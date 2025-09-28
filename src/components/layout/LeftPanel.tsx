@@ -12,7 +12,12 @@ const LeftPanel: React.FC = () => {
       }}
     >
       <ButtonBase disableRipple onClick={() => (window.location.href = "/")}>
-        <Stack gap={0}>
+        <Stack gap={0} alignItems="center" sx={{ gap: 0 }}>
+          <img
+            src="/gt-logo.svg"
+            alt="Gittensor"
+            style={{ height: "64px", width: "auto" }}
+          />
           <Typography fontWeight={550} variant="h4">
             Gittensor
           </Typography>

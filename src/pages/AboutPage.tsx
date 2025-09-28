@@ -10,9 +10,9 @@ const AboutPage: React.FC = () => {
           <Typography fontWeight="bold">Mission:</Typography>
           <Typography lineHeight={2}>
             Open source software (OSS) powers the digital world, yet developers
-            often contribute without compensation. Our goal is to accelerate the
-            development of open source software & reward developers for
-            meaningful work.
+            often contribute without compensation. Our goal at Gittensor is to
+            accelerate the development of open source software & reward
+            developers for meaningful work.
           </Typography>
         </Stack>
         <Stack gap={1}>
