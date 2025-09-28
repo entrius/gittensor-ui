@@ -1,0 +1,7 @@
+services:
+  gittensorui:
+    container_name: gt-ui
+    build: .
+    restart: always
+    ports:
+      - "8080:8080"

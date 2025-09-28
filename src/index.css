@@ -1,0 +1,10 @@
+::selection {
+  background: #f2e3c6; /* or one of the above */
+  color: #1a1a1a;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}

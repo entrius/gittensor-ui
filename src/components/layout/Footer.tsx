@@ -1,0 +1,98 @@
+import React, { ReactElement } from "react";
+import { Box, Container, Divider, Stack, Typography } from "@mui/material";
+import { Link as RouterLink } from "react-router-dom";
+
+export const Footer: React.FC = (): ReactElement => {
+  return (
+    <Box
+      component="footer"
+      sx={{
+        mt: "auto",
+        width: "100%",
+        height: "64px",
+        py: 2,
+        textAlign: "center", // Center align text
+      }}
+    >
+      <Container maxWidth="lg">
+        <Stack gap={2}>
+          <Divider />
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            gap={2}
+            justifyContent="center"
+            alignContent="center"
+          >
+            <Typography
+              color="black"
+              variant="caption"
+              component={RouterLink}
+              to="/about"
+              sx={{
+                textDecoration: "none",
+                "&:hover": { textDecoration: "underline" },
+              }}
+            >
+              © Gittensor 2025
+            </Typography>
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{
+                borderColor: "black",
+                display: { xs: "none", sm: "block" },
+              }}
+            />
+            <Typography
+              color="black"
+              variant="caption"
+              component="a"
+              href="https://discord.gg/ksHbEaRczz"
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{
+                textDecoration: "none",
+                // color: "primary.main",
+                "&:hover": { textDecoration: "underline" },
+              }}
+            >
+              Discord
+            </Typography>
+            <Typography
+              color="black"
+              variant="caption"
+              component="a"
+              href="https://github.com/entrius/gittensor"
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{
+                textDecoration: "none",
+                // color: "primary.main",
+                "&:hover": { textDecoration: "underline" },
+              }}
+            >
+              Github
+            </Typography>
+            <Typography
+              color="black"
+              variant="caption"
+              component="a"
+              href="https://x.com/entriusdev"
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{
+                textDecoration: "none",
+                // color: "primary.main",
+                "&:hover": { textDecoration: "underline" },
+              }}
+            >
+              X
+            </Typography>
+          </Stack>
+        </Stack>
+      </Container>
+    </Box>
+  );
+};
+
+export default Footer;
