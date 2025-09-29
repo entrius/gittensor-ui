@@ -5,3 +5,9 @@ services:
     restart: always
     ports:
       - "127.0.0.1:8080:8080"
+    networks:
+      - gittensor_network
+
+networks:
+  gittensor_network:
+    external: true
