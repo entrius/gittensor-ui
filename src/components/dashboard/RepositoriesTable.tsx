@@ -14,25 +14,15 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import theme from "../../theme";
+import { useRepoChanges } from "../../api";
 
-export interface Repository {
-  id: string;
-  name: string;
-  url: string;
-  totalCommits: number;
-  linesAdded: number;
-  linesRemoved: number;
-}
+const baseGithubUrl = "https://github.com/";
 
-interface RepositoriesTableProps {
-  repositories: Repository[];
-}
-
-const RepositoriesTable: React.FC<RepositoriesTableProps> = ({
-  repositories,
-}) => {
+const RepositoriesTable: React.FC = ({}) => {
   // only a subset of columns are shown when in mobile view
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const { data: repoChanges, isLoading: isRepoLoading } = useRepoChanges();
 
   return (
     <Card>
@@ -68,44 +58,49 @@ const RepositoriesTable: React.FC<RepositoriesTableProps> = ({
               </TableRow>
             </TableHead>
             <TableBody>
-              {repositories.map((repo) => (
-                <TableRow key={repo.id} hover>
+              {repoChanges?.map((repo) => (
+                <TableRow key={repo.repositoryFullName} hover>
                   <TableCell>
                     <Stack>
                       <Typography variant="body1" fontWeight="medium">
-                        {repo.name}
+                        {repo.repositoryFullName}
                       </Typography>
                       {!isMobile && (
-                        <Typography variant="body2" color="text.secondary">
-                          {repo.url}
+                        <Typography
+                          component="a"
+                          href={`${baseGithubUrl}/${repo.repositoryFullName}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          variant="body2"
+                          color="text.secondary"
+                        >
+                          {`${baseGithubUrl}/${repo.repositoryFullName}`}
                         </Typography>
                       )}
                     </Stack>
                   </TableCell>
                   {!isMobile && (
                     <TableCell align="right">
-                      <Typography variant="body1">
-                        {repo.totalCommits}
-                      </Typography>
+                      <Typography variant="body1">{repo?.commits}</Typography>
                     </TableCell>
                   )}
                   {!isMobile && (
                     <TableCell align="right">
                       <Typography variant="body1" color="success.main">
-                        +{repo.linesAdded.toLocaleString()}
+                        +{repo?.additions ?? "-"}
                       </Typography>
                     </TableCell>
                   )}
                   {!isMobile && (
                     <TableCell align="right">
                       <Typography variant="body1" color="error.main">
-                        -{repo.linesRemoved.toLocaleString()}
+                        -{repo?.deletions ?? "-"}
                       </Typography>
                     </TableCell>
                   )}
                   <TableCell align="right">
                     <Typography variant="body1" fontWeight="medium">
-                      {(repo.linesAdded + repo.linesRemoved).toLocaleString()}
+                      {repo?.linesChanged ?? "-"}
                     </Typography>
                   </TableCell>
                 </TableRow>

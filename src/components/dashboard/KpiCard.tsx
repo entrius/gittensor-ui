@@ -3,7 +3,7 @@ import { Card, CardContent, Typography, SxProps, Theme } from "@mui/material";
 
 interface KpiCardProps {
   title: string;
-  value: string | number;
+  value?: string | number;
   subtitle?: string;
   variant?: "large" | "medium";
   sx?: SxProps<Theme>;
@@ -20,7 +20,8 @@ const KpiCard: React.FC<KpiCardProps> = ({
   const padding = isLarge ? { py: 4 } : { py: 3 };
   const valueVariant = isLarge ? "h2" : "h3";
 
-  const formattedValue = typeof value === "number" ? value.toLocaleString() : value;
+  const formattedValue =
+    typeof value === "number" ? value.toLocaleString() : value;
 
   return (
     <Card sx={{ flex: 1, ...sx }}>
@@ -29,7 +30,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
           {title}
         </Typography>
         <Typography variant={valueVariant} color="primary" fontWeight="bold">
-          {formattedValue}
+          {formattedValue ?? "-"}
         </Typography>
         {subtitle && (
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>

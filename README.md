@@ -22,6 +22,14 @@ npm install --g yarn
 yarn install
 ```
 
+### Set up .env file
+
+This project reads variables from a .env file, set yours up to look like this
+
+```bash
+VITE_REACT_APP_BASE_URL=http://localhost:<DAS_SERVICE_PORT>
+```
+
 ## Running the app
 
 The app runs on port 8080 by default

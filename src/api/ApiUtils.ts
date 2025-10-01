@@ -11,7 +11,7 @@ export const useApiQuery = <TResponse = void, TSelect = TResponse>(
     queryKey: [queryName, encodedUrl],
     queryFn: async () => {
       const { data } = await axios.get(
-        `${import.meta.env.VITE_REACT_APP_BASE_URL}/api${encodedUrl}`
+        `${import.meta.env.VITE_BASE_URL}${encodedUrl}`
       );
       return data;
     },
