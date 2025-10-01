@@ -2,6 +2,7 @@ import React from "react";
 import ReactECharts from "echarts-for-react";
 import { Card, CardContent, Typography, useTheme } from "@mui/material";
 import { useHistoricalTrend } from "../../api";
+import dayjs from "dayjs";
 
 const CommitTrendChart: React.FC = () => {
   const theme = useTheme();
@@ -19,9 +20,9 @@ const CommitTrendChart: React.FC = () => {
       },
       formatter: (params: any) => {
         const data = params[0];
-        return `${
-          data.axisValue
-        }<br/>Lines Committed: ${data.value.toLocaleString()}`;
+        return `${dayjs(data.axisValue).format(
+          "YYYY-MM-DD"
+        )}<br/>Lines Committed: ${data.value.toLocaleString()}`;
       },
     },
     grid: {
@@ -37,8 +38,8 @@ const CommitTrendChart: React.FC = () => {
       axisLabel: {
         color: theme.palette.text.secondary,
         formatter: (value: string) => {
-          const date = new Date(value);
-          return `${date.getMonth() + 1}/${date.getDate()}`;
+          const date = dayjs(value);
+          return `${date.month() + 1}/${date.date()}`;
         },
       },
       axisLine: {
