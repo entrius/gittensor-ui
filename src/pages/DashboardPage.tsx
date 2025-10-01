@@ -26,6 +26,12 @@ const DashboardPage: React.FC = () => {
             subtitle="Problems resolved and closed"
             variant="large"
           />
+          <KpiCard
+            title="Total Commits"
+            value={stats?.totalCommits}
+            subtitle="All PR commits"
+            variant="large"
+          />
         </Stack>
 
         <Stack direction={isMobile ? "column" : "row"} spacing={3}>

@@ -15,4 +15,5 @@ export type Stats = {
   totalLinesChanged: number;
   recentLinesChanged: number;
   totalIssues: number;
+  totalCommits: number;
 };
