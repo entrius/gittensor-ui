@@ -10,9 +10,11 @@ export type CommitsTrend = {
   date: string;
   linesCommitted: number;
 };
+
 export type Stats = {
   uniqueRepositories: number;
   totalLinesChanged: number;
   recentLinesChanged: number;
   totalIssues: number;
+  totalCommits: number;
 };

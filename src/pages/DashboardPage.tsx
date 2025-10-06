@@ -13,18 +13,22 @@ const DashboardPage: React.FC = () => {
   return (
     <Page title="Dashboard">
       <Stack gap={4}>
+        <KpiCard
+          title="Total Lines Committed"
+          value={stats?.totalLinesChanged}
+          subtitle="Cumulative code contributions"
+          variant="large"
+        />
         <Stack direction={isMobile ? "column" : "row"} gap={3}>
           <KpiCard
-            title="Total Lines Committed"
-            value={stats?.totalLinesChanged}
-            subtitle="Cumulative code contributions"
-            variant="large"
+            title="Total Commits"
+            value={stats?.totalCommits}
+            subtitle="Total snapshots in a PR"
           />
           <KpiCard
             title="Issues Solved"
             value={stats?.totalIssues}
             subtitle="Problems resolved and closed"
-            variant="large"
           />
         </Stack>
 
