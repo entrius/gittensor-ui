@@ -1,10 +1,27 @@
+@import url('https://fonts.cdnfonts.com/css/cy-grotesk-grand?styles=167641');
+
+:root {
+  --font-heading: "CY Grotesk Grand", "Inter", "Helvetica Neue", sans-serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-accent: "JetBrains Mono", "Courier New", monospace;
+}
+
 ::selection {
-  background: #f2e3c6; /* or one of the above */
+  background: #f2e3c6;
   color: #1a1a1a;
 }
 
 body {
   margin: 0;
   padding: 0;
-  overflow-x: hidden; /* Prevent horizontal scrolling */
+  overflow-x: hidden;
+  font-family: var(--font-body);
+}
+
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+.font-accent {
+  font-family: var(--font-accent);
 }

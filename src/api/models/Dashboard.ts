@@ -6,6 +6,13 @@ export type RepoChanges = {
   linesChanged: number;
 };
 
+export type Repository = {
+  fullName: string;
+  owner: string;
+  name: string;
+  weight: string; // bc float
+};
+
 export type CommitsTrend = {
   date: string;
   linesCommitted: number;

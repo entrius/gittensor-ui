@@ -15,17 +15,15 @@ const CommitTrendChart: React.FC = () => {
     },
     tooltip: {
       trigger: "axis",
-      axisPointer: {
-        type: "cross",
-      },
       formatter: (params: any) => {
         const data = params[0];
         return `${dayjs(data.axisValue).format(
-          "YYYY-MM-DD"
+          "YYYY-MM-DD",
         )}<br/>Lines Committed: ${data.value.toLocaleString()}`;
       },
     },
     grid: {
+      top: "5%",
       left: "3%",
       right: "4%",
       bottom: "3%",
@@ -37,6 +35,8 @@ const CommitTrendChart: React.FC = () => {
       data: data?.map((item) => item.date),
       axisLabel: {
         color: theme.palette.text.secondary,
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: 11,
         formatter: (value: string) => {
           const date = dayjs(value);
           return `${date.month() + 1}/${date.date()}`;
@@ -52,6 +52,8 @@ const CommitTrendChart: React.FC = () => {
       type: "value",
       axisLabel: {
         color: theme.palette.text.secondary,
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: 11,
         formatter: (value: number) => {
           return value >= 1000
             ? `${(value / 1000).toFixed(1)}k`

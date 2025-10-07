@@ -24,12 +24,31 @@ const KpiCard: React.FC<KpiCardProps> = ({
     typeof value === "number" ? value.toLocaleString() : value;
 
   return (
-    <Card sx={{ flex: 1, ...sx }}>
+    <Card
+      sx={{
+        flex: 1,
+        borderRadius: 3,
+        border: "1px solid",
+        borderColor: "divider",
+        ...sx,
+      }}
+      elevation={0}
+    >
       <CardContent sx={{ textAlign: "center", ...padding }}>
-        <Typography variant="h6" color="text.secondary" gutterBottom>
+        <Typography
+          variant="dataLabel"
+          fontSize={16}
+          color="text.secondary"
+          gutterBottom
+        >
           {title}
         </Typography>
-        <Typography variant={valueVariant} color="primary" fontWeight="bold">
+        <Typography
+          variant={valueVariant}
+          color="primary"
+          fontWeight="bold"
+          sx={{ fontFamily: '"JetBrains Mono", monospace' }}
+        >
           {formattedValue ?? "-"}
         </Typography>
         {subtitle && (

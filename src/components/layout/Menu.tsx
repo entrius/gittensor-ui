@@ -7,7 +7,11 @@ import {
 } from "@mui/material";
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { MegaphoneIcon, CubeIcon } from "@heroicons/react/24/outline";
+import {
+  MegaphoneIcon,
+  CubeIcon,
+  CommandLineIcon,
+} from "@heroicons/react/24/outline";
 
 // I'm using heroicons as my icon library instead of google icon
 // https://heroicons.com/outline
@@ -47,6 +51,11 @@ export const Menu: React.FC = () => {
         name="dashboard"
         icon={<CubeIcon style={{ height: 20, width: 20 }} />}
         onClick={() => navigate("/")}
+      />
+      <ListMenuButton
+        name="repositories"
+        icon={<CommandLineIcon style={{ height: 20, width: 20 }} />}
+        onClick={() => navigate("/repositories")}
       />
     </List>
   );

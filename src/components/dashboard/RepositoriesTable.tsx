@@ -25,7 +25,14 @@ const RepositoriesTable: React.FC = ({}) => {
   const { data: repoChanges, isLoading: isRepoLoading } = useRepoChanges();
 
   return (
-    <Card>
+    <Card
+      sx={{
+        borderRadius: 3,
+        border: "1px solid",
+        borderColor: "divider",
+      }}
+      elevation={0}
+    >
       <CardContent>
         <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
           Repository Contributions
@@ -35,25 +42,25 @@ const RepositoriesTable: React.FC = ({}) => {
             <TableHead>
               <TableRow>
                 <TableCell>
-                  <strong>Repository</strong>
+                  <Typography variant="dataLabel">Repository</Typography>
                 </TableCell>
                 {!isMobile && (
                   <TableCell align="right">
-                    <strong>Commits</strong>
+                    <Typography variant="dataLabel">Commits</Typography>
                   </TableCell>
                 )}
                 {!isMobile && (
                   <TableCell align="right">
-                    <strong>Lines Added</strong>
+                    <Typography variant="dataLabel">Lines Added</Typography>
                   </TableCell>
                 )}
                 {!isMobile && (
                   <TableCell align="right">
-                    <strong>Lines Removed</strong>
+                    <Typography variant="dataLabel">Lines Removed</Typography>
                   </TableCell>
                 )}
                 <TableCell align="right">
-                  <strong>Lines Changed</strong>
+                  <Typography variant="dataLabel">Lines Changed</Typography>
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -81,25 +88,25 @@ const RepositoriesTable: React.FC = ({}) => {
                   </TableCell>
                   {!isMobile && (
                     <TableCell align="right">
-                      <Typography variant="body1">{repo?.commits}</Typography>
+                      <Typography variant="dataValue">{repo?.commits}</Typography>
                     </TableCell>
                   )}
                   {!isMobile && (
                     <TableCell align="right">
-                      <Typography variant="body1" color="success.main">
+                      <Typography variant="dataValue" color="success.main">
                         +{repo?.additions ?? "-"}
                       </Typography>
                     </TableCell>
                   )}
                   {!isMobile && (
                     <TableCell align="right">
-                      <Typography variant="body1" color="error.main">
+                      <Typography variant="dataValue" color="error.main">
                         -{repo?.deletions ?? "-"}
                       </Typography>
                     </TableCell>
                   )}
                   <TableCell align="right">
-                    <Typography variant="body1" fontWeight="medium">
+                    <Typography variant="dataValue" fontWeight="medium">
                       {repo?.linesChanged ?? "-"}
                     </Typography>
                   </TableCell>

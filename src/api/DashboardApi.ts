@@ -1,5 +1,10 @@
 import { useApiQuery } from "./ApiUtils";
-import { RepoChanges, CommitsTrend, Stats } from "./models/Dashboard";
+import {
+  RepoChanges,
+  CommitsTrend,
+  Stats,
+  Repository,
+} from "./models/Dashboard";
 
 export const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
   queryName: string,
@@ -15,4 +20,4 @@ export const useRepoChanges = () =>
   useDashboardQuery<RepoChanges[]>("useRepoChanges", "/repos/commits");
 
 export const useReposAndWeights = () =>
-  useDashboardQuery<RepoChanges[]>("useReposAndWeights", "/repos");
+  useDashboardQuery<Repository[]>("useReposAndWeights", "/repos");
