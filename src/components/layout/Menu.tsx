@@ -30,8 +30,8 @@ const ListMenuButton: React.FC<ListMenuButtonProps> = ({
   return (
     <ListItem disablePadding>
       <ListItemButton disableRipple onClick={onClick}>
-        <ListItemIcon sx={{ color: "primary.main" }}>{icon}</ListItemIcon>
-        <ListItemText primary={name} />
+        <ListItemIcon sx={{ color: "#ffffff" }}>{icon}</ListItemIcon>
+        <ListItemText primary={name} sx={{ color: "#ffffff" }} />
       </ListItemButton>
     </ListItem>
   );

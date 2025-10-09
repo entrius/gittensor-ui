@@ -20,7 +20,7 @@ const Section: React.FC<SectionProps> = ({ title, children }) => (
     <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mb: 1.5 }}>
       {title}
     </Typography>
-    <Typography variant="body1" lineHeight={1.8} color="text.secondary">
+    <Typography variant="body1" lineHeight={1.8} color="#ffffff">
       {children}
     </Typography>
   </Box>
@@ -33,14 +33,14 @@ const AboutPage: React.FC = () => {
         <Section title="Mission">
           Open source software (OSS) powers the digital world, yet developers
           often contribute without compensation. Our goal at Gittensor is to
-          accelerate the development of open source software & reward
-          developers for meaningful work.
+          accelerate the development of open source software & reward developers
+          for meaningful work.
         </Section>
 
         <Section title="How">
           As a subnet within the Bittensor network, Gittensor distributes
-          emissions to OSS developers (miners) whose code has been integrated
-          & merged into recognized Github repositories.
+          emissions to OSS developers (miners) whose code has been integrated &
+          merged into recognized Github repositories.
         </Section>
 
         <Section title="Miners">
@@ -54,11 +54,11 @@ const AboutPage: React.FC = () => {
 
         <Section title="Validators">
           Leverage the GitHub API to authenticate miners and verify their
-          contributions to OSS repositories. Validators query miners to
-          confirm GitHub Personal Access Token (PAT) ownership, analyze merged
-          pull requests for quality and impact, calculate reward scores based
-          on contribution metrics, and distribute $TAO emissions across the
-          network while maintaining system integrity.
+          contributions to OSS repositories. Validators query miners to confirm
+          GitHub Personal Access Token (PAT) ownership, analyze merged pull
+          requests for quality and impact, calculate reward scores based on
+          contribution metrics, and distribute $TAO emissions across the network
+          while maintaining system integrity.
         </Section>
 
         <Box
@@ -70,11 +70,16 @@ const AboutPage: React.FC = () => {
             borderColor: "divider",
           }}
         >
-          <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mb: 1.5 }}>
+          <Typography
+            variant="h6"
+            fontWeight="bold"
+            gutterBottom
+            sx={{ mb: 1.5 }}
+          >
             Community
           </Typography>
           <Stack gap={1.5}>
-            <Typography variant="body1" lineHeight={1.8} color="text.secondary">
+            <Typography variant="body1" lineHeight={1.8} color="#ffffff">
               Stay up to date with announcements and news in the official
               Bittensor{" "}
               <Typography
@@ -83,17 +88,15 @@ const AboutPage: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 sx={{
-                  color: "primary.main",
-                  textDecoration: "none",
+                  color: "text.primary",
                   fontWeight: 500,
-                  "&:hover": { textDecoration: "underline" },
                 }}
               >
                 discord server
               </Typography>
               .
             </Typography>
-            <Typography variant="body1" lineHeight={1.8} color="text.secondary">
+            <Typography variant="body1" lineHeight={1.8} color="#ffffff">
               Review our codebase and get started mining by checking out the
               readme on our{" "}
               <Typography
@@ -102,10 +105,8 @@ const AboutPage: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 sx={{
-                  color: "primary.main",
-                  textDecoration: "none",
+                  color: "text.primary",
                   fontWeight: 500,
-                  "&:hover": { textDecoration: "underline" },
                 }}
               >
                 Github

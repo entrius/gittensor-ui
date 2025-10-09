@@ -14,6 +14,29 @@
 - React Router v6, TanStack Query v5, Axios
 - ECharts for data visualization
 
+## Design System
+
+### Color Palette
+- **Logo Gradient**: `linear-gradient(90deg, #031cdc, #000000)` (Blue to Black)
+- **Black** (Main): `#000000`
+- **Grey** (Accent): `#3d3d3d`
+- **Blue** (Main): `#031cdc`
+- **White**: `#ffffff`
+- **Yellow** (Accent): `#fff3d10`
+
+### Typography (see TYPOGRAPHY.md)
+- **Headings**: CY Grotesk Grand (h1-h6)
+- **Body**: Inter (body text, buttons, UI)
+- **Accent/Data**: Jet Brains Mono (metrics, data values, code)
+- Apply accent font via: `sx={{ fontFamily: '"JetBrains Mono", monospace' }}`
+- Use `variant="dataValue"` or `variant="dataLabel"` for data/metrics
+
+### Design Principles
+- Sleek, futuristic, sustainable, minimal aesthetic
+- Clean rounded borders (borderRadius: 3)
+- Subtle borders with divider colors
+- No elevation/shadows (elevation={0})
+
 ## Code Style
 
 ### Imports
@@ -26,12 +49,6 @@
 - Props interfaces named `{ComponentName}Props`
 - Default export for components, named exports for utilities
 - Use MUI's `sx` prop for styling (no inline styles or CSS files except index.css)
-
-### Typography (see TYPOGRAPHY.md)
-- Headings: CY Grotesk Grand (h1-h6)
-- Body: Inter (body text, buttons, UI)
-- Data/Metrics: JetBrains Mono (use `variant="dataValue"` or `variant="dataLabel"`)
-- Apply accent font via: `sx={{ fontFamily: '"JetBrains Mono", monospace' }}`
 
 ### TypeScript
 - Strict mode enabled, no implicit any

@@ -18,7 +18,7 @@ const LeftPanel: React.FC = () => {
             alt="Gittensor"
             style={{ height: "64px", width: "auto" }}
           />
-          <Typography fontWeight={550} variant="h4">
+          <Typography fontWeight={550} variant="h4" color="#ffffff">
             Gittensor
           </Typography>
         </Stack>

@@ -42,7 +42,7 @@ const AppLayout: React.FC = () => {
           <LeftPanel />
           <Divider
             orientation={isMobile ? "horizontal" : "vertical"}
-            sx={{ backgroundColor: "black" }}
+            sx={{ backgroundColor: "#ffffff" }}
           />
 
           {/* Right panel (scrollable content) */}

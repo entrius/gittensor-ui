@@ -21,20 +21,22 @@ declare module "@mui/material/Typography" {
 
 const theme = createTheme({
   palette: {
+    mode: "dark",
     primary: {
-      main: "#4B3621",
+      main: "#031cdc",
     },
     secondary: {
-      main: "#f2e3c6",
+      main: "#fff3d10",
     },
     background: {
-      default: "#f9f9f9",
-      paper: "#ffffff",
+      default: "#000000",
+      paper: "#3d3d3d",
     },
     text: {
-      primary: "#1a1a1a",
-      secondary: "#666666",
+      primary: "#ffffff",
+      secondary: "#3d3d3d",
     },
+    divider: "#ffffff",
   },
   typography: {
     fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',

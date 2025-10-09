@@ -10,11 +10,14 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
+  TablePagination,
   TextField,
   Typography,
   Paper,
   InputAdornment,
   Stack,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
 import { useReposAndWeights } from "../../api";
@@ -29,6 +32,10 @@ const RepositoryWeightsTable: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField>("weight");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -37,6 +44,21 @@ const RepositoryWeightsTable: React.FC = () => {
       setSortField(field);
       setSortOrder(field === "weight" ? "desc" : "asc");
     }
+    setPage(0);
+  };
+
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
+    setPage(0);
   };
 
   const filteredAndSortedRepos = useMemo(() => {
@@ -84,6 +106,12 @@ const RepositoryWeightsTable: React.FC = () => {
     return filtered;
   }, [repositories, searchQuery, sortField, sortOrder]);
 
+  const paginatedRepos = useMemo(() => {
+    const startIndex = page * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return filteredAndSortedRepos.slice(startIndex, endIndex);
+  }, [filteredAndSortedRepos, page, rowsPerPage]);
+
   return (
     <Card
       sx={{
@@ -97,10 +125,11 @@ const RepositoryWeightsTable: React.FC = () => {
       elevation={0}
     >
       <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
           <Typography variant="h5">Repositories & Weights</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Contribute to any of these projects to gain score and earn emissions!
+          <Typography variant="body2" color="text.primary">
+            Contribute to any of these projects to gain score and earn
+            emissions!
           </Typography>
         </Box>
 
@@ -108,7 +137,7 @@ const RepositoryWeightsTable: React.FC = () => {
           fullWidth
           placeholder="Search by owner or repository name..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={handleSearchChange}
           sx={{ mb: 3 }}
           InputProps={{
             startAdornment: (
@@ -123,20 +152,38 @@ const RepositoryWeightsTable: React.FC = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>
-                  <TableSortLabel
-                    active={sortField === "owner"}
-                    direction={sortField === "owner" ? sortOrder : "asc"}
-                    onClick={() => handleSort("owner")}
-                  >
-                    <Typography variant="dataLabel">Owner</Typography>
-                  </TableSortLabel>
-                </TableCell>
+                {!isMobile && (
+                  <TableCell>
+                    <TableSortLabel
+                      active={sortField === "owner"}
+                      direction={sortField === "owner" ? sortOrder : "asc"}
+                      onClick={() => handleSort("owner")}
+                      sx={{
+                        "&:hover": {
+                          color: "#031cdc",
+                        },
+                        "&.Mui-active": {
+                          color: "#031cdc",
+                        },
+                      }}
+                    >
+                      <Typography variant="dataLabel">Owner</Typography>
+                    </TableSortLabel>
+                  </TableCell>
+                )}
                 <TableCell>
                   <TableSortLabel
                     active={sortField === "name"}
                     direction={sortField === "name" ? sortOrder : "asc"}
                     onClick={() => handleSort("name")}
+                    sx={{
+                      "&:hover": {
+                        color: "#031cdc",
+                      },
+                      "&.Mui-active": {
+                        color: "#031cdc",
+                      },
+                    }}
                   >
                     <Typography variant="dataLabel">Repository</Typography>
                   </TableSortLabel>
@@ -146,6 +193,14 @@ const RepositoryWeightsTable: React.FC = () => {
                     active={sortField === "weight"}
                     direction={sortField === "weight" ? sortOrder : "desc"}
                     onClick={() => handleSort("weight")}
+                    sx={{
+                      "&:hover": {
+                        color: "#031cdc",
+                      },
+                      "&.Mui-active": {
+                        color: "#031cdc",
+                      },
+                    }}
                   >
                     <Typography variant="dataLabel">Weight</Typography>
                   </TableSortLabel>
@@ -153,44 +208,64 @@ const RepositoryWeightsTable: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredAndSortedRepos.map((repo) => (
+              {paginatedRepos.map((repo) => (
                 <TableRow key={repo.fullName} hover>
-                  <TableCell>
-                    <Typography variant="body1" fontWeight="medium">
-                      {repo.owner}
-                    </Typography>
-                  </TableCell>
+                  {!isMobile && (
+                    <TableCell>
+                      <Typography variant="body1" fontWeight="medium">
+                        {repo.owner}
+                      </Typography>
+                    </TableCell>
+                  )}
                   <TableCell>
                     <Stack>
                       <Typography variant="body1" fontWeight="medium">
-                        {repo.name}
+                        {isMobile ? repo.fullName : repo.name}
                       </Typography>
-                      <Typography
-                        component="a"
-                        href={`${baseGithubUrl}${repo.fullName}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="body2"
-                        sx={{
-                          color: "primary.main",
-                          textDecoration: "none",
-                          "&:hover": { textDecoration: "underline" },
-                        }}
-                      >
-                        {`${baseGithubUrl}${repo.fullName}`}
-                      </Typography>
+                      {!isMobile && (
+                        <Typography
+                          component="a"
+                          href={`${baseGithubUrl}${repo.fullName}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          variant="body2"
+                          sx={{
+                            color: "text.primary",
+                            textDecoration: "none",
+                            "&:hover": { textDecoration: "underline" },
+                          }}
+                        >
+                          {`${baseGithubUrl}${repo.fullName}`}
+                        </Typography>
+                      )}
                     </Stack>
                   </TableCell>
                   <TableCell align="right">
-                    <Typography variant="dataValue">
-                      {repo.weight}
-                    </Typography>
+                    <Typography variant="dataValue">{repo.weight}</Typography>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
+
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25, 50, 100]}
+          component="div"
+          count={filteredAndSortedRepos.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          sx={{
+            ".MuiTablePagination-displayedRows": {
+              fontFamily: '"JetBrains Mono", monospace',
+            },
+            ".MuiTablePagination-selectLabel": {
+              fontFamily: '"JetBrains Mono", monospace',
+            },
+          }}
+        />
 
         {filteredAndSortedRepos.length === 0 && !isLoading && (
           <Box sx={{ textAlign: "center", py: 4 }}>
@@ -205,3 +280,4 @@ const RepositoryWeightsTable: React.FC = () => {
 };
 
 export default RepositoryWeightsTable;
+

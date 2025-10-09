@@ -22,7 +22,7 @@ const RepositoriesTable: React.FC = ({}) => {
   // only a subset of columns are shown when in mobile view
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const { data: repoChanges, isLoading: isRepoLoading } = useRepoChanges();
+  const { data: repoChanges } = useRepoChanges();
 
   return (
     <Card
@@ -79,7 +79,11 @@ const RepositoriesTable: React.FC = ({}) => {
                           target="_blank"
                           rel="noopener noreferrer"
                           variant="body2"
-                          color="text.secondary"
+                          color="text.primary"
+                          sx={{
+                            textDecoration: "none",
+                            "&:hover": { textDecoration: "underline" },
+                          }}
                         >
                           {`${baseGithubUrl}/${repo.repositoryFullName}`}
                         </Typography>
@@ -88,7 +92,9 @@ const RepositoriesTable: React.FC = ({}) => {
                   </TableCell>
                   {!isMobile && (
                     <TableCell align="right">
-                      <Typography variant="dataValue">{repo?.commits}</Typography>
+                      <Typography variant="dataValue">
+                        {repo?.commits}
+                      </Typography>
                     </TableCell>
                   )}
                   {!isMobile && (

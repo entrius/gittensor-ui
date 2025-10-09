@@ -16,7 +16,7 @@ export const Footer: React.FC = (): ReactElement => {
     >
       <Container maxWidth="lg">
         <Stack gap={2}>
-          <Divider />
+          <Divider sx={{ borderColor: "#3d3d3d" }} />
           <Stack
             direction={{ xs: "column", sm: "row" }}
             gap={2}
@@ -24,7 +24,7 @@ export const Footer: React.FC = (): ReactElement => {
             alignContent="center"
           >
             <Typography
-              color="black"
+              color="#ffffff"
               variant="caption"
               component={RouterLink}
               to="/about"
@@ -39,12 +39,12 @@ export const Footer: React.FC = (): ReactElement => {
               orientation="vertical"
               flexItem
               sx={{
-                borderColor: "black",
+                borderColor: "#3d3d3d",
                 display: { xs: "none", sm: "block" },
               }}
             />
             <Typography
-              color="black"
+              color="#ffffff"
               variant="caption"
               component="a"
               href="https://discord.gg/ksHbEaRczz"
@@ -52,14 +52,13 @@ export const Footer: React.FC = (): ReactElement => {
               rel="noopener noreferrer"
               sx={{
                 textDecoration: "none",
-                // color: "primary.main",
                 "&:hover": { textDecoration: "underline" },
               }}
             >
               Discord
             </Typography>
             <Typography
-              color="black"
+              color="#ffffff"
               variant="caption"
               component="a"
               href="https://github.com/entrius/gittensor"
@@ -67,14 +66,13 @@ export const Footer: React.FC = (): ReactElement => {
               rel="noopener noreferrer"
               sx={{
                 textDecoration: "none",
-                // color: "primary.main",
                 "&:hover": { textDecoration: "underline" },
               }}
             >
               Github
             </Typography>
             <Typography
-              color="black"
+              color="#ffffff"
               variant="caption"
               component="a"
               href="https://x.com/entriusdev"
@@ -82,7 +80,6 @@ export const Footer: React.FC = (): ReactElement => {
               rel="noopener noreferrer"
               sx={{
                 textDecoration: "none",
-                // color: "primary.main",
                 "&:hover": { textDecoration: "underline" },
               }}
             >

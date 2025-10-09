@@ -38,7 +38,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
         <Typography
           variant="dataLabel"
           fontSize={16}
-          color="text.secondary"
+          color="#ffffff"
           gutterBottom
         >
           {title}
@@ -52,7 +52,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
           {formattedValue ?? "-"}
         </Typography>
         {subtitle && (
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          <Typography variant="body2" color="#ffffff" sx={{ mt: 1 }}>
             {subtitle}
           </Typography>
         )}
