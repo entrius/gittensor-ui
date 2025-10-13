@@ -34,7 +34,7 @@ const theme = createTheme({
     },
     text: {
       primary: "#ffffff",
-      secondary: "#3d3d3d",
+      secondary: "#7d7d7d",
     },
     divider: "#ffffff",
   },

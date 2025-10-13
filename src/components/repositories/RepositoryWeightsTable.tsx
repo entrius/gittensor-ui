@@ -242,7 +242,8 @@ const RepositoryWeightsTable: React.FC = () => {
                             "&:hover": { textDecoration: "underline" },
                           }}
                         >
-                          {`${baseGithubUrl}${repo.fullName}`}
+                          {baseGithubUrl}
+                          {repo.fullName}
                         </Typography>
                       </Stack>
                     </TableCell>

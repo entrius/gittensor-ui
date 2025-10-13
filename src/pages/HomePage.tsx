@@ -17,7 +17,7 @@ const HomePage: React.FC = () => {
         px: 2,
       }}
     >
-      <Stack alignItems="center" gap={2} sx={{ mb: 6 }}>
+      <Stack alignItems="center" justifyContent="center" gap={2} sx={{ mb: 6 }}>
         <img
           src="/gt-logo.svg"
           alt="Gittensor"
@@ -34,8 +34,8 @@ const HomePage: React.FC = () => {
         >
           GITTENSOR
         </Typography>
-        <Typography variant="body1" color="main" fontWeight="bold">
-          Open Source Software is a silent revolution, hidden in plain sight.
+        <Typography variant="body1" color="text.secondary" fontWeight="bold">
+          Open Source Software is a silent revolution hidden in plain sight.
         </Typography>
       </Stack>
 
