@@ -50,7 +50,7 @@ const HomePage: React.FC = () => {
       >
         <Button
           variant="outlined"
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/dashboard")}
           sx={{
             py: 2,
             borderColor: "#ffffff",
