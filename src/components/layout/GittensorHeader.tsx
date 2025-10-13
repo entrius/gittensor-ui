@@ -14,10 +14,7 @@ const GittensorHeader: React.FC = () => {
         py: 4,
       }}
     >
-      <ButtonBase
-        disableRipple
-        onClick={() => navigate("/home")}
-      >
+      <ButtonBase disableRipple onClick={() => navigate("/")}>
         <Stack alignItems="center" gap={1}>
           <img
             src="/gt-logo.svg"
