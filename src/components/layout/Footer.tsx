@@ -27,7 +27,7 @@ export const Footer: React.FC = (): ReactElement => {
               color="#ffffff"
               variant="caption"
               component={RouterLink}
-              to="/about"
+              to="/home"
               sx={{
                 textDecoration: "none",
                 "&:hover": { textDecoration: "underline" },

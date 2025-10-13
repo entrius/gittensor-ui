@@ -4,6 +4,9 @@ export * from "./AppLayout";
 export { default as Footer } from "./Footer";
 export * from "./Footer";
 
+export { default as GittensorHeader } from "./GittensorHeader";
+export * from "./GittensorHeader";
+
 export { default as LeftPanel } from "./LeftPanel";
 export * from "./LeftPanel";
 

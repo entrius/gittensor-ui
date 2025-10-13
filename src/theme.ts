@@ -23,14 +23,14 @@ const theme = createTheme({
   palette: {
     mode: "dark",
     primary: {
-      main: "#031cdc",
+      main: "#1d37fc",
     },
     secondary: {
-      main: "#fff3d10",
+      main: "#fff30d",
     },
     background: {
       default: "#000000",
-      paper: "#3d3d3d",
+      paper: "#0a0f1f",
     },
     text: {
       primary: "#ffffff",
@@ -39,7 +39,8 @@ const theme = createTheme({
     divider: "#ffffff",
   },
   typography: {
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily:
+      '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     h1: {
       fontFamily: '"CY Grotesk Grand", "Inter", "Helvetica Neue", sans-serif',
     },
@@ -70,21 +71,22 @@ const theme = createTheme({
     dataValue: {
       fontFamily: '"JetBrains Mono", "Courier New", monospace',
       fontWeight: 500,
-      letterSpacing: '0.02em',
+      letterSpacing: "0.02em",
     },
     dataLabel: {
       fontFamily: '"JetBrains Mono", "Courier New", monospace',
-      fontSize: '0.75rem',
+      fontSize: "0.75rem",
       fontWeight: 400,
-      letterSpacing: '0.05em',
-      textTransform: 'uppercase',
+      letterSpacing: "0.05em",
+      textTransform: "uppercase",
     },
   },
   components: {
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily:
+            '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         },
       },
     },

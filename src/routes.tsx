@@ -7,6 +7,7 @@ export type AppRoute = Omit<PathRouteProps, "path"> & {
 };
 
 // main menu pages
+const HomePage = React.lazy(() => import("./pages/HomePage"));
 const AboutPage = React.lazy(() => import("./pages/AboutPage"));
 const DashboardPage = React.lazy(() => import("./pages/DashboardPage"));
 const RepositoriesPage = React.lazy(() => import("./pages/RepositoriesPage"));
@@ -18,6 +19,7 @@ const RepositoriesPage = React.lazy(() => import("./pages/RepositoriesPage"));
 const NotFoundPage = React.lazy(() => import("./pages/NotFoundPage"));
 
 const routesArray: AppRoute[] = [
+  { name: "home", path: "/home", element: <HomePage /> },
   { name: "dashboard", path: "/", element: <DashboardPage /> },
   { name: "about", path: "/about", element: <AboutPage /> },
   {

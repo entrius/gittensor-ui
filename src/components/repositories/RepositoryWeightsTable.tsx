@@ -51,7 +51,9 @@ const RepositoryWeightsTable: React.FC = () => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChangeRowsPerPage = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
@@ -127,7 +129,7 @@ const RepositoryWeightsTable: React.FC = () => {
       <CardContent>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
           <Typography variant="h5">Repositories & Weights</Typography>
-          <Typography variant="body2" color="text.primary">
+          <Typography variant="body2" color="secondary.main">
             Contribute to any of these projects to gain score and earn
             emissions!
           </Typography>
@@ -160,10 +162,10 @@ const RepositoryWeightsTable: React.FC = () => {
                       onClick={() => handleSort("owner")}
                       sx={{
                         "&:hover": {
-                          color: "#031cdc",
+                          color: "secondary.main",
                         },
                         "&.Mui-active": {
-                          color: "#031cdc",
+                          color: "secondary.main",
                         },
                       }}
                     >
@@ -178,10 +180,10 @@ const RepositoryWeightsTable: React.FC = () => {
                     onClick={() => handleSort("name")}
                     sx={{
                       "&:hover": {
-                        color: "#031cdc",
+                        color: "secondary.main",
                       },
                       "&.Mui-active": {
-                        color: "#031cdc",
+                        color: "secondary.main",
                       },
                     }}
                   >
@@ -195,10 +197,10 @@ const RepositoryWeightsTable: React.FC = () => {
                     onClick={() => handleSort("weight")}
                     sx={{
                       "&:hover": {
-                        color: "#031cdc",
+                        color: "secondary.main",
                       },
                       "&.Mui-active": {
-                        color: "#031cdc",
+                        color: "secondary.main",
                       },
                     }}
                   >
@@ -222,22 +224,20 @@ const RepositoryWeightsTable: React.FC = () => {
                       <Typography variant="body1" fontWeight="medium">
                         {isMobile ? repo.fullName : repo.name}
                       </Typography>
-                      {!isMobile && (
-                        <Typography
-                          component="a"
-                          href={`${baseGithubUrl}${repo.fullName}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          variant="body2"
-                          sx={{
-                            color: "text.primary",
-                            textDecoration: "none",
-                            "&:hover": { textDecoration: "underline" },
-                          }}
-                        >
-                          {`${baseGithubUrl}${repo.fullName}`}
-                        </Typography>
-                      )}
+                      <Typography
+                        component="a"
+                        href={`${baseGithubUrl}${repo.fullName}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="body2"
+                        sx={{
+                          color: "text.secondary",
+                          textDecoration: "none",
+                          "&:hover": { textDecoration: "underline" },
+                        }}
+                      >
+                        {`${baseGithubUrl}${repo.fullName}`}
+                      </Typography>
                     </Stack>
                   </TableCell>
                   <TableCell align="right">
@@ -269,7 +269,7 @@ const RepositoryWeightsTable: React.FC = () => {
 
         {filteredAndSortedRepos.length === 0 && !isLoading && (
           <Box sx={{ textAlign: "center", py: 4 }}>
-            <Typography color="text.secondary">
+            <Typography color="secondary.main">
               No repositories found
             </Typography>
           </Box>
@@ -280,4 +280,3 @@ const RepositoryWeightsTable: React.FC = () => {
 };
 
 export default RepositoryWeightsTable;
-

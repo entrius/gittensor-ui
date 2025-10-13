@@ -25,44 +25,22 @@ const AppLayout: React.FC = () => {
           position: "relative",
         }}
       >
-        {/* Inner content container — centered, constrained width */}
-        <Stack
-          direction={{ xs: "column", md: "row" }} // vertical on mobile
+        {/* Right panel (scrollable content) */}
+        <Box
+          ref={mainRef}
+          component="main"
           sx={{
-            width: "100%",
-            maxWidth: { xs: "100%", md: "xl" },
-            mx: "auto",
-            px: { xs: 1, md: 2 },
-            py: { xs: 2, md: 4 },
-            boxSizing: "border-box",
-            gap: 2,
             flexGrow: 1,
+            display: "flex",
+            flexDirection: "column",
+            px: 2,
+            alignItems: "center",
           }}
         >
-          <LeftPanel />
-          <Divider
-            orientation={isMobile ? "horizontal" : "vertical"}
-            sx={{ backgroundColor: "#ffffff" }}
-          />
-
-          {/* Right panel (scrollable content) */}
-          <Box
-            ref={mainRef}
-            component="main"
-            sx={{
-              flexGrow: 1,
-              display: "flex",
-              flexDirection: "column",
-              px: 2,
-              alignItems: "center",
-            }}
-          >
-            <Suspense fallback={<LoadingPage />}>
-              <Outlet />
-            </Suspense>
-            <Footer />
-          </Box>
-        </Stack>
+          <Suspense fallback={<LoadingPage />}>
+            <Outlet />
+          </Suspense>
+        </Box>
       </Box>
     </>
   );

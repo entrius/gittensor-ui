@@ -1,5 +1,7 @@
 import { ContainerProps, Stack } from "@mui/material";
 import React from "react";
+import { Footer } from "..";
+import GittensorHeader from "./GittensorHeader";
 
 const baseTitle = "Gittensor";
 export type PageProps = ContainerProps & {
@@ -17,7 +19,9 @@ const Page: React.FC<PageProps> = ({ children, title, ...props }) => {
       sx={{ width: "100%", maxWidth: "100%" }}
     >
       <Stack gap={2} sx={{ width: "100%", maxWidth: "100%" }}>
+        <GittensorHeader />
         {children}
+        <Footer />
       </Stack>
     </Stack>
   );
