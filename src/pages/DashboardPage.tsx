@@ -8,7 +8,7 @@ import { useStats } from "../api";
 const DashboardPage: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const { data: stats, isLoading } = useStats();
+  const { data: stats } = useStats();
 
   return (
     <Page title="Dashboard">
@@ -23,7 +23,7 @@ const DashboardPage: React.FC = () => {
           <KpiCard
             title="Total Commits"
             value={stats?.totalCommits}
-            subtitle="Total snapshots in a PR"
+            subtitle="Total PR snapshots"
           />
           <KpiCard
             title="Issues Solved"

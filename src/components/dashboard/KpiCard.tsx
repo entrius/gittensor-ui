@@ -45,7 +45,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
         </Typography>
         <Typography
           variant={valueVariant}
-          color="primary"
+          color="text.primary"
           fontWeight="bold"
           sx={{ fontFamily: '"JetBrains Mono", monospace' }}
         >

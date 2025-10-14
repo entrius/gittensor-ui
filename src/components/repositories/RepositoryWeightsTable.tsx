@@ -130,7 +130,7 @@ const RepositoryWeightsTable: React.FC = () => {
       <CardContent>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
           <Typography variant="h5">Repositories & Weights</Typography>
-          <Typography variant="body2" color="secondary.main">
+          <Typography variant="body2" color="text.secondary">
             Contribute to any of these projects to gain score and earn
             emissions!
           </Typography>
@@ -227,24 +227,46 @@ const RepositoryWeightsTable: React.FC = () => {
                     )}
                     <TableCell>
                       <Stack>
-                        <Typography variant="body1" fontWeight="medium">
-                          {isMobile ? repo.fullName : repo.name}
-                        </Typography>
                         <Typography
-                          component="a"
-                          href={`${baseGithubUrl}${repo.fullName}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          variant="body2"
+                          component={isMobile ? "a" : "span"}
+                          variant="body1"
+                          fontWeight="medium"
+                          href={
+                            isMobile
+                              ? `${baseGithubUrl}${repo.fullName}`
+                              : undefined
+                          }
+                          target={isMobile ? "_blank" : undefined}
+                          rel={isMobile ? "noopener noreferrer" : undefined}
                           sx={{
-                            color: "text.secondary",
                             textDecoration: "none",
-                            "&:hover": { textDecoration: "underline" },
+                            "&:hover": {
+                              textDecoration: isMobile
+                                ? "underline"
+                                : undefined,
+                            },
+                            color: "text.primary",
                           }}
                         >
-                          {baseGithubUrl}
-                          {repo.fullName}
+                          {isMobile ? repo.fullName : repo.name}
                         </Typography>
+                        {!isMobile && (
+                          <Typography
+                            component="a"
+                            href={`${baseGithubUrl}${repo.fullName}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="body2"
+                            sx={{
+                              color: "text.secondary",
+                              textDecoration: "none",
+                              "&:hover": { textDecoration: "underline" },
+                            }}
+                          >
+                            {baseGithubUrl}
+                            {repo.fullName}
+                          </Typography>
+                        )}
                       </Stack>
                     </TableCell>
                     <TableCell align="right">

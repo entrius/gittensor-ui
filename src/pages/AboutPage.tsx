@@ -79,24 +79,28 @@ const AboutPage: React.FC = () => {
             Community
           </Typography>
           <Stack gap={1.5}>
-            <Typography variant="body1" lineHeight={1.8} color="#ffffff">
-              Stay up to date with announcements and news in the official
-              Bittensor{" "}
+            <Typography variant="body1" lineHeight={1.8} color="text.primary">
+              Stay up to date with announcements and news in the{" "}
               <Typography
                 component="a"
-                href="https://discord.gg/ksHbEaRczz"
+                href="https://docs.learnbittensor.org/resources/community-links"
                 target="_blank"
                 rel="noopener noreferrer"
                 sx={{
-                  color: "text.primary",
+                  color: "text.secondary",
                   fontWeight: 500,
+
+                  textDecoration: "none",
+                  "&:hover": {
+                    textDecoration: "underline",
+                  },
                 }}
               >
-                discord server
+                Bittensor community
               </Typography>
               .
             </Typography>
-            <Typography variant="body1" lineHeight={1.8} color="#ffffff">
+            <Typography variant="body1" lineHeight={1.8} color="text.primary">
               Review our codebase and get started mining by checking out the
               readme on our{" "}
               <Typography
@@ -105,8 +109,12 @@ const AboutPage: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 sx={{
-                  color: "text.primary",
+                  color: "text.secondary",
                   fontWeight: 500,
+                  textDecoration: "none",
+                  "&:hover": {
+                    textDecoration: "underline",
+                  },
                 }}
               >
                 Github
