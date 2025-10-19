@@ -35,7 +35,7 @@ const RepositoriesTable: React.FC = ({}) => {
     >
       <CardContent>
         <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-          Repository Contributions
+          Top 5 Contributed Repositories
         </Typography>
         <TableContainer component={Paper} elevation={0}>
           <Table>
