@@ -19,7 +19,7 @@ const Page: React.FC<PageProps> = ({ children, title, ...props }) => {
       sx={{ width: "100%", maxWidth: "100%" }}
     >
       <Stack gap={2} sx={{ width: "100%", maxWidth: "100%" }}>
-        <GittensorHeader />
+        {title !== "Home" && <GittensorHeader />}
         {children}
         <Footer />
       </Stack>

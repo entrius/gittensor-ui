@@ -57,8 +57,8 @@ const AboutPage: React.FC = () => {
           contributions to OSS repositories. Validators query miners to confirm
           GitHub Personal Access Token (PAT) ownership, analyze merged pull
           requests for quality and impact, calculate reward scores based on
-          contribution metrics, and distribute $TAO emissions across the network
-          while maintaining system integrity.
+          contribution metrics, and distribute alpha emissions across the
+          network while maintaining system integrity.
         </Section>
 
         <Box

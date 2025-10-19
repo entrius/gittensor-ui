@@ -13,6 +13,11 @@ export type Repository = {
   weight: string; // bc float
 };
 
+export type LanguageWeight = {
+  extension: string;
+  weight: string; // bc float
+};
+
 export type CommitsTrend = {
   date: string;
   linesCommitted: number;

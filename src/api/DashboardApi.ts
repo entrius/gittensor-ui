@@ -4,6 +4,7 @@ import {
   CommitsTrend,
   Stats,
   Repository,
+  LanguageWeight,
 } from "./models/Dashboard";
 
 export const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
@@ -21,3 +22,6 @@ export const useRepoChanges = () =>
 
 export const useReposAndWeights = () =>
   useDashboardQuery<Repository[]>("useReposAndWeights", "/repos");
+
+export const useLanguagesAndWeights = () =>
+  useDashboardQuery<LanguageWeight[]>("useLanguagesAndWeights", "/languages");

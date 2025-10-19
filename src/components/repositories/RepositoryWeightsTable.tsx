@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from "react";
 import {
   Box,
-  Card,
-  CardContent,
   Table,
   TableBody,
   TableCell,
@@ -116,25 +114,14 @@ const RepositoryWeightsTable: React.FC = () => {
   }, [filteredAndSortedRepos, page, rowsPerPage]);
 
   return (
-    <Card
-      sx={{
-        borderRadius: 3,
-        border: "1px solid",
-        borderColor: "divider",
-        maxWidth: 1200,
-        mx: "auto",
-        width: "100%",
-      }}
-      elevation={0}
-    >
-      <CardContent>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-          <Typography variant="h5">Repositories & Weights</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Contribute to any of these projects to gain score and earn
-            emissions!
-          </Typography>
-        </Box>
+    <Box>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+        <Typography variant="h5">Repositories & Weights</Typography>
+        <Typography variant="body2" color="text.secondary">
+          Contribute to any of these projects to gain score and earn
+          emissions!
+        </Typography>
+      </Box>
 
         <TextField
           fullWidth
@@ -297,13 +284,12 @@ const RepositoryWeightsTable: React.FC = () => {
           }}
         />
 
-        {filteredAndSortedRepos.length === 0 && !isLoading && (
-          <Box sx={{ textAlign: "center", py: 4 }}>
-            <Typography>No repositories found!</Typography>
-          </Box>
-        )}
-      </CardContent>
-    </Card>
+      {filteredAndSortedRepos.length === 0 && !isLoading && (
+        <Box sx={{ textAlign: "center", py: 4 }}>
+          <Typography>No repositories found!</Typography>
+        </Box>
+      )}
+    </Box>
   );
 };
 

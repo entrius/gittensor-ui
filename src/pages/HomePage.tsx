@@ -1,22 +1,24 @@
 import React from "react";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { Page } from "../components/layout";
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "100vh",
-        width: "100%",
-        px: 2,
-      }}
-    >
+    <Page title="Home">
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+          width: "100%",
+          px: 2,
+        }}
+      >
       <Stack alignItems="center" justifyContent="center" gap={2} sx={{ mb: 6 }}>
         <img
           src="/gt-logo.svg"
@@ -120,8 +122,29 @@ const HomePage: React.FC = () => {
         >
           about
         </Button>
+        <Button
+          variant="outlined"
+          onClick={() => navigate("/faq")}
+          sx={{
+            py: 2,
+            borderColor: "#ffffff",
+            color: "#ffffff",
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: "1rem",
+            textTransform: "lowercase",
+            borderRadius: 0,
+            "&:hover": {
+              borderColor: "primary.main",
+              backgroundColor: "transparent",
+              color: "primary.main",
+            },
+          }}
+        >
+          faq
+        </Button>
       </Stack>
-    </Box>
+      </Box>
+    </Page>
   );
 };
 
