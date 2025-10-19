@@ -27,7 +27,7 @@ type SortOrder = "asc" | "desc";
 const baseGithubUrl = "https://github.com/";
 
 const RepositoryWeightsTable: React.FC = () => {
-  const { data: repositories, isLoading } = useReposAndWeights();
+  const { data, isLoading } = useReposAndWeights();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField>("weight");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
@@ -63,7 +63,11 @@ const RepositoryWeightsTable: React.FC = () => {
   };
 
   const filteredAndSortedRepos = useMemo(() => {
-    if (!repositories) return [];
+    if (!data) return [];
+
+    const repositories = data.filter(
+      (x) => x.inactiveAt === null || x.inactiveAt === undefined,
+    );
 
     const reposWithParts = repositories.map((repo) => {
       const [owner, name] = repo.fullName.split("/");
@@ -105,7 +109,7 @@ const RepositoryWeightsTable: React.FC = () => {
     });
 
     return filtered;
-  }, [repositories, searchQuery, sortField, sortOrder]);
+  }, [data, searchQuery, sortField, sortOrder]);
 
   const paginatedRepos = useMemo(() => {
     const startIndex = page * rowsPerPage;
@@ -118,171 +122,168 @@ const RepositoryWeightsTable: React.FC = () => {
       <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
         <Typography variant="h5">Repositories & Weights</Typography>
         <Typography variant="body2" color="text.secondary">
-          Contribute to any of these projects to gain score and earn
-          emissions!
+          Contribute to any of these projects to gain score and earn emissions!
         </Typography>
       </Box>
 
-        <TextField
-          fullWidth
-          placeholder="Search by owner or repository name..."
-          value={searchQuery}
-          onChange={handleSearchChange}
-          sx={{ mb: 3 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-          }}
-        />
+      <TextField
+        fullWidth
+        placeholder="Search by owner or repository name..."
+        value={searchQuery}
+        onChange={handleSearchChange}
+        sx={{ mb: 3 }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Search />
+            </InputAdornment>
+          ),
+        }}
+      />
 
-        {isLoading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <TableContainer component={Paper} elevation={0}>
-            <Table>
-              <TableHead>
-                <TableRow>
+      {isLoading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <TableContainer component={Paper} elevation={0}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                {!isMobile && (
+                  <TableCell>
+                    <TableSortLabel
+                      active={sortField === "owner"}
+                      direction={sortField === "owner" ? sortOrder : "asc"}
+                      onClick={() => handleSort("owner")}
+                      sx={{
+                        "&:hover": {
+                          color: "secondary.main",
+                        },
+                        "&.Mui-active": {
+                          color: "secondary.main",
+                        },
+                      }}
+                    >
+                      <Typography variant="dataLabel">Owner</Typography>
+                    </TableSortLabel>
+                  </TableCell>
+                )}
+                <TableCell>
+                  <TableSortLabel
+                    active={sortField === "name"}
+                    direction={sortField === "name" ? sortOrder : "asc"}
+                    onClick={() => handleSort("name")}
+                    sx={{
+                      "&:hover": {
+                        color: "secondary.main",
+                      },
+                      "&.Mui-active": {
+                        color: "secondary.main",
+                      },
+                    }}
+                  >
+                    <Typography variant="dataLabel">Repository</Typography>
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell align="right">
+                  <TableSortLabel
+                    active={sortField === "weight"}
+                    direction={sortField === "weight" ? sortOrder : "desc"}
+                    onClick={() => handleSort("weight")}
+                    sx={{
+                      "&:hover": {
+                        color: "secondary.main",
+                      },
+                      "&.Mui-active": {
+                        color: "secondary.main",
+                      },
+                    }}
+                  >
+                    <Typography variant="dataLabel">Weight</Typography>
+                  </TableSortLabel>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {paginatedRepos.map((repo) => (
+                <TableRow key={repo.fullName} hover>
                   {!isMobile && (
                     <TableCell>
-                      <TableSortLabel
-                        active={sortField === "owner"}
-                        direction={sortField === "owner" ? sortOrder : "asc"}
-                        onClick={() => handleSort("owner")}
-                        sx={{
-                          "&:hover": {
-                            color: "secondary.main",
-                          },
-                          "&.Mui-active": {
-                            color: "secondary.main",
-                          },
-                        }}
-                      >
-                        <Typography variant="dataLabel">Owner</Typography>
-                      </TableSortLabel>
+                      <Typography variant="body1" fontWeight="medium">
+                        {repo.owner}
+                      </Typography>
                     </TableCell>
                   )}
                   <TableCell>
-                    <TableSortLabel
-                      active={sortField === "name"}
-                      direction={sortField === "name" ? sortOrder : "asc"}
-                      onClick={() => handleSort("name")}
-                      sx={{
-                        "&:hover": {
-                          color: "secondary.main",
-                        },
-                        "&.Mui-active": {
-                          color: "secondary.main",
-                        },
-                      }}
-                    >
-                      <Typography variant="dataLabel">Repository</Typography>
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell align="right">
-                    <TableSortLabel
-                      active={sortField === "weight"}
-                      direction={sortField === "weight" ? sortOrder : "desc"}
-                      onClick={() => handleSort("weight")}
-                      sx={{
-                        "&:hover": {
-                          color: "secondary.main",
-                        },
-                        "&.Mui-active": {
-                          color: "secondary.main",
-                        },
-                      }}
-                    >
-                      <Typography variant="dataLabel">Weight</Typography>
-                    </TableSortLabel>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {paginatedRepos.map((repo) => (
-                  <TableRow key={repo.fullName} hover>
-                    {!isMobile && (
-                      <TableCell>
-                        <Typography variant="body1" fontWeight="medium">
-                          {repo.owner}
-                        </Typography>
-                      </TableCell>
-                    )}
-                    <TableCell>
-                      <Stack>
+                    <Stack>
+                      <Typography
+                        component={isMobile ? "a" : "span"}
+                        variant="body1"
+                        fontWeight="medium"
+                        href={
+                          isMobile
+                            ? `${baseGithubUrl}${repo.fullName}`
+                            : undefined
+                        }
+                        target={isMobile ? "_blank" : undefined}
+                        rel={isMobile ? "noopener noreferrer" : undefined}
+                        sx={{
+                          textDecoration: "none",
+                          "&:hover": {
+                            textDecoration: isMobile ? "underline" : undefined,
+                          },
+                          color: "text.primary",
+                        }}
+                      >
+                        {isMobile ? repo.fullName : repo.name}
+                      </Typography>
+                      {!isMobile && (
                         <Typography
-                          component={isMobile ? "a" : "span"}
-                          variant="body1"
-                          fontWeight="medium"
-                          href={
-                            isMobile
-                              ? `${baseGithubUrl}${repo.fullName}`
-                              : undefined
-                          }
-                          target={isMobile ? "_blank" : undefined}
-                          rel={isMobile ? "noopener noreferrer" : undefined}
+                          component="a"
+                          href={`${baseGithubUrl}${repo.fullName}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          variant="body2"
                           sx={{
+                            color: "text.secondary",
                             textDecoration: "none",
-                            "&:hover": {
-                              textDecoration: isMobile
-                                ? "underline"
-                                : undefined,
-                            },
-                            color: "text.primary",
+                            "&:hover": { textDecoration: "underline" },
                           }}
                         >
-                          {isMobile ? repo.fullName : repo.name}
+                          {baseGithubUrl}
+                          {repo.fullName}
                         </Typography>
-                        {!isMobile && (
-                          <Typography
-                            component="a"
-                            href={`${baseGithubUrl}${repo.fullName}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="body2"
-                            sx={{
-                              color: "text.secondary",
-                              textDecoration: "none",
-                              "&:hover": { textDecoration: "underline" },
-                            }}
-                          >
-                            {baseGithubUrl}
-                            {repo.fullName}
-                          </Typography>
-                        )}
-                      </Stack>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Typography variant="dataValue">{repo.weight}</Typography>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
+                      )}
+                    </Stack>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Typography variant="dataValue">{repo.weight}</Typography>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25, 50, 100]}
-          component="div"
-          count={filteredAndSortedRepos.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          sx={{
-            ".MuiTablePagination-displayedRows": {
-              fontFamily: '"JetBrains Mono", monospace',
-            },
-            ".MuiTablePagination-selectLabel": {
-              fontFamily: '"JetBrains Mono", monospace',
-            },
-          }}
-        />
+      <TablePagination
+        rowsPerPageOptions={[5, 10, 25, 50]}
+        component="div"
+        count={filteredAndSortedRepos.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+        sx={{
+          ".MuiTablePagination-displayedRows": {
+            fontFamily: '"JetBrains Mono", monospace',
+          },
+          ".MuiTablePagination-selectLabel": {
+            fontFamily: '"JetBrains Mono", monospace',
+          },
+        }}
+      />
 
       {filteredAndSortedRepos.length === 0 && !isLoading && (
         <Box sx={{ textAlign: "center", py: 4 }}>

@@ -11,6 +11,7 @@ export type Repository = {
   owner: string;
   name: string;
   weight: string; // bc float
+  inactiveAt?: string;
 };
 
 export type LanguageWeight = {

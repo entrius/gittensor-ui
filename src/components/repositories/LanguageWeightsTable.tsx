@@ -142,7 +142,7 @@ const LanguageWeightsTable: React.FC = () => {
                       },
                     }}
                   >
-                    <Typography variant="dataLabel">Language</Typography>
+                    <Typography variant="dataLabel">Extension</Typography>
                   </TableSortLabel>
                 </TableCell>
                 <TableCell align="right">
@@ -183,7 +183,7 @@ const LanguageWeightsTable: React.FC = () => {
       )}
 
       <TablePagination
-        rowsPerPageOptions={[5, 10, 25, 50, 100]}
+        rowsPerPageOptions={[5, 10, 25, 50]}
         component="div"
         count={filteredAndSortedLanguages.length}
         rowsPerPage={rowsPerPage}
