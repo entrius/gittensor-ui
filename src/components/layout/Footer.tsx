@@ -75,7 +75,7 @@ export const Footer: React.FC = (): ReactElement => {
               color="#ffffff"
               variant="caption"
               component="a"
-              href="https://x.com/entriusdev"
+              href="https://x.com/gittensor"
               target="_blank"
               rel="noopener noreferrer"
               sx={{
