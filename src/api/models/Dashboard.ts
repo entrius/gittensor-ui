@@ -4,8 +4,6 @@ export type RepoChanges = {
   additions: number;
   deletions: number;
   linesChanged: number;
-  weight: string; // bc float
-  inactiveAt: string;
 };
 
 export type Repository = {
