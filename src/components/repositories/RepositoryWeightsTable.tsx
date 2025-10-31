@@ -17,9 +17,11 @@ import {
   useMediaQuery,
   useTheme,
   CircularProgress,
+  Tooltip,
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
 import { useReposAndWeights } from "../../api";
+import dayjs from "dayjs";
 
 type SortField = "owner" | "name" | "weight";
 type SortOrder = "asc" | "desc";
@@ -65,11 +67,7 @@ const RepositoryWeightsTable: React.FC = () => {
   const filteredAndSortedRepos = useMemo(() => {
     if (!data) return [];
 
-    const repositories = data.filter(
-      (x) => x.inactiveAt === null || x.inactiveAt === undefined,
-    );
-
-    const reposWithParts = repositories.map((repo) => {
+    const reposWithParts = data.map((repo) => {
       const [owner, name] = repo.fullName.split("/");
       return { ...repo, owner, name };
     });
@@ -206,62 +204,104 @@ const RepositoryWeightsTable: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {paginatedRepos.map((repo) => (
-                <TableRow key={repo.fullName} hover>
-                  {!isMobile && (
-                    <TableCell>
-                      <Typography variant="body1" fontWeight="medium">
-                        {repo.owner}
-                      </Typography>
-                    </TableCell>
-                  )}
-                  <TableCell>
-                    <Stack>
-                      <Typography
-                        component={isMobile ? "a" : "span"}
-                        variant="body1"
-                        fontWeight="medium"
-                        href={
-                          isMobile
-                            ? `${baseGithubUrl}${repo.fullName}`
-                            : undefined
-                        }
-                        target={isMobile ? "_blank" : undefined}
-                        rel={isMobile ? "noopener noreferrer" : undefined}
-                        sx={{
-                          textDecoration: "none",
-                          "&:hover": {
-                            textDecoration: isMobile ? "underline" : undefined,
-                          },
-                          color: "text.primary",
-                        }}
-                      >
-                        {isMobile ? repo.fullName : repo.name}
-                      </Typography>
+              {paginatedRepos.map((repo) => {
+                const isInactive =
+                  repo.inactiveAt !== null && repo.inactiveAt !== undefined;
+                const inactiveDate = isInactive
+                  ? dayjs(repo.inactiveAt).format("DD/MM/YY hh:mm a")
+                  : null;
+
+                return (
+                  <Tooltip
+                    key={repo.fullName}
+                    title={isInactive ? `Inactivated at: ${inactiveDate}` : ""}
+                    arrow
+                    placement="top"
+                  >
+                    <TableRow
+                      hover
+                      sx={{
+                        backgroundColor: isInactive
+                          ? "rgba(211, 47, 47, 0.08)"
+                          : "inherit",
+                        "&:hover": {
+                          backgroundColor: isInactive
+                            ? "rgba(211, 47, 47, 0.12)"
+                            : undefined,
+                        },
+                      }}
+                    >
                       {!isMobile && (
+                        <TableCell>
+                          <Typography
+                            variant="body1"
+                            fontWeight="medium"
+                            sx={{
+                              color: isInactive ? "error.dark" : "text.primary",
+                            }}
+                          >
+                            {repo.owner}
+                          </Typography>
+                        </TableCell>
+                      )}
+                      <TableCell>
+                        <Stack>
+                          <Typography
+                            component={isMobile ? "a" : "span"}
+                            variant="body1"
+                            fontWeight="medium"
+                            href={
+                              isMobile
+                                ? `${baseGithubUrl}${repo.fullName}`
+                                : undefined
+                            }
+                            target={isMobile ? "_blank" : undefined}
+                            rel={isMobile ? "noopener noreferrer" : undefined}
+                            sx={{
+                              textDecoration: "none",
+                              "&:hover": {
+                                textDecoration: isMobile ? "underline" : undefined,
+                              },
+                              color: isInactive ? "error.dark" : "text.primary",
+                            }}
+                          >
+                            {isMobile ? repo.fullName : repo.name}
+                          </Typography>
+                          {!isMobile && (
+                            <Typography
+                              component="a"
+                              href={`${baseGithubUrl}${repo.fullName}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              variant="body2"
+                              sx={{
+                                color: isInactive
+                                  ? "rgba(211, 47, 47, 0.7)"
+                                  : "text.secondary",
+                                textDecoration: "none",
+                                "&:hover": { textDecoration: "underline" },
+                              }}
+                            >
+                              {baseGithubUrl}
+                              {repo.fullName}
+                            </Typography>
+                          )}
+                        </Stack>
+                      </TableCell>
+                      <TableCell align="right">
                         <Typography
-                          component="a"
-                          href={`${baseGithubUrl}${repo.fullName}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          variant="body2"
+                          variant="dataValue"
                           sx={{
-                            color: "text.secondary",
-                            textDecoration: "none",
-                            "&:hover": { textDecoration: "underline" },
+                            color: isInactive ? "error.dark" : "text.primary",
                           }}
                         >
-                          {baseGithubUrl}
-                          {repo.fullName}
+                          {repo.weight}
                         </Typography>
-                      )}
-                    </Stack>
-                  </TableCell>
-                  <TableCell align="right">
-                    <Typography variant="dataValue">{repo.weight}</Typography>
-                  </TableCell>
-                </TableRow>
-              ))}
+                      </TableCell>
+                    </TableRow>
+                  </Tooltip>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>
