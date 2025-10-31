@@ -19,130 +19,135 @@ const HomePage: React.FC = () => {
           px: 2,
         }}
       >
-      <Stack alignItems="center" justifyContent="center" gap={2} sx={{ mb: 6 }}>
-        <img
-          src="/gt-logo.svg"
-          alt="Gittensor"
-          style={{ height: "128px", width: "auto" }}
-        />
-        <Typography
-          variant="h1"
-          color="#ffffff"
-          fontWeight="bold"
-          sx={{
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: { xs: "2.5rem", sm: "3.5rem", md: "4rem" },
-          }}
+        <Stack
+          alignItems="center"
+          justifyContent="center"
+          gap={2}
+          sx={{ mb: 6 }}
         >
-          GITTENSOR
-        </Typography>
-        <Typography variant="body1" color="text.secondary" fontWeight="bold">
-          Open Source Software is a silent revolution hidden in plain sight.
-        </Typography>
-      </Stack>
-
-      {/* Navigation */}
-      <Stack
-        direction="column"
-        gap={2}
-        sx={{
-          width: "100%",
-          maxWidth: "400px",
-        }}
-      >
-        <Button
-          variant="outlined"
-          onClick={() => navigate("/dashboard")}
-          sx={{
-            py: 2,
-            borderColor: "#ffffff",
-            color: "#ffffff",
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: "1rem",
-            textTransform: "lowercase",
-            borderRadius: 0,
-            "&:hover": {
-              borderColor: "primary.main",
-              backgroundColor: "transparent",
-              color: "primary.main",
-            },
-          }}
-        >
-          dashboard{" "}
+          <img
+            src="/gt-logo.svg"
+            alt="Gittensor"
+            style={{ height: "128px", width: "auto" }}
+          />
           <Typography
-            component="span"
+            variant="h1"
+            color="#ffffff"
+            fontWeight="bold"
             sx={{
               fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "0.7rem",
-              color: "secondary.main",
-              fontStyle: "italic",
-              ml: 1,
+              fontSize: { xs: "2.5rem", sm: "3.5rem", md: "4rem" },
             }}
           >
-            new
+            GITTENSOR
           </Typography>
-        </Button>
-        <Button
-          variant="outlined"
-          onClick={() => navigate("/repositories")}
+          <Typography variant="body1" color="text.secondary" fontWeight="bold">
+            The workforce for open source.
+          </Typography>
+        </Stack>
+
+        {/* Navigation */}
+        <Stack
+          direction="column"
+          gap={2}
           sx={{
-            py: 2,
-            borderColor: "#ffffff",
-            color: "#ffffff",
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: "1rem",
-            textTransform: "lowercase",
-            borderRadius: 0,
-            "&:hover": {
-              borderColor: "primary.main",
-              backgroundColor: "transparent",
-              color: "primary.main",
-            },
+            width: "100%",
+            maxWidth: "400px",
           }}
         >
-          repositories
-        </Button>
-        <Button
-          variant="outlined"
-          onClick={() => navigate("/about")}
-          sx={{
-            py: 2,
-            borderColor: "#ffffff",
-            color: "#ffffff",
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: "1rem",
-            textTransform: "lowercase",
-            borderRadius: 0,
-            "&:hover": {
-              borderColor: "primary.main",
-              backgroundColor: "transparent",
-              color: "primary.main",
-            },
-          }}
-        >
-          about
-        </Button>
-        <Button
-          variant="outlined"
-          onClick={() => navigate("/faq")}
-          sx={{
-            py: 2,
-            borderColor: "#ffffff",
-            color: "#ffffff",
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: "1rem",
-            textTransform: "lowercase",
-            borderRadius: 0,
-            "&:hover": {
-              borderColor: "primary.main",
-              backgroundColor: "transparent",
-              color: "primary.main",
-            },
-          }}
-        >
-          faq
-        </Button>
-      </Stack>
+          <Button
+            variant="outlined"
+            onClick={() => navigate("/dashboard")}
+            sx={{
+              py: 2,
+              borderColor: "#ffffff",
+              color: "#ffffff",
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "1rem",
+              textTransform: "lowercase",
+              borderRadius: 0,
+              "&:hover": {
+                borderColor: "primary.main",
+                backgroundColor: "transparent",
+                color: "primary.main",
+              },
+            }}
+          >
+            dashboard{" "}
+            <Typography
+              component="span"
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "0.7rem",
+                color: "secondary.main",
+                fontStyle: "italic",
+                ml: 1,
+              }}
+            >
+              new
+            </Typography>
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => navigate("/repositories")}
+            sx={{
+              py: 2,
+              borderColor: "#ffffff",
+              color: "#ffffff",
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "1rem",
+              textTransform: "lowercase",
+              borderRadius: 0,
+              "&:hover": {
+                borderColor: "primary.main",
+                backgroundColor: "transparent",
+                color: "primary.main",
+              },
+            }}
+          >
+            repositories
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => navigate("/about")}
+            sx={{
+              py: 2,
+              borderColor: "#ffffff",
+              color: "#ffffff",
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "1rem",
+              textTransform: "lowercase",
+              borderRadius: 0,
+              "&:hover": {
+                borderColor: "primary.main",
+                backgroundColor: "transparent",
+                color: "primary.main",
+              },
+            }}
+          >
+            about
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => navigate("/faq")}
+            sx={{
+              py: 2,
+              borderColor: "#ffffff",
+              color: "#ffffff",
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "1rem",
+              textTransform: "lowercase",
+              borderRadius: 0,
+              "&:hover": {
+                borderColor: "primary.main",
+                backgroundColor: "transparent",
+                color: "primary.main",
+              },
+            }}
+          >
+            faq
+          </Button>
+        </Stack>
       </Box>
     </Page>
   );
