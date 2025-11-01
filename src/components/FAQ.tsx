@@ -15,13 +15,12 @@ export const FAQ: React.FC<FAQProps> = ({ question, answer }) => {
       sx={{
         p: 3,
         borderRadius: 3,
-        backgroundColor: "background.paper",
-        border: "1px solid",
-        borderColor: "divider",
+        backgroundColor: "transparent",
+        border: "1px solid rgba(255, 255, 255, 0.1)",
         cursor: "pointer",
         transition: "all 0.2s ease-in-out",
         "&:hover": {
-          borderColor: "primary.main",
+          borderColor: "rgba(255, 255, 255, 0.3)",
         },
       }}
       onClick={() => setExpanded(!expanded)}

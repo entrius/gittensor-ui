@@ -112,14 +112,24 @@ const CommitTrendChart: React.FC = () => {
   };
 
   return (
-    <Card>
-      <CardContent>
-        <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-          Lines Committed Historical Trend
+    <Card
+      sx={{
+        borderRadius: 3,
+        border: "1px solid rgba(255, 255, 255, 0.1)",
+        backgroundColor: "transparent",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+      elevation={0}
+    >
+      <CardContent sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, "&:last-child": { pb: 2 } }}>
+        <Typography variant="h6" gutterBottom sx={{ mb: 1, fontSize: "1rem" }}>
+          Lines Committed Trend
         </Typography>
         <ReactECharts
           option={option}
-          style={{ height: "400px", width: "100%" }}
+          style={{ height: "100%", width: "100%", minHeight: "200px" }}
           opts={{ renderer: "canvas" }}
         />
       </CardContent>

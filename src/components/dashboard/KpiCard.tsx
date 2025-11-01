@@ -17,8 +17,9 @@ const KpiCard: React.FC<KpiCardProps> = ({
   sx,
 }) => {
   const isLarge = variant === "large";
-  const padding = isLarge ? { py: 4 } : { py: 3 };
-  const valueVariant = isLarge ? "h2" : "h3";
+  const padding = isLarge ? { py: 2.5 } : { py: 2 };
+  const valueVariant = isLarge ? "h2" : "h4";
+  const titleSize = isLarge ? 16 : 14;
 
   const formattedValue =
     typeof value === "number" ? value.toLocaleString() : value;
@@ -26,20 +27,21 @@ const KpiCard: React.FC<KpiCardProps> = ({
   return (
     <Card
       sx={{
-        flex: 1,
         borderRadius: 3,
-        border: "1px solid",
-        borderColor: "divider",
+        border: "1px solid rgba(255, 255, 255, 0.1)",
+        backgroundColor: "transparent",
+        height: "100%",
         ...sx,
       }}
       elevation={0}
     >
-      <CardContent sx={{ textAlign: "center", ...padding }}>
+      <CardContent sx={{ textAlign: "center", ...padding, "&:last-child": { pb: padding.py } }}>
         <Typography
           variant="dataLabel"
-          fontSize={16}
+          fontSize={titleSize}
           color="#ffffff"
           gutterBottom
+          sx={{ mb: isLarge ? 1 : 0.5 }}
         >
           {title}
         </Typography>
@@ -47,12 +49,12 @@ const KpiCard: React.FC<KpiCardProps> = ({
           variant={valueVariant}
           color="text.primary"
           fontWeight="bold"
-          sx={{ fontFamily: '"JetBrains Mono", monospace' }}
+          sx={{ fontFamily: '"JetBrains Mono", monospace', my: isLarge ? 1 : 0.5 }}
         >
           {formattedValue ?? "-"}
         </Typography>
         {subtitle && (
-          <Typography variant="body2" color="#ffffff" sx={{ mt: 1 }}>
+          <Typography variant="body2" color="#ffffff" sx={{ mt: isLarge ? 0.5 : 0.25, fontSize: isLarge ? 14 : 12 }}>
             {subtitle}
           </Typography>
         )}

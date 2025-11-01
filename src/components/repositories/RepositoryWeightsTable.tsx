@@ -144,7 +144,7 @@ const RepositoryWeightsTable: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <TableContainer component={Paper} elevation={0}>
+        <TableContainer component={Paper} elevation={0} sx={{ backgroundColor: "transparent" }}>
           <Table>
             <TableHead>
               <TableRow>
