@@ -11,18 +11,11 @@ export const useApiQuery = <TResponse = void, TSelect = TResponse>(
   return useQuery<TResponse, AxiosError, TSelect>({
     queryKey: [queryName, encodedUrl],
     queryFn: async () => {
-      // If no base URL is configured, return undefined to prevent crashes
-      if (!baseUrl) {
-        console.warn(
-          `API call to ${encodedUrl} skipped: VITE_BASE_URL not configured`
-        );
-        return undefined as TResponse;
-      }
-
-      const { data } = await axios.get(`${baseUrl}${encodedUrl}`);
+      const requestUrl = baseUrl ? `${baseUrl}${encodedUrl}` : encodedUrl;
+      const { data } = await axios.get(requestUrl);
       return data;
     },
-    retry: false, // Don't retry if API is not configured
-    enabled: !!baseUrl, // Only run query if base URL exists
+    retry: false,
+    enabled: true,
   });
 };
