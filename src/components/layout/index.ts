@@ -21,3 +21,6 @@ export * from "./PageHeader";
 
 export { default as PageTitle } from "./PageTitle";
 export * from "./PageTitle";
+
+export { default as Sidebar } from "./Sidebar";
+export * from "./Sidebar";

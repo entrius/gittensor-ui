@@ -19,7 +19,11 @@ const GittensorHeader: React.FC = () => {
           <img
             src="/gt-logo.svg"
             alt="Gittensor"
-            style={{ height: "80px", width: "auto" }}
+            style={{ 
+              height: "80px", 
+              width: "auto", 
+              filter: "brightness(0) invert(1) drop-shadow(0 0 10px rgba(255, 255, 255, 0.8))" 
+            }}
           />
           <Typography
             variant="h3"

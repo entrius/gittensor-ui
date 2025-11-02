@@ -44,7 +44,7 @@ const RepositoriesTable: React.FC = () => {
   const [sortField, setSortField] = useState<SortField>("weight");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -136,13 +136,15 @@ const RepositoriesTable: React.FC = () => {
     <Card
       sx={{
         borderRadius: 3,
-        border: "1px solid",
-        borderColor: "divider",
+        border: "1px solid rgba(255, 255, 255, 0.1)",
+        backgroundColor: "transparent",
+        height: "100%",
+        display: "flex",
       }}
       elevation={0}
     >
-      <CardContent>
-        <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
+      <CardContent sx={{ flex: 1, p: 2, "&:last-child": { pb: 2 } }}>
+        <Typography variant="h6" gutterBottom sx={{ mb: 1, fontSize: "1rem" }}>
           Contributed Repositories
         </Typography>
 
@@ -168,7 +170,11 @@ const RepositoriesTable: React.FC = () => {
             <CircularProgress />
           </Box>
         ) : (
-          <TableContainer component={Paper} elevation={0}>
+          <TableContainer
+            component={Paper}
+            elevation={0}
+            sx={{ backgroundColor: "transparent" }}
+          >
             <Table>
               <TableHead>
                 <TableRow>
