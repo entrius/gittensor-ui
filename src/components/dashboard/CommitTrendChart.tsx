@@ -123,7 +123,15 @@ const CommitTrendChart: React.FC = () => {
       }}
       elevation={0}
     >
-      <CardContent sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, "&:last-child": { pb: 2 } }}>
+      <CardContent
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          p: 2,
+          "&:last-child": { pb: 2 },
+        }}
+      >
         <Typography variant="h6" gutterBottom sx={{ mb: 1, fontSize: "1rem" }}>
           Lines Committed Trend
         </Typography>

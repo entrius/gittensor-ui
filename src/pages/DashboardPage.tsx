@@ -38,64 +38,55 @@ const DashboardPage: React.FC = () => {
             overflow: isMobile ? "visible" : "hidden",
           }}
         >
-        {/* Top Row: Focal Point - Total Lines Committed */}
-        <Box sx={{ flexShrink: 0 }}>
-          <KpiCard
-            title="Total Lines Committed"
-            value={stats?.totalLinesChanged}
-            subtitle="Cumulative code contributions"
-            variant="large"
-          />
-        </Box>
-
-        {/* Middle Row: 4 KPI Cards - Responsive Grid */}
-        <Grid container spacing={1.5} sx={{ flexShrink: 0 }}>
-          <Grid item xs={12} sm={6}>
+          {/* Top Row: Focal Point - Total Lines Committed */}
+          <Box sx={{ flexShrink: 0 }}>
             <KpiCard
-              title="Total Commits"
-              value={stats?.totalCommits}
-              subtitle="Total PR snapshots"
-              sx={{ height: "100%" }}
+              title="Total Lines Committed"
+              value={stats?.totalLinesChanged}
+              subtitle="Cumulative code contributions"
+              variant="large"
             />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <KpiCard
-              title="Issues Solved"
-              value={stats?.totalIssues}
-              subtitle="Problems resolved and closed"
-              sx={{ height: "100%" }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <KpiCard
-              title="Lines Committed (Last 90 Days)"
-              value={stats?.recentLinesChanged}
-              subtitle="Recent activity"
-              sx={{ height: "100%" }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <KpiCard
-              title="Total Unique Repositories"
-              value={stats?.uniqueRepositories}
-              subtitle="Projects contributed to"
-              sx={{ height: "100%" }}
-            />
-          </Grid>
-        </Grid>
-
-        {/* Bottom Section: Chart and Table Stacked */}
-        <Box sx={{ width: "100%", flex: isMobile ? 0 : 1, display: "flex", flexDirection: "column", gap: 1.5, minHeight: 0 }}>
-          {/* Chart */}
-          <Box sx={{ width: "100%", height: isMobile ? "300px" : "35%", flexShrink: 0, overflow: "hidden" }}>
-            <CommitTrendChart />
           </Box>
-          
-          {/* Table */}
-          <Box sx={{ width: "100%", flex: 1, minHeight: 0, overflow: "hidden" }}>
-            <RepositoriesTable />
-          </Box>
-        </Box>
+
+          {/* Middle Row: 4 KPI Cards - Responsive Grid */}
+          <Grid container spacing={1.5} sx={{ flexShrink: 0 }}>
+            <Grid item xs={12} sm={6}>
+              <KpiCard
+                title="Total Commits"
+                value={stats?.totalCommits}
+                subtitle="Total PR snapshots"
+                sx={{ height: "100%" }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <KpiCard
+                title="Issues Solved"
+                value={stats?.totalIssues}
+                subtitle="Problems resolved and closed"
+                sx={{ height: "100%" }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <KpiCard
+                title="Lines Committed (Last 90 Days)"
+                value={stats?.recentLinesChanged}
+                subtitle="Recent activity"
+                sx={{ height: "100%" }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <KpiCard
+                title="Total Unique Repositories"
+                value={stats?.uniqueRepositories}
+                subtitle="Projects contributed to"
+                sx={{ height: "100%" }}
+              />
+            </Grid>
+          </Grid>
+
+          <CommitTrendChart />
+
+          <RepositoriesTable />
         </Box>
       </Box>
     </Page>

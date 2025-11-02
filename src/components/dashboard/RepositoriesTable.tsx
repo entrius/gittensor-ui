@@ -36,34 +36,50 @@ const RepositoriesTable: React.FC = ({}) => {
       }}
       elevation={0}
     >
-      <CardContent sx={{ flex: 1, p: 2, "&:last-child": { pb: 2 }, overflow: "auto" }}>
+      <CardContent
+        sx={{ flex: 1, p: 2, "&:last-child": { pb: 2 }, overflow: "auto" }}
+      >
         <Typography variant="h6" gutterBottom sx={{ mb: 1, fontSize: "1rem" }}>
           Top 5 Repositories
         </Typography>
-        <TableContainer component={Paper} elevation={0} sx={{ backgroundColor: "transparent" }}>
+        <TableContainer
+          component={Paper}
+          elevation={0}
+          sx={{ backgroundColor: "transparent" }}
+        >
           <Table size="small">
             <TableHead>
               <TableRow>
                 <TableCell sx={{ py: 1 }}>
-                  <Typography variant="dataLabel" fontSize={12}>Repository</Typography>
+                  <Typography variant="dataLabel" fontSize={12}>
+                    Repository
+                  </Typography>
                 </TableCell>
                 {!isMobile && (
                   <TableCell align="right" sx={{ py: 1 }}>
-                    <Typography variant="dataLabel" fontSize={12}>Commits</Typography>
+                    <Typography variant="dataLabel" fontSize={12}>
+                      Commits
+                    </Typography>
                   </TableCell>
                 )}
                 {!isMobile && (
                   <TableCell align="right" sx={{ py: 1 }}>
-                    <Typography variant="dataLabel" fontSize={12}>Added</Typography>
+                    <Typography variant="dataLabel" fontSize={12}>
+                      Added
+                    </Typography>
                   </TableCell>
                 )}
                 {!isMobile && (
                   <TableCell align="right" sx={{ py: 1 }}>
-                    <Typography variant="dataLabel" fontSize={12}>Removed</Typography>
+                    <Typography variant="dataLabel" fontSize={12}>
+                      Removed
+                    </Typography>
                   </TableCell>
                 )}
                 <TableCell align="right" sx={{ py: 1 }}>
-                  <Typography variant="dataLabel" fontSize={12}>Changed</Typography>
+                  <Typography variant="dataLabel" fontSize={12}>
+                    Changed
+                  </Typography>
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -72,7 +88,11 @@ const RepositoriesTable: React.FC = ({}) => {
                 <TableRow key={repo.repositoryFullName} hover>
                   <TableCell sx={{ py: 1 }}>
                     <Stack>
-                      <Typography variant="body2" fontWeight="medium" fontSize={13}>
+                      <Typography
+                        variant="body2"
+                        fontWeight="medium"
+                        fontSize={13}
+                      >
                         {repo.repositoryFullName}
                       </Typography>
                       {!isMobile && (
@@ -103,20 +123,32 @@ const RepositoriesTable: React.FC = ({}) => {
                   )}
                   {!isMobile && (
                     <TableCell align="right" sx={{ py: 1 }}>
-                      <Typography variant="dataValue" color="success.main" fontSize={13}>
+                      <Typography
+                        variant="dataValue"
+                        color="success.main"
+                        fontSize={13}
+                      >
                         +{repo?.additions ?? "-"}
                       </Typography>
                     </TableCell>
                   )}
                   {!isMobile && (
                     <TableCell align="right" sx={{ py: 1 }}>
-                      <Typography variant="dataValue" color="error.main" fontSize={13}>
+                      <Typography
+                        variant="dataValue"
+                        color="error.main"
+                        fontSize={13}
+                      >
                         -{repo?.deletions ?? "-"}
                       </Typography>
                     </TableCell>
                   )}
                   <TableCell align="right" sx={{ py: 1 }}>
-                    <Typography variant="dataValue" fontWeight="medium" fontSize={13}>
+                    <Typography
+                      variant="dataValue"
+                      fontWeight="medium"
+                      fontSize={13}
+                    >
                       {repo?.linesChanged ?? "-"}
                     </Typography>
                   </TableCell>
