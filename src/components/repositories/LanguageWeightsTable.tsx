@@ -27,7 +27,7 @@ const LanguageWeightsTable: React.FC = () => {
   const [sortField, setSortField] = useState<SortField>("weight");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -124,11 +124,38 @@ const LanguageWeightsTable: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <TableContainer component={Paper} elevation={0} sx={{ backgroundColor: "transparent" }}>
-          <Table>
+        <TableContainer
+          component={Paper}
+          elevation={0}
+          sx={{
+            backgroundColor: "transparent",
+            maxHeight: "500px",
+            overflow: "auto",
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-track": {
+              backgroundColor: "transparent",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "rgba(255, 255, 255, 0.1)",
+              borderRadius: "4px",
+              "&:hover": {
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
+              },
+            },
+          }}
+        >
+          <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell>
+                <TableCell
+                  sx={{
+                    backgroundColor: "rgba(18, 18, 20, 0.95)",
+                    backdropFilter: "blur(8px)",
+                    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                  }}
+                >
                   <TableSortLabel
                     active={sortField === "extension"}
                     direction={sortField === "extension" ? sortOrder : "asc"}
@@ -145,7 +172,14 @@ const LanguageWeightsTable: React.FC = () => {
                     <Typography variant="dataLabel">Extension</Typography>
                   </TableSortLabel>
                 </TableCell>
-                <TableCell align="right">
+                <TableCell
+                  align="right"
+                  sx={{
+                    backgroundColor: "rgba(18, 18, 20, 0.95)",
+                    backdropFilter: "blur(8px)",
+                    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                  }}
+                >
                   <TableSortLabel
                     active={sortField === "weight"}
                     direction={sortField === "weight" ? sortOrder : "desc"}
