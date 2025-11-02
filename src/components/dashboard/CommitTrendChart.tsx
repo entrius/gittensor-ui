@@ -7,7 +7,7 @@ import dayjs from "dayjs";
 const CommitTrendChart: React.FC = () => {
   const theme = useTheme();
 
-  const { data, isLoading } = useHistoricalTrend();
+  const { data } = useHistoricalTrend();
 
   const option = {
     title: {
@@ -118,16 +118,12 @@ const CommitTrendChart: React.FC = () => {
         border: "1px solid rgba(255, 255, 255, 0.1)",
         backgroundColor: "transparent",
         height: "100%",
-        display: "flex",
-        flexDirection: "column",
       }}
       elevation={0}
     >
       <CardContent
         sx={{
           flex: 1,
-          display: "flex",
-          flexDirection: "column",
           p: 2,
           "&:last-child": { pb: 2 },
         }}

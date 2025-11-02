@@ -84,8 +84,7 @@ const DashboardPage: React.FC = () => {
             </Grid>
           </Grid>
 
-          <CommitTrendChart />
-
+          {!isMobile && <CommitTrendChart />}
           <RepositoriesTable />
         </Box>
       </Box>
