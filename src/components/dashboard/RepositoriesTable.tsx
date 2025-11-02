@@ -88,42 +88,69 @@ const RepositoriesTable: React.FC = () => {
       return repo.repositoryFullName.toLowerCase().includes(searchLower);
     });
 
-    filtered.sort((a, b) => {
-      let aValue: string | number;
-      let bValue: string | number;
+    // Create a copy before sorting to avoid mutation
+    const sorted = [...filtered];
+    
+    sorted.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
 
-      if (sortField === "repositoryFullName") {
-        aValue = a.repositoryFullName;
-        bValue = b.repositoryFullName;
-      } else if (sortField === "commits") {
-        aValue = a.commits;
-        bValue = b.commits;
-      } else if (sortField === "additions") {
-        aValue = a.additions;
-        bValue = b.additions;
-      } else if (sortField === "deletions") {
-        aValue = a.deletions;
-        bValue = b.deletions;
-      } else if (sortField === "linesChanged") {
-        aValue = a.linesChanged;
-        bValue = b.linesChanged;
-      } else {
-        aValue = a.weight;
-        bValue = b.weight;
+      // Get the values based on sort field
+      switch (sortField) {
+        case "repositoryFullName":
+          aValue = a.repositoryFullName;
+          bValue = b.repositoryFullName;
+          break;
+        case "commits":
+          aValue = a.commits;
+          bValue = b.commits;
+          break;
+        case "additions":
+          aValue = a.additions;
+          bValue = b.additions;
+          break;
+        case "deletions":
+          aValue = a.deletions;
+          bValue = b.deletions;
+          break;
+        case "linesChanged":
+          aValue = a.linesChanged;
+          bValue = b.linesChanged;
+          break;
+        case "weight":
+          aValue = a.weight;
+          bValue = b.weight;
+          break;
+        default:
+          aValue = a.weight;
+          bValue = b.weight;
       }
 
-      if (typeof aValue === "string" && typeof bValue === "string") {
+      // Handle null/undefined values - push them to the end
+      if (aValue == null && bValue == null) return 0;
+      if (aValue == null) return 1;
+      if (bValue == null) return -1;
+
+      // For repository name, do string comparison
+      if (sortField === "repositoryFullName") {
         return sortOrder === "asc"
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
       }
 
-      return sortOrder === "asc"
-        ? parseFloat(aValue as string) - parseFloat(bValue as string)
-        : parseFloat(bValue as string) - parseFloat(aValue as string);
+      // For all numeric fields (including weight which is a string), convert to number
+      const aNum = typeof aValue === "string" ? parseFloat(aValue) : Number(aValue);
+      const bNum = typeof bValue === "string" ? parseFloat(bValue) : Number(bValue);
+      
+      // Handle NaN values
+      if (isNaN(aNum) && isNaN(bNum)) return 0;
+      if (isNaN(aNum)) return 1;
+      if (isNaN(bNum)) return -1;
+      
+      return sortOrder === "asc" ? aNum - bNum : bNum - aNum;
     });
 
-    return filtered;
+    return sorted;
   }, [repoChanges, searchQuery, sortField, sortOrder]);
 
   const paginatedRepos = useMemo(() => {
@@ -140,11 +167,21 @@ const RepositoriesTable: React.FC = () => {
         backgroundColor: "transparent",
         height: "100%",
         display: "flex",
+        flexDirection: "column",
       }}
       elevation={0}
     >
-      <CardContent sx={{ flex: 1, p: 2, "&:last-child": { pb: 2 } }}>
-        <Typography variant="h6" gutterBottom sx={{ mb: 1, fontSize: "1rem" }}>
+      <CardContent sx={{ flex: 1, p: isMobile ? 1.5 : 2, "&:last-child": { pb: isMobile ? 1.5 : 2 }, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }}>
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            mb: isMobile ? 1 : 1.5, 
+            fontSize: isMobile ? "0.9rem" : "1rem",
+            fontFamily: '"JetBrains Mono", monospace',
+            fontWeight: 500,
+            flexShrink: 0,
+          }}
+        >
           Contributed Repositories
         </Typography>
 
@@ -154,7 +191,7 @@ const RepositoriesTable: React.FC = () => {
             placeholder="Search by repository name..."
             value={searchQuery}
             onChange={handleSearchChange}
-            sx={{ mb: 3 }}
+            sx={{ mb: 2, flexShrink: 0 }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -173,12 +210,36 @@ const RepositoriesTable: React.FC = () => {
           <TableContainer
             component={Paper}
             elevation={0}
-            sx={{ backgroundColor: "transparent" }}
+            sx={{ 
+              backgroundColor: "transparent",
+              maxHeight: isMobile ? "300px" : "500px",
+              overflow: "auto",
+              flexShrink: 0,
+              "&::-webkit-scrollbar": {
+                width: "8px",
+              },
+              "&::-webkit-scrollbar-track": {
+                backgroundColor: "transparent",
+              },
+              "&::-webkit-scrollbar-thumb": {
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                borderRadius: "4px",
+                "&:hover": {
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                },
+              },
+            }}
           >
-            <Table>
+            <Table stickyHeader>
               <TableHead>
                 <TableRow>
-                  <TableCell>
+                  <TableCell
+                    sx={{
+                      backgroundColor: "rgba(18, 18, 20, 0.95)",
+                      backdropFilter: "blur(8px)",
+                      borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                    }}
+                  >
                     <TableSortLabel
                       active={sortField === "repositoryFullName"}
                       direction={
@@ -198,7 +259,14 @@ const RepositoriesTable: React.FC = () => {
                     </TableSortLabel>
                   </TableCell>
                   {!isMobile && (
-                    <TableCell align="right">
+                    <TableCell 
+                      align="right"
+                      sx={{
+                        backgroundColor: "rgba(18, 18, 20, 0.95)",
+                        backdropFilter: "blur(8px)",
+                        borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                      }}
+                    >
                       <TableSortLabel
                         active={sortField === "commits"}
                         direction={sortField === "commits" ? sortOrder : "desc"}
@@ -217,7 +285,14 @@ const RepositoriesTable: React.FC = () => {
                     </TableCell>
                   )}
                   {!isMobile && (
-                    <TableCell align="right">
+                    <TableCell 
+                      align="right"
+                      sx={{
+                        backgroundColor: "rgba(18, 18, 20, 0.95)",
+                        backdropFilter: "blur(8px)",
+                        borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                      }}
+                    >
                       <TableSortLabel
                         active={sortField === "additions"}
                         direction={
@@ -238,7 +313,14 @@ const RepositoriesTable: React.FC = () => {
                     </TableCell>
                   )}
                   {!isMobile && (
-                    <TableCell align="right">
+                    <TableCell 
+                      align="right"
+                      sx={{
+                        backgroundColor: "rgba(18, 18, 20, 0.95)",
+                        backdropFilter: "blur(8px)",
+                        borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                      }}
+                    >
                       <TableSortLabel
                         active={sortField === "deletions"}
                         direction={
@@ -260,7 +342,14 @@ const RepositoriesTable: React.FC = () => {
                       </TableSortLabel>
                     </TableCell>
                   )}
-                  <TableCell align="right">
+                  <TableCell 
+                    align="right"
+                    sx={{
+                      backgroundColor: "rgba(18, 18, 20, 0.95)",
+                      backdropFilter: "blur(8px)",
+                      borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                    }}
+                  >
                     <TableSortLabel
                       active={sortField === "linesChanged"}
                       direction={
@@ -280,7 +369,14 @@ const RepositoriesTable: React.FC = () => {
                     </TableSortLabel>
                   </TableCell>
                   {!isMobile && (
-                    <TableCell align="right">
+                    <TableCell 
+                      align="right"
+                      sx={{
+                        backgroundColor: "rgba(18, 18, 20, 0.95)",
+                        backdropFilter: "blur(8px)",
+                        borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                      }}
+                    >
                       <TableSortLabel
                         active={sortField === "weight"}
                         direction={sortField === "weight" ? sortOrder : "desc"}
@@ -440,6 +536,8 @@ const RepositoriesTable: React.FC = () => {
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
           sx={{
+            flexShrink: 0,
+            mt: 1,
             ".MuiTablePagination-displayedRows": {
               fontFamily: '"JetBrains Mono", monospace',
             },

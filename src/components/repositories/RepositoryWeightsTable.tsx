@@ -34,7 +34,7 @@ const RepositoryWeightsTable: React.FC = () => {
   const [sortField, setSortField] = useState<SortField>("weight");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -144,12 +144,39 @@ const RepositoryWeightsTable: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <TableContainer component={Paper} elevation={0} sx={{ backgroundColor: "transparent" }}>
-          <Table>
+        <TableContainer
+          component={Paper}
+          elevation={0}
+          sx={{
+            backgroundColor: "transparent",
+            maxHeight: "500px",
+            overflow: "auto",
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-track": {
+              backgroundColor: "transparent",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "rgba(255, 255, 255, 0.1)",
+              borderRadius: "4px",
+              "&:hover": {
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
+              },
+            },
+          }}
+        >
+          <Table stickyHeader>
             <TableHead>
               <TableRow>
                 {!isMobile && (
-                  <TableCell>
+                  <TableCell
+                    sx={{
+                      backgroundColor: "rgba(18, 18, 20, 0.95)",
+                      backdropFilter: "blur(8px)",
+                      borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                    }}
+                  >
                     <TableSortLabel
                       active={sortField === "owner"}
                       direction={sortField === "owner" ? sortOrder : "asc"}
@@ -167,7 +194,13 @@ const RepositoryWeightsTable: React.FC = () => {
                     </TableSortLabel>
                   </TableCell>
                 )}
-                <TableCell>
+                <TableCell
+                  sx={{
+                    backgroundColor: "rgba(18, 18, 20, 0.95)",
+                    backdropFilter: "blur(8px)",
+                    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                  }}
+                >
                   <TableSortLabel
                     active={sortField === "name"}
                     direction={sortField === "name" ? sortOrder : "asc"}
@@ -184,7 +217,14 @@ const RepositoryWeightsTable: React.FC = () => {
                     <Typography variant="dataLabel">Repository</Typography>
                   </TableSortLabel>
                 </TableCell>
-                <TableCell align="right">
+                <TableCell
+                  align="right"
+                  sx={{
+                    backgroundColor: "rgba(18, 18, 20, 0.95)",
+                    backdropFilter: "blur(8px)",
+                    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                  }}
+                >
                   <TableSortLabel
                     active={sortField === "weight"}
                     direction={sortField === "weight" ? sortOrder : "desc"}
