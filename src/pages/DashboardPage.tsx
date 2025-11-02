@@ -25,6 +25,7 @@ const DashboardPage: React.FC = () => {
           gap: { xs: 2, sm: 1.5 },
           py: { xs: 2, sm: 1 },
           mx: "auto",
+          overflow: isMobile ? "visible" : "hidden",
         }}
       >
         <Box
@@ -33,6 +34,8 @@ const DashboardPage: React.FC = () => {
             display: "flex",
             flexDirection: "column",
             gap: { xs: 2, sm: 1.5 },
+            flex: isMobile ? "0" : "1",
+            minHeight: 0,
           }}
         >
           {/* Top Row: Focal Point - Total Lines Committed */}
@@ -81,8 +84,35 @@ const DashboardPage: React.FC = () => {
             </Grid>
           </Grid>
 
-          {!isMobile && <CommitTrendChart />}
-          <RepositoriesTable />
+          {/* Bottom Section: Chart and Table Stacked */}
+          <Box sx={{ 
+            width: "100%", 
+            display: "flex", 
+            flexDirection: "column", 
+            gap: 1.5, 
+            minHeight: isMobile ? "600px" : 0,
+            flexShrink: 0,
+          }}>
+            {/* Chart */}
+            <Box sx={{ 
+              width: "100%", 
+              height: isMobile ? "350px" : "400px", 
+              flexShrink: 0, 
+              minHeight: isMobile ? "350px" : "400px" 
+            }}>
+              <CommitTrendChart />
+            </Box>
+
+            {/* Table */}
+            <Box sx={{ 
+              width: "100%", 
+              minHeight: isMobile ? "400px" : 0, 
+              height: isMobile ? "400px" : "auto",
+              overflow: "hidden" 
+            }}>
+              <RepositoriesTable />
+            </Box>
+          </Box>
         </Box>
       </Box>
     </Page>
