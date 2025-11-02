@@ -17,13 +17,12 @@ const DashboardPage: React.FC = () => {
         sx={{
           width: "100%",
           maxWidth: "1400px",
-          height: isMobile ? "auto" : "calc(100vh - 64px)",
+          minHeight: isMobile ? "auto" : "calc(100vh - 64px)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: isMobile ? "flex-start" : "center",
           gap: { xs: 2, sm: 1.5 },
-          overflow: isMobile ? "visible" : "hidden",
           py: { xs: 2, sm: 1 },
           mx: "auto",
         }}
@@ -34,8 +33,6 @@ const DashboardPage: React.FC = () => {
             display: "flex",
             flexDirection: "column",
             gap: { xs: 2, sm: 1.5 },
-            flex: isMobile ? "0" : "1",
-            overflow: isMobile ? "visible" : "hidden",
           }}
         >
           {/* Top Row: Focal Point - Total Lines Committed */}

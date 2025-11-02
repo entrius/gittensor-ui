@@ -23,10 +23,10 @@ const CommitTrendChart: React.FC = () => {
       },
     },
     grid: {
-      top: "5%",
+      top: "9%",
       left: "3%",
       right: "4%",
-      bottom: "3%",
+      bottom: "0%",
       containLabel: true,
     },
     xAxis: {
