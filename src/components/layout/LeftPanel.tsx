@@ -16,7 +16,11 @@ const LeftPanel: React.FC = () => {
           <img
             src="/gt-logo.svg"
             alt="Gittensor"
-            style={{ height: "64px", width: "auto" }}
+            style={{ 
+              height: "64px", 
+              width: "auto", 
+              filter: "brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))" 
+            }}
           />
           <Typography fontWeight={550} variant="h4" color="#ffffff">
             Gittensor
