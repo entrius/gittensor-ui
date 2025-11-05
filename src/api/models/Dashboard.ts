@@ -27,9 +27,22 @@ export type CommitsTrend = {
 };
 
 export type Stats = {
-  uniqueRepositories: number;
-  totalLinesChanged: number;
-  recentLinesChanged: number;
+  uniqueRepositories: string | number;
+  totalLinesChanged: string | number;
+  recentLinesChanged: string | number;
   totalIssues: number;
-  totalCommits: number;
+  totalCommits: string | number;
+};
+
+export type CommitLog = {
+  pullRequestNumber: number;
+  hotkey: string;
+  pullRequestTitle: string;
+  additions: number;
+  deletions: number;
+  commitCount: number;
+  repository: string;
+  mergedAt: string;
+  author: string;
+  score: string; // Backend returns as string
 };

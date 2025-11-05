@@ -1,9 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 
 export const useApiQuery = <TResponse = void, TSelect = TResponse>(
   queryName: string,
-  url: string
+  url: string,
+  refetchInterval?: number
 ) => {
   const encodedUrl = encodeURI(url);
   const baseUrl = import.meta.env.VITE_BASE_URL;
@@ -17,5 +18,6 @@ export const useApiQuery = <TResponse = void, TSelect = TResponse>(
     },
     retry: false,
     enabled: true,
+    refetchInterval: refetchInterval,
   });
 };
