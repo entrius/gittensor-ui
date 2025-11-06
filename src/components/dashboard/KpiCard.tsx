@@ -23,8 +23,11 @@ const KpiCard: React.FC<KpiCardProps> = ({
   const valueVariant = isLarge ? "h2" : "h4";
   const titleSize = isLarge ? (isMobile ? 14 : 16) : (isMobile ? 12 : 14);
 
-  const formattedValue =
-    typeof value === "number" ? value.toLocaleString() : value;
+  const formattedValue = value !== undefined && value !== null
+    ? (typeof value === "number" || typeof value === "string" 
+        ? Number(value).toLocaleString() 
+        : value)
+    : undefined;
 
   return (
     <Card

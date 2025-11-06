@@ -210,7 +210,7 @@ const RepositoriesTable: React.FC = () => {
           <TableContainer
             component={Paper}
             elevation={0}
-            sx={{ 
+            sx={{
               backgroundColor: "transparent",
               maxHeight: isMobile ? "300px" : "500px",
               overflow: "auto",
@@ -230,7 +230,7 @@ const RepositoriesTable: React.FC = () => {
               },
             }}
           >
-            <Table stickyHeader>
+            <Table stickyHeader sx={{ width: '100%', tableLayout: 'fixed' }}>
               <TableHead>
                 <TableRow>
                   <TableCell
@@ -238,6 +238,7 @@ const RepositoriesTable: React.FC = () => {
                       backgroundColor: "rgba(18, 18, 20, 0.95)",
                       backdropFilter: "blur(8px)",
                       borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                      width: isMobile ? "60%" : "33%",
                     }}
                   >
                     <TableSortLabel
@@ -259,12 +260,13 @@ const RepositoriesTable: React.FC = () => {
                     </TableSortLabel>
                   </TableCell>
                   {!isMobile && (
-                    <TableCell 
+                    <TableCell
                       align="right"
                       sx={{
                         backgroundColor: "rgba(18, 18, 20, 0.95)",
                         backdropFilter: "blur(8px)",
                         borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                        width: "12%",
                       }}
                     >
                       <TableSortLabel
@@ -285,12 +287,13 @@ const RepositoriesTable: React.FC = () => {
                     </TableCell>
                   )}
                   {!isMobile && (
-                    <TableCell 
+                    <TableCell
                       align="right"
                       sx={{
                         backgroundColor: "rgba(18, 18, 20, 0.95)",
                         backdropFilter: "blur(8px)",
                         borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                        width: "13%",
                       }}
                     >
                       <TableSortLabel
@@ -313,12 +316,13 @@ const RepositoriesTable: React.FC = () => {
                     </TableCell>
                   )}
                   {!isMobile && (
-                    <TableCell 
+                    <TableCell
                       align="right"
                       sx={{
                         backgroundColor: "rgba(18, 18, 20, 0.95)",
                         backdropFilter: "blur(8px)",
                         borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                        width: "14%",
                       }}
                     >
                       <TableSortLabel
@@ -342,12 +346,13 @@ const RepositoriesTable: React.FC = () => {
                       </TableSortLabel>
                     </TableCell>
                   )}
-                  <TableCell 
+                  <TableCell
                     align="right"
                     sx={{
                       backgroundColor: "rgba(18, 18, 20, 0.95)",
                       backdropFilter: "blur(8px)",
                       borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                      width: isMobile ? "40%" : "14%",
                     }}
                   >
                     <TableSortLabel
@@ -369,12 +374,13 @@ const RepositoriesTable: React.FC = () => {
                     </TableSortLabel>
                   </TableCell>
                   {!isMobile && (
-                    <TableCell 
+                    <TableCell
                       align="right"
                       sx={{
                         backgroundColor: "rgba(18, 18, 20, 0.95)",
                         backdropFilter: "blur(8px)",
                         borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                        width: "14%",
                       }}
                     >
                       <TableSortLabel
@@ -426,7 +432,12 @@ const RepositoriesTable: React.FC = () => {
                           },
                         }}
                       >
-                        <TableCell>
+                        <TableCell
+                          sx={{
+                            overflow: "hidden",
+                            wordBreak: "break-word",
+                          }}
+                        >
                           <Stack>
                             <Typography
                               variant="body1"
@@ -435,6 +446,7 @@ const RepositoriesTable: React.FC = () => {
                                 color: isInactive
                                   ? "error.dark"
                                   : "text.primary",
+                                wordBreak: "break-word",
                               }}
                             >
                               {repo.repositoryFullName}
@@ -452,6 +464,7 @@ const RepositoriesTable: React.FC = () => {
                                     : "text.secondary",
                                   textDecoration: "none",
                                   "&:hover": { textDecoration: "underline" },
+                                  wordBreak: "break-word",
                                 }}
                               >
                                 {`${baseGithubUrl}${repo.repositoryFullName}`}

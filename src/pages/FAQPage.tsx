@@ -31,11 +31,24 @@ const FAQPage: React.FC = () => {
           />
           <FAQ
             question="What is Gittensor?"
-            answer="Gittensor is a subnet within the Bittensor network that rewards open source software developers for their contributions. It distributes emissions, in the form of alpha tokens, to developers whose code has been integrated and merged into recognized GitHub repositories."
+            answer="Gittensor is subnet 74 within the Bittensor network that rewards open source software developers for their contributions. It distributes emissions, in the form of alpha tokens, to developers whose code has been integrated and merged into recognized GitHub repositories."
           />
           <FAQ
             question="How do I start mining on Gittensor?"
-            answer="To start mining, you need to make pull requests to recognized OSS repositories on GitHub. Once your code is merged into the production branch, you'll be eligible for emissions based on factors like PR size, files affected, repository popularity, and more. Check out our GitHub repository for detailed setup instructions."
+            answer={
+              <>
+                To start mining, you need to make pull requests to recognized OSS repositories on GitHub. Once your code is merged into the production branch, you'll be eligible for emissions based on factors like PR size, files affected, repository popularity, and more. Check out our GitHub repository for detailed setup instructions. Feel free to join the{" "}
+                <a
+                  href="https://discord.com/invite/bittensor"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "inherit", textDecoration: "underline" }}
+                >
+                  Discord
+                </a>{" "}
+                and ask questions.
+              </>
+            }
           />
         </Stack>
       </Box>
