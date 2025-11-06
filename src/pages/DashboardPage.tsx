@@ -14,7 +14,7 @@ const DashboardPage: React.FC = () => {
   const { data: stats } = useStats();
 
   // Dynamic sidebar width based on screen size
-  const sidebarWidth = isMobile || isTablet ? "100%" : isLargeScreen ? "450px" : "400px";
+  const sidebarWidth = isMobile || isTablet ? "100%" : isLargeScreen ? "340px" : "300px";
 
   return (
     <Page title="Dashboard">
