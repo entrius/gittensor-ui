@@ -11,6 +11,7 @@ import {
   MegaphoneIcon,
   CubeIcon,
   CommandLineIcon,
+  BanknotesIcon,
 } from "@heroicons/react/24/outline";
 
 // I'm using heroicons as my icon library instead of google icon
@@ -56,6 +57,11 @@ export const Menu: React.FC = () => {
         name="repositories"
         icon={<CommandLineIcon style={{ height: 20, width: 20 }} />}
         onClick={() => navigate("/repositories")}
+      />
+      <ListMenuButton
+        name="Issue Registration"
+        icon={<BanknotesIcon style={{ height: 20, width: 20 }} />}
+        onClick={() => navigate("/issues")}
       />
     </List>
   );

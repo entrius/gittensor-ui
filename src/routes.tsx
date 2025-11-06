@@ -12,6 +12,7 @@ const AboutPage = React.lazy(() => import("./pages/AboutPage"));
 const FAQPage = React.lazy(() => import("./pages/FAQPage"));
 const DashboardPage = React.lazy(() => import("./pages/DashboardPage"));
 const RepositoriesPage = React.lazy(() => import("./pages/RepositoriesPage"));
+const IssuesPage = React.lazy(() => import("./pages/IssuesPage"));
 // const UnderConstructionPage = React.lazy(
 //   () => import("./pages/UnderConstructionPage")
 // );
@@ -28,6 +29,11 @@ const routesArray: AppRoute[] = [
     name: "repositories",
     path: "/repositories",
     element: <RepositoriesPage />,
+  },
+  {
+    name: "issues",
+    path: "/issues",
+    element: <IssuesPage />,
   },
 
   // 404 catch-all route (must be last)

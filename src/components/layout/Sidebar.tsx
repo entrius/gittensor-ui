@@ -16,7 +16,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
   };
 
   const navItems = [
-    { label: "dashboard", path: "/dashboard", badge: "new" },
+    { label: "dashboard", path: "/dashboard" },
+    { label: "issues", path: "/issues", badge: "new" },
     { label: "repositories", path: "/repositories" },
     { label: "about", path: "/about" },
     { label: "faq", path: "/faq" },
