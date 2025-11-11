@@ -82,19 +82,13 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
           try {
             await window.ethereum.request({
               method: 'wallet_addEthereumChain',
-              params: [
-                {
-                  chainId: BITTENSOR_NETWORK.chainId,
-                  chainName: BITTENSOR_NETWORK.chainName,
-                  rpcUrls: BITTENSOR_NETWORK.rpcUrls,
-                  nativeCurrency: BITTENSOR_NETWORK.nativeCurrency,
-                },
-              ],
+              params: [BITTENSOR_NETWORK],
             });
-          } catch (addError) {
+          } catch (addError: any) {
+            console.error('Add network error:', addError);
             setStatus({
               type: 'error',
-              message: 'Failed to add Bittensor network to MetaMask.',
+              message: `Failed to add Bittensor network: ${addError.message || addError.code || 'Unknown error'}`,
             });
             setLoading(false);
             return false;

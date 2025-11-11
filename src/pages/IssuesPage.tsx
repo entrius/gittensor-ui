@@ -1,7 +1,13 @@
 import React, { useState } from "react";
-import { Box, Button, Typography } from "@mui/material";
+import { Box, Button, Typography, Stack } from "@mui/material";
 import { Page } from "../components/layout";
-import { IssueRegistrationModal } from "../components/issues";
+import {
+  IssueRegistrationModal,
+  IssueStatsCards,
+  BountyHistoryChart,
+  FeaturedIssuesCards,
+  IssuesTable,
+} from "../components/issues";
 
 const IssuesPage: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -21,18 +27,31 @@ const IssuesPage: React.FC = () => {
           sx={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
+            alignItems: "flex-start",
             mb: 4,
           }}
         >
-          <Typography
-            variant="h4"
-            sx={{
-              fontFamily: '"CY Grotesk Grand", "Inter", "Helvetica Neue", sans-serif',
-            }}
-          >
-            Issues
-          </Typography>
+          <Box>
+            <Typography
+              variant="h4"
+              sx={{
+                fontFamily: '"CY Grotesk Grand", "Inter", "Helvetica Neue", sans-serif',
+                mb: 1,
+              }}
+            >
+              Issues
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "rgba(255, 255, 255, 0.5)",
+                maxWidth: "600px",
+                lineHeight: 1.6,
+              }}
+            >
+              Accelerate open-source development by funding critical issues with cryptocurrency bounties.
+            </Typography>
+          </Box>
           <Button
             variant="contained"
             onClick={() => setModalOpen(true)}
@@ -42,46 +61,49 @@ const IssuesPage: React.FC = () => {
               fontWeight: 600,
               px: 3,
               py: 1.25,
+              flexShrink: 0,
             }}
           >
             Register Issue
           </Button>
         </Box>
 
-        {/* Placeholder for future content */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: "400px",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
-            borderRadius: 3,
-            backgroundColor: "transparent",
-            p: 4,
-          }}
-        >
-          <Typography
-            variant="h6"
-            color="text.secondary"
-            sx={{
-              mb: 2,
-              fontFamily: '"CY Grotesk Grand", "Inter", "Helvetica Neue", sans-serif',
-            }}
-          >
-            Registered Issues
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Issue list and details will appear here
-          </Typography>
-        </Box>
+        {/* Dashboard Content */}
+        <Stack spacing={{ xs: 3, sm: 4 }}>
+          {/* KPI Summary Cards */}
+          <IssueStatsCards />
+
+          {/* Bounty History Chart */}
+          <BountyHistoryChart days={30} />
+
+          {/* Featured High-Value Issues */}
+          <FeaturedIssuesCards />
+
+          {/* All Issues Table */}
+          <IssuesTable />
+        </Stack>
 
         {/* Registration Modal */}
         <IssueRegistrationModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
         />
+
+        {/* Disclaimer */}
+        <Typography
+          variant="caption"
+          sx={{
+            display: "block",
+            textAlign: "center",
+            color: "rgba(255, 255, 255, 0.3)",
+            mt: 6,
+            pt: 4,
+            borderTop: "1px solid rgba(255, 255, 255, 0.05)",
+            fontSize: "0.7rem",
+          }}
+        >
+          * All bounty amounts are paid in Gittensor ALPHA tokens. USD values are estimates based on current token price and last known smart contract data.
+        </Typography>
       </Box>
     </Page>
   );

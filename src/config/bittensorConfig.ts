@@ -1,13 +1,14 @@
 // Bittensor Network Configuration
 export const BITTENSOR_NETWORK = {
-  chainId: '0x3b1', // 945 in decimal
-  chainName: 'Subtensor',
-  rpcUrls: ['wss://evm.chain.opentensor.ai'],
+  chainId: '0x3c4', // 964 in decimal
+  chainName: 'Subtensor EVM',
+  rpcUrls: ['https://evm.chain.opentensor.ai'],
   nativeCurrency: {
     name: 'TAO',
     symbol: 'TAO',
     decimals: 18
-  }
+  },
+  blockExplorerUrls: ['https://explorer.chain.opentensor.ai']
 };
 
 // Contract Addresses - UPDATE THESE WITH ACTUAL ADDRESSES FROM BACKEND
