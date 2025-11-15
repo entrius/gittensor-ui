@@ -17,7 +17,7 @@ import {
   GitHub,
 } from "@mui/icons-material";
 import theme from "../../theme";
-import { useCommitLog } from "../../api";
+import { useInfiniteCommitLog } from "../../api";
 import dayjs from "dayjs";
 
 interface CommitLogEntry {
@@ -39,25 +39,46 @@ const LiveCommitLog: React.FC = () => {
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
   const isSmallDesktop = useMediaQuery(theme.breakpoints.between("md", "lg"));
   
-  // Using individual commit log endpoint for real-time transaction log
-  const { data: commits, isLoading } = useCommitLog({ refetchInterval: 10000 }); // Poll every 10 seconds
+  // Using infinite query for pagination
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteCommitLog({ refetchInterval: 10000 }); // Poll every 10 seconds
   
   const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
   const logContainerRef = useRef<HTMLDivElement>(null);
-  const previousDataRef = useRef<typeof commits | undefined>(undefined);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const previousDataRef = useRef<CommitLogEntry[] | undefined>(undefined);
+
+  // Flatten all pages into a single array
+  const commits: CommitLogEntry[] = data?.pages.flat() ?? [];
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Infinite scroll state:', {
+      totalPages: data?.pages.length,
+      totalCommits: commits.length,
+      hasNextPage,
+      isFetchingNextPage,
+      isLoading
+    });
+  }, [data?.pages.length, commits.length, hasNextPage, isFetchingNextPage, isLoading]);
 
   useEffect(() => {
-    if (!commits) return;
+    if (commits.length === 0) return;
 
     // Check for new commits (use PR number + merge time as unique ID)
     const newEntries: CommitLogEntry[] = [];
     const getCommitId = (c: CommitLogEntry) => `${c.pullRequestNumber}-${c.mergedAt}`;
 
-    commits.forEach((commit) => {
+    commits.forEach((commit: CommitLogEntry) => {
       const commitId = getCommitId(commit);
       const previousCommit = previousDataRef.current?.find(
-        (c) => getCommitId(c) === commitId
+        (c: CommitLogEntry) => getCommitId(c) === commitId
       );
 
       // Only add if this is a new commit
@@ -71,7 +92,7 @@ const LiveCommitLog: React.FC = () => {
 
     if (newEntries.length > 0 || logEntries.length === 0) {
       // On first load or when new commits arrive
-      const allCommits = commits.map(c => ({
+      const allCommits = commits.map((c: CommitLogEntry) => ({
         ...c,
         isNew: newEntries.some(ne => getCommitId(ne) === getCommitId(c))
       }));
@@ -90,6 +111,25 @@ const LiveCommitLog: React.FC = () => {
 
     previousDataRef.current = commits;
   }, [commits, logEntries.length]);
+
+  // Intersection observer for infinite scroll
+  useEffect(() => {
+    if (!loadMoreRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          console.log('Loading more commits...', { hasNextPage, isFetchingNextPage });
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(loadMoreRef.current);
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, logEntries.length]);
 
   const getScoreColor = (score: string) => {
     const scoreNum = parseFloat(score);
@@ -215,13 +255,15 @@ const LiveCommitLog: React.FC = () => {
             }}
           >
             <Stack spacing={isMobile ? 1 : isTablet ? 1.25 : 1}>
-              {logEntries.map((entry) => {
+              {logEntries.map((entry, index) => {
                 const entryId = `${entry.pullRequestNumber}-${entry.mergedAt}`;
                 const githubUrl = `https://github.com/${entry.repository}/pull/${entry.pullRequestNumber}`;
+                const isLastItem = index === logEntries.length - 1;
                 
                 return (
                 <Box
                   key={entryId}
+                  ref={isLastItem ? loadMoreRef : null}
                   component="a"
                   href={githubUrl}
                   target="_blank"
@@ -446,7 +488,44 @@ const LiveCommitLog: React.FC = () => {
                     </Stack>
                   </Stack>
                 </Box>
-              )})}
+              );
+              })}
+              
+              {/* Loading indicator for next page */}
+              {isFetchingNextPage && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    py: 2,
+                  }}
+                >
+                  <CircularProgress size={24} />
+                </Box>
+              )}
+              
+              {/* End of list indicator */}
+              {!hasNextPage && logEntries.length > 0 && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    py: 2,
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "text.secondary",
+                      fontSize: isMobile ? "0.65rem" : "0.7rem",
+                    }}
+                  >
+                    No more commits to load
+                  </Typography>
+                </Box>
+              )}
             </Stack>
           </Box>
         )}
