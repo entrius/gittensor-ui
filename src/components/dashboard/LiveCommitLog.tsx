@@ -184,7 +184,7 @@ const LiveCommitLog: React.FC = () => {
                 fontWeight: 500,
               }}
             >
-              Commit Activity
+              Live Activity
             </Typography>
             <Box
               sx={{

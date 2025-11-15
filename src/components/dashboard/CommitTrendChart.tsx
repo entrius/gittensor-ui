@@ -61,15 +61,16 @@ const CommitTrendChart: React.FC = () => {
       },
     },
     yAxis: {
-      type: "value",
+      type: "log",
+      logBase: 10,
       axisLabel: {
         color: theme.palette.text.secondary,
         fontFamily: '"JetBrains Mono", monospace',
         fontSize: isMobile ? 10 : 11,
         formatter: (value: number) => {
-          return value >= 1000
-            ? `${(value / 1000).toFixed(1)}k`
-            : value.toString();
+          if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+          if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
+          return value.toString();
         },
         margin: isMobile ? 8 : 12,
       },

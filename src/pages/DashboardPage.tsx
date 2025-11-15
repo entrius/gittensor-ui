@@ -67,7 +67,7 @@ const DashboardPage: React.FC = () => {
 
           {/* Middle Row: 4 KPI Cards - Responsive Grid */}
           <Grid container spacing={{ xs: 1.5, md: 2 }} sx={{ flexShrink: 0 }}>
-            <Grid item xs={12} sm={6} md={6} lg={3}>
+            <Grid item xs={12} sm={6} md={6} lg={6} xl={3}>
               <KpiCard
                 title="Total Commits"
                 value={stats?.totalCommits}
@@ -75,7 +75,7 @@ const DashboardPage: React.FC = () => {
                 sx={{ height: "100%" }}
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={6} lg={3}>
+            <Grid item xs={12} sm={6} md={6} lg={6} xl={3}>
               <KpiCard
                 title="Issues Solved"
                 value={stats?.totalIssues}
@@ -83,17 +83,17 @@ const DashboardPage: React.FC = () => {
                 sx={{ height: "100%" }}
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={6} lg={3}>
+            <Grid item xs={12} sm={6} md={6} lg={6} xl={3}>
               <KpiCard
-                title="Lines Committed (Last 90 Days)"
+                title="Lines Committed"
                 value={stats?.recentLinesChanged}
-                subtitle="Recent activity"
+                subtitle="Last 90 Days"
                 sx={{ height: "100%" }}
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={6} lg={3}>
+            <Grid item xs={12} sm={6} md={6} lg={6} xl={3}>
               <KpiCard
-                title="Total Unique Repositories"
+                title="Total Repositories"
                 value={stats?.uniqueRepositories}
                 subtitle="Projects contributed to"
                 sx={{ height: "100%" }}
