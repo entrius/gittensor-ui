@@ -90,20 +90,22 @@ const DashboardPage: React.FC = () => {
               />
             </Grid>
 
-            <KpiCard
-              title="Lines Committed"
-              value={stats?.recentLinesChanged}
-              subtitle="Last 90 Days"
-              sx={{ height: "100%" }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={6} lg={6} xl={3}>
-            <KpiCard
-              title="Total Repositories"
-              value={stats?.uniqueRepositories}
-              subtitle="Projects contributed to"
-              sx={{ height: "100%" }}
-            />
+            <Grid item xs={12} sm={6} md={6} lg={6} xl={3}>
+              <KpiCard
+                title="Lines Committed"
+                value={stats?.recentLinesChanged}
+                subtitle="Last 90 Days"
+                sx={{ height: "100%" }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={6} lg={6} xl={3}>
+              <KpiCard
+                title="Total Repositories"
+                value={stats?.uniqueRepositories}
+                subtitle="Projects contributed to"
+                sx={{ height: "100%" }}
+              />
+            </Grid>
           </Grid>
           {/* Bottom Section: Chart and Table Stacked */}
           <Box
