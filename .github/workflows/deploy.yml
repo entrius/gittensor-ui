@@ -7,6 +7,9 @@ on:
       - test
   workflow_dispatch:
 
+env:
+  CONTAINER_NAME: gt-ui
+
 jobs:
   deploy:
     name: "Deploy to VPS"
@@ -36,7 +39,17 @@ jobs:
 
       - name: Print Container Status
         id: printStatus
-        run: ssh my-vps 'docker ps'
+        run: |
+          echo "Checking container status..."
+          ssh my-vps 'docker ps'
+
+          echo "Verifying ${{ env.CONTAINER_NAME }} is running..."
+          if ssh my-vps "docker ps --format '{{.Names}}' | grep -q '^${{ env.CONTAINER_NAME }}$'"; then
+            echo "Container ${{ env.CONTAINER_NAME }} is running"
+          else
+            echo "Container ${{ env.CONTAINER_NAME }} is NOT running"
+            exit 1
+          fi
 
       # for notifying of deploy or statusfailure
       - name: Notify Deploy Failure

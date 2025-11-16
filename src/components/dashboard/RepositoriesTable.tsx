@@ -210,7 +210,7 @@ const RepositoriesTable: React.FC = () => {
           <TableContainer
             component={Paper}
             elevation={0}
-            sx={{ 
+            sx={{
               backgroundColor: "transparent",
               maxHeight: isMobile ? "300px" : "500px",
               overflow: "auto",
