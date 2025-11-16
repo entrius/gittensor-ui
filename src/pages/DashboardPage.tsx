@@ -1,7 +1,12 @@
 import React from "react";
-import { Stack, useMediaQuery, Box, Grid } from "@mui/material";
+import { useMediaQuery, Box, Grid } from "@mui/material";
 import { Page } from "../components/layout";
-import { CommitTrendChart, RepositoriesTable, KpiCard, LiveCommitLog } from "../components";
+import {
+  CommitTrendChart,
+  RepositoriesTable,
+  KpiCard,
+  LiveCommitLog,
+} from "../components";
 import theme from "../theme";
 import { useStats } from "../api";
 
@@ -14,7 +19,8 @@ const DashboardPage: React.FC = () => {
   const { data: stats } = useStats();
 
   // Dynamic sidebar width based on screen size
-  const sidebarWidth = isMobile || isTablet ? "100%" : isLargeScreen ? "340px" : "300px";
+  const sidebarWidth =
+    isMobile || isTablet ? "100%" : isLargeScreen ? "340px" : "300px";
 
   return (
     <Page title="Dashboard">
@@ -84,49 +90,53 @@ const DashboardPage: React.FC = () => {
               />
             </Grid>
 
-              <KpiCard
-                title="Lines Committed"
-                value={stats?.recentLinesChanged}
-                subtitle="Last 90 Days"
-                sx={{ height: "100%" }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={6} lg={6} xl={3}>
-              <KpiCard
-                title="Total Repositories"
-                value={stats?.uniqueRepositories}
-                subtitle="Projects contributed to"
-                sx={{ height: "100%" }}
-              />
-            </Grid>
+            <KpiCard
+              title="Lines Committed"
+              value={stats?.recentLinesChanged}
+              subtitle="Last 90 Days"
+              sx={{ height: "100%" }}
+            />
           </Grid>
-
+          <Grid item xs={12} sm={6} md={6} lg={6} xl={3}>
+            <KpiCard
+              title="Total Repositories"
+              value={stats?.uniqueRepositories}
+              subtitle="Projects contributed to"
+              sx={{ height: "100%" }}
+            />
+          </Grid>
           {/* Bottom Section: Chart and Table Stacked */}
-          <Box sx={{ 
-            width: "100%", 
-            display: "flex", 
-            flexDirection: "column", 
-            gap: 1.5, 
-            minHeight: isMobile ? "600px" : 0,
-            flexShrink: 0,
-          }}>
+          <Box
+            sx={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              gap: 1.5,
+              minHeight: isMobile ? "600px" : 0,
+              flexShrink: 0,
+            }}
+          >
             {/* Chart */}
-            <Box sx={{ 
-              width: "100%", 
-              height: isMobile ? "350px" : "400px", 
-              flexShrink: 0, 
-              minHeight: isMobile ? "350px" : "400px" 
-            }}>
+            <Box
+              sx={{
+                width: "100%",
+                height: isMobile ? "350px" : "400px",
+                flexShrink: 0,
+                minHeight: isMobile ? "350px" : "400px",
+              }}
+            >
               <CommitTrendChart />
             </Box>
 
             {/* Table */}
-            <Box sx={{ 
-              width: "100%", 
-              minHeight: isMobile ? "400px" : 0, 
-              height: isMobile ? "400px" : "auto",
-              overflow: "hidden" 
-            }}>
+            <Box
+              sx={{
+                width: "100%",
+                minHeight: isMobile ? "400px" : 0,
+                height: isMobile ? "400px" : "auto",
+                overflow: "hidden",
+              }}
+            >
               <RepositoriesTable />
             </Box>
           </Box>
