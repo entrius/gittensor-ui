@@ -29,7 +29,11 @@ dayjs.extend(relativeTime);
 type SortField = "bountyUsd" | "registrationTimestamp" | "title";
 type SortOrder = "asc" | "desc";
 
-export const IssuesTable: React.FC = () => {
+interface IssuesTableProps {
+  onIssueClick?: (issueId: string) => void;
+}
+
+export const IssuesTable: React.FC<IssuesTableProps> = ({ onIssueClick }) => {
   const [activeTab, setActiveTab] = useState<0 | 1>(0); // 0 = Open, 1 = Solved
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(0);
@@ -325,9 +329,15 @@ export const IssuesTable: React.FC = () => {
               paginatedIssues.map((issue) => (
                 <TableRow
                   key={issue.id}
+                  onClick={() => onIssueClick?.(issue.id)}
                   sx={{
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
                     "&:hover": {
-                      backgroundColor: "rgba(255, 255, 255, 0.02)",
+                      backgroundColor: "rgba(255, 255, 255, 0.05)",
+                      "& .issue-title": {
+                        color: "primary.main",
+                      },
                     },
                     "& td": {
                       borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
@@ -339,12 +349,15 @@ export const IssuesTable: React.FC = () => {
                       href={issue.githubUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="issue-title"
                       sx={{
                         textDecoration: "none",
                         color: "inherit",
+                        display: "block",
+                        transition: "color 0.2s ease",
                         "&:hover": {
                           color: "primary.main",
-                          textDecoration: "underline",
                         },
                       }}
                     >
@@ -386,6 +399,7 @@ export const IssuesTable: React.FC = () => {
                       href={`https://github.com/${issue.repositoryOwner}/${issue.repositoryName}`}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                       sx={{
                         textDecoration: "none",
                         color: "text.secondary",
@@ -435,6 +449,7 @@ export const IssuesTable: React.FC = () => {
                           href={issue.solutionPrUrl}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
                           sx={{
                             textDecoration: "none",
                             color: "primary.main",

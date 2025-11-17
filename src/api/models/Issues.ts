@@ -21,7 +21,8 @@ export interface Issue {
   bountyAmount: number; // in tokens
   bountyUsd: number; // in USD
   depositorAddress: string;
-  registrationTimestamp: number; // Unix timestamp
+  issueCreatedTimestamp: number; // Unix timestamp when issue was created on GitHub
+  registrationTimestamp: number; // Unix timestamp when registered on Gittensor
   status: IssueStatusType;
   solverAddress?: string;
   resolutionTimestamp?: number;
@@ -32,6 +33,20 @@ export interface Issue {
   language?: string;
   timeToSolve?: number; // in seconds
   lastBountyUpdate?: number; // Unix timestamp
+  solutionRequiredBy?: number; // Unix timestamp for deadline
+  openPullRequests?: OpenPullRequest[];
+  initialBountyAmount?: number; // Initial deposit amount in USD
+  currentSolutionAmount?: number; // Current solution amount
+  solutionPrUrl?: string; // URL to the PR that solved the issue
+  solutionPrNumber?: number; // PR number that solved the issue
+}
+
+export interface OpenPullRequest {
+  number: number;
+  url: string;
+  author: string;
+  createdAt: number;
+  title: string;
 }
 
 export interface IssueStats {

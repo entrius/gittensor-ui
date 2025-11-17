@@ -16,18 +16,23 @@
     "@mui/icons-material": "^5.16.4",
     "@mui/lab": "^5.0.0-alpha.173",
     "@mui/material": "^5.16.1",
+    "@polkadot/api": "^16.5.2",
+    "@polkadot/api-contract": "^16.5.2",
+    "@polkadot/extension-dapp": "^0.62.4",
+    "@polkadot/util": "^13.5.8",
+    "@polkadot/util-crypto": "^13.5.8",
     "@tanstack/react-query": "^5.51.15",
     "axios": "^1.7.2",
     "dayjs": "^1.11.12",
     "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.2",
-    "ethers": "^6.15.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^9.0.1",
     "react-router-dom": "^6.25.1"
   },
   "devDependencies": {
+    "@types/node": "^24.10.1",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^7.13.1",
@@ -36,6 +41,8 @@
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.7",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
     "typescript": "^5.5.4",
     "vite": "^5.3.1"
   }

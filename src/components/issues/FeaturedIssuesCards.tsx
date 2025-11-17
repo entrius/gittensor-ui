@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Card,
@@ -8,12 +8,21 @@ import {
   Button,
   Grid,
   CircularProgress,
+  IconButton,
 } from "@mui/material";
-import { OpenInNew, GitHub } from "@mui/icons-material";
+import { GitHub, ChevronLeft, ChevronRight } from "@mui/icons-material";
 import { useFeaturedIssues } from "../../api/IssuesApi";
 
-export const FeaturedIssuesCards: React.FC = () => {
-  const { data: issues, isLoading, isError } = useFeaturedIssues(3);
+interface FeaturedIssuesCardsProps {
+  onIssueClick?: (issueId: string) => void;
+}
+
+export const FeaturedIssuesCards: React.FC<FeaturedIssuesCardsProps> = ({
+  onIssueClick,
+}) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const itemsToShow = 3;
+  const { data: allIssues, isLoading, isError } = useFeaturedIssues(10);
 
   if (isLoading) {
     return (
@@ -30,7 +39,7 @@ export const FeaturedIssuesCards: React.FC = () => {
     );
   }
 
-  if (isError || !issues || issues.length === 0) {
+  if (isError || !allIssues || allIssues.length === 0) {
     return null;
   }
 
@@ -48,6 +57,20 @@ export const FeaturedIssuesCards: React.FC = () => {
     if (days === 1) return "1 day ago";
     return `${days} days ago`;
   };
+
+  // Sliding carousel logic - slides respecting full card boundaries
+  const maxIndex = allIssues.length - itemsToShow;
+
+  const handlePrevious = () => {
+    setCurrentIndex((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleNext = () => {
+    setCurrentIndex((prev) => Math.min(maxIndex, prev + 1));
+  };
+
+  const canGoPrevious = currentIndex > 0;
+  const canGoNext = currentIndex < maxIndex;
 
   return (
     <Box sx={{ mb: 4 }}>
@@ -67,27 +90,79 @@ export const FeaturedIssuesCards: React.FC = () => {
         >
           Featured High-Value Issues
         </Typography>
-      </Box>
-
-      <Grid container spacing={{ xs: 2, sm: 2, md: 3 }}>
-        {issues.map((issue) => (
-          <Grid item xs={12} md={4} key={issue.id}>
-            <Card
+        {allIssues.length > itemsToShow && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography variant="caption" sx={{ color: "text.secondary", mr: 1 }}>
+              {currentIndex + 1} - {currentIndex + itemsToShow} of {allIssues.length}
+            </Typography>
+            <IconButton
+              onClick={handlePrevious}
+              disabled={!canGoPrevious}
+              size="small"
               sx={{
-                backgroundColor: "transparent",
                 border: "1px solid rgba(255, 255, 255, 0.1)",
-                borderRadius: 3,
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                transition: "all 0.2s ease",
                 "&:hover": {
-                  borderColor: "rgba(255, 255, 255, 0.2)",
-                  transform: "translateY(-2px)",
+                  borderColor: "primary.main",
+                  backgroundColor: "rgba(29, 55, 252, 0.05)",
+                },
+                "&.Mui-disabled": {
+                  opacity: 0.3,
                 },
               }}
-              elevation={0}
             >
+              <ChevronLeft />
+            </IconButton>
+            <IconButton
+              onClick={handleNext}
+              disabled={!canGoNext}
+              size="small"
+              sx={{
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                "&:hover": {
+                  borderColor: "primary.main",
+                  backgroundColor: "rgba(29, 55, 252, 0.05)",
+                },
+                "&.Mui-disabled": {
+                  opacity: 0.3,
+                },
+              }}
+            >
+              <ChevronRight />
+            </IconButton>
+          </Box>
+        )}
+      </Box>
+
+      <Grid container spacing={{ xs: 2, sm: 2, md: 3 }} sx={{ overflow: "hidden" }}>
+        <Grid item xs={12}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: `repeat(${allIssues.length}, calc(${100 / itemsToShow}%))`,
+              gap: { xs: 2, sm: 2, md: 3 },
+              transition: "transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+              transform: `translateX(calc(-${currentIndex * (100 / itemsToShow)}% - ${currentIndex} * var(--gap)))`,
+              "--gap": { xs: "16px", sm: "16px", md: "24px" },
+            }}
+          >
+            {allIssues.map((issue, index) => (
+              <Box key={issue.id}>
+              <Card
+                sx={{
+                  backgroundColor: "transparent",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  borderRadius: 3,
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    borderColor: "rgba(255, 255, 255, 0.2)",
+                    transform: "translateY(-2px)",
+                  },
+                }}
+                elevation={0}
+              >
               <CardContent
                 sx={{
                   flex: 1,
@@ -199,10 +274,7 @@ export const FeaturedIssuesCards: React.FC = () => {
                 {/* Action Button */}
                 <Button
                   variant="outlined"
-                  endIcon={<OpenInNew />}
-                  href={issue.githubUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  onClick={() => onIssueClick?.(issue.id)}
                   sx={{
                     mt: "auto",
                     textTransform: "none",
@@ -214,12 +286,14 @@ export const FeaturedIssuesCards: React.FC = () => {
                     },
                   }}
                 >
-                  View Issue
+                  View Details
                 </Button>
               </CardContent>
             </Card>
-          </Grid>
-        ))}
+              </Box>
+            ))}
+          </Box>
+        </Grid>
       </Grid>
     </Box>
   );

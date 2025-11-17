@@ -7,10 +7,23 @@ import {
   BountyHistoryChart,
   FeaturedIssuesCards,
   IssuesTable,
+  IssueDetailsModal,
 } from "../components/issues";
 
 const IssuesPage: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
+
+  const handleIssueClick = (issueId: string) => {
+    setSelectedIssueId(issueId);
+    setDetailsModalOpen(true);
+  };
+
+  const handleCloseDetails = () => {
+    setDetailsModalOpen(false);
+    setSelectedIssueId(null);
+  };
 
   return (
     <Page title="Issues">
@@ -77,16 +90,23 @@ const IssuesPage: React.FC = () => {
           <BountyHistoryChart days={30} />
 
           {/* Featured High-Value Issues */}
-          <FeaturedIssuesCards />
+          <FeaturedIssuesCards onIssueClick={handleIssueClick} />
 
           {/* All Issues Table */}
-          <IssuesTable />
+          <IssuesTable onIssueClick={handleIssueClick} />
         </Stack>
 
         {/* Registration Modal */}
         <IssueRegistrationModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
+        />
+
+        {/* Issue Details Modal */}
+        <IssueDetailsModal
+          issueId={selectedIssueId}
+          open={detailsModalOpen}
+          onClose={handleCloseDetails}
         />
 
         {/* Disclaimer */}

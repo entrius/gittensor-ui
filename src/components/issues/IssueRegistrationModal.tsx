@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,15 +12,18 @@ import {
   IconButton,
   useTheme,
   useMediaQuery,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { BrowserProvider, Contract, parseUnits } from 'ethers';
+import { usePolkadotWallet, useContract } from '../../hooks/usePolkadotWallet';
 import {
-  BITTENSOR_NETWORK,
-  ALPHA_TOKEN_ADDRESS,
-  BOUNTY_CONTRACT_ADDRESS,
-  ALPHA_TOKEN_ABI,
-  BOUNTY_ABI,
+  ALPHA_TOKEN,
+  BOUNTY_CONTRACT,
+  NETWORK_INFO,
+  areContractsConfigured,
 } from '../../config/bittensorConfig';
 
 interface StatusMessage {
@@ -37,101 +40,25 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // State management
-  const [account, setAccount] = useState<string | null>(null);
-  const [provider, setProvider] = useState<BrowserProvider | null>(null);
+  // Polkadot wallet hook
+  const wallet = usePolkadotWallet();
+  const contract = useContract(wallet);
+
+  // Form state
   const [githubUrl, setGithubUrl] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
   const [status, setStatus] = useState<StatusMessage | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Truncate address for display
-  const truncateAddress = (address: string): string => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
-
-  // Connect MetaMask wallet
-  const connectWallet = async (): Promise<boolean> => {
-    try {
-      // Check if MetaMask is installed
-      if (!window.ethereum) {
-        setStatus({
-          type: 'error',
-          message: 'Please install MetaMask to use this feature.',
-        });
-        return false;
-      }
-
-      setLoading(true);
-      setStatus({
-        type: 'info',
-        message: 'Connecting to MetaMask...',
-      });
-
-      const browserProvider = new BrowserProvider(window.ethereum);
-
-      // Try to switch to Bittensor network
-      try {
-        await window.ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: BITTENSOR_NETWORK.chainId }],
-        });
-      } catch (switchError: any) {
-        // Network doesn't exist, add it
-        if (switchError.code === 4902) {
-          try {
-            await window.ethereum.request({
-              method: 'wallet_addEthereumChain',
-              params: [BITTENSOR_NETWORK],
-            });
-          } catch (addError: any) {
-            console.error('Add network error:', addError);
-            setStatus({
-              type: 'error',
-              message: `Failed to add Bittensor network: ${addError.message || addError.code || 'Unknown error'}`,
-            });
-            setLoading(false);
-            return false;
-          }
-        } else {
-          setStatus({
-            type: 'error',
-            message: 'Failed to switch to Bittensor network.',
-          });
-          setLoading(false);
-          return false;
-        }
-      }
-
-      // Request account access
-      const accounts = await browserProvider.send('eth_requestAccounts', []);
-      const userAccount = accounts[0];
-
-      setProvider(browserProvider);
-      setAccount(userAccount);
-      setStatus({
-        type: 'success',
-        message: `Connected: ${truncateAddress(userAccount)}`,
-      });
-      setLoading(false);
-      return true;
-    } catch (error: any) {
-      console.error('Wallet connection error:', error);
+  // Update status when wallet error changes
+  useEffect(() => {
+    if (wallet.error) {
       setStatus({
         type: 'error',
-        message: error.message || 'Failed to connect wallet.',
+        message: wallet.error,
       });
-      setLoading(false);
-      return false;
     }
-  };
-
-  // Disconnect wallet
-  const disconnectWallet = () => {
-    setAccount(null);
-    setProvider(null);
-    setStatus(null);
-  };
+  }, [wallet.error]);
 
   // Validate form inputs
   const validateInputs = (): boolean => {
@@ -172,94 +99,122 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
     return true;
   };
 
-  // Handle payment process
+  // Handle payment/registration process
   const handlePayment = async () => {
     // Validate inputs first
     if (!validateInputs()) {
       return;
     }
 
-    // Ensure wallet is connected
-    if (!account || !provider) {
-      const connected = await connectWallet();
-      if (!connected) {
-        return;
-      }
+    // Check if contracts are configured
+    if (!areContractsConfigured()) {
+      setStatus({
+        type: 'error',
+        message: 'Contracts not configured yet. Please wait for deployment to testnet.',
+      });
+      return;
     }
 
     setLoading(true);
 
     try {
-      const signer = await provider!.getSigner();
-      const amountWei = parseUnits(amount, 18);
+      // Ensure we have API and account
+      if (!contract.api || !contract.account) {
+        throw new Error('Wallet not connected or API not ready');
+      }
 
-      // Transaction 1: Approve token spending
+      const signer = await contract.getSigner();
+
+      // Convert amount to smallest unit (ALPHA has 18 decimals)
+      const amountInSmallestUnit = BigInt(parseFloat(amount) * 10 ** ALPHA_TOKEN.decimals);
+
+      // Step 1: Approve ALPHA token spending via pallet-assets
       setStatus({
         type: 'info',
-        message: 'Step 1/2: Approve token spending...',
+        message: 'Step 1/2: Approving ALPHA token spending...',
       });
 
-      const alphaTokenContract = new Contract(
-        ALPHA_TOKEN_ADDRESS,
-        ALPHA_TOKEN_ABI,
-        signer
+      // Call pallet-assets approve_transfer
+      // This allows the bounty contract to transfer tokens on behalf of the user
+      const approveCall = contract.api.tx.assets.approveTransfer(
+        ALPHA_TOKEN.assetId,
+        BOUNTY_CONTRACT.address,
+        amountInSmallestUnit.toString()
       );
 
-      const approveTx = await alphaTokenContract.approve(
-        BOUNTY_CONTRACT_ADDRESS,
-        amountWei
+      const approveResult = await approveCall.signAndSend(
+        contract.account.address,
+        { signer },
+        ({ status, events }) => {
+          if (status.isInBlock) {
+            console.log(`Approval included in block ${status.asInBlock}`);
+          }
+        }
       );
 
       setStatus({
         type: 'info',
-        message: 'Step 1/2: Waiting for approval confirmation...',
+        message: 'Step 1/2: Approval confirmed, waiting for finalization...',
       });
 
-      await approveTx.wait();
+      // Wait for approval to finalize
+      await new Promise((resolve) => setTimeout(resolve, 6000)); // Wait ~1 block
 
-      // Transaction 2: Register issue
+      // Step 2: Call the bounty contract to register the issue
       setStatus({
         type: 'info',
-        message: 'Step 2/2: Registering issue...',
+        message: 'Step 2/2: Registering issue on-chain...',
       });
 
-      const bountyContract = new Contract(
-        BOUNTY_CONTRACT_ADDRESS,
-        BOUNTY_ABI,
-        signer
+      // TODO: Once contract is deployed, we'll use ContractPromise here
+      // Example (will be uncommented when contract is ready):
+      /*
+      const contract = new ContractPromise(
+        contract.api,
+        BOUNTY_CONTRACT.metadata,
+        BOUNTY_CONTRACT.address
       );
 
-      const registerTx = await bountyContract.registerIssue(githubUrl, amountWei);
+      const registerTx = await contract.tx.registerIssue(
+        { gasLimit: -1, storageDepositLimit: null },
+        githubUrl,
+        amountInSmallestUnit.toString()
+      ).signAndSend(
+        contract.account.address,
+        { signer },
+        ({ status, events }) => {
+          if (status.isInBlock) {
+            console.log(`Registration in block ${status.asInBlock}`);
+          }
+        }
+      );
+      */
 
+      // For now, show a placeholder success message
       setStatus({
         type: 'info',
-        message: 'Step 2/2: Waiting for registration confirmation...',
+        message: 'Contract interaction will be implemented after WASM contract deployment.',
       });
 
-      const receipt = await registerTx.wait();
+      // Simulate success for now
+      setTimeout(() => {
+        setStatus({
+          type: 'success',
+          message: `Ready to register! Network: ${NETWORK_INFO.name}. Contract deployment pending.`,
+        });
 
-      // Success!
-      setStatus({
-        type: 'success',
-        message: `Success! Transaction: ${receipt.hash}`,
-      });
-
-      // Clear form
-      setGithubUrl('');
-      setAmount('');
+        // Clear form
+        setGithubUrl('');
+        setAmount('');
+      }, 2000);
     } catch (error: any) {
-      console.error('Payment error:', error);
+      console.error('Registration error:', error);
 
       // User rejected transaction
-      if (error.code === 'ACTION_REJECTED' || error.code === 4001) {
+      if (error.message?.includes('Cancelled')) {
         setStatus({
           type: 'warning',
           message: 'Transaction cancelled by user.',
-        });
-      } else if (error.reason) {
-        setStatus({
-          type: 'error',
-          message: `Transaction failed: ${error.reason}`,
         });
       } else if (error.message) {
         setStatus({
@@ -355,19 +310,39 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
         <Typography
           variant="body2"
           color="text.secondary"
-          sx={{ mb: 3 }}
+          sx={{ mb: 3, lineHeight: 1.6 }}
         >
-          Incentivize open source contributions by placing a bounty on GitHub issues using Alpha tokens
+          Place a bounty on your GitHub issue using Gittensor Subnet ALPHA tokens to attract miner attention.
+          Your bounty enters the miners' pool of available issues, where they're incentivized to prioritize
+          solutions based on bounty amounts. While registration doesn't guarantee a direct solution, our
+          network enhances your bounty over time with additional ALPHA tokens as your issue remains open
+          (up to a limit to prevent gaming). This time-based allocation increases rewards to further
+          incentivize our best miners and improves the likelihood that your issue will be solved.
         </Typography>
 
-        {!account ? (
+        {/* Network Info Badge */}
+        <Box
+          sx={{
+            mb: 3,
+            p: 1.5,
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            borderRadius: 2,
+          }}
+        >
+          <Typography variant="caption" color="primary" sx={{ fontWeight: 600 }}>
+            Network: {NETWORK_INFO.name}
+          </Typography>
+        </Box>
+
+        {!wallet.isConnected ? (
           // Not connected - Show connect button
           <Box>
             <Button
               variant="contained"
               fullWidth
-              onClick={connectWallet}
-              disabled={loading}
+              onClick={wallet.connect}
+              disabled={wallet.isConnecting}
               sx={{
                 p: 1.5,
                 fontSize: 16,
@@ -376,18 +351,32 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
                 fontWeight: 600,
               }}
             >
-              {loading ? 'Connecting...' : 'Connect MetaMask'}
+              {wallet.isConnecting ? (
+                <>
+                  <CircularProgress size={20} sx={{ mr: 1 }} />
+                  Connecting...
+                </>
+              ) : (
+                'Connect Substrate Wallet'
+              )}
             </Button>
+
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: 'block', mt: 1.5, textAlign: 'center' }}
+            >
+              Compatible with Talisman & Polkadot.js extension
+            </Typography>
+
             {renderStatus()}
           </Box>
         ) : (
           // Connected - Show form
           <Box>
+            {/* Account selector */}
             <Box
               sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
                 mb: 3,
                 p: 2,
                 backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -395,16 +384,52 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
                 borderRadius: 2,
               }}
             >
-              <Typography variant="body2" color="text.secondary">
-                Connected: {truncateAddress(account)}
-              </Typography>
-              <Button
-                size="small"
-                onClick={disconnectWallet}
-                sx={{ textTransform: 'none' }}
-              >
-                Disconnect
-              </Button>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Connected Account
+                </Typography>
+                <Button size="small" onClick={wallet.disconnect} sx={{ textTransform: 'none' }}>
+                  Disconnect
+                </Button>
+              </Box>
+
+              {wallet.accounts.length > 1 ? (
+                <FormControl fullWidth size="small">
+                  <Select
+                    value={wallet.account?.address || ''}
+                    onChange={(e) => {
+                      const selected = wallet.accounts.find((acc) => acc.address === e.target.value);
+                      if (selected) wallet.selectAccount(selected);
+                    }}
+                    sx={{
+                      fontSize: 14,
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'rgba(255, 255, 255, 0.2)',
+                      },
+                    }}
+                  >
+                    {wallet.accounts.map((acc) => (
+                      <MenuItem key={acc.address} value={acc.address}>
+                        <Box>
+                          <Typography variant="body2">{acc.meta.name || 'Unnamed Account'}</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {wallet.formatAddress(acc.address)}
+                          </Typography>
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              ) : (
+                <Box>
+                  <Typography variant="body2" fontWeight={600}>
+                    {wallet.account?.meta.name || 'Unnamed Account'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {wallet.formatAddress(wallet.account?.address || '')}
+                  </Typography>
+                </Box>
+              )}
             </Box>
 
             <TextField
@@ -441,7 +466,7 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
             <TextField
               fullWidth
               type="number"
-              label="Amount (Alpha tokens)"
+              label={`Amount (${ALPHA_TOKEN.symbol} tokens)`}
               placeholder="0.00"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}

@@ -184,21 +184,49 @@ export const generateMockIssue = (id: string): Issue => {
   const title = randomElement(ISSUE_TITLES);
   const labels = randomElement(LABELS);
   const status = randomElement(["OPEN", "SOLVED", "IN_PROGRESS"] as IssueStatusType[]);
+
+  // Issue was created on GitHub some time ago (30-90 days)
+  const issueCreatedTimestamp = Date.now() - randomInt(30, 90) * 86400000;
+  // Registered on Gittensor more recently (0-30 days ago)
   const registrationTimestamp = Date.now() - randomInt(0, 30) * 86400000;
+
   const timeToSolve = status === "SOLVED" ? randomInt(3600, 604800) : undefined;
   const resolutionTimestamp =
     status === "SOLVED" ? registrationTimestamp + (timeToSolve || 0) * 1000 : undefined;
+
+  const initialBountyUsd = randomInt(5000, 50000);
+  const hasAdditionalContributions = Math.random() > 0.5;
+  const currentBountyUsd = hasAdditionalContributions
+    ? initialBountyUsd + randomInt(1000, 10000)
+    : initialBountyUsd;
+
+  // Generate open PRs for non-solved issues
+  const openPRCount = status !== "SOLVED" ? randomInt(0, 5) : 0;
+  const openPullRequests = Array.from({ length: openPRCount }, () => ({
+    number: randomInt(1, 999),
+    url: `https://github.com/${repo.owner}/${repo.name}/pull/${randomInt(1, 999)}`,
+    author: `contributor-${randomInt(1, 100)}`,
+    createdAt: Date.now() - randomInt(1, 15) * 86400000,
+    title: randomElement(ISSUE_TITLES),
+  }));
+
+  // Generate solution PR for solved issues
+  const solutionPrNumber = status === "SOLVED" ? randomInt(100, 999) : undefined;
+  const solutionPrUrl = solutionPrNumber
+    ? `https://github.com/${repo.owner}/${repo.name}/pull/${solutionPrNumber}`
+    : undefined;
 
   return {
     id,
     githubUrl: `https://github.com/${repo.owner}/${repo.name}/issues/${randomInt(1, 1000)}`,
     title,
-    description: "This is a detailed description of the issue. It contains multiple lines of text explaining the problem, expected behavior, and steps to reproduce.",
+    description: "This is a detailed description of the issue. It contains multiple lines of text explaining the problem, expected behavior, and steps to reproduce. The issue may involve fixing bugs, adding new features, or improving existing functionality. Contributors should review the attached code and follow the repository's contribution guidelines.",
     repositoryName: repo.name,
     repositoryOwner: repo.owner,
     bountyAmount: randomInt(5, 50),
-    bountyUsd: randomInt(5000, 50000),
+    bountyUsd: currentBountyUsd,
     depositorAddress: generateAddress(),
+    issueCreatedTimestamp,
     registrationTimestamp,
     status,
     solverAddress: status === "SOLVED" ? generateAddress() : undefined,
@@ -210,5 +238,11 @@ export const generateMockIssue = (id: string): Issue => {
     language: repo.language,
     timeToSolve,
     lastBountyUpdate: Date.now() - randomInt(0, 10) * 86400000,
+    solutionRequiredBy: status !== "SOLVED" ? Date.now() + randomInt(7, 60) * 86400000 : undefined,
+    openPullRequests: openPullRequests.length > 0 ? openPullRequests : undefined,
+    initialBountyAmount: initialBountyUsd,
+    currentSolutionAmount: status === "SOLVED" ? currentBountyUsd : undefined,
+    solutionPrUrl,
+    solutionPrNumber,
   };
 };
