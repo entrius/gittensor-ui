@@ -1,5 +1,6 @@
 import { useApiQuery } from "./ApiUtils";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import {
   RepoChanges,
@@ -77,6 +78,74 @@ export const useInfiniteCommitLog = (options?: { refetchInterval?: number }) => 
     },
     initialPageParam: 1,
     refetchInterval: options?.refetchInterval,
+    retry: false,
+  });
+};
+
+// Miner-specific hooks
+
+export const useMinerPRs = (githubId: string, lookbackDays: number = 30) => {
+  const baseUrl = import.meta.env.VITE_REACT_APP_BASE_URL;
+  const url = `/dash/commits`;
+  const encodedUrl = encodeURI(url);
+
+  return useQuery<CommitLog[], AxiosError, CommitLog[]>({
+    queryKey: [`useMinerPRs`, githubId, lookbackDays],
+    queryFn: async () => {
+      const requestUrl = baseUrl ? `${baseUrl}${encodedUrl}` : encodedUrl;
+      const { data } = await axios.get<CommitLog[]>(requestUrl, {
+        params: { page: 1, limit: 1000 }
+      });
+      return data;
+    },
+    select: (data) => {
+      if (!data) return [];
+
+      // Filter by author (GitHub username) and lookback days
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - lookbackDays);
+
+      return data.filter((pr: CommitLog) => {
+        const mergedDate = new Date(pr.mergedAt);
+        return pr.author === githubId && mergedDate >= cutoffDate;
+      });
+    },
+    retry: false,
+  });
+};
+
+export const useAllMinerData = (lookbackDays: number = 30) => {
+  const baseUrl = import.meta.env.VITE_REACT_APP_BASE_URL;
+  const url = `/dash/commits`;
+  const encodedUrl = encodeURI(url);
+
+  const selectFn = useCallback((data: CommitLog[]) => {
+    if (!data || !Array.isArray(data)) {
+      console.warn('[useAllMinerData] API returned non-array data:', data);
+      return [];
+    }
+
+    // Filter by lookback days only
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - lookbackDays);
+
+    return data.filter((pr: CommitLog) => {
+      const mergedDate = new Date(pr.mergedAt);
+      return mergedDate >= cutoffDate;
+    });
+  }, [lookbackDays]);
+
+  return useQuery<CommitLog[], AxiosError, CommitLog[]>({
+    queryKey: [`useAllMinerData`, lookbackDays],
+    queryFn: async () => {
+      const requestUrl = baseUrl ? `${baseUrl}${encodedUrl}` : encodedUrl;
+      // Fetch a reasonable number for good leaderboard representation with fast loading
+      const { data } = await axios.get<CommitLog[]>(requestUrl, {
+        params: { page: 1, limit: 500 }
+      });
+      return data;
+    },
+    select: selectFn,
     retry: false,
   });
 };

@@ -12,6 +12,7 @@ const AboutPage = React.lazy(() => import("./pages/AboutPage"));
 const FAQPage = React.lazy(() => import("./pages/FAQPage"));
 const DashboardPage = React.lazy(() => import("./pages/DashboardPage"));
 const RepositoriesPage = React.lazy(() => import("./pages/RepositoriesPage"));
+const MinersPage = React.lazy(() => import("./pages/MinersPage"));
 // const UnderConstructionPage = React.lazy(
 //   () => import("./pages/UnderConstructionPage")
 // );
@@ -22,6 +23,7 @@ const NotFoundPage = React.lazy(() => import("./pages/NotFoundPage"));
 const routesArray: AppRoute[] = [
   { name: "home", path: "/", element: <HomePage /> },
   { name: "dashboard", path: "/dashboard", element: <DashboardPage /> },
+  { name: "miners", path: "/miners", element: <MinersPage /> },
   { name: "about", path: "/about", element: <AboutPage /> },
   { name: "faq", path: "/faq", element: <FAQPage /> },
   {

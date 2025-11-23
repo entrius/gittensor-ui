@@ -17,6 +17,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
 
   const navItems = [
     { label: "dashboard", path: "/dashboard", badge: "new" },
+    { label: "miners", path: "/miners" },
     { label: "repositories", path: "/repositories" },
     { label: "about", path: "/about" },
     { label: "faq", path: "/faq" },
@@ -47,10 +48,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
         <img
           src="/gt-logo.svg"
           alt="Gittensor"
-          style={{ 
-            height: "60px", 
-            width: "auto", 
-            filter: "brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))" 
+          style={{
+            height: "60px",
+            width: "auto",
+            filter: "brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))"
           }}
         />
       </ButtonBase>

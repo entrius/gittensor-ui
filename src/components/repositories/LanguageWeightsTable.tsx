@@ -97,27 +97,42 @@ const LanguageWeightsTable: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-        <Typography variant="h5">Language Weights</Typography>
-        <Typography variant="body2" color="text.secondary">
-          Programming language multipliers used in scoring calculations
-        </Typography>
-      </Box>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, mb: 3 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Typography variant="h5">Language Weights</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Programming language multipliers used in scoring calculations
+          </Typography>
+        </Box>
 
-      <TextField
-        fullWidth
-        placeholder="Search by language extension..."
-        value={searchQuery}
-        onChange={handleSearchChange}
-        sx={{ mb: 3 }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <Search />
-            </InputAdornment>
-          ),
-        }}
-      />
+        <TextField
+          placeholder="Search..."
+          size="small"
+          value={searchQuery}
+          onChange={handleSearchChange}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search sx={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "1rem" }} />
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            width: "200px",
+            "& .MuiOutlinedInput-root": {
+              color: "#ffffff",
+              fontFamily: '"JetBrains Mono", monospace',
+              backgroundColor: "rgba(255, 255, 255, 0.02)",
+              fontSize: "0.8rem",
+              height: "36px",
+              borderRadius: 2,
+              "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
+              "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.2)" },
+              "&.Mui-focused fieldset": { borderColor: "primary.main" },
+            },
+          }}
+        />
+      </Box>
 
       {isLoading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
@@ -224,6 +239,8 @@ const LanguageWeightsTable: React.FC = () => {
         page={page}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
+        showFirstButton
+        showLastButton
         sx={{
           ".MuiTablePagination-displayedRows": {
             fontFamily: '"JetBrains Mono", monospace',

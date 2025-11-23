@@ -44,7 +44,7 @@ const DashboardPage: React.FC = () => {
             flexDirection: "column",
             gap: { xs: 2, sm: 1.5 },
             minHeight: 0,
-            overflow: showSidebarRight ? "auto" : "visible",
+            overflow: "hidden",
             pr: showSidebarRight ? 1 : 0,
             "&::-webkit-scrollbar": {
               width: "8px",
@@ -112,17 +112,18 @@ const DashboardPage: React.FC = () => {
             sx={{
               width: "100%",
               display: "flex",
-              flexDirection: "column",
+              flexDirection: isMobile ? "column" : "row",
               gap: 1.5,
-              minHeight: isMobile ? "600px" : 0,
-              flexShrink: 0,
+              minHeight: 0,
+              flex: 1,
+              overflow: "hidden",
             }}
           >
             {/* Chart */}
             <Box
               sx={{
-                width: "100%",
-                height: isMobile ? "350px" : "400px",
+                width: isMobile ? "100%" : "40%",
+                height: isMobile ? "350px" : "100%",
                 flexShrink: 0,
                 minHeight: isMobile ? "350px" : "400px",
               }}
@@ -133,9 +134,10 @@ const DashboardPage: React.FC = () => {
             {/* Table */}
             <Box
               sx={{
-                width: "100%",
-                minHeight: isMobile ? "400px" : 0,
-                height: isMobile ? "400px" : "auto",
+                width: isMobile ? "100%" : "60%",
+                minHeight: 0,
+                flex: 1,
+                height: "100%",
                 overflow: "hidden",
               }}
             >

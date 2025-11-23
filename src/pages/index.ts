@@ -13,5 +13,8 @@ export * from "./NotFoundPage";
 export { default as RepositoriesPage } from "./RepositoriesPage";
 export * from "./RepositoriesPage";
 
+export { default as MinersPage } from "./MinersPage";
+export * from "./MinersPage";
+
 export { default as UnderConstructionPage } from "./UnderConstructionPage";
 export * from "./UnderConstructionPage";
