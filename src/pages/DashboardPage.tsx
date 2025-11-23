@@ -20,7 +20,10 @@ const DashboardPage: React.FC = () => {
 
   // Calculate daily rewards: TAO price × Alpha price × 2952 (daily Alpha emissions for miners)
   const dailyRewards = React.useMemo(() => {
-    if (!stats?.prices?.tao?.data?.price || !stats?.prices?.alpha?.data?.price) {
+    if (
+      !stats?.prices?.tao?.data?.price ||
+      !stats?.prices?.alpha?.data?.price
+    ) {
       return undefined;
     }
     const taoPrice = stats.prices.tao.data.price;
@@ -33,7 +36,11 @@ const DashboardPage: React.FC = () => {
   const monthlyRewards = React.useMemo(() => {
     if (!dailyRewards) return undefined;
     const now = new Date();
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const daysInMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+    ).getDate();
     return dailyRewards * daysInMonth;
   }, [dailyRewards]);
 
@@ -81,23 +88,13 @@ const DashboardPage: React.FC = () => {
           }}
         >
           {/* Top Row: Total Lines Committed + Monthly Rewards */}
-          <Grid container spacing={{ xs: 1.5, md: 2 }} sx={{ flexShrink: 0 }}>
-            <Grid item xs={12} md={6}>
-              <KpiCard
-                title="Total Lines Committed"
-                value={stats?.totalLinesChanged}
-                subtitle="Cumulative code contributions"
-                variant="large"
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <KpiCard
-                title="Monthly Rewards"
-                value={monthlyRewards ? `$${monthlyRewards.toFixed(2)}` : undefined}
-                subtitle="Total potential mining rewards this month"
-                variant="large"
-              />
-            </Grid>
+          <Grid item xs={12} md={6}>
+            <KpiCard
+              title="Total Lines Committed"
+              value={stats?.totalLinesChanged}
+              subtitle="Cumulative code contributions"
+              variant="large"
+            />
           </Grid>
 
           {/* Middle Row: 4 KPI Cards - Responsive Grid */}
