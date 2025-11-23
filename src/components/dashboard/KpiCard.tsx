@@ -24,7 +24,9 @@ const KpiCard: React.FC<KpiCardProps> = ({
   const titleSize = isLarge ? (isMobile ? 14 : 16) : (isMobile ? 12 : 14);
 
   const formattedValue = value !== undefined && value !== null
-    ? (typeof value === "number" || typeof value === "string" 
+    ? (typeof value === "string" && value.startsWith("$")
+        ? value // Already formatted with currency
+        : typeof value === "number" || typeof value === "string" 
         ? Number(value).toLocaleString() 
         : value)
     : undefined;
