@@ -11,7 +11,6 @@ import {
     Typography,
     CircularProgress,
     Avatar,
-    Chip,
     TextField,
     InputAdornment,
     Tabs,
@@ -610,11 +609,9 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({ onSelectMiner }) =>
                                             </TableCell>
                                             <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>{item?.repository || ""}</TableCell>
                                             <TableCell align="right" sx={{ ...bodyCellStyle, width: "15%" }}>
-                                                <Chip
-                                                    label={parseFloat(item?.score || "0").toFixed(4)}
-                                                    size="small"
-                                                    sx={scoreChipStyle}
-                                                />
+                                                <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.75rem", fontWeight: 600 }}>
+                                                    {parseFloat(item?.score || "0").toFixed(4)}
+                                                </Typography>
                                             </TableCell>
                                         </>
                                     ) : activeTab === 2 ? (
@@ -631,11 +628,9 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({ onSelectMiner }) =>
                                                 </a>
                                             </TableCell>
                                             <TableCell align="right" sx={{ ...bodyCellStyle, width: "20%" }}>
-                                                <Chip
-                                                    label={(item?.totalScore || 0).toFixed(2)}
-                                                    size="small"
-                                                    sx={scoreChipStyle}
-                                                />
+                                                <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.75rem", fontWeight: 600 }}>
+                                                    {(item?.totalScore || 0).toFixed(2)}
+                                                </Typography>
                                             </TableCell>
                                             <TableCell align="right" sx={{ ...bodyCellStyle, width: "20%" }}>
                                                 {item?.totalPRs || 0}
@@ -668,16 +663,9 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({ onSelectMiner }) =>
                                                 // Elite Contributors - only Avg Repo Weight, no Total Score
                                                 <>
                                                     <TableCell align="right" sx={{ ...bodyCellStyle, width: "15%" }}>
-                                                        <Chip
-                                                            label={(item?.avgRepoWeight || 0).toFixed(4)}
-                                                            size="small"
-                                                            sx={{
-                                                                ...scoreChipStyle,
-                                                                backgroundColor: "rgba(255, 255, 255, 0.05)",
-                                                                color: "rgba(255, 255, 255, 0.8)",
-                                                                borderColor: "rgba(255, 255, 255, 0.1)",
-                                                            }}
-                                                        />
+                                                        <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.75rem", fontWeight: 600 }}>
+                                                            {(item?.avgRepoWeight || 0).toFixed(4)}
+                                                        </Typography>
                                                     </TableCell>
                                                     <TableCell align="right" sx={{ ...bodyCellStyle, width: "12%" }}>
                                                         {item?.uniqueRepos?.size || 0}
@@ -690,11 +678,9 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({ onSelectMiner }) =>
                                                 // Top Miners
                                                 <>
                                                     <TableCell align="right" sx={{ ...bodyCellStyle, width: "15%" }}>
-                                                        <Chip
-                                                            label={(item?.totalScore || 0).toFixed(2)}
-                                                            size="small"
-                                                            sx={scoreChipStyle}
-                                                        />
+                                                        <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.75rem", fontWeight: 600 }}>
+                                                            {(item?.totalScore || 0).toFixed(2)}
+                                                        </Typography>
                                                     </TableCell>
                                                     <TableCell align="right" sx={{ ...bodyCellStyle, width: "10%" }}>
                                                         {item?.totalPRs || 0}
@@ -780,19 +766,6 @@ const bodyCellStyle = {
     py: 1,
     height: "60px", // Enforce consistent row height
     boxSizing: "border-box" as const,
-};
-
-const scoreChipStyle = {
-    backgroundColor: "rgba(88, 166, 255, 0.1)",
-    color: "#ffffff",
-    fontFamily: '"JetBrains Mono", monospace',
-    fontWeight: 600,
-    border: "1px solid rgba(88, 166, 255, 0.2)",
-    height: "24px",
-    "& .MuiChip-label": {
-        px: 1,
-        fontSize: "0.75rem",
-    }
 };
 
 const getRankIcon = (rank: number) => {

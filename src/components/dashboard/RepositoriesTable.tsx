@@ -17,7 +17,10 @@ import {
   Tooltip,
   CircularProgress,
   Box,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
 import theme from "../../theme";
 import { useRepoChanges } from "../../api";
 import dayjs from "dayjs";
@@ -43,6 +46,7 @@ const RepositoriesTable: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(8);
+  const [searchQuery, setSearchQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Dynamically calculate rows per page based on available height
@@ -87,6 +91,11 @@ const RepositoriesTable: React.FC = () => {
     setPage(0);
   };
 
+  // Reset page when search query changes
+  useEffect(() => {
+    setPage(0);
+  }, [searchQuery]);
+
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
@@ -98,8 +107,17 @@ const RepositoriesTable: React.FC = () => {
   const filteredAndSortedRepos = useMemo(() => {
     if (!repoChanges) return [];
 
+    // Filter by search query
+    let filtered = repoChanges;
+    if (searchQuery) {
+      const lowerQuery = searchQuery.toLowerCase();
+      filtered = repoChanges.filter((repo) =>
+        repo.repositoryFullName.toLowerCase().includes(lowerQuery)
+      );
+    }
+
     // Create a copy before sorting to avoid mutation
-    const sorted = [...repoChanges];
+    const sorted = [...filtered];
 
     sorted.sort((a, b) => {
       let aValue: any;
@@ -161,7 +179,7 @@ const RepositoriesTable: React.FC = () => {
     });
 
     return sorted;
-  }, [repoChanges, sortField, sortOrder]);
+  }, [repoChanges, sortField, sortOrder, searchQuery]);
 
   const paginatedRepos = useMemo(() => {
     const startIndex = page * rowsPerPage;
@@ -182,19 +200,55 @@ const RepositoriesTable: React.FC = () => {
       elevation={0}
     >
       <CardContent ref={containerRef} sx={{ p: isMobile ? 1.5 : 2, "&:last-child": { pb: isMobile ? 1.5 : 2 }, display: "flex", flexDirection: "column", flex: 1, overflow: "hidden", minHeight: 0 }}>
-        <Typography
-          variant="h6"
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
           sx={{
             mb: isMobile ? 1 : 1.5,
-            fontSize: isMobile ? "0.9rem" : "1rem",
-            fontFamily: '"JetBrains Mono", monospace',
-            fontWeight: 500,
             flexShrink: 0,
+            gap: 2,
+            flexWrap: "wrap",
           }}
         >
-          Contributed Repositories
-        </Typography>
-
+          <Typography
+            variant="h6"
+            sx={{
+              fontSize: isMobile ? "0.9rem" : "1rem",
+              fontFamily: '"JetBrains Mono", monospace',
+              fontWeight: 500,
+            }}
+          >
+            Contributed Repositories
+          </Typography>
+          <TextField
+            placeholder="Search..."
+            size="small"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "1rem" }} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              width: isMobile ? "100%" : "200px",
+              "& .MuiOutlinedInput-root": {
+                color: "#ffffff",
+                fontFamily: '"JetBrains Mono", monospace',
+                backgroundColor: "rgba(255, 255, 255, 0.02)",
+                fontSize: "0.8rem",
+                height: "36px",
+                borderRadius: 2,
+                "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
+                "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.2)" },
+                "&.Mui-focused fieldset": { borderColor: "primary.main" },
+              },
+            }}
+          />
+        </Stack>
 
 
         {isLoading ? (
@@ -209,7 +263,7 @@ const RepositoriesTable: React.FC = () => {
               backgroundColor: "transparent",
             }}
           >
-            <Table sx={{ width: '100%', tableLayout: 'auto' }}>
+            <Table sx={{ width: '100%', tableLayout: 'fixed' }}>
               <TableHead>
                 <TableRow>
                   <TableCell
@@ -218,6 +272,8 @@ const RepositoriesTable: React.FC = () => {
                       backdropFilter: "blur(8px)",
                       borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
                       minWidth: isMobile ? 120 : 180,
+                      maxWidth: isMobile ? 200 : 300,
+                      width: isMobile ? 150 : 250,
                     }}
                   >
                     <TableSortLabel
@@ -245,7 +301,7 @@ const RepositoriesTable: React.FC = () => {
                         backgroundColor: "rgba(18, 18, 20, 0.95)",
                         backdropFilter: "blur(8px)",
                         borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                        minWidth: 85,
+                        width: "12%",
                       }}
                     >
                       <TableSortLabel
@@ -329,7 +385,7 @@ const RepositoriesTable: React.FC = () => {
                       backgroundColor: "rgba(18, 18, 20, 0.95)",
                       backdropFilter: "blur(8px)",
                       borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                      minWidth: isMobile ? 100 : 120,
+                      width: isMobile ? "25%" : "15%",
                     }}
                   >
                     <TableSortLabel
@@ -357,7 +413,7 @@ const RepositoriesTable: React.FC = () => {
                         backgroundColor: "rgba(18, 18, 20, 0.95)",
                         backdropFilter: "blur(8px)",
                         borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                        minWidth: 80,
+                        width: "12%",
                       }}
                     >
                       <TableSortLabel
@@ -414,6 +470,8 @@ const RepositoriesTable: React.FC = () => {
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
+                            maxWidth: isMobile ? 200 : 300,
+                            width: isMobile ? 150 : 250,
                           }}
                         >
                           <Typography

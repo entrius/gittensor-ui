@@ -110,9 +110,9 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                     <Grid item xs={12} sm={6} md={4} lg={2.4} key={index}>
                         <Box
                             sx={{
-                                backgroundColor: "rgba(255, 255, 255, 0.03)",
-                                borderRadius: 2,
-                                border: "1px solid rgba(255, 255, 255, 0.06)",
+                                backgroundColor: "transparent",
+                                borderRadius: 3,
+                                border: "1px solid rgba(255, 255, 255, 0.1)",
                                 p: 2.5,
                                 height: "100%",
                                 display: "flex",

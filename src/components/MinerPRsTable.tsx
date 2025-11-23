@@ -12,7 +12,6 @@ import {
     CircularProgress,
     TextField,
     InputAdornment,
-    Chip,
 } from "@mui/material";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import { useMinerPRs } from "../api";
@@ -212,22 +211,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                                         </Box>
                                     </TableCell>
                                     <TableCell align="right" sx={{ ...bodyCellStyle, width: "10%" }}>
-                                        <Chip
-                                            label={parseFloat(pr.score).toFixed(4)}
-                                            size="small"
-                                            sx={{
-                                                backgroundColor: "rgba(88, 166, 255, 0.1)",
-                                                color: "#ffffff",
-                                                fontFamily: '"JetBrains Mono", monospace',
-                                                fontWeight: 600,
-                                                border: "1px solid rgba(88, 166, 255, 0.2)",
-                                                height: "24px",
-                                                "& .MuiChip-label": {
-                                                    px: 1,
-                                                    fontSize: "0.75rem",
-                                                }
-                                            }}
-                                        />
+                                        <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.75rem", fontWeight: 600 }}>
+                                            {parseFloat(pr.score).toFixed(4)}
+                                        </Typography>
                                     </TableCell>
                                     <TableCell align="right" sx={{ ...bodyCellStyle, width: "15%" }}>
                                         {new Date(pr.mergedAt).toLocaleDateString()}
