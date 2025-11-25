@@ -68,7 +68,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
     },
     { label: "Total PRs", value: minerStats.totalPrs },
     {
-      label: "Lines Changed",
+      label: "Scored Lines",
       value: Number(minerStats.totalLinesChanged).toLocaleString(),
     },
     { label: "Unique Repos", value: minerStats.uniqueReposCount },

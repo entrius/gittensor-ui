@@ -65,7 +65,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
 
   // Safe hook usage
   const allMinerDataQuery = useAllMinerData();
-  const allMinerStatsQuery = useAllMinerStats(100);
+  const allMinerStatsQuery = useAllMinerStats(); // Get all miners (max 256)
   // Memoize empty array to prevent infinite loops when data is loading
   const emptyArray = useMemo(() => [], []);
   const allPRs = Array.isArray(allMinerDataQuery?.data)
@@ -217,7 +217,10 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
       return;
     }
     const topPRs = [...allPRs]
-      .sort((a, b) => parseFloat(b.baseScore || "0") - parseFloat(a.baseScore || "0"))
+      .sort(
+        (a, b) =>
+          parseFloat(b.baseScore || "0") - parseFloat(a.baseScore || "0"),
+      )
       .slice(0, 100)
       .map((pr, index) => ({ ...pr, rank: index + 1 }));
     setTopPRsLeaderboard(topPRs);
@@ -256,13 +259,6 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
       .map((miner, index) => ({ ...miner, rank: index + 1 }));
   }, [displayMinerStats]);
 
-  const repoImpactLeaderboard = useMemo(() => {
-    if (!Array.isArray(minerStats)) return [];
-    return [...minerStats]
-      .sort((a, b) => b.avgRepoWeight - a.avgRepoWeight) // Sort by avg repo weight to show most skilled
-      .map((miner, index) => ({ ...miner, rank: index + 1 }));
-  }, [minerStats]);
-
   const topReposLeaderboard = useMemo(() => {
     if (!Array.isArray(repoStats)) return [];
     return [...repoStats]
@@ -298,13 +294,11 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
     if (activeTab === 0) return getFilteredData(overallLeaderboard);
     if (activeTab === 1) return getFilteredData(topPRsLeaderboard);
     if (activeTab === 2) return getFilteredData(topReposLeaderboard);
-    if (activeTab === 3) return getFilteredData(repoImpactLeaderboard);
     return [];
   }, [
     activeTab,
     overallLeaderboard,
     topPRsLeaderboard,
-    repoImpactLeaderboard,
     topReposLeaderboard,
     searchQuery,
   ]);
@@ -340,9 +334,9 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
         (item: any) => `#${item?.pullRequestNumber || ""}`,
       );
       seriesData = chartData.map((item: any) =>
-        Number(parseFloat(item?.score || "0")),
+        Number(parseFloat(item?.baseScore || "0")),
       );
-      title = "Top Pull Requests by Score";
+      title = "Top Pull Requests by Base Score";
     } else if (activeTab === 2) {
       // Top Repos
       xAxisData = chartData.map(
@@ -351,15 +345,6 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
       );
       seriesData = chartData.map((item: any) => Number(item?.totalScore) || 0);
       title = "Top Repositories by Score Produced";
-    } else if (activeTab === 3) {
-      // Elite Contributors
-      xAxisData = chartData.map(
-        (item: any) => item?.author || item?.githubId || "",
-      );
-      seriesData = chartData.map(
-        (item: any) => Number(item?.avgRepoWeight) || 0,
-      );
-      title = "Elite Contributors by Avg Repo Weight";
     }
 
     return {
@@ -509,7 +494,6 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
           <Tab label="Top Miners" />
           <Tab label="Top PRs" />
           <Tab label="Top Repos" />
-          <Tab label="Elite Contributors" />
         </Tabs>
       </Box>
 
@@ -537,12 +521,6 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
         {activeTab === 2 && (
           <Typography variant="body2" color="text.secondary">
             Repositories generating the most score from contributor activity.
-          </Typography>
-        )}
-        {activeTab === 3 && (
-          <Typography variant="body2" color="text.secondary">
-            Top miners ranked by average repository weight of their
-            contributions.
           </Typography>
         )}
 
@@ -624,7 +602,8 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
 
       <TableContainer
         sx={{
-          overflowX: "auto",
+          maxHeight: "600px",
+          overflow: "auto",
           "&::-webkit-scrollbar": { width: "8px", height: "8px" },
           "&::-webkit-scrollbar-thumb": {
             backgroundColor: "rgba(255,255,255,0.1)",
@@ -662,7 +641,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                       width: "15%",
                     }}
                   >
-                    Score
+                    Base Score
                   </TableCell>
                 </>
               ) : activeTab === 2 ? (
@@ -679,7 +658,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                       width: "20%",
                     }}
                   >
-                    Total Score Produced
+                    Total Base Score
                   </TableCell>
                   <TableCell
                     align="right"
@@ -695,7 +674,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                   </TableCell>
                 </>
               ) : (
-                // Miner Columns (for both Top Miners and Elite Contributors)
+                // Miner Columns (Top Miners)
                 <>
                   <TableCell
                     sx={{
@@ -705,34 +684,8 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                   >
                     Miner
                   </TableCell>
-                  {activeTab === 3 ? (
-                    // Elite Contributors - only Avg Repo Weight, no Total Score
-                    <>
-                      <TableCell
-                        align="right"
-                        sx={{
-                          ...headerCellStyle,
-                          color: "secondary.main",
-                          width: "15%",
-                        }}
-                      >
-                        Avg Repo Weight
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{ ...headerCellStyle, width: "12%" }}
-                      >
-                        Unique Repos
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{ ...headerCellStyle, width: "12%" }}
-                      >
-                        PRs
-                      </TableCell>
-                    </>
-                  ) : (
-                    // Top Miners - show both Score and Base Score
+                  {/* Top Miners - show both Score and Base Score */}
+                  {
                     <>
                       <TableCell
                         align="right"
@@ -760,7 +713,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                         PRs
                       </TableCell>
                     </>
-                  )}
+                  }
                   {activeTab === 0 ? (
                     // Top Miners gets separate Added/Deleted columns plus total
                     <>
@@ -783,14 +736,6 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                         Lines Changed
                       </TableCell>
                     </>
-                  ) : activeTab === 3 ? (
-                    // Elite Contributors gets single Lines column
-                    <TableCell
-                      align="right"
-                      sx={{ ...headerCellStyle, width: "12%" }}
-                    >
-                      Lines
-                    </TableCell>
                   ) : null}
                 </>
               )}
@@ -974,40 +919,8 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                             </Box>
                           </Box>
                         </TableCell>
-                        {activeTab === 3 ? (
-                          // Elite Contributors - only Avg Repo Weight, no Total Score
-                          <>
-                            <TableCell
-                              align="right"
-                              sx={{ ...bodyCellStyle, width: "15%" }}
-                            >
-                              <Typography
-                                sx={{
-                                  fontFamily: '"JetBrains Mono", monospace',
-                                  fontSize: "0.75rem",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                {Number(item?.avgRepoWeight || 0).toFixed(4)}
-                              </Typography>
-                            </TableCell>
-                            <TableCell
-                              align="right"
-                              sx={{ ...bodyCellStyle, width: "12%" }}
-                            >
-                              {item?.uniqueRepos?.size ||
-                                item?.uniqueReposCount ||
-                                0}
-                            </TableCell>
-                            <TableCell
-                              align="right"
-                              sx={{ ...bodyCellStyle, width: "12%" }}
-                            >
-                              {item?.totalPRs || 0}
-                            </TableCell>
-                          </>
-                        ) : (
-                          // Top Miners - show both Score and Base Score
+                        {/* Top Miners - show both Score and Base Score */}
+                        {
                           <>
                             <TableCell
                               align="right"
@@ -1045,7 +958,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                               {item?.totalPRs || 0}
                             </TableCell>
                           </>
-                        )}
+                        }
                         {activeTab === 0 ? (
                           // Top Miners gets separate Added/Deleted cells plus total
                           <>
@@ -1094,14 +1007,6 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                               </Typography>
                             </TableCell>
                           </>
-                        ) : activeTab === 3 ? (
-                          // Elite Contributors gets single Lines cell
-                          <TableCell
-                            align="right"
-                            sx={{ ...bodyCellStyle, width: "12%" }}
-                          >
-                            {(item?.linesChanged || 0).toLocaleString()}
-                          </TableCell>
                         ) : null}
                       </>
                     )}

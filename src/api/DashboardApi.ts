@@ -68,7 +68,9 @@ export const useCommitLog = (
     { page, limit },
   );
 
-export const useInfiniteCommitLog = (options?: { refetchInterval?: number }) => {
+export const useInfiniteCommitLog = (options?: {
+  refetchInterval?: number;
+}) => {
   const baseUrl = import.meta.env.VITE_REACT_APP_BASE_URL;
   const limit = 15;
 
@@ -103,39 +105,30 @@ export const useInfiniteCommitLog = (options?: { refetchInterval?: number }) => 
  * Uses the optimized /miners/:githubId/prs endpoint
  */
 export const useMinerPRs = (githubId: string) =>
-  useMinersQuery<CommitLog[]>(
-    "useMinerPRs",
-    `/${githubId}/prs`,
-  );
+  useMinersQuery<CommitLog[]>("useMinerPRs", `/${githubId}/prs`);
 
 /**
  * Get pre-computed stats for a specific miner (totalScore, baseTotalScore, totalPRs, etc.)
  * Much faster than aggregating PRs - uses the MinerEvaluations table
  */
 export const useMinerStats = (githubId: string) =>
-  useMinersQuery<MinerEvaluation>(
-    "useMinerStats",
-    `/${githubId}/stats`,
-  );
+  useMinersQuery<MinerEvaluation>("useMinerStats", `/${githubId}/stats`);
 
 /**
  * Get all miners' PR data
  * Uses the optimized /miners/all/prs endpoint
  */
 export const useAllMinerData = () =>
-  useMinersQuery<CommitLog[]>(
-    "useAllMinerData",
-    "/all/prs",
-  );
+  useMinersQuery<CommitLog[]>("useAllMinerData", "/all/prs");
 
 /**
  * Get all miners' pre-computed stats for leaderboards
  * Much faster than aggregating PRs - uses the MinerEvaluations table
+ * Max 256 miners in the subnet
  */
-export const useAllMinerStats = (limit: number = 100) =>
+export const useAllMinerStats = () =>
   useMinersQuery<MinerEvaluation[]>(
     "useAllMinerStats",
     "/stats/all",
     undefined,
-    { limit },
   );
