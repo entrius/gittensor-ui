@@ -142,7 +142,7 @@ const RepositoryWeightsTable: React.FC = () => {
             "& .MuiOutlinedInput-root": {
               color: "#ffffff",
               fontFamily: '"JetBrains Mono", monospace',
-              backgroundColor: "rgba(255, 255, 255, 0.02)",
+              backgroundColor: "rgba(0, 0, 0, 0.4)",
               fontSize: "0.8rem",
               height: "36px",
               borderRadius: 2,
