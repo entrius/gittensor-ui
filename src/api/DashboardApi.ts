@@ -9,6 +9,7 @@ import {
   Repository,
   LanguageWeight,
   CommitLog,
+  MinerEvaluation,
 } from "./models/Dashboard";
 
 export const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
@@ -20,6 +21,19 @@ export const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
   useApiQuery<TResponse, TSelect>(
     queryName,
     `/dash${url}`,
+    refetchInterval,
+    queryParams,
+  );
+
+export const useMinersQuery = <TResponse = void, TSelect = TResponse>(
+  queryName: string,
+  url: string,
+  refetchInterval?: number,
+  queryParams?: Record<string, string | number | undefined>,
+) =>
+  useApiQuery<TResponse, TSelect>(
+    queryName,
+    `/miners${url}`,
     refetchInterval,
     queryParams,
   );
@@ -82,70 +96,46 @@ export const useInfiniteCommitLog = (options?: { refetchInterval?: number }) => 
   });
 };
 
-// Miner-specific hooks
+// Miner-specific hooks - optimized to use new /miners endpoints
 
-export const useMinerPRs = (githubId: string, lookbackDays: number = 30) => {
-  const baseUrl = import.meta.env.VITE_REACT_APP_BASE_URL;
-  const url = `/dash/commits`;
-  const encodedUrl = encodeURI(url);
+/**
+ * Get all pull requests for a specific miner
+ * Uses the optimized /miners/:githubId/prs endpoint
+ */
+export const useMinerPRs = (githubId: string) =>
+  useMinersQuery<CommitLog[]>(
+    "useMinerPRs",
+    `/${githubId}/prs`,
+  );
 
-  return useQuery<CommitLog[], AxiosError, CommitLog[]>({
-    queryKey: [`useMinerPRs`, githubId, lookbackDays],
-    queryFn: async () => {
-      const requestUrl = baseUrl ? `${baseUrl}${encodedUrl}` : encodedUrl;
-      const { data } = await axios.get<CommitLog[]>(requestUrl, {
-        params: { page: 1, limit: 1000 }
-      });
-      return data;
-    },
-    select: (data) => {
-      if (!data) return [];
+/**
+ * Get pre-computed stats for a specific miner (totalScore, baseTotalScore, totalPRs, etc.)
+ * Much faster than aggregating PRs - uses the MinerEvaluations table
+ */
+export const useMinerStats = (githubId: string) =>
+  useMinersQuery<MinerEvaluation>(
+    "useMinerStats",
+    `/${githubId}/stats`,
+  );
 
-      // Filter by author (GitHub username) and lookback days
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - lookbackDays);
+/**
+ * Get all miners' PR data
+ * Uses the optimized /miners/all/prs endpoint
+ */
+export const useAllMinerData = () =>
+  useMinersQuery<CommitLog[]>(
+    "useAllMinerData",
+    "/all/prs",
+  );
 
-      return data.filter((pr: CommitLog) => {
-        const mergedDate = new Date(pr.mergedAt);
-        return pr.author === githubId && mergedDate >= cutoffDate;
-      });
-    },
-    retry: false,
-  });
-};
-
-export const useAllMinerData = (lookbackDays: number = 30) => {
-  const baseUrl = import.meta.env.VITE_REACT_APP_BASE_URL;
-  const url = `/dash/commits`;
-  const encodedUrl = encodeURI(url);
-
-  const selectFn = useCallback((data: CommitLog[]) => {
-    if (!data || !Array.isArray(data)) {
-      console.warn('[useAllMinerData] API returned non-array data:', data);
-      return [];
-    }
-
-    // Filter by lookback days only
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - lookbackDays);
-
-    return data.filter((pr: CommitLog) => {
-      const mergedDate = new Date(pr.mergedAt);
-      return mergedDate >= cutoffDate;
-    });
-  }, [lookbackDays]);
-
-  return useQuery<CommitLog[], AxiosError, CommitLog[]>({
-    queryKey: [`useAllMinerData`, lookbackDays],
-    queryFn: async () => {
-      const requestUrl = baseUrl ? `${baseUrl}${encodedUrl}` : encodedUrl;
-      // Fetch a reasonable number for good leaderboard representation with fast loading
-      const { data } = await axios.get<CommitLog[]>(requestUrl, {
-        params: { page: 1, limit: 500 }
-      });
-      return data;
-    },
-    select: selectFn,
-    retry: false,
-  });
-};
+/**
+ * Get all miners' pre-computed stats for leaderboards
+ * Much faster than aggregating PRs - uses the MinerEvaluations table
+ */
+export const useAllMinerStats = (limit: number = 100) =>
+  useMinersQuery<MinerEvaluation[]>(
+    "useAllMinerStats",
+    "/stats/all",
+    undefined,
+    { limit },
+  );

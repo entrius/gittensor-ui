@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
     Card,
     Typography,
@@ -10,10 +10,7 @@ import {
     TableHead,
     TableRow,
     CircularProgress,
-    TextField,
-    InputAdornment,
 } from "@mui/material";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import { useMinerPRs } from "../api";
 
 interface MinerPRsTableProps {
@@ -21,15 +18,7 @@ interface MinerPRsTableProps {
 }
 
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
-    const [lookbackDays, setLookbackDays] = useState(30);
-    const { data: prs, isLoading } = useMinerPRs(githubId, lookbackDays);
-
-    const handleLookbackChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const value = parseInt(event.target.value, 10);
-        if (!isNaN(value) && value > 0) {
-            setLookbackDays(value);
-        }
-    };
+    const { data: prs, isLoading } = useMinerPRs(githubId);
 
     return (
         <Card
@@ -44,16 +33,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             }}
             elevation={0}
         >
-            {/* Header with Lookback Days Filter */}
+            {/* Header */}
             <Box
                 sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
                     p: 3,
                     borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                    flexWrap: "wrap",
-                    gap: 2,
                 }}
             >
                 <Typography
@@ -67,51 +51,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 >
                     Scored Pull Requests
                 </Typography>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Typography
-                        sx={{
-                            color: "rgba(255, 255, 255, 0.7)",
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "0.85rem",
-                        }}
-                    >
-                        Lookback Days:
-                    </Typography>
-                    <TextField
-                        type="number"
-                        value={lookbackDays}
-                        onChange={handleLookbackChange}
-                        size="small"
-                        InputProps={{
-                            endAdornment: (
-                                <InputAdornment position="end">
-                                    <CalendarTodayIcon
-                                        sx={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "1rem" }}
-                                    />
-                                </InputAdornment>
-                            ),
-                        }}
-                        sx={{
-                            width: "120px",
-                            "& .MuiOutlinedInput-root": {
-                                color: "#ffffff",
-                                fontFamily: '"JetBrains Mono", monospace',
-                                backgroundColor: "rgba(255, 255, 255, 0.02)",
-                                fontSize: "0.85rem",
-                                borderRadius: 2,
-                                "& fieldset": {
-                                    borderColor: "rgba(255, 255, 255, 0.1)",
-                                },
-                                "&:hover fieldset": {
-                                    borderColor: "rgba(255, 255, 255, 0.2)",
-                                },
-                                "&.Mui-focused fieldset": {
-                                    borderColor: "primary.main",
-                                },
-                            },
-                        }}
-                    />
-                </Box>
             </Box>
 
             {/* Table */}
@@ -128,7 +67,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                             fontSize: "0.9rem",
                         }}
                     >
-                        No PRs found for the last {lookbackDays} days
+                        No PRs found
                     </Typography>
                 </Box>
             ) : (
