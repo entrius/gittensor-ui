@@ -181,7 +181,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               color="#ffffff"
               variant="caption"
               component="a"
-              href="https://x.com/gittensor"
+              href="https://x.com/gittensor_io"
               target="_blank"
               rel="noopener noreferrer"
               sx={{
