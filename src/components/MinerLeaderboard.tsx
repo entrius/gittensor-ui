@@ -236,8 +236,8 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
         baseTotalScore: Number(stat.baseTotalScore) || 0, // Base score
         totalPRs: Number(stat.totalPrs) || 0,
         linesChanged: Number(stat.totalLinesChanged) || 0,
-        linesAdded: 0, // Not available in precomputed stats
-        linesDeleted: 0, // Not available in precomputed stats
+        linesAdded: Number(stat.totalAdditions) || 0,
+        linesDeleted: Number(stat.totalDeletions) || 0,
         uniqueRepos: new Set<string>(), // Will show count instead
         hotkey: stat.hotkey || "N/A",
         repoImpactScore: 0, // Not available in precomputed stats

@@ -101,4 +101,6 @@ export type MinerEvaluation = {
   evaluatedAt: string;
   createdAt: string;
   updatedAt: string;
+  totalAdditions?: number;
+  totalDeletions?: number;
 };
