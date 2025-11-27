@@ -42,22 +42,22 @@ const theme = createTheme({
     fontFamily:
       '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     h1: {
-      fontFamily: '"CY Grotesk Grand", "Inter", "Helvetica Neue", sans-serif',
+      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
     },
     h2: {
-      fontFamily: '"CY Grotesk Grand", "Inter", "Helvetica Neue", sans-serif',
+      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
     },
     h3: {
-      fontFamily: '"CY Grotesk Grand", "Inter", "Helvetica Neue", sans-serif',
+      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
     },
     h4: {
-      fontFamily: '"CY Grotesk Grand", "Inter", "Helvetica Neue", sans-serif',
+      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
     },
     h5: {
-      fontFamily: '"CY Grotesk Grand", "Inter", "Helvetica Neue", sans-serif',
+      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
     },
     h6: {
-      fontFamily: '"CY Grotesk Grand", "Inter", "Helvetica Neue", sans-serif',
+      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
     },
     body1: {
       fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',

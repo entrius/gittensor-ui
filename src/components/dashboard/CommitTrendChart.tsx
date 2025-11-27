@@ -11,6 +11,11 @@ const CommitTrendChart: React.FC = () => {
 
   const { data } = useHistoricalTrend();
 
+  // Filter data to only include the last 7 days
+  const filteredData = data?.filter((item) =>
+    dayjs(item.date).isAfter(dayjs().subtract(7, "day"))
+  );
+
   const option = {
     title: {
       show: false,
@@ -43,7 +48,7 @@ const CommitTrendChart: React.FC = () => {
     xAxis: {
       type: "category",
       boundaryGap: false,
-      data: data?.map((item) => item.date),
+      data: filteredData?.map((item) => item.date),
       axisLabel: {
         color: theme.palette.text.secondary,
         fontFamily: '"JetBrains Mono", monospace',
@@ -90,7 +95,7 @@ const CommitTrendChart: React.FC = () => {
       {
         name: "Lines Committed",
         type: "line",
-        data: data?.map((item) => item.linesCommitted),
+        data: filteredData?.map((item) => item.linesCommitted),
         smooth: true,
         lineStyle: {
           color: theme.palette.primary.main,
@@ -138,11 +143,11 @@ const CommitTrendChart: React.FC = () => {
       elevation={0}
     >
       <CardContent sx={{ flex: 1, display: "flex", flexDirection: "column", p: isMobile ? 1.5 : 2, "&:last-child": { pb: isMobile ? 1.5 : 2 }, minHeight: 0 }}>
-        <Typography 
-          variant="h6" 
-          gutterBottom 
-          sx={{ 
-            mb: isMobile ? 0.5 : 1, 
+        <Typography
+          variant="h6"
+          gutterBottom
+          sx={{
+            mb: isMobile ? 0.5 : 1,
             fontSize: isMobile ? "0.9rem" : "1rem",
             fontFamily: '"JetBrains Mono", monospace',
             fontWeight: 500,

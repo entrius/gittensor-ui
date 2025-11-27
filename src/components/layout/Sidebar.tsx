@@ -1,5 +1,12 @@
 import React from "react";
-import { Box, Button, Stack, Typography, ButtonBase, Divider } from "@mui/material";
+import {
+  Box,
+  Button,
+  Stack,
+  Typography,
+  ButtonBase,
+  Divider,
+} from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 
 interface SidebarProps {
@@ -16,7 +23,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
   };
 
   const navItems = [
-    { label: "dashboard", path: "/dashboard", badge: "new" },
+    { label: "dashboard", path: "/dashboard" },
+    { label: "miners", path: "/miners", badge: "new" },
     { label: "repositories", path: "/repositories" },
     { label: "about", path: "/about" },
     { label: "faq", path: "/faq" },
@@ -47,10 +55,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
         <img
           src="/gt-logo.svg"
           alt="Gittensor"
-          style={{ 
-            height: "60px", 
-            width: "auto", 
-            filter: "brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))" 
+          style={{
+            height: "60px",
+            width: "auto",
+            filter:
+              "brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))",
           }}
         />
       </ButtonBase>
@@ -111,7 +120,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
       <Box sx={{ mt: 2 }}>
         <Divider sx={{ borderColor: "#3d3d3d", mb: 2 }} />
         <Stack direction="column" spacing={1} alignItems="center">
-          <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" justifyContent="center">
+          <Stack
+            direction="row"
+            spacing={0.5}
+            alignItems="center"
+            flexWrap="wrap"
+            justifyContent="center"
+          >
             <Typography
               color="#ffffff"
               variant="caption"
@@ -127,7 +142,16 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
             >
               Community
             </Typography>
-            <Divider orientation="vertical" flexItem sx={{ borderColor: "#3d3d3d", mx: 0.5, height: "12px", alignSelf: "center" }} />
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{
+                borderColor: "#3d3d3d",
+                mx: 0.5,
+                height: "12px",
+                alignSelf: "center",
+              }}
+            />
             <Typography
               color="#ffffff"
               variant="caption"
@@ -143,12 +167,21 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
             >
               Github
             </Typography>
-            <Divider orientation="vertical" flexItem sx={{ borderColor: "#3d3d3d", mx: 0.5, height: "12px", alignSelf: "center" }} />
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{
+                borderColor: "#3d3d3d",
+                mx: 0.5,
+                height: "12px",
+                alignSelf: "center",
+              }}
+            />
             <Typography
               color="#ffffff"
               variant="caption"
               component="a"
-              href="https://x.com/gittensor"
+              href="https://x.com/gittensor_io"
               target="_blank"
               rel="noopener noreferrer"
               sx={{

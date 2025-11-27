@@ -81,5 +81,24 @@ export type CommitLog = {
   repository: string;
   mergedAt: string;
   author: string;
+  githubId: string; // Numeric GitHub ID
   score: string; // Backend returns as string
+  baseScore?: string; // Backend returns as string
+};
+
+export type MinerEvaluation = {
+  id: number;
+  uid: number;
+  hotkey: string;
+  githubId: string;
+  failedReason: string;
+  baseTotalScore: number;
+  totalScore: number;
+  totalLinesChanged: number;
+  totalOpenPrs: number;
+  totalPrs: number;
+  uniqueReposCount: number;
+  evaluatedAt: string;
+  createdAt: string;
+  updatedAt: string;
 };
