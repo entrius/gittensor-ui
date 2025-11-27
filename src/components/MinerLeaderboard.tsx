@@ -226,30 +226,27 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
     setTopPRsLeaderboard(topPRs);
   }, [allPRs]);
 
-  // Use precomputed miner stats for Top Miners tab if available, fall back to computed stats from PRs
+  // Use precomputed miner stats for Top Miners tab (only shows LIVE miners)
   const displayMinerStats = useMemo(() => {
-    if (precomputedMinerStats.length > 0) {
-      return precomputedMinerStats.map((stat) => {
-        const mapped = {
-          githubId: stat.githubId || "",
-          author: githubIdToUsername.get(stat.githubId) || undefined, // Add username from mapping
-          totalScore: Number(stat.totalScore) || 0, // Earned score
-          baseTotalScore: Number(stat.baseTotalScore) || 0, // Base score
-          totalPRs: Number(stat.totalPrs) || 0,
-          linesChanged: Number(stat.totalLinesChanged) || 0,
-          linesAdded: 0, // Not available in precomputed stats
-          linesDeleted: 0, // Not available in precomputed stats
-          uniqueRepos: new Set<string>(), // Will show count instead
-          hotkey: stat.hotkey || "N/A",
-          repoImpactScore: 0, // Not available in precomputed stats
-          avgRepoWeight: 0, // Not available in precomputed stats
-          uniqueReposCount: Number(stat.uniqueReposCount) || 0, // Add this for display
-        };
-        return mapped as any;
-      });
-    }
-    return minerStats;
-  }, [precomputedMinerStats, minerStats, githubIdToUsername]);
+    return precomputedMinerStats.map((stat) => {
+      const mapped = {
+        githubId: stat.githubId || "",
+        author: githubIdToUsername.get(stat.githubId) || undefined, // Add username from mapping
+        totalScore: Number(stat.totalScore) || 0, // Earned score
+        baseTotalScore: Number(stat.baseTotalScore) || 0, // Base score
+        totalPRs: Number(stat.totalPrs) || 0,
+        linesChanged: Number(stat.totalLinesChanged) || 0,
+        linesAdded: 0, // Not available in precomputed stats
+        linesDeleted: 0, // Not available in precomputed stats
+        uniqueRepos: new Set<string>(), // Will show count instead
+        hotkey: stat.hotkey || "N/A",
+        repoImpactScore: 0, // Not available in precomputed stats
+        avgRepoWeight: 0, // Not available in precomputed stats
+        uniqueReposCount: Number(stat.uniqueReposCount) || 0, // Add this for display
+      };
+      return mapped as any;
+    });
+  }, [precomputedMinerStats, githubIdToUsername]);
 
   // Derived Leaderboards with safety checks
   const overallLeaderboard = useMemo(() => {
