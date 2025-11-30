@@ -95,15 +95,21 @@ const RepositoryWeightsTable: React.FC = () => {
         bValue = b.weight;
       }
 
+      // For weight field, always parse as numbers
+      if (sortField === "weight") {
+        const aNum = parseFloat(aValue as string);
+        const bNum = parseFloat(bValue as string);
+        return sortOrder === "asc" ? aNum - bNum : bNum - aNum;
+      }
+
+      // For string fields (owner, name), use localeCompare
       if (typeof aValue === "string" && typeof bValue === "string") {
         return sortOrder === "asc"
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
       }
 
-      return sortOrder === "asc"
-        ? parseFloat(aValue as string) - parseFloat(bValue as string)
-        : parseFloat(bValue as string) - parseFloat(aValue as string);
+      return 0;
     });
 
     return filtered;
