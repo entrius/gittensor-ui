@@ -13,6 +13,9 @@ import { GitHub } from "@mui/icons-material";
 import theme from "../../theme";
 import { useInfiniteCommitLog } from "../../api";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+
+dayjs.extend(utc);
 
 interface CommitLogEntry {
   pullRequestNumber: number;
@@ -422,7 +425,7 @@ const LiveCommitLog: React.FC = () => {
                             fontFamily: '"JetBrains Mono", monospace',
                           }}
                         >
-                          {dayjs(entry.mergedAt).format("MMM D, h:mm A")}
+                          {dayjs(entry.mergedAt).utc().format("MMM D, h:mm A")} UTC
                         </Typography>
                       </Stack>
 

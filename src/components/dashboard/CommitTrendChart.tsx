@@ -3,6 +3,9 @@ import ReactECharts from "echarts-for-react";
 import { Card, CardContent, Typography, useTheme, useMediaQuery } from "@mui/material";
 import { useHistoricalTrend } from "../../api";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+
+dayjs.extend(utc);
 
 const CommitTrendChart: React.FC = () => {
   const theme = useTheme();
@@ -11,9 +14,9 @@ const CommitTrendChart: React.FC = () => {
 
   const { data } = useHistoricalTrend();
 
-  // Filter data to only include the last 7 days
+  // Filter data to only include the last 10 days (using UTC)
   const filteredData = data?.filter((item) =>
-    dayjs(item.date).isAfter(dayjs().subtract(7, "day"))
+    dayjs.utc(item.date).isAfter(dayjs.utc().subtract(10, "day"))
   );
 
   const option = {
@@ -24,9 +27,9 @@ const CommitTrendChart: React.FC = () => {
       trigger: "axis",
       formatter: (params: any) => {
         const data = params[0];
-        return `${dayjs(data.axisValue).format(
+        return `${dayjs.utc(data.axisValue).format(
           "YYYY-MM-DD",
-        )}<br/>Lines Committed: ${data.value.toLocaleString()}`;
+        )} UTC<br/>Lines Committed: ${data.value.toLocaleString()}`;
       },
       backgroundColor: "rgba(18, 18, 20, 0.95)",
       borderColor: "rgba(255, 255, 255, 0.1)",
@@ -54,7 +57,7 @@ const CommitTrendChart: React.FC = () => {
         fontFamily: '"JetBrains Mono", monospace',
         fontSize: isMobile ? 10 : 11,
         formatter: (value: string) => {
-          const date = dayjs(value);
+          const date = dayjs.utc(value);
           return `${date.month() + 1}/${date.date()}`;
         },
         margin: isMobile ? 8 : 12,
@@ -95,7 +98,7 @@ const CommitTrendChart: React.FC = () => {
       {
         name: "Lines Committed",
         type: "line",
-        data: filteredData?.map((item) => item.linesCommitted),
+        data: filteredData?.map((item) => typeof item.linesCommitted === 'string' ? parseInt(item.linesCommitted) : item.linesCommitted),
         smooth: true,
         lineStyle: {
           color: theme.palette.primary.main,
