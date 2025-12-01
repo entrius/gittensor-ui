@@ -10,6 +10,7 @@ import {
   TableHead,
   TableRow,
   CircularProgress,
+  Avatar,
 } from "@mui/material";
 import { useMinerPRs } from "../api";
 
@@ -146,7 +147,25 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     </Box>
                   </TableCell>
                   <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
-                    {pr.repository}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.5,
+                      }}
+                    >
+                      <Avatar
+                        src={`https://avatars.githubusercontent.com/${pr.repository.split('/')[0]}`}
+                        alt={pr.repository.split('/')[0]}
+                        sx={{
+                          width: 20,
+                          height: 20,
+                          border: "1px solid rgba(255, 255, 255, 0.2)",
+                          backgroundColor: pr.repository.split('/')[0] === 'opentensor' ? '#ffffff' : pr.repository.split('/')[0] === 'bitcoin' ? '#F7931A' : 'transparent',
+                        }}
+                      />
+                      {pr.repository}
+                    </Box>
                   </TableCell>
                   <TableCell
                     align="right"

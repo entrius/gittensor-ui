@@ -21,6 +21,7 @@ import {
   Select,
   MenuItem,
   FormControl,
+  Avatar,
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
 import { useReposAndWeights } from "../../api";
@@ -345,15 +346,33 @@ const RepositoryWeightsTable: React.FC = () => {
                             boxSizing: "border-box",
                           }}
                         >
-                          <Typography
-                            variant="body1"
-                            fontWeight="medium"
+                          <Box
                             sx={{
-                              color: isInactive ? "error.dark" : "text.primary",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1.5,
                             }}
                           >
-                            {repo.owner}
-                          </Typography>
+                            <Avatar
+                              src={`https://avatars.githubusercontent.com/${repo.owner}`}
+                              alt={repo.owner}
+                              sx={{
+                                width: 24,
+                                height: 24,
+                                border: "1px solid rgba(255, 255, 255, 0.2)",
+                                backgroundColor: repo.owner === 'opentensor' ? '#ffffff' : repo.owner === 'bitcoin' ? '#F7931A' : 'transparent',
+                              }}
+                            />
+                            <Typography
+                              variant="body1"
+                              fontWeight="medium"
+                              sx={{
+                                color: isInactive ? "error.dark" : "text.primary",
+                              }}
+                            >
+                              {repo.owner}
+                            </Typography>
+                          </Box>
                         </TableCell>
                       )}
                       <TableCell
@@ -363,48 +382,68 @@ const RepositoryWeightsTable: React.FC = () => {
                           boxSizing: "border-box",
                         }}
                       >
-                        <Stack>
-                          <Typography
-                            component={isMobile ? "a" : "span"}
-                            variant="body1"
-                            fontWeight="medium"
-                            href={
-                              isMobile
-                                ? `${baseGithubUrl}${repo.fullName}`
-                                : undefined
-                            }
-                            target={isMobile ? "_blank" : undefined}
-                            rel={isMobile ? "noopener noreferrer" : undefined}
-                            sx={{
-                              textDecoration: "none",
-                              "&:hover": {
-                                textDecoration: isMobile ? "underline" : undefined,
-                              },
-                              color: isInactive ? "error.dark" : "text.primary",
-                            }}
-                          >
-                            {isMobile ? repo.fullName : repo.name}
-                          </Typography>
-                          {!isMobile && (
-                            <Typography
-                              component="a"
-                              href={`${baseGithubUrl}${repo.fullName}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              variant="body2"
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                          }}
+                        >
+                          {isMobile && (
+                            <Avatar
+                              src={`https://avatars.githubusercontent.com/${repo.owner}`}
+                              alt={repo.owner}
                               sx={{
-                                color: isInactive
-                                  ? "rgba(211, 47, 47, 0.7)"
-                                  : "text.secondary",
+                                width: 24,
+                                height: 24,
+                                border: "1px solid rgba(255, 255, 255, 0.2)",
+                                backgroundColor: repo.owner === 'opentensor' ? '#ffffff' : repo.owner === 'bitcoin' ? '#F7931A' : 'transparent',
+                              }}
+                            />
+                          )}
+                          <Stack>
+                            <Typography
+                              component={isMobile ? "a" : "span"}
+                              variant="body1"
+                              fontWeight="medium"
+                              href={
+                                isMobile
+                                  ? `${baseGithubUrl}${repo.fullName}`
+                                  : undefined
+                              }
+                              target={isMobile ? "_blank" : undefined}
+                              rel={isMobile ? "noopener noreferrer" : undefined}
+                              sx={{
                                 textDecoration: "none",
-                                "&:hover": { textDecoration: "underline" },
+                                "&:hover": {
+                                  textDecoration: isMobile ? "underline" : undefined,
+                                },
+                                color: isInactive ? "error.dark" : "text.primary",
                               }}
                             >
-                              {baseGithubUrl}
-                              {repo.fullName}
+                              {isMobile ? repo.fullName : repo.name}
                             </Typography>
-                          )}
-                        </Stack>
+                            {!isMobile && (
+                              <Typography
+                                component="a"
+                                href={`${baseGithubUrl}${repo.fullName}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="body2"
+                                sx={{
+                                  color: isInactive
+                                    ? "rgba(211, 47, 47, 0.7)"
+                                    : "text.secondary",
+                                  textDecoration: "none",
+                                  "&:hover": { textDecoration: "underline" },
+                                }}
+                              >
+                                {baseGithubUrl}
+                                {repo.fullName}
+                              </Typography>
+                            )}
+                          </Stack>
+                        </Box>
                       </TableCell>
                       <TableCell
                         align="right"

@@ -851,7 +851,25 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                         </Box>
                       </TableCell>
                       <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
-                        {item?.repository || ""}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                          }}
+                        >
+                          <Avatar
+                            src={`https://avatars.githubusercontent.com/${(item?.repository || "").split('/')[0]}`}
+                            alt={(item?.repository || "").split('/')[0]}
+                            sx={{
+                              width: 20,
+                              height: 20,
+                              border: "1px solid rgba(255, 255, 255, 0.2)",
+                              backgroundColor: (item?.repository || "").split('/')[0] === 'opentensor' ? '#ffffff' : (item?.repository || "").split('/')[0] === 'bitcoin' ? '#F7931A' : 'transparent',
+                            }}
+                          />
+                          {item?.repository || ""}
+                        </Box>
                       </TableCell>
                       <TableCell
                         align="right"
@@ -872,18 +890,36 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                     // Top Repos Rows
                     <>
                       <TableCell sx={{ ...bodyCellStyle, width: "40%" }}>
-                        <a
-                          href={`https://github.com/${item?.repository}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            color: "#ffffff",
-                            textDecoration: "none",
-                            fontWeight: 500,
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
                           }}
                         >
-                          {item?.repository || ""}
-                        </a>
+                          <Avatar
+                            src={`https://avatars.githubusercontent.com/${(item?.repository || "").split('/')[0]}`}
+                            alt={(item?.repository || "").split('/')[0]}
+                            sx={{
+                              width: 20,
+                              height: 20,
+                              border: "1px solid rgba(255, 255, 255, 0.2)",
+                              backgroundColor: (item?.repository || "").split('/')[0] === 'opentensor' ? '#ffffff' : (item?.repository || "").split('/')[0] === 'bitcoin' ? '#F7931A' : 'transparent',
+                            }}
+                          />
+                          <a
+                            href={`https://github.com/${item?.repository}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              color: "#ffffff",
+                              textDecoration: "none",
+                              fontWeight: 500,
+                            }}
+                          >
+                            {item?.repository || ""}
+                          </a>
+                        </Box>
                       </TableCell>
                       <TableCell
                         align="right"
