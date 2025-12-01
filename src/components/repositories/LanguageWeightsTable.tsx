@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
   Box,
   Table,
@@ -31,6 +31,7 @@ const LanguageWeightsTable: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -99,8 +100,15 @@ const LanguageWeightsTable: React.FC = () => {
     return filteredAndSortedLanguages.slice(startIndex, endIndex);
   }, [filteredAndSortedLanguages, page, rowsPerPage]);
 
+  // Scroll to top when rows per page changes
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [rowsPerPage]);
+
   return (
-    <Box>
+    <Box ref={containerRef}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, mb: 3 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Typography variant="h5">Language Weights</Typography>
@@ -185,21 +193,8 @@ const LanguageWeightsTable: React.FC = () => {
           elevation={0}
           sx={{
             backgroundColor: "transparent",
-            maxHeight: "500px",
-            overflow: "auto",
-            "&::-webkit-scrollbar": {
-              width: "8px",
-            },
-            "&::-webkit-scrollbar-track": {
-              backgroundColor: "transparent",
-            },
-            "&::-webkit-scrollbar-thumb": {
-              backgroundColor: "rgba(255, 255, 255, 0.1)",
-              borderRadius: "4px",
-              "&:hover": {
-                backgroundColor: "rgba(255, 255, 255, 0.2)",
-              },
-            },
+            // Removed fixed height to allow natural expansion
+            overflow: "visible",
           }}
         >
           <Table stickyHeader>
