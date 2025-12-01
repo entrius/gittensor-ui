@@ -23,7 +23,7 @@ export type LanguageWeight = {
 
 export type CommitsTrend = {
   date: string;
-  linesCommitted: number;
+  linesCommitted: number | string; // API returns string, needs conversion
 };
 
 export type Stats = {
