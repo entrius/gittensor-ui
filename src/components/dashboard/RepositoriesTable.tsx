@@ -19,6 +19,7 @@ import {
   Box,
   TextField,
   InputAdornment,
+  Avatar,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import theme from "../../theme";
@@ -474,30 +475,48 @@ const RepositoriesTable: React.FC = () => {
                             width: isMobile ? 150 : 250,
                           }}
                         >
-                          <Typography
-                            component="a"
-                            href={`${baseGithubUrl}${repo.repositoryFullName}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="body2"
-                            fontWeight="medium"
+                          <Box
                             sx={{
-                              color: isInactive
-                                ? "error.dark"
-                                : "text.primary",
-                              textDecoration: "none",
-                              "&:hover": {
-                                textDecoration: "underline",
-                                color: "primary.main"
-                              },
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                              display: "block",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1.5,
                             }}
                           >
-                            {repo.repositoryFullName}
-                          </Typography>
+                            <Avatar
+                              src={`https://avatars.githubusercontent.com/${repo.repositoryFullName.split('/')[0]}`}
+                              alt={repo.repositoryFullName.split('/')[0]}
+                              sx={{
+                                width: 20,
+                                height: 20,
+                                border: "1px solid rgba(255, 255, 255, 0.2)",
+                                backgroundColor: repo.repositoryFullName.split('/')[0] === 'opentensor' ? '#ffffff' : repo.repositoryFullName.split('/')[0] === 'bitcoin' ? '#F7931A' : 'transparent',
+                              }}
+                            />
+                            <Typography
+                              component="a"
+                              href={`${baseGithubUrl}${repo.repositoryFullName}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              variant="body2"
+                              fontWeight="medium"
+                              sx={{
+                                color: isInactive
+                                  ? "error.dark"
+                                  : "text.primary",
+                                textDecoration: "none",
+                                "&:hover": {
+                                  textDecoration: "underline",
+                                  color: "primary.main"
+                                },
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                display: "block",
+                              }}
+                            >
+                              {repo.repositoryFullName}
+                            </Typography>
+                          </Box>
                         </TableCell>
                         {!isMobile && (
                           <TableCell align="right">
