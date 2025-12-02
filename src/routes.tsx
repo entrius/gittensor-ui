@@ -13,9 +13,10 @@ const FAQPage = React.lazy(() => import("./pages/FAQPage"));
 const DashboardPage = React.lazy(() => import("./pages/DashboardPage"));
 const RepositoriesPage = React.lazy(() => import("./pages/RepositoriesPage"));
 const MinersPage = React.lazy(() => import("./pages/MinersPage"));
-// const UnderConstructionPage = React.lazy(
-//   () => import("./pages/UnderConstructionPage")
-// );
+const MinerDetailsPage = React.lazy(() => import("./pages/MinerDetailsPage"));
+const RepositoryDetailsPage = React.lazy(
+  () => import("./pages/RepositoryDetailsPage"),
+);
 
 // 404 page
 const NotFoundPage = React.lazy(() => import("./pages/NotFoundPage"));
@@ -24,6 +25,16 @@ const routesArray: AppRoute[] = [
   { name: "home", path: "/", element: <HomePage /> },
   { name: "dashboard", path: "/dashboard", element: <DashboardPage /> },
   { name: "miners", path: "/miners", element: <MinersPage /> },
+  {
+    name: "miner-details",
+    path: "/miners/details",
+    element: <MinerDetailsPage />,
+  },
+  {
+    name: "repository-details",
+    path: "/miners/repository",
+    element: <RepositoryDetailsPage />,
+  },
   { name: "about", path: "/about", element: <AboutPage /> },
   { name: "faq", path: "/faq", element: <FAQPage /> },
   {

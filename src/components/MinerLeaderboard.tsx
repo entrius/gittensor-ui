@@ -33,6 +33,8 @@ import { CommitLog } from "../api/models/Dashboard";
 interface MinerLeaderboardProps {
   onSelectMiner: (githubId: string) => void;
   onSelectRepository?: (repositoryFullName: string) => void;
+  activeTab?: number;
+  onTabChange?: (tab: number) => void;
 }
 
 interface MinerStats {
@@ -62,11 +64,16 @@ interface RepoStats {
 const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
   onSelectMiner,
   onSelectRepository,
+  activeTab: controlledActiveTab,
+  onTabChange,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState(0);
+  const [internalActiveTab, setInternalActiveTab] = useState(0);
   const [showChart, setShowChart] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Use controlled tab if provided, otherwise use internal state
+  const activeTab = controlledActiveTab !== undefined ? controlledActiveTab : internalActiveTab;
 
   // Safe hook usage
   const allMinerDataQuery = useAllMinerData();
@@ -97,7 +104,11 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
   const [topPRsLeaderboard, setTopPRsLeaderboard] = useState<any[]>([]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
+    if (onTabChange) {
+      onTabChange(newValue);
+    } else {
+      setInternalActiveTab(newValue);
+    }
   };
 
   // Process Repo Weights
@@ -222,10 +233,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
       return;
     }
     const topPRs = [...allPRs]
-      .sort(
-        (a, b) =>
-          parseFloat(b.score || "0") - parseFloat(a.score || "0"),
-      )
+      .sort((a, b) => parseFloat(b.score || "0") - parseFloat(a.score || "0"))
       .slice(0, 100)
       .map((pr, index) => ({ ...pr, rank: index + 1 }));
     setTopPRsLeaderboard(topPRs);
@@ -449,7 +457,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
   // Scroll to top when rows per page changes
   React.useEffect(() => {
     if (cardRef.current) {
-      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      cardRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [rowsPerPage]);
 
@@ -560,7 +568,14 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
 
           <FormControl size="small">
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.7)", fontFamily: '"JetBrains Mono", monospace', fontSize: "0.8rem" }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "rgba(255, 255, 255, 0.7)",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: "0.8rem",
+                }}
+              >
                 Rows:
               </Typography>
               <Select
@@ -578,7 +593,9 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                   borderRadius: 2,
                   minWidth: "80px",
                   "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
-                  "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.2)" },
+                  "&:hover fieldset": {
+                    borderColor: "rgba(255, 255, 255, 0.2)",
+                  },
                   "&.Mui-focused fieldset": { borderColor: "primary.main" },
                   "& .MuiSelect-select": {
                     py: 0.75,
@@ -588,7 +605,6 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                 <MenuItem value={10}>10</MenuItem>
                 <MenuItem value={25}>25</MenuItem>
                 <MenuItem value={50}>50</MenuItem>
-                <MenuItem value={-1}>All</MenuItem>
               </Select>
             </Box>
           </FormControl>
@@ -647,8 +663,21 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
 
       <TableContainer
         sx={{
-          // Removed fixed height to allow natural expansion
-          overflow: "visible",
+          maxHeight: "600px",
+          overflowY: "auto",
+          "&::-webkit-scrollbar": {
+            width: "8px",
+          },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: "transparent",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: "rgba(255, 255, 255, 0.1)",
+            borderRadius: "4px",
+            "&:hover": {
+              backgroundColor: "rgba(255, 255, 255, 0.2)",
+            },
+          },
         }}
       >
         <Table
@@ -774,13 +803,12 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
           </TableHead>
           <TableBody>
             {Array.isArray(currentData) &&
-              (rowsPerPage > 0
-                ? currentData.slice(
+              currentData
+                .slice(
                   page * rowsPerPage,
                   page * rowsPerPage + rowsPerPage,
                 )
-                : currentData
-              ).map((item: any) => (
+                .map((item: any) => (
                 <TableRow
                   key={
                     activeTab === 1
@@ -853,13 +881,20 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                           }}
                         >
                           <Avatar
-                            src={`https://avatars.githubusercontent.com/${(item?.repository || "").split('/')[0]}`}
-                            alt={(item?.repository || "").split('/')[0]}
+                            src={`https://avatars.githubusercontent.com/${(item?.repository || "").split("/")[0]}`}
+                            alt={(item?.repository || "").split("/")[0]}
                             sx={{
                               width: 20,
                               height: 20,
                               border: "1px solid rgba(255, 255, 255, 0.2)",
-                              backgroundColor: (item?.repository || "").split('/')[0] === 'opentensor' ? '#ffffff' : (item?.repository || "").split('/')[0] === 'bitcoin' ? '#F7931A' : 'transparent',
+                              backgroundColor:
+                                (item?.repository || "").split("/")[0] ===
+                                "opentensor"
+                                  ? "#ffffff"
+                                  : (item?.repository || "").split("/")[0] ===
+                                      "bitcoin"
+                                    ? "#F7931A"
+                                    : "transparent",
                             }}
                           />
                           {item?.repository || ""}
@@ -892,13 +927,20 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                           }}
                         >
                           <Avatar
-                            src={`https://avatars.githubusercontent.com/${(item?.repository || "").split('/')[0]}`}
-                            alt={(item?.repository || "").split('/')[0]}
+                            src={`https://avatars.githubusercontent.com/${(item?.repository || "").split("/")[0]}`}
+                            alt={(item?.repository || "").split("/")[0]}
                             sx={{
                               width: 20,
                               height: 20,
                               border: "1px solid rgba(255, 255, 255, 0.2)",
-                              backgroundColor: (item?.repository || "").split('/')[0] === 'opentensor' ? '#ffffff' : (item?.repository || "").split('/')[0] === 'bitcoin' ? '#F7931A' : 'transparent',
+                              backgroundColor:
+                                (item?.repository || "").split("/")[0] ===
+                                "opentensor"
+                                  ? "#ffffff"
+                                  : (item?.repository || "").split("/")[0] ===
+                                      "bitcoin"
+                                    ? "#F7931A"
+                                    : "transparent",
                             }}
                           />
                           <Typography
@@ -1130,25 +1172,34 @@ const getRankIcon = (rank: number) => {
         flexShrink: 0,
         border: "1px solid",
         borderColor:
-          rank === 1 ? "rgba(255, 215, 0, 0.4)" :
-          rank === 2 ? "rgba(192, 192, 192, 0.4)" :
-          rank === 3 ? "rgba(205, 127, 50, 0.4)" :
-          "rgba(255, 255, 255, 0.15)",
+          rank === 1
+            ? "rgba(255, 215, 0, 0.4)"
+            : rank === 2
+              ? "rgba(192, 192, 192, 0.4)"
+              : rank === 3
+                ? "rgba(205, 127, 50, 0.4)"
+                : "rgba(255, 255, 255, 0.15)",
         boxShadow:
-          rank === 1 ? "0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)" :
-          rank === 2 ? "0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)" :
-          rank === 3 ? "0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)" :
-          "none",
+          rank === 1
+            ? "0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)"
+            : rank === 2
+              ? "0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)"
+              : rank === 3
+                ? "0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)"
+                : "none",
       }}
     >
       <Typography
         component="span"
         sx={{
-          color: 
-            rank === 1 ? "#FFD700" :
-            rank === 2 ? "#C0C0C0" :
-            rank === 3 ? "#CD7F32" :
-            "rgba(255, 255, 255, 0.6)",
+          color:
+            rank === 1
+              ? "#FFD700"
+              : rank === 2
+                ? "#C0C0C0"
+                : rank === 3
+                  ? "#CD7F32"
+                  : "rgba(255, 255, 255, 0.6)",
           fontFamily: '"JetBrains Mono", monospace',
           fontSize: "0.65rem",
           fontWeight: 600,

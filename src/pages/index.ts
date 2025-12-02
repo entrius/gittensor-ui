@@ -16,5 +16,11 @@ export * from "./RepositoriesPage";
 export { default as MinersPage } from "./MinersPage";
 export * from "./MinersPage";
 
+export { default as MinerDetailsPage } from "./MinerDetailsPage";
+export * from "./MinerDetailsPage";
+
+export { default as RepositoryDetailsPage } from "./RepositoryDetailsPage";
+export * from "./RepositoryDetailsPage";
+
 export { default as UnderConstructionPage } from "./UnderConstructionPage";
 export * from "./UnderConstructionPage";

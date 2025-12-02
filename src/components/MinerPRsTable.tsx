@@ -27,13 +27,13 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const filteredPRs = useMemo(() => {
     if (!prs) return [];
     if (!selectedRepo) return prs;
-    return prs.filter(pr => pr.repository === selectedRepo);
+    return prs.filter((pr) => pr.repository === selectedRepo);
   }, [prs, selectedRepo]);
 
   // Get unique repositories for quick filters
   const uniqueRepos = useMemo(() => {
     if (!prs) return [];
-    const repos = new Set(prs.map(pr => pr.repository));
+    const repos = new Set(prs.map((pr) => pr.repository));
     return Array.from(repos).sort();
   }, [prs]);
 
@@ -57,7 +57,15 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 2,
+          }}
+        >
           <Box sx={{ display: "flex", alignItems: "baseline", gap: 1.5 }}>
             <Typography
               variant="h6"
@@ -77,7 +85,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 fontSize: "0.75rem",
               }}
             >
-              ({filteredPRs.length}{selectedRepo ? ` of ${prs?.length || 0}` : ""})
+              ({filteredPRs.length}
+              {selectedRepo ? ` of ${prs?.length || 0}` : ""})
             </Typography>
           </Box>
           {selectedRepo && (
@@ -164,19 +173,41 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             },
           }}
         >
-          <Table stickyHeader sx={{ tableLayout: "fixed", minWidth: { xs: "100%", sm: "800px" } }}>
+          <Table
+            stickyHeader
+            sx={{ tableLayout: "fixed", minWidth: { xs: "100%", sm: "800px" } }}
+          >
             <TableHead>
               <TableRow>
                 <TableCell sx={headerCellStyle}>PR #</TableCell>
                 <TableCell sx={headerCellStyle}>Title</TableCell>
-                <TableCell sx={{ ...headerCellStyle, display: { xs: "none", sm: "table-cell" } }}>Repository</TableCell>
-                <TableCell align="right" sx={{ ...headerCellStyle, display: { xs: "none", md: "table-cell" } }}>
+                <TableCell
+                  sx={{
+                    ...headerCellStyle,
+                    display: { xs: "none", sm: "table-cell" },
+                  }}
+                >
+                  Repository
+                </TableCell>
+                <TableCell
+                  align="right"
+                  sx={{
+                    ...headerCellStyle,
+                    display: { xs: "none", md: "table-cell" },
+                  }}
+                >
                   +/-
                 </TableCell>
                 <TableCell align="right" sx={headerCellStyle}>
                   Score
                 </TableCell>
-                <TableCell align="right" sx={{ ...headerCellStyle, display: { xs: "none", sm: "table-cell" } }}>
+                <TableCell
+                  align="right"
+                  sx={{
+                    ...headerCellStyle,
+                    display: { xs: "none", sm: "table-cell" },
+                  }}
+                >
                   Merged
                 </TableCell>
               </TableRow>
@@ -192,7 +223,13 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     transition: "background-color 0.2s",
                   }}
                 >
-                  <TableCell sx={{ ...bodyCellStyle, width: { xs: "20%", sm: "10%" }, fontSize: { xs: "0.75rem", sm: "0.85rem" } }}>
+                  <TableCell
+                    sx={{
+                      ...bodyCellStyle,
+                      width: { xs: "20%", sm: "10%" },
+                      fontSize: { xs: "0.75rem", sm: "0.85rem" },
+                    }}
+                  >
                     <a
                       href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
                       target="_blank"
@@ -206,7 +243,13 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                       #{pr.pullRequestNumber}
                     </a>
                   </TableCell>
-                  <TableCell sx={{ ...bodyCellStyle, width: { xs: "55%", sm: "30%" }, fontSize: { xs: "0.75rem", sm: "0.85rem" } }}>
+                  <TableCell
+                    sx={{
+                      ...bodyCellStyle,
+                      width: { xs: "55%", sm: "30%" },
+                      fontSize: { xs: "0.75rem", sm: "0.85rem" },
+                    }}
+                  >
                     <Box
                       sx={{
                         maxWidth: "100%",
@@ -218,7 +261,13 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                       {pr.pullRequestTitle}
                     </Box>
                   </TableCell>
-                  <TableCell sx={{ ...bodyCellStyle, width: "20%", display: { xs: "none", sm: "table-cell" } }}>
+                  <TableCell
+                    sx={{
+                      ...bodyCellStyle,
+                      width: "20%",
+                      display: { xs: "none", sm: "table-cell" },
+                    }}
+                  >
                     <Box
                       onClick={() => setSelectedRepo(pr.repository)}
                       sx={{
@@ -233,13 +282,18 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                       }}
                     >
                       <Avatar
-                        src={`https://avatars.githubusercontent.com/${pr.repository.split('/')[0]}`}
-                        alt={pr.repository.split('/')[0]}
+                        src={`https://avatars.githubusercontent.com/${pr.repository.split("/")[0]}`}
+                        alt={pr.repository.split("/")[0]}
                         sx={{
                           width: 20,
                           height: 20,
                           border: "1px solid rgba(255, 255, 255, 0.2)",
-                          backgroundColor: pr.repository.split('/')[0] === 'opentensor' ? '#ffffff' : pr.repository.split('/')[0] === 'bitcoin' ? '#F7931A' : 'transparent',
+                          backgroundColor:
+                            pr.repository.split("/")[0] === "opentensor"
+                              ? "#ffffff"
+                              : pr.repository.split("/")[0] === "bitcoin"
+                                ? "#F7931A"
+                                : "transparent",
                         }}
                       />
                       {pr.repository}
@@ -247,7 +301,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   </TableCell>
                   <TableCell
                     align="right"
-                    sx={{ ...bodyCellStyle, width: "15%", display: { xs: "none", md: "table-cell" } }}
+                    sx={{
+                      ...bodyCellStyle,
+                      width: "15%",
+                      display: { xs: "none", md: "table-cell" },
+                    }}
                   >
                     <Box
                       component="span"
@@ -285,7 +343,12 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   </TableCell>
                   <TableCell
                     align="right"
-                    sx={{ ...bodyCellStyle, width: "15%", display: { xs: "none", sm: "table-cell" }, fontSize: { xs: "0.75rem", sm: "0.85rem" } }}
+                    sx={{
+                      ...bodyCellStyle,
+                      width: "15%",
+                      display: { xs: "none", sm: "table-cell" },
+                      fontSize: { xs: "0.75rem", sm: "0.85rem" },
+                    }}
                   >
                     {new Date(pr.mergedAt).toLocaleDateString()}
                   </TableCell>

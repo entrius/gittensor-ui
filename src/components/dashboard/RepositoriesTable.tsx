@@ -262,6 +262,21 @@ const RepositoriesTable: React.FC = () => {
             elevation={0}
             sx={{
               backgroundColor: "transparent",
+              maxHeight: "600px",
+              overflowY: "auto",
+              "&::-webkit-scrollbar": {
+                width: "8px",
+              },
+              "&::-webkit-scrollbar-track": {
+                backgroundColor: "transparent",
+              },
+              "&::-webkit-scrollbar-thumb": {
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                borderRadius: "4px",
+                "&:hover": {
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                },
+              },
             }}
           >
             <Table sx={{ width: '100%', tableLayout: 'fixed' }}>

@@ -94,7 +94,6 @@ const LanguageWeightsTable: React.FC = () => {
   }, [languages, searchQuery, sortField, sortOrder]);
 
   const paginatedLanguages = useMemo(() => {
-    if (rowsPerPage === -1) return filteredAndSortedLanguages;
     const startIndex = page * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     return filteredAndSortedLanguages.slice(startIndex, endIndex);
@@ -149,7 +148,6 @@ const LanguageWeightsTable: React.FC = () => {
                 <MenuItem value={10}>10</MenuItem>
                 <MenuItem value={25}>25</MenuItem>
                 <MenuItem value={50}>50</MenuItem>
-                <MenuItem value={-1}>All</MenuItem>
               </Select>
             </Box>
           </FormControl>
@@ -193,8 +191,21 @@ const LanguageWeightsTable: React.FC = () => {
           elevation={0}
           sx={{
             backgroundColor: "transparent",
-            // Removed fixed height to allow natural expansion
-            overflow: "visible",
+            maxHeight: "600px",
+            overflowY: "auto",
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-track": {
+              backgroundColor: "transparent",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "rgba(255, 255, 255, 0.1)",
+              borderRadius: "4px",
+              "&:hover": {
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
+              },
+            },
           }}
         >
           <Table stickyHeader>

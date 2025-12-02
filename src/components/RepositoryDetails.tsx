@@ -19,47 +19,62 @@ interface RepositoryDetailsProps {
   repositoryFullName: string;
 }
 
-const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({ repositoryFullName }) => {
+const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
+  repositoryFullName,
+}) => {
   const { data: allPRs, isLoading } = useAllMinerData();
 
   // Filter PRs for this repository and calculate rankings
   const repoData = useMemo(() => {
     if (!allPRs) return null;
 
-    const prs = allPRs.filter(pr => pr.repository === repositoryFullName);
-    
+    const prs = allPRs.filter((pr) => pr.repository === repositoryFullName);
+
     // Calculate stats for this repo
-    const totalScore = prs.reduce((sum, pr) => sum + parseFloat(pr.score || "0"), 0);
-    const totalLines = prs.reduce((sum, pr) => sum + (pr.additions + pr.deletions), 0);
+    const totalScore = prs.reduce(
+      (sum, pr) => sum + parseFloat(pr.score || "0"),
+      0,
+    );
+    const totalLines = prs.reduce(
+      (sum, pr) => sum + (pr.additions + pr.deletions),
+      0,
+    );
     const totalCommits = prs.reduce((sum, pr) => sum + pr.commitCount, 0);
-    
+
     // Get unique contributors
-    const contributors = new Map<string, { author: string; githubId: string; prs: number; score: number }>();
-    prs.forEach(pr => {
-      const existing = contributors.get(pr.githubId) || { 
-        author: pr.author, 
-        githubId: pr.githubId, 
-        prs: 0, 
-        score: 0 
+    const contributors = new Map<
+      string,
+      { author: string; githubId: string; prs: number; score: number }
+    >();
+    prs.forEach((pr) => {
+      const existing = contributors.get(pr.githubId) || {
+        author: pr.author,
+        githubId: pr.githubId,
+        prs: 0,
+        score: 0,
       };
       existing.prs += 1;
       existing.score += parseFloat(pr.score || "0");
       contributors.set(pr.githubId, existing);
     });
 
-    const sortedContributors = Array.from(contributors.values())
-      .sort((a, b) => b.score - a.score);
+    const sortedContributors = Array.from(contributors.values()).sort(
+      (a, b) => b.score - a.score,
+    );
 
     // Calculate stats for all repositories to determine rankings
-    const repoStats = new Map<string, { 
-      totalScore: number; 
-      totalPRs: number; 
-      totalLines: number; 
-      totalCommits: number;
-      uniqueContributors: number;
-    }>();
+    const repoStats = new Map<
+      string,
+      {
+        totalScore: number;
+        totalPRs: number;
+        totalLines: number;
+        totalCommits: number;
+        uniqueContributors: number;
+      }
+    >();
 
-    allPRs.forEach(pr => {
+    allPRs.forEach((pr) => {
       const existing = repoStats.get(pr.repository) || {
         totalScore: 0,
         totalPRs: 0,
@@ -76,7 +91,7 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({ repositoryFullNam
 
     // Count unique contributors per repo
     const repoContributors = new Map<string, Set<string>>();
-    allPRs.forEach(pr => {
+    allPRs.forEach((pr) => {
       if (!repoContributors.has(pr.repository)) {
         repoContributors.set(pr.repository, new Set());
       }
@@ -89,26 +104,31 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({ repositoryFullNam
 
     // Calculate rankings
     const allRepos = Array.from(repoStats.entries());
-    
-    const scoreRank = allRepos
-      .sort((a, b) => b[1].totalScore - a[1].totalScore)
-      .findIndex(([repo]) => repo === repositoryFullName) + 1;
-    
-    const prsRank = allRepos
-      .sort((a, b) => b[1].totalPRs - a[1].totalPRs)
-      .findIndex(([repo]) => repo === repositoryFullName) + 1;
-    
-    const contributorsRank = allRepos
-      .sort((a, b) => b[1].uniqueContributors - a[1].uniqueContributors)
-      .findIndex(([repo]) => repo === repositoryFullName) + 1;
-    
-    const linesRank = allRepos
-      .sort((a, b) => b[1].totalLines - a[1].totalLines)
-      .findIndex(([repo]) => repo === repositoryFullName) + 1;
-    
-    const commitsRank = allRepos
-      .sort((a, b) => b[1].totalCommits - a[1].totalCommits)
-      .findIndex(([repo]) => repo === repositoryFullName) + 1;
+
+    const scoreRank =
+      allRepos
+        .sort((a, b) => b[1].totalScore - a[1].totalScore)
+        .findIndex(([repo]) => repo === repositoryFullName) + 1;
+
+    const prsRank =
+      allRepos
+        .sort((a, b) => b[1].totalPRs - a[1].totalPRs)
+        .findIndex(([repo]) => repo === repositoryFullName) + 1;
+
+    const contributorsRank =
+      allRepos
+        .sort((a, b) => b[1].uniqueContributors - a[1].uniqueContributors)
+        .findIndex(([repo]) => repo === repositoryFullName) + 1;
+
+    const linesRank =
+      allRepos
+        .sort((a, b) => b[1].totalLines - a[1].totalLines)
+        .findIndex(([repo]) => repo === repositoryFullName) + 1;
+
+    const commitsRank =
+      allRepos
+        .sort((a, b) => b[1].totalCommits - a[1].totalCommits)
+        .findIndex(([repo]) => repo === repositoryFullName) + 1;
 
     return {
       prs,
@@ -166,14 +186,34 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({ repositoryFullNam
     );
   }
 
-  const [owner, repoName] = repositoryFullName.split('/');
+  const [owner, repoName] = repositoryFullName.split("/");
 
   const statItems = [
-    { label: "Total Score", value: repoData.totalScore.toFixed(4), rank: repoData.rankings.score },
-    { label: "Total PRs", value: repoData.totalPRs, rank: repoData.rankings.prs },
-    { label: "Contributors", value: repoData.contributors.length, rank: repoData.rankings.contributors },
-    { label: "Total Lines", value: repoData.totalLines.toLocaleString(), rank: repoData.rankings.lines },
-    { label: "Total Commits", value: repoData.totalCommits, rank: repoData.rankings.commits },
+    {
+      label: "Total Score",
+      value: repoData.totalScore.toFixed(4),
+      rank: repoData.rankings.score,
+    },
+    {
+      label: "Total PRs",
+      value: repoData.totalPRs,
+      rank: repoData.rankings.prs,
+    },
+    {
+      label: "Contributors",
+      value: repoData.contributors.length,
+      rank: repoData.rankings.contributors,
+    },
+    {
+      label: "Total Lines",
+      value: repoData.totalLines.toLocaleString(),
+      rank: repoData.rankings.lines,
+    },
+    {
+      label: "Total Commits",
+      value: repoData.totalCommits,
+      rank: repoData.rankings.commits,
+    },
   ];
 
   return (
@@ -196,7 +236,12 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({ repositoryFullNam
               width: 64,
               height: 64,
               border: "2px solid rgba(255, 255, 255, 0.2)",
-              backgroundColor: owner === 'opentensor' ? '#ffffff' : owner === 'bitcoin' ? '#F7931A' : 'transparent',
+              backgroundColor:
+                owner === "opentensor"
+                  ? "#ffffff"
+                  : owner === "bitcoin"
+                    ? "#F7931A"
+                    : "transparent",
             }}
           />
           <Box>
@@ -272,25 +317,34 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({ repositoryFullNam
                         flexShrink: 0,
                         border: "1px solid",
                         borderColor:
-                          item.rank === 1 ? "rgba(255, 215, 0, 0.4)" :
-                          item.rank === 2 ? "rgba(192, 192, 192, 0.4)" :
-                          item.rank === 3 ? "rgba(205, 127, 50, 0.4)" :
-                          "rgba(255, 255, 255, 0.15)",
+                          item.rank === 1
+                            ? "rgba(255, 215, 0, 0.4)"
+                            : item.rank === 2
+                              ? "rgba(192, 192, 192, 0.4)"
+                              : item.rank === 3
+                                ? "rgba(205, 127, 50, 0.4)"
+                                : "rgba(255, 255, 255, 0.15)",
                         boxShadow:
-                          item.rank === 1 ? "0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)" :
-                          item.rank === 2 ? "0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)" :
-                          item.rank === 3 ? "0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)" :
-                          "none",
+                          item.rank === 1
+                            ? "0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)"
+                            : item.rank === 2
+                              ? "0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)"
+                              : item.rank === 3
+                                ? "0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)"
+                                : "none",
                       }}
                     >
                       <Typography
                         component="span"
                         sx={{
                           color:
-                            item.rank === 1 ? "#FFD700" :
-                            item.rank === 2 ? "#C0C0C0" :
-                            item.rank === 3 ? "#CD7F32" :
-                            "rgba(255, 255, 255, 0.6)",
+                            item.rank === 1
+                              ? "#FFD700"
+                              : item.rank === 2
+                                ? "#C0C0C0"
+                                : item.rank === 3
+                                  ? "#CD7F32"
+                                  : "rgba(255, 255, 255, 0.6)",
                           fontFamily: '"JetBrains Mono", monospace',
                           fontSize: "0.6rem",
                           fontWeight: 600,
@@ -360,8 +414,12 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({ repositoryFullNam
               <TableRow>
                 <TableCell sx={headerCellStyle}>Rank</TableCell>
                 <TableCell sx={headerCellStyle}>Contributor</TableCell>
-                <TableCell align="right" sx={headerCellStyle}>PRs</TableCell>
-                <TableCell align="right" sx={headerCellStyle}>Score</TableCell>
+                <TableCell align="right" sx={headerCellStyle}>
+                  PRs
+                </TableCell>
+                <TableCell align="right" sx={headerCellStyle}>
+                  Score
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -388,25 +446,34 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({ repositoryFullNam
                         flexShrink: 0,
                         border: "1px solid",
                         borderColor:
-                          index === 0 ? "rgba(255, 215, 0, 0.4)" :
-                          index === 1 ? "rgba(192, 192, 192, 0.4)" :
-                          index === 2 ? "rgba(205, 127, 50, 0.4)" :
-                          "rgba(255, 255, 255, 0.15)",
+                          index === 0
+                            ? "rgba(255, 215, 0, 0.4)"
+                            : index === 1
+                              ? "rgba(192, 192, 192, 0.4)"
+                              : index === 2
+                                ? "rgba(205, 127, 50, 0.4)"
+                                : "rgba(255, 255, 255, 0.15)",
                         boxShadow:
-                          index === 0 ? "0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)" :
-                          index === 1 ? "0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)" :
-                          index === 2 ? "0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)" :
-                          "none",
+                          index === 0
+                            ? "0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)"
+                            : index === 1
+                              ? "0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)"
+                              : index === 2
+                                ? "0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)"
+                                : "none",
                       }}
                     >
                       <Typography
                         component="span"
                         sx={{
                           color:
-                            index === 0 ? "#FFD700" :
-                            index === 1 ? "#C0C0C0" :
-                            index === 2 ? "#CD7F32" :
-                            "rgba(255, 255, 255, 0.6)",
+                            index === 0
+                              ? "#FFD700"
+                              : index === 1
+                                ? "#C0C0C0"
+                                : index === 2
+                                  ? "#CD7F32"
+                                  : "rgba(255, 255, 255, 0.6)",
                           fontFamily: '"JetBrains Mono", monospace',
                           fontSize: "0.7rem",
                           fontWeight: 600,
@@ -421,7 +488,9 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({ repositoryFullNam
                     </Box>
                   </TableCell>
                   <TableCell sx={bodyCellStyle}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Box
+                      sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+                    >
                       <Avatar
                         src={`https://avatars.githubusercontent.com/${contributor.author}`}
                         alt={contributor.author}
@@ -475,9 +544,9 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({ repositoryFullNam
           </Typography>
         </Box>
 
-        <TableContainer 
-          sx={{ 
-            maxHeight: "500px", 
+        <TableContainer
+          sx={{
+            maxHeight: "500px",
             overflow: "auto",
             "&::-webkit-scrollbar": {
               width: "8px",
@@ -501,88 +570,101 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({ repositoryFullNam
                 <TableCell sx={headerCellStyle}>PR #</TableCell>
                 <TableCell sx={headerCellStyle}>Title</TableCell>
                 <TableCell sx={headerCellStyle}>Author</TableCell>
-                <TableCell align="right" sx={headerCellStyle}>Commits</TableCell>
-                <TableCell align="right" sx={headerCellStyle}>+/-</TableCell>
-                <TableCell align="right" sx={headerCellStyle}>Score</TableCell>
-                <TableCell align="right" sx={headerCellStyle}>Merged</TableCell>
+                <TableCell align="right" sx={headerCellStyle}>
+                  Commits
+                </TableCell>
+                <TableCell align="right" sx={headerCellStyle}>
+                  +/-
+                </TableCell>
+                <TableCell align="right" sx={headerCellStyle}>
+                  Score
+                </TableCell>
+                <TableCell align="right" sx={headerCellStyle}>
+                  Merged
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {repoData.prs
-                .sort((a, b) => parseFloat(b.score || "0") - parseFloat(a.score || "0"))
+                .sort(
+                  (a, b) =>
+                    parseFloat(b.score || "0") - parseFloat(a.score || "0"),
+                )
                 .map((pr, index) => (
-                <TableRow
-                  key={`${pr.pullRequestNumber}-${index}`}
-                  sx={{
-                    "&:hover": {
-                      backgroundColor: "rgba(255, 255, 255, 0.05)",
-                    },
-                    transition: "background-color 0.2s",
-                  }}
-                >
-                  <TableCell sx={bodyCellStyle}>
-                    <a
-                      href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        color: "#ffffff",
-                        textDecoration: "none",
-                        fontWeight: 500,
-                      }}
-                    >
-                      #{pr.pullRequestNumber}
-                    </a>
-                  </TableCell>
-                  <TableCell sx={bodyCellStyle}>
-                    <Box
-                      sx={{
-                        maxWidth: "300px",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {pr.pullRequestTitle}
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={bodyCellStyle}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Avatar
-                        src={`https://avatars.githubusercontent.com/${pr.author}`}
-                        alt={pr.author}
-                        sx={{ width: 20, height: 20 }}
-                      />
-                      {pr.author}
-                    </Box>
-                  </TableCell>
-                  <TableCell align="right" sx={bodyCellStyle}>
-                    {pr.commitCount}
-                  </TableCell>
-                  <TableCell align="right" sx={bodyCellStyle}>
-                    <Box component="span" sx={{ color: "#7ee787", mr: 1 }}>
-                      +{pr.additions}
-                    </Box>
-                    <Box component="span" sx={{ color: "#ff7b72" }}>
-                      -{pr.deletions}
-                    </Box>
-                  </TableCell>
-                  <TableCell align="right" sx={bodyCellStyle}>
-                    <Typography
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.75rem",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {parseFloat(pr.score || "0").toFixed(4)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="right" sx={bodyCellStyle}>
-                    {new Date(pr.mergedAt).toLocaleDateString()}
-                  </TableCell>
-                </TableRow>
-              ))}
+                  <TableRow
+                    key={`${pr.pullRequestNumber}-${index}`}
+                    sx={{
+                      "&:hover": {
+                        backgroundColor: "rgba(255, 255, 255, 0.05)",
+                      },
+                      transition: "background-color 0.2s",
+                    }}
+                  >
+                    <TableCell sx={bodyCellStyle}>
+                      <a
+                        href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          color: "#ffffff",
+                          textDecoration: "none",
+                          fontWeight: 500,
+                        }}
+                      >
+                        #{pr.pullRequestNumber}
+                      </a>
+                    </TableCell>
+                    <TableCell sx={bodyCellStyle}>
+                      <Box
+                        sx={{
+                          maxWidth: "300px",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {pr.pullRequestTitle}
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={bodyCellStyle}>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        <Avatar
+                          src={`https://avatars.githubusercontent.com/${pr.author}`}
+                          alt={pr.author}
+                          sx={{ width: 20, height: 20 }}
+                        />
+                        {pr.author}
+                      </Box>
+                    </TableCell>
+                    <TableCell align="right" sx={bodyCellStyle}>
+                      {pr.commitCount}
+                    </TableCell>
+                    <TableCell align="right" sx={bodyCellStyle}>
+                      <Box component="span" sx={{ color: "#7ee787", mr: 1 }}>
+                        +{pr.additions}
+                      </Box>
+                      <Box component="span" sx={{ color: "#ff7b72" }}>
+                        -{pr.deletions}
+                      </Box>
+                    </TableCell>
+                    <TableCell align="right" sx={bodyCellStyle}>
+                      <Typography
+                        sx={{
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {parseFloat(pr.score || "0").toFixed(4)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right" sx={bodyCellStyle}>
+                      {new Date(pr.mergedAt).toLocaleDateString()}
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </TableContainer>
