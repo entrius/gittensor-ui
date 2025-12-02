@@ -24,7 +24,6 @@ import {
   FormControl,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import TableChartIcon from "@mui/icons-material/TableChart";
 import ReactECharts from "echarts-for-react";
@@ -1141,10 +1140,10 @@ const bodyCellStyle = {
 };
 
 const getRankIcon = (rank: number) => {
-  if (rank === 1) return <EmojiEventsIcon sx={{ color: "#FFD700" }} />;
-  if (rank === 2) return <EmojiEventsIcon sx={{ color: "#C0C0C0" }} />;
-  if (rank === 3) return <EmojiEventsIcon sx={{ color: "#CD7F32" }} />;
-  return `#${rank}`;
+  if (rank === 1) return "1 🥇";
+  if (rank === 2) return "2 🥈";
+  if (rank === 3) return "3 🥉";
+  return rank;
 };
 
 export default MinerLeaderboard;
