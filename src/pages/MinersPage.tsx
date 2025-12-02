@@ -40,17 +40,23 @@ const MinersPage: React.FC = () => {
               sx={{
                 mb: 2,
                 alignSelf: "flex-start",
-                color: "rgba(255, 255, 255, 0.6)",
+                color: "rgba(255, 255, 255, 0.7)",
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: "0.8rem",
                 fontWeight: 500,
-                letterSpacing: "1px",
-                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+                textTransform: "none",
+                backgroundColor: "#000000",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                borderRadius: "8px",
+                px: 2,
+                py: 1,
                 "&:hover": {
                   color: "#ffffff",
-                  backgroundColor: "transparent",
+                  backgroundColor: "rgba(0, 0, 0, 0.8)",
+                  borderColor: "rgba(255, 255, 255, 0.2)",
                 },
-                pl: 0,
+                transition: "all 0.2s",
               }}
               disableRipple
             >

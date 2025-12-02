@@ -1116,10 +1116,51 @@ const bodyCellStyle = {
 };
 
 const getRankIcon = (rank: number) => {
-  if (rank === 1) return "1 🥇";
-  if (rank === 2) return "2 🥈";
-  if (rank === 3) return "3 🥉";
-  return rank;
+  return (
+    <Box
+      sx={{
+        backgroundColor: "#000000",
+        borderRadius: "2px",
+        width: "22px",
+        height: "22px",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        border: "1px solid",
+        borderColor:
+          rank === 1 ? "rgba(255, 215, 0, 0.4)" :
+          rank === 2 ? "rgba(192, 192, 192, 0.4)" :
+          rank === 3 ? "rgba(205, 127, 50, 0.4)" :
+          "rgba(255, 255, 255, 0.15)",
+        boxShadow:
+          rank === 1 ? "0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)" :
+          rank === 2 ? "0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)" :
+          rank === 3 ? "0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)" :
+          "none",
+      }}
+    >
+      <Typography
+        component="span"
+        sx={{
+          color: 
+            rank === 1 ? "#FFD700" :
+            rank === 2 ? "#C0C0C0" :
+            rank === 3 ? "#CD7F32" :
+            "rgba(255, 255, 255, 0.6)",
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: "0.65rem",
+          fontWeight: 600,
+          lineHeight: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {rank}
+      </Typography>
+    </Box>
+  );
 };
 
 export default MinerLeaderboard;
