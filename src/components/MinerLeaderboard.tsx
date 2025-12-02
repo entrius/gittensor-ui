@@ -790,14 +790,16 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                         : item?.githubId
                   }
                   hover
-                  onClick={() =>
-                    activeTab !== 1 &&
-                    activeTab !== 2 &&
-                    onSelectMiner(item?.githubId || item?.author)
-                  }
+                  onClick={() => {
+                    if (activeTab === 0) {
+                      onSelectMiner(item?.githubId || item?.author);
+                    } else if (activeTab === 2 && onSelectRepository) {
+                      onSelectRepository(item?.repository || "");
+                    }
+                  }}
                   sx={{
                     cursor:
-                      activeTab !== 1 && activeTab !== 2
+                      activeTab === 0 || (activeTab === 2 && onSelectRepository)
                         ? "pointer"
                         : "default",
                     "&:hover": {
@@ -899,36 +901,15 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                               backgroundColor: (item?.repository || "").split('/')[0] === 'opentensor' ? '#ffffff' : (item?.repository || "").split('/')[0] === 'bitcoin' ? '#F7931A' : 'transparent',
                             }}
                           />
-                          {onSelectRepository ? (
-                            <Typography
-                              component="span"
-                              onClick={() => onSelectRepository(item?.repository || "")}
-                              sx={{
-                                color: "#ffffff",
-                                fontWeight: 500,
-                                cursor: "pointer",
-                                "&:hover": {
-                                  color: "primary.main",
-                                },
-                                transition: "color 0.2s",
-                              }}
-                            >
-                              {item?.repository || ""}
-                            </Typography>
-                          ) : (
-                            <a
-                              href={`https://github.com/${item?.repository}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{
-                                color: "#ffffff",
-                                textDecoration: "none",
-                                fontWeight: 500,
-                              }}
-                            >
-                              {item?.repository || ""}
-                            </a>
-                          )}
+                          <Typography
+                            component="span"
+                            sx={{
+                              color: "#ffffff",
+                              fontWeight: 500,
+                            }}
+                          >
+                            {item?.repository || ""}
+                          </Typography>
                         </Box>
                       </TableCell>
                       <TableCell
