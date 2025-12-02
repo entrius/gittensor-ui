@@ -59,6 +59,34 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
     };
   }, [allMinersStats, minerStats, githubId]);
 
+  // Find top PR by score - MUST be before conditional returns
+  const topPR = useMemo(() => {
+    if (!prs || prs.length === 0) return null;
+    return prs.reduce((max, pr) => {
+      const prScore = parseFloat(pr.score || "0");
+      const maxScore = parseFloat(max.score || "0");
+      return prScore > maxScore ? pr : max;
+    }, prs[0]);
+  }, [prs]);
+
+  // Calculate top PR ranking among all PRs - MUST be before conditional returns
+  const topPRRank = useMemo(() => {
+    if (!topPR || !allPRs || allPRs.length === 0) return null;
+    
+    // Sort all PRs by score descending
+    const sortedPRs = allPRs
+      .slice()
+      .sort((a, b) => parseFloat(b.score || "0") - parseFloat(a.score || "0"));
+    
+    // Find the rank of this specific PR
+    const rank = sortedPRs.findIndex(
+      pr => pr.repository === topPR.repository && 
+            pr.pullRequestNumber === topPR.pullRequestNumber
+    ) + 1;
+    
+    return rank || null;
+  }, [topPR, allPRs]);
+
   if (isLoading) {
     return (
       <Card
@@ -98,34 +126,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
     );
   }
 
-  // Find top PR by score
-  const topPR = useMemo(() => {
-    if (!prs || prs.length === 0) return null;
-    return prs.reduce((max, pr) => {
-      const prScore = parseFloat(pr.score || "0");
-      const maxScore = parseFloat(max.score || "0");
-      return prScore > maxScore ? pr : max;
-    }, prs[0]);
-  }, [prs]);
-
-  // Calculate top PR ranking among all PRs
-  const topPRRank = useMemo(() => {
-    if (!topPR || !allPRs || allPRs.length === 0) return null;
-    
-    // Sort all PRs by score descending
-    const sortedPRs = allPRs
-      .slice()
-      .sort((a, b) => parseFloat(b.score || "0") - parseFloat(a.score || "0"));
-    
-    // Find the rank of this specific PR
-    const rank = sortedPRs.findIndex(
-      pr => pr.repository === topPR.repository && 
-            pr.pullRequestNumber === topPR.pullRequestNumber
-    ) + 1;
-    
-    return rank || null;
-  }, [topPR, allPRs]);
-
   // Use pre-computed stats directly from the evaluation
   const statItems: Array<{
     label: string;
@@ -140,17 +140,17 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
     },
     { 
       label: "Total PRs", 
-      value: minerStats.totalPrs,
+      value: Number(minerStats.totalPrs || 0),
       rank: rankings?.totalPrs
     },
     {
       label: "Scored Lines",
-      value: Number(minerStats.totalLinesChanged).toLocaleString(),
+      value: Number(minerStats.totalLinesChanged || 0).toLocaleString(),
       rank: rankings?.linesChanged
     },
     { 
       label: "Unique Repos", 
-      value: minerStats.uniqueReposCount,
+      value: Number(minerStats.uniqueReposCount || 0),
       rank: rankings?.uniqueRepos
     },
     {
@@ -313,7 +313,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                       transition: "color 0.2s",
                     }}
                   >
-                    {item.value}
+                    {String(item.value)}
                   </Typography>
                 </a>
               ) : (
@@ -326,7 +326,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                     wordBreak: "break-all",
                   }}
                 >
-                  {item.value}
+                  {String(item.value)}
                 </Typography>
               )}
             </Box>

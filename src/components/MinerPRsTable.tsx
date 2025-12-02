@@ -37,7 +37,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       {/* Header */}
       <Box
         sx={{
-          p: 3,
+          p: { xs: 2, sm: 3 },
           borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
         }}
       >
@@ -46,7 +46,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           sx={{
             color: "#ffffff",
             fontFamily: '"JetBrains Mono", monospace',
-            fontSize: "1.1rem",
+            fontSize: { xs: "0.95rem", sm: "1.1rem" },
             fontWeight: 500,
           }}
         >
@@ -74,11 +74,12 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       ) : (
         <TableContainer
           sx={{
-            maxHeight: "500px",
-            overflow: "auto",
+            maxHeight: { xs: "400px", sm: "500px" },
+            overflowY: "auto",
+            overflowX: { xs: "hidden", sm: "auto" },
             "&::-webkit-scrollbar": {
-              width: "8px",
-              height: "8px",
+              width: { xs: "6px", sm: "8px" },
+              height: { xs: "6px", sm: "8px" },
             },
             "&::-webkit-scrollbar-track": {
               backgroundColor: "transparent",
@@ -92,19 +93,19 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             },
           }}
         >
-          <Table stickyHeader sx={{ tableLayout: "fixed", minWidth: "800px" }}>
+          <Table stickyHeader sx={{ tableLayout: "fixed", minWidth: { xs: "100%", sm: "800px" } }}>
             <TableHead>
               <TableRow>
                 <TableCell sx={headerCellStyle}>PR #</TableCell>
                 <TableCell sx={headerCellStyle}>Title</TableCell>
-                <TableCell sx={headerCellStyle}>Repository</TableCell>
-                <TableCell align="right" sx={headerCellStyle}>
+                <TableCell sx={{ ...headerCellStyle, display: { xs: "none", sm: "table-cell" } }}>Repository</TableCell>
+                <TableCell align="right" sx={{ ...headerCellStyle, display: { xs: "none", md: "table-cell" } }}>
                   +/-
                 </TableCell>
                 <TableCell align="right" sx={headerCellStyle}>
                   Score
                 </TableCell>
-                <TableCell align="right" sx={headerCellStyle}>
+                <TableCell align="right" sx={{ ...headerCellStyle, display: { xs: "none", sm: "table-cell" } }}>
                   Merged
                 </TableCell>
               </TableRow>
@@ -120,7 +121,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     transition: "background-color 0.2s",
                   }}
                 >
-                  <TableCell sx={{ ...bodyCellStyle, width: "10%" }}>
+                  <TableCell sx={{ ...bodyCellStyle, width: { xs: "20%", sm: "10%" }, fontSize: { xs: "0.75rem", sm: "0.85rem" } }}>
                     <a
                       href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
                       target="_blank"
@@ -134,7 +135,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                       #{pr.pullRequestNumber}
                     </a>
                   </TableCell>
-                  <TableCell sx={{ ...bodyCellStyle, width: "30%" }}>
+                  <TableCell sx={{ ...bodyCellStyle, width: { xs: "55%", sm: "30%" }, fontSize: { xs: "0.75rem", sm: "0.85rem" } }}>
                     <Box
                       sx={{
                         maxWidth: "100%",
@@ -146,7 +147,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                       {pr.pullRequestTitle}
                     </Box>
                   </TableCell>
-                  <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
+                  <TableCell sx={{ ...bodyCellStyle, width: "20%", display: { xs: "none", sm: "table-cell" } }}>
                     <Box
                       sx={{
                         display: "flex",
@@ -169,7 +170,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   </TableCell>
                   <TableCell
                     align="right"
-                    sx={{ ...bodyCellStyle, width: "15%" }}
+                    sx={{ ...bodyCellStyle, width: "15%", display: { xs: "none", md: "table-cell" } }}
                   >
                     <Box
                       component="span"
@@ -193,12 +194,12 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   </TableCell>
                   <TableCell
                     align="right"
-                    sx={{ ...bodyCellStyle, width: "10%" }}
+                    sx={{ ...bodyCellStyle, width: { xs: "25%", sm: "10%" } }}
                   >
                     <Typography
                       sx={{
                         fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.75rem",
+                        fontSize: { xs: "0.7rem", sm: "0.75rem" },
                         fontWeight: 600,
                       }}
                     >
@@ -207,7 +208,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   </TableCell>
                   <TableCell
                     align="right"
-                    sx={{ ...bodyCellStyle, width: "15%" }}
+                    sx={{ ...bodyCellStyle, width: "15%", display: { xs: "none", sm: "table-cell" }, fontSize: { xs: "0.75rem", sm: "0.85rem" } }}
                   >
                     {new Date(pr.mergedAt).toLocaleDateString()}
                   </TableCell>
@@ -227,10 +228,11 @@ const headerCellStyle = {
   color: "rgba(255, 255, 255, 0.7)",
   fontFamily: '"JetBrains Mono", monospace',
   fontWeight: 500,
-  fontSize: "0.75rem",
+  fontSize: { xs: "0.65rem", sm: "0.75rem" },
   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  height: "56px",
-  py: 1.5,
+  height: { xs: "48px", sm: "56px" },
+  py: { xs: 1, sm: 1.5 },
+  px: { xs: 0.5, sm: 2 },
   textTransform: "uppercase" as const,
   letterSpacing: "0.5px",
 };
@@ -240,8 +242,9 @@ const bodyCellStyle = {
   fontFamily: '"JetBrains Mono", monospace',
   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
   fontSize: "0.85rem",
-  py: 1,
-  height: "60px",
+  py: { xs: 0.75, sm: 1 },
+  px: { xs: 0.5, sm: 2 },
+  height: { xs: "52px", sm: "60px" },
 };
 
 export default MinerPRsTable;
