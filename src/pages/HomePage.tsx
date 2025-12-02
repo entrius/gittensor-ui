@@ -8,14 +8,21 @@ const HomePage: React.FC = () => {
 
   // Calculate monthly rewards: TAO price × Alpha price × 2952 × days in current month
   const monthlyRewards = React.useMemo(() => {
-    if (!stats?.prices?.tao?.data?.price || !stats?.prices?.alpha?.data?.price) {
+    if (
+      !stats?.prices?.tao?.data?.price ||
+      !stats?.prices?.alpha?.data?.price
+    ) {
       return undefined;
     }
     const taoPrice = stats.prices.tao.data.price;
     const alphaPrice = stats.prices.alpha.data.price;
     const dailyAlphaEmissions = 2952;
     const now = new Date();
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const daysInMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+    ).getDate();
     return taoPrice * alphaPrice * dailyAlphaEmissions * daysInMonth;
   }, [stats?.prices]);
 
@@ -40,10 +47,11 @@ const HomePage: React.FC = () => {
           <img
             src="/gt-logo.svg"
             alt="Gittensor"
-            style={{ 
-              height: window.innerWidth < 600 ? "96px" : "128px", 
-              width: "auto", 
-              filter: "grayscale(100%) invert(1) drop-shadow(0 0 12px rgba(255, 255, 255, 0.8))" 
+            style={{
+              height: window.innerWidth < 600 ? "96px" : "128px",
+              width: "auto",
+              filter:
+                "grayscale(100%) invert(1) drop-shadow(0 0 12px rgba(255, 255, 255, 0.8))",
             }}
           />
           <Typography
@@ -58,9 +66,9 @@ const HomePage: React.FC = () => {
           >
             GITTENSOR
           </Typography>
-          <Typography 
-            variant="body1" 
-            color="text.secondary" 
+          <Typography
+            variant="body1"
+            color="text.secondary"
             fontWeight="bold"
             sx={{
               fontSize: { xs: "0.9rem", sm: "1rem" },
@@ -113,7 +121,11 @@ const HomePage: React.FC = () => {
                     letterSpacing: "-0.02em",
                   }}
                 >
-                  ${monthlyRewards.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  $
+                  {monthlyRewards.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </Typography>
                 <Typography
                   variant="body2"
@@ -125,7 +137,8 @@ const HomePage: React.FC = () => {
                     lineHeight: 1.6,
                   }}
                 >
-                  Compete for rewards by contributing quality code to open source
+                  Compete for rewards by contributing quality code to open
+                  source
                 </Typography>
               </Stack>
             </Box>

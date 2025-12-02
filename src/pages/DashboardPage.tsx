@@ -18,32 +18,6 @@ const DashboardPage: React.FC = () => {
 
   const { data: stats } = useStats();
 
-  // Calculate daily rewards: TAO price × Alpha price × 2952 (daily Alpha emissions for miners)
-  const dailyRewards = React.useMemo(() => {
-    if (
-      !stats?.prices?.tao?.data?.price ||
-      !stats?.prices?.alpha?.data?.price
-    ) {
-      return undefined;
-    }
-    const taoPrice = stats.prices.tao.data.price;
-    const alphaPrice = stats.prices.alpha.data.price;
-    const dailyAlphaEmissions = 2952;
-    return taoPrice * alphaPrice * dailyAlphaEmissions;
-  }, [stats?.prices]);
-
-  // Calculate monthly rewards: daily rewards × days in current month
-  const monthlyRewards = React.useMemo(() => {
-    if (!dailyRewards) return undefined;
-    const now = new Date();
-    const daysInMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0,
-    ).getDate();
-    return dailyRewards * daysInMonth;
-  }, [dailyRewards]);
-
   // Dynamic sidebar width based on screen size
   const sidebarWidth =
     isMobile || isTablet ? "100%" : isLargeScreen ? "340px" : "300px";

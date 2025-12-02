@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
   Box,
   Table,
@@ -18,6 +18,10 @@ import {
   useTheme,
   CircularProgress,
   Tooltip,
+  Select,
+  MenuItem,
+  FormControl,
+  Avatar,
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
 import { useReposAndWeights } from "../../api";
@@ -28,15 +32,20 @@ type SortOrder = "asc" | "desc";
 
 const baseGithubUrl = "https://github.com/";
 
-const RepositoryWeightsTable: React.FC = () => {
+interface RepositoryWeightsTableProps {
+  onSelectRepository?: (repositoryFullName: string) => void;
+}
+
+const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({ onSelectRepository }) => {
   const { data, isLoading } = useReposAndWeights();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField>("weight");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -121,8 +130,15 @@ const RepositoryWeightsTable: React.FC = () => {
     return filteredAndSortedRepos.slice(startIndex, endIndex);
   }, [filteredAndSortedRepos, page, rowsPerPage]);
 
+  // Scroll to top when rows per page changes
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [rowsPerPage]);
+
   return (
-    <Box>
+    <Box ref={containerRef}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, mb: 3 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Typography variant="h5">Repositories & Weights</Typography>
@@ -131,33 +147,69 @@ const RepositoryWeightsTable: React.FC = () => {
           </Typography>
         </Box>
 
-        <TextField
-          placeholder="Search..."
-          size="small"
-          value={searchQuery}
-          onChange={handleSearchChange}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search sx={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "1rem" }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            width: "200px",
-            "& .MuiOutlinedInput-root": {
-              color: "#ffffff",
-              fontFamily: '"JetBrains Mono", monospace',
-              backgroundColor: "rgba(0, 0, 0, 0.4)",
-              fontSize: "0.8rem",
-              height: "36px",
-              borderRadius: 2,
-              "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
-              "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.2)" },
-              "&.Mui-focused fieldset": { borderColor: "primary.main" },
-            },
-          }}
-        />
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <FormControl size="small">
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.7)", fontFamily: '"JetBrains Mono", monospace', fontSize: "0.8rem" }}>
+                Rows:
+              </Typography>
+              <Select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(e.target.value as number);
+                  setPage(0);
+                }}
+                sx={{
+                  color: "#ffffff",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  backgroundColor: "rgba(0, 0, 0, 0.4)",
+                  fontSize: "0.8rem",
+                  height: "36px",
+                  borderRadius: 2,
+                  minWidth: "80px",
+                  "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
+                  "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.2)" },
+                  "&.Mui-focused fieldset": { borderColor: "primary.main" },
+                  "& .MuiSelect-select": {
+                    py: 0.75,
+                  },
+                }}
+              >
+                <MenuItem value={5}>5</MenuItem>
+                <MenuItem value={10}>10</MenuItem>
+                <MenuItem value={25}>25</MenuItem>
+                <MenuItem value={50}>50</MenuItem>
+              </Select>
+            </Box>
+          </FormControl>
+          <TextField
+            placeholder="Search..."
+            size="small"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search sx={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "1rem" }} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              width: "200px",
+              "& .MuiOutlinedInput-root": {
+                color: "#ffffff",
+                fontFamily: '"JetBrains Mono", monospace',
+                backgroundColor: "rgba(0, 0, 0, 0.4)",
+                fontSize: "0.8rem",
+                height: "36px",
+                borderRadius: 2,
+                "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
+                "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.2)" },
+                "&.Mui-focused fieldset": { borderColor: "primary.main" },
+              },
+            }}
+          />
+        </Box>
       </Box>
 
       {isLoading ? (
@@ -170,8 +222,8 @@ const RepositoryWeightsTable: React.FC = () => {
           elevation={0}
           sx={{
             backgroundColor: "transparent",
-            maxHeight: "500px",
-            overflow: "auto",
+            maxHeight: "600px",
+            overflowY: "auto",
             "&::-webkit-scrollbar": {
               width: "8px",
             },
@@ -196,6 +248,9 @@ const RepositoryWeightsTable: React.FC = () => {
                       backgroundColor: "rgba(18, 18, 20, 0.95)",
                       backdropFilter: "blur(8px)",
                       borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                      height: "56px",
+                      py: 1.5,
+                      boxSizing: "border-box",
                     }}
                   >
                     <TableSortLabel
@@ -220,6 +275,9 @@ const RepositoryWeightsTable: React.FC = () => {
                     backgroundColor: "rgba(18, 18, 20, 0.95)",
                     backdropFilter: "blur(8px)",
                     borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                    height: "56px",
+                    py: 1.5,
+                    boxSizing: "border-box",
                   }}
                 >
                   <TableSortLabel
@@ -244,6 +302,9 @@ const RepositoryWeightsTable: React.FC = () => {
                     backgroundColor: "rgba(18, 18, 20, 0.95)",
                     backdropFilter: "blur(8px)",
                     borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                    height: "56px",
+                    py: 1.5,
+                    boxSizing: "border-box",
                   }}
                 >
                   <TableSortLabel
@@ -293,63 +354,120 @@ const RepositoryWeightsTable: React.FC = () => {
                       }}
                     >
                       {!isMobile && (
-                        <TableCell>
-                          <Typography
-                            variant="body1"
-                            fontWeight="medium"
+                        <TableCell
+                          sx={{
+                            height: "60px",
+                            py: 1,
+                            boxSizing: "border-box",
+                          }}
+                        >
+                          <Box
                             sx={{
-                              color: isInactive ? "error.dark" : "text.primary",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1.5,
                             }}
                           >
-                            {repo.owner}
-                          </Typography>
-                        </TableCell>
-                      )}
-                      <TableCell>
-                        <Stack>
-                          <Typography
-                            component={isMobile ? "a" : "span"}
-                            variant="body1"
-                            fontWeight="medium"
-                            href={
-                              isMobile
-                                ? `${baseGithubUrl}${repo.fullName}`
-                                : undefined
-                            }
-                            target={isMobile ? "_blank" : undefined}
-                            rel={isMobile ? "noopener noreferrer" : undefined}
-                            sx={{
-                              textDecoration: "none",
-                              "&:hover": {
-                                textDecoration: isMobile ? "underline" : undefined,
-                              },
-                              color: isInactive ? "error.dark" : "text.primary",
-                            }}
-                          >
-                            {isMobile ? repo.fullName : repo.name}
-                          </Typography>
-                          {!isMobile && (
-                            <Typography
-                              component="a"
-                              href={`${baseGithubUrl}${repo.fullName}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              variant="body2"
+                            <Avatar
+                              src={`https://avatars.githubusercontent.com/${repo.owner}`}
+                              alt={repo.owner}
                               sx={{
-                                color: isInactive
-                                  ? "rgba(211, 47, 47, 0.7)"
-                                  : "text.secondary",
-                                textDecoration: "none",
-                                "&:hover": { textDecoration: "underline" },
+                                width: 24,
+                                height: 24,
+                                border: "1px solid rgba(255, 255, 255, 0.2)",
+                                backgroundColor: repo.owner === 'opentensor' ? '#ffffff' : repo.owner === 'bitcoin' ? '#F7931A' : 'transparent',
+                              }}
+                            />
+                            <Typography
+                              variant="body1"
+                              fontWeight="medium"
+                              sx={{
+                                color: isInactive ? "error.dark" : "text.primary",
                               }}
                             >
-                              {baseGithubUrl}
-                              {repo.fullName}
+                              {repo.owner}
                             </Typography>
+                          </Box>
+                        </TableCell>
+                      )}
+                      <TableCell
+                        sx={{
+                          height: "60px",
+                          py: 1,
+                          boxSizing: "border-box",
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                          }}
+                        >
+                          {isMobile && (
+                            <Avatar
+                              src={`https://avatars.githubusercontent.com/${repo.owner}`}
+                              alt={repo.owner}
+                              sx={{
+                                width: 24,
+                                height: 24,
+                                border: "1px solid rgba(255, 255, 255, 0.2)",
+                                backgroundColor: repo.owner === 'opentensor' ? '#ffffff' : repo.owner === 'bitcoin' ? '#F7931A' : 'transparent',
+                              }}
+                            />
                           )}
-                        </Stack>
+                          <Stack>
+                            <Typography
+                              component={isMobile ? "a" : "span"}
+                              variant="body1"
+                              fontWeight="medium"
+                              href={
+                                isMobile
+                                  ? `${baseGithubUrl}${repo.fullName}`
+                                  : undefined
+                              }
+                              target={isMobile ? "_blank" : undefined}
+                              rel={isMobile ? "noopener noreferrer" : undefined}
+                              sx={{
+                                textDecoration: "none",
+                                "&:hover": {
+                                  textDecoration: isMobile ? "underline" : undefined,
+                                },
+                                color: isInactive ? "error.dark" : "text.primary",
+                              }}
+                            >
+                              {isMobile ? repo.fullName : repo.name}
+                            </Typography>
+                            {!isMobile && (
+                              <Typography
+                                component="a"
+                                href={`${baseGithubUrl}${repo.fullName}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="body2"
+                                sx={{
+                                  color: isInactive
+                                    ? "rgba(211, 47, 47, 0.7)"
+                                    : "text.secondary",
+                                  textDecoration: "none",
+                                  "&:hover": { textDecoration: "underline" },
+                                }}
+                              >
+                                {baseGithubUrl}
+                                {repo.fullName}
+                              </Typography>
+                            )}
+                          </Stack>
+                        </Box>
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell
+                        align="right"
+                        sx={{
+                          height: "60px",
+                          py: 1,
+                          boxSizing: "border-box",
+                        }}
+                      >
                         <Typography
                           variant="dataValue"
                           sx={{
@@ -369,7 +487,7 @@ const RepositoryWeightsTable: React.FC = () => {
       )}
 
       <TablePagination
-        rowsPerPageOptions={[5, 10, 25, 50]}
+        rowsPerPageOptions={[]}
         component="div"
         count={filteredAndSortedRepos.length}
         rowsPerPage={rowsPerPage}
@@ -380,9 +498,6 @@ const RepositoryWeightsTable: React.FC = () => {
         showLastButton
         sx={{
           ".MuiTablePagination-displayedRows": {
-            fontFamily: '"JetBrains Mono", monospace',
-          },
-          ".MuiTablePagination-selectLabel": {
             fontFamily: '"JetBrains Mono", monospace',
           },
         }}

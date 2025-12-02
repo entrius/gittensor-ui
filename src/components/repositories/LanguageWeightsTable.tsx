@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
   Box,
   Table,
@@ -14,6 +14,9 @@ import {
   Paper,
   InputAdornment,
   CircularProgress,
+  Select,
+  MenuItem,
+  FormControl,
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
 import { useLanguagesAndWeights } from "../../api";
@@ -27,7 +30,8 @@ const LanguageWeightsTable: React.FC = () => {
   const [sortField, setSortField] = useState<SortField>("weight");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -95,8 +99,15 @@ const LanguageWeightsTable: React.FC = () => {
     return filteredAndSortedLanguages.slice(startIndex, endIndex);
   }, [filteredAndSortedLanguages, page, rowsPerPage]);
 
+  // Scroll to top when rows per page changes
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [rowsPerPage]);
+
   return (
-    <Box>
+    <Box ref={containerRef}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, mb: 3 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Typography variant="h5">Language Weights</Typography>
@@ -105,33 +116,69 @@ const LanguageWeightsTable: React.FC = () => {
           </Typography>
         </Box>
 
-        <TextField
-          placeholder="Search..."
-          size="small"
-          value={searchQuery}
-          onChange={handleSearchChange}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search sx={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "1rem" }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            width: "200px",
-            "& .MuiOutlinedInput-root": {
-              color: "#ffffff",
-              fontFamily: '"JetBrains Mono", monospace',
-              backgroundColor: "rgba(0, 0, 0, 0.4)",
-              fontSize: "0.8rem",
-              height: "36px",
-              borderRadius: 2,
-              "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
-              "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.2)" },
-              "&.Mui-focused fieldset": { borderColor: "primary.main" },
-            },
-          }}
-        />
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <FormControl size="small">
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.7)", fontFamily: '"JetBrains Mono", monospace', fontSize: "0.8rem" }}>
+                Rows:
+              </Typography>
+              <Select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(e.target.value as number);
+                  setPage(0);
+                }}
+                sx={{
+                  color: "#ffffff",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  backgroundColor: "rgba(0, 0, 0, 0.4)",
+                  fontSize: "0.8rem",
+                  height: "36px",
+                  borderRadius: 2,
+                  minWidth: "80px",
+                  "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
+                  "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.2)" },
+                  "&.Mui-focused fieldset": { borderColor: "primary.main" },
+                  "& .MuiSelect-select": {
+                    py: 0.75,
+                  },
+                }}
+              >
+                <MenuItem value={5}>5</MenuItem>
+                <MenuItem value={10}>10</MenuItem>
+                <MenuItem value={25}>25</MenuItem>
+                <MenuItem value={50}>50</MenuItem>
+              </Select>
+            </Box>
+          </FormControl>
+          <TextField
+            placeholder="Search..."
+            size="small"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search sx={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "1rem" }} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              width: "200px",
+              "& .MuiOutlinedInput-root": {
+                color: "#ffffff",
+                fontFamily: '"JetBrains Mono", monospace',
+                backgroundColor: "rgba(0, 0, 0, 0.4)",
+                fontSize: "0.8rem",
+                height: "36px",
+                borderRadius: 2,
+                "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
+                "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.2)" },
+                "&.Mui-focused fieldset": { borderColor: "primary.main" },
+              },
+            }}
+          />
+        </Box>
       </Box>
 
       {isLoading ? (
@@ -144,8 +191,8 @@ const LanguageWeightsTable: React.FC = () => {
           elevation={0}
           sx={{
             backgroundColor: "transparent",
-            maxHeight: "500px",
-            overflow: "auto",
+            maxHeight: "600px",
+            overflowY: "auto",
             "&::-webkit-scrollbar": {
               width: "8px",
             },
@@ -232,7 +279,7 @@ const LanguageWeightsTable: React.FC = () => {
       )}
 
       <TablePagination
-        rowsPerPageOptions={[5, 10, 25, 50]}
+        rowsPerPageOptions={[]}
         component="div"
         count={filteredAndSortedLanguages.length}
         rowsPerPage={rowsPerPage}
@@ -243,9 +290,6 @@ const LanguageWeightsTable: React.FC = () => {
         showLastButton
         sx={{
           ".MuiTablePagination-displayedRows": {
-            fontFamily: '"JetBrains Mono", monospace',
-          },
-          ".MuiTablePagination-selectLabel": {
             fontFamily: '"JetBrains Mono", monospace',
           },
         }}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import {
   Card,
   Typography,
@@ -10,6 +10,8 @@ import {
   TableHead,
   TableRow,
   CircularProgress,
+  Avatar,
+  Chip,
 } from "@mui/material";
 import { useMinerPRs } from "../api";
 
@@ -19,6 +21,21 @@ interface MinerPRsTableProps {
 
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const { data: prs, isLoading } = useMinerPRs(githubId);
+  const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
+
+  // Filter PRs by selected repository
+  const filteredPRs = useMemo(() => {
+    if (!prs) return [];
+    if (!selectedRepo) return prs;
+    return prs.filter((pr) => pr.repository === selectedRepo);
+  }, [prs, selectedRepo]);
+
+  // Get unique repositories for quick filters
+  const uniqueRepos = useMemo(() => {
+    if (!prs) return [];
+    const repos = new Set(prs.map((pr) => pr.repository));
+    return Array.from(repos).sort();
+  }, [prs]);
 
   return (
     <Card
@@ -36,21 +53,73 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       {/* Header */}
       <Box
         sx={{
-          p: 3,
+          p: { xs: 2, sm: 3 },
           borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
         }}
       >
-        <Typography
-          variant="h6"
+        <Box
           sx={{
-            color: "#ffffff",
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: "1.1rem",
-            fontWeight: 500,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 2,
           }}
         >
-          Scored Pull Requests
-        </Typography>
+          <Box sx={{ display: "flex", alignItems: "baseline", gap: 1.5 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                color: "#ffffff",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: { xs: "0.95rem", sm: "1.1rem" },
+                fontWeight: 500,
+              }}
+            >
+              Scored Pull Requests
+            </Typography>
+            <Typography
+              sx={{
+                color: "rgba(255, 255, 255, 0.5)",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "0.75rem",
+              }}
+            >
+              ({filteredPRs.length}
+              {selectedRepo ? ` of ${prs?.length || 0}` : ""})
+            </Typography>
+          </Box>
+          {selectedRepo && (
+            <Chip
+              label={`Filtered: ${selectedRepo}`}
+              onDelete={() => setSelectedRepo(null)}
+              sx={{
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                color: "#ffffff",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "0.75rem",
+                "& .MuiChip-deleteIcon": {
+                  color: "rgba(255, 255, 255, 0.7)",
+                  "&:hover": {
+                    color: "#ffffff",
+                  },
+                },
+              }}
+            />
+          )}
+        </Box>
+        {!selectedRepo && uniqueRepos.length > 1 && (
+          <Typography
+            sx={{
+              color: "rgba(255, 255, 255, 0.5)",
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "0.7rem",
+              mt: 1,
+            }}
+          >
+            Click on a repository to filter PRs
+          </Typography>
+        )}
       </Box>
 
       {/* Table */}
@@ -70,14 +139,27 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             No PRs found
           </Typography>
         </Box>
+      ) : filteredPRs.length === 0 ? (
+        <Box sx={{ textAlign: "center", py: 8 }}>
+          <Typography
+            sx={{
+              color: "rgba(255, 255, 255, 0.5)",
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "0.9rem",
+            }}
+          >
+            No PRs found for {selectedRepo}
+          </Typography>
+        </Box>
       ) : (
         <TableContainer
           sx={{
-            maxHeight: "500px",
-            overflow: "auto",
+            maxHeight: { xs: "400px", sm: "500px" },
+            overflowY: "auto",
+            overflowX: { xs: "hidden", sm: "auto" },
             "&::-webkit-scrollbar": {
-              width: "8px",
-              height: "8px",
+              width: { xs: "6px", sm: "8px" },
+              height: { xs: "6px", sm: "8px" },
             },
             "&::-webkit-scrollbar-track": {
               backgroundColor: "transparent",
@@ -91,25 +173,47 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             },
           }}
         >
-          <Table stickyHeader sx={{ tableLayout: "fixed", minWidth: "800px" }}>
+          <Table
+            stickyHeader
+            sx={{ tableLayout: "fixed", minWidth: { xs: "100%", sm: "800px" } }}
+          >
             <TableHead>
               <TableRow>
                 <TableCell sx={headerCellStyle}>PR #</TableCell>
                 <TableCell sx={headerCellStyle}>Title</TableCell>
-                <TableCell sx={headerCellStyle}>Repository</TableCell>
-                <TableCell align="right" sx={headerCellStyle}>
+                <TableCell
+                  sx={{
+                    ...headerCellStyle,
+                    display: { xs: "none", sm: "table-cell" },
+                  }}
+                >
+                  Repository
+                </TableCell>
+                <TableCell
+                  align="right"
+                  sx={{
+                    ...headerCellStyle,
+                    display: { xs: "none", md: "table-cell" },
+                  }}
+                >
                   +/-
                 </TableCell>
                 <TableCell align="right" sx={headerCellStyle}>
                   Score
                 </TableCell>
-                <TableCell align="right" sx={headerCellStyle}>
+                <TableCell
+                  align="right"
+                  sx={{
+                    ...headerCellStyle,
+                    display: { xs: "none", sm: "table-cell" },
+                  }}
+                >
                   Merged
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {prs.map((pr, index) => (
+              {filteredPRs.map((pr, index) => (
                 <TableRow
                   key={`${pr.repository}-${pr.pullRequestNumber}-${index}`}
                   sx={{
@@ -119,7 +223,13 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     transition: "background-color 0.2s",
                   }}
                 >
-                  <TableCell sx={{ ...bodyCellStyle, width: "10%" }}>
+                  <TableCell
+                    sx={{
+                      ...bodyCellStyle,
+                      width: { xs: "20%", sm: "10%" },
+                      fontSize: { xs: "0.75rem", sm: "0.85rem" },
+                    }}
+                  >
                     <a
                       href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
                       target="_blank"
@@ -133,7 +243,13 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                       #{pr.pullRequestNumber}
                     </a>
                   </TableCell>
-                  <TableCell sx={{ ...bodyCellStyle, width: "30%" }}>
+                  <TableCell
+                    sx={{
+                      ...bodyCellStyle,
+                      width: { xs: "55%", sm: "30%" },
+                      fontSize: { xs: "0.75rem", sm: "0.85rem" },
+                    }}
+                  >
                     <Box
                       sx={{
                         maxWidth: "100%",
@@ -145,12 +261,51 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                       {pr.pullRequestTitle}
                     </Box>
                   </TableCell>
-                  <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
-                    {pr.repository}
+                  <TableCell
+                    sx={{
+                      ...bodyCellStyle,
+                      width: "20%",
+                      display: { xs: "none", sm: "table-cell" },
+                    }}
+                  >
+                    <Box
+                      onClick={() => setSelectedRepo(pr.repository)}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.5,
+                        cursor: "pointer",
+                        "&:hover": {
+                          color: "primary.main",
+                        },
+                        transition: "color 0.2s",
+                      }}
+                    >
+                      <Avatar
+                        src={`https://avatars.githubusercontent.com/${pr.repository.split("/")[0]}`}
+                        alt={pr.repository.split("/")[0]}
+                        sx={{
+                          width: 20,
+                          height: 20,
+                          border: "1px solid rgba(255, 255, 255, 0.2)",
+                          backgroundColor:
+                            pr.repository.split("/")[0] === "opentensor"
+                              ? "#ffffff"
+                              : pr.repository.split("/")[0] === "bitcoin"
+                                ? "#F7931A"
+                                : "transparent",
+                        }}
+                      />
+                      {pr.repository}
+                    </Box>
                   </TableCell>
                   <TableCell
                     align="right"
-                    sx={{ ...bodyCellStyle, width: "15%" }}
+                    sx={{
+                      ...bodyCellStyle,
+                      width: "15%",
+                      display: { xs: "none", md: "table-cell" },
+                    }}
                   >
                     <Box
                       component="span"
@@ -174,12 +329,12 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   </TableCell>
                   <TableCell
                     align="right"
-                    sx={{ ...bodyCellStyle, width: "10%" }}
+                    sx={{ ...bodyCellStyle, width: { xs: "25%", sm: "10%" } }}
                   >
                     <Typography
                       sx={{
                         fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.75rem",
+                        fontSize: { xs: "0.7rem", sm: "0.75rem" },
                         fontWeight: 600,
                       }}
                     >
@@ -188,7 +343,12 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   </TableCell>
                   <TableCell
                     align="right"
-                    sx={{ ...bodyCellStyle, width: "15%" }}
+                    sx={{
+                      ...bodyCellStyle,
+                      width: "15%",
+                      display: { xs: "none", sm: "table-cell" },
+                      fontSize: { xs: "0.75rem", sm: "0.85rem" },
+                    }}
                   >
                     {new Date(pr.mergedAt).toLocaleDateString()}
                   </TableCell>
@@ -208,10 +368,11 @@ const headerCellStyle = {
   color: "rgba(255, 255, 255, 0.7)",
   fontFamily: '"JetBrains Mono", monospace',
   fontWeight: 500,
-  fontSize: "0.75rem",
+  fontSize: { xs: "0.65rem", sm: "0.75rem" },
   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  height: "56px",
-  py: 1.5,
+  height: { xs: "48px", sm: "56px" },
+  py: { xs: 1, sm: 1.5 },
+  px: { xs: 0.5, sm: 2 },
   textTransform: "uppercase" as const,
   letterSpacing: "0.5px",
 };
@@ -221,8 +382,9 @@ const bodyCellStyle = {
   fontFamily: '"JetBrains Mono", monospace',
   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
   fontSize: "0.85rem",
-  py: 1,
-  height: "60px",
+  py: { xs: 0.75, sm: 1 },
+  px: { xs: 0.5, sm: 2 },
+  height: { xs: "52px", sm: "60px" },
 };
 
 export default MinerPRsTable;
