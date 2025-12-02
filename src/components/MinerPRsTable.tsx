@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import {
   Card,
   Typography,
@@ -11,6 +11,7 @@ import {
   TableRow,
   CircularProgress,
   Avatar,
+  Chip,
 } from "@mui/material";
 import { useMinerPRs } from "../api";
 
@@ -20,6 +21,21 @@ interface MinerPRsTableProps {
 
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const { data: prs, isLoading } = useMinerPRs(githubId);
+  const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
+
+  // Filter PRs by selected repository
+  const filteredPRs = useMemo(() => {
+    if (!prs) return [];
+    if (!selectedRepo) return prs;
+    return prs.filter(pr => pr.repository === selectedRepo);
+  }, [prs, selectedRepo]);
+
+  // Get unique repositories for quick filters
+  const uniqueRepos = useMemo(() => {
+    if (!prs) return [];
+    const repos = new Set(prs.map(pr => pr.repository));
+    return Array.from(repos).sort();
+  }, [prs]);
 
   return (
     <Card
@@ -41,17 +57,60 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
         }}
       >
-        <Typography
-          variant="h6"
-          sx={{
-            color: "#ffffff",
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: { xs: "0.95rem", sm: "1.1rem" },
-            fontWeight: 500,
-          }}
-        >
-          Scored Pull Requests
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "baseline", gap: 1.5 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                color: "#ffffff",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: { xs: "0.95rem", sm: "1.1rem" },
+                fontWeight: 500,
+              }}
+            >
+              Scored Pull Requests
+            </Typography>
+            <Typography
+              sx={{
+                color: "rgba(255, 255, 255, 0.5)",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "0.75rem",
+              }}
+            >
+              ({filteredPRs.length}{selectedRepo ? ` of ${prs?.length || 0}` : ""})
+            </Typography>
+          </Box>
+          {selectedRepo && (
+            <Chip
+              label={`Filtered: ${selectedRepo}`}
+              onDelete={() => setSelectedRepo(null)}
+              sx={{
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                color: "#ffffff",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "0.75rem",
+                "& .MuiChip-deleteIcon": {
+                  color: "rgba(255, 255, 255, 0.7)",
+                  "&:hover": {
+                    color: "#ffffff",
+                  },
+                },
+              }}
+            />
+          )}
+        </Box>
+        {!selectedRepo && uniqueRepos.length > 1 && (
+          <Typography
+            sx={{
+              color: "rgba(255, 255, 255, 0.5)",
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "0.7rem",
+              mt: 1,
+            }}
+          >
+            Click on a repository to filter PRs
+          </Typography>
+        )}
       </Box>
 
       {/* Table */}
@@ -69,6 +128,18 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             }}
           >
             No PRs found
+          </Typography>
+        </Box>
+      ) : filteredPRs.length === 0 ? (
+        <Box sx={{ textAlign: "center", py: 8 }}>
+          <Typography
+            sx={{
+              color: "rgba(255, 255, 255, 0.5)",
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "0.9rem",
+            }}
+          >
+            No PRs found for {selectedRepo}
           </Typography>
         </Box>
       ) : (
@@ -111,7 +182,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {prs.map((pr, index) => (
+              {filteredPRs.map((pr, index) => (
                 <TableRow
                   key={`${pr.repository}-${pr.pullRequestNumber}-${index}`}
                   sx={{
@@ -149,10 +220,16 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   </TableCell>
                   <TableCell sx={{ ...bodyCellStyle, width: "20%", display: { xs: "none", sm: "table-cell" } }}>
                     <Box
+                      onClick={() => setSelectedRepo(pr.repository)}
                       sx={{
                         display: "flex",
                         alignItems: "center",
                         gap: 1.5,
+                        cursor: "pointer",
+                        "&:hover": {
+                          color: "primary.main",
+                        },
+                        transition: "color 0.2s",
                       }}
                     >
                       <Avatar

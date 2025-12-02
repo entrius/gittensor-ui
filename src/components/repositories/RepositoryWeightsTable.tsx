@@ -32,7 +32,11 @@ type SortOrder = "asc" | "desc";
 
 const baseGithubUrl = "https://github.com/";
 
-const RepositoryWeightsTable: React.FC = () => {
+interface RepositoryWeightsTableProps {
+  onSelectRepository?: (repositoryFullName: string) => void;
+}
+
+const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({ onSelectRepository }) => {
   const { data, isLoading } = useReposAndWeights();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField>("weight");

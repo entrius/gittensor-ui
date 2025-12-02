@@ -32,6 +32,7 @@ import { CommitLog } from "../api/models/Dashboard";
 
 interface MinerLeaderboardProps {
   onSelectMiner: (githubId: string) => void;
+  onSelectRepository?: (repositoryFullName: string) => void;
 }
 
 interface MinerStats {
@@ -60,6 +61,7 @@ interface RepoStats {
 
 const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
   onSelectMiner,
+  onSelectRepository,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState(0);
@@ -897,18 +899,36 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                               backgroundColor: (item?.repository || "").split('/')[0] === 'opentensor' ? '#ffffff' : (item?.repository || "").split('/')[0] === 'bitcoin' ? '#F7931A' : 'transparent',
                             }}
                           />
-                          <a
-                            href={`https://github.com/${item?.repository}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              color: "#ffffff",
-                              textDecoration: "none",
-                              fontWeight: 500,
-                            }}
-                          >
-                            {item?.repository || ""}
-                          </a>
+                          {onSelectRepository ? (
+                            <Typography
+                              component="span"
+                              onClick={() => onSelectRepository(item?.repository || "")}
+                              sx={{
+                                color: "#ffffff",
+                                fontWeight: 500,
+                                cursor: "pointer",
+                                "&:hover": {
+                                  color: "primary.main",
+                                },
+                                transition: "color 0.2s",
+                              }}
+                            >
+                              {item?.repository || ""}
+                            </Typography>
+                          ) : (
+                            <a
+                              href={`https://github.com/${item?.repository}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                color: "#ffffff",
+                                textDecoration: "none",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {item?.repository || ""}
+                            </a>
+                          )}
                         </Box>
                       </TableCell>
                       <TableCell
