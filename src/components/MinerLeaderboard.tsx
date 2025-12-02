@@ -201,7 +201,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
         uniqueMiners: new Set<string>(),
       };
 
-      current.totalScore += parseFloat(pr.baseScore || "0"); // Use base score
+      current.totalScore += parseFloat(pr.score || "0");
       current.totalPRs += 1;
       if (pr.author) {
         current.uniqueMiners.add(pr.author);
@@ -222,7 +222,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
     const topPRs = [...allPRs]
       .sort(
         (a, b) =>
-          parseFloat(b.baseScore || "0") - parseFloat(a.baseScore || "0"),
+          parseFloat(b.score || "0") - parseFloat(a.score || "0"),
       )
       .slice(0, 100)
       .map((pr, index) => ({ ...pr, rank: index + 1 }));
@@ -334,9 +334,9 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
         (item: any) => `#${item?.pullRequestNumber || ""}`,
       );
       seriesData = chartData.map((item: any) =>
-        Number(parseFloat(item?.baseScore || "0")),
+        Number(parseFloat(item?.score || "0")),
       );
-      title = "Top Pull Requests by Base Score";
+      title = "Top Pull Requests by Score";
     } else if (activeTab === 2) {
       // Top Repos
       xAxisData = chartData.map(
@@ -679,7 +679,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                       width: "15%",
                     }}
                   >
-                    Base Score
+                    Score
                   </TableCell>
                 </>
               ) : activeTab === 2 ? (
@@ -696,7 +696,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                       width: "20%",
                     }}
                   >
-                    Total Base Score
+                    Total Score
                   </TableCell>
                   <TableCell
                     align="right"
@@ -722,7 +722,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                   >
                     Miner
                   </TableCell>
-                  {/* Top Miners - show both Score and Base Score */}
+                  {/* Top Miners - show Score */}
                   {
                     <>
                       <TableCell
@@ -730,19 +730,10 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                         sx={{
                           ...headerCellStyle,
                           color: "secondary.main",
-                          width: "12%",
+                          width: "15%",
                         }}
                       >
                         Score
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{
-                          ...headerCellStyle,
-                          width: "12%",
-                        }}
-                      >
-                        Base Score
                       </TableCell>
                       <TableCell
                         align="right"
@@ -881,7 +872,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                             fontWeight: 600,
                           }}
                         >
-                          {parseFloat(item?.baseScore || "0").toFixed(4)}
+                          {parseFloat(item?.score || "0").toFixed(4)}
                         </Typography>
                       </TableCell>
                     </>
@@ -997,12 +988,12 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                           </Box>
                         </Box>
                       </TableCell>
-                      {/* Top Miners - show both Score and Base Score */}
+                      {/* Top Miners - show Score */}
                       {
                         <>
                           <TableCell
                             align="right"
-                            sx={{ ...bodyCellStyle, width: "12%" }}
+                            sx={{ ...bodyCellStyle, width: "15%" }}
                           >
                             <Typography
                               sx={{
@@ -1012,21 +1003,6 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                               }}
                             >
                               {Number(item?.totalScore || 0).toFixed(2)}
-                            </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="right"
-                            sx={{ ...bodyCellStyle, width: "12%" }}
-                          >
-                            <Typography
-                              sx={{
-                                fontFamily: '"JetBrains Mono", monospace',
-                                fontSize: "0.75rem",
-                                fontWeight: 600,
-                                color: "rgba(255, 255, 255, 0.7)",
-                              }}
-                            >
-                              {Number(item?.baseTotalScore || 0).toFixed(2)}
                             </Typography>
                           </TableCell>
                           <TableCell

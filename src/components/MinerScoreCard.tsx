@@ -62,10 +62,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
   // Use pre-computed stats directly from the evaluation
   const statItems = [
     { label: "Current Score", value: Number(minerStats.totalScore).toFixed(4) },
-    {
-      label: "Base Score",
-      value: Number(minerStats.baseTotalScore).toFixed(4),
-    },
     { label: "Total PRs", value: minerStats.totalPrs },
     {
       label: "Scored Lines",
