@@ -129,6 +129,7 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({ repositoryFullNam
               width: 64,
               height: 64,
               border: "2px solid rgba(255, 255, 255, 0.2)",
+              backgroundColor: owner === 'opentensor' ? '#ffffff' : owner === 'bitcoin' ? '#F7931A' : 'transparent',
             }}
           />
           <Box>
