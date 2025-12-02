@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Stack, Typography, Grid } from "@mui/material";
 import { Page } from "../components/layout";
+import { SEO } from "../components";
 
 interface SectionProps {
   title: string;
@@ -39,6 +40,10 @@ const Section: React.FC<SectionProps> = ({ title, children }) => (
 const AboutPage: React.FC = () => {
   return (
     <Page title="About">
+      <SEO
+        title="About Gittensor"
+        description="Learn about Gittensor's mission to transform software into a global public resource. Understand how miners, validators, and the community work together."
+      />
       <Box
         sx={{
           maxWidth: 900,

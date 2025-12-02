@@ -33,7 +33,6 @@ const HomePage: React.FC = () => {
       <SEO
         title="Gittensor"
         description="The workforce for open source. Compete for rewards by contributing quality code to open source repositories."
-        image="/og-images/home.jpg"
         type="website"
       />
       <Box
