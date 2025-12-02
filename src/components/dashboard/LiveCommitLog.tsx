@@ -8,8 +8,8 @@ import {
   CircularProgress,
   useMediaQuery,
   alpha,
+  Avatar,
 } from "@mui/material";
-import { GitHub } from "@mui/icons-material";
 import theme from "../../theme";
 import { useInfiniteCommitLog } from "../../api";
 import dayjs from "dayjs";
@@ -315,14 +315,14 @@ const LiveCommitLog: React.FC = () => {
                           spacing={0.75}
                           flex={1}
                         >
-                          <GitHub
+                          <Avatar
+                            src={`https://avatars.githubusercontent.com/${entry.repository.split('/')[0]}`}
+                            alt={entry.repository.split('/')[0]}
                             sx={{
-                              fontSize: isMobile
-                                ? "0.9rem"
-                                : isTablet
-                                  ? "1.1rem"
-                                  : "1rem",
-                              color: "text.secondary",
+                              width: isMobile ? 14 : isTablet ? 18 : 16,
+                              height: isMobile ? 14 : isTablet ? 18 : 16,
+                              border: "1px solid rgba(255, 255, 255, 0.2)",
+                              backgroundColor: entry.repository.split('/')[0] === 'opentensor' ? '#ffffff' : entry.repository.split('/')[0] === 'bitcoin' ? '#F7931A' : 'transparent',
                               flexShrink: 0,
                             }}
                           />

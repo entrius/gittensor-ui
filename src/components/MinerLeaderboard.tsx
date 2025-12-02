@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import {
   Box,
   Card,
@@ -19,9 +19,11 @@ import {
   IconButton,
   Collapse,
   TablePagination,
+  Select,
+  MenuItem,
+  FormControl,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import TableChartIcon from "@mui/icons-material/TableChart";
 import ReactECharts from "echarts-for-react";
@@ -30,6 +32,9 @@ import { CommitLog } from "../api/models/Dashboard";
 
 interface MinerLeaderboardProps {
   onSelectMiner: (githubId: string) => void;
+  onSelectRepository?: (repositoryFullName: string) => void;
+  activeTab?: number;
+  onTabChange?: (tab: number) => void;
 }
 
 interface MinerStats {
@@ -58,10 +63,17 @@ interface RepoStats {
 
 const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
   onSelectMiner,
+  onSelectRepository,
+  activeTab: controlledActiveTab,
+  onTabChange,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState(0);
+  const [internalActiveTab, setInternalActiveTab] = useState(0);
   const [showChart, setShowChart] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // Use controlled tab if provided, otherwise use internal state
+  const activeTab = controlledActiveTab !== undefined ? controlledActiveTab : internalActiveTab;
 
   // Safe hook usage
   const allMinerDataQuery = useAllMinerData();
@@ -92,7 +104,11 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
   const [topPRsLeaderboard, setTopPRsLeaderboard] = useState<any[]>([]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
+    if (onTabChange) {
+      onTabChange(newValue);
+    } else {
+      setInternalActiveTab(newValue);
+    }
   };
 
   // Process Repo Weights
@@ -198,7 +214,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
         uniqueMiners: new Set<string>(),
       };
 
-      current.totalScore += parseFloat(pr.baseScore || "0"); // Use base score
+      current.totalScore += parseFloat(pr.score || "0");
       current.totalPRs += 1;
       if (pr.author) {
         current.uniqueMiners.add(pr.author);
@@ -217,10 +233,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
       return;
     }
     const topPRs = [...allPRs]
-      .sort(
-        (a, b) =>
-          parseFloat(b.baseScore || "0") - parseFloat(a.baseScore || "0"),
-      )
+      .sort((a, b) => parseFloat(b.score || "0") - parseFloat(a.score || "0"))
       .slice(0, 100)
       .map((pr, index) => ({ ...pr, rank: index + 1 }));
     setTopPRsLeaderboard(topPRs);
@@ -331,9 +344,9 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
         (item: any) => `#${item?.pullRequestNumber || ""}`,
       );
       seriesData = chartData.map((item: any) =>
-        Number(parseFloat(item?.baseScore || "0")),
+        Number(parseFloat(item?.score || "0")),
       );
-      title = "Top Pull Requests by Base Score";
+      title = "Top Pull Requests by Score";
     } else if (activeTab === 2) {
       // Top Repos
       xAxisData = chartData.map(
@@ -441,6 +454,13 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
     setPage(0);
   }, [activeTab, searchQuery]);
 
+  // Scroll to top when rows per page changes
+  React.useEffect(() => {
+    if (cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [rowsPerPage]);
+
   if (isLoadingPRs || isLoadingRepos || isLoadingMinerStats) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
@@ -451,6 +471,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
 
   return (
     <Card
+      ref={cardRef}
       sx={{
         borderRadius: 3,
         border: "1px solid rgba(255, 255, 255, 0.1)",
@@ -545,6 +566,49 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
             </IconButton>
           </Tooltip>
 
+          <FormControl size="small">
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "rgba(255, 255, 255, 0.7)",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: "0.8rem",
+                }}
+              >
+                Rows:
+              </Typography>
+              <Select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(e.target.value as number);
+                  setPage(0);
+                }}
+                sx={{
+                  color: "#ffffff",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  backgroundColor: "rgba(0, 0, 0, 0.4)",
+                  fontSize: "0.8rem",
+                  height: "36px",
+                  borderRadius: 2,
+                  minWidth: "80px",
+                  "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
+                  "&:hover fieldset": {
+                    borderColor: "rgba(255, 255, 255, 0.2)",
+                  },
+                  "&.Mui-focused fieldset": { borderColor: "primary.main" },
+                  "& .MuiSelect-select": {
+                    py: 0.75,
+                  },
+                }}
+              >
+                <MenuItem value={10}>10</MenuItem>
+                <MenuItem value={25}>25</MenuItem>
+                <MenuItem value={50}>50</MenuItem>
+              </Select>
+            </Box>
+          </FormControl>
+
           <TextField
             placeholder="Search..."
             size="small"
@@ -600,11 +664,19 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
       <TableContainer
         sx={{
           maxHeight: "600px",
-          overflow: "auto",
-          "&::-webkit-scrollbar": { width: "8px", height: "8px" },
+          overflowY: "auto",
+          "&::-webkit-scrollbar": {
+            width: "8px",
+          },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: "transparent",
+          },
           "&::-webkit-scrollbar-thumb": {
-            backgroundColor: "rgba(255,255,255,0.1)",
+            backgroundColor: "rgba(255, 255, 255, 0.1)",
             borderRadius: "4px",
+            "&:hover": {
+              backgroundColor: "rgba(255, 255, 255, 0.2)",
+            },
           },
         }}
       >
@@ -638,7 +710,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                       width: "15%",
                     }}
                   >
-                    Base Score
+                    Score
                   </TableCell>
                 </>
               ) : activeTab === 2 ? (
@@ -655,7 +727,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                       width: "20%",
                     }}
                   >
-                    Total Base Score
+                    Total Score
                   </TableCell>
                   <TableCell
                     align="right"
@@ -681,7 +753,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                   >
                     Miner
                   </TableCell>
-                  {/* Top Miners - show both Score and Base Score */}
+                  {/* Top Miners - show Score */}
                   {
                     <>
                       <TableCell
@@ -689,19 +761,10 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                         sx={{
                           ...headerCellStyle,
                           color: "secondary.main",
-                          width: "12%",
+                          width: "15%",
                         }}
                       >
                         Score
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{
-                          ...headerCellStyle,
-                          width: "12%",
-                        }}
-                      >
-                        Base Score
                       </TableCell>
                       <TableCell
                         align="right"
@@ -741,279 +804,316 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
           <TableBody>
             {Array.isArray(currentData) &&
               currentData
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .slice(
+                  page * rowsPerPage,
+                  page * rowsPerPage + rowsPerPage,
+                )
                 .map((item: any) => (
-                  <TableRow
-                    key={
-                      activeTab === 1
-                        ? `${item?.repository}-${item?.pullRequestNumber}`
-                        : activeTab === 2
-                          ? item?.repository
-                          : item?.githubId
+                <TableRow
+                  key={
+                    activeTab === 1
+                      ? `${item?.repository}-${item?.pullRequestNumber}`
+                      : activeTab === 2
+                        ? item?.repository
+                        : item?.githubId
+                  }
+                  hover
+                  onClick={() => {
+                    if (activeTab === 0) {
+                      onSelectMiner(item?.githubId || item?.author);
+                    } else if (activeTab === 2 && onSelectRepository) {
+                      onSelectRepository(item?.repository || "");
                     }
-                    hover
-                    onClick={() =>
-                      activeTab !== 1 &&
-                      activeTab !== 2 &&
-                      onSelectMiner(item?.githubId || item?.author)
-                    }
-                    sx={{
-                      cursor:
-                        activeTab !== 1 && activeTab !== 2
-                          ? "pointer"
-                          : "default",
-                      "&:hover": {
-                        backgroundColor: "rgba(255, 255, 255, 0.05)",
-                      },
-                      transition: "background-color 0.2s",
-                    }}
-                  >
-                    <TableCell sx={{ ...bodyCellStyle, width: "80px" }}>
-                      {getRankIcon(item?.rank || 0)}
-                    </TableCell>
+                  }}
+                  sx={{
+                    cursor:
+                      activeTab === 0 || (activeTab === 2 && onSelectRepository)
+                        ? "pointer"
+                        : "default",
+                    "&:hover": {
+                      backgroundColor: "rgba(255, 255, 255, 0.05)",
+                    },
+                    transition: "background-color 0.2s",
+                  }}
+                >
+                  <TableCell sx={{ ...bodyCellStyle, width: "80px" }}>
+                    {getRankIcon(item?.rank || 0)}
+                  </TableCell>
 
-                    {activeTab === 1 ? (
-                      // Top PRs Rows
-                      <>
-                        <TableCell sx={{ ...bodyCellStyle, width: "40%" }}>
-                          <a
-                            href={`https://github.com/${item?.repository}/pull/${item?.pullRequestNumber}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              color: "#ffffff",
-                              textDecoration: "none",
-                              fontWeight: 500,
-                            }}
-                          >
-                            {item?.pullRequestTitle || ""}
-                          </a>
-                        </TableCell>
-                        <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <Avatar
-                              src={`https://avatars.githubusercontent.com/${item?.author}`}
-                              sx={{ width: 20, height: 20 }}
-                            />
-                            {item?.author || ""}
-                          </Box>
-                        </TableCell>
-                        <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
-                          {item?.repository || ""}
-                        </TableCell>
-                        <TableCell
-                          align="right"
-                          sx={{ ...bodyCellStyle, width: "15%" }}
+                  {activeTab === 1 ? (
+                    // Top PRs Rows
+                    <>
+                      <TableCell sx={{ ...bodyCellStyle, width: "40%" }}>
+                        <a
+                          href={`https://github.com/${item?.repository}/pull/${item?.pullRequestNumber}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            color: "#ffffff",
+                            textDecoration: "none",
+                            fontWeight: 500,
+                          }}
                         >
-                          <Typography
+                          {item?.pullRequestTitle || ""}
+                        </a>
+                      </TableCell>
+                      <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                          }}
+                        >
+                          <Avatar
+                            src={`https://avatars.githubusercontent.com/${item?.author}`}
+                            sx={{ width: 20, height: 20 }}
+                          />
+                          {item?.author || ""}
+                        </Box>
+                      </TableCell>
+                      <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                          }}
+                        >
+                          <Avatar
+                            src={`https://avatars.githubusercontent.com/${(item?.repository || "").split("/")[0]}`}
+                            alt={(item?.repository || "").split("/")[0]}
                             sx={{
-                              fontFamily: '"JetBrains Mono", monospace',
-                              fontSize: "0.75rem",
-                              fontWeight: 600,
+                              width: 20,
+                              height: 20,
+                              border: "1px solid rgba(255, 255, 255, 0.2)",
+                              backgroundColor:
+                                (item?.repository || "").split("/")[0] ===
+                                "opentensor"
+                                  ? "#ffffff"
+                                  : (item?.repository || "").split("/")[0] ===
+                                      "bitcoin"
+                                    ? "#F7931A"
+                                    : "transparent",
                             }}
-                          >
-                            {parseFloat(item?.baseScore || "0").toFixed(4)}
-                          </Typography>
-                        </TableCell>
-                      </>
-                    ) : activeTab === 2 ? (
-                      // Top Repos Rows
-                      <>
-                        <TableCell sx={{ ...bodyCellStyle, width: "40%" }}>
-                          <a
-                            href={`https://github.com/${item?.repository}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
+                          />
+                          {item?.repository || ""}
+                        </Box>
+                      </TableCell>
+                      <TableCell
+                        align="right"
+                        sx={{ ...bodyCellStyle, width: "15%" }}
+                      >
+                        <Typography
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.75rem",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {parseFloat(item?.score || "0").toFixed(4)}
+                        </Typography>
+                      </TableCell>
+                    </>
+                  ) : activeTab === 2 ? (
+                    // Top Repos Rows
+                    <>
+                      <TableCell sx={{ ...bodyCellStyle, width: "40%" }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                          }}
+                        >
+                          <Avatar
+                            src={`https://avatars.githubusercontent.com/${(item?.repository || "").split("/")[0]}`}
+                            alt={(item?.repository || "").split("/")[0]}
+                            sx={{
+                              width: 20,
+                              height: 20,
+                              border: "1px solid rgba(255, 255, 255, 0.2)",
+                              backgroundColor:
+                                (item?.repository || "").split("/")[0] ===
+                                "opentensor"
+                                  ? "#ffffff"
+                                  : (item?.repository || "").split("/")[0] ===
+                                      "bitcoin"
+                                    ? "#F7931A"
+                                    : "transparent",
+                            }}
+                          />
+                          <Typography
+                            component="span"
+                            sx={{
                               color: "#ffffff",
-                              textDecoration: "none",
                               fontWeight: 500,
                             }}
                           >
                             {item?.repository || ""}
-                          </a>
-                        </TableCell>
-                        <TableCell
-                          align="right"
-                          sx={{ ...bodyCellStyle, width: "20%" }}
-                        >
-                          <Typography
-                            sx={{
-                              fontFamily: '"JetBrains Mono", monospace',
-                              fontSize: "0.75rem",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {Number(item?.totalScore || 0).toFixed(2)}
                           </Typography>
-                        </TableCell>
-                        <TableCell
-                          align="right"
-                          sx={{ ...bodyCellStyle, width: "20%" }}
-                        >
-                          {item?.totalPRs || 0}
-                        </TableCell>
-                        <TableCell
-                          align="right"
-                          sx={{ ...bodyCellStyle, width: "15%" }}
-                        >
-                          {item?.uniqueMiners?.size || 0}
-                        </TableCell>
-                      </>
-                    ) : (
-                      // Miner Rows
-                      <>
-                        <TableCell
+                        </Box>
+                      </TableCell>
+                      <TableCell
+                        align="right"
+                        sx={{ ...bodyCellStyle, width: "20%" }}
+                      >
+                        <Typography
                           sx={{
-                            ...bodyCellStyle,
-                            width: activeTab === 0 ? "30%" : "40%",
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.75rem",
+                            fontWeight: 600,
                           }}
                         >
-                          <Box
+                          {Number(item?.totalScore || 0).toFixed(2)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell
+                        align="right"
+                        sx={{ ...bodyCellStyle, width: "20%" }}
+                      >
+                        {item?.totalPRs || 0}
+                      </TableCell>
+                      <TableCell
+                        align="right"
+                        sx={{ ...bodyCellStyle, width: "15%" }}
+                      >
+                        {item?.uniqueMiners?.size || 0}
+                      </TableCell>
+                    </>
+                  ) : (
+                    // Miner Rows
+                    <>
+                      <TableCell
+                        sx={{
+                          ...bodyCellStyle,
+                          width: activeTab === 0 ? "30%" : "40%",
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                          }}
+                        >
+                          <Avatar
+                            src={`https://avatars.githubusercontent.com/${item?.author || item?.githubId}`}
+                            alt={item?.author || item?.githubId}
                             sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1.5,
+                              width: 24,
+                              height: 24,
+                              border: "1px solid rgba(255, 255, 255, 0.2)",
                             }}
-                          >
-                            <Avatar
-                              src={`https://avatars.githubusercontent.com/${item?.author || item?.githubId}`}
-                              alt={item?.author || item?.githubId}
+                          />
+                          <Box>
+                            <Typography
+                              variant="body2"
                               sx={{
-                                width: 24,
-                                height: 24,
-                                border: "1px solid rgba(255, 255, 255, 0.2)",
+                                fontWeight: 600,
+                                color: "#ffffff",
+                                fontSize: "0.85rem",
+                                fontFamily: '"JetBrains Mono", monospace',
                               }}
-                            />
-                            <Box>
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  fontWeight: 600,
-                                  color: "#ffffff",
-                                  fontSize: "0.85rem",
-                                  fontFamily: '"JetBrains Mono", monospace',
-                                }}
-                              >
-                                {item?.author || item?.githubId || ""}
-                              </Typography>
-                              <Typography
-                                variant="caption"
-                                sx={{
-                                  color: "rgba(255, 255, 255, 0.4)",
-                                  fontSize: "0.7rem",
-                                  fontFamily: '"JetBrains Mono", monospace',
-                                }}
-                              >
-                                {(item?.hotkey || "").substring(0, 8)}...
-                              </Typography>
-                            </Box>
+                            >
+                              {item?.author || item?.githubId || ""}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: "rgba(255, 255, 255, 0.4)",
+                                fontSize: "0.7rem",
+                                fontFamily: '"JetBrains Mono", monospace',
+                              }}
+                            >
+                              {(item?.hotkey || "").substring(0, 8)}...
+                            </Typography>
                           </Box>
-                        </TableCell>
-                        {/* Top Miners - show both Score and Base Score */}
-                        {
-                          <>
-                            <TableCell
-                              align="right"
-                              sx={{ ...bodyCellStyle, width: "12%" }}
+                        </Box>
+                      </TableCell>
+                      {/* Top Miners - show Score */}
+                      {
+                        <>
+                          <TableCell
+                            align="right"
+                            sx={{ ...bodyCellStyle, width: "15%" }}
+                          >
+                            <Typography
+                              sx={{
+                                fontFamily: '"JetBrains Mono", monospace',
+                                fontSize: "0.75rem",
+                                fontWeight: 600,
+                              }}
                             >
-                              <Typography
-                                sx={{
-                                  fontFamily: '"JetBrains Mono", monospace',
-                                  fontSize: "0.75rem",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                {Number(item?.totalScore || 0).toFixed(2)}
-                              </Typography>
-                            </TableCell>
-                            <TableCell
-                              align="right"
-                              sx={{ ...bodyCellStyle, width: "12%" }}
+                              {Number(item?.totalScore || 0).toFixed(2)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell
+                            align="right"
+                            sx={{ ...bodyCellStyle, width: "10%" }}
+                          >
+                            {item?.totalPRs || 0}
+                          </TableCell>
+                        </>
+                      }
+                      {activeTab === 0 ? (
+                        // Top Miners gets separate Added/Deleted cells plus total
+                        <>
+                          <TableCell
+                            align="right"
+                            sx={{ ...bodyCellStyle, width: "11%" }}
+                          >
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: "#7ee787",
+                                fontFamily: '"JetBrains Mono", monospace',
+                                fontSize: "0.85rem",
+                              }}
                             >
-                              <Typography
-                                sx={{
-                                  fontFamily: '"JetBrains Mono", monospace',
-                                  fontSize: "0.75rem",
-                                  fontWeight: 600,
-                                  color: "rgba(255, 255, 255, 0.7)",
-                                }}
-                              >
-                                {Number(item?.baseTotalScore || 0).toFixed(2)}
-                              </Typography>
-                            </TableCell>
-                            <TableCell
-                              align="right"
-                              sx={{ ...bodyCellStyle, width: "10%" }}
+                              +{(item?.linesAdded || 0).toLocaleString()}
+                            </Typography>
+                          </TableCell>
+                          <TableCell
+                            align="right"
+                            sx={{ ...bodyCellStyle, width: "11%" }}
+                          >
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: "#ff7b72",
+                                fontFamily: '"JetBrains Mono", monospace',
+                                fontSize: "0.85rem",
+                              }}
                             >
-                              {item?.totalPRs || 0}
-                            </TableCell>
-                          </>
-                        }
-                        {activeTab === 0 ? (
-                          // Top Miners gets separate Added/Deleted cells plus total
-                          <>
-                            <TableCell
-                              align="right"
-                              sx={{ ...bodyCellStyle, width: "11%" }}
+                              -{(item?.linesDeleted || 0).toLocaleString()}
+                            </Typography>
+                          </TableCell>
+                          <TableCell
+                            align="right"
+                            sx={{ ...bodyCellStyle, width: "11%" }}
+                          >
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontFamily: '"JetBrains Mono", monospace',
+                                fontSize: "0.85rem",
+                              }}
                             >
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  color: "#7ee787",
-                                  fontFamily: '"JetBrains Mono", monospace',
-                                  fontSize: "0.85rem",
-                                }}
-                              >
-                                +{(item?.linesAdded || 0).toLocaleString()}
-                              </Typography>
-                            </TableCell>
-                            <TableCell
-                              align="right"
-                              sx={{ ...bodyCellStyle, width: "11%" }}
-                            >
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  color: "#ff7b72",
-                                  fontFamily: '"JetBrains Mono", monospace',
-                                  fontSize: "0.85rem",
-                                }}
-                              >
-                                -{(item?.linesDeleted || 0).toLocaleString()}
-                              </Typography>
-                            </TableCell>
-                            <TableCell
-                              align="right"
-                              sx={{ ...bodyCellStyle, width: "11%" }}
-                            >
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  fontFamily: '"JetBrains Mono", monospace',
-                                  fontSize: "0.85rem",
-                                }}
-                              >
-                                {(item?.linesChanged || 0).toLocaleString()}
-                              </Typography>
-                            </TableCell>
-                          </>
-                        ) : null}
-                      </>
-                    )}
-                  </TableRow>
-                ))}
+                              {(item?.linesChanged || 0).toLocaleString()}
+                            </Typography>
+                          </TableCell>
+                        </>
+                      ) : null}
+                    </>
+                  )}
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </TableContainer>
       <TablePagination
-        rowsPerPageOptions={[10, 25, 50]}
+        rowsPerPageOptions={[]}
         component="div"
         count={currentData.length}
         rowsPerPage={rowsPerPage}
@@ -1025,9 +1125,6 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
         sx={{
           borderTop: "1px solid rgba(255, 255, 255, 0.1)",
           color: "rgba(255, 255, 255, 0.7)",
-          ".MuiTablePagination-select": {
-            fontFamily: '"JetBrains Mono", monospace',
-          },
           ".MuiTablePagination-displayedRows": {
             fontFamily: '"JetBrains Mono", monospace',
           },
@@ -1062,10 +1159,60 @@ const bodyCellStyle = {
 };
 
 const getRankIcon = (rank: number) => {
-  if (rank === 1) return <EmojiEventsIcon sx={{ color: "#FFD700" }} />;
-  if (rank === 2) return <EmojiEventsIcon sx={{ color: "#C0C0C0" }} />;
-  if (rank === 3) return <EmojiEventsIcon sx={{ color: "#CD7F32" }} />;
-  return `#${rank}`;
+  return (
+    <Box
+      sx={{
+        backgroundColor: "#000000",
+        borderRadius: "2px",
+        width: "22px",
+        height: "22px",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        border: "1px solid",
+        borderColor:
+          rank === 1
+            ? "rgba(255, 215, 0, 0.4)"
+            : rank === 2
+              ? "rgba(192, 192, 192, 0.4)"
+              : rank === 3
+                ? "rgba(205, 127, 50, 0.4)"
+                : "rgba(255, 255, 255, 0.15)",
+        boxShadow:
+          rank === 1
+            ? "0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)"
+            : rank === 2
+              ? "0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)"
+              : rank === 3
+                ? "0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)"
+                : "none",
+      }}
+    >
+      <Typography
+        component="span"
+        sx={{
+          color:
+            rank === 1
+              ? "#FFD700"
+              : rank === 2
+                ? "#C0C0C0"
+                : rank === 3
+                  ? "#CD7F32"
+                  : "rgba(255, 255, 255, 0.6)",
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: "0.65rem",
+          fontWeight: 600,
+          lineHeight: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {rank}
+      </Typography>
+    </Box>
+  );
 };
 
 export default MinerLeaderboard;

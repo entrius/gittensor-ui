@@ -1,11 +1,52 @@
-import React, { useState } from "react";
-import { Box, Button, Typography } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import React from "react";
+import { Box } from "@mui/material";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Page } from "../components/layout";
-import { MinerScoreCard, MinerPRsTable, MinerLeaderboard } from "../components";
+import { MinerLeaderboard } from "../components";
 
 const MinersPage: React.FC = () => {
-  const [selectedMiner, setSelectedMiner] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Map tab names to indices
+  const tabNameToIndex: Record<string, number> = {
+    miners: 0,
+    prs: 1,
+    repos: 2,
+  };
+
+  const indexToTabName: Record<number, string> = {
+    0: "miners",
+    1: "prs",
+    2: "repos",
+  };
+
+  // Get active tab from query param, default to 0 (Top Miners)
+  const tabParam = searchParams.get("tab");
+  const activeTab = tabParam && tabNameToIndex[tabParam] !== undefined
+    ? tabNameToIndex[tabParam]
+    : 0;
+
+  const handleSelectMiner = (githubId: string) => {
+    navigate(`/miners/details?githubId=${githubId}`);
+  };
+
+  const handleSelectRepository = (repositoryFullName: string) => {
+    navigate(
+      `/miners/repository?name=${encodeURIComponent(repositoryFullName)}`,
+    );
+  };
+
+  const handleTabChange = (newTab: number) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (newTab === 0) {
+      // Default tab, remove param for cleaner URL
+      newParams.delete("tab");
+    } else {
+      newParams.set("tab", indexToTabName[newTab]);
+    }
+    setSearchParams(newParams);
+  };
 
   return (
     <Page title="Miner Dashboard">
@@ -19,51 +60,14 @@ const MinersPage: React.FC = () => {
           py: { xs: 2, sm: 0 },
         }}
       >
-        {!selectedMiner ? (
-          <Box sx={{ maxWidth: 1200, width: "100%" }}>
-            <MinerLeaderboard onSelectMiner={setSelectedMiner} />
-          </Box>
-        ) : (
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 3,
-              maxWidth: 1200,
-              width: "100%",
-              px: { xs: 2, sm: 2, md: 0 },
-            }}
-          >
-            <Button
-              startIcon={<ArrowBackIcon sx={{ fontSize: "1rem !important" }} />}
-              onClick={() => setSelectedMiner(null)}
-              sx={{
-                mb: 2,
-                alignSelf: "flex-start",
-                color: "rgba(255, 255, 255, 0.6)",
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "0.8rem",
-                fontWeight: 500,
-                letterSpacing: "1px",
-                textTransform: "uppercase",
-                "&:hover": {
-                  color: "#ffffff",
-                  backgroundColor: "transparent",
-                },
-                pl: 0,
-              }}
-              disableRipple
-            >
-              Back to Leaderboard
-            </Button>
-
-            {/* Miner Score Card */}
-            <MinerScoreCard githubId={selectedMiner} />
-
-            {/* Miner PRs Table */}
-            <MinerPRsTable githubId={selectedMiner} />
-          </Box>
-        )}
+        <Box sx={{ maxWidth: 1200, width: "100%" }}>
+          <MinerLeaderboard
+            onSelectMiner={handleSelectMiner}
+            onSelectRepository={handleSelectRepository}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+        </Box>
       </Box>
     </Page>
   );
