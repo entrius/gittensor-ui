@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Box, Button } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { Page } from "../components/layout";
-import { MinerScoreCard, MinerPRsTable } from "../components";
+import { MinerScoreCard, MinerPRsTable, SEO } from "../components";
 
 const MinerDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -16,8 +16,17 @@ const MinerDetailsPage: React.FC = () => {
     return null;
   }
 
+  // Use GitHub avatar as OG image (format: https://github.com/{username}.png)
+  const minerAvatarUrl = `https://github.com/${githubId}.png?size=1200`;
+
   return (
     <Page title="Miner Details">
+      <SEO
+        title={`Miner Stats - ${githubId}`}
+        description={`View detailed statistics, contributions, and pull requests for ${githubId} on Gittensor. Track open source contributions and rewards.`}
+        image={minerAvatarUrl}
+        type="website"
+      />
       <Box
         sx={{
           display: "flex",

@@ -1,0 +1,22 @@
+[build]
+  publish = "dist"
+  command = "yarn build"
+
+# API proxy to avoid CORS issues (matching Vite dev server proxy)
+[[redirects]]
+  from = "/dash/*"
+  to = "https://api.gittensor.io/dash/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/miners/*"
+  to = "https://api.gittensor.io/miners/:splat"
+  status = 200
+  force = true
+
+# SPA fallback (must be last)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
