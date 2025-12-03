@@ -3,6 +3,7 @@
   command = "yarn build"
 
 # API proxy to avoid CORS issues (matching Vite dev server proxy)
+# Specific API endpoints only - don't catch /miners/details or /miners/repository
 [[redirects]]
   from = "/dash/*"
   to = "https://api.gittensor.io/dash/:splat"
@@ -10,8 +11,26 @@
   force = true
 
 [[redirects]]
-  from = "/miners/*"
-  to = "https://api.gittensor.io/miners/:splat"
+  from = "/miners/all/*"
+  to = "https://api.gittensor.io/miners/all/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/miners/stats/*"
+  to = "https://api.gittensor.io/miners/stats/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/miners/:id/prs"
+  to = "https://api.gittensor.io/miners/:id/prs"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/miners/:id/stats"
+  to = "https://api.gittensor.io/miners/:id/stats"
   status = 200
   force = true
 
