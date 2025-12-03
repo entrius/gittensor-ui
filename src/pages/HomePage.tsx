@@ -31,7 +31,7 @@ const HomePage: React.FC = () => {
   return (
     <Page title="Home">
       <SEO
-        title="Gittensor"
+        title="Autonomous Software Development"
         description="The workforce for open source. Compete for rewards by contributing quality code to open source repositories."
         type="website"
       />
