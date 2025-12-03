@@ -99,11 +99,54 @@ export default async (request: Request, context: Context) => {
     if (pathname === "/miners/repository") {
         const repo = searchParams.get("name");
         if (repo) {
-            title = `${repo} | Gittensor`;
-            description = `View detailed statistics, contributors, and pull requests for ${repo} on Gittensor. Track repository activity and open source contributions.`;
-
-            // Extract owner from repo name (format: owner/repo)
             const repoOwner = repo.split("/")[0];
+            const repoName = repo.split("/")[1] || repo;
+
+            try {
+                // Fetch repository stats from Gittensor API
+                const repoStatsResponse = await fetch(`https://api.gittensor.io/miners/repository/${encodeURIComponent(repo)}/stats`);
+
+                if (repoStatsResponse.ok) {
+                    const repoStats = await repoStatsResponse.json();
+
+                    // Build description with repository stats
+                    const statParts = [];
+
+                    if (repoStats.totalContributors !== undefined) {
+                        statParts.push(`${repoStats.totalContributors} contributors`);
+                    }
+
+                    if (repoStats.totalPRs !== undefined) {
+                        statParts.push(`${repoStats.totalPRs} PRs`);
+                    }
+
+                    if (repoStats.totalCommits !== undefined) {
+                        statParts.push(`${repoStats.totalCommits} commits`);
+                    }
+
+                    if (repoStats.totalAdditions !== undefined || repoStats.totalDeletions !== undefined) {
+                        const additions = repoStats.totalAdditions || 0;
+                        const deletions = repoStats.totalDeletions || 0;
+                        statParts.push(`${additions.toLocaleString()}+ / ${deletions.toLocaleString()}- lines`);
+                    }
+
+                    if (repoStats.weight !== undefined) {
+                        statParts.push(`Weight: ${repoStats.weight.toFixed(4)}`);
+                    }
+
+                    description = statParts.length > 0
+                        ? statParts.join(' • ')
+                        : `View detailed statistics, contributors, and pull requests for ${repo} on Gittensor.`;
+                } else {
+                    // Fallback if API fails
+                    description = `Open source repository on Gittensor. Track activity, contributions, and rewards for ${repo}.`;
+                }
+            } catch (error) {
+                console.error("Failed to fetch repository stats:", error);
+                description = `View detailed statistics, contributors, and pull requests for ${repo} on Gittensor.`;
+            }
+
+            title = `${repoName} | Gittensor`;
             image = `https://github.com/${repoOwner}.png?size=1200`;
         }
     }
