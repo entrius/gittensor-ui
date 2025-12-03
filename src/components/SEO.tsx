@@ -12,7 +12,7 @@ export interface SEOProps {
 }
 
 const DEFAULT_IMAGE = "/og-images/gittensor-og.jpg";
-const SITE_NAME = "Gittensor | Autonomous Software Development";
+const SITE_NAME = "Gittensor";
 
 export const SEO: React.FC<SEOProps> = ({
     title,
@@ -31,18 +31,23 @@ export const SEO: React.FC<SEOProps> = ({
         ? image
         : `${typeof window !== "undefined" ? window.location.origin : ""}${image}`;
 
-    // Full title with site name
-    const fullTitle = `${title} | ${siteName}`;
+    // Browser tab title - just the site name for homepage, otherwise "PageTitle | Gittensor"
+    const browserTitle = title === "Autonomous Software Development" ? siteName : `${title} | ${siteName}`;
+
+    // Full title for OG/Twitter tags
+    const ogTitle = title === "Autonomous Software Development"
+        ? "Gittensor | Autonomous Software Development"
+        : `${title} | Gittensor`;
 
     return (
         <Helmet>
             {/* Essential Meta Tags */}
-            <title>{fullTitle}</title>
+            <title>{browserTitle}</title>
             <meta name="description" content={description} />
             <link rel="canonical" href={currentUrl} />
 
             {/* Open Graph Tags (Facebook, LinkedIn, WhatsApp, Discord, etc.) */}
-            <meta property="og:title" content={fullTitle} />
+            <meta property="og:title" content={ogTitle} />
             <meta property="og:description" content={description} />
             <meta property="og:image" content={absoluteImageUrl} />
             <meta property="og:image:width" content="1200" />
@@ -56,7 +61,7 @@ export const SEO: React.FC<SEOProps> = ({
 
             {/* Twitter Card Tags */}
             <meta name="twitter:card" content="summary_large_image" />
-            <meta name="twitter:title" content={fullTitle} />
+            <meta name="twitter:title" content={ogTitle} />
             <meta name="twitter:description" content={description} />
             <meta name="twitter:image" content={absoluteImageUrl} />
             <meta name="twitter:image:alt" content={`${title} - ${siteName}`} />
