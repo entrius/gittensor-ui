@@ -11,7 +11,7 @@ export interface SEOProps {
     twitterHandle?: string;
 }
 
-const DEFAULT_IMAGE = "/og-images/autonomous-software-development.jpg";
+const DEFAULT_IMAGE = "/og-images/gittensor-og.jpg";
 const SITE_NAME = "Gittensor | Autonomous Software Development";
 
 export const SEO: React.FC<SEOProps> = ({
