@@ -1,4 +1,5 @@
 import type { Context } from "https://edge.netlify.com";
+import { HTMLRewriter } from "https://ghuc.cc/worker-tools/html-rewriter/index.ts";
 
 // Types for API responses
 interface MinerStats {
@@ -14,10 +15,6 @@ export default async (request: Request, context: Context) => {
     const url = new URL(request.url);
     const pathname = url.pathname;
     const searchParams = url.searchParams;
-
-    // Fetch the original HTML
-    const response = await context.next();
-    const html = await response.text();
 
     // Default meta tags
     let title = "Gittensor | Autonomous Software Development";
@@ -111,42 +108,58 @@ export default async (request: Request, context: Context) => {
         }
     }
 
-    // Escape special characters for HTML attributes
-    const escapeHtml = (str: string) => str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+    // Fetch the original HTML
+    const response = await context.next();
 
-    const safeTitle = escapeHtml(title);
-    const safeDescription = escapeHtml(description);
+    // Use HTMLRewriter to modify meta tags
+    const rewriter = new HTMLRewriter()
+        .on("title", {
+            element(element) {
+                element.setInnerContent(title);
+            },
+        })
+        .on('meta[name="title"]', {
+            element(element) {
+                element.setAttribute("content", title);
+            },
+        })
+        .on('meta[name="description"]', {
+            element(element) {
+                element.setAttribute("content", description);
+            },
+        })
+        .on('meta[property="og:title"]', {
+            element(element) {
+                element.setAttribute("content", title);
+            },
+        })
+        .on('meta[property="og:description"]', {
+            element(element) {
+                element.setAttribute("content", description);
+            },
+        })
+        .on('meta[property="og:image"]', {
+            element(element) {
+                element.setAttribute("content", image);
+            },
+        })
+        .on('meta[property="twitter:title"]', {
+            element(element) {
+                element.setAttribute("content", title);
+            },
+        })
+        .on('meta[property="twitter:description"]', {
+            element(element) {
+                element.setAttribute("content", description);
+            },
+        })
+        .on('meta[property="twitter:image"]', {
+            element(element) {
+                element.setAttribute("content", image);
+            },
+        });
 
-    // Replace meta tags in the HTML
-    let modifiedHtml = html
-        // Update title
-        .replace(/<title>.*?<\/title>/, `<title>${safeTitle}</title>`)
-        // Update og:title
-        .replace(/<meta property="og:title" content=".*?" \/>/, `<meta property="og:title" content="${safeTitle}" />`)
-        // Update twitter:title
-        .replace(/<meta property="twitter:title" content=".*?" \/>/, `<meta property="twitter:title" content="${safeTitle}" />`)
-        // Update og:description
-        .replace(/<meta property="og:description" content=".*?" \/>/, `<meta property="og:description" content="${safeDescription}" />`)
-        // Update twitter:description
-        .replace(/<meta property="twitter:description" content=".*?" \/>/, `<meta property="twitter:description" content="${safeDescription}" />`)
-        // Update meta description
-        .replace(/<meta name="description" content=".*?" \/>/, `<meta name="description" content="${safeDescription}" />`)
-        // Update og:image
-        .replace(/<meta property="og:image" content=".*?" \/>/, `<meta property="og:image" content="${image}" />`)
-        // Update twitter:image
-        .replace(/<meta property="twitter:image" content=".*?" \/>/, `<meta property="twitter:image" content="${image}" />`);
-
-    return new Response(modifiedHtml, {
-        headers: {
-            "content-type": "text/html",
-            "cache-control": "public, max-age=300", // Cache for 5 minutes
-        },
-    });
+    return rewriter.transform(response);
 };
 
 export const config = {
