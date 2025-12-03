@@ -16,8 +16,11 @@ const MinerDetailsPage: React.FC = () => {
     return null;
   }
 
-  // Use GitHub avatar as OG image (format: https://github.com/{username}.png)
-  const minerAvatarUrl = `https://github.com/${githubId}.png?size=1200`;
+  // Use GitHub avatar as OG image - supports both username and numeric ID
+  // For numeric IDs, use: https://avatars.githubusercontent.com/u/{id}?s=1200
+  const minerAvatarUrl = /^\d+$/.test(githubId)
+    ? `https://avatars.githubusercontent.com/u/${githubId}?s=1200`
+    : `https://github.com/${githubId}.png?size=1200`;
 
   return (
     <Page title="Miner Details">
