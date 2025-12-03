@@ -30,25 +30,54 @@ export default async (request: Request, context: Context) => {
             try {
                 // Fetch miner stats from API
                 const statsResponse = await fetch(`https://api.gittensor.io/miners/${githubId}/stats`);
+
                 if (statsResponse.ok) {
                     const stats: MinerStats = await statsResponse.json();
 
-                    // Create rich description with actual stats
+                    // Fetch all miner stats to determine rank
+                    const allMinersResponse = await fetch(`https://api.gittensor.io/miners/all/stats`);
+                    let rank = "N/A";
+
+                    if (allMinersResponse.ok) {
+                        const allMiners: MinerStats[] = await allMinersResponse.json();
+                        // Sort by totalScore descending to get rank
+                        const sortedMiners = allMiners.sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+                        const minerIndex = sortedMiners.findIndex((m: any) => m.githubId === githubId);
+                        if (minerIndex !== -1) {
+                            rank = `#${minerIndex + 1}`;
+                        }
+                    }
+
+                    // Fetch GitHub username if it's a numeric ID
+                    let displayName = githubId;
+                    if (/^\d+$/.test(githubId)) {
+                        try {
+                            const githubResponse = await fetch(`https://api.github.com/user/${githubId}`);
+                            if (githubResponse.ok) {
+                                const githubData = await githubResponse.json();
+                                displayName = githubData.login || githubId;
+                            }
+                        } catch (e) {
+                            console.error("Failed to fetch GitHub username:", e);
+                        }
+                    }
+
+                    // Create rich title and description with actual stats
+                    title = `${displayName} | Rank ${rank}`;
                     description = `Score: ${stats.totalScore?.toFixed(2) || 'N/A'} | PRs: ${stats.totalPRs || 0} | Lines: +${stats.totalAdditions || 0}/-${stats.totalDeletions || 0} | Open PRs: ${stats.totalOpenPrs || 0}`;
-                    title = `${githubId} - Gittensor Miner`;
+                } else {
+                    title = `${githubId} | Gittensor`;
+                    description = `View detailed statistics, contributions, and pull requests for ${githubId} on Gittensor.`;
                 }
             } catch (error) {
                 console.error("Failed to fetch miner stats:", error);
                 // Fallback to generic description
+                title = `${githubId} | Gittensor`;
                 description = `View detailed statistics, contributions, and pull requests for ${githubId} on Gittensor.`;
             }
 
-            title = `${githubId} | Gittensor`;
-
-            // Use correct avatar URL format
-            image = /^\d+$/.test(githubId)
-                ? `https://avatars.githubusercontent.com/u/${githubId}?s=1200`
-                : `https://github.com/${githubId}.png?size=1200`;
+            // Use dynamic OG image generator
+            image = `https://magical-crostata-b02d38.netlify.app/api/og-image/miner?githubId=${encodeURIComponent(githubId)}`;
         }
     }
 
@@ -59,9 +88,8 @@ export default async (request: Request, context: Context) => {
             title = `${repo} | Gittensor`;
             description = `View detailed statistics, contributors, and pull requests for ${repo} on Gittensor. Track repository activity and open source contributions.`;
 
-            // Extract owner from repo name (format: owner/repo)
-            const repoOwner = repo.split("/")[0];
-            image = `https://github.com/${repoOwner}.png?size=1200`;
+            // Use dynamic OG image generator
+            image = `https://magical-crostata-b02d38.netlify.app/api/og-image/repo?repo=${encodeURIComponent(repo)}`;
         }
     }
 
