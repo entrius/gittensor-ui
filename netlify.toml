@@ -34,6 +34,13 @@
   status = 200
   force = true
 
+# Dynamic OG Image generation
+[[redirects]]
+  from = "/og-image"
+  to = "/og-image"
+  status = 200
+  force = true
+
 # SPA fallback (must be last)
 [[redirects]]
   from = "/*"
