@@ -51,8 +51,32 @@ export default async (request: Request, context: Context) => {
                         rank = stats.rank;
                     }
 
-                    // Create rich description with actual stats
-                    description = `Score: ${stats.totalScore?.toFixed(2) || 'N/A'} | PRs: ${stats.totalPRs || 0} | Lines: +${stats.totalAdditions || 0}/-${stats.totalDeletions || 0} | Open PRs: ${stats.totalOpenPrs || 0}`;
+                    // Create rich description with rank and key stats
+                    const statParts = [];
+
+                    if (rank !== null) {
+                        statParts.push(`Rank #${rank}`);
+                    }
+
+                    if (stats.totalScore !== undefined) {
+                        statParts.push(`Score: ${stats.totalScore.toFixed(2)}`);
+                    }
+
+                    if (stats.totalPRs !== undefined) {
+                        statParts.push(`${stats.totalPRs} PRs`);
+                    }
+
+                    if (stats.totalAdditions !== undefined || stats.totalDeletions !== undefined) {
+                        const additions = stats.totalAdditions || 0;
+                        const deletions = stats.totalDeletions || 0;
+                        statParts.push(`${additions.toLocaleString()}+ / ${deletions.toLocaleString()}- lines`);
+                    }
+
+                    if (stats.totalOpenPrs !== undefined && stats.totalOpenPrs > 0) {
+                        statParts.push(`${stats.totalOpenPrs} open`);
+                    }
+
+                    description = statParts.join(' • ');
                 }
             } catch (error) {
                 console.error("Failed to fetch miner data:", error);
