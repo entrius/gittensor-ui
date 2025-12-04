@@ -506,7 +506,7 @@ export default async (req: Request) => {
           width: 1200,
           height: 630,
           headers: {
-            "cache-control": "public, immutable, s-maxage=7200, max-age=7200",
+            "cache-control": "public, s-maxage=300, max-age=300",
             "content-type": "image/png",
           },
         }
@@ -555,7 +555,7 @@ export default async (req: Request) => {
           width: 1200,
           height: 630,
           headers: {
-            "cache-control": "public, immutable, s-maxage=7200, max-age=7200",
+            "cache-control": "public, s-maxage=300, max-age=300",
             "content-type": "image/png",
           },
         }
@@ -566,7 +566,7 @@ export default async (req: Request) => {
         width: 1200,
         height: 630,
         headers: {
-          "cache-control": "public, immutable, s-maxage=86400, max-age=86400",
+          "cache-control": "public, s-maxage=3600, max-age=3600",
           "content-type": "image/png",
         },
       });
