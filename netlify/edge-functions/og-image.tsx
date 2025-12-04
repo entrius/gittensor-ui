@@ -135,9 +135,12 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
                   textTransform: "uppercase",
                   marginBottom: "8px",
                   letterSpacing: "1px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
                 }}
               >
-                <span style={{ fontSize: "28px" }}>🏆</span> SCORE
+                <span style={{ fontSize: "28px", color: "#c9d1d9" }}>◆</span> SCORE
               </span>
               <span
                 style={{
@@ -159,9 +162,12 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
                   textTransform: "uppercase",
                   marginBottom: "8px",
                   letterSpacing: "1px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
                 }}
               >
-                <span style={{ fontSize: "28px" }}>🔀</span> PULL REQUESTS
+                <span style={{ fontSize: "28px", color: "#c9d1d9" }}>⎇</span> PULL REQUESTS
               </span>
               <span
                 style={{
@@ -183,9 +189,12 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
                   textTransform: "uppercase",
                   marginBottom: "8px",
                   letterSpacing: "1px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
                 }}
               >
-                <span style={{ fontSize: "28px" }}>📊</span> LINES
+                <span style={{ fontSize: "28px", color: "#c9d1d9" }}>▬</span> LINES
               </span>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span
