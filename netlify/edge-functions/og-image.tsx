@@ -184,8 +184,8 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
           position: "absolute",
           bottom: "24px",
           right: "60px",
-          gap: "16px",
-          fontSize: "24px",
+          gap: "20px",
+          fontSize: "44px",
           fontWeight: 700,
         }}
       >
