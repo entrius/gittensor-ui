@@ -15,12 +15,11 @@ export default async (request: Request, context: Context) => {
     const url = new URL(request.url);
     const pathname = url.pathname;
     const searchParams = url.searchParams;
-    const origin = url.origin; // e.g. https://magical-crostata-b02d38.netlify.app
 
     // Default meta tags
     let title = "Gittensor | Autonomous Software Development";
     let description = "The workforce for open source. Compete for rewards by contributing quality code to open source repositories.";
-    let image = `${origin}/og-images/gittensor-og.jpg`;
+    let image = "https://magical-crostata-b02d38.netlify.app/og-images/gittensor-og.jpg";
 
     // Miner details page
     if (pathname === "/miners/details") {
@@ -28,7 +27,6 @@ export default async (request: Request, context: Context) => {
         if (githubId) {
             let username = githubId;
             let rank: number | null = null;
-            let stats: MinerStats | null = null;
 
             try {
                 // If it's a numeric ID, fetch the GitHub username
@@ -43,10 +41,10 @@ export default async (request: Request, context: Context) => {
                 // Fetch miner stats from API
                 const statsResponse = await fetch(`https://api.gittensor.io/miners/${githubId}/stats`);
                 if (statsResponse.ok) {
-                    stats = await statsResponse.json();
+                    const stats: MinerStats = await statsResponse.json();
 
                     // Get rank if available
-                    if (stats && stats.rank) {
+                    if (stats.rank) {
                         rank = stats.rank;
                     }
 
@@ -57,21 +55,21 @@ export default async (request: Request, context: Context) => {
                         statParts.push(`Rank #${rank}`);
                     }
 
-                    if (stats && stats.totalScore !== undefined) {
+                    if (stats.totalScore !== undefined) {
                         statParts.push(`Score: ${stats.totalScore.toFixed(2)}`);
                     }
 
-                    if (stats && stats.totalPRs !== undefined) {
+                    if (stats.totalPRs !== undefined) {
                         statParts.push(`${stats.totalPRs} PRs`);
                     }
 
-                    if (stats && (stats.totalAdditions !== undefined || stats.totalDeletions !== undefined)) {
+                    if (stats.totalAdditions !== undefined || stats.totalDeletions !== undefined) {
                         const additions = stats.totalAdditions || 0;
                         const deletions = stats.totalDeletions || 0;
                         statParts.push(`${additions.toLocaleString()}+ / ${deletions.toLocaleString()}- lines`);
                     }
 
-                    if (stats && stats.totalOpenPrs !== undefined && stats.totalOpenPrs > 0) {
+                    if (stats.totalOpenPrs !== undefined && stats.totalOpenPrs > 0) {
                         statParts.push(`${stats.totalOpenPrs} open`);
                     }
 
@@ -90,27 +88,10 @@ export default async (request: Request, context: Context) => {
                 title = `${username} | Gittensor`;
             }
 
-            // Construct Dynamic Image URL
-            const imgParams = new URLSearchParams();
-            imgParams.set("title", username);
-            imgParams.set("subtitle", "Gittensor Miner");
-            imgParams.set("type", "miner");
-
-            // Avatar URL
-            const avatarUrl = /^\d+$/.test(githubId)
-                ? `https://avatars.githubusercontent.com/u/${githubId}?s=400`
-                : `https://github.com/${githubId}.png?size=400`;
-            imgParams.set("avatar", avatarUrl);
-
-            if (rank) imgParams.set("rank", rank.toString());
-            if (stats) {
-                if (stats.totalScore) imgParams.set("score", stats.totalScore.toFixed(2));
-                if (stats.totalPRs) imgParams.set("prs", stats.totalPRs.toString());
-                if (stats.totalAdditions) imgParams.set("additions", stats.totalAdditions.toString());
-                if (stats.totalDeletions) imgParams.set("deletions", stats.totalDeletions.toString());
-            }
-
-            image = `${origin}/og-image?${imgParams.toString()}`;
+            // Use correct avatar URL format
+            image = /^\d+$/.test(githubId)
+                ? `https://avatars.githubusercontent.com/u/${githubId}?s=1200`
+                : `https://github.com/${githubId}.png?size=1200`;
         }
     }
 
@@ -120,14 +101,13 @@ export default async (request: Request, context: Context) => {
         if (repo) {
             const repoOwner = repo.split("/")[0];
             const repoName = repo.split("/")[1] || repo;
-            let repoStats: any = null;
 
             try {
                 // Fetch repository stats from Gittensor API
                 const repoStatsResponse = await fetch(`https://api.gittensor.io/miners/repository/${encodeURIComponent(repo)}/stats`);
 
                 if (repoStatsResponse.ok) {
-                    repoStats = await repoStatsResponse.json();
+                    const repoStats = await repoStatsResponse.json();
 
                     // Build description with repository stats
                     const statParts = [];
@@ -168,22 +148,17 @@ export default async (request: Request, context: Context) => {
 
             title = `${repoName} | Gittensor`;
 
-            // Construct Dynamic Image URL
-            const imgParams = new URLSearchParams();
-            imgParams.set("title", repoName);
-            imgParams.set("subtitle", repoOwner); // Use owner as subtitle
-            imgParams.set("type", "repo");
-            imgParams.set("avatar", `https://github.com/${repoOwner}.png?size=400`);
+            // Use dynamic image generator for special orgs (opentensor, bitcoin)
+            const avatarUrl = `https://github.com/${repoOwner}.png?size=1200`;
+            const ownerLower = repoOwner.toLowerCase();
 
-            if (repoStats) {
-                if (repoStats.weight) imgParams.set("weight", repoStats.weight.toFixed(4));
-                if (repoStats.totalPRs) imgParams.set("prs", repoStats.totalPRs.toString());
-                if (repoStats.totalCommits) imgParams.set("commits", repoStats.totalCommits.toString());
-                if (repoStats.totalAdditions) imgParams.set("additions", repoStats.totalAdditions.toString());
-                if (repoStats.totalDeletions) imgParams.set("deletions", repoStats.totalDeletions.toString());
+            if (ownerLower === "opentensor" || ownerLower === "bitcoin") {
+                // Use the dynamic image generator with colored background
+                image = `https://magical-crostata-b02d38.netlify.app/og-images/generate?avatar=${encodeURIComponent(avatarUrl)}&owner=${encodeURIComponent(repoOwner)}`;
+            } else {
+                // Use GitHub avatar directly
+                image = avatarUrl;
             }
-
-            image = `${origin}/og-image?${imgParams.toString()}`;
         }
     }
 
@@ -193,47 +168,47 @@ export default async (request: Request, context: Context) => {
     // Use HTMLRewriter to modify meta tags
     const rewriter = new HTMLRewriter()
         .on("title", {
-            element(element) {
+            element(element: any) {
                 element.setInnerContent(title);
             },
         })
         .on('meta[name="title"]', {
-            element(element) {
+            element(element: any) {
                 element.setAttribute("content", title);
             },
         })
         .on('meta[name="description"]', {
-            element(element) {
+            element(element: any) {
                 element.setAttribute("content", description);
             },
         })
         .on('meta[property="og:title"]', {
-            element(element) {
+            element(element: any) {
                 element.setAttribute("content", title);
             },
         })
         .on('meta[property="og:description"]', {
-            element(element) {
+            element(element: any) {
                 element.setAttribute("content", description);
             },
         })
         .on('meta[property="og:image"]', {
-            element(element) {
+            element(element: any) {
                 element.setAttribute("content", image);
             },
         })
         .on('meta[property="twitter:title"]', {
-            element(element) {
+            element(element: any) {
                 element.setAttribute("content", title);
             },
         })
         .on('meta[property="twitter:description"]', {
-            element(element) {
+            element(element: any) {
                 element.setAttribute("content", description);
             },
         })
         .on('meta[property="twitter:image"]', {
-            element(element) {
+            element(element: any) {
                 element.setAttribute("content", image);
             },
         });
