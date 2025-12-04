@@ -440,27 +440,52 @@ export default async (req: Request) => {
       let avatarUrl = "";
 
       try {
-        // Fetch GitHub username if numeric ID
-        if (/^\d+$/.test(githubId)) {
+        let numericGithubId = githubId;
+        
+        // If username provided, fetch numeric ID from GitHub API
+        if (!/^\d+$/.test(githubId)) {
+          const githubUserResponse = await fetch(`https://api.github.com/users/${githubId}`);
+          if (githubUserResponse.ok) {
+            const githubUserData = await githubUserResponse.json();
+            numericGithubId = githubUserData.id.toString();
+            username = githubUserData.login;
+            avatarUrl = githubUserData.avatar_url || `https://github.com/${githubId}.png?size=400`;
+          } else {
+            avatarUrl = `https://github.com/${githubId}.png?size=400`;
+          }
+        } else {
+          // Numeric ID provided, fetch username
           const githubResponse = await fetch(`https://api.github.com/user/${githubId}`);
           if (githubResponse.ok) {
             const githubData = await githubResponse.json();
             username = githubData.login || githubId;
             avatarUrl = `https://avatars.githubusercontent.com/u/${githubId}?s=400`;
           }
-        } else {
-          avatarUrl = `https://github.com/${githubId}.png?size=400`;
         }
 
-        // Fetch miner stats
-        const statsResponse = await fetch(`https://api.gittensor.io/miners/${githubId}/stats`);
+        // Fetch miner stats using numeric ID
+        const statsResponse = await fetch(`https://api.gittensor.io/miners/${numericGithubId}/stats`);
         if (statsResponse.ok) {
           const stats = await statsResponse.json();
-          if (stats.rank) rank = stats.rank;
-          if (stats.totalScore) score = stats.totalScore.toFixed(2);
-          if (stats.totalPRs) prs = stats.totalPRs.toString();
-          if (stats.totalAdditions) additions = stats.totalAdditions.toLocaleString();
-          if (stats.totalDeletions) deletions = stats.totalDeletions.toLocaleString();
+          
+          // Calculate rank from all miners stats
+          const allStatsResponse = await fetch("https://api.gittensor.io/miners/stats/all");
+          if (allStatsResponse.ok) {
+            const allStats = await allStatsResponse.json();
+            const sortedByScore = allStats
+              .filter((m: any) => m.totalScore)
+              .sort((a: any, b: any) => parseFloat(b.totalScore) - parseFloat(a.totalScore));
+            const minerRank = sortedByScore.findIndex((m: any) => m.githubId === numericGithubId);
+            if (minerRank !== -1) rank = minerRank + 1;
+          }
+          
+          // Use correct field names from API
+          if (stats.totalScore) score = parseFloat(stats.totalScore).toFixed(2);
+          if (stats.totalPrs !== undefined) prs = stats.totalPrs.toString();
+          if (stats.totalAdditions !== undefined) additions = stats.totalAdditions.toLocaleString();
+          if (stats.totalDeletions !== undefined) deletions = stats.totalDeletions.toLocaleString();
+        } else {
+          console.error("Stats API failed:", statsResponse.status, await statsResponse.text());
         }
       } catch (error) {
         console.error("Failed to fetch miner data:", error);
