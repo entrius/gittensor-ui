@@ -43,10 +43,11 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "space-between",
+        justifyContent: "center",
         backgroundColor: "#000",
         backgroundImage: "linear-gradient(to bottom right, #000 0%, #1a1a1a 100%)",
-        padding: "60px",
+        padding: "60px 60px 0 60px",
+        position: "relative",
       }}
     >
       {/* Logo */}
@@ -129,14 +130,14 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
             <div style={{ display: "flex", flexDirection: "column" }}>
               <span
                 style={{
-                  fontSize: "18px",
+                  fontSize: "20px",
                   color: "#888",
                   textTransform: "uppercase",
                   marginBottom: "8px",
                   letterSpacing: "1px",
                 }}
               >
-                🏆 SCORE
+                <span style={{ fontSize: "28px" }}>🏆</span> SCORE
               </span>
               <span
                 style={{
@@ -153,14 +154,14 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
             <div style={{ display: "flex", flexDirection: "column" }}>
               <span
                 style={{
-                  fontSize: "18px",
+                  fontSize: "20px",
                   color: "#888",
                   textTransform: "uppercase",
                   marginBottom: "8px",
                   letterSpacing: "1px",
                 }}
               >
-                🔀 PULL REQUESTS
+                <span style={{ fontSize: "28px" }}>🔀</span> PULL REQUESTS
               </span>
               <span
                 style={{
@@ -177,14 +178,14 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
             <div style={{ display: "flex", flexDirection: "column" }}>
               <span
                 style={{
-                  fontSize: "18px",
+                  fontSize: "20px",
                   color: "#888",
                   textTransform: "uppercase",
                   marginBottom: "8px",
                   letterSpacing: "1px",
                 }}
               >
-                📊 LINES
+                <span style={{ fontSize: "28px" }}>📊</span> LINES
               </span>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span
@@ -211,48 +212,26 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
         </div>
       </div>
 
-      {/* GitHub-style contribution bar at bottom */}
+      {/* GitHub-style contribution bar at bottom - no labels */}
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
+          position: "absolute",
+          bottom: "0",
+          left: "0",
           width: "100%",
-          gap: "12px",
+          height: "8px",
+          overflow: "hidden",
+          backgroundColor: "#f85149",
         }}
       >
         <div
           style={{
-            display: "flex",
-            width: "100%",
-            height: "8px",
-            borderRadius: "4px",
-            overflow: "hidden",
-            backgroundColor: "#f85149",
+            width: `${additionsPercent}%`,
+            height: "100%",
+            backgroundColor: "#3fb950",
           }}
-        >
-          <div
-            style={{
-              width: `${additionsPercent}%`,
-              height: "100%",
-              backgroundColor: "#3fb950",
-            }}
-          />
-        </div>
-        <div
-          style={{
-            display: "flex",
-            gap: "20px",
-            fontSize: "16px",
-            color: "#8b949e",
-          }}
-        >
-          <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ color: "#3fb950" }}>●</span> {additions} additions
-          </span>
-          <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ color: "#f85149" }}>●</span> {deletions} deletions
-          </span>
-        </div>
+        />
       </div>
     </div>
   );
