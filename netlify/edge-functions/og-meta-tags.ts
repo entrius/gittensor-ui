@@ -88,8 +88,9 @@ export default async (request: Request, context: Context) => {
                 title = `${username} | Gittensor`;
             }
 
-            // Use dynamically generated OG image
-            image = `https://magical-crostata-b02d38.netlify.app/og-image/miner?githubId=${encodeURIComponent(githubId)}`;
+            // Use dynamically generated OG image from new unified handler
+            const baseUrl = new URL(request.url).origin;
+            image = `${baseUrl}/og-image?type=miner&id=${encodeURIComponent(githubId)}`;
         }
     }
 
@@ -145,7 +146,9 @@ export default async (request: Request, context: Context) => {
             }
 
             title = `${repoName} | Gittensor`;
-            image = `https://github.com/${repoOwner}.png?size=1200`;
+            // Use dynamically generated OG image from new unified handler
+            const baseUrl = new URL(request.url).origin;
+            image = `${baseUrl}/og-image?type=repository&repo=${encodeURIComponent(repo)}`;
         }
     }
 

@@ -34,6 +34,19 @@
   status = 200
   force = true
 
+# Edge Functions for OG image generation and meta tag injection
+[[edge_functions]]
+  path = "/og-image"
+  function = "og-image"
+
+[[edge_functions]]
+  path = "/miners/details"
+  function = "og-meta-tags"
+
+[[edge_functions]]
+  path = "/miners/repository"
+  function = "og-meta-tags"
+
 # SPA fallback (must be last)
 [[redirects]]
   from = "/*"
