@@ -88,10 +88,8 @@ export default async (request: Request, context: Context) => {
                 title = `${username} | Gittensor`;
             }
 
-            // Use correct avatar URL format
-            image = /^\d+$/.test(githubId)
-                ? `https://avatars.githubusercontent.com/u/${githubId}?s=1200`
-                : `https://github.com/${githubId}.png?size=1200`;
+            // Use dynamically generated OG image
+            image = `https://magical-crostata-b02d38.netlify.app/og-image/miner?githubId=${encodeURIComponent(githubId)}`;
         }
     }
 
@@ -147,18 +145,7 @@ export default async (request: Request, context: Context) => {
             }
 
             title = `${repoName} | Gittensor`;
-
-            // Use dynamic image generator for special orgs (opentensor, bitcoin)
-            const avatarUrl = `https://github.com/${repoOwner}.png?size=1200`;
-            const ownerLower = repoOwner.toLowerCase();
-
-            if (ownerLower === "opentensor" || ownerLower === "bitcoin") {
-                // Use the dynamic image generator with colored background
-                image = `https://magical-crostata-b02d38.netlify.app/og-images/generate?avatar=${encodeURIComponent(avatarUrl)}&owner=${encodeURIComponent(repoOwner)}`;
-            } else {
-                // Use GitHub avatar directly
-                image = avatarUrl;
-            }
+            image = `https://github.com/${repoOwner}.png?size=1200`;
         }
     }
 
