@@ -123,7 +123,7 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
             style={{
               display: "flex",
               flexDirection: "row",
-              gap: "50px",
+              gap: "60px",
             }}
           >
             {/* Score */}
@@ -135,12 +135,9 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
                   textTransform: "uppercase",
                   marginBottom: "8px",
                   letterSpacing: "1px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
                 }}
               >
-                <span style={{ fontSize: "28px", color: "#c9d1d9" }}>◆</span> SCORE
+                SCORE
               </span>
               <span
                 style={{
@@ -162,12 +159,9 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
                   textTransform: "uppercase",
                   marginBottom: "8px",
                   letterSpacing: "1px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
                 }}
               >
-                <span style={{ fontSize: "28px", color: "#c9d1d9" }}>⎇</span> PULL REQUESTS
+                PULL REQUESTS
               </span>
               <span
                 style={{
@@ -179,49 +173,27 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
                 {prs}
               </span>
             </div>
-
-            {/* Lines */}
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <span
-                style={{
-                  fontSize: "20px",
-                  color: "#888",
-                  textTransform: "uppercase",
-                  marginBottom: "8px",
-                  letterSpacing: "1px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                <span style={{ fontSize: "28px", color: "#c9d1d9" }}>▬</span> LINES
-              </span>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <span
-                  style={{
-                    fontSize: "36px",
-                    fontWeight: 700,
-                    color: "#3fb950",
-                  }}
-                >
-                  +{additions}
-                </span>
-                <span
-                  style={{
-                    fontSize: "36px",
-                    fontWeight: 700,
-                    color: "#f85149",
-                  }}
-                >
-                  -{deletions}
-                </span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* GitHub-style contribution bar at bottom - no labels */}
+      {/* Lines positioned bottom right above bar */}
+      <div
+        style={{
+          display: "flex",
+          position: "absolute",
+          bottom: "24px",
+          right: "60px",
+          gap: "16px",
+          fontSize: "24px",
+          fontWeight: 700,
+        }}
+      >
+        <span style={{ color: "#3fb950" }}>+{additions}</span>
+        <span style={{ color: "#f85149" }}>-{deletions}</span>
+      </div>
+
+      {/* GitHub-style contribution bar at bottom */}
       <div
         style={{
           display: "flex",
