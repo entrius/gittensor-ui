@@ -50,7 +50,7 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
           position: "absolute",
           top: "40px",
           left: "60px",
-          fontSize: "32px",
+          fontSize: "40px",
           fontWeight: 700,
           color: "#fff",
         }}
@@ -70,11 +70,11 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
         {/* Avatar */}
         <img
           src={avatarUrl}
-          width={200}
-          height={200}
+          width={240}
+          height={240}
           style={{
-            borderRadius: "100px",
-            border: "4px solid #00ffff",
+            borderRadius: "120px",
+            border: "6px solid #00ffff",
           }}
         />
 
@@ -83,14 +83,14 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "20px",
+            gap: "30px",
           }}
         >
           {/* Username and Rank */}
           <div
             style={{
               display: "flex",
-              fontSize: "48px",
+              fontSize: "64px",
               fontWeight: 700,
               color: "#fff",
               alignItems: "center",
@@ -100,10 +100,10 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
             {rank && (
               <span
                 style={{
-                  fontSize: "48px",
+                  fontSize: "64px",
                   fontWeight: 700,
                   color: "#00ffff",
-                  marginLeft: "20px",
+                  marginLeft: "24px",
                 }}
               >
                 #{rank}
@@ -116,24 +116,25 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
             style={{
               display: "flex",
               flexDirection: "row",
-              gap: "40px",
+              gap: "50px",
             }}
           >
             {/* Score */}
             <div style={{ display: "flex", flexDirection: "column" }}>
               <span
                 style={{
-                  fontSize: "14px",
+                  fontSize: "18px",
                   color: "#888",
                   textTransform: "uppercase",
-                  marginBottom: "5px",
+                  marginBottom: "8px",
+                  letterSpacing: "1px",
                 }}
               >
                 SCORE
               </span>
               <span
                 style={{
-                  fontSize: "32px",
+                  fontSize: "44px",
                   fontWeight: 700,
                   color: "#fff",
                 }}
@@ -146,17 +147,18 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
             <div style={{ display: "flex", flexDirection: "column" }}>
               <span
                 style={{
-                  fontSize: "14px",
+                  fontSize: "18px",
                   color: "#888",
                   textTransform: "uppercase",
-                  marginBottom: "5px",
+                  marginBottom: "8px",
+                  letterSpacing: "1px",
                 }}
               >
                 PULL REQUESTS
               </span>
               <span
                 style={{
-                  fontSize: "32px",
+                  fontSize: "44px",
                   fontWeight: 700,
                   color: "#fff",
                 }}
@@ -169,10 +171,11 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
             <div style={{ display: "flex", flexDirection: "column" }}>
               <span
                 style={{
-                  fontSize: "14px",
+                  fontSize: "18px",
                   color: "#888",
                   textTransform: "uppercase",
-                  marginBottom: "5px",
+                  marginBottom: "8px",
+                  letterSpacing: "1px",
                 }}
               >
                 LINES
@@ -180,7 +183,7 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span
                   style={{
-                    fontSize: "28px",
+                    fontSize: "36px",
                     fontWeight: 700,
                     color: "#0f0",
                   }}
@@ -189,7 +192,7 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
                 </span>
                 <span
                   style={{
-                    fontSize: "28px",
+                    fontSize: "36px",
                     fontWeight: 700,
                     color: "#f00",
                   }}
@@ -236,7 +239,7 @@ function RepoTemplate({
           position: "absolute",
           top: "40px",
           right: "60px",
-          fontSize: "24px",
+          fontSize: "32px",
           fontWeight: 700,
           color: "#888",
         }}
@@ -249,22 +252,22 @@ function RepoTemplate({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "20px",
-          marginBottom: "50px",
+          gap: "24px",
+          marginBottom: "60px",
         }}
       >
         <img
           src={ownerAvatar}
-          width={80}
-          height={80}
+          width={100}
+          height={100}
           style={{
-            borderRadius: "40px",
-            border: "2px solid #30363d",
+            borderRadius: "50px",
+            border: "3px solid #30363d",
           }}
         />
         <div
           style={{
-            fontSize: "48px",
+            fontSize: "56px",
             color: "#fff",
             fontWeight: 700,
           }}
@@ -278,7 +281,7 @@ function RepoTemplate({
         style={{
           display: "flex",
           flexWrap: "wrap",
-          gap: "40px",
+          gap: "50px",
         }}
       >
         {totalContributors !== undefined && (
@@ -294,19 +297,20 @@ function RepoTemplate({
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span
               style={{
-                fontSize: "16px",
+                fontSize: "20px",
                 color: "#8b949e",
                 textTransform: "uppercase",
-                marginBottom: "10px",
+                marginBottom: "12px",
+                letterSpacing: "1px",
               }}
             >
               📊 LINES CHANGED
             </span>
-            <div style={{ display: "flex", gap: "10px" }}>
-              <span style={{ fontSize: "32px", fontWeight: 700, color: "#3fb950" }}>
+            <div style={{ display: "flex", gap: "12px" }}>
+              <span style={{ fontSize: "40px", fontWeight: 700, color: "#3fb950" }}>
                 +{(totalAdditions || 0).toLocaleString()}
               </span>
-              <span style={{ fontSize: "32px", fontWeight: 700, color: "#f85149" }}>
+              <span style={{ fontSize: "40px", fontWeight: 700, color: "#f85149" }}>
                 -{(totalDeletions || 0).toLocaleString()}
               </span>
             </div>
@@ -323,7 +327,7 @@ function RepoTemplate({
           display: "flex",
           position: "absolute",
           bottom: "40px",
-          fontSize: "20px",
+          fontSize: "24px",
           color: "#6e7681",
         }}
       >
@@ -339,17 +343,18 @@ function RepoStat({ label, value, icon }: { label: string; value: string; icon: 
     <div style={{ display: "flex", flexDirection: "column" }}>
       <span
         style={{
-          fontSize: "16px",
+          fontSize: "20px",
           color: "#8b949e",
           textTransform: "uppercase",
-          marginBottom: "10px",
+          marginBottom: "12px",
+          letterSpacing: "1px",
         }}
       >
         {icon} {label}
       </span>
       <span
         style={{
-          fontSize: "36px",
+          fontSize: "44px",
           fontWeight: 700,
           color: "#fff",
         }}
@@ -380,12 +385,12 @@ function HomeTemplate() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: "30px",
+          gap: "40px",
         }}
       >
         <div
           style={{
-            fontSize: "72px",
+            fontSize: "88px",
             fontWeight: 900,
             color: "#00ffff",
             letterSpacing: "-2px",
@@ -395,7 +400,7 @@ function HomeTemplate() {
         </div>
         <div
           style={{
-            fontSize: "36px",
+            fontSize: "44px",
             color: "#fff",
             fontWeight: 500,
           }}
@@ -404,10 +409,10 @@ function HomeTemplate() {
         </div>
         <div
           style={{
-            fontSize: "24px",
+            fontSize: "28px",
             color: "#888",
             textAlign: "center",
-            maxWidth: "800px",
+            maxWidth: "900px",
           }}
         >
           The workforce for open source. Compete for rewards by contributing quality code.
