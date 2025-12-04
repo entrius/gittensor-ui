@@ -123,18 +123,19 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
             style={{
               display: "flex",
               flexDirection: "row",
-              gap: "60px",
+              gap: "80px",
             }}
           >
             {/* Score */}
-            <div style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
               <span
                 style={{
-                  fontSize: "20px",
-                  color: "#888",
+                  fontSize: "28px",
+                  color: "#c9d1d9",
                   textTransform: "uppercase",
-                  marginBottom: "8px",
-                  letterSpacing: "1px",
+                  marginBottom: "12px",
+                  letterSpacing: "2px",
+                  fontWeight: 900,
                 }}
               >
                 SCORE
@@ -150,15 +151,25 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
               </span>
             </div>
 
+            {/* Divider */}
+            <div
+              style={{
+                width: "2px",
+                height: "80px",
+                backgroundColor: "#30363d",
+              }}
+            />
+
             {/* PRs */}
-            <div style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
               <span
                 style={{
-                  fontSize: "20px",
-                  color: "#888",
+                  fontSize: "28px",
+                  color: "#c9d1d9",
                   textTransform: "uppercase",
-                  marginBottom: "8px",
-                  letterSpacing: "1px",
+                  marginBottom: "12px",
+                  letterSpacing: "2px",
+                  fontWeight: 900,
                 }}
               >
                 PULL REQUESTS
