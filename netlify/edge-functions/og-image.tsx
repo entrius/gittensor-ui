@@ -463,29 +463,30 @@ export default async (req: Request) => {
           }
         }
 
-        // Fetch miner stats using numeric ID
-        const statsResponse = await fetch(`https://api.gittensor.io/miners/${numericGithubId}/stats`);
-        if (statsResponse.ok) {
-          const stats = await statsResponse.json();
+        // Fetch all miners stats (has additions/deletions that single endpoint lacks)
+        const allStatsResponse = await fetch("https://api.gittensor.io/miners/stats/all");
+        if (allStatsResponse.ok) {
+          const allStats = await allStatsResponse.json();
           
-          // Calculate rank from all miners stats
-          const allStatsResponse = await fetch("https://api.gittensor.io/miners/stats/all");
-          if (allStatsResponse.ok) {
-            const allStats = await allStatsResponse.json();
+          // Find this miner's data
+          const minerData = allStats.find((m: any) => m.githubId === numericGithubId);
+          
+          if (minerData) {
+            // Calculate rank
             const sortedByScore = allStats
               .filter((m: any) => m.totalScore)
               .sort((a: any, b: any) => parseFloat(b.totalScore) - parseFloat(a.totalScore));
             const minerRank = sortedByScore.findIndex((m: any) => m.githubId === numericGithubId);
             if (minerRank !== -1) rank = minerRank + 1;
+            
+            // Get stats from all miners endpoint (has additions/deletions)
+            if (minerData.totalScore) score = parseFloat(minerData.totalScore).toFixed(2);
+            if (minerData.totalPrs !== undefined) prs = minerData.totalPrs.toString();
+            if (minerData.totalAdditions !== undefined) additions = minerData.totalAdditions.toLocaleString();
+            if (minerData.totalDeletions !== undefined) deletions = minerData.totalDeletions.toLocaleString();
           }
-          
-          // Use correct field names from API
-          if (stats.totalScore) score = parseFloat(stats.totalScore).toFixed(2);
-          if (stats.totalPrs !== undefined) prs = stats.totalPrs.toString();
-          if (stats.totalAdditions !== undefined) additions = stats.totalAdditions.toLocaleString();
-          if (stats.totalDeletions !== undefined) deletions = stats.totalDeletions.toLocaleString();
         } else {
-          console.error("Stats API failed:", statsResponse.status, await statsResponse.text());
+          console.error("All stats API failed:", allStatsResponse.status, await allStatsResponse.text());
         }
       } catch (error) {
         console.error("Failed to fetch miner data:", error);
