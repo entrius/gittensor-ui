@@ -29,6 +29,12 @@ interface RepoData {
 
 // Miner Template - GitHub-style card with stats
 function MinerTemplate({ username, rank, score, prs, additions, deletions, avatarUrl }: MinerData) {
+  // Calculate percentage for contribution bar
+  const additionsNum = parseInt(additions.replace(/,/g, "")) || 0;
+  const deletionsNum = parseInt(deletions.replace(/,/g, "")) || 0;
+  const total = additionsNum + deletionsNum;
+  const additionsPercent = total > 0 ? (additionsNum / total) * 100 : 50;
+
   return (
     <div
       style={{
@@ -37,7 +43,7 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "space-between",
         backgroundColor: "#000",
         backgroundImage: "linear-gradient(to bottom right, #000 0%, #1a1a1a 100%)",
         padding: "60px",
@@ -130,7 +136,7 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
                   letterSpacing: "1px",
                 }}
               >
-                SCORE
+                🏆 SCORE
               </span>
               <span
                 style={{
@@ -154,7 +160,7 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
                   letterSpacing: "1px",
                 }}
               >
-                PULL REQUESTS
+                🔀 PULL REQUESTS
               </span>
               <span
                 style={{
@@ -178,14 +184,14 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
                   letterSpacing: "1px",
                 }}
               >
-                LINES
+                📊 LINES
               </span>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span
                   style={{
                     fontSize: "36px",
                     fontWeight: 700,
-                    color: "#0f0",
+                    color: "#3fb950",
                   }}
                 >
                   +{additions}
@@ -194,7 +200,7 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
                   style={{
                     fontSize: "36px",
                     fontWeight: 700,
-                    color: "#f00",
+                    color: "#f85149",
                   }}
                 >
                   -{deletions}
@@ -202,6 +208,50 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* GitHub-style contribution bar at bottom */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          width: "100%",
+          gap: "12px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            width: "100%",
+            height: "8px",
+            borderRadius: "4px",
+            overflow: "hidden",
+            backgroundColor: "#f85149",
+          }}
+        >
+          <div
+            style={{
+              width: `${additionsPercent}%`,
+              height: "100%",
+              backgroundColor: "#3fb950",
+            }}
+          />
+        </div>
+        <div
+          style={{
+            display: "flex",
+            gap: "20px",
+            fontSize: "16px",
+            color: "#8b949e",
+          }}
+        >
+          <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ color: "#3fb950" }}>●</span> {additions} additions
+          </span>
+          <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ color: "#f85149" }}>●</span> {deletions} deletions
+          </span>
         </div>
       </div>
     </div>
