@@ -130,11 +130,11 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
               <span
                 style={{
-                  fontSize: "28px",
-                  color: "#c9d1d9",
+                  fontSize: "32px",
+                  color: "#d1d5db",
                   textTransform: "uppercase",
                   marginBottom: "12px",
-                  letterSpacing: "2px",
+                  letterSpacing: "3px",
                   fontWeight: 900,
                 }}
               >
@@ -164,11 +164,11 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
               <span
                 style={{
-                  fontSize: "28px",
-                  color: "#c9d1d9",
+                  fontSize: "32px",
+                  color: "#d1d5db",
                   textTransform: "uppercase",
                   marginBottom: "12px",
-                  letterSpacing: "2px",
+                  letterSpacing: "3px",
                   fontWeight: 900,
                 }}
               >
