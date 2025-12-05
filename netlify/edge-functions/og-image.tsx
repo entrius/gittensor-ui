@@ -11,6 +11,7 @@ interface MinerData {
   additions: string;
   deletions: string;
   avatarUrl: string;
+  baseUrl: string;
 }
 
 interface RepoData {
@@ -28,7 +29,7 @@ interface RepoData {
 // ==================== TEMPLATES ====================
 
 // Miner Template - GitHub-style card with stats
-function MinerTemplate({ username, rank, score, prs, additions, deletions, avatarUrl }: MinerData) {
+function MinerTemplate({ username, rank, score, prs, additions, deletions, avatarUrl, baseUrl }: MinerData) {
   // Calculate percentage for contribution bar
   const additionsNum = parseInt(additions.replace(/,/g, "")) || 0;
   const deletionsNum = parseInt(deletions.replace(/,/g, "")) || 0;
@@ -64,6 +65,18 @@ function MinerTemplate({ username, rank, score, prs, additions, deletions, avata
       >
         GITTENSOR
       </div>
+
+      {/* Logo Image - Top Right */}
+      <img
+        src={`${baseUrl}/gittensor__1_-removebg-preview.png`}
+        width={80}
+        height={80}
+        style={{
+          position: "absolute",
+          top: "40px",
+          right: "60px",
+        }}
+      />
 
       {/* Main Content */}
       <div
@@ -541,6 +554,7 @@ export default async (req: Request) => {
           additions={additions}
           deletions={deletions}
           avatarUrl={avatarUrl}
+          baseUrl={url.origin}
         />,
         {
           width: 1200,
