@@ -533,7 +533,7 @@ export default async (req: Request) => {
             if (minerRank !== -1) rank = minerRank + 1;
             
             // Get stats from all miners endpoint (has additions/deletions)
-            if (minerData.totalScore) score = parseFloat(minerData.totalScore).toFixed(2);
+            if (minerData.totalScore) score = Math.round(parseFloat(minerData.totalScore)).toLocaleString();
             if (minerData.totalPrs !== undefined) prs = minerData.totalPrs.toString();
             if (minerData.totalAdditions !== undefined) additions = minerData.totalAdditions.toLocaleString();
             if (minerData.totalDeletions !== undefined) deletions = minerData.totalDeletions.toLocaleString();
