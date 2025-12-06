@@ -511,30 +511,30 @@ function HomeTemplate({ baseUrl, monthlyRewards }: { baseUrl: string; monthlyRew
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: "40px",
+          gap: "10px",
         }}
       >
         <img
           src={`${baseUrl}/gittensor__1_-removebg-preview.png`}
-          width={200}
-          height={200}
+          width={150}
+          height={150}
         />
         <div
           style={{
             fontSize: "88px",
             fontWeight: 900,
-            color: "#00ffff",
+            color: "#fff",
             letterSpacing: "-2px",
-            marginTop: "20px",
           }}
         >
           GITTENSOR
         </div>
         <div
           style={{
-            fontSize: "44px",
+            fontSize: "36px",
             color: "#fff",
             fontWeight: 500,
+            marginBottom: "10px",
           }}
         >
           Autonomous Software Development
@@ -546,9 +546,9 @@ function HomeTemplate({ baseUrl, monthlyRewards }: { baseUrl: string; monthlyRew
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: "10px",
-              marginTop: "20px",
-              padding: "20px 40px",
+              gap: "0px",
+              marginTop: "10px",
+              padding: "15px 40px",
               backgroundColor: "rgba(255, 255, 255, 0.05)",
               borderRadius: "20px",
               border: "1px solid rgba(255, 255, 255, 0.1)",
@@ -556,18 +556,19 @@ function HomeTemplate({ baseUrl, monthlyRewards }: { baseUrl: string; monthlyRew
           >
             <div
               style={{
-                fontSize: "24px",
+                fontSize: "20px",
                 color: "rgba(255, 255, 255, 0.5)",
                 textTransform: "uppercase",
                 letterSpacing: "4px",
                 fontWeight: 600,
+                marginBottom: "10px",
               }}
             >
               Monthly Reward Pool
             </div>
             <div
               style={{
-                fontSize: "64px",
+                fontSize: "56px",
                 fontWeight: 700,
                 color: "#fff",
                 fontFamily: "monospace",
@@ -580,7 +581,7 @@ function HomeTemplate({ baseUrl, monthlyRewards }: { baseUrl: string; monthlyRew
 
         <div
           style={{
-            fontSize: "28px",
+            fontSize: "24px",
             color: "#888",
             textAlign: "center",
             maxWidth: "900px",
