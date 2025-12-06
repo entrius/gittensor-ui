@@ -24,6 +24,7 @@ interface RepoData {
   totalDeletions?: number;
   weight?: number;
   ownerAvatar: string;
+  baseUrl: string;
 }
 
 // ==================== TEMPLATES ====================
@@ -267,7 +268,20 @@ function RepoTemplate({
   totalDeletions,
   weight,
   ownerAvatar,
+  baseUrl,
 }: RepoData) {
+  // Calculate percentage for contribution bar
+  const additionsNum = totalAdditions || 0;
+  const deletionsNum = totalDeletions || 0;
+  const total = additionsNum + deletionsNum;
+  const additionsPercent = total > 0 ? (additionsNum / total) * 100 : 50;
+
+  // Format numbers
+  const weightDisplay = weight !== undefined ? weight.toFixed(2) : "N/A";
+  const prsDisplay = totalPRs !== undefined ? totalPRs.toLocaleString() : "0";
+  const additionsDisplay = additionsNum.toLocaleString();
+  const deletionsDisplay = deletionsNum.toLocaleString();
+
   return (
     <div
       style={{
@@ -275,9 +289,12 @@ function RepoTemplate({
         width: "100%",
         display: "flex",
         flexDirection: "column",
-        backgroundColor: "#0d1117",
-        backgroundImage: "linear-gradient(135deg, #0d1117 0%, #161b22 100%)",
-        padding: "60px",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#000",
+        backgroundImage: "linear-gradient(to bottom right, #000 0%, #1a1a1a 100%)",
+        padding: "60px 60px 0 60px",
+        position: "relative",
       }}
     >
       {/* Logo */}
@@ -286,129 +303,189 @@ function RepoTemplate({
           display: "flex",
           position: "absolute",
           top: "40px",
-          right: "60px",
-          fontSize: "32px",
+          left: "60px",
+          fontSize: "40px",
           fontWeight: 700,
-          color: "#888",
+          color: "#fff",
         }}
       >
         GITTENSOR
       </div>
 
-      {/* Header */}
+      {/* Logo Image - Top Right */}
+      <img
+        src={`${baseUrl}/gittensor__1_-removebg-preview.png`}
+        width={80}
+        height={80}
+        style={{
+          position: "absolute",
+          top: "40px",
+          right: "60px",
+        }}
+      />
+
+      {/* Main Content */}
       <div
         style={{
           display: "flex",
+          flexDirection: "row",
           alignItems: "center",
-          gap: "24px",
-          marginBottom: "60px",
+          gap: "60px",
         }}
       >
+        {/* Avatar */}
         <img
           src={ownerAvatar}
-          width={100}
-          height={100}
+          width={240}
+          height={240}
           style={{
-            borderRadius: "50px",
-            border: "3px solid #30363d",
+            borderRadius: "120px",
+            border: "6px solid #00ffff",
           }}
         />
+
+        {/* Stats */}
         <div
           style={{
-            fontSize: "56px",
-            color: "#fff",
-            fontWeight: 700,
+            display: "flex",
+            flexDirection: "column",
+            gap: "30px",
           }}
         >
-          {owner}/{repoName}
-        </div>
-      </div>
+          {/* Repo Name */}
+          <div
+            style={{
+              display: "flex",
+              fontSize: "56px",
+              fontWeight: 700,
+              color: "#fff",
+              alignItems: "center",
+            }}
+          >
+            {owner}/{repoName}
+          </div>
 
-      {/* Stats Grid */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "50px",
-        }}
-      >
-        {totalContributors !== undefined && (
-          <RepoStat label="Contributors" value={totalContributors.toString()} icon="👥" />
-        )}
-        {totalPRs !== undefined && (
-          <RepoStat label="Pull Requests" value={totalPRs.toString()} icon="🔀" />
-        )}
-        {totalCommits !== undefined && (
-          <RepoStat label="Commits" value={totalCommits.toString()} icon="💾" />
-        )}
-        {(totalAdditions !== undefined || totalDeletions !== undefined) && (
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span
-              style={{
-                fontSize: "20px",
-                color: "#8b949e",
-                textTransform: "uppercase",
-                marginBottom: "12px",
-                letterSpacing: "1px",
-              }}
-            >
-              📊 LINES CHANGED
-            </span>
-            <div style={{ display: "flex", gap: "12px" }}>
-              <span style={{ fontSize: "40px", fontWeight: 700, color: "#3fb950" }}>
-                +{(totalAdditions || 0).toLocaleString()}
+          {/* Stats Grid */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              gap: "80px",
+            }}
+          >
+            {/* Weight */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <span
+                style={{
+                  fontSize: "28px",
+                  color: "#c9d1d9",
+                  textTransform: "uppercase",
+                  marginBottom: "12px",
+                  letterSpacing: "2px",
+                  fontWeight: 900,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#8b949e">
+                  <path d="M12 .25a.75.75 0 0 1 .673.418l3.058 6.197 6.839.994a.75.75 0 0 1 .415 1.279l-4.948 4.823 1.168 6.811a.751.751 0 0 1-1.088.791L12 18.347l-6.117 3.216a.75.75 0 0 1-1.088-.79l1.168-6.812-4.948-4.823a.75.75 0 0 1 .416-1.28l6.838-.993L11.328.668A.75.75 0 0 1 12 .25Zm0 2.445L9.44 7.882a.75.75 0 0 1-.565.41l-5.725.832 4.143 4.038a.748.748 0 0 1 .215.664l-.978 5.702 5.121-2.692a.75.75 0 0 1 .698 0l5.12 2.692-.977-5.702a.748.748 0 0 1 .215-.664l4.143-4.038-5.725-.831a.75.75 0 0 1-.565-.41L12 2.694Z"></path>
+                </svg>
+                WEIGHT
               </span>
-              <span style={{ fontSize: "40px", fontWeight: 700, color: "#f85149" }}>
-                -{(totalDeletions || 0).toLocaleString()}
+              <span
+                style={{
+                  fontSize: "44px",
+                  fontWeight: 700,
+                  color: "#fff",
+                }}
+              >
+                {weightDisplay}
+              </span>
+            </div>
+
+            {/* Divider */}
+            <div
+              style={{
+                width: "2px",
+                height: "80px",
+                backgroundColor: "#30363d",
+              }}
+            />
+
+            {/* PRs */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <span
+                style={{
+                  fontSize: "28px",
+                  color: "#c9d1d9",
+                  textTransform: "uppercase",
+                  marginBottom: "12px",
+                  letterSpacing: "2px",
+                  fontWeight: 900,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#8b949e">
+                  <path d="M15 13.25a3.25 3.25 0 1 1 6.5 0 3.25 3.25 0 0 1-6.5 0Zm-12.5 6a3.25 3.25 0 1 1 6.5 0 3.25 3.25 0 0 1-6.5 0Zm0-14.5a3.25 3.25 0 1 1 6.5 0 3.25 3.25 0 0 1-6.5 0ZM5.75 6.5a1.75 1.75 0 1 0-.001-3.501A1.75 1.75 0 0 0 5.75 6.5Zm0 14.5a1.75 1.75 0 1 0-.001-3.501A1.75 1.75 0 0 0 5.75 21Zm12.5-6a1.75 1.75 0 1 0-.001-3.501A1.75 1.75 0 0 0 18.25 15Z"></path>
+                  <path d="M6.5 7.25c0 2.9 2.35 5.25 5.25 5.25h4.5V14h-4.5A6.75 6.75 0 0 1 5 7.25Z"></path>
+                  <path d="M5.75 16.75A.75.75 0 0 1 5 16V8a.75.75 0 0 1 1.5 0v8a.75.75 0 0 1-.75.75Z"></path>
+                </svg>
+                PULL REQUESTS
+              </span>
+              <span
+                style={{
+                  fontSize: "44px",
+                  fontWeight: 700,
+                  color: "#fff",
+                }}
+              >
+                {prsDisplay}
               </span>
             </div>
           </div>
-        )}
-        {weight !== undefined && (
-          <RepoStat label="Weight" value={weight.toFixed(4)} icon="⚖️" />
-        )}
+        </div>
       </div>
 
-      {/* Footer */}
+      {/* Lines positioned bottom right above bar */}
       <div
         style={{
           display: "flex",
           position: "absolute",
-          bottom: "40px",
-          fontSize: "24px",
-          color: "#6e7681",
-        }}
-      >
-        Track open source contributions and rewards
-      </div>
-    </div>
-  );
-}
-
-// Helper component for repo stats
-function RepoStat({ label, value, icon }: { label: string; value: string; icon: string }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
-      <span
-        style={{
-          fontSize: "20px",
-          color: "#8b949e",
-          textTransform: "uppercase",
-          marginBottom: "12px",
-          letterSpacing: "1px",
-        }}
-      >
-        {icon} {label}
-      </span>
-      <span
-        style={{
+          bottom: "24px",
+          right: "60px",
+          gap: "20px",
           fontSize: "44px",
           fontWeight: 700,
-          color: "#fff",
         }}
       >
-        {value}
-      </span>
+        <span style={{ color: "#3fb950" }}>+{additionsDisplay}</span>
+        <span style={{ color: "#f85149" }}>-{deletionsDisplay}</span>
+      </div>
+
+      {/* GitHub-style contribution bar at bottom */}
+      <div
+        style={{
+          display: "flex",
+          position: "absolute",
+          bottom: "0",
+          left: "0",
+          width: "100%",
+          height: "8px",
+          overflow: "hidden",
+          backgroundColor: "#f85149",
+        }}
+      >
+        <div
+          style={{
+            width: `${additionsPercent}%`,
+            height: "100%",
+            backgroundColor: "#3fb950",
+          }}
+        />
+      </div>
     </div>
   );
 }
@@ -494,7 +571,7 @@ export default async (req: Request) => {
 
       try {
         let numericGithubId = githubId;
-        
+
         // If username provided, fetch numeric ID from GitHub API
         if (!/^\d+$/.test(githubId)) {
           const githubUserResponse = await fetch(`https://api.github.com/users/${githubId}`);
@@ -520,10 +597,10 @@ export default async (req: Request) => {
         const allStatsResponse = await fetch("https://api.gittensor.io/miners/stats/all");
         if (allStatsResponse.ok) {
           const allStats = await allStatsResponse.json();
-          
+
           // Find this miner's data
           const minerData = allStats.find((m: any) => m.githubId === numericGithubId);
-          
+
           if (minerData) {
             // Calculate rank
             const sortedByScore = allStats
@@ -531,7 +608,7 @@ export default async (req: Request) => {
               .sort((a: any, b: any) => parseFloat(b.totalScore) - parseFloat(a.totalScore));
             const minerRank = sortedByScore.findIndex((m: any) => m.githubId === numericGithubId);
             if (minerRank !== -1) rank = minerRank + 1;
-            
+
             // Get stats from all miners endpoint (has additions/deletions)
             if (minerData.totalScore) score = Math.round(parseFloat(minerData.totalScore)).toLocaleString();
             if (minerData.totalPrs !== undefined) prs = minerData.totalPrs.toString();
@@ -574,11 +651,12 @@ export default async (req: Request) => {
       const repoOwner = repo.split("/")[0];
       const repoName = repo.split("/")[1] || repo;
       let ownerAvatar = `https://github.com/${repoOwner}.png?size=400`;
-      
+
       let repoData: Partial<RepoData> = {
         repoName,
         owner: repoOwner,
         ownerAvatar,
+        baseUrl: url.origin,
       };
 
       try {
