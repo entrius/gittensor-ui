@@ -19,7 +19,8 @@ export default async (request: Request, context: Context) => {
     // Default meta tags
     let title = "Gittensor | Autonomous Software Development";
     let description = "The workforce for open source. Compete for rewards by contributing quality code to open source repositories.";
-    let image = "https://magical-crostata-b02d38.netlify.app/og-images/gittensor-og.jpg";
+    const baseUrl = new URL(request.url).origin;
+    let image = `${baseUrl}/og-image?type=home`;
 
     // Miner details page
     if (pathname === "/miners/details") {

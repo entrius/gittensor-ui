@@ -492,7 +492,7 @@ function RepoTemplate({
 }
 
 // Home/Default Template
-function HomeTemplate() {
+function HomeTemplate({ baseUrl }: { baseUrl: string }) {
   return (
     <div
       style={{
@@ -514,12 +514,18 @@ function HomeTemplate() {
           gap: "40px",
         }}
       >
+        <img
+          src={`${baseUrl}/gittensor__1_-removebg-preview.png`}
+          width={200}
+          height={200}
+        />
         <div
           style={{
             fontSize: "88px",
             fontWeight: 900,
             color: "#00ffff",
             letterSpacing: "-2px",
+            marginTop: "20px",
           }}
         >
           GITTENSOR
@@ -721,7 +727,7 @@ export default async (req: Request) => {
       );
     } else {
       // Default home template
-      return new ImageResponse(<HomeTemplate />, {
+      return new ImageResponse(<HomeTemplate baseUrl={url.origin} />, {
         width: 1200,
         height: 630,
         headers: {
