@@ -208,5 +208,5 @@ export default async (request: Request, context: Context) => {
 };
 
 export const config = {
-    path: ["/miners/details", "/miners/repository"],
+    path: ["/", "/miners/details", "/miners/repository"],
 };
