@@ -541,8 +541,8 @@ function HomeTemplate({ baseUrl, monthlyRewards, totalLines, totalCommits, total
             borderRadius: "30px",
             border: "1px solid rgba(255, 255, 255, 0.1)",
             position: "absolute",
-            top: "40px",
-            right: "40px",
+            top: "25px",
+            right: "25px",
           }}
         >
           <div
