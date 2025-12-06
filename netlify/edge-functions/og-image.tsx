@@ -492,7 +492,16 @@ function RepoTemplate({
 }
 
 // Home/Default Template
-function HomeTemplate({ baseUrl, monthlyRewards }: { baseUrl: string; monthlyRewards?: string }) {
+interface HomeProps {
+  baseUrl: string;
+  monthlyRewards?: string;
+  totalLines?: string;
+  totalCommits?: string;
+  totalIssues?: string;
+  totalRepos?: string;
+}
+
+function HomeTemplate({ baseUrl, monthlyRewards, totalLines, totalCommits, totalIssues, totalRepos }: HomeProps) {
   return (
     <div
       style={{
@@ -512,16 +521,17 @@ function HomeTemplate({ baseUrl, monthlyRewards }: { baseUrl: string; monthlyRew
           flexDirection: "column",
           alignItems: "center",
           gap: "10px",
+          marginTop: "-20px", // Pull up slightly to fit everything
         }}
       >
         <img
           src={`${baseUrl}/gittensor__1_-removebg-preview.png`}
-          width={150}
-          height={150}
+          width={120}
+          height={120}
         />
         <div
           style={{
-            fontSize: "88px",
+            fontSize: "70px",
             fontWeight: 900,
             color: "#fff",
             letterSpacing: "-2px",
@@ -531,10 +541,10 @@ function HomeTemplate({ baseUrl, monthlyRewards }: { baseUrl: string; monthlyRew
         </div>
         <div
           style={{
-            fontSize: "36px",
+            fontSize: "32px",
             color: "#fff",
             fontWeight: 500,
-            marginBottom: "10px",
+            marginBottom: "5px",
           }}
         >
           Autonomous Software Development
@@ -546,9 +556,10 @@ function HomeTemplate({ baseUrl, monthlyRewards }: { baseUrl: string; monthlyRew
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: "10px",
-              marginTop: "40px",
-              padding: "30px 60px",
+              gap: "5px",
+              marginTop: "10px",
+              marginBottom: "30px",
+              padding: "20px 50px",
               backgroundColor: "rgba(255, 255, 255, 0.05)",
               borderRadius: "30px",
               border: "1px solid rgba(255, 255, 255, 0.1)",
@@ -556,19 +567,18 @@ function HomeTemplate({ baseUrl, monthlyRewards }: { baseUrl: string; monthlyRew
           >
             <div
               style={{
-                fontSize: "28px",
+                fontSize: "24px",
                 color: "rgba(255, 255, 255, 0.5)",
                 textTransform: "uppercase",
                 letterSpacing: "6px",
                 fontWeight: 600,
-                marginBottom: "10px",
               }}
             >
               Monthly Reward Pool
             </div>
             <div
               style={{
-                fontSize: "80px",
+                fontSize: "72px",
                 fontWeight: 700,
                 color: "#fff",
                 fontFamily: "monospace",
@@ -578,6 +588,50 @@ function HomeTemplate({ baseUrl, monthlyRewards }: { baseUrl: string; monthlyRew
             </div>
           </div>
         )}
+
+        {/* KPIs Grid */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            gap: "30px",
+            marginTop: "0px",
+          }}
+        >
+          {totalLines && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ fontSize: "36px", fontWeight: "bold", color: "#fff" }}>{parseInt(totalLines).toLocaleString()}</div>
+              <div style={{ fontSize: "16px", color: "#888", textTransform: "uppercase", letterSpacing: "1px" }}>Total Lines</div>
+            </div>
+          )}
+          {/* Divider */}
+          <div style={{ width: "1px", height: "50px", backgroundColor: "#333" }} />
+
+          {totalCommits && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ fontSize: "36px", fontWeight: "bold", color: "#fff" }}>{parseInt(totalCommits).toLocaleString()}</div>
+              <div style={{ fontSize: "16px", color: "#888", textTransform: "uppercase", letterSpacing: "1px" }}>Commits</div>
+            </div>
+          )}
+          {/* Divider */}
+          <div style={{ width: "1px", height: "50px", backgroundColor: "#333" }} />
+
+          {totalIssues && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ fontSize: "36px", fontWeight: "bold", color: "#fff" }}>{parseInt(totalIssues).toLocaleString()}</div>
+              <div style={{ fontSize: "16px", color: "#888", textTransform: "uppercase", letterSpacing: "1px" }}>Issues</div>
+            </div>
+          )}
+          {/* Divider */}
+          <div style={{ width: "1px", height: "50px", backgroundColor: "#333" }} />
+
+          {totalRepos && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ fontSize: "36px", fontWeight: "bold", color: "#fff" }}>{parseInt(totalRepos).toLocaleString()}</div>
+              <div style={{ fontSize: "16px", color: "#888", textTransform: "uppercase", letterSpacing: "1px" }}>Repositories</div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -757,6 +811,10 @@ export default async (req: Request) => {
     } else {
       // Fetch stats for monthly reward pool calculation
       let monthlyRewardsStr: string | undefined;
+      let totalLines: string | undefined;
+      let totalCommits: string | undefined;
+      let totalIssues: string | undefined;
+      let totalRepos: string | undefined;
 
       try {
         const statsResponse = await fetch("https://api.gittensor.io/dash/stats");
@@ -779,6 +837,12 @@ export default async (req: Request) => {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             });
+
+            // Capture other stats
+            totalLines = stats.totalLinesChanged;
+            totalCommits = stats.totalCommits;
+            totalIssues = stats.totalIssues;
+            totalRepos = stats.uniqueRepositories;
           }
         }
       } catch (error) {
@@ -786,7 +850,15 @@ export default async (req: Request) => {
       }
 
       // Default home template
-      return new ImageResponse(<HomeTemplate baseUrl={url.origin} monthlyRewards={monthlyRewardsStr} />, {
+      return new ImageResponse(
+        <HomeTemplate
+          baseUrl={url.origin}
+          monthlyRewards={monthlyRewardsStr}
+          totalLines={totalLines}
+          totalCommits={totalCommits}
+          totalIssues={totalIssues}
+          totalRepos={totalRepos}
+        />, {
         width: 1200,
         height: 630,
         headers: {
