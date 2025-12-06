@@ -659,23 +659,53 @@ export default async (req: Request) => {
         baseUrl: url.origin,
       };
 
+      // Fetch repository stats from Gittensor API
+      // We need to fetch from two endpoints to get all data:
+      // 1. /dash/repos for weight
+      // 2. /miners/all/prs for contributions stats
+
       try {
         // Fetch repository stats from Gittensor API
-        const repoStatsResponse = await fetch(
-          `https://api.gittensor.io/miners/repository/${encodeURIComponent(repo)}/stats`
-        );
+        // We need to fetch from two endpoints to get all data:
+        // 1. /dash/repos for weight
+        // 2. /miners/all/prs for contributions stats
 
-        if (repoStatsResponse.ok) {
-          const repoStats = await repoStatsResponse.json();
+        const [reposResponse, prsResponse] = await Promise.all([
+          fetch("https://api.gittensor.io/dash/repos"),
+          fetch("https://api.gittensor.io/miners/all/prs")
+        ]);
+
+        if (reposResponse.ok && prsResponse.ok) {
+          const repos = await reposResponse.json();
+          const prs = await prsResponse.json();
+
+          // 1. Find repo weight
+          const repoInfo = repos.find((r: any) => r.fullName === repo);
+          const weight = repoInfo ? parseFloat(repoInfo.weight) : 0;
+
+          // 2. Calculate stats from PRs
+          const repoPrs = prs.filter((pr: any) => pr.repository === repo);
+
+          const totalPRs = repoPrs.length;
+          const totalCommits = repoPrs.reduce((sum: number, pr: any) => sum + (pr.commitCount || 0), 0);
+          const totalAdditions = repoPrs.reduce((sum: number, pr: any) => sum + (pr.additions || 0), 0);
+          const totalDeletions = repoPrs.reduce((sum: number, pr: any) => sum + (pr.deletions || 0), 0);
+          const totalContributors = new Set(repoPrs.map((pr: any) => pr.githubId)).size;
+
           repoData = {
             ...repoData,
-            totalContributors: repoStats.totalContributors,
-            totalPRs: repoStats.totalPRs,
-            totalCommits: repoStats.totalCommits,
-            totalAdditions: repoStats.totalAdditions,
-            totalDeletions: repoStats.totalDeletions,
-            weight: repoStats.weight,
+            totalContributors,
+            totalPRs,
+            totalCommits,
+            totalAdditions,
+            totalDeletions,
+            weight,
           };
+        } else {
+          console.error("Failed to fetch data:", {
+            reposStatus: reposResponse.status,
+            prsStatus: prsResponse.status
+          });
         }
       } catch (error) {
         console.error("Failed to fetch repository stats:", error);
