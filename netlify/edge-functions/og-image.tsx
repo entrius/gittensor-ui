@@ -524,8 +524,8 @@ function HomeTemplate({ baseUrl, monthlyRewards, totalLines, totalCommits, total
         height={150}
         style={{
           position: "absolute",
-          top: "60px",
-          left: "60px",
+          top: "40px",
+          left: "40px",
         }}
       />
 
@@ -541,8 +541,8 @@ function HomeTemplate({ baseUrl, monthlyRewards, totalLines, totalCommits, total
             borderRadius: "30px",
             border: "1px solid rgba(255, 255, 255, 0.1)",
             position: "absolute",
-            top: "60px",
-            right: "60px",
+            top: "40px",
+            right: "40px",
           }}
         >
           <div
