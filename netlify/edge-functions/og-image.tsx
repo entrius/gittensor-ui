@@ -492,7 +492,7 @@ function RepoTemplate({
 }
 
 // Home/Default Template
-function HomeTemplate({ baseUrl }: { baseUrl: string }) {
+function HomeTemplate({ baseUrl, monthlyRewards }: { baseUrl: string; monthlyRewards?: string }) {
   return (
     <div
       style={{
@@ -539,12 +539,52 @@ function HomeTemplate({ baseUrl }: { baseUrl: string }) {
         >
           Autonomous Software Development
         </div>
+
+        {monthlyRewards && (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "10px",
+              marginTop: "20px",
+              padding: "20px 40px",
+              backgroundColor: "rgba(255, 255, 255, 0.05)",
+              borderRadius: "20px",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "24px",
+                color: "rgba(255, 255, 255, 0.5)",
+                textTransform: "uppercase",
+                letterSpacing: "4px",
+                fontWeight: 600,
+              }}
+            >
+              Monthly Reward Pool
+            </div>
+            <div
+              style={{
+                fontSize: "64px",
+                fontWeight: 700,
+                color: "#fff",
+                fontFamily: "monospace",
+              }}
+            >
+              {monthlyRewards}
+            </div>
+          </div>
+        )}
+
         <div
           style={{
             fontSize: "28px",
             color: "#888",
             textAlign: "center",
             maxWidth: "900px",
+            marginTop: "20px",
           }}
         >
           The workforce for open source. Compete for rewards by contributing quality code.
@@ -726,8 +766,38 @@ export default async (req: Request) => {
         }
       );
     } else {
+      // Fetch stats for monthly reward pool calculation
+      let monthlyRewardsStr: string | undefined;
+
+      try {
+        const statsResponse = await fetch("https://api.gittensor.io/dash/stats");
+        if (statsResponse.ok) {
+          const stats = await statsResponse.json();
+          const taoPrice = stats?.prices?.tao?.data?.price;
+          const alphaPrice = stats?.prices?.alpha?.data?.price;
+
+          if (taoPrice && alphaPrice) {
+            const dailyAlphaEmissions = 2952;
+            const now = new Date();
+            const daysInMonth = new Date(
+              now.getFullYear(),
+              now.getMonth() + 1,
+              0,
+            ).getDate();
+            const monthlyRewards = taoPrice * alphaPrice * dailyAlphaEmissions * daysInMonth;
+
+            monthlyRewardsStr = "$" + monthlyRewards.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch stats for home OG:", error);
+      }
+
       // Default home template
-      return new ImageResponse(<HomeTemplate baseUrl={url.origin} />, {
+      return new ImageResponse(<HomeTemplate baseUrl={url.origin} monthlyRewards={monthlyRewardsStr} />, {
         width: 1200,
         height: 630,
         headers: {
