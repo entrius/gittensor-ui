@@ -659,11 +659,6 @@ export default async (req: Request) => {
         baseUrl: url.origin,
       };
 
-      // Fetch repository stats from Gittensor API
-      // We need to fetch from two endpoints to get all data:
-      // 1. /dash/repos for weight
-      // 2. /miners/all/prs for contributions stats
-
       try {
         // Fetch repository stats from Gittensor API
         // We need to fetch from two endpoints to get all data:
@@ -680,11 +675,12 @@ export default async (req: Request) => {
           const prs = await prsResponse.json();
 
           // 1. Find repo weight
-          const repoInfo = repos.find((r: any) => r.fullName === repo);
+          const repoInfo = Array.isArray(repos) ? repos.find((r: any) => r.fullName === repo) : null;
           const weight = repoInfo ? parseFloat(repoInfo.weight) : 0;
 
           // 2. Calculate stats from PRs
-          const repoPrs = prs.filter((pr: any) => pr.repository === repo);
+          const prsList = Array.isArray(prs) ? prs : [];
+          const repoPrs = prsList.filter((pr: any) => pr.repository === repo);
 
           const totalPRs = repoPrs.length;
           const totalCommits = repoPrs.reduce((sum: number, pr: any) => sum + (pr.commitCount || 0), 0);
