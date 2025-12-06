@@ -546,20 +546,20 @@ function HomeTemplate({ baseUrl, monthlyRewards }: { baseUrl: string; monthlyRew
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: "0px",
-              marginTop: "10px",
-              padding: "15px 40px",
+              gap: "10px",
+              marginTop: "40px",
+              padding: "30px 60px",
               backgroundColor: "rgba(255, 255, 255, 0.05)",
-              borderRadius: "20px",
+              borderRadius: "30px",
               border: "1px solid rgba(255, 255, 255, 0.1)",
             }}
           >
             <div
               style={{
-                fontSize: "20px",
+                fontSize: "28px",
                 color: "rgba(255, 255, 255, 0.5)",
                 textTransform: "uppercase",
-                letterSpacing: "4px",
+                letterSpacing: "6px",
                 fontWeight: 600,
                 marginBottom: "10px",
               }}
@@ -568,7 +568,7 @@ function HomeTemplate({ baseUrl, monthlyRewards }: { baseUrl: string; monthlyRew
             </div>
             <div
               style={{
-                fontSize: "56px",
+                fontSize: "80px",
                 fontWeight: 700,
                 color: "#fff",
                 fontFamily: "monospace",
@@ -578,18 +578,6 @@ function HomeTemplate({ baseUrl, monthlyRewards }: { baseUrl: string; monthlyRew
             </div>
           </div>
         )}
-
-        <div
-          style={{
-            fontSize: "24px",
-            color: "#888",
-            textAlign: "center",
-            maxWidth: "900px",
-            marginTop: "20px",
-          }}
-        >
-          The workforce for open source. Compete for rewards by contributing quality code.
-        </div>
       </div>
     </div>
   );
