@@ -499,9 +499,10 @@ interface HomeProps {
   totalCommits?: string;
   totalIssues?: string;
   totalRepos?: string;
+  totalPRs?: string;
 }
 
-function HomeTemplate({ baseUrl, monthlyRewards, totalLines, totalCommits, totalIssues, totalRepos }: HomeProps) {
+function HomeTemplate({ baseUrl, monthlyRewards, totalLines, totalCommits, totalIssues, totalRepos, totalPRs }: HomeProps) {
   return (
     <div
       style={{
@@ -513,116 +514,127 @@ function HomeTemplate({ baseUrl, monthlyRewards, totalLines, totalCommits, total
         justifyContent: "center",
         backgroundColor: "#000",
         backgroundImage: "linear-gradient(135deg, #000 0%, #1a1a1a 50%, #000 100%)",
+        position: "relative",
       }}
     >
-      <div
+      {/* Logo - Top Left */}
+      <img
+        src={`${baseUrl}/gittensor__1_-removebg-preview.png`}
+        width={150}
+        height={150}
         style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "10px",
-          marginTop: "0px",
+          position: "absolute",
+          top: "60px",
+          left: "60px",
         }}
-      >
-        <img
-          src={`${baseUrl}/gittensor__1_-removebg-preview.png`}
-          width={150}
-          height={150}
-        />
-        <div
-          style={{
-            fontSize: "90px",
-            fontWeight: 900,
-            color: "#fff",
-            letterSpacing: "-4px",
-            marginTop: "10px",
-          }}
-        >
-          GITTENSOR
-        </div>
+      />
 
-        {monthlyRewards && (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "5px",
-              marginTop: "20px",
-              marginBottom: "40px",
-              padding: "25px 60px",
-              backgroundColor: "rgba(255, 255, 255, 0.05)",
-              borderRadius: "30px",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "26px",
-                color: "rgba(255, 255, 255, 0.5)",
-                textTransform: "uppercase",
-                letterSpacing: "6px",
-                fontWeight: 600,
-              }}
-            >
-              Monthly Reward Pool
-            </div>
-            <div
-              style={{
-                fontSize: "80px",
-                fontWeight: 700,
-                color: "#fff",
-                fontFamily: "monospace",
-              }}
-            >
-              {monthlyRewards}
-            </div>
-          </div>
-        )}
-
-        {/* KPIs Grid */}
+      {/* Reward Pool - Top Right */}
+      {monthlyRewards && (
         <div
           style={{
             display: "flex",
-            flexDirection: "row",
-            gap: "40px",
-            marginTop: "0px",
+            flexDirection: "column",
+            alignItems: "center",
+            padding: "20px 40px",
+            backgroundColor: "rgba(255, 255, 255, 0.05)",
+            borderRadius: "30px",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            position: "absolute",
+            top: "60px",
+            right: "60px",
           }}
         >
-          {totalLines && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <div style={{ fontSize: "36px", fontWeight: "bold", color: "#fff" }}>{parseInt(totalLines).toLocaleString()}</div>
-              <div style={{ fontSize: "16px", color: "#888", textTransform: "uppercase", letterSpacing: "1px" }}>Total Lines</div>
-            </div>
-          )}
-          {/* Divider */}
-          <div style={{ width: "1px", height: "50px", backgroundColor: "#333" }} />
-
-          {totalCommits && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <div style={{ fontSize: "36px", fontWeight: "bold", color: "#fff" }}>{parseInt(totalCommits).toLocaleString()}</div>
-              <div style={{ fontSize: "16px", color: "#888", textTransform: "uppercase", letterSpacing: "1px" }}>Commits</div>
-            </div>
-          )}
-          {/* Divider */}
-          <div style={{ width: "1px", height: "50px", backgroundColor: "#333" }} />
-
-          {totalIssues && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <div style={{ fontSize: "36px", fontWeight: "bold", color: "#fff" }}>{parseInt(totalIssues).toLocaleString()}</div>
-              <div style={{ fontSize: "16px", color: "#888", textTransform: "uppercase", letterSpacing: "1px" }}>Issues</div>
-            </div>
-          )}
-          {/* Divider */}
-          <div style={{ width: "1px", height: "50px", backgroundColor: "#333" }} />
-
-          {totalRepos && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <div style={{ fontSize: "36px", fontWeight: "bold", color: "#fff" }}>{parseInt(totalRepos).toLocaleString()}</div>
-              <div style={{ fontSize: "16px", color: "#888", textTransform: "uppercase", letterSpacing: "1px" }}>Repositories</div>
-            </div>
-          )}
+          <div
+            style={{
+              fontSize: "24px",
+              color: "rgba(255, 255, 255, 0.5)",
+              textTransform: "uppercase",
+              letterSpacing: "4px",
+              fontWeight: 600,
+              marginBottom: "5px",
+            }}
+          >
+            Monthly Reward Pool
+          </div>
+          <div
+            style={{
+              fontSize: "64px",
+              fontWeight: 700,
+              color: "#fff",
+              fontFamily: "monospace",
+            }}
+          >
+            {monthlyRewards}
+          </div>
         </div>
+      )}
+
+      {/* Title - Center */}
+      <div
+        style={{
+          fontSize: "120px",
+          fontWeight: 900,
+          color: "#fff",
+          letterSpacing: "-6px",
+          marginBottom: "60px",
+        }}
+      >
+        GITTENSOR
+      </div>
+
+      {/* KPIs Grid - Bottom */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          gap: "50px",
+          position: "absolute",
+          bottom: "60px",
+        }}
+      >
+        {totalLines && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ fontSize: "56px", fontWeight: "bold", color: "#fff" }}>{parseInt(totalLines).toLocaleString()}</div>
+            <div style={{ fontSize: "20px", color: "#888", textTransform: "uppercase", letterSpacing: "2px", fontWeight: 600 }}>Total Lines</div>
+          </div>
+        )}
+        {/* Divider */}
+        <div style={{ width: "2px", height: "70px", backgroundColor: "#333" }} />
+
+        {totalPRs && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ fontSize: "56px", fontWeight: "bold", color: "#fff" }}>{parseInt(totalPRs).toLocaleString()}</div>
+            <div style={{ fontSize: "20px", color: "#888", textTransform: "uppercase", letterSpacing: "2px", fontWeight: 600 }}>PRs</div>
+          </div>
+        )}
+        {/* Divider */}
+        <div style={{ width: "2px", height: "70px", backgroundColor: "#333" }} />
+
+        {totalCommits && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ fontSize: "56px", fontWeight: "bold", color: "#fff" }}>{parseInt(totalCommits).toLocaleString()}</div>
+            <div style={{ fontSize: "20px", color: "#888", textTransform: "uppercase", letterSpacing: "2px", fontWeight: 600 }}>Commits</div>
+          </div>
+        )}
+        {/* Divider */}
+        <div style={{ width: "2px", height: "70px", backgroundColor: "#333" }} />
+
+        {totalIssues && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ fontSize: "56px", fontWeight: "bold", color: "#fff" }}>{parseInt(totalIssues).toLocaleString()}</div>
+            <div style={{ fontSize: "20px", color: "#888", textTransform: "uppercase", letterSpacing: "2px", fontWeight: 600 }}>Issues</div>
+          </div>
+        )}
+        {/* Divider */}
+        <div style={{ width: "2px", height: "70px", backgroundColor: "#333" }} />
+
+        {totalRepos && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ fontSize: "56px", fontWeight: "bold", color: "#fff" }}>{parseInt(totalRepos).toLocaleString()}</div>
+            <div style={{ fontSize: "20px", color: "#888", textTransform: "uppercase", letterSpacing: "2px", fontWeight: 600 }}>Repos</div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -806,9 +818,14 @@ export default async (req: Request) => {
       let totalCommits: string | undefined;
       let totalIssues: string | undefined;
       let totalRepos: string | undefined;
+      let totalPRs: string | undefined;
 
       try {
-        const statsResponse = await fetch("https://api.gittensor.io/dash/stats");
+        const [statsResponse, prsResponse] = await Promise.all([
+          fetch("https://api.gittensor.io/dash/stats"),
+          fetch("https://api.gittensor.io/miners/all/prs")
+        ]);
+
         if (statsResponse.ok) {
           const stats = await statsResponse.json();
           const taoPrice = stats?.prices?.tao?.data?.price;
@@ -836,6 +853,14 @@ export default async (req: Request) => {
             totalRepos = stats.uniqueRepositories;
           }
         }
+
+        if (prsResponse.ok) {
+          const prs = await prsResponse.json();
+          if (Array.isArray(prs)) {
+            totalPRs = prs.length.toString();
+          }
+        }
+
       } catch (error) {
         console.error("Failed to fetch stats for home OG:", error);
       }
@@ -849,6 +874,7 @@ export default async (req: Request) => {
           totalCommits={totalCommits}
           totalIssues={totalIssues}
           totalRepos={totalRepos}
+          totalPRs={totalPRs}
         />, {
         width: 1200,
         height: 630,
