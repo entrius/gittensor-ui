@@ -521,33 +521,24 @@ function HomeTemplate({ baseUrl, monthlyRewards, totalLines, totalCommits, total
           flexDirection: "column",
           alignItems: "center",
           gap: "10px",
-          marginTop: "-20px", // Pull up slightly to fit everything
+          marginTop: "0px",
         }}
       >
         <img
           src={`${baseUrl}/gittensor__1_-removebg-preview.png`}
-          width={120}
-          height={120}
+          width={150}
+          height={150}
         />
         <div
           style={{
-            fontSize: "70px",
+            fontSize: "90px",
             fontWeight: 900,
             color: "#fff",
-            letterSpacing: "-2px",
+            letterSpacing: "-4px",
+            marginTop: "10px",
           }}
         >
           GITTENSOR
-        </div>
-        <div
-          style={{
-            fontSize: "32px",
-            color: "#fff",
-            fontWeight: 500,
-            marginBottom: "5px",
-          }}
-        >
-          Autonomous Software Development
         </div>
 
         {monthlyRewards && (
@@ -557,9 +548,9 @@ function HomeTemplate({ baseUrl, monthlyRewards, totalLines, totalCommits, total
               flexDirection: "column",
               alignItems: "center",
               gap: "5px",
-              marginTop: "10px",
-              marginBottom: "30px",
-              padding: "20px 50px",
+              marginTop: "20px",
+              marginBottom: "40px",
+              padding: "25px 60px",
               backgroundColor: "rgba(255, 255, 255, 0.05)",
               borderRadius: "30px",
               border: "1px solid rgba(255, 255, 255, 0.1)",
@@ -567,7 +558,7 @@ function HomeTemplate({ baseUrl, monthlyRewards, totalLines, totalCommits, total
           >
             <div
               style={{
-                fontSize: "24px",
+                fontSize: "26px",
                 color: "rgba(255, 255, 255, 0.5)",
                 textTransform: "uppercase",
                 letterSpacing: "6px",
@@ -578,7 +569,7 @@ function HomeTemplate({ baseUrl, monthlyRewards, totalLines, totalCommits, total
             </div>
             <div
               style={{
-                fontSize: "72px",
+                fontSize: "80px",
                 fontWeight: 700,
                 color: "#fff",
                 fontFamily: "monospace",
@@ -594,7 +585,7 @@ function HomeTemplate({ baseUrl, monthlyRewards, totalLines, totalCommits, total
           style={{
             display: "flex",
             flexDirection: "row",
-            gap: "30px",
+            gap: "40px",
             marginTop: "0px",
           }}
         >
