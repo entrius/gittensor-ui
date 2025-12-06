@@ -341,6 +341,7 @@ function RepoTemplate({
           style={{
             borderRadius: "120px",
             border: "6px solid #00ffff",
+            backgroundColor: owner === "opentensor" ? "#ffffff" : owner === "bitcoin" ? "#F7931A" : "transparent",
           }}
         />
 
