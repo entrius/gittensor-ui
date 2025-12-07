@@ -1,9 +1,0 @@
-Server is running on port 3001
-Loading font from: /Users/grant/gt metatags/gittensor-ui-meta-tags/node_modules/@fontsource/inter/files/inter-latin-700-normal.woff
-Font loaded successfully, size: 31320 bytes
-Warning: Each child in a list should have a unique "key" prop.
-
-Check the top-level render call using <div>. See https://reactjs.org/link/warning-keys for more information.
-    at div
-Invalid value "300" for "height". Expected a number, "auto", or a percentage value (e.g., "50%").
-Invalid value "300" for "width". Expected a number, "auto", or a percentage value (e.g., "50%").
