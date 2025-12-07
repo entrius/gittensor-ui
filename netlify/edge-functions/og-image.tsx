@@ -536,35 +536,36 @@ function HomeTemplate({ baseUrl, monthlyRewards, totalLines, totalCommits, total
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            padding: "16px 32px",
-            backgroundColor: "#0d1117",
+            padding: "15px 30px",
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
             borderRadius: "24px",
-            border: "1px solid #30363d",
+            border: "1px solid rgba(0, 255, 255, 0.2)",
+            boxShadow: "0 0 20px rgba(0, 255, 255, 0.05)",
             position: "absolute",
             top: "25px",
             right: "25px",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+            backdropFilter: "blur(4px)",
           }}
         >
           <div
             style={{
-              fontSize: "14px",
+              fontSize: "16px",
               color: "#00ffff",
               textTransform: "uppercase",
               letterSpacing: "2px",
               fontWeight: 700,
-              marginBottom: "4px",
+              marginBottom: "0px",
             }}
           >
             Monthly Reward Pool
           </div>
           <div
             style={{
-              fontSize: "52px",
+              fontSize: "56px",
               fontWeight: 700,
               color: "#fff",
               fontFamily: "monospace",
-              lineHeight: 1,
+              textShadow: "0 0 10px rgba(0, 255, 255, 0.2)",
             }}
           >
             {monthlyRewards}
