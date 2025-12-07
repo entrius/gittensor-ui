@@ -2,7 +2,7 @@ import React from "react";
 import { Box } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Page } from "../components/layout";
-import { MinerLeaderboard } from "../components";
+import { MinerLeaderboard, SEO } from "../components";
 
 const MinersPage: React.FC = () => {
   const navigate = useNavigate();
@@ -50,6 +50,10 @@ const MinersPage: React.FC = () => {
 
   return (
     <Page title="Miner Dashboard">
+      <SEO
+        title="Miners Leaderboard"
+        description="Top contributors on Gittensor. View miner rankings, scores, and contribution statistics."
+      />
       <Box
         sx={{
           display: "flex",

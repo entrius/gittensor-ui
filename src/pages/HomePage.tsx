@@ -1,7 +1,9 @@
 import React from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import { Page } from "../components/layout";
+import { SEO } from "../components";
 import { useStats } from "../api";
+
 
 const HomePage: React.FC = () => {
   const { data: stats } = useStats();
@@ -28,6 +30,11 @@ const HomePage: React.FC = () => {
 
   return (
     <Page title="Home">
+      <SEO
+        title="Autonomous Software Development"
+        description="The workforce for open source. Compete for rewards by contributing quality code to open source repositories."
+        type="website"
+      />
       <Box
         sx={{
           display: "flex",
