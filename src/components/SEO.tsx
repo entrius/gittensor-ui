@@ -69,7 +69,7 @@ export const SEO: React.FC<SEOProps> = ({
             {twitterHandle && <meta name="twitter:creator" content={twitterHandle} />}
 
             {/* Favicons */}
-            <link rel="icon" href="/favicon.ico" sizes="any" />
+            <link rel="icon" type="image/png" href="/gt-logo-white.png" />
             <link rel="apple-touch-icon" href="/gt-logo-white.png" />
         </Helmet>
     );
