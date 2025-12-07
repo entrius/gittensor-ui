@@ -1,7 +1,6 @@
 import { useApiQuery } from "./ApiUtils";
-import { useCallback } from "react";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import axios, { AxiosError } from "axios";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import axios from "axios";
 import {
   RepoChanges,
   CommitsTrend,
@@ -71,13 +70,14 @@ export const useCommitLog = (
 export const useInfiniteCommitLog = (options?: {
   refetchInterval?: number;
 }) => {
+  const baseUrl = import.meta.env.VITE_REACT_APP_BASE_URL;
   const limit = 15;
 
   return useInfiniteQuery({
     queryKey: ["useInfiniteCommitLog"],
     queryFn: async ({ pageParam }: { pageParam: number }) => {
       const url = `/dash/commits`;
-      const requestUrl = url;
+      const requestUrl = baseUrl ? `${baseUrl}${url}` : url;
       const { data } = await axios.get<CommitLog[]>(requestUrl, {
         params: { page: pageParam, limit },
       });
