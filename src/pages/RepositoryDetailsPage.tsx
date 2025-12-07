@@ -16,16 +16,15 @@ const RepositoryDetailsPage: React.FC = () => {
     return null;
   }
 
-  // Extract owner from repo name (format: owner/repo) and use their GitHub avatar as OG image
-  const repoOwner = repo.split("/")[0];
-  const repoAvatarUrl = `https://github.com/${repoOwner}.png?size=1200`;
+  // Use dynamic OG image from API
+  const ogImageUrl = `https://api.gittensor.io/og-image?type=repository&repo=${encodeURIComponent(repo)}`;
 
   return (
     <Page title="Repository Details">
       <SEO
         title={`Repository Stats - ${repo}`}
         description={`View detailed statistics, contributors, and pull requests for ${repo} on Gittensor. Track repository activity and open source contributions.`}
-        image={repoAvatarUrl}
+        image={ogImageUrl}
         type="website"
       />
       <Box

@@ -16,18 +16,15 @@ const MinerDetailsPage: React.FC = () => {
     return null;
   }
 
-  // Use GitHub avatar as OG image - supports both username and numeric ID
-  // For numeric IDs, use: https://avatars.githubusercontent.com/u/{id}?s=1200
-  const minerAvatarUrl = /^\d+$/.test(githubId)
-    ? `https://avatars.githubusercontent.com/u/${githubId}?s=1200`
-    : `https://github.com/${githubId}.png?size=1200`;
+  // Use dynamic OG image from API
+  const ogImageUrl = `https://api.gittensor.io/og-image?type=miner&id=${encodeURIComponent(githubId)}`;
 
   return (
     <Page title="Miner Details">
       <SEO
         title={`Miner Stats - ${githubId}`}
         description={`View detailed statistics, contributions, and pull requests for ${githubId} on Gittensor. Track open source contributions and rewards.`}
-        image={minerAvatarUrl}
+        image={ogImageUrl}
         type="website"
       />
       <Box

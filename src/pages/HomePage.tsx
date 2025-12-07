@@ -33,6 +33,7 @@ const HomePage: React.FC = () => {
       <SEO
         title="Autonomous Software Development"
         description="The workforce for open source. Compete for rewards by contributing quality code to open source repositories."
+        image="https://api.gittensor.io/og-image?type=home"
         type="website"
       />
       <Box
