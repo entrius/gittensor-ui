@@ -52,28 +52,26 @@ async function injectMetaTags(html, url) {
   let title = "Gittensor | Autonomous Software Development";
   let description =
     "The workforce for open source. Compete for rewards by contributing quality code to open source repositories.";
-  let image = "/og-images/gittensor-og.jpg"; // Fallback
+  let image = "/gittensor-og.jpg"; // Fallback
 
   // Miner details page
   if (pathname === "/miners/details") {
     const githubId = searchParams.get("githubId");
     if (githubId) {
-      // Fetch username from GitHub API
+      // Fetch username from Gittensor API (uses first PR author)
       let username = githubId;
       try {
-        // Add GitHub token if available (increases rate limit from 60 to 5000/hour)
-        const headers = {};
-        if (typeof GITHUB_TOKEN !== 'undefined' && GITHUB_TOKEN) {
-          headers['Authorization'] = `Bearer ${GITHUB_TOKEN}`;
-        }
-
-        const githubResponse = await fetch(`https://api.github.com/user/${githubId}`, { headers });
-        if (githubResponse.ok) {
-          const githubData = await githubResponse.json();
-          username = githubData.login || githubId;
+        const minerResponse = await fetch(
+          `https://api.gittensor.io/miners/${githubId}/prs`,
+        );
+        if (minerResponse.ok) {
+          const prs = await minerResponse.json();
+          if (prs && prs.length > 0 && prs[0].author) {
+            username = prs[0].author;
+          }
         }
       } catch (error) {
-        console.error('Failed to fetch GitHub username:', error);
+        console.error("Failed to fetch miner username:", error);
         // Fall back to githubId if fetch fails
       }
 

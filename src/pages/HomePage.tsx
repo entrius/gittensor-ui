@@ -4,7 +4,6 @@ import { Page } from "../components/layout";
 import { SEO } from "../components";
 import { useStats } from "../api";
 
-
 const HomePage: React.FC = () => {
   const { data: stats } = useStats();
 
@@ -33,7 +32,6 @@ const HomePage: React.FC = () => {
       <SEO
         title="Autonomous Software Development"
         description="The workforce for open source. Compete for rewards by contributing quality code to open source repositories."
-        image="https://api.gittensor.io/og-image?type=home"
         type="website"
       />
       <Box

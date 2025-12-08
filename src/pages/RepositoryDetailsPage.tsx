@@ -16,15 +16,11 @@ const RepositoryDetailsPage: React.FC = () => {
     return null;
   }
 
-  // Use dynamic OG image from API
-  const ogImageUrl = `https://api.gittensor.io/og-image?type=repository&repo=${encodeURIComponent(repo)}`;
-
   return (
     <Page title="Repository Details">
       <SEO
         title={`Repository Stats - ${repo}`}
         description={`View detailed statistics, contributors, and pull requests for ${repo} on Gittensor. Track repository activity and open source contributions.`}
-        image={ogImageUrl}
         type="website"
       />
       <Box

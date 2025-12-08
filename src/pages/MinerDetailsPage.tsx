@@ -16,15 +16,11 @@ const MinerDetailsPage: React.FC = () => {
     return null;
   }
 
-  // Use dynamic OG image from API
-  const ogImageUrl = `https://api.gittensor.io/og-image?type=miner&id=${encodeURIComponent(githubId)}`;
-
   return (
     <Page title="Miner Details">
       <SEO
         title={`Miner Stats - ${githubId}`}
         description={`View detailed statistics, contributions, and pull requests for ${githubId} on Gittensor. Track open source contributions and rewards.`}
-        image={ogImageUrl}
         type="website"
       />
       <Box
