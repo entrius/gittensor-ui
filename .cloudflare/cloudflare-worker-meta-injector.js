@@ -54,6 +54,9 @@ async function injectMetaTags(html, url) {
     "The workforce for open source. Compete for rewards by contributing quality code to open source repositories.";
   let image = "/gittensor-og.jpg"; // Fallback
 
+  // Cache buster for OG images - uses full timestamp to bypass social media caching
+  const cacheBuster = Date.now(); // Millisecond-precision timestamp
+
   // Miner details page
   if (pathname === "/miners/details") {
     const githubId = searchParams.get("githubId");
@@ -77,7 +80,7 @@ async function injectMetaTags(html, url) {
 
       title = `${username} | Gittensor`;
       description = `View detailed statistics, contributions, and pull requests for ${username} on Gittensor. Track open source contributions and rewards.`;
-      image = `https://api.gittensor.io/og-image?type=miner&id=${encodeURIComponent(githubId)}`;
+      image = `https://api.gittensor.io/og-image?type=miner&id=${encodeURIComponent(githubId)}&v=${cacheBuster}`;
     }
   }
 
@@ -90,13 +93,13 @@ async function injectMetaTags(html, url) {
 
       title = `${repoName} | Gittensor`;
       description = `View detailed statistics, contributors, and pull requests for ${repo} on Gittensor. Track repository activity and open source contributions.`;
-      image = `https://api.gittensor.io/og-image?type=repository&repo=${encodeURIComponent(repo)}`;
+      image = `https://api.gittensor.io/og-image?type=repository&repo=${encodeURIComponent(repo)}&v=${cacheBuster}`;
     }
   }
 
   // Home page
   if (pathname === "/") {
-    image = "https://api.gittensor.io/og-image?type=home";
+    image = `https://api.gittensor.io/og-image?type=home&v=${cacheBuster}`;
   }
 
   // Replace meta tags - use [\s\S]*? to match across newlines
