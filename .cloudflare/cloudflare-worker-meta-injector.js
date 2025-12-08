@@ -54,8 +54,8 @@ async function injectMetaTags(html, url) {
     "The workforce for open source. Compete for rewards by contributing quality code to open source repositories.";
   let image = "/gittensor-og.jpg"; // Fallback
 
-  // Cache buster for OG images - uses full timestamp to bypass social media caching
-  const cacheBuster = Date.now(); // Millisecond-precision timestamp
+  // This ensures data is accurate at post time while avoiding excessive cache invalidation
+  const cacheBuster = Date.now();
 
   // Miner details page
   if (pathname === "/miners/details") {
@@ -111,30 +111,40 @@ async function injectMetaTags(html, url) {
       /<meta property="og:title"[\s\S]*?\/>/i,
       `<meta property="og:title" content="${escapeHtml(title)}" />`,
     )
-    // Update twitter:title
+    // Update twitter:title (uses name attribute, not property)
     .replace(
-      /<meta property="twitter:title"[\s\S]*?\/>/i,
-      `<meta property="twitter:title" content="${escapeHtml(title)}" />`,
+      /<meta (property|name)="twitter:title"[\s\S]*?\/>/i,
+      `<meta name="twitter:title" content="${escapeHtml(title)}" />`,
     )
     // Update og:description
     .replace(
       /<meta property="og:description"[\s\S]*?\/>/i,
       `<meta property="og:description" content="${escapeHtml(description)}" />`,
     )
-    // Update twitter:description
+    // Update twitter:description (uses name attribute, not property)
     .replace(
-      /<meta property="twitter:description"[\s\S]*?\/>/i,
-      `<meta property="twitter:description" content="${escapeHtml(description)}" />`,
+      /<meta (property|name)="twitter:description"[\s\S]*?\/>/i,
+      `<meta name="twitter:description" content="${escapeHtml(description)}" />`,
     )
     // Update og:image
     .replace(
       /<meta property="og:image"[\s\S]*?\/>/i,
       `<meta property="og:image" content="${escapeHtml(image)}" />`,
     )
-    // Update twitter:image
+    // Update og:image:secure_url (required for Twitter/HTTPS)
     .replace(
-      /<meta property="twitter:image"[\s\S]*?\/>/i,
-      `<meta property="twitter:image" content="${escapeHtml(image)}" />`,
+      /<meta property="og:image:secure_url"[\s\S]*?\/>/i,
+      `<meta property="og:image:secure_url" content="${escapeHtml(image)}" />`,
+    )
+    // Update twitter:image (uses name attribute, not property)
+    .replace(
+      /<meta (property|name)="twitter:image"[\s\S]*?\/>/i,
+      `<meta name="twitter:image" content="${escapeHtml(image)}" />`,
+    )
+    // Update twitter:card (uses name attribute, not property)
+    .replace(
+      /<meta (property|name)="twitter:card"[\s\S]*?\/>/i,
+      `<meta name="twitter:card" content="summary_large_image" />`,
     );
 
   return modifiedHtml;
