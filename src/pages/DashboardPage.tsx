@@ -6,6 +6,7 @@ import {
   RepositoriesTable,
   KpiCard,
   LiveCommitLog,
+  SEO,
 } from "../components";
 import theme from "../theme";
 import { useStats } from "../api";
@@ -24,6 +25,10 @@ const DashboardPage: React.FC = () => {
 
   return (
     <Page title="Dashboard">
+      <SEO
+        title="Dashboard"
+        description="View real-time statistics, commit trends, and network performance for Gittensor."
+      />
       <Box
         sx={{
           width: "100%",

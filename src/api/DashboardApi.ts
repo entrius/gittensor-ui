@@ -1,7 +1,6 @@
 import { useApiQuery } from "./ApiUtils";
-import { useCallback } from "react";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import axios, { AxiosError } from "axios";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import axios from "axios";
 import {
   RepoChanges,
   CommitsTrend,

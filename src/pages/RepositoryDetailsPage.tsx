@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Box, Button } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { Page } from "../components/layout";
-import { RepositoryDetails } from "../components";
+import { RepositoryDetails, SEO } from "../components";
 
 const RepositoryDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -18,6 +18,11 @@ const RepositoryDetailsPage: React.FC = () => {
 
   return (
     <Page title="Repository Details">
+      <SEO
+        title={`Repository Stats - ${repo}`}
+        description={`View detailed statistics, contributors, and pull requests for ${repo} on Gittensor. Track repository activity and open source contributions.`}
+        type="website"
+      />
       <Box
         sx={{
           display: "flex",

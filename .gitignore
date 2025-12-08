@@ -5,3 +5,5 @@ dist
 *.orig
 
 package-lock.json
+*.log
+.wrangler

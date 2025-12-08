@@ -2,10 +2,15 @@ import React from "react";
 import { Stack, Box } from "@mui/material";
 import { Page } from "../components/layout";
 import FAQ from "../components/FAQ";
+import { SEO } from "../components";
 
 const FAQPage: React.FC = () => {
   return (
     <Page title="FAQ">
+      <SEO
+        title="Frequently Asked Questions"
+        description="Find answers to common questions about Gittensor, incentive mechanisms, subnets, alpha tokens, and how to start mining."
+      />
       <Box
         sx={{
           display: "flex",
