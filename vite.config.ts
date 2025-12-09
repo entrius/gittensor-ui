@@ -16,17 +16,5 @@ export default defineConfig({
     host: true, //set to true to make the server accessible on your network
     origin: "http://127.0.0.1:8080",
     allowedHosts: ["gittensor.io", "gittensor.io"],
-    proxy: {
-      "/dash": {
-        target: "https://api.gittensor.io",
-        changeOrigin: true,
-        secure: false,
-      },
-      "/miners": {
-        target: "https://api.gittensor.io",
-        changeOrigin: true,
-        secure: false,
-      },
-    },
   },
 });

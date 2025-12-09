@@ -75,7 +75,8 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
   const cardRef = useRef<HTMLDivElement>(null);
 
   // Use controlled tab if provided, otherwise use internal state
-  const activeTab = controlledActiveTab !== undefined ? controlledActiveTab : internalActiveTab;
+  const activeTab =
+    controlledActiveTab !== undefined ? controlledActiveTab : internalActiveTab;
 
   // Safe hook usage
   const allMinerDataQuery = useAllMinerData();
@@ -806,10 +807,7 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
           <TableBody>
             {Array.isArray(currentData) &&
               currentData
-                .slice(
-                  page * rowsPerPage,
-                  page * rowsPerPage + rowsPerPage,
-                )
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((item: any) => (
                   <TableRow
                     key={
@@ -824,7 +822,10 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                       if (activeTab === 0) {
                         onSelectMiner(item?.githubId || item?.author);
                       } else if (activeTab === 1 && onSelectPR) {
-                        onSelectPR(item?.repository || "", item?.pullRequestNumber);
+                        onSelectPR(
+                          item?.repository || "",
+                          item?.pullRequestNumber,
+                        );
                       } else if (activeTab === 2 && onSelectRepository) {
                         onSelectRepository(item?.repository || "");
                       }
@@ -832,8 +833,8 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                     sx={{
                       cursor:
                         activeTab === 0 ||
-                          (activeTab === 1 && onSelectPR) ||
-                          (activeTab === 2 && onSelectRepository)
+                        (activeTab === 1 && onSelectPR) ||
+                        (activeTab === 2 && onSelectRepository)
                           ? "pointer"
                           : "default",
                       "&:hover": {
@@ -912,11 +913,17 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                               display: "flex",
                               alignItems: "center",
                               gap: 1.5,
-                              cursor: onSelectRepository ? "pointer" : "default",
+                              cursor: onSelectRepository
+                                ? "pointer"
+                                : "default",
                               "&:hover": {
                                 "& .MuiTypography-root": {
-                                  color: onSelectRepository ? "primary.main" : "#ffffff",
-                                  textDecoration: onSelectRepository ? "underline" : "none",
+                                  color: onSelectRepository
+                                    ? "primary.main"
+                                    : "#ffffff",
+                                  textDecoration: onSelectRepository
+                                    ? "underline"
+                                    : "none",
                                 },
                               },
                             }}
@@ -930,10 +937,10 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                                 border: "1px solid rgba(255, 255, 255, 0.2)",
                                 backgroundColor:
                                   (item?.repository || "").split("/")[0] ===
-                                    "opentensor"
+                                  "opentensor"
                                     ? "#ffffff"
                                     : (item?.repository || "").split("/")[0] ===
-                                      "bitcoin"
+                                        "bitcoin"
                                       ? "#F7931A"
                                       : "transparent",
                               }}
@@ -980,11 +987,17 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                               display: "flex",
                               alignItems: "center",
                               gap: 1.5,
-                              cursor: onSelectRepository ? "pointer" : "default",
+                              cursor: onSelectRepository
+                                ? "pointer"
+                                : "default",
                               "&:hover": {
                                 "& .MuiTypography-root": {
-                                  color: onSelectRepository ? "primary.main" : "#ffffff",
-                                  textDecoration: onSelectRepository ? "underline" : "none",
+                                  color: onSelectRepository
+                                    ? "primary.main"
+                                    : "#ffffff",
+                                  textDecoration: onSelectRepository
+                                    ? "underline"
+                                    : "none",
                                 },
                               },
                             }}
@@ -998,10 +1011,10 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                                 border: "1px solid rgba(255, 255, 255, 0.2)",
                                 backgroundColor:
                                   (item?.repository || "").split("/")[0] ===
-                                    "opentensor"
+                                  "opentensor"
                                     ? "#ffffff"
                                     : (item?.repository || "").split("/")[0] ===
-                                      "bitcoin"
+                                        "bitcoin"
                                       ? "#F7931A"
                                       : "transparent",
                               }}

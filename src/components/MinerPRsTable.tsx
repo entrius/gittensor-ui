@@ -144,18 +144,20 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             )}
           </Box>
         </Box>
-        {!selectedRepo && !selectedAuthor && (uniqueRepos.length > 1 || uniqueAuthors.length > 1) && (
-          <Typography
-            sx={{
-              color: "rgba(255, 255, 255, 0.5)",
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "0.7rem",
-              mt: 1,
-            }}
-          >
-            Click on a repository or author to filter PRs
-          </Typography>
-        )}
+        {!selectedRepo &&
+          !selectedAuthor &&
+          (uniqueRepos.length > 1 || uniqueAuthors.length > 1) && (
+            <Typography
+              sx={{
+                color: "rgba(255, 255, 255, 0.5)",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "0.7rem",
+                mt: 1,
+              }}
+            >
+              Click on a repository or author to filter PRs
+            </Typography>
+          )}
       </Box>
 
       {/* Table */}
@@ -254,7 +256,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   key={`${pr.repository}-${pr.pullRequestNumber}-${index}`}
                   onClick={() => {
                     navigate(
-                      `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`
+                      `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
                     );
                   }}
                   sx={{

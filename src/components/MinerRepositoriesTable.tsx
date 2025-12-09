@@ -78,7 +78,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     const sorted = [...repoStats];
     sorted.sort((a, b) => {
       let compareValue = 0;
-      
+
       switch (sortField) {
         case "repository":
           compareValue = a.repository.localeCompare(b.repository);
@@ -97,7 +97,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
           compareValue = a.score - b.score;
           break;
       }
-      
+
       return sortOrder === "asc" ? compareValue : -compareValue;
     });
     return sorted;

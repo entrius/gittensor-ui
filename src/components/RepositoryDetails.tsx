@@ -22,7 +22,12 @@ interface RepositoryDetailsProps {
   repositoryFullName: string;
 }
 
-type ContributorSortField = "rank" | "contributor" | "prs" | "score" | "minerRank";
+type ContributorSortField =
+  | "rank"
+  | "contributor"
+  | "prs"
+  | "score"
+  | "minerRank";
 type SortOrder = "asc" | "desc";
 
 const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
@@ -31,16 +36,20 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
   const navigate = useNavigate();
   const { data: allPRs, isLoading } = useAllMinerData();
   const { data: allMinersStats } = useAllMinerStats();
-  const [selectedAuthor, setSelectedAuthor] = React.useState<string | null>(null);
-  const [contributorSortField, setContributorSortField] = useState<ContributorSortField>("score");
-  const [contributorSortOrder, setContributorSortOrder] = useState<SortOrder>("desc");
+  const [selectedAuthor, setSelectedAuthor] = React.useState<string | null>(
+    null,
+  );
+  const [contributorSortField, setContributorSortField] =
+    useState<ContributorSortField>("score");
+  const [contributorSortOrder, setContributorSortOrder] =
+    useState<SortOrder>("desc");
 
   // Build githubId -> miner rank map
   const minerRankMap = useMemo(() => {
     const map = new Map<string, number>();
     if (Array.isArray(allMinersStats)) {
       const sorted = [...allMinersStats].sort(
-        (a, b) => Number(b.totalScore) - Number(a.totalScore)
+        (a, b) => Number(b.totalScore) - Number(a.totalScore),
       );
       sorted.forEach((miner, index) => {
         map.set(miner.githubId, index + 1);
@@ -54,11 +63,13 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
     if (!allPRs) return null;
 
     // First get all PRs for this repo to calculate total stats correctly
-    const allRepoPRs = allPRs.filter((pr) => pr.repository === repositoryFullName);
+    const allRepoPRs = allPRs.filter(
+      (pr) => pr.repository === repositoryFullName,
+    );
 
     // Filter PRs for the list if author selected
-    const displayedPRs = selectedAuthor 
-      ? allRepoPRs.filter(pr => pr.author === selectedAuthor)
+    const displayedPRs = selectedAuthor
+      ? allRepoPRs.filter((pr) => pr.author === selectedAuthor)
       : allRepoPRs;
 
     // Calculate stats for this repo (based on ALL PRs, not filtered)
@@ -70,7 +81,10 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
       (sum, pr) => sum + (pr.additions + pr.deletions),
       0,
     );
-    const totalCommits = allRepoPRs.reduce((sum, pr) => sum + pr.commitCount, 0);
+    const totalCommits = allRepoPRs.reduce(
+      (sum, pr) => sum + pr.commitCount,
+      0,
+    );
 
     // Get unique contributors
     const contributors = new Map<
@@ -182,11 +196,11 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
   // Sort contributors
   const sortedContributors = useMemo(() => {
     if (!repoData) return [];
-    
+
     const sorted = [...repoData.contributors];
     sorted.sort((a, b) => {
       let compareValue = 0;
-      
+
       switch (contributorSortField) {
         case "contributor":
           compareValue = a.author.localeCompare(b.author);
@@ -207,7 +221,7 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
           compareValue = aRank - bRank;
           break;
       }
-      
+
       return contributorSortOrder === "asc" ? compareValue : -compareValue;
     });
     return sorted;
@@ -490,7 +504,11 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
                 <TableCell sx={headerCellStyle}>
                   <TableSortLabel
                     active={contributorSortField === "rank"}
-                    direction={contributorSortField === "rank" ? contributorSortOrder : "asc"}
+                    direction={
+                      contributorSortField === "rank"
+                        ? contributorSortOrder
+                        : "asc"
+                    }
                     onClick={() => handleContributorSort("rank")}
                     sx={{
                       color: "inherit",
@@ -509,7 +527,11 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
                 <TableCell sx={headerCellStyle}>
                   <TableSortLabel
                     active={contributorSortField === "contributor"}
-                    direction={contributorSortField === "contributor" ? contributorSortOrder : "asc"}
+                    direction={
+                      contributorSortField === "contributor"
+                        ? contributorSortOrder
+                        : "asc"
+                    }
                     onClick={() => handleContributorSort("contributor")}
                     sx={{
                       color: "inherit",
@@ -528,7 +550,11 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
                 <TableCell align="right" sx={headerCellStyle}>
                   <TableSortLabel
                     active={contributorSortField === "prs"}
-                    direction={contributorSortField === "prs" ? contributorSortOrder : "desc"}
+                    direction={
+                      contributorSortField === "prs"
+                        ? contributorSortOrder
+                        : "desc"
+                    }
                     onClick={() => handleContributorSort("prs")}
                     sx={{
                       color: "inherit",
@@ -547,7 +573,11 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
                 <TableCell align="right" sx={headerCellStyle}>
                   <TableSortLabel
                     active={contributorSortField === "score"}
-                    direction={contributorSortField === "score" ? contributorSortOrder : "desc"}
+                    direction={
+                      contributorSortField === "score"
+                        ? contributorSortOrder
+                        : "desc"
+                    }
                     onClick={() => handleContributorSort("score")}
                     sx={{
                       color: "inherit",
@@ -566,7 +596,11 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
                 <TableCell align="right" sx={headerCellStyle}>
                   <TableSortLabel
                     active={contributorSortField === "minerRank"}
-                    direction={contributorSortField === "minerRank" ? contributorSortOrder : "asc"}
+                    direction={
+                      contributorSortField === "minerRank"
+                        ? contributorSortOrder
+                        : "asc"
+                    }
                     onClick={() => handleContributorSort("minerRank")}
                     sx={{
                       color: "inherit",
@@ -652,7 +686,9 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
                   <TableCell sx={bodyCellStyle}>
                     <Box
                       onClick={() =>
-                        navigate(`/miners/details?githubId=${contributor.githubId}`)
+                        navigate(
+                          `/miners/details?githubId=${contributor.githubId}`,
+                        )
                       }
                       sx={{
                         display: "flex",
@@ -838,7 +874,7 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
                     key={`${pr.pullRequestNumber}-${index}`}
                     onClick={() => {
                       navigate(
-                        `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`
+                        `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
                       );
                     }}
                     sx={{
