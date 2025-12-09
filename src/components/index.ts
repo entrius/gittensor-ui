@@ -3,6 +3,8 @@ export * from "./layout";
 export { default as FAQ } from "./FAQ";
 export { default as MinerScoreCard } from "./MinerScoreCard";
 export { default as MinerPRsTable } from "./MinerPRsTable";
+export { default as MinerRepositoriesTable } from "./MinerRepositoriesTable";
 export { default as MinerLeaderboard } from "./MinerLeaderboard";
 export { default as RepositoryDetails } from "./RepositoryDetails";
+export { default as PRDetailsCard } from "./PRDetailsCard";
 export { SEO } from "./SEO";

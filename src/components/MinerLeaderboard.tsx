@@ -33,6 +33,7 @@ import { CommitLog } from "../api/models/Dashboard";
 interface MinerLeaderboardProps {
   onSelectMiner: (githubId: string) => void;
   onSelectRepository?: (repositoryFullName: string) => void;
+  onSelectPR?: (repository: string, pullRequestNumber: number) => void;
   activeTab?: number;
   onTabChange?: (tab: number) => void;
 }
@@ -64,6 +65,7 @@ interface RepoStats {
 const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
   onSelectMiner,
   onSelectRepository,
+  onSelectPR,
   activeTab: controlledActiveTab,
   onTabChange,
 }) => {
@@ -809,306 +811,373 @@ const MinerLeaderboard: React.FC<MinerLeaderboardProps> = ({
                   page * rowsPerPage + rowsPerPage,
                 )
                 .map((item: any) => (
-                <TableRow
-                  key={
-                    activeTab === 1
-                      ? `${item?.repository}-${item?.pullRequestNumber}`
-                      : activeTab === 2
-                        ? item?.repository
-                        : item?.githubId
-                  }
-                  hover
-                  onClick={() => {
-                    if (activeTab === 0) {
-                      onSelectMiner(item?.githubId || item?.author);
-                    } else if (activeTab === 2 && onSelectRepository) {
-                      onSelectRepository(item?.repository || "");
+                  <TableRow
+                    key={
+                      activeTab === 1
+                        ? `${item?.repository}-${item?.pullRequestNumber}`
+                        : activeTab === 2
+                          ? item?.repository
+                          : item?.githubId
                     }
-                  }}
-                  sx={{
-                    cursor:
-                      activeTab === 0 || (activeTab === 2 && onSelectRepository)
-                        ? "pointer"
-                        : "default",
-                    "&:hover": {
-                      backgroundColor: "rgba(255, 255, 255, 0.05)",
-                    },
-                    transition: "background-color 0.2s",
-                  }}
-                >
-                  <TableCell sx={{ ...bodyCellStyle, width: "80px" }}>
-                    {getRankIcon(item?.rank || 0)}
-                  </TableCell>
+                    hover
+                    onClick={() => {
+                      if (activeTab === 0) {
+                        onSelectMiner(item?.githubId || item?.author);
+                      } else if (activeTab === 1 && onSelectPR) {
+                        onSelectPR(item?.repository || "", item?.pullRequestNumber);
+                      } else if (activeTab === 2 && onSelectRepository) {
+                        onSelectRepository(item?.repository || "");
+                      }
+                    }}
+                    sx={{
+                      cursor:
+                        activeTab === 0 ||
+                          (activeTab === 1 && onSelectPR) ||
+                          (activeTab === 2 && onSelectRepository)
+                          ? "pointer"
+                          : "default",
+                      "&:hover": {
+                        backgroundColor: "rgba(255, 255, 255, 0.05)",
+                      },
+                      transition: "background-color 0.2s",
+                    }}
+                  >
+                    <TableCell sx={{ ...bodyCellStyle, width: "80px" }}>
+                      {getRankIcon(item?.rank || 0)}
+                    </TableCell>
 
-                  {activeTab === 1 ? (
-                    // Top PRs Rows
-                    <>
-                      <TableCell sx={{ ...bodyCellStyle, width: "40%" }}>
-                        <a
-                          href={`https://github.com/${item?.repository}/pull/${item?.pullRequestNumber}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            color: "#ffffff",
-                            textDecoration: "none",
-                            fontWeight: 500,
-                          }}
-                        >
-                          {item?.pullRequestTitle || ""}
-                        </a>
-                      </TableCell>
-                      <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                          }}
-                        >
-                          <Avatar
-                            src={`https://avatars.githubusercontent.com/${item?.author}`}
-                            sx={{ width: 20, height: 20 }}
-                          />
-                          {item?.author || ""}
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1.5,
-                          }}
-                        >
-                          <Avatar
-                            src={`https://avatars.githubusercontent.com/${(item?.repository || "").split("/")[0]}`}
-                            alt={(item?.repository || "").split("/")[0]}
-                            sx={{
-                              width: 20,
-                              height: 20,
-                              border: "1px solid rgba(255, 255, 255, 0.2)",
-                              backgroundColor:
-                                (item?.repository || "").split("/")[0] ===
-                                "opentensor"
-                                  ? "#ffffff"
-                                  : (item?.repository || "").split("/")[0] ===
-                                      "bitcoin"
-                                    ? "#F7931A"
-                                    : "transparent",
-                            }}
-                          />
-                          {item?.repository || ""}
-                        </Box>
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{ ...bodyCellStyle, width: "15%" }}
-                      >
-                        <Typography
-                          sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "0.75rem",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {parseFloat(item?.score || "0").toFixed(4)}
-                        </Typography>
-                      </TableCell>
-                    </>
-                  ) : activeTab === 2 ? (
-                    // Top Repos Rows
-                    <>
-                      <TableCell sx={{ ...bodyCellStyle, width: "40%" }}>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1.5,
-                          }}
-                        >
-                          <Avatar
-                            src={`https://avatars.githubusercontent.com/${(item?.repository || "").split("/")[0]}`}
-                            alt={(item?.repository || "").split("/")[0]}
-                            sx={{
-                              width: 20,
-                              height: 20,
-                              border: "1px solid rgba(255, 255, 255, 0.2)",
-                              backgroundColor:
-                                (item?.repository || "").split("/")[0] ===
-                                "opentensor"
-                                  ? "#ffffff"
-                                  : (item?.repository || "").split("/")[0] ===
-                                      "bitcoin"
-                                    ? "#F7931A"
-                                    : "transparent",
-                            }}
-                          />
+                    {activeTab === 1 ? (
+                      // Top PRs Rows
+                      <>
+                        <TableCell sx={{ ...bodyCellStyle, width: "40%" }}>
                           <Typography
                             component="span"
                             sx={{
                               color: "#ffffff",
                               fontWeight: 500,
+                              cursor: "pointer",
+                              "&:hover": {
+                                color: "primary.main",
+                                textDecoration: "underline",
+                              },
                             }}
                           >
-                            {item?.repository || ""}
+                            {item?.pullRequestTitle || ""}
                           </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{ ...bodyCellStyle, width: "20%" }}
-                      >
-                        <Typography
-                          sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "0.75rem",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {Number(item?.totalScore || 0).toFixed(2)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{ ...bodyCellStyle, width: "20%" }}
-                      >
-                        {item?.totalPRs || 0}
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{ ...bodyCellStyle, width: "15%" }}
-                      >
-                        {item?.uniqueMiners?.size || 0}
-                      </TableCell>
-                    </>
-                  ) : (
-                    // Miner Rows
-                    <>
-                      <TableCell
-                        sx={{
-                          ...bodyCellStyle,
-                          width: activeTab === 0 ? "30%" : "40%",
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1.5,
-                          }}
-                        >
-                          <Avatar
-                            src={`https://avatars.githubusercontent.com/${item?.author || item?.githubId}`}
-                            alt={item?.author || item?.githubId}
-                            sx={{
-                              width: 24,
-                              height: 24,
-                              border: "1px solid rgba(255, 255, 255, 0.2)",
+                        </TableCell>
+                        <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
+                          <Box
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSelectMiner(item?.githubId || item?.author);
                             }}
-                          />
-                          <Box>
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                              cursor: "pointer",
+                              "&:hover": {
+                                "& .MuiTypography-root": {
+                                  color: "primary.main",
+                                  textDecoration: "underline",
+                                },
+                              },
+                            }}
+                          >
+                            <Avatar
+                              src={`https://avatars.githubusercontent.com/${item?.author}`}
+                              sx={{ width: 20, height: 20 }}
+                            />
                             <Typography
-                              variant="body2"
+                              component="span"
                               sx={{
-                                fontWeight: 600,
-                                color: "#ffffff",
+                                fontFamily: '"JetBrains Mono", monospace',
                                 fontSize: "0.85rem",
-                                fontFamily: '"JetBrains Mono", monospace',
+                                transition: "color 0.2s",
                               }}
                             >
-                              {item?.author || item?.githubId || ""}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: "rgba(255, 255, 255, 0.4)",
-                                fontSize: "0.7rem",
-                                fontFamily: '"JetBrains Mono", monospace',
-                              }}
-                            >
-                              {(item?.hotkey || "").substring(0, 8)}...
+                              {item?.author || ""}
                             </Typography>
                           </Box>
-                        </Box>
-                      </TableCell>
-                      {/* Top Miners - show Score */}
-                      {
-                        <>
-                          <TableCell
-                            align="right"
-                            sx={{ ...bodyCellStyle, width: "15%" }}
+                        </TableCell>
+                        <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
+                          <Box
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onSelectRepository) {
+                                onSelectRepository(item?.repository || "");
+                              }
+                            }}
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1.5,
+                              cursor: onSelectRepository ? "pointer" : "default",
+                              "&:hover": {
+                                "& .MuiTypography-root": {
+                                  color: onSelectRepository ? "primary.main" : "#ffffff",
+                                  textDecoration: onSelectRepository ? "underline" : "none",
+                                },
+                              },
+                            }}
                           >
-                            <Typography
+                            <Avatar
+                              src={`https://avatars.githubusercontent.com/${(item?.repository || "").split("/")[0]}`}
+                              alt={(item?.repository || "").split("/")[0]}
                               sx={{
-                                fontFamily: '"JetBrains Mono", monospace',
-                                fontSize: "0.75rem",
-                                fontWeight: 600,
+                                width: 20,
+                                height: 20,
+                                border: "1px solid rgba(255, 255, 255, 0.2)",
+                                backgroundColor:
+                                  (item?.repository || "").split("/")[0] ===
+                                    "opentensor"
+                                    ? "#ffffff"
+                                    : (item?.repository || "").split("/")[0] ===
+                                      "bitcoin"
+                                      ? "#F7931A"
+                                      : "transparent",
+                              }}
+                            />
+                            <Typography
+                              component="span"
+                              sx={{
+                                color: "#ffffff",
+                                fontWeight: 500,
+                                transition: "color 0.2s",
                               }}
                             >
-                              {Number(item?.totalScore || 0).toFixed(2)}
+                              {item?.repository || ""}
                             </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="right"
-                            sx={{ ...bodyCellStyle, width: "10%" }}
+                          </Box>
+                        </TableCell>
+                        <TableCell
+                          align="right"
+                          sx={{ ...bodyCellStyle, width: "15%" }}
+                        >
+                          <Typography
+                            sx={{
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: "0.75rem",
+                              fontWeight: 600,
+                            }}
                           >
-                            {item?.totalPRs || 0}
-                          </TableCell>
-                        </>
-                      }
-                      {activeTab === 0 ? (
-                        // Top Miners gets separate Added/Deleted cells plus total
-                        <>
-                          <TableCell
-                            align="right"
-                            sx={{ ...bodyCellStyle, width: "11%" }}
+                            {parseFloat(item?.score || "0").toFixed(4)}
+                          </Typography>
+                        </TableCell>
+                      </>
+                    ) : activeTab === 2 ? (
+                      // Top Repos Rows
+                      <>
+                        <TableCell sx={{ ...bodyCellStyle, width: "40%" }}>
+                          <Box
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onSelectRepository) {
+                                onSelectRepository(item?.repository || "");
+                              }
+                            }}
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1.5,
+                              cursor: onSelectRepository ? "pointer" : "default",
+                              "&:hover": {
+                                "& .MuiTypography-root": {
+                                  color: onSelectRepository ? "primary.main" : "#ffffff",
+                                  textDecoration: onSelectRepository ? "underline" : "none",
+                                },
+                              },
+                            }}
                           >
-                            <Typography
-                              variant="body2"
+                            <Avatar
+                              src={`https://avatars.githubusercontent.com/${(item?.repository || "").split("/")[0]}`}
+                              alt={(item?.repository || "").split("/")[0]}
                               sx={{
-                                color: "#7ee787",
-                                fontFamily: '"JetBrains Mono", monospace',
-                                fontSize: "0.85rem",
+                                width: 20,
+                                height: 20,
+                                border: "1px solid rgba(255, 255, 255, 0.2)",
+                                backgroundColor:
+                                  (item?.repository || "").split("/")[0] ===
+                                    "opentensor"
+                                    ? "#ffffff"
+                                    : (item?.repository || "").split("/")[0] ===
+                                      "bitcoin"
+                                      ? "#F7931A"
+                                      : "transparent",
+                              }}
+                            />
+                            <Typography
+                              component="span"
+                              sx={{
+                                color: "#ffffff",
+                                fontWeight: 500,
+                                transition: "color 0.2s",
                               }}
                             >
-                              +{(item?.linesAdded || 0).toLocaleString()}
+                              {item?.repository || ""}
                             </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="right"
-                            sx={{ ...bodyCellStyle, width: "11%" }}
+                          </Box>
+                        </TableCell>
+                        <TableCell
+                          align="right"
+                          sx={{ ...bodyCellStyle, width: "20%" }}
+                        >
+                          <Typography
+                            sx={{
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: "0.75rem",
+                              fontWeight: 600,
+                            }}
                           >
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                color: "#ff7b72",
-                                fontFamily: '"JetBrains Mono", monospace',
-                                fontSize: "0.85rem",
-                              }}
-                            >
-                              -{(item?.linesDeleted || 0).toLocaleString()}
-                            </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="right"
-                            sx={{ ...bodyCellStyle, width: "11%" }}
+                            {Number(item?.totalScore || 0).toFixed(2)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell
+                          align="right"
+                          sx={{ ...bodyCellStyle, width: "20%" }}
+                        >
+                          {item?.totalPRs || 0}
+                        </TableCell>
+                        <TableCell
+                          align="right"
+                          sx={{ ...bodyCellStyle, width: "15%" }}
+                        >
+                          {item?.uniqueMiners?.size || 0}
+                        </TableCell>
+                      </>
+                    ) : (
+                      // Miner Rows
+                      <>
+                        <TableCell
+                          sx={{
+                            ...bodyCellStyle,
+                            width: activeTab === 0 ? "30%" : "40%",
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1.5,
+                            }}
                           >
-                            <Typography
-                              variant="body2"
+                            <Avatar
+                              src={`https://avatars.githubusercontent.com/${item?.author || item?.githubId}`}
+                              alt={item?.author || item?.githubId}
                               sx={{
-                                fontFamily: '"JetBrains Mono", monospace',
-                                fontSize: "0.85rem",
+                                width: 24,
+                                height: 24,
+                                border: "1px solid rgba(255, 255, 255, 0.2)",
                               }}
+                            />
+                            <Box>
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontWeight: 600,
+                                  color: "#ffffff",
+                                  fontSize: "0.85rem",
+                                  fontFamily: '"JetBrains Mono", monospace',
+                                  transition: "color 0.2s",
+                                  "&:hover": {
+                                    color: "primary.main",
+                                    textDecoration: "underline",
+                                  },
+                                }}
+                              >
+                                {item?.author || item?.githubId || ""}
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: "rgba(255, 255, 255, 0.4)",
+                                  fontSize: "0.7rem",
+                                  fontFamily: '"JetBrains Mono", monospace',
+                                }}
+                              >
+                                {(item?.hotkey || "").substring(0, 8)}...
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </TableCell>
+                        {/* Top Miners - show Score */}
+                        {
+                          <>
+                            <TableCell
+                              align="right"
+                              sx={{ ...bodyCellStyle, width: "15%" }}
                             >
-                              {(item?.linesChanged || 0).toLocaleString()}
-                            </Typography>
-                          </TableCell>
-                        </>
-                      ) : null}
-                    </>
-                  )}
-                </TableRow>
-              ))}
+                              <Typography
+                                sx={{
+                                  fontFamily: '"JetBrains Mono", monospace',
+                                  fontSize: "0.75rem",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {Number(item?.totalScore || 0).toFixed(2)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell
+                              align="right"
+                              sx={{ ...bodyCellStyle, width: "10%" }}
+                            >
+                              {item?.totalPRs || 0}
+                            </TableCell>
+                          </>
+                        }
+                        {activeTab === 0 ? (
+                          // Top Miners gets separate Added/Deleted cells plus total
+                          <>
+                            <TableCell
+                              align="right"
+                              sx={{ ...bodyCellStyle, width: "11%" }}
+                            >
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  color: "#7ee787",
+                                  fontFamily: '"JetBrains Mono", monospace',
+                                  fontSize: "0.85rem",
+                                }}
+                              >
+                                +{(item?.linesAdded || 0).toLocaleString()}
+                              </Typography>
+                            </TableCell>
+                            <TableCell
+                              align="right"
+                              sx={{ ...bodyCellStyle, width: "11%" }}
+                            >
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  color: "#ff7b72",
+                                  fontFamily: '"JetBrains Mono", monospace',
+                                  fontSize: "0.85rem",
+                                }}
+                              >
+                                -{(item?.linesDeleted || 0).toLocaleString()}
+                              </Typography>
+                            </TableCell>
+                            <TableCell
+                              align="right"
+                              sx={{ ...bodyCellStyle, width: "11%" }}
+                            >
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontFamily: '"JetBrains Mono", monospace',
+                                  fontSize: "0.85rem",
+                                }}
+                              >
+                                {(item?.linesChanged || 0).toLocaleString()}
+                              </Typography>
+                            </TableCell>
+                          </>
+                        ) : null}
+                      </>
+                    )}
+                  </TableRow>
+                ))}
           </TableBody>
         </Table>
       </TableContainer>

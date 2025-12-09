@@ -15,9 +15,9 @@ const CommitTrendChart: React.FC = () => {
   const { data } = useHistoricalTrend();
 
   // Filter data to only include the last 10 days (using UTC)
-  const filteredData = data?.filter((item) =>
+  const filteredData = Array.isArray(data) ? data.filter((item) =>
     dayjs.utc(item.date).isAfter(dayjs.utc().subtract(10, "day"))
-  );
+  ) : [];
 
   const option = {
     title: {

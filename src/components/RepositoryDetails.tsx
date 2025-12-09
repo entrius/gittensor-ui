@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Card,
   Typography,
@@ -12,41 +12,72 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Chip,
+  TableSortLabel,
 } from "@mui/material";
-import { useAllMinerData } from "../api";
+import { useAllMinerData, useAllMinerStats } from "../api";
+import { useNavigate } from "react-router-dom";
 
 interface RepositoryDetailsProps {
   repositoryFullName: string;
 }
 
+type ContributorSortField = "rank" | "contributor" | "prs" | "score" | "minerRank";
+type SortOrder = "asc" | "desc";
+
 const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
   repositoryFullName,
 }) => {
+  const navigate = useNavigate();
   const { data: allPRs, isLoading } = useAllMinerData();
+  const { data: allMinersStats } = useAllMinerStats();
+  const [selectedAuthor, setSelectedAuthor] = React.useState<string | null>(null);
+  const [contributorSortField, setContributorSortField] = useState<ContributorSortField>("score");
+  const [contributorSortOrder, setContributorSortOrder] = useState<SortOrder>("desc");
+
+  // Build githubId -> miner rank map
+  const minerRankMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (Array.isArray(allMinersStats)) {
+      const sorted = [...allMinersStats].sort(
+        (a, b) => Number(b.totalScore) - Number(a.totalScore)
+      );
+      sorted.forEach((miner, index) => {
+        map.set(miner.githubId, index + 1);
+      });
+    }
+    return map;
+  }, [allMinersStats]);
 
   // Filter PRs for this repository and calculate rankings
   const repoData = useMemo(() => {
     if (!allPRs) return null;
 
-    const prs = allPRs.filter((pr) => pr.repository === repositoryFullName);
+    // First get all PRs for this repo to calculate total stats correctly
+    const allRepoPRs = allPRs.filter((pr) => pr.repository === repositoryFullName);
 
-    // Calculate stats for this repo
-    const totalScore = prs.reduce(
+    // Filter PRs for the list if author selected
+    const displayedPRs = selectedAuthor 
+      ? allRepoPRs.filter(pr => pr.author === selectedAuthor)
+      : allRepoPRs;
+
+    // Calculate stats for this repo (based on ALL PRs, not filtered)
+    const totalScore = allRepoPRs.reduce(
       (sum, pr) => sum + parseFloat(pr.score || "0"),
       0,
     );
-    const totalLines = prs.reduce(
+    const totalLines = allRepoPRs.reduce(
       (sum, pr) => sum + (pr.additions + pr.deletions),
       0,
     );
-    const totalCommits = prs.reduce((sum, pr) => sum + pr.commitCount, 0);
+    const totalCommits = allRepoPRs.reduce((sum, pr) => sum + pr.commitCount, 0);
 
     // Get unique contributors
     const contributors = new Map<
       string,
       { author: string; githubId: string; prs: number; score: number }
     >();
-    prs.forEach((pr) => {
+    allRepoPRs.forEach((pr) => {
       const existing = contributors.get(pr.githubId) || {
         author: pr.author,
         githubId: pr.githubId,
@@ -131,11 +162,12 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
         .findIndex(([repo]) => repo === repositoryFullName) + 1;
 
     return {
-      prs,
+      prs: displayedPRs,
+      totalPRCount: allRepoPRs.length,
       totalScore,
       totalLines,
       totalCommits,
-      totalPRs: prs.length,
+      totalPRs: allRepoPRs.length,
       contributors: sortedContributors,
       rankings: {
         score: scoreRank || null,
@@ -145,7 +177,50 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
         commits: commitsRank || null,
       },
     };
-  }, [allPRs, repositoryFullName]);
+  }, [allPRs, repositoryFullName, selectedAuthor]);
+
+  // Sort contributors
+  const sortedContributors = useMemo(() => {
+    if (!repoData) return [];
+    
+    const sorted = [...repoData.contributors];
+    sorted.sort((a, b) => {
+      let compareValue = 0;
+      
+      switch (contributorSortField) {
+        case "contributor":
+          compareValue = a.author.localeCompare(b.author);
+          break;
+        case "prs":
+          compareValue = a.prs - b.prs;
+          break;
+        case "score":
+          compareValue = a.score - b.score;
+          break;
+        case "rank":
+          // Rank is based on score by default (inverted because lower rank is better)
+          compareValue = b.score - a.score;
+          break;
+        case "minerRank":
+          const aRank = minerRankMap.get(a.githubId) || 999999;
+          const bRank = minerRankMap.get(b.githubId) || 999999;
+          compareValue = aRank - bRank;
+          break;
+      }
+      
+      return contributorSortOrder === "asc" ? compareValue : -compareValue;
+    });
+    return sorted;
+  }, [repoData, contributorSortField, contributorSortOrder, minerRankMap]);
+
+  const handleContributorSort = (field: ContributorSortField) => {
+    if (contributorSortField === field) {
+      setContributorSortOrder(contributorSortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setContributorSortField(field);
+      setContributorSortOrder("desc");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -412,18 +487,105 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell sx={headerCellStyle}>Rank</TableCell>
-                <TableCell sx={headerCellStyle}>Contributor</TableCell>
-                <TableCell align="right" sx={headerCellStyle}>
-                  PRs
+                <TableCell sx={headerCellStyle}>
+                  <TableSortLabel
+                    active={contributorSortField === "rank"}
+                    direction={contributorSortField === "rank" ? contributorSortOrder : "asc"}
+                    onClick={() => handleContributorSort("rank")}
+                    sx={{
+                      color: "inherit",
+                      "&:hover": { color: "rgba(255, 255, 255, 0.9)" },
+                      "&.Mui-active": {
+                        color: "rgba(255, 255, 255, 0.9)",
+                        "& .MuiTableSortLabel-icon": {
+                          color: "rgba(255, 255, 255, 0.9) !important",
+                        },
+                      },
+                    }}
+                  >
+                    Rank
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={headerCellStyle}>
+                  <TableSortLabel
+                    active={contributorSortField === "contributor"}
+                    direction={contributorSortField === "contributor" ? contributorSortOrder : "asc"}
+                    onClick={() => handleContributorSort("contributor")}
+                    sx={{
+                      color: "inherit",
+                      "&:hover": { color: "rgba(255, 255, 255, 0.9)" },
+                      "&.Mui-active": {
+                        color: "rgba(255, 255, 255, 0.9)",
+                        "& .MuiTableSortLabel-icon": {
+                          color: "rgba(255, 255, 255, 0.9) !important",
+                        },
+                      },
+                    }}
+                  >
+                    Contributor
+                  </TableSortLabel>
                 </TableCell>
                 <TableCell align="right" sx={headerCellStyle}>
-                  Score
+                  <TableSortLabel
+                    active={contributorSortField === "prs"}
+                    direction={contributorSortField === "prs" ? contributorSortOrder : "desc"}
+                    onClick={() => handleContributorSort("prs")}
+                    sx={{
+                      color: "inherit",
+                      "&:hover": { color: "rgba(255, 255, 255, 0.9)" },
+                      "&.Mui-active": {
+                        color: "rgba(255, 255, 255, 0.9)",
+                        "& .MuiTableSortLabel-icon": {
+                          color: "rgba(255, 255, 255, 0.9) !important",
+                        },
+                      },
+                    }}
+                  >
+                    PRs
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell align="right" sx={headerCellStyle}>
+                  <TableSortLabel
+                    active={contributorSortField === "score"}
+                    direction={contributorSortField === "score" ? contributorSortOrder : "desc"}
+                    onClick={() => handleContributorSort("score")}
+                    sx={{
+                      color: "inherit",
+                      "&:hover": { color: "rgba(255, 255, 255, 0.9)" },
+                      "&.Mui-active": {
+                        color: "rgba(255, 255, 255, 0.9)",
+                        "& .MuiTableSortLabel-icon": {
+                          color: "rgba(255, 255, 255, 0.9) !important",
+                        },
+                      },
+                    }}
+                  >
+                    Score
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell align="right" sx={headerCellStyle}>
+                  <TableSortLabel
+                    active={contributorSortField === "minerRank"}
+                    direction={contributorSortField === "minerRank" ? contributorSortOrder : "asc"}
+                    onClick={() => handleContributorSort("minerRank")}
+                    sx={{
+                      color: "inherit",
+                      "&:hover": { color: "rgba(255, 255, 255, 0.9)" },
+                      "&.Mui-active": {
+                        color: "rgba(255, 255, 255, 0.9)",
+                        "& .MuiTableSortLabel-icon": {
+                          color: "rgba(255, 255, 255, 0.9) !important",
+                        },
+                      },
+                    }}
+                  >
+                    Miner Rank
+                  </TableSortLabel>
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {repoData.contributors.map((contributor, index) => (
+              {sortedContributors.map((contributor, index) => (
                 <TableRow
                   key={contributor.githubId}
                   sx={{
@@ -489,14 +651,38 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
                   </TableCell>
                   <TableCell sx={bodyCellStyle}>
                     <Box
-                      sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+                      onClick={() =>
+                        navigate(`/miners/details?githubId=${contributor.githubId}`)
+                      }
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.5,
+                        cursor: "pointer",
+                        "&:hover": {
+                          color: "primary.main",
+                          "& .MuiTypography-root": {
+                            textDecoration: "underline",
+                          },
+                        },
+                        transition: "color 0.2s",
+                      }}
                     >
                       <Avatar
                         src={`https://avatars.githubusercontent.com/${contributor.author}`}
                         alt={contributor.author}
                         sx={{ width: 24, height: 24 }}
                       />
-                      {contributor.author}
+                      <Typography
+                        component="span"
+                        sx={{
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: "0.85rem",
+                          transition: "color 0.2s",
+                        }}
+                      >
+                        {contributor.author}
+                      </Typography>
                     </Box>
                   </TableCell>
                   <TableCell align="right" sx={bodyCellStyle}>
@@ -504,6 +690,9 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
                   </TableCell>
                   <TableCell align="right" sx={bodyCellStyle}>
                     {contributor.score.toFixed(4)}
+                  </TableCell>
+                  <TableCell align="right" sx={bodyCellStyle}>
+                    {minerRankMap.get(contributor.githubId) || "-"}
                   </TableCell>
                 </TableRow>
               ))}
@@ -529,19 +718,73 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
           sx={{
             p: 3,
             borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 1,
           }}
         >
-          <Typography
-            variant="h6"
+          <Box
             sx={{
-              color: "#ffffff",
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "1.1rem",
-              fontWeight: 500,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 2,
             }}
           >
-            Pull Requests ({repoData.prs.length})
-          </Typography>
+            <Box sx={{ display: "flex", alignItems: "baseline", gap: 1.5 }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  color: "#ffffff",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: "1.1rem",
+                  fontWeight: 500,
+                }}
+              >
+                Pull Requests
+              </Typography>
+              <Typography
+                sx={{
+                  color: "rgba(255, 255, 255, 0.5)",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: "0.75rem",
+                }}
+              >
+                ({repoData.prs.length}
+                {selectedAuthor ? ` of ${repoData.totalPRCount || 0}` : ""})
+              </Typography>
+            </Box>
+            {selectedAuthor && (
+              <Chip
+                label={`Author: ${selectedAuthor}`}
+                onDelete={() => setSelectedAuthor(null)}
+                sx={{
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  color: "#ffffff",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: "0.75rem",
+                  "& .MuiChip-deleteIcon": {
+                    color: "rgba(255, 255, 255, 0.7)",
+                    "&:hover": {
+                      color: "#ffffff",
+                    },
+                  },
+                }}
+              />
+            )}
+          </Box>
+          {!selectedAuthor && repoData.contributors.length > 1 && (
+            <Typography
+              sx={{
+                color: "rgba(255, 255, 255, 0.5)",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "0.7rem",
+              }}
+            >
+              Click on an author to filter PRs
+            </Typography>
+          )}
         </Box>
 
         <TableContainer
@@ -593,7 +836,13 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
                 .map((pr, index) => (
                   <TableRow
                     key={`${pr.pullRequestNumber}-${index}`}
+                    onClick={() => {
+                      navigate(
+                        `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`
+                      );
+                    }}
                     sx={{
+                      cursor: "pointer",
                       "&:hover": {
                         backgroundColor: "rgba(255, 255, 255, 0.05)",
                       },
@@ -628,7 +877,20 @@ const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
                     </TableCell>
                     <TableCell sx={bodyCellStyle}>
                       <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        onClick={() => setSelectedAuthor(pr.author)}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          cursor: "pointer",
+                          "&:hover": {
+                            color: "primary.main",
+                            "& .MuiTypography-root": {
+                              textDecoration: "underline",
+                            },
+                          },
+                          transition: "color 0.2s",
+                        }}
                       >
                         <Avatar
                           src={`https://avatars.githubusercontent.com/${pr.author}`}

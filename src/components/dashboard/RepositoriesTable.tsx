@@ -498,13 +498,13 @@ const RepositoriesTable: React.FC = () => {
                             }}
                           >
                             <Avatar
-                              src={`https://avatars.githubusercontent.com/${repo.repositoryFullName.split('/')[0]}`}
-                              alt={repo.repositoryFullName.split('/')[0]}
+                              src={`https://avatars.githubusercontent.com/${(repo.repositoryFullName || '').split('/')[0]}`}
+                              alt={(repo.repositoryFullName || '').split('/')[0]}
                               sx={{
                                 width: 20,
                                 height: 20,
                                 border: "1px solid rgba(255, 255, 255, 0.2)",
-                                backgroundColor: repo.repositoryFullName.split('/')[0] === 'opentensor' ? '#ffffff' : repo.repositoryFullName.split('/')[0] === 'bitcoin' ? '#F7931A' : 'transparent',
+                                backgroundColor: (repo.repositoryFullName || '').split('/')[0] === 'opentensor' ? '#ffffff' : (repo.repositoryFullName || '').split('/')[0] === 'bitcoin' ? '#F7931A' : 'transparent',
                               }}
                             />
                             <Typography

@@ -3,7 +3,12 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Box, Button } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { Page } from "../components/layout";
-import { MinerScoreCard, MinerPRsTable, SEO } from "../components";
+import {
+  MinerScoreCard,
+  MinerRepositoriesTable,
+  MinerPRsTable,
+  SEO,
+} from "../components";
 
 const MinerDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -74,6 +79,9 @@ const MinerDetailsPage: React.FC = () => {
 
           {/* Miner Score Card */}
           <MinerScoreCard githubId={githubId} />
+
+          {/* Top Repositories */}
+          <MinerRepositoriesTable githubId={githubId} />
 
           {/* Miner PRs Table */}
           <MinerPRsTable githubId={githubId} />

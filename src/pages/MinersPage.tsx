@@ -37,6 +37,12 @@ const MinersPage: React.FC = () => {
     );
   };
 
+  const handleSelectPR = (repository: string, pullRequestNumber: number) => {
+    navigate(
+      `/miners/pr?repo=${encodeURIComponent(repository)}&number=${pullRequestNumber}`,
+    );
+  };
+
   const handleTabChange = (newTab: number) => {
     const newParams = new URLSearchParams(searchParams);
     if (newTab === 0) {
@@ -68,6 +74,7 @@ const MinersPage: React.FC = () => {
           <MinerLeaderboard
             onSelectMiner={handleSelectMiner}
             onSelectRepository={handleSelectRepository}
+            onSelectPR={handleSelectPR}
             activeTab={activeTab}
             onTabChange={handleTabChange}
           />

@@ -14,27 +14,43 @@ import {
   Chip,
 } from "@mui/material";
 import { useMinerPRs } from "../api";
+import { useNavigate } from "react-router-dom";
 
 interface MinerPRsTableProps {
   githubId: string;
 }
 
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
+  const navigate = useNavigate();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
+  const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
 
-  // Filter PRs by selected repository
+  // Filter PRs by selected repository and author
   const filteredPRs = useMemo(() => {
     if (!prs) return [];
-    if (!selectedRepo) return prs;
-    return prs.filter((pr) => pr.repository === selectedRepo);
-  }, [prs, selectedRepo]);
+    let filtered = prs;
+    if (selectedRepo) {
+      filtered = filtered.filter((pr) => pr.repository === selectedRepo);
+    }
+    if (selectedAuthor) {
+      filtered = filtered.filter((pr) => pr.author === selectedAuthor);
+    }
+    return filtered;
+  }, [prs, selectedRepo, selectedAuthor]);
 
   // Get unique repositories for quick filters
   const uniqueRepos = useMemo(() => {
     if (!prs) return [];
     const repos = new Set(prs.map((pr) => pr.repository));
     return Array.from(repos).sort();
+  }, [prs]);
+
+  // Get unique authors for quick filters
+  const uniqueAuthors = useMemo(() => {
+    if (!prs) return [];
+    const authors = new Set(prs.map((pr) => pr.author));
+    return Array.from(authors).sort();
   }, [prs]);
 
   return (
@@ -86,29 +102,49 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               }}
             >
               ({filteredPRs.length}
-              {selectedRepo ? ` of ${prs?.length || 0}` : ""})
+              {selectedRepo || selectedAuthor ? ` of ${prs?.length || 0}` : ""})
             </Typography>
           </Box>
-          {selectedRepo && (
-            <Chip
-              label={`Filtered: ${selectedRepo}`}
-              onDelete={() => setSelectedRepo(null)}
-              sx={{
-                backgroundColor: "rgba(255, 255, 255, 0.1)",
-                color: "#ffffff",
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "0.75rem",
-                "& .MuiChip-deleteIcon": {
-                  color: "rgba(255, 255, 255, 0.7)",
-                  "&:hover": {
-                    color: "#ffffff",
+          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+            {selectedRepo && (
+              <Chip
+                label={`Repo: ${selectedRepo}`}
+                onDelete={() => setSelectedRepo(null)}
+                sx={{
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  color: "#ffffff",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: "0.75rem",
+                  "& .MuiChip-deleteIcon": {
+                    color: "rgba(255, 255, 255, 0.7)",
+                    "&:hover": {
+                      color: "#ffffff",
+                    },
                   },
-                },
-              }}
-            />
-          )}
+                }}
+              />
+            )}
+            {selectedAuthor && (
+              <Chip
+                label={`Author: ${selectedAuthor}`}
+                onDelete={() => setSelectedAuthor(null)}
+                sx={{
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  color: "#ffffff",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: "0.75rem",
+                  "& .MuiChip-deleteIcon": {
+                    color: "rgba(255, 255, 255, 0.7)",
+                    "&:hover": {
+                      color: "#ffffff",
+                    },
+                  },
+                }}
+              />
+            )}
+          </Box>
         </Box>
-        {!selectedRepo && uniqueRepos.length > 1 && (
+        {!selectedRepo && !selectedAuthor && (uniqueRepos.length > 1 || uniqueAuthors.length > 1) && (
           <Typography
             sx={{
               color: "rgba(255, 255, 255, 0.5)",
@@ -117,7 +153,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               mt: 1,
             }}
           >
-            Click on a repository to filter PRs
+            Click on a repository or author to filter PRs
           </Typography>
         )}
       </Box>
@@ -216,7 +252,13 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               {filteredPRs.map((pr, index) => (
                 <TableRow
                   key={`${pr.repository}-${pr.pullRequestNumber}-${index}`}
+                  onClick={() => {
+                    navigate(
+                      `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`
+                    );
+                  }}
                   sx={{
+                    cursor: "pointer",
                     "&:hover": {
                       backgroundColor: "rgba(255, 255, 255, 0.05)",
                     },
