@@ -53,6 +53,23 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     return Array.from(authors).sort();
   }, [prs]);
 
+  if (isLoading) {
+    return (
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: "1px solid rgba(255, 255, 255, 0.1)",
+          backgroundColor: "transparent",
+          p: 4,
+          textAlign: "center",
+        }}
+        elevation={0}
+      >
+        <CircularProgress size={40} sx={{ color: "primary.main" }} />
+      </Card>
+    );
+  }
+
   return (
     <Card
       sx={{
@@ -144,28 +161,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             )}
           </Box>
         </Box>
-        {!selectedRepo &&
-          !selectedAuthor &&
-          (uniqueRepos.length > 1 || uniqueAuthors.length > 1) && (
-            <Typography
-              sx={{
-                color: "rgba(255, 255, 255, 0.5)",
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "0.7rem",
-                mt: 1,
-              }}
-            >
-              Click on a repository or author to filter PRs
-            </Typography>
-          )}
       </Box>
 
       {/* Table */}
-      {isLoading ? (
-        <Box sx={{ textAlign: "center", py: 8 }}>
-          <CircularProgress size={40} sx={{ color: "primary.main" }} />
-        </Box>
-      ) : !prs || prs.length === 0 ? (
+      {!prs || prs.length === 0 ? (
         <Box sx={{ textAlign: "center", py: 8 }}>
           <Typography
             sx={{

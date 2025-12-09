@@ -104,12 +104,13 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
     return (
       <Card
         sx={{
-          backgroundColor: "rgba(255, 255, 255, 0.02)",
+          backgroundColor: "transparent",
           borderRadius: "8px",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
           p: 4,
           textAlign: "center",
         }}
+        elevation={0}
       >
         <CircularProgress size={40} sx={{ color: "primary.main" }} />
       </Card>
@@ -122,7 +123,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
         sx={{
           backgroundColor: "rgba(255, 255, 255, 0.02)",
           borderRadius: "8px",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
           p: 4,
         }}
       >

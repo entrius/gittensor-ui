@@ -3,7 +3,12 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Box, Button } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { Page } from "../components/layout";
-import { RepositoryDetails, SEO } from "../components";
+import {
+  RepositoryScoreCard,
+  RepositoryContributorsTable,
+  RepositoryPRsTable,
+  SEO,
+} from "../components";
 
 const RepositoryDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -72,7 +77,14 @@ const RepositoryDetailsPage: React.FC = () => {
             Back to Leaderboard
           </Button>
 
-          <RepositoryDetails repositoryFullName={repo} />
+          {/* Repository Score Card */}
+          <RepositoryScoreCard repositoryFullName={repo} />
+
+          {/* Top Contributors */}
+          <RepositoryContributorsTable repositoryFullName={repo} />
+
+          {/* Repository PRs Table */}
+          <RepositoryPRsTable repositoryFullName={repo} />
         </Box>
       </Box>
     </Page>
