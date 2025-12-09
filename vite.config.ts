@@ -15,6 +15,18 @@ export default defineConfig({
     strictPort: true, //Set to true to exit if the port is already in use, instead of automatically trying the next available port.
     host: true, //set to true to make the server accessible on your network
     origin: "http://127.0.0.1:8080",
-    allowedHosts: ["test.gittensor.io", "gittensor.io"],
+    allowedHosts: ["gittensor.io", "gittensor.io"],
+    proxy: {
+      "/dash": {
+        target: "https://api.gittensor.io",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/miners": {
+        target: "https://api.gittensor.io",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
 });
