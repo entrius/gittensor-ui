@@ -52,7 +52,7 @@ jobs:
           fi
 
       - name: Refresh Repository weights
-        id: deploy
+        id: weight-refresh
         run: ssh my-vps '~/update-repository-weights.sh'
 
       # for notifying of deploy or statusfailure
