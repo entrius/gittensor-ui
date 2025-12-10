@@ -1,9 +1,8 @@
 import React from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Box, Button } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { Box } from "@mui/material";
 import { Page } from "../components/layout";
-import { PRDetailsCard, SEO } from "../components";
+import { PRDetailsCard, BackButton, SEO } from "../components";
 
 const PRDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -44,34 +43,7 @@ const PRDetailsPage: React.FC = () => {
             px: { xs: 2, sm: 2, md: 0 },
           }}
         >
-          <Button
-            startIcon={<ArrowBackIcon sx={{ fontSize: "1rem !important" }} />}
-            onClick={() => navigate("/miners?tab=prs")}
-            sx={{
-              mb: 2,
-              alignSelf: "flex-start",
-              color: "rgba(255, 255, 255, 0.7)",
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "0.8rem",
-              fontWeight: 500,
-              letterSpacing: "0.5px",
-              textTransform: "none",
-              backgroundColor: "#000000",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              borderRadius: "8px",
-              px: 2,
-              py: 1,
-              "&:hover": {
-                color: "#ffffff",
-                backgroundColor: "rgba(0, 0, 0, 0.8)",
-                borderColor: "rgba(255, 255, 255, 0.2)",
-              },
-              transition: "all 0.2s",
-            }}
-            disableRipple
-          >
-            Back to Top PRs
-          </Button>
+          <BackButton to="/miners?tab=prs" label="Back to Top PRs" />
 
           <PRDetailsCard
             repository={repository}
