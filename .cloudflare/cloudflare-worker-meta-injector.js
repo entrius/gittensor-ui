@@ -54,6 +54,9 @@ async function injectMetaTags(html, url) {
     "The workforce for open source. Compete for rewards by contributing quality code to open source repositories.";
   let image = "/gittensor-og.jpg"; // Fallback
 
+  // This ensures data is accurate at post time while avoiding excessive cache invalidation
+  const cacheBuster = Date.now();
+
   // Miner details page
   if (pathname === "/miners/details") {
     const githubId = searchParams.get("githubId");
@@ -77,7 +80,7 @@ async function injectMetaTags(html, url) {
 
       title = `${username} | Gittensor`;
       description = `View detailed statistics, contributions, and pull requests for ${username} on Gittensor. Track open source contributions and rewards.`;
-      image = `https://api.gittensor.io/og-image?type=miner&id=${encodeURIComponent(githubId)}`;
+      image = `https://api.gittensor.io/og-image?type=miner&id=${encodeURIComponent(githubId)}&v=${cacheBuster}`;
     }
   }
 
@@ -90,13 +93,13 @@ async function injectMetaTags(html, url) {
 
       title = `${repoName} | Gittensor`;
       description = `View detailed statistics, contributors, and pull requests for ${repo} on Gittensor. Track repository activity and open source contributions.`;
-      image = `https://api.gittensor.io/og-image?type=repository&repo=${encodeURIComponent(repo)}`;
+      image = `https://api.gittensor.io/og-image?type=repository&repo=${encodeURIComponent(repo)}&v=${cacheBuster}`;
     }
   }
 
   // Home page
   if (pathname === "/") {
-    image = "https://api.gittensor.io/og-image?type=home";
+    image = `https://api.gittensor.io/og-image?type=home&v=${cacheBuster}`;
   }
 
   // Replace meta tags - use [\s\S]*? to match across newlines
@@ -108,30 +111,40 @@ async function injectMetaTags(html, url) {
       /<meta property="og:title"[\s\S]*?\/>/i,
       `<meta property="og:title" content="${escapeHtml(title)}" />`,
     )
-    // Update twitter:title
+    // Update twitter:title (uses name attribute, not property)
     .replace(
-      /<meta property="twitter:title"[\s\S]*?\/>/i,
-      `<meta property="twitter:title" content="${escapeHtml(title)}" />`,
+      /<meta (property|name)="twitter:title"[\s\S]*?\/>/i,
+      `<meta name="twitter:title" content="${escapeHtml(title)}" />`,
     )
     // Update og:description
     .replace(
       /<meta property="og:description"[\s\S]*?\/>/i,
       `<meta property="og:description" content="${escapeHtml(description)}" />`,
     )
-    // Update twitter:description
+    // Update twitter:description (uses name attribute, not property)
     .replace(
-      /<meta property="twitter:description"[\s\S]*?\/>/i,
-      `<meta property="twitter:description" content="${escapeHtml(description)}" />`,
+      /<meta (property|name)="twitter:description"[\s\S]*?\/>/i,
+      `<meta name="twitter:description" content="${escapeHtml(description)}" />`,
     )
     // Update og:image
     .replace(
       /<meta property="og:image"[\s\S]*?\/>/i,
       `<meta property="og:image" content="${escapeHtml(image)}" />`,
     )
-    // Update twitter:image
+    // Update og:image:secure_url (required for Twitter/HTTPS)
     .replace(
-      /<meta property="twitter:image"[\s\S]*?\/>/i,
-      `<meta property="twitter:image" content="${escapeHtml(image)}" />`,
+      /<meta property="og:image:secure_url"[\s\S]*?\/>/i,
+      `<meta property="og:image:secure_url" content="${escapeHtml(image)}" />`,
+    )
+    // Update twitter:image (uses name attribute, not property)
+    .replace(
+      /<meta (property|name)="twitter:image"[\s\S]*?\/>/i,
+      `<meta name="twitter:image" content="${escapeHtml(image)}" />`,
+    )
+    // Update twitter:card (uses name attribute, not property)
+    .replace(
+      /<meta (property|name)="twitter:card"[\s\S]*?\/>/i,
+      `<meta name="twitter:card" content="summary_large_image" />`,
     );
 
   return modifiedHtml;
