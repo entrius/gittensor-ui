@@ -61,7 +61,12 @@ const RepositoriesTable: React.FC = () => {
         const rowHeight = 53; // Each table row height
         const padding = 32; // Top and bottom padding
 
-        const availableHeight = containerHeight - titleHeight - headerHeight - paginationHeight - padding;
+        const availableHeight =
+          containerHeight -
+          titleHeight -
+          headerHeight -
+          paginationHeight -
+          padding;
         const calculatedRows = Math.floor(availableHeight / rowHeight);
         const finalRows = Math.max(5, Math.min(calculatedRows, 20)); // Between 5 and 20 rows
 
@@ -70,8 +75,8 @@ const RepositoriesTable: React.FC = () => {
     };
 
     calculateRows();
-    window.addEventListener('resize', calculateRows);
-    return () => window.removeEventListener('resize', calculateRows);
+    window.addEventListener("resize", calculateRows);
+    return () => window.removeEventListener("resize", calculateRows);
   }, []);
 
   const handleSort = (field: SortField) => {
@@ -101,10 +106,6 @@ const RepositoriesTable: React.FC = () => {
     setPage(newPage);
   };
 
-
-
-
-
   const filteredAndSortedRepos = useMemo(() => {
     if (!repoChanges) return [];
 
@@ -113,7 +114,7 @@ const RepositoriesTable: React.FC = () => {
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
       filtered = repoChanges.filter((repo) =>
-        repo.repositoryFullName.toLowerCase().includes(lowerQuery)
+        repo.repositoryFullName.toLowerCase().includes(lowerQuery),
       );
     }
 
@@ -168,8 +169,10 @@ const RepositoriesTable: React.FC = () => {
       }
 
       // For all numeric fields (including weight which is a string), convert to number
-      const aNum = typeof aValue === "string" ? parseFloat(aValue) : Number(aValue);
-      const bNum = typeof bValue === "string" ? parseFloat(bValue) : Number(bValue);
+      const aNum =
+        typeof aValue === "string" ? parseFloat(aValue) : Number(aValue);
+      const bNum =
+        typeof bValue === "string" ? parseFloat(bValue) : Number(bValue);
 
       // Handle NaN values
       if (isNaN(aNum) && isNaN(bNum)) return 0;
@@ -200,7 +203,18 @@ const RepositoriesTable: React.FC = () => {
       }}
       elevation={0}
     >
-      <CardContent ref={containerRef} sx={{ p: isMobile ? 1.5 : 2, "&:last-child": { pb: isMobile ? 1.5 : 2 }, display: "flex", flexDirection: "column", flex: 1, overflow: "hidden", minHeight: 0 }}>
+      <CardContent
+        ref={containerRef}
+        sx={{
+          p: isMobile ? 1.5 : 2,
+          "&:last-child": { pb: isMobile ? 1.5 : 2 },
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+          overflow: "hidden",
+          minHeight: 0,
+        }}
+      >
         <Stack
           direction="row"
           justifyContent="space-between"
@@ -230,7 +244,9 @@ const RepositoriesTable: React.FC = () => {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "1rem" }} />
+                  <SearchIcon
+                    sx={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "1rem" }}
+                  />
                 </InputAdornment>
               ),
             }}
@@ -250,7 +266,6 @@ const RepositoriesTable: React.FC = () => {
             }}
           />
         </Stack>
-
 
         {isLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
@@ -279,7 +294,7 @@ const RepositoriesTable: React.FC = () => {
               },
             }}
           >
-            <Table sx={{ width: '100%', tableLayout: 'fixed' }}>
+            <Table sx={{ width: "100%", tableLayout: "fixed" }}>
               <TableHead>
                 <TableRow>
                   <TableCell
@@ -307,7 +322,12 @@ const RepositoriesTable: React.FC = () => {
                         },
                       }}
                     >
-                      <Typography variant="dataLabel" sx={{ fontSize: isMedium ? '0.7rem' : '0.75rem' }}>Repository</Typography>
+                      <Typography
+                        variant="dataLabel"
+                        sx={{ fontSize: isMedium ? "0.7rem" : "0.75rem" }}
+                      >
+                        Repository
+                      </Typography>
                     </TableSortLabel>
                   </TableCell>
                   {!isMobile && (
@@ -333,7 +353,12 @@ const RepositoriesTable: React.FC = () => {
                           },
                         }}
                       >
-                        <Typography variant="dataLabel" sx={{ fontSize: isMedium ? '0.7rem' : '0.75rem' }}>Commits</Typography>
+                        <Typography
+                          variant="dataLabel"
+                          sx={{ fontSize: isMedium ? "0.7rem" : "0.75rem" }}
+                        >
+                          Commits
+                        </Typography>
                       </TableSortLabel>
                     </TableCell>
                   )}
@@ -362,7 +387,12 @@ const RepositoriesTable: React.FC = () => {
                           },
                         }}
                       >
-                        <Typography variant="dataLabel" sx={{ fontSize: isMedium ? '0.7rem' : '0.75rem' }}>Lines Added</Typography>
+                        <Typography
+                          variant="dataLabel"
+                          sx={{ fontSize: isMedium ? "0.7rem" : "0.75rem" }}
+                        >
+                          Lines Added
+                        </Typography>
                       </TableSortLabel>
                     </TableCell>
                   )}
@@ -391,7 +421,12 @@ const RepositoriesTable: React.FC = () => {
                           },
                         }}
                       >
-                        <Typography variant="dataLabel" sx={{ fontSize: isMedium ? '0.7rem' : '0.75rem' }}>Lines Removed</Typography>
+                        <Typography
+                          variant="dataLabel"
+                          sx={{ fontSize: isMedium ? "0.7rem" : "0.75rem" }}
+                        >
+                          Lines Removed
+                        </Typography>
                       </TableSortLabel>
                     </TableCell>
                   )}
@@ -419,7 +454,12 @@ const RepositoriesTable: React.FC = () => {
                         },
                       }}
                     >
-                      <Typography variant="dataLabel" sx={{ fontSize: isMedium ? '0.7rem' : '0.75rem' }}>Lines Changed</Typography>
+                      <Typography
+                        variant="dataLabel"
+                        sx={{ fontSize: isMedium ? "0.7rem" : "0.75rem" }}
+                      >
+                        Lines Changed
+                      </Typography>
                     </TableSortLabel>
                   </TableCell>
                   {!isMobile && !isMedium && (
@@ -445,7 +485,12 @@ const RepositoriesTable: React.FC = () => {
                           },
                         }}
                       >
-                        <Typography variant="dataLabel" sx={{ fontSize: isMedium ? '0.7rem' : '0.75rem' }}>Weight</Typography>
+                        <Typography
+                          variant="dataLabel"
+                          sx={{ fontSize: isMedium ? "0.7rem" : "0.75rem" }}
+                        >
+                          Weight
+                        </Typography>
                       </TableSortLabel>
                     </TableCell>
                   )}
@@ -498,13 +543,24 @@ const RepositoriesTable: React.FC = () => {
                             }}
                           >
                             <Avatar
-                              src={`https://avatars.githubusercontent.com/${repo.repositoryFullName.split('/')[0]}`}
-                              alt={repo.repositoryFullName.split('/')[0]}
+                              src={`https://avatars.githubusercontent.com/${(repo.repositoryFullName || "").split("/")[0]}`}
+                              alt={
+                                (repo.repositoryFullName || "").split("/")[0]
+                              }
                               sx={{
                                 width: 20,
                                 height: 20,
                                 border: "1px solid rgba(255, 255, 255, 0.2)",
-                                backgroundColor: repo.repositoryFullName.split('/')[0] === 'opentensor' ? '#ffffff' : repo.repositoryFullName.split('/')[0] === 'bitcoin' ? '#F7931A' : 'transparent',
+                                backgroundColor:
+                                  (repo.repositoryFullName || "").split(
+                                    "/",
+                                  )[0] === "opentensor"
+                                    ? "#ffffff"
+                                    : (repo.repositoryFullName || "").split(
+                                          "/",
+                                        )[0] === "bitcoin"
+                                      ? "#F7931A"
+                                      : "transparent",
                               }}
                             />
                             <Typography
@@ -521,7 +577,7 @@ const RepositoriesTable: React.FC = () => {
                                 textDecoration: "none",
                                 "&:hover": {
                                   textDecoration: "underline",
-                                  color: "primary.main"
+                                  color: "primary.main",
                                 },
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
@@ -628,7 +684,7 @@ const RepositoriesTable: React.FC = () => {
           </Box>
         )}
       </CardContent>
-    </Card >
+    </Card>
   );
 };
 

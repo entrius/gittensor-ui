@@ -1,6 +1,12 @@
 import React from "react";
 import ReactECharts from "echarts-for-react";
-import { Card, CardContent, Typography, useTheme, useMediaQuery } from "@mui/material";
+import {
+  Card,
+  CardContent,
+  Typography,
+  useTheme,
+  useMediaQuery,
+} from "@mui/material";
 import { useHistoricalTrend } from "../../api";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -10,14 +16,15 @@ dayjs.extend(utc);
 const CommitTrendChart: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
 
   const { data } = useHistoricalTrend();
 
   // Filter data to only include the last 10 days (using UTC)
-  const filteredData = data?.filter((item) =>
-    dayjs.utc(item.date).isAfter(dayjs.utc().subtract(10, "day"))
-  );
+  const filteredData = Array.isArray(data)
+    ? data.filter((item) =>
+        dayjs.utc(item.date).isAfter(dayjs.utc().subtract(10, "day")),
+      )
+    : [];
 
   const option = {
     title: {
@@ -27,9 +34,11 @@ const CommitTrendChart: React.FC = () => {
       trigger: "axis",
       formatter: (params: any) => {
         const data = params[0];
-        return `${dayjs.utc(data.axisValue).format(
-          "YYYY-MM-DD",
-        )} UTC<br/>Lines Committed: ${data.value.toLocaleString()}`;
+        return `${dayjs
+          .utc(data.axisValue)
+          .format(
+            "YYYY-MM-DD",
+          )} UTC<br/>Lines Committed: ${data.value.toLocaleString()}`;
       },
       backgroundColor: "rgba(18, 18, 20, 0.95)",
       borderColor: "rgba(255, 255, 255, 0.1)",
@@ -98,7 +107,11 @@ const CommitTrendChart: React.FC = () => {
       {
         name: "Lines Committed",
         type: "line",
-        data: filteredData?.map((item) => typeof item.linesCommitted === 'string' ? parseInt(item.linesCommitted) : item.linesCommitted),
+        data: filteredData?.map((item) =>
+          typeof item.linesCommitted === "string"
+            ? parseInt(item.linesCommitted)
+            : item.linesCommitted,
+        ),
         smooth: true,
         lineStyle: {
           color: theme.palette.primary.main,
@@ -145,7 +158,16 @@ const CommitTrendChart: React.FC = () => {
       }}
       elevation={0}
     >
-      <CardContent sx={{ flex: 1, display: "flex", flexDirection: "column", p: isMobile ? 1.5 : 2, "&:last-child": { pb: isMobile ? 1.5 : 2 }, minHeight: 0 }}>
+      <CardContent
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          p: isMobile ? 1.5 : 2,
+          "&:last-child": { pb: isMobile ? 1.5 : 2 },
+          minHeight: 0,
+        }}
+      >
         <Typography
           variant="h6"
           gutterBottom
