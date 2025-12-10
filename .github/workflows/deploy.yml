@@ -51,6 +51,10 @@ jobs:
             exit 1
           fi
 
+      - name: Refresh Repository weights
+        id: weight-refresh
+        run: ssh my-vps '~/update-repository-weights.sh'
+
       # for notifying of deploy or statusfailure
       - name: Notify Deploy Failure
         if: failure()
