@@ -22,6 +22,7 @@ import {
   Avatar,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import { Link } from "react-router-dom";
 import theme from "../../theme";
 import { useRepoChanges } from "../../api";
 import dayjs from "dayjs";
@@ -508,10 +509,8 @@ const RepositoriesTable: React.FC = () => {
                               }}
                             />
                             <Typography
-                              component="a"
-                              href={`${baseGithubUrl}${repo.repositoryFullName}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                              component={Link}
+                              to={`/miners/repository?name=${repo.repositoryFullName}`}
                               variant="body2"
                               fontWeight="medium"
                               sx={{

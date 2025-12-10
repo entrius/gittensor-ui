@@ -22,5 +22,8 @@ export * from "./MinerDetailsPage";
 export { default as RepositoryDetailsPage } from "./RepositoryDetailsPage";
 export * from "./RepositoryDetailsPage";
 
+export { default as RoadmapPage } from "./RoadmapPage";
+export * from "./RoadmapPage";
+
 export { default as UnderConstructionPage } from "./UnderConstructionPage";
 export * from "./UnderConstructionPage";
