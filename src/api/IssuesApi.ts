@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import axios from "axios";
 import {
   Issue,
   IssueStats,
@@ -14,8 +15,50 @@ import {
   generateMockIssue,
 } from "./mockData/issuesMockData";
 
+// API base URL - defaults to localhost for development
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 // Set to true to use mock data, false to use real API
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
+
+/**
+ * Validate a GitHub issue URL
+ */
+export const useValidateIssue = () => {
+  return useMutation({
+    mutationFn: async (githubUrl: string) => {
+      const response = await axios.post(`${API_BASE_URL}/issues/validate`, {
+        githubUrl,
+      });
+      return response.data;
+    },
+  });
+};
+
+/**
+ * Register issue metadata after smart contract transaction
+ */
+export const useRegisterIssueMetadata = () => {
+  return useMutation({
+    mutationFn: async (data: {
+      issueId: string;
+      githubUrl: string;
+      githubUrlHash: string;
+      depositorAddress: string;
+      initialBountyAmount: string;
+      activeBountyAmount: string;
+      registrationTimestamp: number;
+      blockNumber: string;
+      txHash: string;
+    }) => {
+      const response = await axios.post(
+        `${API_BASE_URL}/issues/register-metadata`,
+        data
+      );
+      return response.data;
+    },
+  });
+};
 
 /**
  * Fetch overall issue statistics
@@ -25,16 +68,13 @@ export const useIssueStats = () => {
     queryKey: ["issueStats"],
     queryFn: async () => {
       if (USE_MOCK_DATA) {
-        // Simulate API delay
         await new Promise((resolve) => setTimeout(resolve, 500));
         return generateMockIssueStats();
       }
-      // TODO: Replace with actual API call
-      // const response = await axios.get("/issues/stats");
-      // return response.data;
-      throw new Error("Real API not implemented yet");
+      const response = await axios.get(`${API_BASE_URL}/issues/stats`);
+      return response.data;
     },
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 30000,
   });
 };
 
@@ -49,12 +89,12 @@ export const useBountyHistory = (days: number = 30) => {
         await new Promise((resolve) => setTimeout(resolve, 500));
         return generateMockBountyHistory(days);
       }
-      // TODO: Replace with actual API call
-      // const response = await axios.get(`/issues/bounty-history?days=${days}`);
-      // return response.data;
-      throw new Error("Real API not implemented yet");
+      const response = await axios.get(
+        `${API_BASE_URL}/issues/bounty-history?days=${days}`
+      );
+      return response.data.history;
     },
-    refetchInterval: 60000, // Refetch every minute
+    refetchInterval: 60000,
   });
 };
 
@@ -69,10 +109,10 @@ export const useFeaturedIssues = (limit: number = 3) => {
         await new Promise((resolve) => setTimeout(resolve, 500));
         return generateMockFeaturedIssues(limit);
       }
-      // TODO: Replace with actual API call
-      // const response = await axios.get(`/issues/featured?limit=${limit}`);
-      // return response.data;
-      throw new Error("Real API not implemented yet");
+      const response = await axios.get(
+        `${API_BASE_URL}/issues/featured?limit=${limit}`
+      );
+      return response.data;
     },
     refetchInterval: 30000,
   });
@@ -94,11 +134,11 @@ export const useIssues = (status?: "OPEN" | "SOLVED") => {
         if (status === "SOLVED") return solvedIssues;
         return [...openIssues, ...solvedIssues];
       }
-      // TODO: Replace with actual API call
-      // const url = status ? `/issues?status=${status}` : "/issues";
-      // const response = await axios.get(url);
-      // return response.data;
-      throw new Error("Real API not implemented yet");
+      const url = status
+        ? `${API_BASE_URL}/issues?status=${status}`
+        : `${API_BASE_URL}/issues`;
+      const response = await axios.get(url);
+      return response.data.issues;
     },
     refetchInterval: 30000,
   });
@@ -107,18 +147,18 @@ export const useIssues = (status?: "OPEN" | "SOLVED") => {
 /**
  * Fetch single issue details
  */
-export const useIssue = (issueId: string) => {
+export const useIssue = (issueId: string | null) => {
   return useQuery<Issue>({
     queryKey: ["issue", issueId],
     queryFn: async () => {
+      if (!issueId) throw new Error("Issue ID required");
+
       if (USE_MOCK_DATA) {
         await new Promise((resolve) => setTimeout(resolve, 500));
         return generateMockIssue(issueId);
       }
-      // TODO: Replace with actual API call
-      // const response = await axios.get(`/issues/${issueId}`);
-      // return response.data;
-      throw new Error("Real API not implemented yet");
+      const response = await axios.get(`${API_BASE_URL}/issues/${issueId}`);
+      return response.data;
     },
     enabled: !!issueId,
   });
