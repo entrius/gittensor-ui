@@ -17,10 +17,17 @@ import {
   Typography,
   CircularProgress,
   Link,
+  Grid,
+  Card,
+  CardContent,
+  Button,
+  ToggleButtonGroup,
+  ToggleButton,
 } from "@mui/material";
-import { Search, CheckCircle, Schedule } from "@mui/icons-material";
+import { Search, CheckCircle, Schedule, ViewList, ViewModule, GitHub } from "@mui/icons-material";
 import { useIssues } from "../../api/IssuesApi";
 import { IssueListItem } from "../../api/models/Issues";
+import type { CurrencyDisplay } from "../../pages/IssuesPage";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
@@ -28,18 +35,21 @@ dayjs.extend(relativeTime);
 
 type SortField = "bountyUsd" | "registrationTimestamp" | "title";
 type SortOrder = "asc" | "desc";
+type ViewMode = "table" | "card";
 
 interface IssuesTableProps {
   onIssueClick?: (issueId: string) => void;
+  currencyDisplay?: CurrencyDisplay;
 }
 
-export const IssuesTable: React.FC<IssuesTableProps> = ({ onIssueClick }) => {
+export const IssuesTable: React.FC<IssuesTableProps> = ({ onIssueClick, currencyDisplay = "usd" }) => {
   const [activeTab, setActiveTab] = useState<0 | 1>(0); // 0 = Open, 1 = Solved
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [sortField, setSortField] = useState<SortField>("bountyUsd");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
 
   const status = activeTab === 0 ? "OPEN" : "SOLVED";
   const { data: issues, isLoading, isError } = useIssues(status);
@@ -48,7 +58,8 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({ onIssueClick }) => {
   const filteredAndSortedIssues = useMemo(() => {
     if (!issues) return [];
 
-    let filtered = issues;
+    // Create a copy to avoid mutating original array
+    let filtered = [...issues];
 
     // Search filter
     if (searchQuery.trim()) {
@@ -61,24 +72,27 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({ onIssueClick }) => {
       );
     }
 
-    // Sort
+    // Sort (on the copy)
     filtered.sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
+      let aValue: string | number;
+      let bValue: string | number;
 
       switch (sortField) {
         case "bountyUsd":
-          aValue = a.bountyUsd;
-          bValue = b.bountyUsd;
+          aValue = a.bountyUsd ?? 0;
+          bValue = b.bountyUsd ?? 0;
           break;
         case "registrationTimestamp":
-          aValue = a.registrationTimestamp;
-          bValue = b.registrationTimestamp;
+          aValue = a.registrationTimestamp ?? 0;
+          bValue = b.registrationTimestamp ?? 0;
           break;
         case "title":
           aValue = a.title.toLowerCase();
           bValue = b.title.toLowerCase();
           break;
+        default:
+          aValue = 0;
+          bValue = 0;
       }
 
       if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
@@ -109,8 +123,14 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({ onIssueClick }) => {
     setSearchQuery("");
   };
 
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString("en-US", {
+  const formatBounty = (issue: IssueListItem) => {
+    if (currencyDisplay === "alpha") {
+      const val = issue.bountyAlpha || 0;
+      if (val >= 1000000) return `${(val / 1000000).toFixed(2)}M ل`;
+      if (val >= 1000) return `${(val / 1000).toFixed(1)}K ل`;
+      return `${val.toLocaleString(undefined, { maximumFractionDigits: 0 })} ل`;
+    }
+    return issue.bountyUsd.toLocaleString("en-US", {
       style: "currency",
       currency: "USD",
       minimumFractionDigits: 0,
@@ -222,8 +242,8 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({ onIssueClick }) => {
         </Tabs>
       </Box>
 
-      {/* Search Bar */}
-      <Box sx={{ p: 3, pb: 2 }}>
+      {/* Search Bar and View Toggle */}
+      <Box sx={{ p: 3, pb: 2, display: "flex", gap: 2, alignItems: "center" }}>
         <TextField
           fullWidth
           placeholder="Search by title or repository..."
@@ -251,9 +271,177 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({ onIssueClick }) => {
             },
           }}
         />
+        <ToggleButtonGroup
+          value={viewMode}
+          exclusive
+          onChange={(_, value) => value && setViewMode(value)}
+          size="small"
+          sx={{
+            flexShrink: 0,
+            "& .MuiToggleButton-root": {
+              borderColor: "rgba(255, 255, 255, 0.2)",
+              color: "text.secondary",
+              "&.Mui-selected": {
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                color: "primary.main",
+              },
+            },
+          }}
+        >
+          <ToggleButton value="table">
+            <ViewList />
+          </ToggleButton>
+          <ToggleButton value="card">
+            <ViewModule />
+          </ToggleButton>
+        </ToggleButtonGroup>
       </Box>
 
-      {/* Table */}
+      {/* Card View */}
+      {viewMode === "card" && (
+        <Box sx={{ px: 3, pb: 3 }}>
+          {/* Sort controls for card view */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              Sort by:
+            </Typography>
+            <ToggleButtonGroup
+              value={sortField}
+              exclusive
+              onChange={(_, value) => {
+                if (value) {
+                  if (value === sortField) {
+                    setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                  } else {
+                    setSortField(value);
+                    setSortOrder("desc");
+                  }
+                }
+              }}
+              size="small"
+              sx={{
+                "& .MuiToggleButton-root": {
+                  textTransform: "none",
+                  px: 2,
+                  borderColor: "rgba(255, 255, 255, 0.2)",
+                  color: "text.secondary",
+                  fontSize: "0.8rem",
+                  "&.Mui-selected": {
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    color: "text.primary",
+                  },
+                },
+              }}
+            >
+              <ToggleButton value="bountyUsd">
+                Bounty {sortField === "bountyUsd" && (sortOrder === "desc" ? "↓" : "↑")}
+              </ToggleButton>
+              <ToggleButton value="registrationTimestamp">
+                Date {sortField === "registrationTimestamp" && (sortOrder === "desc" ? "↓" : "↑")}
+              </ToggleButton>
+              <ToggleButton value="title">
+                Title {sortField === "title" && (sortOrder === "desc" ? "↓" : "↑")}
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+
+          {paginatedIssues.length === 0 ? (
+            <Typography color="text.secondary" textAlign="center" py={8}>
+              {searchQuery
+                ? "No issues found matching your search"
+                : `No ${status.toLowerCase()} issues yet`}
+            </Typography>
+          ) : (
+            <Grid container spacing={2}>
+              {paginatedIssues.map((issue) => (
+                <Grid item xs={12} sm={6} md={3} key={issue.id}>
+                  <Card
+                    onClick={() => onIssueClick?.(issue.id)}
+                    sx={{
+                      cursor: "pointer",
+                      height: "100%",
+                      backgroundColor: "rgba(255, 255, 255, 0.02)",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      transition: "all 0.2s",
+                      "&:hover": {
+                        borderColor: "primary.main",
+                        backgroundColor: "rgba(29, 55, 252, 0.05)",
+                      },
+                    }}
+                  >
+                    <CardContent sx={{ display: "flex", flexDirection: "column", height: "100%", p: 2 }}>
+                      {/* Bounty */}
+                      <Typography
+                        variant="h5"
+                        sx={{
+                          fontFamily: '"JetBrains Mono", monospace',
+                          color: "primary.main",
+                          fontWeight: 700,
+                          mb: 1,
+                        }}
+                      >
+                        {formatBounty(issue)}
+                      </Typography>
+                      {/* Title */}
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: 600,
+                          mb: 1,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          lineHeight: 1.4,
+                          minHeight: "2.8em",
+                        }}
+                      >
+                        {issue.title}
+                      </Typography>
+                      {/* Repository */}
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 1 }}>
+                        <GitHub sx={{ fontSize: 14, color: "text.secondary" }} />
+                        <Typography variant="caption" color="text.secondary" noWrap>
+                          {issue.repositoryOwner}/{issue.repositoryName}
+                        </Typography>
+                      </Box>
+                      {/* Labels */}
+                      {(issue.labels || []).length > 0 && (
+                        <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", mb: 1 }}>
+                          {(issue.labels || []).slice(0, 2).map((label) => (
+                            <Chip
+                              key={label}
+                              label={label}
+                              size="small"
+                              sx={{
+                                height: "18px",
+                                fontSize: "0.65rem",
+                                backgroundColor: "rgba(255, 255, 255, 0.05)",
+                                color: "text.secondary",
+                              }}
+                            />
+                          ))}
+                        </Box>
+                      )}
+                      {/* Status and Time */}
+                      <Box sx={{ mt: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        {getStatusChip(issue)}
+                        <Typography variant="caption" color="text.secondary">
+                          {formatTimeAgo(issue.registrationTimestamp)}
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+      )}
+
+      {/* Table View */}
+      {viewMode === "table" && (
       <TableContainer>
         <Table>
           <TableHead>
@@ -376,9 +564,9 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({ onIssueClick }) => {
                         {issue.title}
                       </Typography>
                     </Link>
-                    {issue.labels.length > 0 && (
+                    {(issue.labels || []).length > 0 && (
                       <Box sx={{ display: "flex", gap: 0.5, mt: 1 }}>
-                        {issue.labels.slice(0, 3).map((label) => (
+                        {(issue.labels || []).slice(0, 3).map((label) => (
                           <Chip
                             key={label}
                             label={label}
@@ -436,7 +624,7 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({ onIssueClick }) => {
                         color: "primary.main",
                       }}
                     >
-                      {formatCurrency(issue.bountyUsd)}
+                      {formatBounty(issue)}
                     </Typography>
                   </TableCell>
                   <TableCell align="center">
@@ -494,6 +682,7 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({ onIssueClick }) => {
           </TableBody>
         </Table>
       </TableContainer>
+      )}
 
       {/* Pagination */}
       {filteredAndSortedIssues.length > 0 && (

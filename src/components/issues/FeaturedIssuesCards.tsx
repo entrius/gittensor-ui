@@ -12,13 +12,16 @@ import {
 } from "@mui/material";
 import { GitHub, ChevronLeft, ChevronRight } from "@mui/icons-material";
 import { useFeaturedIssues } from "../../api/IssuesApi";
+import type { CurrencyDisplay } from "../../pages/IssuesPage";
 
 interface FeaturedIssuesCardsProps {
   onIssueClick?: (issueId: string) => void;
+  currencyDisplay?: CurrencyDisplay;
 }
 
 export const FeaturedIssuesCards: React.FC<FeaturedIssuesCardsProps> = ({
   onIssueClick,
+  currencyDisplay = "usd",
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const itemsToShow = 3;
@@ -43,8 +46,14 @@ export const FeaturedIssuesCards: React.FC<FeaturedIssuesCardsProps> = ({
     return null;
   }
 
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString("en-US", {
+  const formatBounty = (issue: { bountyUsd: number; bountyAlpha: number }) => {
+    if (currencyDisplay === "alpha") {
+      const val = issue.bountyAlpha || 0;
+      if (val >= 1000000) return `${(val / 1000000).toFixed(2)}M ل`;
+      if (val >= 1000) return `${(val / 1000).toFixed(1)}K ل`;
+      return `${val.toLocaleString(undefined, { maximumFractionDigits: 0 })} ل`;
+    }
+    return issue.bountyUsd.toLocaleString("en-US", {
       style: "currency",
       currency: "USD",
       minimumFractionDigits: 0,
@@ -181,7 +190,7 @@ export const FeaturedIssuesCards: React.FC<FeaturedIssuesCardsProps> = ({
                     fontWeight: 700,
                   }}
                 >
-                  {formatCurrency(issue.bountyUsd)}
+                  {formatBounty(issue)}
                 </Typography>
 
                 {/* Issue Title */}
@@ -247,7 +256,7 @@ export const FeaturedIssuesCards: React.FC<FeaturedIssuesCardsProps> = ({
                       }}
                     />
                   )}
-                  {issue.labels.slice(0, 2).map((label) => (
+                  {(issue.labels || []).slice(0, 2).map((label) => (
                     <Chip
                       key={label}
                       label={label}

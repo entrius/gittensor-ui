@@ -18,24 +18,28 @@ export interface Issue {
   description: string;
   repositoryName: string;
   repositoryOwner: string;
-  bountyAmount: number; // in tokens
+  bountyAlpha?: number; // in ALPHA tokens
   bountyUsd: number; // in USD
   depositorAddress: string;
-  issueCreatedTimestamp: number; // Unix timestamp when issue was created on GitHub
-  registrationTimestamp: number; // Unix timestamp when registered on Gittensor
+  issueCreatedTimestamp?: number; // Milliseconds when issue was created on GitHub
+  registrationTimestamp: number; // Milliseconds when registered on Gittensor
   status: IssueStatusType;
   solverAddress?: string;
   resolutionTimestamp?: number;
-  registrationTxHash: string;
+  registrationTxHash?: string;
   resolutionTxHash?: string;
   labels: string[];
-  commentsCount: number;
+  commentsCount?: number;
   language?: string;
   timeToSolve?: number; // in seconds
   lastBountyUpdate?: number; // Unix timestamp
   solutionRequiredBy?: number; // Unix timestamp for deadline
   openPullRequests?: OpenPullRequest[];
-  initialBountyAmount?: number; // Initial deposit amount in USD
+  // Bounty breakdown
+  initialBountyAlpha?: number; // Initial deposit in ALPHA
+  initialBountyUsd?: number; // Initial deposit in USD
+  contributionsAlpha?: number; // Contributions in ALPHA
+  contributionsUsd?: number; // Contributions in USD
   currentSolutionAmount?: number; // Current solution amount
   solutionPrUrl?: string; // URL to the PR that solved the issue
   solutionPrNumber?: number; // PR number that solved the issue
@@ -50,14 +54,15 @@ export interface OpenPullRequest {
 }
 
 export interface IssueStats {
-  totalBountyPool: number; // Total $ in all active bounties
+  totalBountyPoolAlpha: number; // Total ALPHA in all active bounties
   totalBountyPoolUsd: number;
   activeIssuesCount: number;
   solvedIssuesCount: number;
   totalIssuesCount: number;
-  averageBountyUsd: number;
-  averageTimeToSolve: number; // in seconds
-  totalPaidOut: number; // Total $ paid to solvers
+  totalPaidOutAlpha: number; // Total ALPHA paid to solvers
+  totalPaidOutUsd: number;
+  alphaPrice: number;
+  successRate: number;
 }
 
 export interface BountyHistoryPoint {
@@ -74,6 +79,7 @@ export interface FeaturedIssue {
   title: string;
   repositoryName: string;
   repositoryOwner: string;
+  bountyAlpha: number;
   bountyUsd: number;
   ageInDays: number;
   githubUrl: string;
@@ -86,6 +92,7 @@ export interface IssueListItem {
   title: string;
   repositoryName: string;
   repositoryOwner: string;
+  bountyAlpha: number;
   bountyUsd: number;
   status: IssueStatusType;
   registrationTimestamp: number;

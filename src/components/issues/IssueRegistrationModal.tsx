@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { usePolkadotWallet, useContract } from '../../hooks/usePolkadotWallet';
-import { useValidateIssue, useRegisterIssueMetadata } from '../../api/IssuesApi';
+import { useValidateIssue, useRegisterIssueMetadata, useIssueStats, useIssues } from '../../api/IssuesApi';
 import {
   BOUNTY_CONTRACT,
   NETWORK_INFO,
@@ -28,6 +28,7 @@ import { stringToU8a } from '@polkadot/util';
 import { keccakAsHex } from '@polkadot/util-crypto';
 import { ContractPromise } from '@polkadot/api-contract';
 import contractMetadata from '../../contracts/IssueBountyManager.json';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface StatusMessage {
   type: 'info' | 'success' | 'error' | 'warning';
@@ -42,6 +43,8 @@ interface IssueRegistrationModalProps {
 const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, onClose }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const statusRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
 
   // Polkadot wallet hook
   const wallet = usePolkadotWallet();
@@ -50,6 +53,8 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
   // API hooks
   const validateIssueMutation = useValidateIssue();
   const registerMetadataMutation = useRegisterIssueMetadata();
+  const { data: issueStats } = useIssueStats();
+  const { data: openIssues } = useIssues('OPEN');
 
   // Form state
   const [githubUrl, setGithubUrl] = useState<string>('');
@@ -59,6 +64,29 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
   const [validatedIssue, setValidatedIssue] = useState<any>(null);
   const [currentStep, setCurrentStep] = useState<'validate' | 'payment'>('validate');
   const [gasMultiplier, setGasMultiplier] = useState<number>(1); // 1x = normal, 1.5x = faster, 2x = fastest
+
+  // Auto-scroll to status when it changes
+  useEffect(() => {
+    if (status && statusRef.current) {
+      statusRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [status]);
+
+  // Calculate estimated ALPHA conversion and ranking
+  const alphaPrice = issueStats?.alphaPrice || 0;
+  const estimatedAlpha = alphaPrice > 0 && parseFloat(amount) > 0
+    ? (parseFloat(amount) * 300 / alphaPrice) // Estimate: TAO ~$300, convert to USD then to ALPHA
+    : 0;
+  const estimatedBountyUsd = parseFloat(amount) > 0 ? parseFloat(amount) * 300 : 0; // TAO ~$300
+
+  // Calculate ranking among open issues
+  const calculateRanking = (): { rank: number; total: number } | null => {
+    if (!openIssues || openIssues.length === 0 || estimatedBountyUsd <= 0) return null;
+    const sortedBounties = openIssues.map(i => i.bountyUsd).sort((a, b) => b - a);
+    const rank = sortedBounties.findIndex(b => estimatedBountyUsd >= b) + 1;
+    return { rank: rank === 0 ? sortedBounties.length + 1 : rank, total: sortedBounties.length + 1 };
+  };
+  const ranking = calculateRanking();
 
   // Update status when wallet error changes
   useEffect(() => {
@@ -98,10 +126,10 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
       return false;
     }
 
-    if (!amount || parseFloat(amount) <= 0) {
+    if (!amount || parseFloat(amount) < 0.05) {
       setStatus({
         type: 'error',
-        message: 'Please enter a valid amount greater than 0.',
+        message: 'Minimum bounty amount is 0.05 TAO.',
       });
       return false;
     }
@@ -222,7 +250,7 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
       const gasLimit = contract.api.registry.createType('WeightV2', {
         refTime: Math.floor(baseRefTime * gasMultiplier),
         proofSize: Math.floor(baseProofSize * gasMultiplier),
-      });
+      }) as any;
 
       // New contract: register(url) is payable, send TAO with value
       const registerTx = contractInstance.tx.register(
@@ -245,7 +273,7 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
       const txResult: any = await new Promise((resolve, reject) => {
         const signAndSendArgs = contract.isDevMode
           ? [signer, { tip: tipAmount }, (result: any) => handleTxResult(result, resolve, reject)] // KeyringPair with tip
-          : [contract.account.address, { signer, tip: tipAmount }, (result: any) => handleTxResult(result, resolve, reject)]; // Injected signer with tip
+          : [contract.account!.address, { signer, tip: tipAmount }, (result: any) => handleTxResult(result, resolve, reject)]; // Injected signer with tip
 
         async function handleTxResult({ status, events, dispatchError }: any, resolve: any, reject: any) {
           if (status.isInBlock) {
@@ -316,7 +344,12 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
         message: `✓ Issue registered successfully! Issue ID: ${txResult.issueId}`,
       });
 
-      // Clear form
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['issues'] });
+      queryClient.invalidateQueries({ queryKey: ['featuredIssues'] });
+      queryClient.invalidateQueries({ queryKey: ['issueStats'] });
+
+      // Clear form and close modal after short delay
       setTimeout(() => {
         setGithubUrl('');
         setAmount('');
@@ -324,7 +357,7 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
         setStatus(null);
         setCurrentStep('validate');
         onClose();
-      }, 3000);
+      }, 2000);
 
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -350,19 +383,21 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
     if (!status) return null;
 
     return (
-      <Alert
-        severity={status.type}
-        sx={{
-          mt: 2,
-          wordBreak: 'break-word',
-          '& .MuiAlert-message': {
-            width: '100%',
-          },
-        }}
-        icon={loading ? <CircularProgress size={20} /> : undefined}
-      >
-        {status.message}
-      </Alert>
+      <Box ref={statusRef}>
+        <Alert
+          severity={status.type}
+          sx={{
+            mt: 2,
+            wordBreak: 'break-word',
+            '& .MuiAlert-message': {
+              width: '100%',
+            },
+          }}
+          icon={loading ? <CircularProgress size={20} /> : undefined}
+        >
+          {status.message}
+        </Alert>
+      </Box>
     );
   };
 
@@ -444,12 +479,12 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
           sx={{
             mb: 3,
             p: 1.5,
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
+            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
             borderRadius: 2,
           }}
         >
-          <Typography variant="caption" color="primary" sx={{ fontWeight: 600 }}>
+          <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary' }}>
             Network: {NETWORK_INFO.name}
           </Typography>
         </Box>
@@ -507,7 +542,7 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
                 <Typography variant="body2" color="text.secondary">
                   Connected Account
                 </Typography>
-                <Button size="small" onClick={wallet.disconnect} sx={{ textTransform: 'none' }}>
+                <Button size="small" onClick={wallet.disconnect} sx={{ textTransform: 'none', color: 'text.secondary' }}>
                   Disconnect
                 </Button>
               </Box>
@@ -626,7 +661,7 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
                     size="small"
                     onClick={handleBackToValidation}
                     disabled={loading}
-                    sx={{ textTransform: 'none', fontSize: 12 }}
+                    sx={{ textTransform: 'none', fontSize: 12, color: 'text.secondary' }}
                   >
                     Change Issue
                   </Button>
@@ -636,13 +671,22 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
                   fullWidth
                   type="number"
                   label="Bounty Amount (TAO)"
-                  placeholder="0.00"
+                  placeholder="0.05"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={(e) => {
+                    // Restrict to 4 decimal places
+                    const val = e.target.value;
+                    const parts = val.split('.');
+                    if (parts[1] && parts[1].length > 4) {
+                      return; // Don't update if more than 4 decimals
+                    }
+                    setAmount(val);
+                  }}
                   disabled={loading}
+                  helperText="Minimum: 0.05 TAO • Max 4 decimal places"
                   inputProps={{
-                    min: 0,
-                    step: 0.01,
+                    min: 0.05,
+                    step: 0.0001,
                   }}
                   sx={{
                     mb: 1.5,
@@ -677,7 +721,7 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
                       variant="caption"
                       color="text.secondary"
                       sx={{ ml: 1, cursor: 'help' }}
-                      title="Higher priority = Higher gas limit = Faster processing on congested network. Gas fees are paid in TAO to validators."
+                      title="Higher priority = Higher gas limit + tip = Faster processing. Currently optional on localnet."
                     >
                       ⓘ
                     </Typography>
@@ -688,7 +732,12 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
                       variant={gasMultiplier === 1 ? 'contained' : 'outlined'}
                       onClick={() => setGasMultiplier(1)}
                       disabled={loading}
-                      sx={{ flex: 1, textTransform: 'none' }}
+                      sx={{
+                        flex: 1,
+                        textTransform: 'none',
+                        color: gasMultiplier === 1 ? 'white' : 'text.primary',
+                        borderColor: 'rgba(255, 255, 255, 0.3)',
+                      }}
                     >
                       Normal (1x)
                     </Button>
@@ -697,7 +746,12 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
                       variant={gasMultiplier === 1.5 ? 'contained' : 'outlined'}
                       onClick={() => setGasMultiplier(1.5)}
                       disabled={loading}
-                      sx={{ flex: 1, textTransform: 'none' }}
+                      sx={{
+                        flex: 1,
+                        textTransform: 'none',
+                        color: gasMultiplier === 1.5 ? 'white' : 'text.primary',
+                        borderColor: 'rgba(255, 255, 255, 0.3)',
+                      }}
                     >
                       Fast (1.5x)
                     </Button>
@@ -706,48 +760,87 @@ const IssueRegistrationModal: React.FC<IssueRegistrationModalProps> = ({ open, o
                       variant={gasMultiplier === 2 ? 'contained' : 'outlined'}
                       onClick={() => setGasMultiplier(2)}
                       disabled={loading}
-                      sx={{ flex: 1, textTransform: 'none' }}
+                      sx={{
+                        flex: 1,
+                        textTransform: 'none',
+                        color: gasMultiplier === 2 ? 'white' : 'text.primary',
+                        borderColor: 'rgba(255, 255, 255, 0.3)',
+                      }}
                     >
                       Fastest (2x)
                     </Button>
                   </Box>
                 </Box>
 
-                {/* Fee breakdown */}
+                {/* Estimated ALPHA conversion and ranking */}
                 {parseFloat(amount) > 0 && (
-                  <Box sx={{ mb: 2.5, p: 1.5, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 2 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Bounty amount:
+                  <Box sx={{ mb: 2.5 }}>
+                    {/* ALPHA estimate box */}
+                    <Box sx={{ p: 1.5, backgroundColor: 'rgba(29, 55, 252, 0.1)', border: '1px solid rgba(29, 55, 252, 0.3)', borderRadius: 2, mb: 1.5 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Estimated conversion:
+                        </Typography>
+                        <Typography variant="body2" color="primary" fontWeight={600}>
+                          ~{estimatedAlpha.toLocaleString(undefined, { maximumFractionDigits: 0 })} ل ALPHA
+                        </Typography>
+                      </Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                        ≈ ${estimatedBountyUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })} USD (estimate only - contract converts at current rate)
                       </Typography>
-                      <Typography variant="caption">{parseFloat(amount).toFixed(2)} TAO</Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Tx priority tip:
-                      </Typography>
-                      <Typography variant="caption">{gasMultiplier.toFixed(1)} TAO</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Converted to:
-                      </Typography>
-                      <Typography variant="caption" color="success.main">ALPHA (auto-staked)</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Payout fee (2%):
-                      </Typography>
-                      <Typography variant="caption" color="warning.main">Deducted on payout</Typography>
+
+                    {/* Ranking preview */}
+                    {ranking && (
+                      <Box sx={{ p: 1.5, backgroundColor: 'rgba(76, 175, 80, 0.1)', border: '1px solid rgba(76, 175, 80, 0.3)', borderRadius: 2, mb: 1.5 }}>
+                        <Typography variant="caption" color="success.main" fontWeight={600}>
+                          Your bounty would rank #{ranking.rank} of {ranking.total} open issues
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {/* Fee breakdown */}
+                    <Box sx={{ p: 1.5, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 2 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Bounty amount:
+                        </Typography>
+                        <Typography variant="caption">{parseFloat(amount).toFixed(2)} TAO</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Tx priority tip:
+                        </Typography>
+                        <Typography variant="caption">{gasMultiplier.toFixed(1)} TAO</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Converted to:
+                        </Typography>
+                        <Typography variant="caption" color="success.main">ALPHA (auto-staked)</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Payout fee (2%):
+                        </Typography>
+                        <Typography variant="caption" color="warning.main">Deducted on payout</Typography>
+                      </Box>
                     </Box>
                   </Box>
+                )}
+
+                {/* Disabled reason message */}
+                {!loading && (!amount || parseFloat(amount) < 0.05) && (
+                  <Typography variant="caption" color="warning.main" sx={{ display: 'block', mb: 1, textAlign: 'center' }}>
+                    {!amount ? 'Enter a bounty amount to continue' : 'Minimum bounty is 0.05 TAO'}
+                  </Typography>
                 )}
 
                 <Button
                   variant="contained"
                   fullWidth
                   onClick={handlePayment}
-                  disabled={loading || !amount || parseFloat(amount) <= 0}
+                  disabled={loading || !amount || parseFloat(amount) < 0.05}
                   sx={{
                     p: 1.5,
                     fontSize: 16,

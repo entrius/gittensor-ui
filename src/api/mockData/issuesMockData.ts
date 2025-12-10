@@ -80,17 +80,19 @@ export const generateMockIssueStats = (): IssueStats => {
   const activeIssuesCount = randomInt(15, 50);
   const solvedIssuesCount = randomInt(30, 100);
   const totalBountyPoolUsd = randomInt(50000, 500000);
-  const totalPaidOut = randomInt(100000, 1000000);
+  const totalPaidOutUsd = randomInt(100000, 1000000);
+  const alphaPrice = 0.15; // Example ALPHA price
 
   return {
-    totalBountyPool: totalBountyPoolUsd / 1000, // Assuming 1 token = $1000
+    totalBountyPoolAlpha: totalBountyPoolUsd / alphaPrice,
     totalBountyPoolUsd,
     activeIssuesCount,
     solvedIssuesCount,
     totalIssuesCount: activeIssuesCount + solvedIssuesCount,
-    averageBountyUsd: Math.floor(totalBountyPoolUsd / activeIssuesCount),
-    averageTimeToSolve: randomInt(86400, 604800), // 1-7 days in seconds
-    totalPaidOut,
+    totalPaidOutAlpha: totalPaidOutUsd / alphaPrice,
+    totalPaidOutUsd,
+    alphaPrice,
+    successRate: Math.round((solvedIssuesCount / (activeIssuesCount + solvedIssuesCount)) * 100),
   };
 };
 
@@ -127,13 +129,16 @@ export const generateMockFeaturedIssues = (limit: number = 3): FeaturedIssue[] =
     const title = randomElement(ISSUE_TITLES);
     const labels = randomElement(LABELS);
     const ageInDays = randomInt(1, 30);
+    const bountyUsd = randomInt(5000, 50000);
+    const alphaPrice = 0.15;
 
     return {
       id: generateIssueId(),
       title,
       repositoryName: repo.name,
       repositoryOwner: repo.owner,
-      bountyUsd: randomInt(5000, 50000),
+      bountyAlpha: bountyUsd / alphaPrice,
+      bountyUsd,
       ageInDays,
       githubUrl: `https://github.com/${repo.owner}/${repo.name}/issues/${randomInt(1, 1000)}`,
       language: repo.language,
@@ -160,12 +165,16 @@ export const generateMockIssuesList = (
       ? `https://github.com/${repo.owner}/${repo.name}/pull/${prNumber}`
       : undefined;
 
+    const bountyUsd = randomInt(500, 25000);
+    const alphaPrice = 0.15;
+
     return {
       id: generateIssueId(),
       title,
       repositoryName: repo.name,
       repositoryOwner: repo.owner,
-      bountyUsd: randomInt(500, 25000),
+      bountyAlpha: bountyUsd / alphaPrice,
+      bountyUsd,
       status,
       registrationTimestamp,
       resolutionTimestamp,
@@ -194,11 +203,11 @@ export const generateMockIssue = (id: string): Issue => {
   const resolutionTimestamp =
     status === "SOLVED" ? registrationTimestamp + (timeToSolve || 0) * 1000 : undefined;
 
+  const alphaPrice = 0.15;
   const initialBountyUsd = randomInt(5000, 50000);
   const hasAdditionalContributions = Math.random() > 0.5;
-  const currentBountyUsd = hasAdditionalContributions
-    ? initialBountyUsd + randomInt(1000, 10000)
-    : initialBountyUsd;
+  const contributionsUsd = hasAdditionalContributions ? randomInt(1000, 10000) : 0;
+  const currentBountyUsd = initialBountyUsd + contributionsUsd;
 
   // Generate open PRs for non-solved issues
   const openPRCount = status !== "SOLVED" ? randomInt(0, 5) : 0;
@@ -223,7 +232,7 @@ export const generateMockIssue = (id: string): Issue => {
     description: "This is a detailed description of the issue. It contains multiple lines of text explaining the problem, expected behavior, and steps to reproduce. The issue may involve fixing bugs, adding new features, or improving existing functionality. Contributors should review the attached code and follow the repository's contribution guidelines.",
     repositoryName: repo.name,
     repositoryOwner: repo.owner,
-    bountyAmount: randomInt(5, 50),
+    bountyAlpha: currentBountyUsd / alphaPrice,
     bountyUsd: currentBountyUsd,
     depositorAddress: generateAddress(),
     issueCreatedTimestamp,
@@ -240,7 +249,10 @@ export const generateMockIssue = (id: string): Issue => {
     lastBountyUpdate: Date.now() - randomInt(0, 10) * 86400000,
     solutionRequiredBy: status !== "SOLVED" ? Date.now() + randomInt(7, 60) * 86400000 : undefined,
     openPullRequests: openPullRequests.length > 0 ? openPullRequests : undefined,
-    initialBountyAmount: initialBountyUsd,
+    initialBountyAlpha: initialBountyUsd / alphaPrice,
+    initialBountyUsd: initialBountyUsd,
+    contributionsAlpha: contributionsUsd / alphaPrice,
+    contributionsUsd,
     currentSolutionAmount: status === "SOLVED" ? currentBountyUsd : undefined,
     solutionPrUrl,
     solutionPrNumber,

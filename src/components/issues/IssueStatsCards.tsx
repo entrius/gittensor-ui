@@ -2,8 +2,13 @@ import React from "react";
 import { Grid, Box, CircularProgress } from "@mui/material";
 import { KpiCard } from "../dashboard";
 import { useIssueStats } from "../../api/IssuesApi";
+import type { CurrencyDisplay } from "../../pages/IssuesPage";
 
-export const IssueStatsCards: React.FC = () => {
+interface IssueStatsCardsProps {
+  currencyDisplay?: CurrencyDisplay;
+}
+
+export const IssueStatsCards: React.FC<IssueStatsCardsProps> = ({ currencyDisplay = "usd" }) => {
   const { data: stats, isLoading, isError } = useIssueStats();
 
   if (isLoading) {
@@ -25,17 +30,18 @@ export const IssueStatsCards: React.FC = () => {
     return null;
   }
 
-  const formatCurrency = (value: number | undefined) => {
-    if (!value || isNaN(value)) {
-      return "$0";
+  const formatValue = (usdValue: number | undefined, alphaValue: number | undefined) => {
+    if (currencyDisplay === "alpha") {
+      if (!alphaValue || isNaN(alphaValue)) return "0 ل";
+      if (alphaValue >= 1000000) return `${(alphaValue / 1000000).toFixed(2)}M ل`;
+      if (alphaValue >= 1000) return `${(alphaValue / 1000).toFixed(1)}K ل`;
+      return `${alphaValue.toLocaleString(undefined, { maximumFractionDigits: 0 })} ل`;
     }
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(2)}M`;
-    }
-    if (value >= 1000) {
-      return `$${(value / 1000).toFixed(1)}K`;
-    }
-    return `$${value.toFixed(2)}`;
+    // USD display
+    if (!usdValue || isNaN(usdValue)) return "$0";
+    if (usdValue >= 1000000) return `$${(usdValue / 1000000).toFixed(2)}M`;
+    if (usdValue >= 1000) return `$${(usdValue / 1000).toFixed(1)}K`;
+    return `$${usdValue.toFixed(2)}`;
   };
 
   return (
@@ -48,7 +54,7 @@ export const IssueStatsCards: React.FC = () => {
         <Grid item xs={12} sm={6} md={3}>
           <KpiCard
             variant="medium"
-            value={formatCurrency(stats?.totalBountyPoolUsd)}
+            value={formatValue(stats?.totalBountyPoolUsd, stats?.totalBountyPoolAlpha)}
             title="Total Bounty Pool*"
             subtitle="Active bounties"
           />
@@ -70,7 +76,7 @@ export const IssueStatsCards: React.FC = () => {
             variant="medium"
             value={(stats?.solvedIssuesCount || 0).toLocaleString()}
             title="Solved Issues"
-            subtitle={`${formatCurrency(stats?.totalPaidOut)} paid out`}
+            subtitle={`${formatValue(stats?.totalPaidOutUsd, stats?.totalPaidOutAlpha)} paid out`}
           />
         </Grid>
 
@@ -78,13 +84,7 @@ export const IssueStatsCards: React.FC = () => {
         <Grid item xs={12} sm={6} md={3}>
           <KpiCard
             variant="medium"
-            value={
-              stats?.totalIssuesCount && stats.totalIssuesCount > 0
-                ? `${Math.round(
-                    (stats.solvedIssuesCount / stats.totalIssuesCount) * 100
-                  )}%`
-                : "0%"
-            }
+            value={`${stats?.successRate ?? 0}%`}
             title="Success Rate"
             subtitle={`${stats?.totalIssuesCount || 0} total issues`}
           />

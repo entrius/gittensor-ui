@@ -216,8 +216,9 @@ export const IssueDetailsModal: React.FC<IssueDetailsModalProps> = ({
                     {formatCurrency(issue.bountyUsd)}
                   </Typography>
                 </Grid>
-                {issue.initialBountyAmount &&
-                  issue.initialBountyAmount !== issue.bountyUsd && (
+                {issue.initialBountyUsd != null &&
+                  issue.contributionsUsd != null &&
+                  issue.contributionsUsd > 0 && (
                     <Grid item xs={12} sm={6}>
                       <Typography
                         variant="caption"
@@ -237,13 +238,10 @@ export const IssueDetailsModal: React.FC<IssueDetailsModalProps> = ({
                           fontWeight: 600,
                         }}
                       >
-                        {formatCurrency(issue.initialBountyAmount)}
+                        {formatCurrency(issue.initialBountyUsd)}
                       </Typography>
                       <Typography variant="caption" sx={{ color: "success.main" }}>
-                        {formatCurrency(
-                          issue.bountyUsd - issue.initialBountyAmount
-                        )}{" "}
-                        from contributions
+                        {formatCurrency(issue.contributionsUsd)} from contributions
                       </Typography>
                     </Grid>
                   )}
@@ -359,23 +357,25 @@ export const IssueDetailsModal: React.FC<IssueDetailsModalProps> = ({
                 </Box>
 
                 {/* Issue Created (GitHub) */}
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <CalendarToday
-                    sx={{ fontSize: 18, color: "text.secondary" }}
-                  />
-                  <Box sx={{ flex: 1 }}>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "text.secondary", display: "block" }}
-                    >
-                      Issue Created
-                    </Typography>
-                    <Typography variant="body2">
-                      {dayjs(issue.issueCreatedTimestamp).format("MMM D, YYYY")} •{" "}
-                      {dayjs(issue.issueCreatedTimestamp).fromNow()}
-                    </Typography>
+                {issue.issueCreatedTimestamp && (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <CalendarToday
+                      sx={{ fontSize: 18, color: "text.secondary" }}
+                    />
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: "text.secondary", display: "block" }}
+                      >
+                        Issue Created
+                      </Typography>
+                      <Typography variant="body2">
+                        {dayjs(issue.issueCreatedTimestamp).format("MMM D, YYYY")} •{" "}
+                        {dayjs(issue.issueCreatedTimestamp).fromNow()}
+                      </Typography>
+                    </Box>
                   </Box>
-                </Box>
+                )}
 
                 {/* Registered on Gittensor */}
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
