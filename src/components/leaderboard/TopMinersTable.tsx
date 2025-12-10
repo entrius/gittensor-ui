@@ -77,7 +77,9 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     const textColor = "rgba(255, 255, 255, 0.7)";
     const axisLineColor = "rgba(255, 255, 255, 0.1)";
 
-    const xAxisData = chartData.map((item) => item?.author || item?.githubId || "");
+    const xAxisData = chartData.map(
+      (item) => item?.author || item?.githubId || "",
+    );
     const seriesData = chartData.map((item) => Number(item?.totalScore) || 0);
 
     return {
@@ -126,7 +128,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           fontFamily: "JetBrains Mono",
           interval: 0,
           rotate: 45,
-          formatter: (label: string) => label.length > 15 ? label.substring(0, 12) + "..." : label,
+          formatter: (label: string) =>
+            label.length > 15 ? label.substring(0, 12) + "..." : label,
         },
         axisLine: { lineStyle: { color: axisLineColor } },
       },
@@ -366,16 +369,28 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
               >
                 Score
               </TableCell>
-              <TableCell align="right" sx={{ ...headerCellStyle, width: "10%" }}>
+              <TableCell
+                align="right"
+                sx={{ ...headerCellStyle, width: "10%" }}
+              >
                 PRs
               </TableCell>
-              <TableCell align="right" sx={{ ...headerCellStyle, width: "11%" }}>
+              <TableCell
+                align="right"
+                sx={{ ...headerCellStyle, width: "11%" }}
+              >
                 Lines Added
               </TableCell>
-              <TableCell align="right" sx={{ ...headerCellStyle, width: "11%" }}>
+              <TableCell
+                align="right"
+                sx={{ ...headerCellStyle, width: "11%" }}
+              >
                 Lines Deleted
               </TableCell>
-              <TableCell align="right" sx={{ ...headerCellStyle, width: "11%" }}>
+              <TableCell
+                align="right"
+                sx={{ ...headerCellStyle, width: "11%" }}
+              >
                 Lines Changed
               </TableCell>
             </TableRow>
@@ -387,7 +402,9 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                 <TableRow
                   key={miner.githubId}
                   hover
-                  onClick={() => onSelectMiner(miner.githubId || miner.author || "")}
+                  onClick={() =>
+                    onSelectMiner(miner.githubId || miner.author || "")
+                  }
                   sx={{
                     cursor: "pointer",
                     "&:hover": {
@@ -446,7 +463,10 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                       </Box>
                     </Box>
                   </TableCell>
-                  <TableCell align="right" sx={{ ...bodyCellStyle, width: "15%" }}>
+                  <TableCell
+                    align="right"
+                    sx={{ ...bodyCellStyle, width: "15%" }}
+                  >
                     <Typography
                       sx={{
                         fontFamily: '"JetBrains Mono", monospace',
@@ -457,10 +477,16 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                       {Number(miner.totalScore || 0).toFixed(2)}
                     </Typography>
                   </TableCell>
-                  <TableCell align="right" sx={{ ...bodyCellStyle, width: "10%" }}>
+                  <TableCell
+                    align="right"
+                    sx={{ ...bodyCellStyle, width: "10%" }}
+                  >
                     {miner.totalPRs || 0}
                   </TableCell>
-                  <TableCell align="right" sx={{ ...bodyCellStyle, width: "11%" }}>
+                  <TableCell
+                    align="right"
+                    sx={{ ...bodyCellStyle, width: "11%" }}
+                  >
                     <Typography
                       variant="body2"
                       sx={{
@@ -472,7 +498,10 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                       +{(miner.linesAdded || 0).toLocaleString()}
                     </Typography>
                   </TableCell>
-                  <TableCell align="right" sx={{ ...bodyCellStyle, width: "11%" }}>
+                  <TableCell
+                    align="right"
+                    sx={{ ...bodyCellStyle, width: "11%" }}
+                  >
                     <Typography
                       variant="body2"
                       sx={{
@@ -484,7 +513,10 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                       -{(miner.linesDeleted || 0).toLocaleString()}
                     </Typography>
                   </TableCell>
-                  <TableCell align="right" sx={{ ...bodyCellStyle, width: "11%" }}>
+                  <TableCell
+                    align="right"
+                    sx={{ ...bodyCellStyle, width: "11%" }}
+                  >
                     <Typography
                       variant="body2"
                       sx={{
