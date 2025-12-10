@@ -69,7 +69,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     const axisLineColor = "rgba(255, 255, 255, 0.1)";
 
     const xAxisData = chartData.map(
-      (item) => (item?.repository || "").split("/")[1] || item?.repository || "",
+      (item) =>
+        (item?.repository || "").split("/")[1] || item?.repository || "",
     );
     const seriesData = chartData.map((item) => Number(item?.totalScore) || 0);
 
@@ -119,7 +120,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           fontFamily: "JetBrains Mono",
           interval: 0,
           rotate: 45,
-          formatter: (label: string) => label.length > 15 ? label.substring(0, 12) + "..." : label,
+          formatter: (label: string) =>
+            label.length > 15 ? label.substring(0, 12) + "..." : label,
         },
         axisLine: { lineStyle: { color: axisLineColor } },
       },
@@ -359,10 +361,16 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               >
                 Total Score
               </TableCell>
-              <TableCell align="right" sx={{ ...headerCellStyle, width: "20%" }}>
+              <TableCell
+                align="right"
+                sx={{ ...headerCellStyle, width: "20%" }}
+              >
                 PRs
               </TableCell>
-              <TableCell align="right" sx={{ ...headerCellStyle, width: "15%" }}>
+              <TableCell
+                align="right"
+                sx={{ ...headerCellStyle, width: "15%" }}
+              >
                 Contributors
               </TableCell>
             </TableRow>
@@ -409,9 +417,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           height: 20,
                           border: "1px solid rgba(255, 255, 255, 0.2)",
                           backgroundColor:
-                            (repo.repository || "").split("/")[0] === "opentensor"
+                            (repo.repository || "").split("/")[0] ===
+                            "opentensor"
                               ? "#ffffff"
-                              : (repo.repository || "").split("/")[0] === "bitcoin"
+                              : (repo.repository || "").split("/")[0] ===
+                                  "bitcoin"
                                 ? "#F7931A"
                                 : "transparent",
                         }}
