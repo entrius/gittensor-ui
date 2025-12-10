@@ -272,18 +272,21 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                       fontSize: { xs: "0.75rem", sm: "0.85rem" },
                     }}
                   >
-                    <a
-                      href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
+                    <Box
+                      onClick={() => navigate(`/miners/pr?repo=${pr.repository}&number=${pr.pullRequestNumber}`)}
+                      sx={{
                         color: "#ffffff",
                         textDecoration: "none",
                         fontWeight: 500,
+                        cursor: "pointer",
+                        "&:hover": {
+                          textDecoration: "underline",
+                          color: "primary.main",
+                        },
                       }}
                     >
                       #{pr.pullRequestNumber}
-                    </a>
+                    </Box>
                   </TableCell>
                   <TableCell
                     sx={{

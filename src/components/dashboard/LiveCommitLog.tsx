@@ -10,6 +10,7 @@ import {
   alpha,
   Avatar,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import theme from "../../theme";
 import { useInfiniteCommitLog } from "../../api";
 import dayjs from "dayjs";
@@ -32,6 +33,7 @@ interface CommitLogEntry {
 }
 
 const LiveCommitLog: React.FC = () => {
+  const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
 
@@ -237,17 +239,13 @@ const LiveCommitLog: React.FC = () => {
             <Stack spacing={isMobile ? 1 : isTablet ? 1.25 : 1}>
               {logEntries.map((entry, index) => {
                 const entryId = `${entry.pullRequestNumber}-${entry.mergedAt}`;
-                const githubUrl = `https://github.com/${entry.repository}/pull/${entry.pullRequestNumber}`;
                 const isLastItem = index === logEntries.length - 1;
 
                 return (
                   <Box
                     key={entryId}
                     ref={isLastItem ? loadMoreRef : null}
-                    component="a"
-                    href={githubUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    onClick={() => navigate(`/miners/pr?repo=${entry.repository}&number=${entry.pullRequestNumber}`)}
                     sx={{
                       p: isMobile ? 0.75 : isTablet ? 1.25 : 1,
                       borderRadius: 3,

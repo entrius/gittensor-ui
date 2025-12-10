@@ -7,6 +7,7 @@ import {
   CircularProgress,
   Avatar,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import {
   useMinerStats,
   useMinerPRs,
@@ -19,6 +20,7 @@ interface MinerScoreCardProps {
 }
 
 const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
+  const navigate = useNavigate();
   // Use pre-computed stats from MinerEvaluations table - much faster!
   const { data: minerStats, isLoading, error } = useMinerStats(githubId);
   // Fetch PRs to get username for avatar (only fetches first PR)
@@ -171,7 +173,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
       value: topPR ? parseFloat(topPR.score || "0").toFixed(4) : "N/A",
       rank: topPRRank,
       link: topPR
-        ? `https://github.com/${topPR.repository}/pull/${topPR.pullRequestNumber}`
+        ? `/miners/pr?repo=${topPR.repository}&number=${topPR.pullRequestNumber}`
         : null,
     },
   ];
@@ -313,13 +315,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                 )}
               </Box>
               {item.link ? (
-                <a
-                  href={item.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: "#ffffff",
-                    textDecoration: "none",
+                <Box
+                  onClick={() => navigate(item.link!)}
+                  sx={{
+                    cursor: "pointer",
                   }}
                 >
                   <Typography
@@ -337,7 +336,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                   >
                     {String(item.value)}
                   </Typography>
-                </a>
+                </Box>
               ) : (
                 <Typography
                   sx={{
