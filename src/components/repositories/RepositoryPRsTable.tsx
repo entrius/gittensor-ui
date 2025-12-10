@@ -12,7 +12,7 @@ import {
   CircularProgress,
   Avatar,
 } from "@mui/material";
-import { useAllMinerData } from "../api";
+import { useAllMinerData } from "../../api";
 import { useNavigate } from "react-router-dom";
 
 interface RepositoryPRsTableProps {

@@ -12,7 +12,7 @@ import {
   useMinerPRs,
   useAllMinerStats,
   useAllMinerData,
-} from "../api";
+} from "../../api";
 
 interface MinerScoreCardProps {
   githubId: string;

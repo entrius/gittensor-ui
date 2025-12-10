@@ -13,7 +13,7 @@ import {
   Avatar,
   Chip,
 } from "@mui/material";
-import { useMinerPRs } from "../api";
+import { useMinerPRs } from "../../api";
 import { useNavigate } from "react-router-dom";
 
 interface MinerPRsTableProps {

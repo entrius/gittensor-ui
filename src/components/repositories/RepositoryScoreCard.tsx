@@ -7,7 +7,7 @@ import {
   CircularProgress,
   Avatar,
 } from "@mui/material";
-import { useAllMinerData } from "../api";
+import { useAllMinerData } from "../../api";
 
 interface RepositoryScoreCardProps {
   repositoryFullName: string;

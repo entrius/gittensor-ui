@@ -50,7 +50,7 @@ const RepositoryDetailsPage: React.FC = () => {
         >
           <Button
             startIcon={<ArrowBackIcon sx={{ fontSize: "1rem !important" }} />}
-            onClick={() => navigate("/miners")}
+            onClick={() => navigate("/miners?tab=repos")}
             sx={{
               mb: 2,
               alignSelf: "flex-start",
@@ -74,7 +74,7 @@ const RepositoryDetailsPage: React.FC = () => {
             }}
             disableRipple
           >
-            Back to Leaderboard
+            Back to Top Repositories
           </Button>
 
           {/* Repository Score Card */}

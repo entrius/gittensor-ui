@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo } from "react";
 import { Box, Tabs, Tab, Card } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Page } from "../components/layout";
@@ -115,7 +115,12 @@ const MinersPage: React.FC = () => {
 
     const statsMap = new Map<
       string,
-      { repository: string; totalScore: number; totalPRs: number; uniqueMiners: Set<string> }
+      {
+        repository: string;
+        totalScore: number;
+        totalPRs: number;
+        uniqueMiners: Set<string>;
+      }
     >();
 
     allPRs.forEach((pr: CommitLog) => {

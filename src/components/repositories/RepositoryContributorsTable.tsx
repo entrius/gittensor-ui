@@ -13,75 +13,81 @@ import {
   Avatar,
   TableSortLabel,
 } from "@mui/material";
-import { useMinerPRs, useReposAndWeights } from "../api";
+import { useAllMinerData, useAllMinerStats } from "../../api";
 import { useNavigate } from "react-router-dom";
 
-interface MinerRepositoriesTableProps {
-  githubId: string;
+interface RepositoryContributorsTableProps {
+  repositoryFullName: string;
 }
 
-interface RepoStats {
-  repository: string;
-  prs: number;
-  score: number;
-  weight: number;
-}
-
-type SortField = "rank" | "repository" | "prs" | "score" | "weight";
+type ContributorSortField =
+  | "rank"
+  | "contributor"
+  | "prs"
+  | "score"
+  | "minerRank";
 type SortOrder = "asc" | "desc";
 
-const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
-  githubId,
-}) => {
+const RepositoryContributorsTable: React.FC<
+  RepositoryContributorsTableProps
+> = ({ repositoryFullName }) => {
   const navigate = useNavigate();
-  const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
-  const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
-  const [sortField, setSortField] = useState<SortField>("score");
+  const { data: allPRs, isLoading } = useAllMinerData();
+  const { data: allMinersStats } = useAllMinerStats();
+  const [sortField, setSortField] = useState<ContributorSortField>("score");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
-  // Build repository weights map
-  const repoWeights = useMemo(() => {
+  // Build githubId -> miner rank map
+  const minerRankMap = useMemo(() => {
     const map = new Map<string, number>();
-    if (Array.isArray(repos)) {
-      repos.forEach((repo) => {
-        if (repo && repo.fullName) {
-          map.set(repo.fullName, parseFloat(repo.weight || "0"));
-        }
+    if (Array.isArray(allMinersStats)) {
+      const sorted = [...allMinersStats].sort(
+        (a, b) => Number(b.totalScore) - Number(a.totalScore),
+      );
+      sorted.forEach((miner, index) => {
+        map.set(miner.githubId, index + 1);
       });
     }
     return map;
-  }, [repos]);
+  }, [allMinersStats]);
 
-  // Aggregate PRs by repository
-  const repoStats = useMemo(() => {
-    if (!prs || prs.length === 0) return [];
+  // Get contributors for this repository
+  const contributors = useMemo(() => {
+    if (!allPRs) return [];
 
-    const statsMap = new Map<string, RepoStats>();
+    const allRepoPRs = allPRs.filter(
+      (pr) => pr.repository === repositoryFullName,
+    );
 
-    prs.forEach((pr) => {
-      const existing = statsMap.get(pr.repository) || {
-        repository: pr.repository,
+    const contributorsMap = new Map<
+      string,
+      { author: string; githubId: string; prs: number; score: number }
+    >();
+
+    allRepoPRs.forEach((pr) => {
+      const existing = contributorsMap.get(pr.githubId) || {
+        author: pr.author,
+        githubId: pr.githubId,
         prs: 0,
         score: 0,
-        weight: repoWeights.get(pr.repository) || 0,
       };
       existing.prs += 1;
       existing.score += parseFloat(pr.score || "0");
-      statsMap.set(pr.repository, existing);
+      contributorsMap.set(pr.githubId, existing);
     });
 
-    return Array.from(statsMap.values());
-  }, [prs, repoWeights]);
+    return Array.from(contributorsMap.values());
+  }, [allPRs, repositoryFullName]);
 
-  // Sort repository stats
-  const sortedRepoStats = useMemo(() => {
-    const sorted = [...repoStats];
+  // Sort contributors
+  const sortedContributors = useMemo(() => {
+    const sorted = [...contributors];
     sorted.sort((a, b) => {
       let compareValue = 0;
 
       switch (sortField) {
-        case "repository":
-          compareValue = a.repository.localeCompare(b.repository);
+        case "contributor":
+          compareValue = a.author.localeCompare(b.author);
           break;
         case "prs":
           compareValue = a.prs - b.prs;
@@ -89,21 +95,22 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
         case "score":
           compareValue = a.score - b.score;
           break;
-        case "weight":
-          compareValue = a.weight - b.weight;
-          break;
         case "rank":
-          // Rank is based on score by default
-          compareValue = a.score - b.score;
+          compareValue = b.score - a.score;
+          break;
+        case "minerRank":
+          const aRank = minerRankMap.get(a.githubId) || 999999;
+          const bRank = minerRankMap.get(b.githubId) || 999999;
+          compareValue = aRank - bRank;
           break;
       }
 
       return sortOrder === "asc" ? compareValue : -compareValue;
     });
     return sorted;
-  }, [repoStats, sortField, sortOrder]);
+  }, [contributors, sortField, sortOrder, minerRankMap]);
 
-  const handleSort = (field: SortField) => {
+  const handleSort = (field: ContributorSortField) => {
     if (sortField === field) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
@@ -111,8 +118,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       setSortOrder("desc");
     }
   };
-
-  const isLoading = isLoadingPRs || isLoadingRepos;
 
   if (isLoading) {
     return (
@@ -131,7 +136,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     );
   }
 
-  if (!prs || prs.length === 0 || repoStats.length === 0) {
+  if (contributors.length === 0) {
     return (
       <Card
         sx={{
@@ -150,7 +155,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
             textAlign: "center",
           }}
         >
-          No repository contributions found
+          No contributors found
         </Typography>
       </Card>
     );
@@ -184,7 +189,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
             fontWeight: 500,
           }}
         >
-          Top Repositories
+          Top Contributors
         </Typography>
       </Box>
 
@@ -195,39 +200,21 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
               <TableCell sx={headerCellStyle}>
                 <TableSortLabel
                   active={sortField === "rank"}
-                  direction={sortField === "rank" ? sortOrder : "desc"}
+                  direction={sortField === "rank" ? sortOrder : "asc"}
                   onClick={() => handleSort("rank")}
-                  sx={{
-                    color: "inherit",
-                    "&:hover": { color: "rgba(255, 255, 255, 0.9)" },
-                    "&.Mui-active": {
-                      color: "rgba(255, 255, 255, 0.9)",
-                      "& .MuiTableSortLabel-icon": {
-                        color: "rgba(255, 255, 255, 0.9) !important",
-                      },
-                    },
-                  }}
+                  sx={sortLabelStyle}
                 >
                   Rank
                 </TableSortLabel>
               </TableCell>
               <TableCell sx={headerCellStyle}>
                 <TableSortLabel
-                  active={sortField === "repository"}
-                  direction={sortField === "repository" ? sortOrder : "asc"}
-                  onClick={() => handleSort("repository")}
-                  sx={{
-                    color: "inherit",
-                    "&:hover": { color: "rgba(255, 255, 255, 0.9)" },
-                    "&.Mui-active": {
-                      color: "rgba(255, 255, 255, 0.9)",
-                      "& .MuiTableSortLabel-icon": {
-                        color: "rgba(255, 255, 255, 0.9) !important",
-                      },
-                    },
-                  }}
+                  active={sortField === "contributor"}
+                  direction={sortField === "contributor" ? sortOrder : "asc"}
+                  onClick={() => handleSort("contributor")}
+                  sx={sortLabelStyle}
                 >
-                  Repository
+                  Contributor
                 </TableSortLabel>
               </TableCell>
               <TableCell align="right" sx={headerCellStyle}>
@@ -235,16 +222,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                   active={sortField === "prs"}
                   direction={sortField === "prs" ? sortOrder : "desc"}
                   onClick={() => handleSort("prs")}
-                  sx={{
-                    color: "inherit",
-                    "&:hover": { color: "rgba(255, 255, 255, 0.9)" },
-                    "&.Mui-active": {
-                      color: "rgba(255, 255, 255, 0.9)",
-                      "& .MuiTableSortLabel-icon": {
-                        color: "rgba(255, 255, 255, 0.9) !important",
-                      },
-                    },
-                  }}
+                  sx={sortLabelStyle}
                 >
                   PRs
                 </TableSortLabel>
@@ -254,45 +232,27 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                   active={sortField === "score"}
                   direction={sortField === "score" ? sortOrder : "desc"}
                   onClick={() => handleSort("score")}
-                  sx={{
-                    color: "inherit",
-                    "&:hover": { color: "rgba(255, 255, 255, 0.9)" },
-                    "&.Mui-active": {
-                      color: "rgba(255, 255, 255, 0.9)",
-                      "& .MuiTableSortLabel-icon": {
-                        color: "rgba(255, 255, 255, 0.9) !important",
-                      },
-                    },
-                  }}
+                  sx={sortLabelStyle}
                 >
                   Score
                 </TableSortLabel>
               </TableCell>
               <TableCell align="right" sx={headerCellStyle}>
                 <TableSortLabel
-                  active={sortField === "weight"}
-                  direction={sortField === "weight" ? sortOrder : "desc"}
-                  onClick={() => handleSort("weight")}
-                  sx={{
-                    color: "inherit",
-                    "&:hover": { color: "rgba(255, 255, 255, 0.9)" },
-                    "&.Mui-active": {
-                      color: "rgba(255, 255, 255, 0.9)",
-                      "& .MuiTableSortLabel-icon": {
-                        color: "rgba(255, 255, 255, 0.9) !important",
-                      },
-                    },
-                  }}
+                  active={sortField === "minerRank"}
+                  direction={sortField === "minerRank" ? sortOrder : "asc"}
+                  onClick={() => handleSort("minerRank")}
+                  sx={sortLabelStyle}
                 >
-                  Weight
+                  Miner Rank
                 </TableSortLabel>
               </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {sortedRepoStats.map((repo, index) => (
+            {sortedContributors.map((contributor, index) => (
               <TableRow
-                key={repo.repository}
+                key={contributor.githubId}
                 sx={{
                   "&:hover": {
                     backgroundColor: "rgba(255, 255, 255, 0.05)",
@@ -358,7 +318,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                   <Box
                     onClick={() =>
                       navigate(
-                        `/miners/repository?name=${encodeURIComponent(repo.repository)}`,
+                        `/miners/details?githubId=${contributor.githubId}`,
                       )
                     }
                     sx={{
@@ -376,19 +336,9 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                     }}
                   >
                     <Avatar
-                      src={`https://avatars.githubusercontent.com/${repo.repository.split("/")[0]}`}
-                      alt={repo.repository.split("/")[0]}
-                      sx={{
-                        width: 24,
-                        height: 24,
-                        border: "1px solid rgba(255, 255, 255, 0.2)",
-                        backgroundColor:
-                          repo.repository.split("/")[0] === "opentensor"
-                            ? "#ffffff"
-                            : repo.repository.split("/")[0] === "bitcoin"
-                              ? "#F7931A"
-                              : "transparent",
-                      }}
+                      src={`https://avatars.githubusercontent.com/${contributor.author}`}
+                      alt={contributor.author}
+                      sx={{ width: 24, height: 24 }}
                     />
                     <Typography
                       component="span"
@@ -398,18 +348,18 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                         transition: "color 0.2s",
                       }}
                     >
-                      {repo.repository}
+                      {contributor.author}
                     </Typography>
                   </Box>
                 </TableCell>
                 <TableCell align="right" sx={bodyCellStyle}>
-                  {repo.prs}
+                  {contributor.prs}
                 </TableCell>
                 <TableCell align="right" sx={bodyCellStyle}>
-                  {repo.score.toFixed(4)}
+                  {contributor.score.toFixed(4)}
                 </TableCell>
                 <TableCell align="right" sx={bodyCellStyle}>
-                  {repo.weight.toFixed(4)}
+                  {minerRankMap.get(contributor.githubId) || "-"}
                 </TableCell>
               </TableRow>
             ))}
@@ -439,4 +389,15 @@ const bodyCellStyle = {
   fontSize: "0.85rem",
 };
 
-export default MinerRepositoriesTable;
+const sortLabelStyle = {
+  color: "inherit",
+  "&:hover": { color: "rgba(255, 255, 255, 0.9)" },
+  "&.Mui-active": {
+    color: "rgba(255, 255, 255, 0.9)",
+    "& .MuiTableSortLabel-icon": {
+      color: "rgba(255, 255, 255, 0.9) !important",
+    },
+  },
+};
+
+export default RepositoryContributorsTable;

@@ -7,8 +7,8 @@ import {
   Avatar,
   Grid,
 } from "@mui/material";
-import { useAllMinerData } from "../api";
-import { CommitLog } from "../api/models/Dashboard";
+import { useAllMinerData } from "../../api";
+import { CommitLog } from "../../api/models/Dashboard";
 import { useNavigate } from "react-router-dom";
 
 interface PRDetailsCardProps {
