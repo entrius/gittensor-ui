@@ -97,6 +97,17 @@ async function injectMetaTags(html, url) {
     }
   }
 
+  // PR details page
+  if (pathname === "/miners/pr") {
+    const repo = searchParams.get("repo");
+    const number = searchParams.get("number");
+    if (repo && number) {
+      title = `PR #${number} - ${repo} | Gittensor`;
+      description = `View detailed statistics for pull request #${number} in ${repo} on Gittensor. Track contributions, scores, and changes.`;
+      image = `https://api.gittensor.io/og-image?type=pr&repo=${encodeURIComponent(repo)}&number=${encodeURIComponent(number)}&v=${cacheBuster}`;
+    }
+  }
+
   // Home page
   if (pathname === "/") {
     image = `https://api.gittensor.io/og-image?type=home&v=${cacheBuster}`;
