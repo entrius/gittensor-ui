@@ -52,6 +52,7 @@ jobs:
           fi
 
       - name: Clear Cloudflare Cache
+        if: github.ref == 'refs/heads/main'
         id: cache-clear
         run: |
           echo "Waiting 10 seconds for site to fully deploy..."
