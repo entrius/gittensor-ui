@@ -400,7 +400,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((miner) => (
                 <TableRow
-                  key={miner.githubId}
+                  key={`${miner.githubId}-${miner.hotkey}`}
                   hover
                   onClick={() =>
                     onSelectMiner(miner.githubId || miner.author || "")
