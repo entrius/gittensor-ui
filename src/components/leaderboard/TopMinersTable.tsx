@@ -57,10 +57,12 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const cardRef = useRef<HTMLDivElement>(null);
 
+  // 1. Assign ranks to all miners based on the incoming order (assumed to be sorted by score from parent)
   const rankedMiners = useMemo(() => {
     return miners.map((miner, index) => ({ ...miner, rank: index + 1 }));
   }, [miners]);
 
+  // 2. Filter based on search query
   const filteredMiners = useMemo(() => {
     if (!searchQuery) return rankedMiners;
     const lowerQuery = searchQuery.toLowerCase();
@@ -72,8 +74,16 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     );
   }, [rankedMiners, searchQuery]);
 
+  // 3. Explicitly sort by totalScore to guarantee order before pagination
+  // We use totalScore as the source of truth, as rank is a derived property
+  const displayMiners = useMemo(() => {
+    // Create a strict copy to avoid any mutation issues
+    return [...filteredMiners].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+  }, [filteredMiners]);
+
   const getChartOption = () => {
-    const chartData = filteredMiners;
+    // Clone to ensure chart doesn't mutate source data
+    const chartData = [...displayMiners];
     const textColor = "rgba(255, 255, 255, 0.7)";
     const axisLineColor = "rgba(255, 255, 255, 0.1)";
 
@@ -395,8 +405,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
               </TableCell>
             </TableRow>
           </TableHead>
-          <TableBody>
-            {filteredMiners
+          <TableBody key={page}>
+            {displayMiners
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((miner) => (
                 <TableRow
@@ -533,7 +543,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
         </Table>
       </TableContainer>
       <TablePagination
-        rowsPerPageOptions={[]}
+        rowsPerPageOptions={[10, 25, 50]}
         component="div"
         count={filteredMiners.length}
         rowsPerPage={rowsPerPage}
