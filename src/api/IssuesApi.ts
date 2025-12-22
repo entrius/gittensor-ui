@@ -1,16 +1,8 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import axios from "axios";
-import {
-  Issue,
-  IssueStats,
-  BountyHistoryPoint,
-  FeaturedIssue,
-  IssueListItem,
-} from "./models/Issues";
+import { Issue, IssueStats, IssueListItem } from "./models/Issues";
 import {
   generateMockIssueStats,
-  generateMockBountyHistory,
-  generateMockFeaturedIssues,
   generateMockIssuesList,
   generateMockIssue,
 } from "./mockData/issuesMockData";
@@ -72,46 +64,6 @@ export const useIssueStats = () => {
         return generateMockIssueStats();
       }
       const response = await axios.get(`${API_BASE_URL}/issues/stats`);
-      return response.data;
-    },
-    refetchInterval: 30000,
-  });
-};
-
-/**
- * Fetch bounty pool history for charting
- */
-export const useBountyHistory = (days: number = 30) => {
-  return useQuery<BountyHistoryPoint[]>({
-    queryKey: ["bountyHistory", days],
-    queryFn: async () => {
-      if (USE_MOCK_DATA) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        return generateMockBountyHistory(days);
-      }
-      const response = await axios.get(
-        `${API_BASE_URL}/issues/bounty-history?days=${days}`
-      );
-      return response.data.history;
-    },
-    refetchInterval: 60000,
-  });
-};
-
-/**
- * Fetch featured high-value issues
- */
-export const useFeaturedIssues = (limit: number = 3) => {
-  return useQuery<FeaturedIssue[]>({
-    queryKey: ["featuredIssues", limit],
-    queryFn: async () => {
-      if (USE_MOCK_DATA) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        return generateMockFeaturedIssues(limit);
-      }
-      const response = await axios.get(
-        `${API_BASE_URL}/issues/featured?limit=${limit}`
-      );
       return response.data;
     },
     refetchInterval: 30000,
