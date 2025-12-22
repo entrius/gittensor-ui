@@ -7,6 +7,9 @@ on:
       - test
   workflow_dispatch:
 
+env:
+  CONTAINER_NAME: gt-ui
+
 jobs:
   deploy:
     name: "Deploy to VPS"
@@ -36,7 +39,34 @@ jobs:
 
       - name: Print Container Status
         id: printStatus
-        run: ssh my-vps 'docker ps'
+        run: |
+          echo "Checking container status..."
+          ssh my-vps 'docker ps'
+
+          echo "Verifying ${{ env.CONTAINER_NAME }} is running..."
+          if ssh my-vps "docker ps --format '{{.Names}}' | grep -q '^${{ env.CONTAINER_NAME }}$'"; then
+            echo "Container ${{ env.CONTAINER_NAME }} is running"
+          else
+            echo "Container ${{ env.CONTAINER_NAME }} is NOT running"
+            exit 1
+          fi
+
+      - name: Clear Cloudflare Cache
+        if: github.ref == 'refs/heads/main'
+        id: cache-clear
+        run: |
+          echo "Waiting 10 seconds for site to fully deploy..."
+          sleep 10
+          echo "Clearing Cloudflare cache..."
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}' \
+            --fail-with-body || echo "Cache clear failed but continuing"
+
+      - name: Refresh Repository weights
+        id: weight-refresh
+        run: ssh my-vps '~/update-repository-weights.sh'
 
       # for notifying of deploy or statusfailure
       - name: Notify Deploy Failure

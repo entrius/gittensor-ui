@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -11,16 +11,18 @@ import {
   TableRow,
   TableSortLabel,
   TablePagination,
-  TextField,
   Paper,
   Stack,
   useMediaQuery,
-  InputAdornment,
   Tooltip,
   CircularProgress,
   Box,
+  TextField,
+  InputAdornment,
+  Avatar,
 } from "@mui/material";
-import { Search } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import SearchIcon from "@mui/icons-material/Search";
 import theme from "../../theme";
 import { useRepoChanges } from "../../api";
 import dayjs from "dayjs";
@@ -34,17 +36,48 @@ type SortField =
   | "weight";
 type SortOrder = "asc" | "desc";
 
-const baseGithubUrl = "https://github.com/";
-
 const RepositoriesTable: React.FC = () => {
+  const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMedium = useMediaQuery(theme.breakpoints.down("md"));
+  const isLarge = useMediaQuery(theme.breakpoints.down("lg"));
   const { data: repoChanges, isLoading } = useRepoChanges();
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField>("weight");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(8);
+  const [searchQuery, setSearchQuery] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Dynamically calculate rows per page based on available height
+  useEffect(() => {
+    const calculateRows = () => {
+      if (containerRef.current) {
+        const containerHeight = containerRef.current.clientHeight;
+        const titleHeight = 40; // Title height
+        const headerHeight = 56; // Table header height
+        const paginationHeight = 52; // Pagination height
+        const rowHeight = 53; // Each table row height
+        const padding = 32; // Top and bottom padding
+
+        const availableHeight =
+          containerHeight -
+          titleHeight -
+          headerHeight -
+          paginationHeight -
+          padding;
+        const calculatedRows = Math.floor(availableHeight / rowHeight);
+        const finalRows = Math.max(5, Math.min(calculatedRows, 20)); // Between 5 and 20 rows
+
+        setRowsPerPage(finalRows);
+      }
+    };
+
+    calculateRows();
+    window.addEventListener("resize", calculateRows);
+    return () => window.removeEventListener("resize", calculateRows);
+  }, []);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -64,33 +97,30 @@ const RepositoriesTable: React.FC = () => {
     setPage(0);
   };
 
+  // Reset page when search query changes
+  useEffect(() => {
+    setPage(0);
+  }, [searchQuery]);
+
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event.target.value);
-    setPage(0);
   };
 
   const filteredAndSortedRepos = useMemo(() => {
     if (!repoChanges) return [];
 
-    let filtered = repoChanges.filter((repo) => {
-      const searchLower = searchQuery.toLowerCase();
-      return repo.repositoryFullName.toLowerCase().includes(searchLower);
-    });
+    // Filter by search query
+    let filtered = repoChanges;
+    if (searchQuery) {
+      const lowerQuery = searchQuery.toLowerCase();
+      filtered = repoChanges.filter((repo) =>
+        repo.repositoryFullName.toLowerCase().includes(lowerQuery),
+      );
+    }
 
     // Create a copy before sorting to avoid mutation
     const sorted = [...filtered];
-    
+
     sorted.sort((a, b) => {
       let aValue: any;
       let bValue: any;
@@ -139,19 +169,21 @@ const RepositoriesTable: React.FC = () => {
       }
 
       // For all numeric fields (including weight which is a string), convert to number
-      const aNum = typeof aValue === "string" ? parseFloat(aValue) : Number(aValue);
-      const bNum = typeof bValue === "string" ? parseFloat(bValue) : Number(bValue);
-      
+      const aNum =
+        typeof aValue === "string" ? parseFloat(aValue) : Number(aValue);
+      const bNum =
+        typeof bValue === "string" ? parseFloat(bValue) : Number(bValue);
+
       // Handle NaN values
       if (isNaN(aNum) && isNaN(bNum)) return 0;
       if (isNaN(aNum)) return 1;
       if (isNaN(bNum)) return -1;
-      
+
       return sortOrder === "asc" ? aNum - bNum : bNum - aNum;
     });
 
     return sorted;
-  }, [repoChanges, searchQuery, sortField, sortOrder]);
+  }, [repoChanges, sortField, sortOrder, searchQuery]);
 
   const paginatedRepos = useMemo(() => {
     const startIndex = page * rowsPerPage;
@@ -171,36 +203,69 @@ const RepositoriesTable: React.FC = () => {
       }}
       elevation={0}
     >
-      <CardContent sx={{ flex: 1, p: isMobile ? 1.5 : 2, "&:last-child": { pb: isMobile ? 1.5 : 2 }, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }}>
-        <Typography 
-          variant="h6" 
-          sx={{ 
-            mb: isMobile ? 1 : 1.5, 
-            fontSize: isMobile ? "0.9rem" : "1rem",
-            fontFamily: '"JetBrains Mono", monospace',
-            fontWeight: 500,
+      <CardContent
+        ref={containerRef}
+        sx={{
+          p: isMobile ? 1.5 : 2,
+          "&:last-child": { pb: isMobile ? 1.5 : 2 },
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+          overflow: "hidden",
+          minHeight: 0,
+        }}
+      >
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{
+            mb: isMobile ? 1 : 1.5,
             flexShrink: 0,
+            gap: 2,
+            flexWrap: "wrap",
           }}
         >
-          Contributed Repositories
-        </Typography>
-
-        {!isMobile && (
+          <Typography
+            variant="h6"
+            sx={{
+              fontSize: isMobile ? "0.9rem" : "1rem",
+              fontFamily: '"JetBrains Mono", monospace',
+              fontWeight: 500,
+            }}
+          >
+            Contributed Repositories
+          </Typography>
           <TextField
-            fullWidth
-            placeholder="Search by repository name..."
+            placeholder="Search..."
+            size="small"
             value={searchQuery}
-            onChange={handleSearchChange}
-            sx={{ mb: 2, flexShrink: 0 }}
+            onChange={(e) => setSearchQuery(e.target.value)}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <Search />
+                  <SearchIcon
+                    sx={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "1rem" }}
+                  />
                 </InputAdornment>
               ),
             }}
+            sx={{
+              width: isMobile ? "100%" : "200px",
+              "& .MuiOutlinedInput-root": {
+                color: "#ffffff",
+                fontFamily: '"JetBrains Mono", monospace',
+                backgroundColor: "rgba(0, 0, 0, 0.4)",
+                fontSize: "0.8rem",
+                height: "36px",
+                borderRadius: 2,
+                "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
+                "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.2)" },
+                "&.Mui-focused fieldset": { borderColor: "primary.main" },
+              },
+            }}
           />
-        )}
+        </Stack>
 
         {isLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
@@ -212,9 +277,8 @@ const RepositoriesTable: React.FC = () => {
             elevation={0}
             sx={{
               backgroundColor: "transparent",
-              maxHeight: isMobile ? "300px" : "500px",
-              overflow: "auto",
-              flexShrink: 0,
+              maxHeight: "600px",
+              overflowY: "auto",
               "&::-webkit-scrollbar": {
                 width: "8px",
               },
@@ -230,7 +294,7 @@ const RepositoriesTable: React.FC = () => {
               },
             }}
           >
-            <Table stickyHeader sx={{ width: '100%', tableLayout: 'fixed' }}>
+            <Table sx={{ width: "100%", tableLayout: "fixed" }}>
               <TableHead>
                 <TableRow>
                   <TableCell
@@ -238,7 +302,9 @@ const RepositoriesTable: React.FC = () => {
                       backgroundColor: "rgba(18, 18, 20, 0.95)",
                       backdropFilter: "blur(8px)",
                       borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                      width: isMobile ? "60%" : "33%",
+                      minWidth: isMobile ? 120 : 180,
+                      maxWidth: isMobile ? 200 : 300,
+                      width: isMobile ? 150 : 250,
                     }}
                   >
                     <TableSortLabel
@@ -256,7 +322,12 @@ const RepositoriesTable: React.FC = () => {
                         },
                       }}
                     >
-                      <Typography variant="dataLabel">Repository</Typography>
+                      <Typography
+                        variant="dataLabel"
+                        sx={{ fontSize: isMedium ? "0.7rem" : "0.75rem" }}
+                      >
+                        Repository
+                      </Typography>
                     </TableSortLabel>
                   </TableCell>
                   {!isMobile && (
@@ -282,18 +353,23 @@ const RepositoriesTable: React.FC = () => {
                           },
                         }}
                       >
-                        <Typography variant="dataLabel">Commits</Typography>
+                        <Typography
+                          variant="dataLabel"
+                          sx={{ fontSize: isMedium ? "0.7rem" : "0.75rem" }}
+                        >
+                          Commits
+                        </Typography>
                       </TableSortLabel>
                     </TableCell>
                   )}
-                  {!isMobile && (
+                  {!isMobile && !isLarge && (
                     <TableCell
                       align="right"
                       sx={{
                         backgroundColor: "rgba(18, 18, 20, 0.95)",
                         backdropFilter: "blur(8px)",
                         borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                        width: "13%",
+                        width: "15%",
                       }}
                     >
                       <TableSortLabel
@@ -311,18 +387,23 @@ const RepositoriesTable: React.FC = () => {
                           },
                         }}
                       >
-                        <Typography variant="dataLabel">Lines Added</Typography>
+                        <Typography
+                          variant="dataLabel"
+                          sx={{ fontSize: isMedium ? "0.7rem" : "0.75rem" }}
+                        >
+                          Lines Added
+                        </Typography>
                       </TableSortLabel>
                     </TableCell>
                   )}
-                  {!isMobile && (
+                  {!isMobile && !isLarge && (
                     <TableCell
                       align="right"
                       sx={{
                         backgroundColor: "rgba(18, 18, 20, 0.95)",
                         backdropFilter: "blur(8px)",
                         borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                        width: "14%",
+                        width: "15%",
                       }}
                     >
                       <TableSortLabel
@@ -340,7 +421,10 @@ const RepositoriesTable: React.FC = () => {
                           },
                         }}
                       >
-                        <Typography variant="dataLabel">
+                        <Typography
+                          variant="dataLabel"
+                          sx={{ fontSize: isMedium ? "0.7rem" : "0.75rem" }}
+                        >
                           Lines Removed
                         </Typography>
                       </TableSortLabel>
@@ -352,7 +436,7 @@ const RepositoriesTable: React.FC = () => {
                       backgroundColor: "rgba(18, 18, 20, 0.95)",
                       backdropFilter: "blur(8px)",
                       borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                      width: isMobile ? "40%" : "14%",
+                      width: isMobile ? "25%" : "15%",
                     }}
                   >
                     <TableSortLabel
@@ -370,17 +454,22 @@ const RepositoriesTable: React.FC = () => {
                         },
                       }}
                     >
-                      <Typography variant="dataLabel">Lines Changed</Typography>
+                      <Typography
+                        variant="dataLabel"
+                        sx={{ fontSize: isMedium ? "0.7rem" : "0.75rem" }}
+                      >
+                        Lines Changed
+                      </Typography>
                     </TableSortLabel>
                   </TableCell>
-                  {!isMobile && (
+                  {!isMobile && !isMedium && (
                     <TableCell
                       align="right"
                       sx={{
                         backgroundColor: "rgba(18, 18, 20, 0.95)",
                         backdropFilter: "blur(8px)",
                         borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                        width: "14%",
+                        width: "12%",
                       }}
                     >
                       <TableSortLabel
@@ -396,7 +485,12 @@ const RepositoriesTable: React.FC = () => {
                           },
                         }}
                       >
-                        <Typography variant="dataLabel">Weight</Typography>
+                        <Typography
+                          variant="dataLabel"
+                          sx={{ fontSize: isMedium ? "0.7rem" : "0.75rem" }}
+                        >
+                          Weight
+                        </Typography>
                       </TableSortLabel>
                     </TableCell>
                   )}
@@ -435,42 +529,62 @@ const RepositoriesTable: React.FC = () => {
                         <TableCell
                           sx={{
                             overflow: "hidden",
-                            wordBreak: "break-word",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            maxWidth: isMobile ? 200 : 300,
+                            width: isMobile ? 150 : 250,
                           }}
                         >
-                          <Stack>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1.5,
+                            }}
+                          >
+                            <Avatar
+                              src={`https://avatars.githubusercontent.com/${(repo.repositoryFullName || "").split("/")[0]}`}
+                              alt={
+                                (repo.repositoryFullName || "").split("/")[0]
+                              }
+                              sx={{
+                                width: 20,
+                                height: 20,
+                                border: "1px solid rgba(255, 255, 255, 0.2)",
+                                backgroundColor:
+                                  (repo.repositoryFullName || "").split(
+                                    "/",
+                                  )[0] === "opentensor"
+                                    ? "#ffffff"
+                                    : (repo.repositoryFullName || "").split(
+                                          "/",
+                                        )[0] === "bitcoin"
+                                      ? "#F7931A"
+                                      : "transparent",
+                              }}
+                            />
                             <Typography
-                              variant="body1"
+                              variant="body2"
                               fontWeight="medium"
+                              onClick={() => navigate(`/miners/repository?name=${repo.repositoryFullName}`)}
                               sx={{
                                 color: isInactive
                                   ? "error.dark"
                                   : "text.primary",
-                                wordBreak: "break-word",
+                                cursor: "pointer",
+                                "&:hover": {
+                                  textDecoration: "underline",
+                                  color: "primary.main",
+                                },
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                display: "block",
                               }}
                             >
                               {repo.repositoryFullName}
                             </Typography>
-                            {!isMobile && (
-                              <Typography
-                                component="a"
-                                href={`${baseGithubUrl}${repo.repositoryFullName}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                variant="body2"
-                                sx={{
-                                  color: isInactive
-                                    ? "rgba(211, 47, 47, 0.7)"
-                                    : "text.secondary",
-                                  textDecoration: "none",
-                                  "&:hover": { textDecoration: "underline" },
-                                  wordBreak: "break-word",
-                                }}
-                              >
-                                {`${baseGithubUrl}${repo.repositoryFullName}`}
-                              </Typography>
-                            )}
-                          </Stack>
+                          </Box>
                         </TableCell>
                         {!isMobile && (
                           <TableCell align="right">
@@ -486,7 +600,7 @@ const RepositoriesTable: React.FC = () => {
                             </Typography>
                           </TableCell>
                         )}
-                        {!isMobile && (
+                        {!isMobile && !isLarge && (
                           <TableCell align="right">
                             <Typography
                               variant="dataValue"
@@ -496,7 +610,7 @@ const RepositoriesTable: React.FC = () => {
                             </Typography>
                           </TableCell>
                         )}
-                        {!isMobile && (
+                        {!isMobile && !isLarge && (
                           <TableCell align="right">
                             <Typography
                               variant="dataValue"
@@ -517,7 +631,7 @@ const RepositoriesTable: React.FC = () => {
                             {repo.linesChanged ?? "-"}
                           </Typography>
                         </TableCell>
-                        {!isMobile && (
+                        {!isMobile && !isMedium && (
                           <TableCell align="right">
                             <Typography
                               variant="dataValue"
@@ -541,21 +655,22 @@ const RepositoriesTable: React.FC = () => {
         )}
 
         <TablePagination
-          rowsPerPageOptions={[5, 10, 25, 50]}
+          rowsPerPageOptions={[]}
           component="div"
           count={filteredAndSortedRepos.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
+          showFirstButton
+          showLastButton
           sx={{
             flexShrink: 0,
             mt: 1,
             ".MuiTablePagination-displayedRows": {
               fontFamily: '"JetBrains Mono", monospace',
             },
-            ".MuiTablePagination-selectLabel": {
-              fontFamily: '"JetBrains Mono", monospace',
+            ".MuiTablePagination-toolbar": {
+              minHeight: "48px",
             },
           }}
         />

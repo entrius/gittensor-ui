@@ -12,10 +12,14 @@ const AboutPage = React.lazy(() => import("./pages/AboutPage"));
 const FAQPage = React.lazy(() => import("./pages/FAQPage"));
 const DashboardPage = React.lazy(() => import("./pages/DashboardPage"));
 const RepositoriesPage = React.lazy(() => import("./pages/RepositoriesPage"));
+const MinersPage = React.lazy(() => import("./pages/MinersPage"));
+const MinerDetailsPage = React.lazy(() => import("./pages/MinerDetailsPage"));
+const RepositoryDetailsPage = React.lazy(
+  () => import("./pages/RepositoryDetailsPage"),
+);
+const PRDetailsPage = React.lazy(() => import("./pages/PRDetailsPage"));
+const RoadmapPage = React.lazy(() => import("./pages/RoadmapPage"));
 const IssuesPage = React.lazy(() => import("./pages/IssuesPage"));
-// const UnderConstructionPage = React.lazy(
-//   () => import("./pages/UnderConstructionPage")
-// );
 
 // 404 page
 const NotFoundPage = React.lazy(() => import("./pages/NotFoundPage"));
@@ -23,6 +27,23 @@ const NotFoundPage = React.lazy(() => import("./pages/NotFoundPage"));
 const routesArray: AppRoute[] = [
   { name: "home", path: "/", element: <HomePage /> },
   { name: "dashboard", path: "/dashboard", element: <DashboardPage /> },
+  { name: "miners", path: "/miners", element: <MinersPage /> },
+  {
+    name: "miner-details",
+    path: "/miners/details",
+    element: <MinerDetailsPage />,
+  },
+  {
+    name: "repository-details",
+    path: "/miners/repository",
+    element: <RepositoryDetailsPage />,
+  },
+  {
+    name: "pr-details",
+    path: "/miners/pr",
+    element: <PRDetailsPage />,
+  },
+  { name: "roadmap", path: "/roadmap", element: <RoadmapPage /> },
   { name: "about", path: "/about", element: <AboutPage /> },
   { name: "faq", path: "/faq", element: <FAQPage /> },
   {

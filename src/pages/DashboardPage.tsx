@@ -1,7 +1,13 @@
 import React from "react";
-import { Stack, useMediaQuery, Box, Grid } from "@mui/material";
+import { useMediaQuery, Box, Grid } from "@mui/material";
 import { Page } from "../components/layout";
-import { CommitTrendChart, RepositoriesTable, KpiCard, LiveCommitLog } from "../components";
+import {
+  CommitTrendChart,
+  RepositoriesTable,
+  KpiCard,
+  LiveCommitLog,
+  SEO,
+} from "../components";
 import theme from "../theme";
 import { useStats } from "../api";
 
@@ -14,10 +20,15 @@ const DashboardPage: React.FC = () => {
   const { data: stats } = useStats();
 
   // Dynamic sidebar width based on screen size
-  const sidebarWidth = isMobile || isTablet ? "100%" : isLargeScreen ? "340px" : "300px";
+  const sidebarWidth =
+    isMobile || isTablet ? "100%" : isLargeScreen ? "340px" : "300px";
 
   return (
     <Page title="Dashboard">
+      <SEO
+        title="Dashboard"
+        description="View real-time statistics, commit trends, and network performance for Gittensor."
+      />
       <Box
         sx={{
           width: "100%",
@@ -55,19 +66,19 @@ const DashboardPage: React.FC = () => {
             },
           }}
         >
-          {/* Top Row: Focal Point - Total Lines Committed */}
-          <Box sx={{ flexShrink: 0 }}>
+          {/* Top Row: Total Lines Committed + Monthly Rewards */}
+          <Grid item xs={12} md={6}>
             <KpiCard
               title="Total Lines Committed"
               value={stats?.totalLinesChanged}
               subtitle="Cumulative code contributions"
               variant="large"
             />
-          </Box>
+          </Grid>
 
           {/* Middle Row: 4 KPI Cards - Responsive Grid */}
           <Grid container spacing={{ xs: 1.5, md: 2 }} sx={{ flexShrink: 0 }}>
-            <Grid item xs={12} sm={6} md={6} lg={3}>
+            <Grid item xs={12} sm={6} md={6} lg={6} xl={3}>
               <KpiCard
                 title="Total Commits"
                 value={stats?.totalCommits}
@@ -75,7 +86,7 @@ const DashboardPage: React.FC = () => {
                 sx={{ height: "100%" }}
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={6} lg={3}>
+            <Grid item xs={12} sm={6} md={6} lg={6} xl={3}>
               <KpiCard
                 title="Issues Solved"
                 value={stats?.totalIssues}
@@ -83,50 +94,56 @@ const DashboardPage: React.FC = () => {
                 sx={{ height: "100%" }}
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={6} lg={3}>
+
+            <Grid item xs={12} sm={6} md={6} lg={6} xl={3}>
               <KpiCard
-                title="Lines Committed (Last 90 Days)"
+                title="Lines Committed"
                 value={stats?.recentLinesChanged}
-                subtitle="Recent activity"
+                subtitle="Last 90 Days"
                 sx={{ height: "100%" }}
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={6} lg={3}>
+            <Grid item xs={12} sm={6} md={6} lg={6} xl={3}>
               <KpiCard
-                title="Total Unique Repositories"
+                title="Total Repositories"
                 value={stats?.uniqueRepositories}
                 subtitle="Projects contributed to"
                 sx={{ height: "100%" }}
               />
             </Grid>
           </Grid>
-
           {/* Bottom Section: Chart and Table Stacked */}
-          <Box sx={{ 
-            width: "100%", 
-            display: "flex", 
-            flexDirection: "column", 
-            gap: 1.5, 
-            minHeight: isMobile ? "600px" : 0,
-            flexShrink: 0,
-          }}>
+          <Box
+            sx={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              gap: 1.5,
+              minHeight: isMobile ? "600px" : 0,
+              flexShrink: 0,
+            }}
+          >
             {/* Chart */}
-            <Box sx={{ 
-              width: "100%", 
-              height: isMobile ? "350px" : "400px", 
-              flexShrink: 0, 
-              minHeight: isMobile ? "350px" : "400px" 
-            }}>
+            <Box
+              sx={{
+                width: "100%",
+                height: isMobile ? "350px" : "400px",
+                flexShrink: 0,
+                minHeight: isMobile ? "350px" : "400px",
+              }}
+            >
               <CommitTrendChart />
             </Box>
 
             {/* Table */}
-            <Box sx={{ 
-              width: "100%", 
-              minHeight: isMobile ? "400px" : 0, 
-              height: isMobile ? "400px" : "auto",
-              overflow: "hidden" 
-            }}>
+            <Box
+              sx={{
+                width: "100%",
+                minHeight: isMobile ? "400px" : 0,
+                height: isMobile ? "400px" : "auto",
+                overflow: "hidden",
+              }}
+            >
               <RepositoriesTable />
             </Box>
           </Box>

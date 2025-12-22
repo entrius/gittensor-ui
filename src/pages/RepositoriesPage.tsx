@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Page } from "../components/layout";
+import { SEO } from "../components";
 import {
   RepositoryWeightsTable,
   LanguageWeightsTable,
@@ -15,6 +16,10 @@ const RepositoriesPage: React.FC = () => {
 
   return (
     <Page title="Repositories">
+      <SEO
+        title="Repositories"
+        description="Explore open source repositories on Gittensor. View weights, language distribution, and contribution opportunities."
+      />
       <Box
         sx={{
           display: "flex",

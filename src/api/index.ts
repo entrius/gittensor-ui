@@ -1,3 +1,5 @@
 export * from "./ApiUtils";
-export * from "./models";
 export * from "./DashboardApi";
+export * from "./MinerApi";
+
+export * from "./models";

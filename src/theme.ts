@@ -19,6 +19,12 @@ declare module "@mui/material/Typography" {
   }
 }
 
+declare module "@mui/material/Button" {
+  interface ButtonPropsVariantOverrides {
+    back: true;
+  }
+}
+
 const theme = createTheme({
   palette: {
     mode: "dark",
@@ -42,22 +48,22 @@ const theme = createTheme({
     fontFamily:
       '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     h1: {
-      fontFamily: '"CY Grotesk Grand", "Inter", "Helvetica Neue", sans-serif',
+      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
     },
     h2: {
-      fontFamily: '"CY Grotesk Grand", "Inter", "Helvetica Neue", sans-serif',
+      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
     },
     h3: {
-      fontFamily: '"CY Grotesk Grand", "Inter", "Helvetica Neue", sans-serif',
+      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
     },
     h4: {
-      fontFamily: '"CY Grotesk Grand", "Inter", "Helvetica Neue", sans-serif',
+      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
     },
     h5: {
-      fontFamily: '"CY Grotesk Grand", "Inter", "Helvetica Neue", sans-serif',
+      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
     },
     h6: {
-      fontFamily: '"CY Grotesk Grand", "Inter", "Helvetica Neue", sans-serif',
+      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
     },
     body1: {
       fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
@@ -101,6 +107,31 @@ const theme = createTheme({
           backgroundColor: "rgb(190, 52, 85)",
         },
       },
+    },
+    MuiButton: {
+      variants: [
+        {
+          props: { variant: "back" },
+          style: {
+            color: "rgba(255, 255, 255, 0.7)",
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: "0.8rem",
+            fontWeight: 500,
+            letterSpacing: "0.5px",
+            textTransform: "none",
+            backgroundColor: "#000000",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            borderRadius: "8px",
+            padding: "8px 16px",
+            transition: "all 0.2s",
+            "&:hover": {
+              color: "#ffffff",
+              backgroundColor: "rgba(0, 0, 0, 0.8)",
+              borderColor: "rgba(255, 255, 255, 0.2)",
+            },
+          },
+        },
+      ],
     },
   },
 });
