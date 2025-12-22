@@ -1,4 +1,4 @@
-import { useQuery, UseQueryOptions } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 
 export const useApiQuery = <TResponse = void, TSelect = TResponse>(
