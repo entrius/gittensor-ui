@@ -104,3 +104,32 @@ export type MinerEvaluation = {
   totalAdditions?: number;
   totalDeletions?: number;
 };
+
+export type GithubMinerData = {
+  // Core Identity
+  githubId: string;
+  login: string;
+  name: string;
+  avatarUrl: string;
+  htmlUrl: string;
+  type: string;
+  // Account Metadata
+  bio: string;
+  company: string;
+  location: string;
+  blog: string;
+  email: string;
+  twitterUsername: string;
+  hireable: boolean;
+  // Timestamps
+  githubCreatedAt: string;
+  githubUpdatedAt: string;
+  // Stats / Activity
+  publicRepos: number;
+  publicGists: number;
+  followers: number;
+  following: number;
+  // Tracking
+  lastFetchedAt: string;
+  updatedAt: string;
+};

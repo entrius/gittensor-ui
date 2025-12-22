@@ -8,7 +8,6 @@ import {
   Repository,
   LanguageWeight,
   CommitLog,
-  MinerEvaluation,
 } from "./models/Dashboard";
 
 export const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
@@ -20,19 +19,6 @@ export const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
   useApiQuery<TResponse, TSelect>(
     queryName,
     `/dash${url}`,
-    refetchInterval,
-    queryParams,
-  );
-
-export const useMinersQuery = <TResponse = void, TSelect = TResponse>(
-  queryName: string,
-  url: string,
-  refetchInterval?: number,
-  queryParams?: Record<string, string | number | undefined>,
-) =>
-  useApiQuery<TResponse, TSelect>(
-    queryName,
-    `/miners${url}`,
     refetchInterval,
     queryParams,
   );
@@ -96,38 +82,3 @@ export const useInfiniteCommitLog = (options?: {
     retry: false,
   });
 };
-
-// Miner-specific hooks - optimized to use new /miners endpoints
-
-/**
- * Get all pull requests for a specific miner
- * Uses the optimized /miners/:githubId/prs endpoint
- */
-export const useMinerPRs = (githubId: string) =>
-  useMinersQuery<CommitLog[]>("useMinerPRs", `/${githubId}/prs`);
-
-/**
- * Get pre-computed stats for a specific miner (totalScore, baseTotalScore, totalPRs, etc.)
- * Much faster than aggregating PRs - uses the MinerEvaluations table
- */
-export const useMinerStats = (githubId: string) =>
-  useMinersQuery<MinerEvaluation>("useMinerStats", `/${githubId}/stats`);
-
-/**
- * Get all miners' PR data
- * Uses the optimized /miners/all/prs endpoint
- */
-export const useAllMinerData = () =>
-  useMinersQuery<CommitLog[]>("useAllMinerData", "/all/prs");
-
-/**
- * Get all miners' pre-computed stats for leaderboards
- * Much faster than aggregating PRs - uses the MinerEvaluations table
- * Max 256 miners in the subnet
- */
-export const useAllMinerStats = () =>
-  useMinersQuery<MinerEvaluation[]>(
-    "useAllMinerStats",
-    "/stats/all",
-    undefined,
-  );
