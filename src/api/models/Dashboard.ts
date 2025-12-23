@@ -36,37 +36,26 @@ export type Stats = {
     tao: {
       data: {
         price: number;
-        symbol: string;
-        name: string;
-        market_cap: number;
-        volume_24h: number;
-        percent_change_1h: number;
-        percent_change_24h: number;
-        percent_change_7d: number;
-        percent_change_30d: number;
-        last_updated: string;
-      };
-      lastUpdated: string;
-      nextUpdate: string;
+        marketCap: number;
+        volume24h: number;
+        percentChange24h: number;
+        percentChange7d: number;
+        lastUpdated: string;
+        metadata: any;
+      } | null;
+      lastUpdated: string | null;
     };
     alpha: {
       data: {
         price: number;
-        symbol: string;
-        name: string;
-        netuid: number;
-        market_cap: number;
-        liquidity: number;
-        price_change_1_hour: number;
-        price_change_1_day: number;
-        price_change_1_week: number;
-        price_change_1_month: number;
-        tao_volume_24_hr: number;
-        alpha_volume_24_hr: number;
-        timestamp: string;
-      };
-      lastUpdated: string;
-      nextUpdate: string;
+        marketCap: number;
+        volume24h: number;
+        percentChange24h: number;
+        percentChange7d: number;
+        lastUpdated: string;
+        metadata: any;
+      } | null;
+      lastUpdated: string | null;
     };
   };
 };
@@ -98,9 +87,31 @@ export type MinerEvaluation = {
   totalOpenPrs: number;
   totalPrs: number;
   uniqueReposCount: number;
+  // Tier system properties
+  currentTier?: string;
+  totalCollateralScore?: number;
+  totalClosedPrs?: number;
+  totalMergedPrs?: number;
+  // Bronze tier
+  bronzeMergedPrs?: number;
+  bronzeTotalPrs?: number;
+  bronzeCollateralScore?: number;
+  bronzeScore?: number;
+  // Silver tier
+  silverMergedPrs?: number;
+  silverTotalPrs?: number;
+  silverCollateralScore?: number;
+  silverScore?: number;
+  // Gold tier
+  goldMergedPrs?: number;
+  goldTotalPrs?: number;
+  goldCollateralScore?: number;
+  goldScore?: number;
+  // Timestamps
   evaluatedAt: string;
   createdAt: string;
   updatedAt: string;
+  // Additional stats
   totalAdditions?: number;
   totalDeletions?: number;
 };
