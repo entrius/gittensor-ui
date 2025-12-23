@@ -5,7 +5,8 @@ export type RepoChanges = {
   deletions: number;
   linesChanged: number;
   weight: string; // bc float
-  inactiveAt: string;
+  tier: string; // Bronze, Silver, Gold
+  inactiveAt: string | null;
 };
 
 export type Repository = {
@@ -13,7 +14,9 @@ export type Repository = {
   owner: string;
   name: string;
   weight: string; // bc float
-  inactiveAt?: string;
+  tier: string; // Bronze, Silver, Gold
+  additionalAcceptableBranches?: string[] | null;
+  inactiveAt?: string | null;
 };
 
 export type LanguageWeight = {
@@ -26,12 +29,25 @@ export type CommitsTrend = {
   linesCommitted: number | string; // API returns string, needs conversion
 };
 
+/**
+ * Dashboard statistics
+ *
+ * API endpoint: GET /dash/stats
+ * Optional query parameter: tier (Bronze, Silver, or Gold) - filters all stats to specific repository tier
+ *
+ * Examples:
+ * - GET /dash/stats - returns overall stats
+ * - GET /dash/stats?tier=Bronze - returns stats filtered to Bronze tier repositories only
+ * - GET /dash/stats?tier=Silver - returns stats filtered to Silver tier repositories only
+ * - GET /dash/stats?tier=Gold - returns stats filtered to Gold tier repositories only
+ */
 export type Stats = {
   uniqueRepositories: string | number;
   totalLinesChanged: string | number;
   recentLinesChanged: string | number;
   totalIssues: number;
   totalCommits: string | number;
+  tier?: string; // Returned when tier filter is applied
   prices?: {
     tao: {
       data: {
@@ -70,9 +86,10 @@ export type CommitLog = {
   repository: string;
   mergedAt: string;
   author: string;
-  githubId: string; // Numeric GitHub ID
+  githubId?: string; // Numeric GitHub ID - only present in /miners endpoints, not /dash/commits
   score: string; // Backend returns as string
   baseScore?: string; // Backend returns as string
+  tier: string; // Bronze, Silver, Gold - from joined repositories table
 };
 
 export type MinerEvaluation = {
@@ -107,6 +124,11 @@ export type MinerEvaluation = {
   goldTotalPrs?: number;
   goldCollateralScore?: number;
   goldScore?: number;
+  // Credibility metrics (PR success rates as percentages 0-100)
+  credibility?: number;
+  bronzeCredibility?: number;
+  silverCredibility?: number;
+  goldCredibility?: number;
   // Timestamps
   evaluatedAt: string;
   createdAt: string;
