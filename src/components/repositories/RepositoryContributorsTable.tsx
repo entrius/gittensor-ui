@@ -56,7 +56,7 @@ const RepositoryContributorsTable: React.FC<
     if (!allPRs) return [];
 
     const allRepoPRs = allPRs.filter(
-      (pr) => pr.repository === repositoryFullName,
+      (pr) => pr.repository === repositoryFullName && pr.githubId,
     );
 
     const contributorsMap = new Map<
@@ -65,6 +65,7 @@ const RepositoryContributorsTable: React.FC<
     >();
 
     allRepoPRs.forEach((pr) => {
+      if (!pr.githubId) return; // Skip PRs without githubId
       const existing = contributorsMap.get(pr.githubId) || {
         author: pr.author,
         githubId: pr.githubId,

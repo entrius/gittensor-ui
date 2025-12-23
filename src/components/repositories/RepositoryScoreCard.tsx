@@ -41,7 +41,7 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
     );
 
     const uniqueContributors = new Set(
-      allRepoPRs.map((pr) => pr.githubId),
+      allRepoPRs.map((pr) => pr.githubId).filter((id): id is string => !!id),
     ).size;
 
     // Calculate stats for all repositories to determine rankings
@@ -74,6 +74,7 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
     // Count unique contributors per repo
     const repoContributors = new Map<string, Set<string>>();
     allPRs.forEach((pr) => {
+      if (!pr.githubId) return; // Skip PRs without githubId
       if (!repoContributors.has(pr.repository)) {
         repoContributors.set(pr.repository, new Set());
       }
