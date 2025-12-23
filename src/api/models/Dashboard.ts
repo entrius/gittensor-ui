@@ -124,7 +124,7 @@ export type MinerEvaluation = {
   goldTotalPrs?: number;
   goldCollateralScore?: number;
   goldScore?: number;
-  // Credibility metrics (PR success rates as percentages 0-100)
+  // Credibility metrics (PR success rates as decimals 0-1)
   credibility?: number;
   bronzeCredibility?: number;
   silverCredibility?: number;
