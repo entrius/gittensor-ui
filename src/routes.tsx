@@ -21,6 +21,7 @@ const RepositoryDetailsPage = React.lazy(
 );
 const PRDetailsPage = React.lazy(() => import("./pages/PRDetailsPage"));
 const RoadmapPage = React.lazy(() => import("./pages/RoadmapPage"));
+const OnboardPage = React.lazy(() => import("./pages/OnboardPage"));
 
 // 404 page
 const NotFoundPage = React.lazy(() => import("./pages/NotFoundPage"));
@@ -53,6 +54,11 @@ const routesArray: AppRoute[] = [
     name: "repositories",
     path: "/repositories",
     element: <RepositoriesPage />,
+  },
+  {
+    name: "onboard",
+    path: "/onboard",
+    element: <OnboardPage />,
   },
 
   // 404 catch-all route (must be last)

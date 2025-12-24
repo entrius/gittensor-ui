@@ -25,6 +25,9 @@ export * from "./RoadmapPage";
 export { default as RepositoryDetailsPage } from "./RepositoryDetailsPage";
 export * from "./RepositoryDetailsPage";
 
+export { default as OnboardPage } from "./OnboardPage";
+export * from "./OnboardPage";
+
 export { default as TopMinersPage } from "./TopMinersPage";
 export * from "./TopMinersPage";
 

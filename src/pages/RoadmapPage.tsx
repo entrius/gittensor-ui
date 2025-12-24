@@ -90,7 +90,7 @@ const RoadmapItem: React.FC<RoadmapItemProps> = ({
   </Box>
 );
 
-const RoadmapPage: React.FC = () => {
+export const RoadmapContent: React.FC = () => {
   const roadmapItems = [
     {
       title: "Issue Bounty Marketplace",
@@ -119,122 +119,110 @@ const RoadmapPage: React.FC = () => {
   ];
 
   return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "100%",
+      }}
+    >
+      <Box
+        sx={{
+          maxWidth: 1400,
+          width: "100%",
+          px: { xs: 2, sm: 3, md: 4 },
+        }}
+      >
+        {/* Roadmap Grid */}
+        <Grid
+          container
+          spacing={{ xs: 3, sm: 3, lg: 3 }}
+          sx={{
+            position: "relative",
+          }}
+        >
+          {roadmapItems.map((item, index) => (
+            <Grid item xs={12} sm={6} lg={3} key={index}>
+              <RoadmapItem {...item} />
+            </Grid>
+          ))}
+        </Grid>
+
+        {/* Vision Statement */}
+        <Box
+          sx={{
+            mt: { xs: 4, sm: 5, md: 6 },
+            p: { xs: 3, sm: 4 },
+            borderRadius: 3,
+            backgroundColor: "rgba(0, 0, 0, 0.3)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <Typography
+            variant="h5"
+            fontWeight="bold"
+            gutterBottom
+            sx={{
+              mb: 2.5,
+              fontSize: { xs: "1.2rem", sm: "1.3rem" },
+              color: "#ffffff",
+              fontFamily: '"JetBrains Mono", monospace',
+              letterSpacing: "0.02em",
+            }}
+          >
+            The Vision
+          </Typography>
+          <Typography
+            variant="body1"
+            lineHeight={1.8}
+            color="rgba(255, 255, 255, 0.9)"
+            fontSize={{ xs: "0.95rem", sm: "1rem" }}
+            sx={{ mb: 2 }}
+          >
+            Gittensor is the only subnet that turns code into a liquid, incentivized, self-improving global asset. We produced more than 300,000 lines of merged production code in just the first few weeks.
+          </Typography>
+          <Typography
+            variant="body1"
+            lineHeight={1.8}
+            color="rgba(255, 255, 255, 0.9)"
+            fontSize={{ xs: "0.95rem", sm: "1rem" }}
+            sx={{ mb: 2 }}
+          >
+            The issue marketplace has the potential to fundamentally reshape how software is built by enabling open, scalable, and market‑driven contribution flows. It directly competes with and ultimately replaces the capabilities of Anthropic's Claude coding workflows, Cursor, Windsurf, Google's Antigravity platform, Devin‑style agent platforms, OpenAI's Codex, and every emerging AI coding assistant.
+          </Typography>
+          <Typography
+            variant="body1"
+            lineHeight={1.8}
+            color="rgba(255, 255, 255, 0.9)"
+            fontSize={{ xs: "0.95rem", sm: "1rem" }}
+          >
+            The combined valuations of these companies vastly exceeds{" "}
+            <Box
+              component="span"
+              sx={{ color: "secondary.main", fontWeight: 600 }}
+            >
+              one trillion dollars
+            </Box>
+            . Gittensor offers a decentralized, collectively owned alternative that improves real production software at global scale. This subnet turns the idea of "autonomous agents" into a real, operational technology.
+          </Typography>
+        </Box>
+      </Box>
+    </Box>
+  );
+};
+
+const RoadmapPage: React.FC = () => {
+  return (
     <Page title="Roadmap">
       <SEO
         title="Roadmap - Gittensor"
         description="Explore Gittensor's development roadmap from issue bounty marketplace to full end-to-end autonomous software development."
       />
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: { xs: "auto", md: "calc(100vh - 80px)" },
-          width: "100%",
-          py: { xs: 4, sm: 5, md: 6 },
-        }}
-      >
-        <Box
-          sx={{
-            maxWidth: 1400,
-            width: "100%",
-            px: { xs: 2, sm: 3, md: 4 },
-          }}
-        >
-          {/* Roadmap Grid */}
-          <Grid
-            container
-            spacing={{ xs: 3, sm: 3, lg: 3 }}
-            sx={{
-              position: "relative",
-            }}
-          >
-            {roadmapItems.map((item, index) => (
-              <Grid item xs={12} sm={6} lg={3} key={index}>
-                <RoadmapItem {...item} />
-              </Grid>
-            ))}
-          </Grid>
-
-          {/* Vision Statement */}
-          <Box
-            sx={{
-              mt: { xs: 4, sm: 5, md: 6 },
-              p: { xs: 3, sm: 4 },
-              borderRadius: 3,
-              backgroundColor: "rgba(0, 0, 0, 0.3)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            <Typography
-              variant="h5"
-              fontWeight="bold"
-              gutterBottom
-              sx={{
-                mb: 2.5,
-                fontSize: { xs: "1.2rem", sm: "1.3rem" },
-                color: "#ffffff",
-                fontFamily: '"JetBrains Mono", monospace',
-                letterSpacing: "0.02em",
-              }}
-            >
-              The Vision
-            </Typography>
-            <Typography
-              variant="body1"
-              lineHeight={1.8}
-              color="rgba(255, 255, 255, 0.9)"
-              fontSize={{ xs: "0.95rem", sm: "1rem" }}
-              sx={{ mb: 2 }}
-            >
-              Gittensor is the only subnet that turns code into a liquid,
-              incentivized, self-improving global asset. We have already
-              produced more than{" "}
-              <Box
-                component="span"
-                sx={{ color: "secondary.main", fontWeight: 600 }}
-              >
-                300,000 lines
-              </Box>{" "}
-              of merged production code in just a few weeks.
-            </Typography>
-            <Typography
-              variant="body1"
-              lineHeight={1.8}
-              color="rgba(255, 255, 255, 0.9)"
-              fontSize={{ xs: "0.95rem", sm: "1rem" }}
-              sx={{ mb: 2 }}
-            >
-              The issue marketplace has the potential to fundamentally reshape
-              how software is built by enabling open, scalable, and
-              market‑driven contribution flows. It directly competes with and
-              ultimately replaces the capabilities of Anthropic's Claude coding
-              workflows, Cursor, Windsurf, Google's Antigravity platform,
-              Devin‑style agent platforms, OpenAI's Codex, and every emerging AI
-              coding assistant.
-            </Typography>
-            <Typography
-              variant="body1"
-              lineHeight={1.8}
-              color="rgba(255, 255, 255, 0.9)"
-              fontSize={{ xs: "0.95rem", sm: "1rem" }}
-            >
-              The combined valuations of these companies exceed{" "}
-              <Box
-                component="span"
-                sx={{ color: "secondary.main", fontWeight: 600 }}
-              >
-                one trillion dollars
-              </Box>
-              . Gittensor offers a decentralized, collectively owned alternative
-              that improves real production software at global scale. This
-              subnet turns the idea of "autonomous agents" into a real,
-              operational technology.
-            </Typography>
-          </Box>
-        </Box>
+      <Box sx={{ minHeight: { xs: "auto", md: "calc(100vh - 80px)" }, py: { xs: 4, sm: 5, md: 6 }, display: 'flex' }}>
+        <RoadmapContent />
       </Box>
     </Page>
   );
