@@ -166,3 +166,36 @@ export type GithubMinerData = {
   lastFetchedAt: string;
   updatedAt: string;
 };
+
+export type PullRequestDetails = {
+  number: number;
+  repositoryFullName: string;
+  uid: number;
+  hotkey: string;
+  githubId: string;
+  title: string;
+  authorLogin: string;
+  mergedAt: string | null;
+  prCreatedAt: string;
+  prState: string;
+  repoWeightMultiplier: number;
+  baseScore: number;
+  issueMultiplier: number;
+  openPrSpamMultiplier: number;
+  repositoryUniquenessMultiplier: number;
+  timeDecayMultiplier: number;
+  gittensorTagMultiplier: number;
+  credibilityMultiplier: number;
+  earnedScore: number;
+  collateralScore: number;
+  additions: number;
+  deletions: number;
+  commits: number;
+  totalLinesScored: number;
+  gittensorTagged: boolean;
+  mergedByLogin: string | null;
+  description: string | null;
+  lastEditedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};

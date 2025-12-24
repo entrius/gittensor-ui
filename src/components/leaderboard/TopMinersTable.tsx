@@ -38,6 +38,7 @@ interface MinerStats {
   hotkey: string;
   rank?: number;
   uniqueReposCount?: number;
+  credibility?: number;
 }
 
 interface TopMinersTableProps {
@@ -371,6 +372,16 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
               </TableCell>
               <TableCell
                 align="right"
+                sx={{
+                  ...headerCellStyle,
+                  color: "secondary.main",
+                  width: "10%",
+                }}
+              >
+                Credibility
+              </TableCell>
+              <TableCell
+                align="right"
                 sx={{ ...headerCellStyle, width: "10%" }}
               >
                 PRs
@@ -475,6 +486,21 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                       }}
                     >
                       {Number(miner.totalScore || 0).toFixed(2)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ ...bodyCellStyle, width: "10%" }}
+                  >
+                    <Typography
+                      sx={{
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        color: "#ffffff"
+                      }}
+                    >
+                      {((miner.credibility || 0) * 100).toFixed(1)}%
                     </Typography>
                   </TableCell>
                   <TableCell

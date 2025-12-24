@@ -44,6 +44,7 @@ const TopMinersPage: React.FC = () => {
             linesDeleted: Number(stat.totalDeletions) || 0,
             hotkey: stat.hotkey || "N/A",
             uniqueReposCount: Number(stat.uniqueReposCount) || 0,
+            credibility: Number(stat.credibility) || 0,
         }));
     }, [allMinersStats, githubIdToUsername]);
 

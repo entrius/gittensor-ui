@@ -48,7 +48,7 @@ const MinerDetailsPage: React.FC = () => {
             px: { xs: 2, sm: 2, md: 0 },
           }}
         >
-          <BackButton to="/miners" />
+          <BackButton to="/top-miners" />
 
           {/* Miner Score Card */}
           <MinerScoreCard githubId={githubId} />
