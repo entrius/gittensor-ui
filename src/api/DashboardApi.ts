@@ -8,7 +8,6 @@ import {
   Repository,
   LanguageWeight,
   CommitLog,
-  PullRequestDetails,
 } from "./models/Dashboard";
 
 export const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
@@ -83,11 +82,3 @@ export const useInfiniteCommitLog = (options?: {
     retry: false,
   });
 };
-
-export const usePullRequestDetails = (repo: string, number: number) =>
-  useDashboardQuery<PullRequestDetails>(
-    "usePullRequestDetails",
-    "/pr",
-    undefined,
-    { repo, number },
-  );

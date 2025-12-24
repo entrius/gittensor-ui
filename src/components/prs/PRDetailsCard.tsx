@@ -95,12 +95,12 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   const statItems = [
     {
       label: "Score",
-      value: Number(prDetails.earnedScore).toFixed(4),
+      value: parseFloat(prDetails.earnedScore).toFixed(4),
       rank: prRank,
     },
     {
       label: "Base Score",
-      value: Number(prDetails.baseScore).toFixed(4),
+      value: parseFloat(prDetails.baseScore).toFixed(4),
       rank: null,
       color: "rgba(255, 255, 255, 0.7)",
     },
@@ -123,12 +123,12 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   ];
 
   const multipliers = [
-    { label: "Repo Weight", value: `${prDetails.repoWeightMultiplier.toFixed(2)}x` },
-    { label: "Issue Bonus", value: `${prDetails.issueMultiplier.toFixed(2)}x` },
-    { label: "Credibility", value: `${prDetails.credibilityMultiplier.toFixed(2)}x` },
-    { label: "Repo Unique", value: `${prDetails.repositoryUniquenessMultiplier.toFixed(2)}x` },
-    { label: "Time Decay", value: `${prDetails.timeDecayMultiplier.toFixed(2)}x` },
-    { label: "Tag Bonus", value: `${prDetails.gittensorTagMultiplier.toFixed(2)}x` },
+    { label: "Repo Weight", value: `${parseFloat(prDetails.repoWeightMultiplier).toFixed(2)}x` },
+    { label: "Issue Bonus", value: `${parseFloat(prDetails.issueMultiplier).toFixed(2)}x` },
+    { label: "Credibility", value: `${parseFloat(prDetails.credibilityMultiplier).toFixed(2)}x` },
+    { label: "Repo Unique", value: `${parseFloat(prDetails.repositoryUniquenessMultiplier).toFixed(2)}x` },
+    { label: "Time Decay", value: `${parseFloat(prDetails.timeDecayMultiplier).toFixed(2)}x` },
+    { label: "Tag Bonus", value: `${parseFloat(prDetails.gittensorTagMultiplier).toFixed(2)}x` },
   ];
 
   return (

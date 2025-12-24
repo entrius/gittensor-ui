@@ -111,16 +111,19 @@ export type MinerEvaluation = {
   totalMergedPrs?: number;
   // Bronze tier
   bronzeMergedPrs?: number;
+  bronzeClosedPrs?: number;
   bronzeTotalPrs?: number;
   bronzeCollateralScore?: number;
   bronzeScore?: number;
   // Silver tier
   silverMergedPrs?: number;
+  silverClosedPrs?: number;
   silverTotalPrs?: number;
   silverCollateralScore?: number;
   silverScore?: number;
   // Gold tier
   goldMergedPrs?: number;
+  goldClosedPrs?: number;
   goldTotalPrs?: number;
   goldCollateralScore?: number;
   goldScore?: number;
@@ -178,16 +181,16 @@ export type PullRequestDetails = {
   mergedAt: string | null;
   prCreatedAt: string;
   prState: string;
-  repoWeightMultiplier: number;
-  baseScore: number;
-  issueMultiplier: number;
-  openPrSpamMultiplier: number;
-  repositoryUniquenessMultiplier: number;
-  timeDecayMultiplier: number;
-  gittensorTagMultiplier: number;
-  credibilityMultiplier: number;
-  earnedScore: number;
-  collateralScore: number;
+  repoWeightMultiplier: string; // float returned as string
+  baseScore: string; // float returned as string
+  issueMultiplier: string; // float returned as string
+  openPrSpamMultiplier: string; // float returned as string
+  repositoryUniquenessMultiplier: string; // float returned as string
+  timeDecayMultiplier: string; // float returned as string
+  gittensorTagMultiplier: string; // float returned as string
+  credibilityMultiplier: string; // float returned as string
+  earnedScore: string; // float returned as string
+  collateralScore: string; // float returned as string
   additions: number;
   deletions: number;
   commits: number;
@@ -198,4 +201,5 @@ export type PullRequestDetails = {
   lastEditedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  tier: string; // Bronze, Silver, Gold
 };

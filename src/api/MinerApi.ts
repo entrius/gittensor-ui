@@ -1,6 +1,11 @@
 // Miner-specific hooks - optimized to use new /miners endpoints
 import { useApiQuery } from "./ApiUtils";
-import { CommitLog, GithubMinerData, MinerEvaluation } from "./models/Dashboard";
+import {
+  CommitLog,
+  GithubMinerData,
+  MinerEvaluation,
+  PullRequestDetails,
+} from "./models/Dashboard";
 
 export const useMinersQuery = <TResponse = void, TSelect = TResponse>(
   queryName: string,
@@ -54,3 +59,15 @@ export const useAllMinerStats = () =>
  */
 export const useMinerGithubData = (githubId: string) =>
   useMinersQuery<GithubMinerData>("useMinerGithubData", `/${githubId}/github`);
+
+/**
+ * Get detailed information for a specific pull request
+ * Uses the /miners/pr endpoint with repo and number query parameters
+ */
+export const usePullRequestDetails = (repo: string, number: number) =>
+  useMinersQuery<PullRequestDetails>(
+    "usePullRequestDetails",
+    "/pr",
+    undefined,
+    { repo, number },
+  );
