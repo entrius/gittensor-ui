@@ -426,11 +426,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
-                transition: "all 0.2s ease-in-out",
-                "&:hover": {
-                  backgroundColor: "rgba(255, 255, 255, 0.05)",
-                  borderColor: "rgba(255, 255, 255, 0.15)",
-                }
               }}
             >
               <Box>
@@ -509,47 +504,18 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                     </Box>
                   )}
                 </Box>
-                {item.link ? (
-                  <a
-                    href={item.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      color: "#ffffff",
-                      textDecoration: "none",
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        color: "#ffffff",
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "1.1rem",
-                        fontWeight: 600,
-                        wordBreak: "break-all",
-                        lineHeight: 1.2,
-                        "&:hover": {
-                          color: "primary.main",
-                        },
-                        transition: "color 0.2s",
-                      }}
-                    >
-                      {String(item.value)}
-                    </Typography>
-                  </a>
-                ) : (
-                  <Typography
-                    sx={{
-                      color: item.color || "#ffffff",
-                      fontFamily: '"JetBrains Mono", monospace',
-                      fontSize: "1.1rem",
-                      fontWeight: 600,
-                      wordBreak: "break-all",
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    {String(item.value)}
-                  </Typography>
-                )}
+                <Typography
+                  sx={{
+                    color: item.color || "#ffffff",
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: "1.1rem",
+                    fontWeight: 600,
+                    wordBreak: "break-all",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {String(item.value)}
+                </Typography>
               </Box>
               {item.subValue && (
                 <Box
