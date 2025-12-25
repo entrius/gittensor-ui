@@ -25,8 +25,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "merged">("all");
 
-  // Filter PRs by selected repository and author
+  // Filter PRs by selected repository, author, and status
   const filteredPRs = useMemo(() => {
     if (!prs) return [];
     let filtered = prs;
@@ -36,8 +37,13 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     if (selectedAuthor) {
       filtered = filtered.filter((pr) => pr.author === selectedAuthor);
     }
+    if (statusFilter === "open") {
+      filtered = filtered.filter((pr) => !pr.mergedAt);
+    } else if (statusFilter === "merged") {
+      filtered = filtered.filter((pr) => pr.mergedAt);
+    }
     return filtered;
-  }, [prs, selectedRepo, selectedAuthor]);
+  }, [prs, selectedRepo, selectedAuthor, statusFilter]);
 
   // Get unique repositories for quick filters
   const uniqueRepos = useMemo(() => {
@@ -109,7 +115,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 fontWeight: 500,
               }}
             >
-              Scored Pull Requests
+              Pull Requests
             </Typography>
             <Typography
               sx={{
@@ -119,10 +125,81 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               }}
             >
               ({filteredPRs.length}
-              {selectedRepo || selectedAuthor ? ` of ${prs?.length || 0}` : ""})
+              {selectedRepo || selectedAuthor || statusFilter !== "all"
+                ? ` of ${prs?.length || 0}`
+                : ""}
+              )
             </Typography>
           </Box>
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+            <Box sx={{ display: "flex", gap: 0.5, mr: 1 }}>
+              <Chip
+                label="All"
+                onClick={() => setStatusFilter("all")}
+                sx={{
+                  backgroundColor:
+                    statusFilter === "all"
+                      ? "rgba(255, 255, 255, 0.2)"
+                      : "transparent",
+                  color: statusFilter === "all" ? "#ffffff" : "rgba(255, 255, 255, 0.5)",
+                  border: "1px solid",
+                  borderColor:
+                    statusFilter === "all"
+                      ? "rgba(255, 255, 255, 0.3)"
+                      : "rgba(255, 255, 255, 0.1)",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: "0.75rem",
+                  height: "24px",
+                  "&:hover": {
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  },
+                }}
+              />
+              <Chip
+                label="Open"
+                onClick={() => setStatusFilter("open")}
+                sx={{
+                  backgroundColor:
+                    statusFilter === "open"
+                      ? "rgba(46, 160, 67, 0.2)"
+                      : "transparent",
+                  color: statusFilter === "open" ? "#3fb950" : "rgba(255, 255, 255, 0.5)",
+                  border: "1px solid",
+                  borderColor:
+                    statusFilter === "open"
+                      ? "rgba(46, 160, 67, 0.3)"
+                      : "rgba(255, 255, 255, 0.1)",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: "0.75rem",
+                  height: "24px",
+                  "&:hover": {
+                    backgroundColor: "rgba(46, 160, 67, 0.1)",
+                  },
+                }}
+              />
+              <Chip
+                label="Merged"
+                onClick={() => setStatusFilter("merged")}
+                sx={{
+                  backgroundColor:
+                    statusFilter === "merged"
+                      ? "rgba(163, 113, 247, 0.2)"
+                      : "transparent",
+                  color: statusFilter === "merged" ? "#a371f7" : "rgba(255, 255, 255, 0.5)",
+                  border: "1px solid",
+                  borderColor:
+                    statusFilter === "merged"
+                      ? "rgba(163, 113, 247, 0.3)"
+                      : "rgba(255, 255, 255, 0.1)",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: "0.75rem",
+                  height: "24px",
+                  "&:hover": {
+                    backgroundColor: "rgba(163, 113, 247, 0.1)",
+                  },
+                }}
+              />
+            </Box>
             {selectedRepo && (
               <Chip
                 label={`Repo: ${selectedRepo}`}
@@ -185,7 +262,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               fontSize: "0.9rem",
             }}
           >
-            No PRs found for {selectedRepo}
+            No PRs found for the selected filters
           </Typography>
         </Box>
       ) : (
@@ -216,6 +293,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           >
             <TableHead>
               <TableRow>
+                <TableCell sx={{ ...headerCellStyle, width: "50px" }}>
+                  Status
+                </TableCell>
                 <TableCell sx={headerCellStyle}>PR #</TableCell>
                 <TableCell sx={headerCellStyle}>Title</TableCell>
                 <TableCell
@@ -245,7 +325,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     display: { xs: "none", sm: "table-cell" },
                   }}
                 >
-                  Merged
+                  Date
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -266,6 +346,36 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     transition: "background-color 0.2s",
                   }}
                 >
+                  <TableCell
+                    sx={{
+                      ...bodyCellStyle,
+                      width: "50px",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        color: !pr.mergedAt ? "#3fb950" : "#a371f7",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {!pr.mergedAt ? (
+                        // Open PR Icon
+                        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+                          <path d="M7.177 3.073L9.573.677A.25.25 0 0110 .854v4.792a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354zM3.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 113 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zM11 2.5h-1V4h1a1 1 0 011 1v5.628a2.251 2.251 0 101.5 0V5A2.5 2.5 0 0011 2.5zm1 10.25a.75.75 0 111.5 0 .75.75 0 01-1.5 0zM3.75 12a.75.75 0 100 1.5.75.75 0 000-1.5z"></path>
+                        </svg>
+                      ) : (
+                        // Merged PR Icon
+                        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+                          <path d="M5.45 5.11L2 1.66V4h1.5l1.95 3.35L3.5 10.7H2v2.34L5.45 9.59l4.49 7.77V18h1.86V1.11H9.94l-4.49 4zm.8 4.48L4.65 6.89 6.25 4.13l1.6 2.76-1.6 2.7z"></path>
+                          <path d="M5.45 5.11L2 1.66V4h1.5l1.95 3.35L3.5 10.7H2v2.34L5.45 9.59l4.49 7.77V18h1.86V1.11H9.94l-4.49 4zm.8 4.48L4.65 6.89 6.25 4.13l1.6 2.76-1.6 2.7z" fill-rule="evenodd"></path>
+                          <path d="M5 3.254V3.25v.005a.75.75 0 1 1 0-.005v.004zm.75.75a.75.75 0 1 0-.005-.005l.005.005zm0 9a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zm10.25-7.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0z"></path>
+                          <path d="M10.293 1.293a1 1 0 011.414 0l2 2a1 1 0 010 1.414l-2 2a1 1 0 01-1.414-1.414L11.586 4H10a1 1 0 00-1 1v8.379l-1.06-1.06a1.003 1.003 0 00-1.42 1.42l3 3a1 1 0 001.42 0l3-3a1 1 0 00-1.42-1.42l-1.29 1.29V5a3 3 0 013-3h1.586l-1.293-1.293a1 1 0 010-1.414z"></path>
+                        </svg>
+                      )}
+                    </Box>
+                  </TableCell>
                   <TableCell
                     sx={{
                       ...bodyCellStyle,
@@ -312,7 +422,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     }}
                   >
                     <Box
-                      onClick={() => setSelectedRepo(pr.repository)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedRepo(pr.repository);
+                      }}
                       sx={{
                         display: "flex",
                         alignItems: "center",
@@ -374,15 +487,42 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     align="right"
                     sx={{ ...bodyCellStyle, width: { xs: "25%", sm: "10%" } }}
                   >
-                    <Typography
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: { xs: "0.7rem", sm: "0.75rem" },
-                        fontWeight: 600,
-                      }}
-                    >
-                      {parseFloat(pr.score).toFixed(4)}
-                    </Typography>
+                    <Box>
+                      {!pr.mergedAt && pr.collateralScore ? (
+                        <Typography
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                            fontWeight: 600,
+                            color: "#fb923c"
+                          }}
+                        >
+                          {parseFloat(pr.collateralScore).toFixed(4)}
+                        </Typography>
+                      ) : (
+                        <Typography
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                            fontWeight: 600,
+                          }}
+                        >
+                          {parseFloat(pr.score).toFixed(4)}
+                        </Typography>
+                      )}
+                      {!pr.mergedAt && pr.collateralScore && (
+                        <Typography
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.6rem",
+                            color: "rgba(255,255,255,0.5)"
+                          }}
+                        >
+                          Collateral
+                        </Typography>
+                      )}
+                    </Box>
+
                   </TableCell>
                   <TableCell
                     align="right"
@@ -391,9 +531,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                       width: "15%",
                       display: { xs: "none", sm: "table-cell" },
                       fontSize: { xs: "0.75rem", sm: "0.85rem" },
+                      color: "rgba(255,255,255,0.7)"
                     }}
                   >
-                    {new Date(pr.mergedAt).toLocaleDateString()}
+                    {pr.mergedAt ? new Date(pr.mergedAt).toLocaleDateString() : "Open"}
                   </TableCell>
                 </TableRow>
               ))}

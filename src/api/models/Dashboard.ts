@@ -84,7 +84,9 @@ export type CommitLog = {
   deletions: number;
   commitCount: number;
   repository: string;
-  mergedAt: string;
+  mergedAt: string | null;
+  prState?: string;
+  collateralScore?: string;
   author: string;
   githubId?: string; // Numeric GitHub ID - only present in /miners endpoints, not /dash/commits
   score: string; // Backend returns as string

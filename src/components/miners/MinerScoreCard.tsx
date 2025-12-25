@@ -209,6 +209,17 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
         rank: rankings?.uniqueRepos,
       },
       {
+        label: "Open PRs",
+        value: Number(minerStats.totalOpenPrs || 0),
+        rank: null,
+      },
+      {
+        label: "Open Collateral",
+        value: Number(minerStats.totalCollateralScore || 0).toFixed(4),
+        rank: null,
+        color: "#fb923c", // Orange for pending/open
+      },
+      {
         label: "Top PR",
         value: topPR ? parseFloat(topPR.score || "0").toFixed(4) : "N/A",
         rank: topPRRank,
