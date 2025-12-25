@@ -18,6 +18,14 @@ import {
   CheckCircle as HireableIcon,
   GitHub as GitHubIcon,
   People as FollowersIcon,
+  VerifiedUser as CredibilityIcon,
+  Score as ScoreIcon,
+  Commit as CommitIcon,
+  Code as CodeIcon,
+  AccountTree as RepoIcon,
+  PendingActions as PendingIcon,
+  Warning as CollateralIcon,
+  Star as StarIcon,
 } from "@mui/icons-material";
 import {
   useMinerStats,
@@ -171,6 +179,8 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
     link?: string | null;
     color?: string;
     subValue?: string;
+    icon: React.ReactNode;
+    bgGradient: string;
   }> = [
       {
         label: "Credibility",
@@ -187,37 +197,51 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                   ? "#fb923c" // Orange
                   : "#f87171", // Red
         subValue: `${minerStats.totalMergedPrs || 0} Merged / ${minerStats.totalClosedPrs || 0} Closed`,
+        icon: <CredibilityIcon sx={{ opacity: 0.8 }} />,
+        bgGradient: "linear-gradient(135deg, rgba(74, 222, 128, 0.1) 0%, rgba(74, 222, 128, 0.05) 100%)",
       },
       {
         label: "Current Score",
         value: Number(minerStats.totalScore).toFixed(4),
         rank: rankings?.score,
+        icon: <ScoreIcon sx={{ opacity: 0.8 }} />,
+        bgGradient: "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)",
       },
       {
         label: "Total PRs",
         value: Number(minerStats.totalPrs || 0),
         rank: rankings?.totalPrs,
+        icon: <CommitIcon sx={{ opacity: 0.8 }} />,
+        bgGradient: "linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)",
       },
       {
         label: "Scored Lines",
         value: Number(minerStats.totalLinesChanged || 0).toLocaleString(),
         rank: rankings?.linesChanged,
+        icon: <CodeIcon sx={{ opacity: 0.8 }} />,
+        bgGradient: "linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(236, 72, 153, 0.05) 100%)",
       },
       {
         label: "Unique Repos",
         value: Number(minerStats.uniqueReposCount || 0),
         rank: rankings?.uniqueRepos,
+        icon: <RepoIcon sx={{ opacity: 0.8 }} />,
+        bgGradient: "linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%)",
       },
       {
         label: "Open PRs",
         value: Number(minerStats.totalOpenPrs || 0),
         rank: null,
+        icon: <PendingIcon sx={{ opacity: 0.8, color: "#facc15" }} />,
+        bgGradient: "linear-gradient(135deg, rgba(250, 204, 21, 0.1) 0%, rgba(250, 204, 21, 0.05) 100%)",
       },
       {
         label: "Open Collateral",
         value: Number(minerStats.totalCollateralScore || 0).toFixed(4),
         rank: null,
         color: "#fb923c", // Orange for pending/open
+        icon: <CollateralIcon sx={{ opacity: 0.8, color: "#fb923c" }} />,
+        bgGradient: "linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%)",
       },
       {
         label: "Top PR",
@@ -226,6 +250,8 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
         link: topPR
           ? `https://github.com/${topPR.repository}/pull/${topPR.pullRequestNumber}`
           : null,
+        icon: <StarIcon sx={{ opacity: 0.8, color: "#fbbf24" }} />,
+        bgGradient: "linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(251, 191, 36, 0.05) 100%)",
       },
     ];
 
@@ -416,145 +442,154 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
 
       <Grid container spacing={2}>
         {statItems.map((item, index) => (
-          <Grid item xs={12} sm={6} md={4} lg={2} key={index}>
+          <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
             <Box
               sx={{
-                backgroundColor: "transparent",
+                background: item.bgGradient,
                 borderRadius: 3,
-                border: "1px solid rgba(255, 255, 255, 0.1)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
                 p: 2.5,
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: "center",
+                justifyContent: "space-between",
+                transition: "all 0.2s ease-in-out",
+                "&:hover": {
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 8px 16px rgba(0,0,0,0.2)",
+                  border: "1px solid rgba(255, 255, 255, 0.15)",
+                },
+                position: "relative",
+                overflow: "hidden"
               }}
             >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                  mb: 1,
-                }}
-              >
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
                 <Typography
                   sx={{
-                    color: "rgba(255, 255, 255, 0.5)",
+                    color: "rgba(255, 255, 255, 0.6)",
                     fontFamily: '"JetBrains Mono", monospace',
-                    fontSize: "0.7rem",
+                    fontSize: "0.75rem",
                     textTransform: "uppercase",
-                    letterSpacing: "1px",
+                    letterSpacing: "0.5px",
                     fontWeight: 600,
                   }}
                 >
                   {item.label}
                 </Typography>
-                {item.rank && (
-                  <Box
-                    sx={{
-                      backgroundColor: "#000000",
-                      borderRadius: "2px",
-                      width: "20px",
-                      height: "20px",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                      border: "1px solid",
-                      borderColor:
-                        item.rank === 1
-                          ? "rgba(255, 215, 0, 0.4)"
-                          : item.rank === 2
-                            ? "rgba(192, 192, 192, 0.4)"
-                            : item.rank === 3
-                              ? "rgba(205, 127, 50, 0.4)"
-                              : "rgba(255, 255, 255, 0.15)",
-                      boxShadow:
-                        item.rank === 1
-                          ? "0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)"
-                          : item.rank === 2
-                            ? "0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)"
-                            : item.rank === 3
-                              ? "0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)"
-                              : "none",
-                    }}
-                  >
-                    <Typography
-                      component="span"
-                      sx={{
-                        color:
-                          item.rank === 1
-                            ? "#FFD700"
-                            : item.rank === 2
-                              ? "#C0C0C0"
-                              : item.rank === 3
-                                ? "#CD7F32"
-                                : "rgba(255, 255, 255, 0.6)",
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.6rem",
-                        fontWeight: 600,
-                        lineHeight: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
+                <Box sx={{ color: "rgba(255,255,255,0.2)" }}>
+                  {item.icon}
+                </Box>
+              </Box>
+
+              <Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  {item.link ? (
+                    <a
+                      href={item.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        color: "#ffffff",
+                        textDecoration: "none",
                       }}
                     >
-                      {item.rank}
+                      <Typography
+                        sx={{
+                          color: "#ffffff",
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: "1.25rem",
+                          fontWeight: 700,
+                          wordBreak: "break-all",
+                          "&:hover": {
+                            color: "primary.main",
+                          },
+                          transition: "color 0.2s",
+                        }}
+                      >
+                        {String(item.value)}
+                      </Typography>
+                    </a>
+                  ) : (
+                    <Typography
+                      sx={{
+                        color: item.color || "#ffffff",
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: "1.25rem",
+                        fontWeight: 700,
+                        wordBreak: "break-all",
+                      }}
+                    >
+                      {String(item.value)}
                     </Typography>
-                  </Box>
-                )}
-              </Box>
-              {item.link ? (
-                <a
-                  href={item.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: "#ffffff",
-                    textDecoration: "none",
-                  }}
-                >
+                  )}
+
+                  {item.rank && (
+                    <Box
+                      sx={{
+                        backgroundColor: "#000000",
+                        borderRadius: "4px",
+                        minWidth: "24px",
+                        height: "24px",
+                        px: 0.5,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        border: "1px solid",
+                        borderColor:
+                          item.rank === 1
+                            ? "rgba(255, 215, 0, 0.4)"
+                            : item.rank === 2
+                              ? "rgba(192, 192, 192, 0.4)"
+                              : item.rank === 3
+                                ? "rgba(205, 127, 50, 0.4)"
+                                : "rgba(255, 255, 255, 0.15)",
+                        boxShadow:
+                          item.rank === 1
+                            ? "0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)"
+                            : item.rank === 2
+                              ? "0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)"
+                              : item.rank === 3
+                                ? "0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)"
+                                : "none",
+                      }}
+                    >
+                      <Typography
+                        component="span"
+                        sx={{
+                          color:
+                            item.rank === 1
+                              ? "#FFD700"
+                              : item.rank === 2
+                                ? "#C0C0C0"
+                                : item.rank === 3
+                                  ? "#CD7F32"
+                                  : "rgba(255, 255, 255, 0.6)",
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: "0.7rem",
+                          fontWeight: 700,
+                          lineHeight: 1,
+                        }}
+                      >
+                        #{item.rank}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+
+                {item.subValue && (
                   <Typography
                     sx={{
-                      color: "#ffffff",
+                      color: "rgba(255, 255, 255, 0.4)",
                       fontFamily: '"JetBrains Mono", monospace',
-                      fontSize: "1.5rem",
-                      fontWeight: 600,
-                      wordBreak: "break-all",
-                      "&:hover": {
-                        color: "primary.main",
-                      },
-                      transition: "color 0.2s",
+                      fontSize: "0.7rem",
+                      mt: 0.5,
                     }}
                   >
-                    {String(item.value)}
+                    {item.subValue}
                   </Typography>
-                </a>
-              ) : (
-                <Typography
-                  sx={{
-                    color: item.color || "#ffffff",
-                    fontFamily: '"JetBrains Mono", monospace',
-                    fontSize: "1.5rem",
-                    fontWeight: 600,
-                    wordBreak: "break-all",
-                  }}
-                >
-                  {String(item.value)}
-                </Typography>
-              )}
-              {item.subValue && (
-                <Typography
-                  sx={{
-                    color: "rgba(255, 255, 255, 0.4)",
-                    fontFamily: '"JetBrains Mono", monospace',
-                    fontSize: "0.75rem",
-                    mt: 0.5,
-                  }}
-                >
-                  {item.subValue}
-                </Typography>
-              )}
+                )}
+              </Box>
             </Box>
           </Grid>
         ))}
