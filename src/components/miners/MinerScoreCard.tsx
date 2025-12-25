@@ -415,7 +415,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
 
       <Grid container spacing={2}>
         {statItems.map((item, index) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} xl={2} key={index}>
+          <Grid item xs={12} sm={6} md={3} key={index}>
             <Box
               sx={{
                 backgroundColor: "rgba(255, 255, 255, 0.03)",
@@ -523,7 +523,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                       sx={{
                         color: "#ffffff",
                         fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "1.4rem",
+                        fontSize: "1.1rem",
                         fontWeight: 600,
                         wordBreak: "break-all",
                         lineHeight: 1.2,
@@ -541,7 +541,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                     sx={{
                       color: item.color || "#ffffff",
                       fontFamily: '"JetBrains Mono", monospace',
-                      fontSize: "1.4rem",
+                      fontSize: "1.1rem",
                       fontWeight: 600,
                       wordBreak: "break-all",
                       lineHeight: 1.2,
@@ -552,18 +552,35 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                 )}
               </Box>
               {item.subValue && (
-                <Typography
+                <Box
                   sx={{
-                    color: "rgba(255, 255, 255, 0.4)",
-                    fontFamily: '"JetBrains Mono", monospace',
-                    fontSize: "0.75rem",
                     mt: 1.5,
                     borderTop: "1px solid rgba(255, 255, 255, 0.1)",
-                    pt: 1
+                    pt: 1,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center"
                   }}
                 >
-                  {item.subValue}
-                </Typography>
+                  <Typography
+                    sx={{
+                      color: "rgba(255, 255, 255, 0.4)",
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: "0.7rem",
+                    }}
+                  >
+                    Merged: {minerStats.totalMergedPrs || 0}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      color: "rgba(255, 255, 255, 0.4)",
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: "0.7rem",
+                    }}
+                  >
+                    Closed: {minerStats.totalClosedPrs || 0}
+                  </Typography>
+                </Box>
               )}
             </Box>
           </Grid>
