@@ -18,14 +18,6 @@ import {
   CheckCircle as HireableIcon,
   GitHub as GitHubIcon,
   People as FollowersIcon,
-  VerifiedUser as CredibilityIcon,
-  Score as ScoreIcon,
-  Commit as CommitIcon,
-  Code as CodeIcon,
-  AccountTree as RepoIcon,
-  PendingActions as PendingIcon,
-  Warning as CollateralIcon,
-  Star as StarIcon,
 } from "@mui/icons-material";
 import {
   useMinerStats,
@@ -179,8 +171,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
     link?: string | null;
     color?: string;
     subValue?: string;
-    icon: React.ReactNode;
-    bgGradient: string;
   }> = [
       {
         label: "Credibility",
@@ -197,51 +187,36 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                   ? "#fb923c" // Orange
                   : "#f87171", // Red
         subValue: `${minerStats.totalMergedPrs || 0} Merged / ${minerStats.totalClosedPrs || 0} Closed`,
-        icon: <CredibilityIcon sx={{ opacity: 0.8 }} />,
-        bgGradient: "linear-gradient(135deg, rgba(74, 222, 128, 0.1) 0%, rgba(74, 222, 128, 0.05) 100%)",
       },
       {
         label: "Current Score",
         value: Number(minerStats.totalScore).toFixed(4),
         rank: rankings?.score,
-        icon: <ScoreIcon sx={{ opacity: 0.8 }} />,
-        bgGradient: "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)",
       },
       {
         label: "Total PRs",
         value: Number(minerStats.totalPrs || 0),
         rank: rankings?.totalPrs,
-        icon: <CommitIcon sx={{ opacity: 0.8 }} />,
-        bgGradient: "linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)",
       },
       {
         label: "Scored Lines",
         value: Number(minerStats.totalLinesChanged || 0).toLocaleString(),
         rank: rankings?.linesChanged,
-        icon: <CodeIcon sx={{ opacity: 0.8 }} />,
-        bgGradient: "linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(236, 72, 153, 0.05) 100%)",
       },
       {
         label: "Unique Repos",
         value: Number(minerStats.uniqueReposCount || 0),
         rank: rankings?.uniqueRepos,
-        icon: <RepoIcon sx={{ opacity: 0.8 }} />,
-        bgGradient: "linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%)",
       },
       {
         label: "Open PRs",
         value: Number(minerStats.totalOpenPrs || 0),
         rank: null,
-        icon: <PendingIcon sx={{ opacity: 0.8, color: "#facc15" }} />,
-        bgGradient: "linear-gradient(135deg, rgba(250, 204, 21, 0.1) 0%, rgba(250, 204, 21, 0.05) 100%)",
       },
       {
         label: "Open Collateral",
         value: Number(minerStats.totalCollateralScore || 0).toFixed(4),
         rank: null,
-        color: "#fb923c", // Orange for pending/open
-        icon: <CollateralIcon sx={{ opacity: 0.8, color: "#fb923c" }} />,
-        bgGradient: "linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%)",
       },
       {
         label: "Top PR",
@@ -250,8 +225,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
         link: topPR
           ? `https://github.com/${topPR.repository}/pull/${topPR.pullRequestNumber}`
           : null,
-        icon: <StarIcon sx={{ opacity: 0.8, color: "#fbbf24" }} />,
-        bgGradient: "linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(251, 191, 36, 0.05) 100%)",
       },
     ];
 
@@ -442,11 +415,11 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
 
       <Grid container spacing={2}>
         {statItems.map((item, index) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+          <Grid item xs={12} sm={6} md={4} lg={3} xl={2} key={index}>
             <Box
               sx={{
-                background: item.bgGradient,
-                borderRadius: 3,
+                backgroundColor: "rgba(255, 255, 255, 0.03)",
+                borderRadius: 2,
                 border: "1px solid rgba(255, 255, 255, 0.08)",
                 p: 2.5,
                 height: "100%",
@@ -455,82 +428,39 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                 justifyContent: "space-between",
                 transition: "all 0.2s ease-in-out",
                 "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: "0 8px 16px rgba(0,0,0,0.2)",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
-                },
-                position: "relative",
-                overflow: "hidden"
+                  backgroundColor: "rgba(255, 255, 255, 0.05)",
+                  borderColor: "rgba(255, 255, 255, 0.15)",
+                }
               }}
             >
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
-                <Typography
+              <Box>
+                <Box
                   sx={{
-                    color: "rgba(255, 255, 255, 0.6)",
-                    fontFamily: '"JetBrains Mono", monospace',
-                    fontSize: "0.75rem",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px",
-                    fontWeight: 600,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    mb: 1.5,
                   }}
                 >
-                  {item.label}
-                </Typography>
-                <Box sx={{ color: "rgba(255,255,255,0.2)" }}>
-                  {item.icon}
-                </Box>
-              </Box>
-
-              <Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  {item.link ? (
-                    <a
-                      href={item.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        color: "#ffffff",
-                        textDecoration: "none",
-                      }}
-                    >
-                      <Typography
-                        sx={{
-                          color: "#ffffff",
-                          fontFamily: '"JetBrains Mono", monospace',
-                          fontSize: "1.25rem",
-                          fontWeight: 700,
-                          wordBreak: "break-all",
-                          "&:hover": {
-                            color: "primary.main",
-                          },
-                          transition: "color 0.2s",
-                        }}
-                      >
-                        {String(item.value)}
-                      </Typography>
-                    </a>
-                  ) : (
-                    <Typography
-                      sx={{
-                        color: item.color || "#ffffff",
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "1.25rem",
-                        fontWeight: 700,
-                        wordBreak: "break-all",
-                      }}
-                    >
-                      {String(item.value)}
-                    </Typography>
-                  )}
-
+                  <Typography
+                    sx={{
+                      color: "rgba(255, 255, 255, 0.5)",
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: "0.75rem",
+                      textTransform: "uppercase",
+                      letterSpacing: "1px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {item.label}
+                  </Typography>
                   {item.rank && (
                     <Box
                       sx={{
                         backgroundColor: "#000000",
-                        borderRadius: "4px",
-                        minWidth: "24px",
-                        height: "24px",
-                        px: 0.5,
+                        borderRadius: "2px",
+                        width: "18px",
+                        height: "18px",
                         display: "inline-flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -566,30 +496,75 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                                   ? "#CD7F32"
                                   : "rgba(255, 255, 255, 0.6)",
                           fontFamily: '"JetBrains Mono", monospace',
-                          fontSize: "0.7rem",
-                          fontWeight: 700,
+                          fontSize: "0.6rem",
+                          fontWeight: 600,
                           lineHeight: 1,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                         }}
                       >
-                        #{item.rank}
+                        {item.rank}
                       </Typography>
                     </Box>
                   )}
                 </Box>
-
-                {item.subValue && (
-                  <Typography
-                    sx={{
-                      color: "rgba(255, 255, 255, 0.4)",
-                      fontFamily: '"JetBrains Mono", monospace',
-                      fontSize: "0.7rem",
-                      mt: 0.5,
+                {item.link ? (
+                  <a
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: "#ffffff",
+                      textDecoration: "none",
                     }}
                   >
-                    {item.subValue}
+                    <Typography
+                      sx={{
+                        color: "#ffffff",
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: "1.4rem",
+                        fontWeight: 600,
+                        wordBreak: "break-all",
+                        lineHeight: 1.2,
+                        "&:hover": {
+                          color: "primary.main",
+                        },
+                        transition: "color 0.2s",
+                      }}
+                    >
+                      {String(item.value)}
+                    </Typography>
+                  </a>
+                ) : (
+                  <Typography
+                    sx={{
+                      color: item.color || "#ffffff",
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: "1.4rem",
+                      fontWeight: 600,
+                      wordBreak: "break-all",
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {String(item.value)}
                   </Typography>
                 )}
               </Box>
+              {item.subValue && (
+                <Typography
+                  sx={{
+                    color: "rgba(255, 255, 255, 0.4)",
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: "0.75rem",
+                    mt: 1.5,
+                    borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+                    pt: 1
+                  }}
+                >
+                  {item.subValue}
+                </Typography>
+              )}
             </Box>
           </Grid>
         ))}
