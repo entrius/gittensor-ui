@@ -48,7 +48,7 @@ const RepositoryDetailsPage: React.FC = () => {
             px: { xs: 2, sm: 2, md: 0 },
           }}
         >
-          <BackButton to="/miners?tab=repos" label="Back to Top Repositories" />
+          <BackButton to="/top-repos" label="Back to Top Repositories" />
 
           {/* Repository Score Card */}
           <RepositoryScoreCard repositoryFullName={repo} />
