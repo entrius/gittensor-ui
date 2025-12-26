@@ -25,7 +25,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "merged">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "merged">(
+    "all",
+  );
 
   // Filter PRs by selected repository, author, and status
   const filteredPRs = useMemo(() => {
@@ -393,7 +395,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                             fontFamily: '"JetBrains Mono", monospace',
                             fontSize: { xs: "0.7rem", sm: "0.75rem" },
                             fontWeight: 600,
-                            color: "#fb923c"
+                            color: "#fb923c",
                           }}
                         >
                           {parseFloat(pr.collateralScore).toFixed(4)}
@@ -414,14 +416,13 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           sx={{
                             fontFamily: '"JetBrains Mono", monospace',
                             fontSize: "0.6rem",
-                            color: "rgba(255,255,255,0.5)"
+                            color: "rgba(255,255,255,0.5)",
                           }}
                         >
                           Collateral
                         </Typography>
                       )}
                     </Box>
-
                   </TableCell>
                   <TableCell
                     align="right"
@@ -430,10 +431,14 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                       width: "15%",
                       display: { xs: "none", sm: "table-cell" },
                       fontSize: { xs: "0.75rem", sm: "0.85rem" },
-                      color: "rgba(255,255,255,0.7)"
+                      color: "rgba(255,255,255,0.7)",
                     }}
                   >
-                    {pr.mergedAt ? new Date(pr.mergedAt).toLocaleDateString() : "Open"}
+                    {pr.mergedAt
+                      ? new Date(pr.mergedAt).toLocaleDateString()
+                      : pr.prState === "CLOSED"
+                        ? "Closed"
+                        : "Open"}
                   </TableCell>
                 </TableRow>
               ))}

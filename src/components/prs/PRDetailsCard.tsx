@@ -22,10 +22,8 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
 }) => {
   const navigate = useNavigate();
   // Fetch detailed PR data directly
-  const { data: prDetails, isLoading: isDetailsLoading } = usePullRequestDetails(
-    repository,
-    pullRequestNumber,
-  );
+  const { data: prDetails, isLoading: isDetailsLoading } =
+    usePullRequestDetails(repository, pullRequestNumber);
 
   // Keep fetching all PRs only for ranking purposes (optional, could be optimized later)
   const { data: allPRs } = useAllMinerData();
@@ -123,12 +121,30 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   ];
 
   const multipliers = [
-    { label: "Repo Weight", value: `${parseFloat(prDetails.repoWeightMultiplier).toFixed(2)}x` },
-    { label: "Issue Bonus", value: `${parseFloat(prDetails.issueMultiplier).toFixed(2)}x` },
-    { label: "Credibility", value: `${parseFloat(prDetails.credibilityMultiplier).toFixed(2)}x` },
-    { label: "Repo Unique", value: `${parseFloat(prDetails.repositoryUniquenessMultiplier).toFixed(2)}x` },
-    { label: "Time Decay", value: `${parseFloat(prDetails.timeDecayMultiplier).toFixed(2)}x` },
-    { label: "Tag Bonus", value: `${parseFloat(prDetails.gittensorTagMultiplier).toFixed(2)}x` },
+    {
+      label: "Repo Weight",
+      value: `${parseFloat(prDetails.repoWeightMultiplier).toFixed(2)}x`,
+    },
+    {
+      label: "Issue Bonus",
+      value: `${parseFloat(prDetails.issueMultiplier).toFixed(2)}x`,
+    },
+    {
+      label: "Credibility",
+      value: `${parseFloat(prDetails.credibilityMultiplier).toFixed(2)}x`,
+    },
+    {
+      label: "Repo Unique",
+      value: `${parseFloat(prDetails.repositoryUniquenessMultiplier).toFixed(2)}x`,
+    },
+    {
+      label: "Time Decay",
+      value: `${parseFloat(prDetails.timeDecayMultiplier).toFixed(2)}x`,
+    },
+    {
+      label: "Tag Bonus",
+      value: `${parseFloat(prDetails.gittensorTagMultiplier).toFixed(2)}x`,
+    },
   ];
 
   return (
@@ -195,16 +211,16 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                 py: 0.25,
                 borderRadius: 1,
                 backgroundColor:
-                  prDetails.prState === "closed"
-                    ? "rgba(130, 80, 223, 0.2)"
-                    : prDetails.prState === "merged"
+                  prDetails.prState === "CLOSED"
+                    ? "rgba(255, 123, 114, 0.2)"
+                    : prDetails.prState === "MERGED"
                       ? "rgba(163, 113, 247, 0.2)"
                       : "rgba(45, 125, 70, 0.2)",
                 border: "1px solid",
                 borderColor:
-                  prDetails.prState === "closed"
-                    ? "rgba(130, 80, 223, 0.4)"
-                    : prDetails.prState === "merged"
+                  prDetails.prState === "CLOSED"
+                    ? "rgba(255, 123, 114, 0.4)"
+                    : prDetails.prState === "MERGED"
                       ? "rgba(163, 113, 247, 0.4)"
                       : "rgba(45, 125, 70, 0.4)",
               }}
@@ -212,9 +228,9 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               <Typography
                 sx={{
                   color:
-                    prDetails.prState === "closed"
-                      ? "#a371f7"
-                      : prDetails.prState === "merged"
+                    prDetails.prState === "CLOSED"
+                      ? "#ff7b72"
+                      : prDetails.prState === "MERGED"
                         ? "#a371f7"
                         : "#3fb950",
                   fontSize: "0.75rem",
@@ -258,7 +274,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
           </Typography>
         </Box>
       </Box>
-
 
       {/* Stats Grid */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -395,14 +410,14 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                   flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  textAlign: "center"
+                  textAlign: "center",
                 }}
               >
                 <Typography
                   sx={{
                     color: "rgba(255, 255, 255, 0.5)",
                     fontSize: "0.7rem",
-                    mb: 0.5
+                    mb: 0.5,
                   }}
                 >
                   {item.label}
@@ -519,11 +534,13 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                 fontWeight: 500,
               }}
             >
-              {prDetails.mergedAt ? new Date(prDetails.mergedAt).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              }) : 'Not Merged'}
+              {prDetails.mergedAt
+                ? new Date(prDetails.mergedAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })
+                : "Not Merged"}
             </Typography>
           </Box>
         </Grid>
