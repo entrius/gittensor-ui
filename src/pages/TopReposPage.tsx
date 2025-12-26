@@ -8,7 +8,9 @@ import { CommitLog } from "../api/models/Dashboard";
 
 const TopReposPage: React.FC = () => {
     const navigate = useNavigate();
-    const { data: allPRs, isLoading: isLoadingPRs } = useAllMinerData();
+    const allMinerDataQuery = useAllMinerData();
+    const allPRs = allMinerDataQuery?.data;
+    const isLoadingPRs = allMinerDataQuery?.isLoading;
 
     const handleSelectRepository = (repositoryFullName: string) => {
         navigate(

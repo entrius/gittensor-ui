@@ -9,9 +9,12 @@ import { CommitLog } from "../api/models/Dashboard";
 const TopMinersPage: React.FC = () => {
     const navigate = useNavigate();
 
-    const { data: allMinersStats, isLoading: isLoadingMinerStats } =
-        useAllMinerStats();
-    const { data: allPRs } = useAllMinerData();
+    const allMinerStatsQuery = useAllMinerStats();
+    const allMinersStats = allMinerStatsQuery?.data;
+    const isLoadingMinerStats = allMinerStatsQuery?.isLoading;
+
+    const allMinerDataQuery = useAllMinerData();
+    const allPRs = allMinerDataQuery?.data;
 
     const handleSelectMiner = (githubId: string) => {
         navigate(`/miners/details?githubId=${githubId}`);
