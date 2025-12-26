@@ -4,3 +4,5 @@ export { default as RepositoryDetails } from "./RepositoryDetails";
 export { default as RepositoryScoreCard } from "./RepositoryScoreCard";
 export { default as RepositoryContributorsTable } from "./RepositoryContributorsTable";
 export { default as RepositoryPRsTable } from "./RepositoryPRsTable";
+export { default as ReadmeViewer } from "./ReadmeViewer";
+export { default as RepositoryCodeBrowser } from "./RepositoryCodeBrowser";

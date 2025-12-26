@@ -15,7 +15,7 @@ export const useMinersQuery = <TResponse = void, TSelect = TResponse>(
 ) =>
   useApiQuery<TResponse, TSelect>(
     queryName,
-    `/miners${url}`,
+    `/api/miners${url}`,
     refetchInterval,
     queryParams,
   );

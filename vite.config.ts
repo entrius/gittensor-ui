@@ -17,17 +17,7 @@ export default defineConfig({
     origin: "http://127.0.0.1:8080",
     allowedHosts: ["test.gittensor.io", "gittensor.io"],
     proxy: {
-      "/miners": {
-        target: "http://localhost:8081",
-        changeOrigin: true,
-        secure: false,
-      },
-      "/dash": {
-        target: "http://localhost:8081",
-        changeOrigin: true,
-        secure: false,
-      },
-      "/og-image": {
+      "/api": {
         target: "http://localhost:8081",
         changeOrigin: true,
         secure: false,
