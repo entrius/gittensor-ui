@@ -4,13 +4,12 @@ import { Box } from "@mui/material";
 import { Page } from "../components/layout";
 import {
   MinerScoreCard,
+  MinerActivityViz,
   MinerRepositoriesTable,
   MinerPRsTable,
   BackButton,
   SEO,
-  MinerActivity,
 } from "../components";
-import { useMinerGithubData } from "../api";
 
 const MinerDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -22,8 +21,6 @@ const MinerDetailsPage: React.FC = () => {
     navigate("/miners");
     return null;
   }
-
-  const { data: githubData } = useMinerGithubData(githubId);
 
   return (
     <Page title="Miner Details">
@@ -57,10 +54,8 @@ const MinerDetailsPage: React.FC = () => {
           {/* Miner Score Card */}
           <MinerScoreCard githubId={githubId} />
 
-          {/* Activity Graph */}
-          {githubData?.login && (
-            <MinerActivity username={githubData.login} />
-          )}
+          {/* Activity Visualization */}
+          <MinerActivityViz githubId={githubId} />
 
           {/* Top Repositories */}
           <MinerRepositoriesTable githubId={githubId} />
