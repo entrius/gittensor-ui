@@ -74,8 +74,8 @@ const RepositoryContributorsTable: React.FC<
   const hasMore = visibleCount < totalContributors;
 
   const handleShowMore = () => {
-    // Expand in groups of 3
-    setVisibleCount(prev => Math.min(prev + 3, totalContributors));
+    // Expand fully
+    setVisibleCount(totalContributors);
   };
 
   const handleShowLess = () => {
@@ -93,39 +93,6 @@ const RepositoryContributorsTable: React.FC<
         <Typography variant="subtitle2" sx={{ color: "text.secondary", fontFamily: '"JetBrains Mono", monospace' }}>
           Top Miner Contributors <Typography component="span" sx={{ color: "#8b949e", fontSize: "0.8em" }}>({contributors.length})</Typography>
         </Typography>
-
-        {contributors.length > 3 && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            {visibleCount > 3 && (
-              <Typography
-                onClick={handleShowLess}
-                sx={{
-                  fontSize: "12px",
-                  color: "#8b949e",
-                  cursor: "pointer",
-                  "&:hover": { color: "#fff" }
-                }}
-              >
-                Show less
-              </Typography>
-            )}
-            {hasMore && (
-              <Typography
-                onClick={handleShowMore}
-                sx={{
-                  fontSize: "12px",
-                  color: "#8b949e",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  "&:hover": { color: "#fff" }
-                }}
-              >
-                Show more <KeyboardArrowDownIcon sx={{ fontSize: 16 }} />
-              </Typography>
-            )}
-          </Box>
-        )}
       </Box>
 
       {/* Header Row */}
@@ -226,6 +193,34 @@ const RepositoryContributorsTable: React.FC<
             </Box>
           );
         })}
+
+        {/* Show More / Show Less Row */}
+        {contributors.length > 3 && (
+          <Box
+            onClick={hasMore ? handleShowMore : handleShowLess}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start", // Left align to match flow
+              px: 1.5,
+              py: 1.5,
+              cursor: "pointer",
+              color: "#8b949e",
+              fontSize: "12px",
+              "&:hover": {
+                color: "#fff",
+                backgroundColor: "rgba(255,255,255,0.02)"
+              },
+              transition: "all 0.1s"
+            }}
+          >
+            {hasMore ? (
+              <>Show more <KeyboardArrowDownIcon sx={{ fontSize: 16, ml: 0.5 }} /></>
+            ) : (
+              <>Show less <KeyboardArrowUpIcon sx={{ fontSize: 16, ml: 0.5 }} /></>
+            )}
+          </Box>
+        )}
       </Box>
     </Box>
   );

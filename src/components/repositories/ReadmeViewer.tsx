@@ -91,6 +91,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
             elevation={0}
             sx={{
                 p: { xs: 2, md: 5 },
+                pt: { xs: 2, md: 0 }, // Reduce top padding
                 maxWidth: "900px",
                 mx: "auto",
                 backgroundColor: "transparent", // Seamless look
@@ -102,7 +103,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
                     borderBottom: "1px solid #30363d",
                     pb: 0.3,
                     mb: 3,
-                    mt: 4,
+                    mt: 1, // Reduced from 4
                     fontWeight: 600,
                     color: "#ffffff"
                 },
@@ -111,7 +112,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
                     borderBottom: "1px solid #30363d",
                     pb: 0.3,
                     mb: 3,
-                    mt: 4,
+                    mt: 2, // Reduced from 4
                     fontWeight: 600,
                     color: "#ffffff"
                 },
