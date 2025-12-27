@@ -71,3 +71,15 @@ export const usePullRequestDetails = (repo: string, number: number) =>
     undefined,
     { repo, number },
   );
+
+/**
+ * Get pull requests for a specific repository filtered by state
+ * Uses the /miners/repo/prs endpoint
+ */
+export const useRepositoryPRs = (repo: string, state?: string) =>
+  useMinersQuery<CommitLog[]>(
+    "useRepositoryPRs",
+    "/repo/prs",
+    undefined,
+    { repo, state }
+  );
