@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Box, Card, Typography, Grid, useTheme, CircularProgress } from "@mui/material";
 import { ActivityCalendar } from "react-activity-calendar";
 import ReactECharts from "echarts-for-react";
-import { useMinerStats, useMinerPRs, useReposAndWeights } from "../../api";
+import { useMinerStats, useMinerPRs, useReposAndWeights, useAllMinerStats } from "../../api";
 import { subDays, format, parseISO, isSameDay } from "date-fns";
 
 interface MinerActivityVizProps {
@@ -14,6 +14,7 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
     const { data: minerStats } = useMinerStats(githubId);
     const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
     const { data: repos } = useReposAndWeights();
+    const { data: allMinerStats } = useAllMinerStats();
 
     const { contributionData, contributionsLast30Days, totalDaysShown } = useMemo(() => {
         if (!prs || prs.length === 0) return { contributionData: [], contributionsLast30Days: 0, totalDaysShown: 0 };
@@ -86,28 +87,31 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
     }, [prs]);
 
     const radarOption = useMemo(() => {
-        if (!minerStats) return {};
+        if (!minerStats || !allMinerStats || allMinerStats.length === 0) return {};
 
-        const maxPrs = 50;
-        const maxLines = 10000;
-        const maxRepos = 10;
+        // Calculate network-wide maximums for normalization
+        const maxCredibility = Math.max(...allMinerStats.map(m => m.credibility || 0), 0.01);
+        const maxComplexity = Math.max(...allMinerStats.map(m => m.totalLinesChanged || 0), 1);
+        const maxMergedPrs = Math.max(...allMinerStats.map(m => m.totalMergedPrs || 0), 1);
+        const maxUniqueRepos = Math.max(...allMinerStats.map(m => m.uniqueReposCount || 0), 1);
+        const maxTotalPrs = Math.max(...allMinerStats.map(m => m.totalPrs || 0), 1);
 
-        // 1. Credibility
-        const credibilityVal = (minerStats.credibility || 0) * 100;
+        // 1. Credibility (normalized to network max)
+        const credibilityVal = ((minerStats.credibility || 0) / maxCredibility) * 100;
 
-        // 2. Complexity (Scored Lines/Changes)
-        const complexityVal = Math.min((minerStats.totalLinesChanged || 0) / maxLines * 100, 100);
+        // 2. Complexity (Scored Lines/Changes, normalized to network max)
+        const complexityVal = ((minerStats.totalLinesChanged || 0) / maxComplexity) * 100;
 
-        // 3. Issues Solved (Merged PRs as proxy)
-        const issuesSolvedVal = Math.min((minerStats.totalMergedPrs || 0) / maxPrs * 100, 100);
+        // 3. Issues Solved (Merged PRs, normalized to network max)
+        const issuesSolvedVal = ((minerStats.totalMergedPrs || 0) / maxMergedPrs) * 100;
 
-        // 4. Unique Repos
-        const uniqueReposVal = Math.min((minerStats.uniqueReposCount || 0) / maxRepos * 100, 100);
+        // 4. Unique Repos (normalized to network max)
+        const uniqueReposVal = ((minerStats.uniqueReposCount || 0) / maxUniqueRepos) * 100;
 
-        // 5. Total PRs
-        const totalPrsVal = Math.min((minerStats.totalPrs || 0) / maxPrs * 100, 100);
+        // 5. Total PRs (normalized to network max)
+        const totalPrsVal = ((minerStats.totalPrs || 0) / maxTotalPrs) * 100;
 
-        // 6. Average Repo Weights (Using actual repository weights from repos API)
+        // 6. Average Repo Weights (normalized to max repo weight of 100)
         let avgWeightVal = 0;
         if (prs && prs.length > 0 && repos) {
             // Build repository weights map
@@ -193,7 +197,7 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
                 }
             ]
         };
-    }, [minerStats, prs, repos]);
+    }, [minerStats, prs, repos, allMinerStats]);
 
     if (!minerStats) return null;
 
