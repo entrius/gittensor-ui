@@ -16,10 +16,16 @@ const CodeViewer: React.FC<CodeViewerProps> = ({ repositoryFullName, filePath, d
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
+    const extension = filePath?.split('.').pop()?.toLowerCase();
+    const isImage = extension && ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico'].includes(extension);
+    const rawUrl = filePath ? `https://raw.githubusercontent.com/${repositoryFullName}/${defaultBranch}/${filePath}` : '';
+
     useEffect(() => {
         const fetchContent = async () => {
-            if (!filePath) {
+            if (!filePath || isImage) {
+                // Don't fetch text content for images or if no file selected
                 setContent(null);
+                setLoading(false);
                 return;
             }
 
@@ -27,8 +33,7 @@ const CodeViewer: React.FC<CodeViewerProps> = ({ repositoryFullName, filePath, d
             setError(null);
             try {
                 // Use raw.githubusercontent.com
-                const url = `https://raw.githubusercontent.com/${repositoryFullName}/${defaultBranch}/${filePath}`;
-                const response = await axios.get(url, { transformResponse: [(data) => data] }); // Force text
+                const response = await axios.get(rawUrl, { transformResponse: [(data) => data] }); // Force text
                 setContent(response.data);
             } catch (err) {
                 console.error("Failed to fetch file content", err);
@@ -39,7 +44,7 @@ const CodeViewer: React.FC<CodeViewerProps> = ({ repositoryFullName, filePath, d
         };
 
         fetchContent();
-    }, [repositoryFullName, filePath, defaultBranch]);
+    }, [repositoryFullName, filePath, defaultBranch, isImage, rawUrl]);
 
     if (!filePath) {
         return (
@@ -65,7 +70,33 @@ const CodeViewer: React.FC<CodeViewerProps> = ({ repositoryFullName, filePath, d
         );
     }
 
-    const extension = filePath.split('.').pop()?.toLowerCase();
+    if (isImage) {
+        return (
+            <Box sx={{
+                height: "100%",
+                width: "100%",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "#0d1117",
+                p: 4
+            }}>
+                <Box
+                    component="img"
+                    src={rawUrl}
+                    alt={filePath}
+                    sx={{
+                        maxWidth: "100%",
+                        maxHeight: "100%",
+                        objectFit: "contain",
+                        border: "1px solid #30363d",
+                        borderRadius: "6px",
+                        backgroundColor: "#161b22" // slight background to see transparent pngs better
+                    }}
+                />
+            </Box>
+        );
+    }
 
     // Special rendering for markdown
     if (extension === 'md') {

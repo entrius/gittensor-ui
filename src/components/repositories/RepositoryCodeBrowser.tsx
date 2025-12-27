@@ -1,46 +1,71 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Box, Paper, Typography, CircularProgress, Divider } from "@mui/material";
+import {
+    Box,
+    Paper,
+    Typography,
+    CircularProgress,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableRow,
+    Link,
+    Breadcrumbs,
+    Avatar
+} from "@mui/material";
 import axios from "axios";
-import FileExplorer, { buildFileTree, FileNode } from "./FileExplorer";
+import { formatDistanceToNow } from "date-fns";
+import FolderIcon from "@mui/icons-material/Folder";
+import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+// import TextSnippetIcon from "@mui/icons-material/TextSnippet"; // Unused
 import CodeViewer from "./CodeViewer";
+import { buildFileTree, FileNode } from "./FileExplorer";
 
 interface RepositoryCodeBrowserProps {
     repositoryFullName: string;
 }
 
-const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({ repositoryFullName }) => {
+interface CommitInfo {
+    message: string;
+    author: string;
+    avatarUrl: string;
+    date: string;
+    sha: string;
+}
+
+const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
+    repositoryFullName,
+}) => {
     const [tree, setTree] = useState<FileNode[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [defaultBranch, setDefaultBranch] = useState<string>("main");
-    const [selectedFile, setSelectedFile] = useState<string | null>(null);
+    const [currentPath, setCurrentPath] = useState<string | null>(null);
+
+    // Cache commit info to avoid spamming
+    const [pathCommits, setPathCommits] = useState<Record<string, CommitInfo>>({});
+    const [loadingCommit, setLoadingCommit] = useState(false);
 
     useEffect(() => {
         const fetchRepoData = async () => {
             setLoading(true);
             try {
-                // 1. Get default branch
-                const repoResponse = await axios.get(`https://api.github.com/repos/${repositoryFullName}`);
+                const repoResponse = await axios.get(
+                    `https://api.github.com/repos/${repositoryFullName}`
+                );
                 const branch = repoResponse.data.default_branch || "main";
                 setDefaultBranch(branch);
 
-                // 2. Get Tree
-                const treeResponse = await axios.get(`https://api.github.com/repos/${repositoryFullName}/git/trees/${branch}?recursive=1`);
+                const treeResponse = await axios.get(
+                    `https://api.github.com/repos/${repositoryFullName}/git/trees/${branch}?recursive=1`
+                );
 
-                // Build Tree structure
                 if (treeResponse.data.tree) {
                     const nodes = buildFileTree(treeResponse.data.tree);
                     setTree(nodes);
-
-                    // Find README to select by default
-                    const readme = treeResponse.data.tree.find((f: any) => f.path.toLowerCase() === "readme.md");
-                    if (readme) {
-                        setSelectedFile(readme.path);
-                    }
                 }
             } catch (err: any) {
                 console.error("Failed to load repository data", err);
-                // Handle rate limit specifically optionally
                 if (err.response?.status === 403) {
                     setError("GitHub API rate limit exceeded. Please try again later.");
                 } else {
@@ -56,97 +81,283 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({ repositor
         }
     }, [repositoryFullName]);
 
+    // Fetch commit info for current path
+    useEffect(() => {
+        const fetchCommit = async () => {
+            const pathKey = currentPath || "root";
+            if (pathCommits[pathKey]) return; // Already cached
+
+            setLoadingCommit(true);
+            try {
+                const params = new URLSearchParams();
+                params.append("sha", defaultBranch);
+                params.append("per_page", "1");
+                if (currentPath) {
+                    params.append("path", currentPath);
+                }
+
+                const response = await axios.get(
+                    `https://api.github.com/repos/${repositoryFullName}/commits?${params.toString()}`
+                );
+
+                if (response.data && response.data.length > 0) {
+                    const c = response.data[0];
+                    setPathCommits((prev) => ({
+                        ...prev,
+                        [pathKey]: {
+                            message: c.commit.message,
+                            author: c.commit.author.name,
+                            avatarUrl: c.author?.avatar_url || "",
+                            date: c.commit.author.date,
+                            sha: c.sha.substring(0, 7),
+                        },
+                    }));
+                }
+            } catch (err) {
+                console.error("Failed to fetch commit", err);
+            } finally {
+                setLoadingCommit(false);
+            }
+        };
+
+        if (!loading && defaultBranch) {
+            // Only fetch if we are not viewing a file (files handle their own commit info usually, but we can do it here too)
+            fetchCommit();
+        }
+    }, [currentPath, repositoryFullName, defaultBranch, loading, pathCommits]);
+
+    const currentNode = useMemo(() => {
+        if (!currentPath) return { children: tree, type: "tree", path: "", name: "" };
+
+        const parts = currentPath.split("/");
+        let currentNodes = tree;
+        let foundNode: FileNode | undefined;
+
+        for (let i = 0; i < parts.length; i++) {
+            foundNode = currentNodes.find((n) => n.name === parts[i]);
+            if (!foundNode) return null;
+            if (foundNode.type === "tree" && foundNode.children) {
+                currentNodes = foundNode.children;
+            } else if (i < parts.length - 1) {
+                // path segment matches a file but there are more segments? Should not happen in valid tree
+                return null;
+            }
+        }
+        return foundNode;
+    }, [tree, currentPath]);
+
+    const handleNavigate = (path: string | null) => {
+        setCurrentPath(path);
+    };
+
     if (loading) {
-        return <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}><CircularProgress /></Box>;
+        return (
+            <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}>
+                <CircularProgress />
+            </Box>
+        );
     }
 
     if (error) {
-        return <Box sx={{ p: 4, color: "error.main", textAlign: "center" }}>{error}</Box>;
+        return (
+            <Box sx={{ p: 4, color: "error.main", textAlign: "center" }}>{error}</Box>
+        );
     }
 
-    // Breadcrumb path calculation
-    const breadcrumbs = selectedFile ? selectedFile.split('/') : [];
+    const breadcrumbs = currentPath ? currentPath.split("/") : [];
+    const currentCommit = pathCommits[currentPath || "root"];
+
+    const isFile = currentNode && currentNode.type === "blob";
+    const directoryChildren = !isFile && currentNode ? (currentNode.children || []) : [];
+
+    // Sort children: Folders first, then files
+    const sortedChildren = [...directoryChildren].sort((a, b) => {
+        if (a.type === b.type) return a.name.localeCompare(b.name);
+        return a.type === "tree" ? -1 : 1;
+    });
 
     return (
-        <Paper
-            elevation={0}
-            sx={{
-                display: "flex",
-                height: "calc(100vh - 200px)",
-                minHeight: "600px",
-                border: "1px solid #30363d",
-                borderRadius: "6px",
-                overflow: "hidden",
-                backgroundColor: "#0d1117"
-            }}
-        >
-            {/* Sidebar */}
-            <Box sx={{
-                width: "280px",
-                minWidth: "220px",
-                borderRight: "1px solid #30363d",
-                display: "flex",
-                flexDirection: "column",
-                backgroundColor: "#0d1117"
-            }}>
-                <Box sx={{
-                    p: "12px 16px",
-                    borderBottom: "1px solid #30363d",
-                    backgroundColor: "#0d1117",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between"
-                }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: "13px", color: "#c9d1d9" }}>
-                        Files
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: "#8b949e", fontSize: "11px" }}>
-                        {defaultBranch}
-                    </Typography>
-                </Box>
-                <Box sx={{ flexGrow: 1, overflowY: "auto", overflowX: "hidden", "&::-webkit-scrollbar": { width: "8px" }, "&::-webkit-scrollbar-thumb": { backgroundColor: "#30363d", borderRadius: "4px" } }}>
-                    <FileExplorer files={tree} onSelectFile={setSelectedFile} selectedFile={selectedFile} />
-                </Box>
+        <Box>
+            {/* Breadcrumbs & Header */}
+            <Box sx={{ mb: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Breadcrumbs
+                    aria-label="breadcrumb"
+                    sx={{
+                        "& .MuiBreadcrumbs-separator": { color: "#8b949e" }
+                    }}
+                >
+                    <Link
+                        component="button"
+                        underline="hover"
+                        color={!currentPath ? "text.primary" : "inherit"}
+                        onClick={() => handleNavigate(null)}
+                        sx={{
+                            fontWeight: !currentPath ? 600 : 400,
+                            color: !currentPath ? "#c9d1d9" : "#58a6ff",
+                            cursor: !currentPath ? "default" : "pointer",
+                            fontSize: "14px"
+                        }}
+                    >
+                        {repositoryFullName}
+                    </Link>
+                    {breadcrumbs.map((part, index) => {
+                        const path = breadcrumbs.slice(0, index + 1).join("/");
+                        const isLast = index === breadcrumbs.length - 1;
+                        return (
+                            <Link
+                                key={path}
+                                component="button"
+                                underline={isLast ? "none" : "hover"}
+                                color={isLast ? "text.primary" : "inherit"}
+                                onClick={() => !isLast && handleNavigate(path)}
+                                sx={{
+                                    fontWeight: isLast ? 600 : 400,
+                                    color: isLast ? "#c9d1d9" : "#58a6ff",
+                                    cursor: isLast ? "default" : "pointer",
+                                    fontSize: "14px"
+                                }}
+                            >
+                                {part}
+                            </Link>
+                        );
+                    })}
+                </Breadcrumbs>
             </Box>
 
-            {/* Main Content */}
-            <Box sx={{ flexGrow: 1, overflow: "hidden", display: "flex", flexDirection: "column", backgroundColor: "#0d1117" }}>
-                {/* File Header / Breadcrumbs */}
-                <Box sx={{
-                    height: "45px",
-                    borderBottom: "1px solid #30363d",
-                    backgroundColor: "#0d1117",
-                    display: "flex",
-                    alignItems: "center",
-                    px: 3
-                }}>
-                    {selectedFile ? (
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, fontSize: "13px", color: "#8b949e" }}>
-                            {breadcrumbs.map((part, index) => (
-                                <React.Fragment key={index}>
-                                    <Typography sx={{
-                                        fontSize: "13px",
-                                        color: index === breadcrumbs.length - 1 ? "#c9d1d9" : "inherit",
-                                        fontWeight: index === breadcrumbs.length - 1 ? 600 : 400
-                                    }}>
-                                        {part}
-                                    </Typography>
-                                    {index < breadcrumbs.length - 1 && <Typography sx={{ color: "#484f58" }}>/</Typography>}
-                                </React.Fragment>
-                            ))}
+            {/* Latest Commit Header (GitHub style blue/gray bar) */}
+            {!isFile && (
+                <Paper
+                    elevation={0}
+                    sx={{
+                        border: "1px solid #30363d",
+                        borderBottom: "none",
+                        borderRadius: "6px 6px 0 0",
+                        backgroundColor: "#161b22",
+                        p: 2,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        justifyContent: "space-between"
+                    }}
+                >
+                    {loadingCommit ? (
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <CircularProgress size={16} />
+                            <Typography sx={{ fontSize: "13px", color: "#8b949e" }}>Loading commit info...</Typography>
                         </Box>
+                    ) : currentCommit ? (
+                        <>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, overflow: "hidden" }}>
+                                <Avatar src={currentCommit.avatarUrl} sx={{ width: 20, height: 20 }} />
+                                <Typography sx={{ fontSize: "13px", fontWeight: 600, color: "#c9d1d9", whiteSpace: "nowrap" }}>
+                                    {currentCommit.author}
+                                </Typography>
+                                <Typography sx={{ fontSize: "13px", color: "#8b949e", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "600px" }}>
+                                    {currentCommit.message}
+                                </Typography>
+                            </Box>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
+                                <Typography sx={{ fontSize: "13px", color: "#8b949e", fontFamily: '"JetBrains Mono", monospace' }}>
+                                    {currentCommit.sha}
+                                </Typography>
+                                <Typography sx={{ fontSize: "13px", color: "#8b949e" }}>
+                                    {formatDistanceToNow(new Date(currentCommit.date), { addSuffix: true })}
+                                </Typography>
+                            </Box>
+                        </>
                     ) : (
-                        <Typography sx={{ fontSize: "13px", color: "#8b949e" }}>No file selected</Typography>
+                        <Typography sx={{ fontSize: "13px", color: "#8b949e" }}>Latest commit info unavailable</Typography>
                     )}
-                </Box>
+                </Paper>
+            )}
 
+            {isFile ? (
                 <CodeViewer
                     repositoryFullName={repositoryFullName}
-                    filePath={selectedFile}
+                    filePath={currentPath}
                     defaultBranch={defaultBranch}
                 />
-            </Box>
-        </Paper>
+            ) : (
+                <TableContainer
+                    component={Paper}
+                    elevation={0}
+                    sx={{
+                        border: "1px solid #30363d",
+                        borderRadius: isFile ? "6px" : "0 0 6px 6px", // Connect to header
+                        backgroundColor: "#0d1117"
+                    }}
+                >
+                    <Table size="small">
+                        <TableBody>
+                            {/* Parent Directory Link (.. ) */}
+                            {currentPath && (
+                                <TableRow hover sx={{ "&:hover": { backgroundColor: "#161b22" }, cursor: "pointer" }}>
+                                    <TableCell
+                                        colSpan={3}
+                                        onClick={() => {
+                                            const parent = currentPath.split("/").slice(0, -1).join("/");
+                                            handleNavigate(parent || null);
+                                        }}
+                                        sx={{
+                                            color: "#58a6ff",
+                                            borderBottom: "1px solid #21262d",
+                                            py: 1,
+                                            fontSize: "13px",
+                                            fontWeight: 600
+                                        }}
+                                    >
+                                        ..
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                            {sortedChildren.map((node) => (
+                                <TableRow
+                                    key={node.path}
+                                    hover
+                                    onClick={() => handleNavigate(node.path)}
+                                    sx={{
+                                        "&:hover": { backgroundColor: "#161b22" },
+                                        cursor: "pointer",
+                                        transition: "background-color 0.1s"
+                                    }}
+                                >
+                                    <TableCell sx={{
+                                        borderBottom: "1px solid #21262d",
+                                        py: 1,
+                                        width: "32px",
+                                        pl: 2
+                                    }}>
+                                        {node.type === "tree" ? (
+                                            <FolderIcon sx={{ color: "#54aeff", fontSize: 16 }} />
+                                        ) : (
+                                            <InsertDriveFileIcon sx={{ color: "#8b949e", fontSize: 16 }} />
+                                        )}
+                                    </TableCell>
+                                    <TableCell sx={{
+                                        borderBottom: "1px solid #21262d",
+                                        py: 1,
+                                        color: "#c9d1d9",
+                                        fontSize: "14px",
+                                        fontWeight: node.type === "tree" ? 600 : 400
+                                    }}>
+                                        {node.name}
+                                    </TableCell>
+                                    <TableCell sx={{
+                                        borderBottom: "1px solid #21262d",
+                                        py: 1,
+                                        color: "#8b949e",
+                                        fontSize: "13px",
+                                        textAlign: "right"
+                                    }}>
+                                        {/* Commit message col (optional placeholder) */}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            )}
+        </Box>
     );
 };
 
