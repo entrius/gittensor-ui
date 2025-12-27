@@ -552,6 +552,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
           </Grid>
         ))}
       </Grid>
+
     </Card>
   );
 };

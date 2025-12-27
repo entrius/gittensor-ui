@@ -1,16 +1,18 @@
 import React, { useMemo } from "react";
-import { Box, Card, Typography, Grid, useTheme, CircularProgress } from "@mui/material";
+import { Box, Card, Typography, Grid, CircularProgress, Chip, Stack } from "@mui/material";
 import { ActivityCalendar } from "react-activity-calendar";
 import ReactECharts from "echarts-for-react";
 import { useMinerStats, useMinerPRs, useReposAndWeights, useAllMinerStats } from "../../api";
-import { subDays, format, parseISO, isSameDay } from "date-fns";
+import { subDays, format } from "date-fns";
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
 interface MinerActivityVizProps {
     githubId: string;
 }
 
 const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
-    const theme = useTheme();
     const { data: minerStats } = useMinerStats(githubId);
     const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
     const { data: repos } = useReposAndWeights();
@@ -22,7 +24,6 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
         const today = new Date();
         let earliestDate = today;
 
-        // Find the earliest contribution date
         prs.forEach(pr => {
             if (pr.mergedAt) {
                 const d = new Date(pr.mergedAt);
@@ -30,16 +31,12 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
             }
         });
 
-        // Calculate days difference
         const diffTime = Math.abs(today.getTime() - earliestDate.getTime());
         const daysDiff = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        // Show exact history length (minimum 1 day)
         const daysToShow = Math.max(daysDiff, 1);
 
         const dataMap = new Map<string, number>();
 
-        // Initialize map for the range
         for (let i = daysToShow; i >= 0; i--) {
             const date = subDays(today, i);
             const dateStr = format(date, "yyyy-MM-dd");
@@ -49,19 +46,15 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
         let last30Count = 0;
         const thirtyDaysAgo = subDays(today, 30);
 
-        // Populate with actual PR data
         prs.forEach(pr => {
             const dateString = pr.mergedAt;
-
             if (dateString) {
                 const date = new Date(dateString);
                 if (!isNaN(date.getTime())) {
                     const dateStr = format(date, "yyyy-MM-dd");
-
                     if (dataMap.has(dateStr)) {
                         dataMap.set(dateStr, (dataMap.get(dateStr) || 0) + 1);
                     }
-
                     if (date >= thirtyDaysAgo) {
                         last30Count++;
                     }
@@ -89,32 +82,20 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
     const radarOption = useMemo(() => {
         if (!minerStats || !allMinerStats || allMinerStats.length === 0) return {};
 
-        // Calculate network-wide maximums for normalization
         const maxCredibility = Math.max(...allMinerStats.map(m => m.credibility || 0), 0.01);
         const maxComplexity = Math.max(...allMinerStats.map(m => m.totalLinesChanged || 0), 1);
         const maxMergedPrs = Math.max(...allMinerStats.map(m => m.totalMergedPrs || 0), 1);
         const maxUniqueRepos = Math.max(...allMinerStats.map(m => m.uniqueReposCount || 0), 1);
         const maxTotalPrs = Math.max(...allMinerStats.map(m => m.totalPrs || 0), 1);
 
-        // 1. Credibility (normalized to network max)
         const credibilityVal = ((minerStats.credibility || 0) / maxCredibility) * 100;
-
-        // 2. Complexity (Scored Lines/Changes, normalized to network max)
         const complexityVal = ((minerStats.totalLinesChanged || 0) / maxComplexity) * 100;
-
-        // 3. Issues Solved (Merged PRs, normalized to network max)
         const issuesSolvedVal = ((minerStats.totalMergedPrs || 0) / maxMergedPrs) * 100;
-
-        // 4. Unique Repos (normalized to network max)
         const uniqueReposVal = ((minerStats.uniqueReposCount || 0) / maxUniqueRepos) * 100;
-
-        // 5. Total PRs (normalized to network max)
         const totalPrsVal = ((minerStats.totalPrs || 0) / maxTotalPrs) * 100;
 
-        // 6. Average Repo Weights (normalized to max repo weight of 100)
         let avgWeightVal = 0;
         if (prs && prs.length > 0 && repos) {
-            // Build repository weights map
             const repoWeights = new Map<string, number>();
             if (Array.isArray(repos)) {
                 repos.forEach((repo) => {
@@ -124,13 +105,11 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
                 });
             }
 
-            // Calculate weighted average based on PRs
             const totalWeight = prs.reduce((sum, pr) => {
                 const weight = repoWeights.get(pr.repository) || 0;
                 return sum + weight;
             }, 0);
             const avgWeight = totalWeight / prs.length;
-            // Normalize to 0-100 scale (repository weights range from 0-100)
             avgWeightVal = Math.min(avgWeight, 100);
         }
 
@@ -140,19 +119,20 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
                 indicator: [
                     { name: 'Credibility', max: 100 },
                     { name: 'Complexity', max: 100 },
-                    { name: 'Issues Solved', max: 100 },
-                    { name: 'Unique Repos', max: 100 },
-                    { name: 'Total PRs', max: 100 },
-                    { name: 'Avg Repo Weight', max: 100 }
+                    { name: 'Issues\nSolved', max: 100 },
+                    { name: 'Unique\nRepos', max: 100 },
+                    { name: 'Total\nPRs', max: 100 },
+                    { name: 'Avg Repo\nWeight', max: 100 }
                 ],
                 center: ['50%', '50%'],
-                radius: '65%',
+                radius: '50%',
                 shape: 'circle',
                 splitNumber: 4,
                 axisName: {
                     color: 'rgba(255, 255, 255, 0.6)',
                     fontFamily: '"JetBrains Mono", monospace',
-                    fontSize: 11
+                    fontSize: 9,
+                    lineHeight: 12
                 },
                 splitLine: {
                     lineStyle: {
@@ -199,6 +179,130 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
         };
     }, [minerStats, prs, repos, allMinerStats]);
 
+    const qualityOption = useMemo(() => {
+        if (!minerStats) return {};
+
+        const merged = minerStats.totalMergedPrs || 0;
+        const closed = minerStats.totalClosedPrs || 0;
+        const open = minerStats.totalOpenPrs || 0;
+        const credibility = (minerStats.credibility || 0) * 100;
+
+        return {
+            backgroundColor: 'transparent',
+            title: {
+                text: `${credibility.toFixed(0)}%`,
+                subtext: 'Credibility',
+                left: 'center',
+                top: '38%',
+                textStyle: {
+                    color: '#fff',
+                    fontSize: 28,
+                    fontWeight: 'bold',
+                    fontFamily: '"JetBrains Mono", monospace'
+                },
+                subtextStyle: {
+                    color: 'rgba(255, 255, 255, 0.4)',
+                    fontSize: 11,
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontWeight: 500
+                }
+            },
+            tooltip: {
+                trigger: 'item',
+                formatter: '{b}: {c} ({d}%)',
+                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                borderColor: 'rgba(255, 255, 255, 0.15)',
+                borderWidth: 1,
+                textStyle: {
+                    color: '#fff',
+                    fontFamily: '"JetBrains Mono", monospace'
+                }
+            },
+            series: [
+                {
+                    name: 'PR Status',
+                    type: 'pie',
+                    radius: ['58%', '72%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: {
+                        borderRadius: 6,
+                        borderColor: '#0d1117',
+                        borderWidth: 3
+                    },
+                    label: {
+                        show: false,
+                        position: 'center'
+                    },
+                    emphasis: {
+                        label: {
+                            show: false
+                        },
+                        scale: true,
+                        scaleSize: 5
+                    },
+                    labelLine: {
+                        show: false
+                    },
+                    data: [
+                        { value: merged, name: 'Merged', itemStyle: { color: '#4ade80' } },
+                        { value: open, name: 'Open', itemStyle: { color: '#52525b' } },
+                        { value: closed, name: 'Closed', itemStyle: { color: '#ef4444' } }
+                    ]
+                }
+            ]
+        };
+    }, [minerStats]);
+
+    // Risk Assessment Logic
+    const riskAssessment = useMemo(() => {
+        if (!minerStats) return { level: 'unknown', color: '#6b7280', icon: null, message: 'Insufficient data' };
+
+        const credibility = minerStats.credibility || 0;
+        const closedPRs = minerStats.totalClosedPrs || 0;
+        const mergedPRs = minerStats.totalMergedPrs || 0;
+        const totalPRs = minerStats.totalPrs || 1;
+
+        // Calculate risk score
+        const closedRatio = closedPRs / totalPRs;
+
+        // High Risk: Low credibility OR high closed ratio
+        if (credibility < 0.5 || closedRatio > 0.3) {
+            return {
+                level: 'high',
+                color: '#ef4444',
+                bgColor: 'rgba(239, 68, 68, 0.1)',
+                borderColor: 'rgba(239, 68, 68, 0.3)',
+                icon: <ErrorOutlineIcon sx={{ fontSize: 18 }} />,
+                message: 'High Risk - Review with caution',
+                recommendation: 'Requires thorough code review'
+            };
+        }
+
+        // Medium Risk: Medium credibility OR some closed PRs
+        if (credibility < 0.7 || closedRatio > 0.1) {
+            return {
+                level: 'medium',
+                color: '#9ca3af',
+                bgColor: 'rgba(156, 163, 175, 0.1)',
+                borderColor: 'rgba(156, 163, 175, 0.25)',
+                icon: <WarningAmberIcon sx={{ fontSize: 18 }} />,
+                message: 'Moderate Risk - Standard review',
+                recommendation: 'Normal code review process'
+            };
+        }
+
+        // Low Risk: High credibility and few/no closed PRs
+        return {
+            level: 'low',
+            color: '#10b981',
+            bgColor: 'rgba(16, 185, 129, 0.1)',
+            borderColor: 'rgba(16, 185, 129, 0.3)',
+            icon: <CheckCircleIcon sx={{ fontSize: 18 }} />,
+            message: 'Low Risk - Trustworthy contributor',
+            recommendation: 'Standard review recommended'
+        };
+    }, [minerStats]);
+
     if (!minerStats) return null;
 
     return (
@@ -213,15 +317,34 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
             }}
             elevation={0}
         >
-            {/* Header */}
+            {/* Header with Risk Signal */}
             <Box sx={{
-                p: 2,
+                p: 2.5,
                 borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                backgroundColor: "rgba(255, 255, 255, 0.02)"
+                backgroundColor: "rgba(255, 255, 255, 0.02)",
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
             }}>
-                <Typography variant="h6" sx={{ fontFamily: '"JetBrains Mono", monospace', color: "#fff", fontSize: "1rem" }}>
+                <Typography variant="h6" sx={{ fontFamily: '"JetBrains Mono", monospace', color: "#fff", fontSize: "1rem", fontWeight: 600 }}>
                     Developer Activity
                 </Typography>
+                <Chip
+                    icon={riskAssessment.icon || undefined}
+                    label={riskAssessment.message}
+                    size="small"
+                    sx={{
+                        backgroundColor: riskAssessment.bgColor,
+                        border: `1px solid ${riskAssessment.borderColor}`,
+                        color: riskAssessment.color,
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        '& .MuiChip-icon': {
+                            color: riskAssessment.color
+                        }
+                    }}
+                />
             </Box>
 
             {isLoadingPRs ? (
@@ -231,21 +354,32 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
             ) : (
                 <Grid container>
                     {/* Heatmap Section */}
-                    <Grid item xs={12} md={8} sx={{
+                    <Grid item xs={12} md={6} sx={{
                         p: 3,
                         borderRight: { md: "1px solid rgba(255, 255, 255, 0.1)" },
                         borderBottom: { xs: "1px solid rgba(255, 255, 255, 0.1)", md: "none" }
                     }}>
-                        <Box sx={{ mb: 2 }}>
-                            <Typography variant="h4" sx={{ color: "#fff", fontFamily: '"JetBrains Mono", monospace', fontWeight: 600 }}>
+                        <Box sx={{ mb: 2.5 }}>
+                            <Typography variant="h3" sx={{
+                                color: "#fff",
+                                fontFamily: '"JetBrains Mono", monospace',
+                                fontWeight: 700,
+                                fontSize: '2.5rem',
+                                lineHeight: 1
+                            }}>
                                 {contributionsLast30Days}
                             </Typography>
-                            <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.5)", fontFamily: '"JetBrains Mono", monospace' }}>
+                            <Typography variant="body2" sx={{
+                                color: "rgba(255, 255, 255, 0.4)",
+                                fontFamily: '"JetBrains Mono", monospace',
+                                fontSize: '0.85rem',
+                                mt: 0.5
+                            }}>
                                 contributions in the last 30 days
                             </Typography>
                         </Box>
 
-                        <Box sx={{ width: "100%", overflowX: "auto" }}>
+                        <Box sx={{ width: "100%", overflowX: "auto", mb: 1 }}>
                             <ActivityCalendar
                                 data={contributionData}
                                 theme={{
@@ -266,24 +400,105 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
                                         'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'
                                     ]
                                 }}
-                                blockSize={12}
-                                blockMargin={4}
-                                fontSize={12}
+                                blockSize={11}
+                                blockMargin={3}
+                                fontSize={11}
                                 style={{ color: '#fff' }}
                                 showWeekdayLabels={false}
                             />
                         </Box>
-                        <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.3)", mt: 2, display: "block", fontStyle: "italic" }}>
+                        <Typography variant="caption" sx={{
+                            color: "rgba(255, 255, 255, 0.25)",
+                            display: "block",
+                            fontStyle: "italic",
+                            fontSize: '0.7rem'
+                        }}>
                             * Activity based on merged PRs in Gittensor-tracked repositories
                         </Typography>
                     </Grid>
 
-                    {/* Radar Chart Section */}
-                    <Grid item xs={12} md={4} sx={{ p: 3, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                        <Typography variant="subtitle2" sx={{ color: "rgba(255, 255, 255, 0.5)", mb: 1, fontFamily: '"JetBrains Mono", monospace', textAlign: "center" }}>
-                            Metric Overview
+                    {/* PR Status Distribution */}
+                    <Grid item xs={12} md={3} sx={{
+                        p: 3,
+                        borderRight: { md: "1px solid rgba(255, 255, 255, 0.1)" },
+                        borderBottom: { xs: "1px solid rgba(255, 255, 255, 0.1)", md: "none" },
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center"
+                    }}>
+                        <Typography variant="subtitle2" sx={{
+                            color: "rgba(255, 255, 255, 0.4)",
+                            mb: 0.75,
+                            fontFamily: '"JetBrains Mono", monospace',
+                            textAlign: "center",
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            letterSpacing: '0.5px',
+                            textTransform: 'uppercase'
+                        }}>
+                            PR Success Ratio
                         </Typography>
-                        <Box sx={{ height: "250px", width: "100%" }}>
+
+                        <Box sx={{ height: "190px", width: "100%", mb: 0.75 }}>
+                            <ReactECharts
+                                option={qualityOption}
+                                style={{ height: '100%', width: '100%' }}
+                                opts={{ renderer: 'svg' }}
+                            />
+                        </Box>
+
+                        {/* Stats Legend */}
+                        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1.5, mb: 0.5, justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#4ade80' }} />
+                                <Typography sx={{ color: "rgba(255, 255, 255, 0.6)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace' }}>
+                                    Merged
+                                </Typography>
+                                <Typography sx={{ color: "#4ade80", fontSize: "0.75rem", fontFamily: '"JetBrains Mono", monospace', fontWeight: 700 }}>
+                                    {minerStats.totalMergedPrs || 0}
+                                </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#52525b' }} />
+                                <Typography sx={{ color: "rgba(255, 255, 255, 0.6)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace' }}>
+                                    Open
+                                </Typography>
+                                <Typography sx={{ color: "rgba(255, 255, 255, 0.6)", fontSize: "0.75rem", fontFamily: '"JetBrains Mono", monospace', fontWeight: 700 }}>
+                                    {minerStats.totalOpenPrs || 0}
+                                </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#ef4444' }} />
+                                <Typography sx={{ color: "rgba(255, 255, 255, 0.6)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace' }}>
+                                    Closed
+                                </Typography>
+                                <Typography sx={{ color: "#ef4444", fontSize: "0.75rem", fontFamily: '"JetBrains Mono", monospace', fontWeight: 700 }}>
+                                    {minerStats.totalClosedPrs || 0}
+                                </Typography>
+                            </Box>
+                        </Box>
+                    </Grid>
+
+                    {/* Metric Overview - Radar Chart */}
+                    <Grid item xs={12} md={3} sx={{
+                        p: 3,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center"
+                    }}>
+                        <Typography variant="subtitle2" sx={{
+                            color: "rgba(255, 255, 255, 0.4)",
+                            mb: 2,
+                            fontFamily: '"JetBrains Mono", monospace',
+                            textAlign: "center",
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            letterSpacing: '0.5px',
+                            textTransform: 'uppercase'
+                        }}>
+                            Performance Profile
+                        </Typography>
+                        <Box sx={{ height: "220px", width: "100%" }}>
                             <ReactECharts
                                 option={radarOption}
                                 style={{ height: '100%', width: '100%' }}

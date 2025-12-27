@@ -7,6 +7,7 @@ import {
   MinerActivityViz,
   MinerRepositoriesTable,
   MinerPRsTable,
+  MinerTierPerformance,
   BackButton,
   SEO,
 } from "../components";
@@ -56,6 +57,9 @@ const MinerDetailsPage: React.FC = () => {
 
           {/* Activity Visualization */}
           <MinerActivityViz githubId={githubId} />
+
+          {/* Tier Performance */}
+          <MinerTierPerformance githubId={githubId} />
 
           {/* Top Repositories */}
           <MinerRepositoriesTable githubId={githubId} />
