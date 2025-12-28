@@ -7,6 +7,7 @@ import {
   Avatar,
   Grid,
   Divider,
+  Chip,
 } from "@mui/material";
 import { useAllMinerData, usePullRequestDetails } from "../../api";
 import { useNavigate } from "react-router-dom";
@@ -89,6 +90,19 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   }
 
   const [owner] = repository.split("/");
+
+  const getTierColor = (tier: string) => {
+    switch (tier) {
+      case "Gold":
+        return "#FFD700";
+      case "Silver":
+        return "#C0C0C0";
+      case "Bronze":
+        return "#CD7F32";
+      default:
+        return "#8b949e";
+    }
+  };
 
   const statItems = [
     {
@@ -252,26 +266,47 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
           >
             {prDetails.title}
           </Typography>
-          <Typography
-            onClick={() =>
-              navigate(
-                `/miners/repository?name=${encodeURIComponent(repository)}`,
-              )
-            }
-            sx={{
-              color: "rgba(255, 255, 255, 0.5)",
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "0.85rem",
-              cursor: "pointer",
-              transition: "color 0.2s",
-              "&:hover": {
-                color: "primary.main",
-                textDecoration: "underline",
-              },
-            }}
-          >
-            {repository}
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography
+              onClick={() =>
+                navigate(
+                  `/miners/repository?name=${encodeURIComponent(repository)}`,
+                )
+              }
+              sx={{
+                color: "rgba(255, 255, 255, 0.5)",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "0.85rem",
+                cursor: "pointer",
+                transition: "color 0.2s",
+                "&:hover": {
+                  color: "primary.main",
+                  textDecoration: "underline",
+                },
+              }}
+            >
+              {repository}
+            </Typography>
+            {prDetails.tier && (
+              <Chip
+                label={prDetails.tier}
+                size="small"
+                sx={{
+                  height: "20px",
+                  fontSize: "0.65rem",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  backgroundColor: "transparent",
+                  border: `1px solid ${getTierColor(prDetails.tier)}`,
+                  color: getTierColor(prDetails.tier),
+                  fontWeight: 600,
+                  borderRadius: "4px",
+                  "& .MuiChip-label": {
+                    px: 1,
+                  },
+                }}
+              />
+            )}
+          </Box>
         </Box>
       </Box>
 
@@ -536,10 +571,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             >
               {prDetails.mergedAt
                 ? new Date(prDetails.mergedAt).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })
                 : "Not Merged"}
             </Typography>
           </Box>

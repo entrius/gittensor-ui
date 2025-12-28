@@ -41,6 +41,9 @@ interface MinerStats {
   credibility?: number;
 }
 
+type SortColumn = "miner" | "totalScore" | "credibility" | "totalPRs" | "linesAdded" | "linesDeleted" | "linesChanged";
+type SortDirection = "asc" | "desc";
+
 interface TopMinersTableProps {
   miners: MinerStats[];
   isLoading?: boolean;
@@ -56,11 +59,69 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [sortColumn, setSortColumn] = useState<SortColumn>("totalScore");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const cardRef = useRef<HTMLDivElement>(null);
 
   const rankedMiners = useMemo(() => {
-    return miners.map((miner, index) => ({ ...miner, rank: index + 1 }));
-  }, [miners]);
+    // First sort by the selected column
+    const sorted = [...miners].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortColumn) {
+        case "miner":
+          aValue = (a.author || a.githubId || "").toLowerCase();
+          bValue = (b.author || b.githubId || "").toLowerCase();
+          break;
+        case "totalScore":
+          aValue = a.totalScore || 0;
+          bValue = b.totalScore || 0;
+          break;
+        case "credibility":
+          aValue = a.credibility || 0;
+          bValue = b.credibility || 0;
+          break;
+        case "totalPRs":
+          aValue = a.totalPRs || 0;
+          bValue = b.totalPRs || 0;
+          break;
+        case "linesAdded":
+          aValue = a.linesAdded || 0;
+          bValue = b.linesAdded || 0;
+          break;
+        case "linesDeleted":
+          aValue = a.linesDeleted || 0;
+          bValue = b.linesDeleted || 0;
+          break;
+        case "linesChanged":
+          aValue = a.linesChanged || 0;
+          bValue = b.linesChanged || 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    // Then assign ranks based on sorted order
+    return sorted.map((miner, index) => ({ ...miner, rank: index + 1 }));
+  }, [miners, sortColumn, sortDirection]);
+
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      // Toggle direction if clicking the same column
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      // Set new column with default direction (desc for numbers, asc for text)
+      setSortColumn(column);
+      setSortDirection(column === "miner" ? "asc" : "desc");
+    }
+    setPage(0);
+  };
 
   const filteredMiners = useMemo(() => {
     if (!searchQuery) return rankedMiners;
@@ -168,6 +229,31 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+
+  const SortableHeader = ({ column, children, align = "left", sx = {} }: { column: SortColumn; children: React.ReactNode; align?: "left" | "right"; sx?: any }) => (
+    <TableCell
+      align={align}
+      sx={{
+        ...headerCellStyle,
+        ...(sx || {}),
+        cursor: "pointer",
+        userSelect: "none",
+        "&:hover": {
+          backgroundColor: "rgba(255, 255, 255, 0.05)",
+        },
+      }}
+      onClick={() => handleSort(column)}
+    >
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: align === "right" ? "flex-end" : "flex-start", gap: 0.5 }}>
+        {children}
+        {sortColumn === column && (
+          <Typography component="span" sx={{ fontSize: "0.7rem", opacity: 0.7 }}>
+            {sortDirection === "asc" ? "▲" : "▼"}
+          </Typography>
+        )}
+      </Box>
+    </TableCell>
+  );
 
   useEffect(() => {
     setPage(0);
@@ -331,7 +417,6 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 
       <TableContainer
         sx={{
-          maxHeight: "600px",
           overflowY: "auto",
           "&::-webkit-scrollbar": {
             width: "8px",
@@ -357,53 +442,40 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
               <TableCell sx={{ ...headerCellStyle, width: "80px" }}>
                 Rank
               </TableCell>
-              <TableCell sx={{ ...headerCellStyle, width: "30%" }}>
+              <SortableHeader column="miner" sx={{ width: "30%" }}>
                 Miner
-              </TableCell>
-              <TableCell
+              </SortableHeader>
+              <SortableHeader
+                column="totalScore"
                 align="right"
                 sx={{
-                  ...headerCellStyle,
                   color: "secondary.main",
                   width: "15%",
                 }}
               >
                 Score
-              </TableCell>
-              <TableCell
+              </SortableHeader>
+              <SortableHeader
+                column="credibility"
                 align="right"
                 sx={{
-                  ...headerCellStyle,
-                  color: "secondary.main",
                   width: "10%",
                 }}
               >
                 Credibility
-              </TableCell>
-              <TableCell
-                align="right"
-                sx={{ ...headerCellStyle, width: "10%" }}
-              >
+              </SortableHeader>
+              <SortableHeader column="totalPRs" align="right" sx={{ width: "10%" }}>
                 PRs
-              </TableCell>
-              <TableCell
-                align="right"
-                sx={{ ...headerCellStyle, width: "11%" }}
-              >
+              </SortableHeader>
+              <SortableHeader column="linesAdded" align="right" sx={{ width: "11%" }}>
                 Lines Added
-              </TableCell>
-              <TableCell
-                align="right"
-                sx={{ ...headerCellStyle, width: "11%" }}
-              >
+              </SortableHeader>
+              <SortableHeader column="linesDeleted" align="right" sx={{ width: "11%" }}>
                 Lines Deleted
-              </TableCell>
-              <TableCell
-                align="right"
-                sx={{ ...headerCellStyle, width: "11%" }}
-              >
+              </SortableHeader>
+              <SortableHeader column="linesChanged" align="right" sx={{ width: "11%" }}>
                 Lines Changed
-              </TableCell>
+              </SortableHeader>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -439,8 +511,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                         src={`https://avatars.githubusercontent.com/${miner.author || miner.githubId}`}
                         alt={miner.author || miner.githubId}
                         sx={{
-                          width: 24,
-                          height: 24,
+                          width: 20,
+                          height: 20,
                           border: "1px solid rgba(255, 255, 255, 0.2)",
                         }}
                       />
@@ -588,8 +660,8 @@ const headerCellStyle = {
   fontWeight: 500,
   fontSize: "0.75rem",
   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  height: "56px",
-  py: 1.5,
+  height: "48px",
+  py: 1,
   boxSizing: "border-box" as const,
 };
 
@@ -597,9 +669,9 @@ const bodyCellStyle = {
   color: "#ffffff",
   fontFamily: '"JetBrains Mono", monospace',
   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  fontSize: "0.85rem",
-  py: 1,
-  height: "60px",
+  fontSize: "0.75rem",
+  py: 0.75,
+  height: "52px",
   boxSizing: "border-box" as const,
 };
 

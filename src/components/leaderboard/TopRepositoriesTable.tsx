@@ -20,6 +20,9 @@ import {
   Select,
   MenuItem,
   FormControl,
+  Button,
+  Stack,
+  Chip,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import BarChartIcon from "@mui/icons-material/BarChart";
@@ -31,8 +34,13 @@ interface RepoStats {
   totalScore: number;
   totalPRs: number;
   uniqueMiners: Set<string>;
+  weight: number;
+  tier: string;
   rank?: number;
 }
+
+type SortColumn = "rank" | "repository" | "weight" | "totalScore" | "totalPRs" | "contributors";
+type SortDirection = "asc" | "desc";
 
 interface TopRepositoriesTableProps {
   repositories: RepoStats[];
@@ -49,19 +57,62 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [sortColumn, setSortColumn] = useState<SortColumn>("totalScore");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [tierFilter, setTierFilter] = useState<"all" | "Gold" | "Silver" | "Bronze">("all");
   const cardRef = useRef<HTMLDivElement>(null);
 
   const rankedRepositories = useMemo(() => {
-    return repositories.map((repo, index) => ({ ...repo, rank: index + 1 }));
-  }, [repositories]);
+    // First, sort by the current sort column
+    const sorted = [...repositories].sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortColumn) {
+        case "repository":
+          comparison = a.repository.localeCompare(b.repository);
+          break;
+        case "weight":
+          comparison = a.weight - b.weight;
+          break;
+        case "totalScore":
+          comparison = a.totalScore - b.totalScore;
+          break;
+        case "totalPRs":
+          comparison = a.totalPRs - b.totalPRs;
+          break;
+        case "contributors":
+          comparison = a.uniqueMiners.size - b.uniqueMiners.size;
+          break;
+        default:
+          // Default to totalScore descending (original behavior)
+          comparison = b.totalScore - a.totalScore;
+      }
+
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+
+    // Then add rank based on sorted order
+    return sorted.map((repo, index) => ({ ...repo, rank: index + 1 }));
+  }, [repositories, sortColumn, sortDirection]);
 
   const filteredRepositories = useMemo(() => {
-    if (!searchQuery) return rankedRepositories;
-    const lowerQuery = searchQuery.toLowerCase();
-    return rankedRepositories.filter((repo) =>
-      repo.repository?.toLowerCase().includes(lowerQuery),
-    );
-  }, [rankedRepositories, searchQuery]);
+    let filtered = rankedRepositories;
+
+    // Apply tier filter
+    if (tierFilter !== "all") {
+      filtered = filtered.filter(repo => repo.tier === tierFilter);
+    }
+
+    // Apply search filter
+    if (searchQuery) {
+      const lowerQuery = searchQuery.toLowerCase();
+      filtered = filtered.filter((repo) =>
+        repo.repository?.toLowerCase().includes(lowerQuery),
+      );
+    }
+
+    return filtered;
+  }, [rankedRepositories, searchQuery, tierFilter]);
 
   const getChartOption = () => {
     const chartData = filteredRepositories;
@@ -160,6 +211,88 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     setPage(0);
   };
 
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      // Toggle direction if clicking the same column
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      // New column - set to desc by default (except for repository name)
+      setSortColumn(column);
+      setSortDirection(column === "repository" ? "asc" : "desc");
+    }
+    setPage(0); // Reset to first page when sorting
+  };
+
+  const SortableHeader = ({ column, children, align = "left", sx = {} }: { column: SortColumn; children: React.ReactNode; align?: "left" | "right"; sx?: any }) => (
+    <TableCell
+      align={align}
+      sx={{
+        ...headerCellStyle,
+        ...(sx || {}),
+        cursor: "pointer",
+        userSelect: "none",
+        "&:hover": {
+          backgroundColor: "rgba(255, 255, 255, 0.05)",
+        },
+      }}
+      onClick={() => handleSort(column)}
+    >
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: align === "right" ? "flex-end" : "flex-start", gap: 0.5 }}>
+        {children}
+        {sortColumn === column && (
+          <Typography component="span" sx={{ fontSize: "0.7rem", opacity: 0.7 }}>
+            {sortDirection === "asc" ? "▲" : "▼"}
+          </Typography>
+        )}
+      </Box>
+    </TableCell>
+  );
+
+  const getTierColor = (tier: string) => {
+    switch (tier) {
+      case "Gold":
+        return "#FFD700";
+      case "Silver":
+        return "#C0C0C0";
+      case "Bronze":
+        return "#CD7F32";
+      default:
+        return "#8b949e";
+    }
+  };
+
+  const tierCounts = useMemo(() => {
+    return {
+      all: rankedRepositories.length,
+      gold: rankedRepositories.filter(r => r.tier === "Gold").length,
+      silver: rankedRepositories.filter(r => r.tier === "Silver").length,
+      bronze: rankedRepositories.filter(r => r.tier === "Bronze").length,
+    };
+  }, [rankedRepositories]);
+
+  const TierFilterButton = ({ label, value, count, color }: { label: string, value: typeof tierFilter, count: number, color: string }) => (
+    <Button
+      size="small"
+      onClick={() => { setTierFilter(value); setPage(0); }}
+      sx={{
+        color: tierFilter === value ? "#fff" : "rgba(255,255,255,0.5)",
+        backgroundColor: tierFilter === value ? "rgba(255,255,255,0.1)" : "transparent",
+        borderRadius: "6px",
+        px: 2,
+        minWidth: "auto",
+        textTransform: "none",
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: "0.8rem",
+        border: tierFilter === value ? `1px solid ${color}` : "1px solid transparent",
+        "&:hover": {
+          backgroundColor: "rgba(255,255,255,0.15)",
+        }
+      }}
+    >
+      {label} <span style={{ opacity: 0.6, marginLeft: '6px', fontSize: '0.75rem' }}>{count}</span>
+    </Button>
+  );
+
   useEffect(() => {
     setPage(0);
   }, [searchQuery]);
@@ -193,112 +326,130 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     >
       <Box
         sx={{
-          p: 2,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 2,
           borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
         }}
       >
-        <Typography variant="body2" color="text.secondary">
-          Repositories generating the most score from contributor activity.
-        </Typography>
+        {/* Row 1: Description */}
+        <Box sx={{ p: 2, pb: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            Repositories generating the most score from contributor activity.
+          </Typography>
+        </Box>
 
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-          <Tooltip title={showChart ? "Hide Chart" : "Show Chart"}>
-            <IconButton
-              onClick={() => setShowChart(!showChart)}
-              size="small"
-              sx={{
-                color: showChart ? "#ffffff" : "rgba(255, 255, 255, 0.5)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                borderRadius: 2,
-                padding: "6px",
-                "&:hover": {
-                  backgroundColor: "rgba(255, 255, 255, 0.05)",
-                  borderColor: "rgba(255, 255, 255, 0.2)",
-                },
-              }}
-            >
-              {showChart ? (
-                <TableChartIcon fontSize="small" />
-              ) : (
-                <BarChartIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Tooltip>
+        {/* Row 2: All Controls */}
+        <Box
+          sx={{
+            px: 2,
+            pb: 2,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 2,
+            flexWrap: "wrap",
+          }}
+        >
+          <Stack direction="row" spacing={1}>
+            <TierFilterButton label="All" value="all" count={tierCounts.all} color="#8b949e" />
+            <TierFilterButton label="Gold" value="Gold" count={tierCounts.gold} color="#FFD700" />
+            <TierFilterButton label="Silver" value="Silver" count={tierCounts.silver} color="#C0C0C0" />
+            <TierFilterButton label="Bronze" value="Bronze" count={tierCounts.bronze} color="#CD7F32" />
+          </Stack>
 
-          <FormControl size="small">
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Typography
-                variant="body2"
+          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+            <Tooltip title={showChart ? "Hide Chart" : "Show Chart"}>
+              <IconButton
+                onClick={() => setShowChart(!showChart)}
+                size="small"
                 sx={{
-                  color: "rgba(255, 255, 255, 0.7)",
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: "0.8rem",
+                  color: showChart ? "#ffffff" : "rgba(255, 255, 255, 0.5)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  borderRadius: 2,
+                  padding: "6px",
+                  "&:hover": {
+                    backgroundColor: "rgba(255, 255, 255, 0.05)",
+                    borderColor: "rgba(255, 255, 255, 0.2)",
+                  },
                 }}
               >
-                Rows:
-              </Typography>
-              <Select
-                value={rowsPerPage}
-                onChange={(e) => {
-                  setRowsPerPage(e.target.value as number);
-                  setPage(0);
-                }}
-                sx={{
+                {showChart ? (
+                  <TableChartIcon fontSize="small" />
+                ) : (
+                  <BarChartIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
+
+            <FormControl size="small">
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "rgba(255, 255, 255, 0.7)",
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: "0.8rem",
+                  }}
+                >
+                  Rows:
+                </Typography>
+                <Select
+                  value={rowsPerPage}
+                  onChange={(e) => {
+                    setRowsPerPage(e.target.value as number);
+                    setPage(0);
+                  }}
+                  sx={{
+                    color: "#ffffff",
+                    fontFamily: '"JetBrains Mono", monospace',
+                    backgroundColor: "rgba(0, 0, 0, 0.4)",
+                    fontSize: "0.8rem",
+                    height: "36px",
+                    borderRadius: 2,
+                    minWidth: "80px",
+                    "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
+                    "&:hover fieldset": {
+                      borderColor: "rgba(255, 255, 255, 0.2)",
+                    },
+                    "&.Mui-focused fieldset": { borderColor: "primary.main" },
+                    "& .MuiSelect-select": { py: 0.75 },
+                  }}
+                >
+                  <MenuItem value={10}>10</MenuItem>
+                  <MenuItem value={25}>25</MenuItem>
+                  <MenuItem value={50}>50</MenuItem>
+                </Select>
+              </Box>
+            </FormControl>
+
+            <TextField
+              placeholder="Search..."
+              size="small"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon
+                      sx={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "1rem" }}
+                    />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                width: "200px",
+                "& .MuiOutlinedInput-root": {
                   color: "#ffffff",
                   fontFamily: '"JetBrains Mono", monospace',
                   backgroundColor: "rgba(0, 0, 0, 0.4)",
                   fontSize: "0.8rem",
                   height: "36px",
                   borderRadius: 2,
-                  minWidth: "80px",
                   "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
-                  "&:hover fieldset": {
-                    borderColor: "rgba(255, 255, 255, 0.2)",
-                  },
+                  "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.2)" },
                   "&.Mui-focused fieldset": { borderColor: "primary.main" },
-                  "& .MuiSelect-select": { py: 0.75 },
-                }}
-              >
-                <MenuItem value={10}>10</MenuItem>
-                <MenuItem value={25}>25</MenuItem>
-                <MenuItem value={50}>50</MenuItem>
-              </Select>
-            </Box>
-          </FormControl>
-
-          <TextField
-            placeholder="Search..."
-            size="small"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon
-                    sx={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "1rem" }}
-                  />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              width: "200px",
-              "& .MuiOutlinedInput-root": {
-                color: "#ffffff",
-                fontFamily: '"JetBrains Mono", monospace',
-                backgroundColor: "rgba(0, 0, 0, 0.4)",
-                fontSize: "0.8rem",
-                height: "36px",
-                borderRadius: 2,
-                "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
-                "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.2)" },
-                "&.Mui-focused fieldset": { borderColor: "primary.main" },
-              },
-            }}
-          />
+                },
+              }}
+            />
+          </Box>
         </Box>
       </Box>
 
@@ -322,7 +473,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
 
       <TableContainer
         sx={{
-          maxHeight: "600px",
           overflowY: "auto",
           "&::-webkit-scrollbar": {
             width: "8px",
@@ -345,34 +495,31 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         >
           <TableHead>
             <TableRow>
-              <TableCell sx={{ ...headerCellStyle, width: "80px" }}>
+              <TableCell sx={{ ...headerCellStyle, width: "60px" }}>
                 Rank
               </TableCell>
-              <TableCell sx={{ ...headerCellStyle, width: "40%" }}>
+              <SortableHeader column="repository" sx={{ width: "35%" }}>
                 Repository
-              </TableCell>
-              <TableCell
+              </SortableHeader>
+              <SortableHeader column="weight" align="right" sx={{ width: "12%" }}>
+                Weight
+              </SortableHeader>
+              <SortableHeader
+                column="totalScore"
                 align="right"
                 sx={{
-                  ...headerCellStyle,
                   color: "secondary.main",
-                  width: "20%",
+                  width: "18%",
                 }}
               >
                 Total Score
-              </TableCell>
-              <TableCell
-                align="right"
-                sx={{ ...headerCellStyle, width: "20%" }}
-              >
+              </SortableHeader>
+              <SortableHeader column="totalPRs" align="right" sx={{ width: "15%" }}>
                 PRs
-              </TableCell>
-              <TableCell
-                align="right"
-                sx={{ ...headerCellStyle, width: "15%" }}
-              >
+              </SortableHeader>
+              <SortableHeader column="contributors" align="right" sx={{ width: "15%" }}>
                 Contributors
-              </TableCell>
+              </SortableHeader>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -391,15 +538,15 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     transition: "background-color 0.2s",
                   }}
                 >
-                  <TableCell sx={{ ...bodyCellStyle, width: "80px" }}>
+                  <TableCell sx={{ ...bodyCellStyle, width: "60px", pr: 0 }}>
                     {getRankIcon(repo.rank || 0)}
                   </TableCell>
-                  <TableCell sx={{ ...bodyCellStyle, width: "40%" }}>
+                  <TableCell sx={{ ...bodyCellStyle, width: "35%", pl: 1.5 }}>
                     <Box
                       sx={{
                         display: "flex",
                         alignItems: "center",
-                        gap: 1.5,
+                        gap: 1,
                         cursor: "pointer",
                         "&:hover": {
                           "& .MuiTypography-root": {
@@ -418,10 +565,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           border: "1px solid rgba(255, 255, 255, 0.2)",
                           backgroundColor:
                             (repo.repository || "").split("/")[0] ===
-                            "opentensor"
+                              "opentensor"
                               ? "#ffffff"
                               : (repo.repository || "").split("/")[0] ===
-                                  "bitcoin"
+                                "bitcoin"
                                 ? "#F7931A"
                                 : "transparent",
                         }}
@@ -436,11 +583,42 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                       >
                         {repo.repository || ""}
                       </Typography>
+                      <Chip
+                        label={repo.tier || "N/A"}
+                        size="small"
+                        sx={{
+                          ml: 1,
+                          height: "20px",
+                          fontSize: "0.65rem",
+                          fontFamily: '"JetBrains Mono", monospace',
+                          backgroundColor: "transparent",
+                          border: `1px solid ${getTierColor(repo.tier)}`,
+                          color: getTierColor(repo.tier),
+                          fontWeight: 600,
+                          borderRadius: "4px",
+                          "& .MuiChip-label": {
+                            px: 1,
+                          },
+                        }}
+                      />
                     </Box>
                   </TableCell>
                   <TableCell
                     align="right"
-                    sx={{ ...bodyCellStyle, width: "20%" }}
+                    sx={{ ...bodyCellStyle, width: "12%" }}
+                  >
+                    <Typography
+                      sx={{
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                      {repo.weight.toFixed(1)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ ...bodyCellStyle, width: "18%" }}
                   >
                     <Typography
                       sx={{
@@ -454,7 +632,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                   </TableCell>
                   <TableCell
                     align="right"
-                    sx={{ ...bodyCellStyle, width: "20%" }}
+                    sx={{ ...bodyCellStyle, width: "15%" }}
                   >
                     {repo.totalPRs || 0}
                   </TableCell>
@@ -487,7 +665,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           },
         }}
       />
-    </Card>
+    </Card >
   );
 };
 
@@ -499,8 +677,8 @@ const headerCellStyle = {
   fontWeight: 500,
   fontSize: "0.75rem",
   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  height: "56px",
-  py: 1.5,
+  height: "48px",
+  py: 1,
   boxSizing: "border-box" as const,
 };
 
@@ -508,9 +686,9 @@ const bodyCellStyle = {
   color: "#ffffff",
   fontFamily: '"JetBrains Mono", monospace',
   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  fontSize: "0.85rem",
-  py: 1,
-  height: "60px",
+  fontSize: "0.75rem",
+  py: 0.75,
+  height: "52px",
   boxSizing: "border-box" as const,
 };
 

@@ -3,7 +3,7 @@ import { Box, Card } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { Page } from "../components/layout";
 import { TopRepositoriesTable, SEO } from "../components";
-import { useAllMinerData } from "../api";
+import { useAllMinerData, useReposAndWeights } from "../api";
 import { CommitLog } from "../api/models/Dashboard";
 
 const TopReposPage: React.FC = () => {
@@ -11,6 +11,7 @@ const TopReposPage: React.FC = () => {
     const allMinerDataQuery = useAllMinerData();
     const allPRs = allMinerDataQuery?.data;
     const isLoadingPRs = allMinerDataQuery?.isLoading;
+    const { data: reposWithWeights, isLoading: isLoadingRepos } = useReposAndWeights();
 
     const handleSelectRepository = (repositoryFullName: string) => {
         navigate(
@@ -20,7 +21,7 @@ const TopReposPage: React.FC = () => {
 
     // Process repo stats for TopRepositoriesTable
     const repoStats = useMemo(() => {
-        if (!allPRs) return [];
+        if (!allPRs || !reposWithWeights) return [];
 
         const statsMap = new Map<
             string,
@@ -29,6 +30,8 @@ const TopReposPage: React.FC = () => {
                 totalScore: number;
                 totalPRs: number;
                 uniqueMiners: Set<string>;
+                weight: number;
+                tier: string;
             }
         >();
 
@@ -40,6 +43,8 @@ const TopReposPage: React.FC = () => {
                 totalScore: 0,
                 totalPRs: 0,
                 uniqueMiners: new Set<string>(),
+                weight: 0,
+                tier: "",
             };
 
             current.totalScore += parseFloat(pr.score || "0");
@@ -51,10 +56,23 @@ const TopReposPage: React.FC = () => {
             statsMap.set(pr.repository, current);
         });
 
+        // Add weight and tier information from repositories
+        const repoDataMap = new Map(
+            reposWithWeights.map(repo => [repo.fullName, { weight: repo.weight, tier: repo.tier }])
+        );
+
+        statsMap.forEach((stats, repoName) => {
+            const repoData = repoDataMap.get(repoName);
+            if (repoData) {
+                stats.weight = repoData.weight ? parseFloat(String(repoData.weight)) : 0;
+                stats.tier = repoData.tier || "";
+            }
+        });
+
         return Array.from(statsMap.values()).sort(
             (a, b) => b.totalScore - a.totalScore,
         );
-    }, [allPRs]);
+    }, [allPRs, reposWithWeights]);
 
     return (
         <Page title="Top Repositories">
@@ -84,7 +102,7 @@ const TopReposPage: React.FC = () => {
                     >
                         <TopRepositoriesTable
                             repositories={repoStats}
-                            isLoading={isLoadingPRs}
+                            isLoading={isLoadingPRs || isLoadingRepos}
                             onSelectRepository={handleSelectRepository}
                         />
                     </Card>

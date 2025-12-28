@@ -83,3 +83,27 @@ export const useRepositoryPRs = (repo: string, state?: string) =>
     undefined,
     { repo, state }
   );
+
+/**
+ * Get all issues for a specific repository
+ * Uses the /miners/repo/issues endpoint
+ */
+export const useRepositoryIssues = (repo: string) =>
+  useMinersQuery<RepositoryIssue[]>(
+    "useRepositoryIssues",
+    "/repo/issues",
+    undefined,
+    { repo }
+  );
+
+export interface RepositoryIssue {
+  issueNumber: number;
+  repositoryFullName: string;
+  linkedPrNumber: number | null;
+  title: string;
+  createdAt: string | null;
+  closedAt: string | null;
+  state?: string;
+  author?: string;
+  url?: string;
+}

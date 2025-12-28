@@ -11,6 +11,7 @@ import { Page } from "../components/layout";
 import {
   RepositoryContributorsTable,
   RepositoryPRsTable,
+  RepositoryIssuesTable,
   BackButton,
   SEO,
   RepositoryCodeBrowser,
@@ -158,19 +159,7 @@ const RepositoryDetailsPage: React.FC = () => {
 
             {/* Issues Tab */}
             <CustomTabPanel value={tabValue} index={2}>
-              <Box sx={{ textAlign: "center", py: 8 }}>
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  Issues integration is coming soon.
-                </Typography>
-                <Button
-                  variant="contained"
-                  href={`https://github.com/${repo}/issues`}
-                  target="_blank"
-                  sx={{ mt: 2 }}
-                >
-                  View Issues on GitHub
-                </Button>
-              </Box>
+              <RepositoryIssuesTable repositoryFullName={repo} />
             </CustomTabPanel>
 
             {/* Pull Requests Tab */}

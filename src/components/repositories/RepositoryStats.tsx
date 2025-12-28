@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Box, Typography, Skeleton, Divider } from "@mui/material";
-import { useReposAndWeights, useAllMinerData } from "../../api";
+import { useReposAndWeights, useAllMinerData, useRepositoryIssues } from "../../api";
 
 interface RepositoryStatsProps {
     repositoryFullName: string;
@@ -11,6 +11,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
 }) => {
     const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
     const { data: allPRs, isLoading: isLoadingPRs } = useAllMinerData();
+    const { data: issues, isLoading: isLoadingIssues } = useRepositoryIssues(repositoryFullName);
 
     const repository = useMemo(() => {
         return repos?.find((r) => r.fullName === repositoryFullName);
@@ -32,7 +33,16 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
         };
     }, [allPRs, repositoryFullName]);
 
-    if (isLoadingRepos || isLoadingPRs) {
+    const issueStats = useMemo(() => {
+        if (!issues) return { totalIssues: 0, closedIssues: 0 };
+
+        return {
+            totalIssues: issues.length,
+            closedIssues: issues.filter(issue => issue.closedAt).length,
+        };
+    }, [issues]);
+
+    if (isLoadingRepos || isLoadingPRs || isLoadingIssues) {
         return (
             <Box sx={{ mb: 4 }}>
                 <Typography
@@ -137,6 +147,21 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
                         }}
                     >
                         {stats.totalPRs}
+                    </Typography>
+                </Box>
+
+                {/* Closed Issues */}
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <Typography variant="body2" sx={{ fontSize: "13px", color: "#8b949e" }}>Closed Issues</Typography>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: "#fff",
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "13px"
+                        }}
+                    >
+                        {issueStats.closedIssues}
                     </Typography>
                 </Box>
             </Box>

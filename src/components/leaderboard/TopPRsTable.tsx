@@ -20,6 +20,9 @@ import {
   Select,
   MenuItem,
   FormControl,
+  Button,
+  Stack,
+  Chip,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import BarChartIcon from "@mui/icons-material/BarChart";
@@ -46,6 +49,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
   const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [tierFilter, setTierFilter] = useState<"all" | "Gold" | "Silver" | "Bronze">("all");
   const cardRef = useRef<HTMLDivElement>(null);
 
   const rankedPRs = useMemo(() => {
@@ -53,15 +57,71 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
   }, [prs]);
 
   const filteredPRs = useMemo(() => {
-    if (!searchQuery) return rankedPRs;
-    const lowerQuery = searchQuery.toLowerCase();
-    return rankedPRs.filter(
-      (pr) =>
-        pr.pullRequestTitle?.toLowerCase().includes(lowerQuery) ||
-        pr.author?.toLowerCase().includes(lowerQuery) ||
-        pr.repository?.toLowerCase().includes(lowerQuery),
-    );
-  }, [rankedPRs, searchQuery]);
+    let filtered = rankedPRs;
+
+    // Apply tier filter
+    if (tierFilter !== "all") {
+      filtered = filtered.filter(pr => pr.tier === tierFilter);
+    }
+
+    // Apply search filter
+    if (searchQuery) {
+      const lowerQuery = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (pr) =>
+          pr.pullRequestTitle?.toLowerCase().includes(lowerQuery) ||
+          pr.author?.toLowerCase().includes(lowerQuery) ||
+          pr.repository?.toLowerCase().includes(lowerQuery),
+      );
+    }
+
+    return filtered;
+  }, [rankedPRs, searchQuery, tierFilter]);
+
+  const tierCounts = useMemo(() => {
+    return {
+      all: rankedPRs.length,
+      gold: rankedPRs.filter(pr => pr.tier === "Gold").length,
+      silver: rankedPRs.filter(pr => pr.tier === "Silver").length,
+      bronze: rankedPRs.filter(pr => pr.tier === "Bronze").length,
+    };
+  }, [rankedPRs]);
+
+  const getTierColor = (tier: string) => {
+    switch (tier) {
+      case "Gold":
+        return "#FFD700";
+      case "Silver":
+        return "#C0C0C0";
+      case "Bronze":
+        return "#CD7F32";
+      default:
+        return "#8b949e";
+    }
+  };
+
+  const TierFilterButton = ({ label, value, count, color }: { label: string, value: typeof tierFilter, count: number, color: string }) => (
+    <Button
+      size="small"
+      onClick={() => { setTierFilter(value); setPage(0); }}
+      sx={{
+        color: tierFilter === value ? "#fff" : "rgba(255,255,255,0.5)",
+        backgroundColor: tierFilter === value ? "rgba(255,255,255,0.1)" : "transparent",
+        borderRadius: "6px",
+        px: 2,
+        minWidth: "auto",
+        textTransform: "none",
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: "0.8rem",
+        border: tierFilter === value ? `1px solid ${color}` : "1px solid transparent",
+        "&:hover": {
+          backgroundColor: "rgba(255,255,255,0.15)",
+        }
+      }}
+    >
+      {label} <span style={{ opacity: 0.6, marginLeft: '6px', fontSize: '0.75rem' }}>{count}</span>
+    </Button>
+  );
 
   const getChartOption = () => {
     const chartData = filteredPRs;
@@ -196,9 +256,17 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
         }}
       >
-        <Typography variant="body2" color="text.secondary">
-          Highest scoring individual pull requests across all repositories.
-        </Typography>
+        <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
+          <Typography variant="body2" color="text.secondary">
+            Highest scoring individual pull requests across all repositories.
+          </Typography>
+          <Stack direction="row" spacing={1}>
+            <TierFilterButton label="All" value="all" count={tierCounts.all} color="#8b949e" />
+            <TierFilterButton label="Gold" value="Gold" count={tierCounts.gold} color="#FFD700" />
+            <TierFilterButton label="Silver" value="Silver" count={tierCounts.silver} color="#C0C0C0" />
+            <TierFilterButton label="Bronze" value="Bronze" count={tierCounts.bronze} color="#CD7F32" />
+          </Stack>
+        </Box>
 
         <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
           <Tooltip title={showChart ? "Hide Chart" : "Show Chart"}>
@@ -317,7 +385,6 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
 
       <TableContainer
         sx={{
-          maxHeight: "600px",
           overflowY: "auto",
           "&::-webkit-scrollbar": {
             width: "8px",
@@ -478,6 +545,24 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                       >
                         {pr.repository || ""}
                       </Typography>
+                      <Chip
+                        label={pr.tier || "N/A"}
+                        size="small"
+                        sx={{
+                          ml: 1,
+                          height: "20px",
+                          fontSize: "0.65rem",
+                          fontFamily: '"JetBrains Mono", monospace',
+                          backgroundColor: "transparent",
+                          border: `1px solid ${getTierColor(pr.tier)}`,
+                          color: getTierColor(pr.tier),
+                          fontWeight: 600,
+                          borderRadius: "4px",
+                          "& .MuiChip-label": {
+                            px: 1,
+                          },
+                        }}
+                      />
                     </Box>
                   </TableCell>
                   <TableCell
@@ -517,7 +602,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           },
         }}
       />
-    </Card>
+    </Card >
   );
 };
 
@@ -529,8 +614,8 @@ const headerCellStyle = {
   fontWeight: 500,
   fontSize: "0.75rem",
   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  height: "56px",
-  py: 1.5,
+  height: "48px",
+  py: 1,
   boxSizing: "border-box" as const,
 };
 
@@ -538,9 +623,9 @@ const bodyCellStyle = {
   color: "#ffffff",
   fontFamily: '"JetBrains Mono", monospace',
   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  fontSize: "0.85rem",
-  py: 1,
-  height: "60px",
+  fontSize: "0.75rem",
+  py: 0.75,
+  height: "52px",
   boxSizing: "border-box" as const,
 };
 
