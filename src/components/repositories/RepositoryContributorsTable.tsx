@@ -1,12 +1,5 @@
 import React, { useMemo, useState } from "react";
-import {
-  Box,
-  Typography,
-  CircularProgress,
-  Avatar,
-  Button,
-  Collapse,
-} from "@mui/material";
+import { Box, Typography, CircularProgress, Avatar } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { useAllMinerData, useAllMinerStats } from "../../api";
@@ -67,7 +60,9 @@ const RepositoryContributorsTable: React.FC<
     });
 
     // Default sort by score descending
-    return Array.from(contributorsMap.values()).sort((a, b) => b.score - a.score);
+    return Array.from(contributorsMap.values()).sort(
+      (a, b) => b.score - a.score,
+    );
   }, [allPRs, repositoryFullName]);
 
   const displayedContributors = contributors.slice(0, visibleCount);
@@ -250,7 +245,7 @@ const RepositoryContributorsTable: React.FC<
                         color: "#8b949e",
                         whiteSpace: "nowrap", // Force single line
                         overflow: "hidden",
-                        textOverflow: "ellipsis"
+                        textOverflow: "ellipsis",
                       }}
                     >
                       Global Rank #{minerRank}
