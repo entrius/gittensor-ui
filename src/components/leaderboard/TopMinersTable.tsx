@@ -50,6 +50,12 @@ interface TopMinersTableProps {
   onSelectMiner: (githubId: string) => void;
 }
 
+// Utility function to truncate text
+const truncateText = (text: string, maxLength: number): string => {
+  if (!text) return "";
+  return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+};
+
 const TopMinersTable: React.FC<TopMinersTableProps> = ({
   miners,
   isLoading,
@@ -517,22 +523,28 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                         }}
                       />
                       <Box>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 600,
-                            color: "#ffffff",
-                            fontSize: "0.85rem",
-                            fontFamily: '"JetBrains Mono", monospace',
-                            transition: "color 0.2s",
-                            "&:hover": {
-                              color: "primary.main",
-                              textDecoration: "underline",
-                            },
-                          }}
-                        >
-                          {miner.author || miner.githubId || ""}
-                        </Typography>
+                        <Tooltip title={miner.author || miner.githubId || ""} placement="top">
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 600,
+                              color: "#ffffff",
+                              fontSize: "0.85rem",
+                              fontFamily: '"JetBrains Mono", monospace',
+                              transition: "color 0.2s",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              maxWidth: "100%",
+                              "&:hover": {
+                                color: "primary.main",
+                                textDecoration: "underline",
+                              },
+                            }}
+                          >
+                            {truncateText(miner.author || miner.githubId || "", 25)}
+                          </Typography>
+                        </Tooltip>
                         <Typography
                           variant="caption"
                           sx={{

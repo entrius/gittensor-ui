@@ -48,6 +48,12 @@ interface TopRepositoriesTableProps {
   onSelectRepository: (repositoryFullName: string) => void;
 }
 
+// Utility function to truncate text
+const truncateText = (text: string, maxLength: number): string => {
+  if (!text) return "";
+  return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+};
+
 const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   repositories,
   isLoading,
@@ -573,16 +579,23 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                                 : "transparent",
                         }}
                       />
-                      <Typography
-                        component="span"
-                        sx={{
-                          color: "#ffffff",
-                          fontWeight: 500,
-                          transition: "color 0.2s",
-                        }}
-                      >
-                        {repo.repository || ""}
-                      </Typography>
+                      <Tooltip title={repo.repository || ""} placement="top">
+                        <Typography
+                          component="span"
+                          sx={{
+                            color: "#ffffff",
+                            fontWeight: 500,
+                            transition: "color 0.2s",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            maxWidth: "100%",
+                            display: "inline-block",
+                          }}
+                        >
+                          {truncateText(repo.repository || "", 40)}
+                        </Typography>
+                      </Tooltip>
                       <Chip
                         label={repo.tier || "N/A"}
                         size="small"

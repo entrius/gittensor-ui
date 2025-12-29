@@ -38,6 +38,12 @@ interface TopPRsTableProps {
   onSelectRepository: (repositoryFullName: string) => void;
 }
 
+// Utility function to truncate text
+const truncateText = (text: string, maxLength: number): string => {
+  if (!text) return "";
+  return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+};
+
 const TopPRsTable: React.FC<TopPRsTableProps> = ({
   prs,
   isLoading,
@@ -451,20 +457,27 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                     {getRankIcon(pr.rank || 0)}
                   </TableCell>
                   <TableCell sx={{ ...bodyCellStyle, width: "40%" }}>
-                    <Typography
-                      component="span"
-                      sx={{
-                        color: "#ffffff",
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        "&:hover": {
-                          color: "primary.main",
-                          textDecoration: "underline",
-                        },
-                      }}
-                    >
-                      {pr.pullRequestTitle || ""}
-                    </Typography>
+                    <Tooltip title={pr.pullRequestTitle || ""} placement="top">
+                      <Typography
+                        component="span"
+                        sx={{
+                          color: "#ffffff",
+                          fontWeight: 500,
+                          cursor: "pointer",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          maxWidth: "100%",
+                          display: "inline-block",
+                          "&:hover": {
+                            color: "primary.main",
+                            textDecoration: "underline",
+                          },
+                        }}
+                      >
+                        {truncateText(pr.pullRequestTitle || "", 50)}
+                      </Typography>
+                    </Tooltip>
                   </TableCell>
                   <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
                     <Box
@@ -489,16 +502,23 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                         src={`https://avatars.githubusercontent.com/${pr.author}`}
                         sx={{ width: 20, height: 20 }}
                       />
-                      <Typography
-                        component="span"
-                        sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
-                          fontSize: "0.85rem",
-                          transition: "color 0.2s",
-                        }}
-                      >
-                        {pr.author || ""}
-                      </Typography>
+                      <Tooltip title={pr.author || ""} placement="top">
+                        <Typography
+                          component="span"
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.85rem",
+                            transition: "color 0.2s",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            maxWidth: "100%",
+                            display: "inline-block",
+                          }}
+                        >
+                          {truncateText(pr.author || "", 20)}
+                        </Typography>
+                      </Tooltip>
                     </Box>
                   </TableCell>
                   <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
@@ -535,16 +555,23 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                                 : "transparent",
                         }}
                       />
-                      <Typography
-                        component="span"
-                        sx={{
-                          color: "#ffffff",
-                          fontWeight: 500,
-                          transition: "color 0.2s",
-                        }}
-                      >
-                        {pr.repository || ""}
-                      </Typography>
+                      <Tooltip title={pr.repository || ""} placement="top">
+                        <Typography
+                          component="span"
+                          sx={{
+                            color: "#ffffff",
+                            fontWeight: 500,
+                            transition: "color 0.2s",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            maxWidth: "100%",
+                            display: "inline-block",
+                          }}
+                        >
+                          {truncateText(pr.repository || "", 30)}
+                        </Typography>
+                      </Tooltip>
                       <Chip
                         label={pr.tier || "N/A"}
                         size="small"
