@@ -15,7 +15,7 @@ export const useMinersQuery = <TResponse = void, TSelect = TResponse>(
 ) =>
   useApiQuery<TResponse, TSelect>(
     queryName,
-    `/api/miners${url}`,
+    `/miners${url}`,
     refetchInterval,
     queryParams,
   );
@@ -77,12 +77,10 @@ export const usePullRequestDetails = (repo: string, number: number) =>
  * Uses the /miners/repo/prs endpoint
  */
 export const useRepositoryPRs = (repo: string, state?: string) =>
-  useMinersQuery<CommitLog[]>(
-    "useRepositoryPRs",
-    "/repo/prs",
-    undefined,
-    { repo, state }
-  );
+  useMinersQuery<CommitLog[]>("useRepositoryPRs", "/repo/prs", undefined, {
+    repo,
+    state,
+  });
 
 /**
  * Get all issues for a specific repository
@@ -93,7 +91,7 @@ export const useRepositoryIssues = (repo: string) =>
     "useRepositoryIssues",
     "/repo/issues",
     undefined,
-    { repo }
+    { repo },
   );
 
 export interface RepositoryIssue {
@@ -113,7 +111,7 @@ export const useRepositoryMaintainers = (repo: string) =>
     "useRepositoryMaintainers",
     "/repo/maintainers",
     undefined,
-    { repo }
+    { repo },
   );
 
 export interface RepositoryMaintainer {

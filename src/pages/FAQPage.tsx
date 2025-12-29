@@ -35,7 +35,12 @@ export const FAQContent: React.FC = () => {
           question="How do I start mining on Gittensor?"
           answer={
             <>
-              To start mining, you need to make pull requests to recognized OSS repositories on GitHub. Once your code is merged into the production branch, you'll be eligible for emissions based on factors like PR size, files affected, repository popularity, and more. Check out our GitHub repository for detailed setup instructions. Feel free to join the{" "}
+              To start mining, you need to make pull requests to recognized OSS
+              repositories on GitHub. Once your code is merged into the
+              production branch, you'll be eligible for emissions based on
+              factors like PR size, files affected, repository popularity, and
+              more. Check out our GitHub repository for detailed setup
+              instructions. Feel free to join the{" "}
               <a
                 href="https://discord.com/invite/bittensor"
                 target="_blank"
@@ -60,7 +65,13 @@ const FAQPage: React.FC = () => {
         title="Frequently Asked Questions"
         description="Find answers to common questions about Gittensor, incentive mechanisms, subnets, alpha tokens, and how to start mining."
       />
-      <Box sx={{ minHeight: { xs: "auto", md: "calc(100vh - 80px)" }, py: { xs: 2, sm: 0 }, display: 'flex' }}>
+      <Box
+        sx={{
+          minHeight: { xs: "auto", md: "calc(100vh - 80px)" },
+          py: { xs: 2, sm: 0 },
+          display: "flex",
+        }}
+      >
         <FAQContent />
       </Box>
     </Page>

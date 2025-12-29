@@ -43,7 +43,14 @@ interface MinerStats {
   credibility?: number;
 }
 
-type SortColumn = "miner" | "totalScore" | "credibility" | "totalPRs" | "linesAdded" | "linesDeleted" | "linesChanged";
+type SortColumn =
+  | "miner"
+  | "totalScore"
+  | "credibility"
+  | "totalPRs"
+  | "linesAdded"
+  | "linesDeleted"
+  | "linesChanged";
 type SortDirection = "asc" | "desc";
 
 interface TopMinersTableProps {
@@ -157,7 +164,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
         ) {
           const name = params.value;
           const dataIndex = chartData.findIndex(
-            (item) => (item.author || item.githubId || "") === name
+            (item) => (item.author || item.githubId || "") === name,
           );
 
           if (dataIndex !== -1 && echartsRef.current) {
@@ -193,7 +200,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
         }
       },
     }),
-    [chartData]
+    [chartData],
   );
 
   const getChartOption = () => {
@@ -213,13 +220,13 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     };
 
     const minerNames = chartData.map(
-      (item) => item?.author || item?.githubId || ""
+      (item) => item?.author || item?.githubId || "",
     );
 
     const seriesData = chartData.map((item, index) => {
       const val = Number(item?.totalScore) || 0;
       // Manual log transform for stability on polar charts
-      // If we use log scale, we plot log10(val). 
+      // If we use log scale, we plot log10(val).
       // We clamp val at 1 (score 1) so log10(1) = 0.
       const plotValue = useLogScale ? Math.log10(Math.max(val, 1)) : val;
 
@@ -282,13 +289,13 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
         },
         axisPointer: {
           show: true,
-          type: 'shadow',
+          type: "shadow",
           label: {
-            show: false // We don't need the label box, just the shadow highlight
+            show: false, // We don't need the label box, just the shadow highlight
           },
           shadowStyle: {
-            color: 'rgba(255, 255, 255, 0.08)' // Subtle highlight for the sector
-          }
+            color: "rgba(255, 255, 255, 0.08)", // Subtle highlight for the sector
+          },
         },
         axisLine: {
           show: true,
@@ -406,7 +413,17 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     setPage(0);
   };
 
-  const SortableHeader = ({ column, children, align = "left", sx = {} }: { column: SortColumn; children: React.ReactNode; align?: "left" | "right"; sx?: any }) => (
+  const SortableHeader = ({
+    column,
+    children,
+    align = "left",
+    sx = {},
+  }: {
+    column: SortColumn;
+    children: React.ReactNode;
+    align?: "left" | "right";
+    sx?: any;
+  }) => (
     <TableCell
       align={align}
       sx={{
@@ -420,10 +437,20 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       }}
       onClick={() => handleSort(column)}
     >
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: align === "right" ? "flex-end" : "flex-start", gap: 0.5 }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: align === "right" ? "flex-end" : "flex-start",
+          gap: 0.5,
+        }}
+      >
         {children}
         {sortColumn === column && (
-          <Typography component="span" sx={{ fontSize: "0.7rem", opacity: 0.7 }}>
+          <Typography
+            component="span"
+            sx={{ fontSize: "0.7rem", opacity: 0.7 }}
+          >
             {sortDirection === "asc" ? "▲" : "▼"}
           </Typography>
         )}
@@ -674,16 +701,32 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
               >
                 Credibility
               </SortableHeader>
-              <SortableHeader column="totalPRs" align="right" sx={{ width: "10%" }}>
+              <SortableHeader
+                column="totalPRs"
+                align="right"
+                sx={{ width: "10%" }}
+              >
                 PRs
               </SortableHeader>
-              <SortableHeader column="linesAdded" align="right" sx={{ width: "11%" }}>
+              <SortableHeader
+                column="linesAdded"
+                align="right"
+                sx={{ width: "11%" }}
+              >
                 Lines Added
               </SortableHeader>
-              <SortableHeader column="linesDeleted" align="right" sx={{ width: "11%" }}>
+              <SortableHeader
+                column="linesDeleted"
+                align="right"
+                sx={{ width: "11%" }}
+              >
                 Lines Deleted
               </SortableHeader>
-              <SortableHeader column="linesChanged" align="right" sx={{ width: "11%" }}>
+              <SortableHeader
+                column="linesChanged"
+                align="right"
+                sx={{ width: "11%" }}
+              >
                 Lines Changed
               </SortableHeader>
             </TableRow>
@@ -727,7 +770,10 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                         }}
                       />
                       <Box>
-                        <Tooltip title={miner.author || miner.githubId || ""} placement="top">
+                        <Tooltip
+                          title={miner.author || miner.githubId || ""}
+                          placement="top"
+                        >
                           <Typography
                             variant="body2"
                             sx={{
@@ -746,7 +792,10 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                               },
                             }}
                           >
-                            {truncateText(miner.author || miner.githubId || "", 25)}
+                            {truncateText(
+                              miner.author || miner.githubId || "",
+                              25,
+                            )}
                           </Typography>
                         </Tooltip>
                         <Typography
@@ -785,7 +834,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: "0.75rem",
                         fontWeight: 600,
-                        color: "#ffffff"
+                        color: "#ffffff",
                       }}
                     >
                       {((miner.credibility || 0) * 100).toFixed(1)}%

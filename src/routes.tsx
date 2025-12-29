@@ -11,7 +11,6 @@ const HomePage = React.lazy(() => import("./pages/HomePage"));
 const AboutPage = React.lazy(() => import("./pages/AboutPage"));
 const FAQPage = React.lazy(() => import("./pages/FAQPage"));
 const DashboardPage = React.lazy(() => import("./pages/DashboardPage"));
-const RepositoriesPage = React.lazy(() => import("./pages/RepositoriesPage"));
 const TopMinersPage = React.lazy(() => import("./pages/TopMinersPage"));
 const TopPRsPage = React.lazy(() => import("./pages/TopPRsPage"));
 const TopReposPage = React.lazy(() => import("./pages/TopReposPage"));
@@ -50,11 +49,6 @@ const routesArray: AppRoute[] = [
   { name: "roadmap", path: "/roadmap", element: <RoadmapPage /> },
   { name: "about", path: "/about", element: <AboutPage /> },
   { name: "faq", path: "/faq", element: <FAQPage /> },
-  {
-    name: "repositories",
-    path: "/repositories",
-    element: <RepositoriesPage />,
-  },
   {
     name: "onboard",
     path: "/onboard",

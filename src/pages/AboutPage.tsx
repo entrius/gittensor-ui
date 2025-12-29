@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Stack, Typography, Grid } from "@mui/material";
+import { Box, Typography, Grid } from "@mui/material";
 import { Page } from "../components/layout";
 import { SEO } from "../components";
 
@@ -199,7 +199,13 @@ const AboutPage: React.FC = () => {
         title="About Gittensor"
         description="Learn about Gittensor's mission to transform software into a global public resource. Understand how miners, validators, and the community work together."
       />
-      <Box sx={{ minHeight: { xs: "auto", md: "calc(100vh - 80px)" }, py: { xs: 4, sm: 5, md: 6 }, display: 'flex' }}>
+      <Box
+        sx={{
+          minHeight: { xs: "auto", md: "calc(100vh - 80px)" },
+          py: { xs: 4, sm: 5, md: 6 },
+          display: "flex",
+        }}
+      >
         <AboutContent />
       </Box>
     </Page>

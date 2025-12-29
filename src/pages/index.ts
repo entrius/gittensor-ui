@@ -10,12 +10,6 @@ export * from "./LoadingPage";
 export { default as NotFoundPage } from "./NotFoundPage";
 export * from "./NotFoundPage";
 
-export { default as RepositoriesPage } from "./RepositoriesPage";
-export * from "./RepositoriesPage";
-
-export { default as MinersPage } from "./MinersPage";
-export * from "./MinersPage";
-
 export { default as MinerDetailsPage } from "./MinerDetailsPage";
 export * from "./MinerDetailsPage";
 

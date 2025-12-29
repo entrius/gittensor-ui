@@ -18,7 +18,7 @@ export const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
 ) =>
   useApiQuery<TResponse, TSelect>(
     queryName,
-    `/api/dash${url}`,
+    `/dash${url}`,
     refetchInterval,
     queryParams,
   );
@@ -62,7 +62,7 @@ export const useInfiniteCommitLog = (options?: {
   return useInfiniteQuery({
     queryKey: ["useInfiniteCommitLog"],
     queryFn: async ({ pageParam }: { pageParam: number }) => {
-      const url = `/api/dash/commits`;
+      const url = `/dash/commits`;
       const requestUrl = baseUrl ? `${baseUrl}${url}` : url;
       const { data } = await axios.get<CommitLog[]>(requestUrl, {
         params: { page: pageParam, limit },
