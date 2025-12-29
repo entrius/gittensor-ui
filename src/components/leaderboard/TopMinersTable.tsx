@@ -20,6 +20,8 @@ import {
   Select,
   MenuItem,
   FormControl,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import BarChartIcon from "@mui/icons-material/BarChart";
@@ -38,13 +40,30 @@ interface MinerStats {
   hotkey: string;
   rank?: number;
   uniqueReposCount?: number;
+  credibility?: number;
 }
+
+type SortColumn =
+  | "miner"
+  | "totalScore"
+  | "credibility"
+  | "totalPRs"
+  | "linesAdded"
+  | "linesDeleted"
+  | "linesChanged";
+type SortDirection = "asc" | "desc";
 
 interface TopMinersTableProps {
   miners: MinerStats[];
   isLoading?: boolean;
   onSelectMiner: (githubId: string) => void;
 }
+
+// Utility function to truncate text
+const truncateText = (text: string, maxLength: number): string => {
+  if (!text) return "";
+  return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+};
 
 const TopMinersTable: React.FC<TopMinersTableProps> = ({
   miners,
@@ -55,11 +74,71 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [sortColumn, setSortColumn] = useState<SortColumn>("totalScore");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [useLogScale, setUseLogScale] = useState(true);
   const cardRef = useRef<HTMLDivElement>(null);
+  const echartsRef = useRef<any>(null);
 
   const rankedMiners = useMemo(() => {
-    return miners.map((miner, index) => ({ ...miner, rank: index + 1 }));
-  }, [miners]);
+    // First sort by the selected column
+    const sorted = [...miners].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortColumn) {
+        case "miner":
+          aValue = (a.author || a.githubId || "").toLowerCase();
+          bValue = (b.author || b.githubId || "").toLowerCase();
+          break;
+        case "totalScore":
+          aValue = a.totalScore || 0;
+          bValue = b.totalScore || 0;
+          break;
+        case "credibility":
+          aValue = a.credibility || 0;
+          bValue = b.credibility || 0;
+          break;
+        case "totalPRs":
+          aValue = a.totalPRs || 0;
+          bValue = b.totalPRs || 0;
+          break;
+        case "linesAdded":
+          aValue = a.linesAdded || 0;
+          bValue = b.linesAdded || 0;
+          break;
+        case "linesDeleted":
+          aValue = a.linesDeleted || 0;
+          bValue = b.linesDeleted || 0;
+          break;
+        case "linesChanged":
+          aValue = a.linesChanged || 0;
+          bValue = b.linesChanged || 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    // Then assign ranks based on sorted order
+    return sorted.map((miner, index) => ({ ...miner, rank: index + 1 }));
+  }, [miners, sortColumn, sortDirection]);
+
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      // Toggle direction if clicking the same column
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      // Set new column with default direction (desc for numbers, asc for text)
+      setSortColumn(column);
+      setSortDirection(column === "miner" ? "asc" : "desc");
+    }
+    setPage(0);
+  };
 
   const filteredMiners = useMemo(() => {
     if (!searchQuery) return rankedMiners;
@@ -72,86 +151,252 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     );
   }, [rankedMiners, searchQuery]);
 
-  const getChartOption = () => {
-    const chartData = filteredMiners;
-    const textColor = "rgba(255, 255, 255, 0.7)";
-    const axisLineColor = "rgba(255, 255, 255, 0.1)";
+  const chartData = useMemo(() => {
+    return filteredMiners.slice(0, 30);
+  }, [filteredMiners]);
 
-    const xAxisData = chartData.map(
+  const onChartEvents = useMemo(
+    () => ({
+      mouseover: (params: any) => {
+        if (
+          params.componentType === "angleAxis" &&
+          params.targetType === "axisLabel"
+        ) {
+          const name = params.value;
+          const dataIndex = chartData.findIndex(
+            (item) => (item.author || item.githubId || "") === name,
+          );
+
+          if (dataIndex !== -1 && echartsRef.current) {
+            const instance = echartsRef.current.getEchartsInstance();
+            instance.dispatchAction({
+              type: "showTip",
+              seriesIndex: 0,
+              dataIndex: dataIndex,
+            });
+            instance.dispatchAction({
+              type: "highlight",
+              seriesIndex: 0,
+              dataIndex: dataIndex,
+            });
+          }
+        }
+      },
+      mouseout: (params: any) => {
+        if (
+          params.componentType === "angleAxis" &&
+          params.targetType === "axisLabel"
+        ) {
+          if (echartsRef.current) {
+            const instance = echartsRef.current.getEchartsInstance();
+            instance.dispatchAction({
+              type: "downplay",
+              seriesIndex: 0,
+            });
+            instance.dispatchAction({
+              type: "hideTip",
+            });
+          }
+        }
+      },
+    }),
+    [chartData],
+  );
+
+  const getChartOption = () => {
+    const textColor = "rgba(255, 255, 255, 0.9)";
+
+    const getRankColor = (rank: number, total: number) => {
+      if (rank === 1) return "#FFD700"; // Gold
+      if (rank === 2) return "#C0C0C0"; // Silver
+      if (rank === 3) return "#CD7F32"; // Bronze
+
+      const ratio = (rank - 4) / Math.max(total - 3, 1);
+      const hue = 45 - ratio * 200;
+      const saturation = 70 - ratio * 20;
+      const lightness = 55 + ratio * 15;
+
+      return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    };
+
+    const minerNames = chartData.map(
       (item) => item?.author || item?.githubId || "",
     );
-    const seriesData = chartData.map((item) => Number(item?.totalScore) || 0);
+
+    const seriesData = chartData.map((item, index) => {
+      const val = Number(item?.totalScore) || 0;
+      // Manual log transform for stability on polar charts
+      // If we use log scale, we plot log10(val).
+      // We clamp val at 1 (score 1) so log10(1) = 0.
+      const plotValue = useLogScale ? Math.log10(Math.max(val, 1)) : val;
+
+      return {
+        value: plotValue,
+        rawValue: val, // Keep original for tooltip
+        name: item?.author || item?.githubId || "",
+        rank: item?.rank || index + 1,
+        credibility: item?.credibility || 0,
+        totalPRs: item?.totalPRs || 0,
+        linesAdded: item?.linesAdded || 0,
+        linesDeleted: item?.linesDeleted || 0,
+        linesChanged: item?.linesChanged || 0,
+        itemStyle: {
+          color: getRankColor(item?.rank || index + 1, chartData.length),
+          shadowBlur: 15,
+          shadowColor: getRankColor(item?.rank || index + 1, chartData.length),
+        },
+      };
+    });
 
     return {
       backgroundColor: "transparent",
       title: {
-        text: "Top Miners by Total Score",
+        text: "Competitive Miner Arena",
+        subtext: "Radial length = Total Score | Color = Rank (warm to cool)",
         left: "center",
-        textStyle: { color: "#fff", fontFamily: "JetBrains Mono" },
-      },
-      tooltip: {
-        trigger: "axis",
-        backgroundColor: "rgba(20, 20, 20, 0.9)",
-        borderColor: "#333",
-        textStyle: { color: "#fff" },
-      },
-      grid: {
-        left: "3%",
-        right: "4%",
-        bottom: "15%",
-        containLabel: true,
-      },
-      dataZoom: [
-        {
-          type: "slider",
-          show: true,
-          start: 0,
-          end: 20,
-          height: 20,
-          bottom: 10,
-          borderColor: "rgba(255,255,255,0.1)",
-          fillerColor: "rgba(88, 166, 255, 0.2)",
-          handleStyle: { color: "#ffffff" },
-          textStyle: { color: textColor },
+        top: 0, // Moved up
+        textStyle: {
+          color: "#ffffff",
+          fontFamily: "JetBrains Mono",
+          fontSize: 18,
+          fontWeight: 600,
         },
-        {
-          type: "inside",
-          start: 0,
-          end: 20,
+        subtextStyle: {
+          color: "rgba(255, 255, 255, 0.6)",
+          fontFamily: "JetBrains Mono",
+          fontSize: 11,
         },
-      ],
-      xAxis: {
+      },
+      polar: {
+        radius: ["20%", "70%"], // Adjusted radius to prevent cutoff
+        center: ["50%", "55%"],
+      },
+      angleAxis: {
         type: "category",
-        data: xAxisData,
+        data: minerNames,
+        startAngle: 90,
+        triggerEvent: true, // Enable hover events on labels
         axisLabel: {
           color: textColor,
           fontFamily: "JetBrains Mono",
+          fontSize: 11,
+          fontWeight: 500,
           interval: 0,
-          rotate: 45,
-          formatter: (label: string) =>
-            label.length > 15 ? label.substring(0, 12) + "..." : label,
+          formatter: (value: string) => {
+            // Increased truncation limit for better visibility
+            return value.length > 15 ? value.substring(0, 15) + "..." : value;
+          },
         },
-        axisLine: { lineStyle: { color: axisLineColor } },
+        axisPointer: {
+          show: true,
+          type: "shadow",
+          label: {
+            show: false, // We don't need the label box, just the shadow highlight
+          },
+          shadowStyle: {
+            color: "rgba(255, 255, 255, 0.08)", // Subtle highlight for the sector
+          },
+        },
+        axisLine: {
+          show: true,
+          lineStyle: {
+            color: "rgba(255, 255, 255, 0.1)",
+          },
+        },
+        axisTick: { show: false },
+        splitLine: {
+          show: true,
+          lineStyle: {
+            color: "rgba(255, 255, 255, 0.05)",
+          },
+        },
       },
-      yAxis: {
+      radiusAxis: {
         type: "value",
-        axisLabel: { color: textColor, fontFamily: "JetBrains Mono" },
-        splitLine: { lineStyle: { color: axisLineColor } },
+        min: 0, // In log mode, 0 means 10^0 = 1. In linear mode, it's 0.
+        axisLabel: {
+          show: false,
+        },
+        axisLine: { show: false },
+        splitLine: {
+          lineStyle: {
+            color: "rgba(255, 255, 255, 0.08)",
+            type: "dashed",
+          },
+        },
+      },
+      tooltip: {
+        trigger: "item",
+        backgroundColor: "rgba(10, 10, 12, 0.98)",
+        borderColor: "rgba(255, 255, 255, 0.2)",
+        borderWidth: 1,
+        textStyle: {
+          color: "#fff",
+          fontFamily: "JetBrains Mono",
+          fontSize: 12,
+        },
+        padding: [14, 18],
+        formatter: (params: any) => {
+          // Handle both axis trigger and item trigger if needed, but 'trigger: item' usually handles series
+          const data = params.data;
+          if (!data || !data.name) return "";
+
+          const rankColor = getRankColor(data.rank, chartData.length);
+
+          return `
+            <div style="font-family: 'JetBrains Mono', monospace;">
+              <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 8px;">
+                #${data.rank} ${data.name}
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: ${rankColor};"></div>
+                <span style="color: ${rankColor}; font-weight: 600; font-size: 13px;">Rank #${data.rank}</span>
+              </div>
+              <div style="display: grid; gap: 6px; font-size: 11px;">
+                <div style="display: flex; justify-content: space-between; gap: 20px;">
+                  <span style="color: rgba(255,255,255,0.65);">Total Score:</span>
+                  <span style="color: #fff; font-weight: 600;">${data.rawValue !== undefined ? data.rawValue.toFixed(2) : data.value.toFixed(2)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 20px;">
+                  <span style="color: rgba(255,255,255,0.65);">Pull Requests:</span>
+                  <span style="color: #fff; font-weight: 600;">${data.totalPRs}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 20px;">
+                  <span style="color: rgba(255,255,255,0.65);">Lines Added:</span>
+                  <span style="color: #7ee787; font-weight: 600;">+${data.linesAdded.toLocaleString()}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 20px;">
+                  <span style="color: rgba(255,255,255,0.65);">Lines Deleted:</span>
+                  <span style="color: #ff7b72; font-weight: 600;">-${data.linesDeleted.toLocaleString()}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 20px;">
+                  <span style="color: rgba(255,255,255,0.65);">Lines Changed:</span>
+                  <span style="color: #fff; font-weight: 600;">${data.linesChanged.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        },
       },
       series: [
         {
-          data: seriesData,
           type: "bar",
-          itemStyle: {
-            color: "rgba(255, 255, 255, 0.7)",
-            borderRadius: [4, 4, 0, 0],
+          data: seriesData,
+          coordinateSystem: "polar",
+          name: "Miner Score",
+          barWidth: "85%",
+          roundCap: true,
+          emphasis: {
+            focus: "series",
+            itemStyle: {
+              shadowBlur: 25,
+              borderColor: "#fff",
+              borderWidth: 2,
+            },
           },
-          showBackground: true,
-          backgroundStyle: {
-            color: "rgba(255, 255, 255, 0.05)",
-            borderRadius: [4, 4, 0, 0],
-          },
-          large: true,
+          animationDuration: 1500,
+          animationEasing: "elasticOut",
+          animationDelay: (idx: number) => idx * 50,
         },
       ],
     };
@@ -167,6 +412,51 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+
+  const SortableHeader = ({
+    column,
+    children,
+    align = "left",
+    sx = {},
+  }: {
+    column: SortColumn;
+    children: React.ReactNode;
+    align?: "left" | "right";
+    sx?: any;
+  }) => (
+    <TableCell
+      align={align}
+      sx={{
+        ...headerCellStyle,
+        ...(sx || {}),
+        cursor: "pointer",
+        userSelect: "none",
+        "&:hover": {
+          backgroundColor: "rgba(255, 255, 255, 0.05)",
+        },
+      }}
+      onClick={() => handleSort(column)}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: align === "right" ? "flex-end" : "flex-start",
+          gap: 0.5,
+        }}
+      >
+        {children}
+        {sortColumn === column && (
+          <Typography
+            component="span"
+            sx={{ fontSize: "0.7rem", opacity: 0.7 }}
+          >
+            {sortDirection === "asc" ? "▲" : "▼"}
+          </Typography>
+        )}
+      </Box>
+    </TableCell>
+  );
 
   useEffect(() => {
     setPage(0);
@@ -236,6 +526,38 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
               )}
             </IconButton>
           </Tooltip>
+
+          {showChart && (
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={useLogScale}
+                  onChange={(e) => setUseLogScale(e.target.checked)}
+                  size="small"
+                  sx={{
+                    "& .MuiSwitch-switchBase.Mui-checked": {
+                      color: "#primary.main",
+                    },
+                    "& .MuiSwitch-track": {
+                      backgroundColor: "rgba(255, 255, 255, 0.3)",
+                    },
+                  }}
+                />
+              }
+              label={
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontFamily: "JetBrains Mono",
+                    fontSize: "0.8rem",
+                    color: "rgba(255, 255, 255, 0.7)",
+                  }}
+                >
+                  Log Scale
+                </Typography>
+              }
+            />
+          )}
 
           <FormControl size="small">
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -315,12 +637,14 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           sx={{
             p: 2,
             borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-            height: "400px",
+            height: "600px",
             backgroundColor: "rgba(0,0,0,0.2)",
           }}
         >
           {showChart && filteredMiners.length > 0 && (
             <ReactECharts
+              ref={echartsRef}
+              onEvents={onChartEvents}
               option={getChartOption()}
               style={{ height: "100%", width: "100%" }}
             />
@@ -330,7 +654,6 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 
       <TableContainer
         sx={{
-          maxHeight: "600px",
           overflowY: "auto",
           "&::-webkit-scrollbar": {
             width: "8px",
@@ -356,43 +679,56 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
               <TableCell sx={{ ...headerCellStyle, width: "80px" }}>
                 Rank
               </TableCell>
-              <TableCell sx={{ ...headerCellStyle, width: "30%" }}>
+              <SortableHeader column="miner" sx={{ width: "30%" }}>
                 Miner
-              </TableCell>
-              <TableCell
+              </SortableHeader>
+              <SortableHeader
+                column="totalScore"
                 align="right"
                 sx={{
-                  ...headerCellStyle,
                   color: "secondary.main",
                   width: "15%",
                 }}
               >
                 Score
-              </TableCell>
-              <TableCell
+              </SortableHeader>
+              <SortableHeader
+                column="credibility"
                 align="right"
-                sx={{ ...headerCellStyle, width: "10%" }}
+                sx={{
+                  width: "10%",
+                }}
+              >
+                Credibility
+              </SortableHeader>
+              <SortableHeader
+                column="totalPRs"
+                align="right"
+                sx={{ width: "10%" }}
               >
                 PRs
-              </TableCell>
-              <TableCell
+              </SortableHeader>
+              <SortableHeader
+                column="linesAdded"
                 align="right"
-                sx={{ ...headerCellStyle, width: "11%" }}
+                sx={{ width: "11%" }}
               >
                 Lines Added
-              </TableCell>
-              <TableCell
+              </SortableHeader>
+              <SortableHeader
+                column="linesDeleted"
                 align="right"
-                sx={{ ...headerCellStyle, width: "11%" }}
+                sx={{ width: "11%" }}
               >
                 Lines Deleted
-              </TableCell>
-              <TableCell
+              </SortableHeader>
+              <SortableHeader
+                column="linesChanged"
                 align="right"
-                sx={{ ...headerCellStyle, width: "11%" }}
+                sx={{ width: "11%" }}
               >
                 Lines Changed
-              </TableCell>
+              </SortableHeader>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -428,28 +764,40 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                         src={`https://avatars.githubusercontent.com/${miner.author || miner.githubId}`}
                         alt={miner.author || miner.githubId}
                         sx={{
-                          width: 24,
-                          height: 24,
+                          width: 20,
+                          height: 20,
                           border: "1px solid rgba(255, 255, 255, 0.2)",
                         }}
                       />
                       <Box>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 600,
-                            color: "#ffffff",
-                            fontSize: "0.85rem",
-                            fontFamily: '"JetBrains Mono", monospace',
-                            transition: "color 0.2s",
-                            "&:hover": {
-                              color: "primary.main",
-                              textDecoration: "underline",
-                            },
-                          }}
+                        <Tooltip
+                          title={miner.author || miner.githubId || ""}
+                          placement="top"
                         >
-                          {miner.author || miner.githubId || ""}
-                        </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 600,
+                              color: "#ffffff",
+                              fontSize: "0.85rem",
+                              fontFamily: '"JetBrains Mono", monospace',
+                              transition: "color 0.2s",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              maxWidth: "100%",
+                              "&:hover": {
+                                color: "primary.main",
+                                textDecoration: "underline",
+                              },
+                            }}
+                          >
+                            {truncateText(
+                              miner.author || miner.githubId || "",
+                              25,
+                            )}
+                          </Typography>
+                        </Tooltip>
                         <Typography
                           variant="caption"
                           sx={{
@@ -475,6 +823,21 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                       }}
                     >
                       {Number(miner.totalScore || 0).toFixed(2)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ ...bodyCellStyle, width: "10%" }}
+                  >
+                    <Typography
+                      sx={{
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        color: "#ffffff",
+                      }}
+                    >
+                      {((miner.credibility || 0) * 100).toFixed(1)}%
                     </Typography>
                   </TableCell>
                   <TableCell
@@ -562,8 +925,8 @@ const headerCellStyle = {
   fontWeight: 500,
   fontSize: "0.75rem",
   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  height: "56px",
-  py: 1.5,
+  height: "48px",
+  py: 1,
   boxSizing: "border-box" as const,
 };
 
@@ -571,9 +934,9 @@ const bodyCellStyle = {
   color: "#ffffff",
   fontFamily: '"JetBrains Mono", monospace',
   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  fontSize: "0.85rem",
-  py: 1,
-  height: "60px",
+  fontSize: "0.75rem",
+  py: 0.75,
+  height: "52px",
   boxSizing: "border-box" as const,
 };
 

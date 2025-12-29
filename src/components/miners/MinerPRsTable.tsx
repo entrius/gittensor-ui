@@ -25,8 +25,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "merged">(
+    "all",
+  );
 
-  // Filter PRs by selected repository and author
+  // Filter PRs by selected repository, author, and status
   const filteredPRs = useMemo(() => {
     if (!prs) return [];
     let filtered = prs;
@@ -36,8 +39,13 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     if (selectedAuthor) {
       filtered = filtered.filter((pr) => pr.author === selectedAuthor);
     }
+    if (statusFilter === "open") {
+      filtered = filtered.filter((pr) => !pr.mergedAt);
+    } else if (statusFilter === "merged") {
+      filtered = filtered.filter((pr) => pr.mergedAt);
+    }
     return filtered;
-  }, [prs, selectedRepo, selectedAuthor]);
+  }, [prs, selectedRepo, selectedAuthor, statusFilter]);
 
   // Get unique repositories for quick filters
   const uniqueRepos = useMemo(() => {
@@ -109,7 +117,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 fontWeight: 500,
               }}
             >
-              Scored Pull Requests
+              Pull Requests
             </Typography>
             <Typography
               sx={{
@@ -119,7 +127,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               }}
             >
               ({filteredPRs.length}
-              {selectedRepo || selectedAuthor ? ` of ${prs?.length || 0}` : ""})
+              {selectedRepo || selectedAuthor || statusFilter !== "all"
+                ? ` of ${prs?.length || 0}`
+                : ""}
+              )
             </Typography>
           </Box>
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
@@ -185,7 +196,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               fontSize: "0.9rem",
             }}
           >
-            No PRs found for {selectedRepo}
+            No PRs found for the selected filters
           </Typography>
         </Box>
       ) : (
@@ -312,7 +323,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     }}
                   >
                     <Box
-                      onClick={() => setSelectedRepo(pr.repository)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedRepo(pr.repository);
+                      }}
                       sx={{
                         display: "flex",
                         alignItems: "center",
@@ -374,15 +388,41 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     align="right"
                     sx={{ ...bodyCellStyle, width: { xs: "25%", sm: "10%" } }}
                   >
-                    <Typography
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: { xs: "0.7rem", sm: "0.75rem" },
-                        fontWeight: 600,
-                      }}
-                    >
-                      {parseFloat(pr.score).toFixed(4)}
-                    </Typography>
+                    <Box>
+                      {!pr.mergedAt && pr.collateralScore ? (
+                        <Typography
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                            fontWeight: 600,
+                            color: "#fb923c",
+                          }}
+                        >
+                          {parseFloat(pr.collateralScore).toFixed(4)}
+                        </Typography>
+                      ) : (
+                        <Typography
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                            fontWeight: 600,
+                          }}
+                        >
+                          {parseFloat(pr.score).toFixed(4)}
+                        </Typography>
+                      )}
+                      {!pr.mergedAt && pr.collateralScore && (
+                        <Typography
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.6rem",
+                            color: "rgba(255,255,255,0.5)",
+                          }}
+                        >
+                          Collateral
+                        </Typography>
+                      )}
+                    </Box>
                   </TableCell>
                   <TableCell
                     align="right"
@@ -391,9 +431,14 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                       width: "15%",
                       display: { xs: "none", sm: "table-cell" },
                       fontSize: { xs: "0.75rem", sm: "0.85rem" },
+                      color: "rgba(255,255,255,0.7)",
                     }}
                   >
-                    {new Date(pr.mergedAt).toLocaleDateString()}
+                    {pr.mergedAt
+                      ? new Date(pr.mergedAt).toLocaleDateString()
+                      : pr.prState === "CLOSED"
+                        ? "Closed"
+                        : "Open"}
                   </TableCell>
                 </TableRow>
               ))}

@@ -84,7 +84,9 @@ export type CommitLog = {
   deletions: number;
   commitCount: number;
   repository: string;
-  mergedAt: string;
+  mergedAt: string | null;
+  prState?: string;
+  collateralScore?: string;
   author: string;
   githubId?: string; // Numeric GitHub ID - only present in /miners endpoints, not /dash/commits
   score: string; // Backend returns as string
@@ -111,16 +113,19 @@ export type MinerEvaluation = {
   totalMergedPrs?: number;
   // Bronze tier
   bronzeMergedPrs?: number;
+  bronzeClosedPrs?: number;
   bronzeTotalPrs?: number;
   bronzeCollateralScore?: number;
   bronzeScore?: number;
   // Silver tier
   silverMergedPrs?: number;
+  silverClosedPrs?: number;
   silverTotalPrs?: number;
   silverCollateralScore?: number;
   silverScore?: number;
   // Gold tier
   goldMergedPrs?: number;
+  goldClosedPrs?: number;
   goldTotalPrs?: number;
   goldCollateralScore?: number;
   goldScore?: number;
@@ -165,4 +170,38 @@ export type GithubMinerData = {
   // Tracking
   lastFetchedAt: string;
   updatedAt: string;
+};
+
+export type PullRequestDetails = {
+  number: number;
+  repositoryFullName: string;
+  uid: number;
+  hotkey: string;
+  githubId: string;
+  title: string;
+  authorLogin: string;
+  mergedAt: string | null;
+  prCreatedAt: string;
+  prState: string;
+  repoWeightMultiplier: string; // float returned as string
+  baseScore: string; // float returned as string
+  issueMultiplier: string; // float returned as string
+  openPrSpamMultiplier: string; // float returned as string
+  repositoryUniquenessMultiplier: string; // float returned as string
+  timeDecayMultiplier: string; // float returned as string
+  gittensorTagMultiplier: string; // float returned as string
+  credibilityMultiplier: string; // float returned as string
+  earnedScore: string; // float returned as string
+  collateralScore: string; // float returned as string
+  additions: number;
+  deletions: number;
+  commits: number;
+  totalLinesScored: number;
+  gittensorTagged: boolean;
+  mergedByLogin: string | null;
+  description: string | null;
+  lastEditedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  tier: string; // Bronze, Silver, Gold
 };

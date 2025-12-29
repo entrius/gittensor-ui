@@ -43,7 +43,7 @@ const PRDetailsPage: React.FC = () => {
             px: { xs: 2, sm: 2, md: 0 },
           }}
         >
-          <BackButton to="/miners?tab=prs" label="Back to Top PRs" />
+          <BackButton to="/top-prs" label="Back to Top PRs" />
 
           <PRDetailsCard
             repository={repository}

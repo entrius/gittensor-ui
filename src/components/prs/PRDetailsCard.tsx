@@ -6,9 +6,9 @@ import {
   CircularProgress,
   Avatar,
   Grid,
+  Chip,
 } from "@mui/material";
-import { useAllMinerData } from "../../api";
-import { CommitLog } from "../../api/models/Dashboard";
+import { useAllMinerData, usePullRequestDetails } from "../../api";
 import { useNavigate } from "react-router-dom";
 
 interface PRDetailsCardProps {
@@ -21,21 +21,16 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   pullRequestNumber,
 }) => {
   const navigate = useNavigate();
-  const { data: allPRs, isLoading } = useAllMinerData();
+  // Fetch detailed PR data directly
+  const { data: prDetails, isLoading: isDetailsLoading } =
+    usePullRequestDetails(repository, pullRequestNumber);
 
-  // Find the specific PR from all PRs
-  const prData: CommitLog | undefined = React.useMemo(() => {
-    if (!Array.isArray(allPRs)) return undefined;
-    return allPRs.find(
-      (pr) =>
-        pr.repository === repository &&
-        pr.pullRequestNumber === pullRequestNumber,
-    );
-  }, [allPRs, repository, pullRequestNumber]);
+  // Keep fetching all PRs only for ranking purposes (optional, could be optimized later)
+  const { data: allPRs } = useAllMinerData();
 
   // Calculate PR ranking among all PRs
   const prRank = useMemo(() => {
-    if (!prData || !allPRs) return null;
+    if (!prDetails || !allPRs) return null;
 
     // Sort all PRs by score descending
     const sortedPRs = allPRs
@@ -51,9 +46,9 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
       ) + 1;
 
     return rank || null;
-  }, [prData, allPRs, repository, pullRequestNumber]);
+  }, [prDetails, allPRs, repository, pullRequestNumber]);
 
-  if (isLoading) {
+  if (isDetailsLoading) {
     return (
       <Card
         sx={{
@@ -70,7 +65,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     );
   }
 
-  if (!prData) {
+  if (!prDetails) {
     return (
       <Card
         sx={{
@@ -95,33 +90,73 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
 
   const [owner] = repository.split("/");
 
+  const getTierColor = (tier: string) => {
+    switch (tier) {
+      case "Gold":
+        return "#FFD700";
+      case "Silver":
+        return "#C0C0C0";
+      case "Bronze":
+        return "#CD7F32";
+      default:
+        return "#8b949e";
+    }
+  };
+
   const statItems = [
     {
       label: "Score",
-      value: parseFloat(prData.score || "0").toFixed(4),
+      value: parseFloat(prDetails.earnedScore).toFixed(4),
       rank: prRank,
     },
     {
-      label: "Additions",
-      value: `+${prData.additions.toLocaleString()}`,
+      label: "Base Score",
+      value: parseFloat(prDetails.baseScore).toFixed(4),
       rank: null,
-      color: "#3fb950",
+      color: "rgba(255, 255, 255, 0.7)",
     },
     {
-      label: "Deletions",
-      value: `-${prData.deletions.toLocaleString()}`,
+      label: "Lines Scored",
+      value: prDetails.totalLinesScored.toLocaleString(),
       rank: null,
-      color: "#f85149",
     },
     {
-      label: "Total Changes",
-      value: (prData.additions + prData.deletions).toLocaleString(),
+      label: "Changes",
+      value: `+${prDetails.additions} / -${prDetails.deletions}`,
       rank: null,
+      color: "rgba(255, 255, 255, 0.7)",
     },
     {
       label: "Commits",
-      value: prData.commitCount,
+      value: prDetails.commits,
       rank: null,
+    },
+  ];
+
+  const multipliers = [
+    {
+      label: "Repo Weight",
+      value: `${parseFloat(prDetails.repoWeightMultiplier).toFixed(2)}x`,
+    },
+    {
+      label: "Issue Bonus",
+      value: `${parseFloat(prDetails.issueMultiplier).toFixed(2)}x`,
+    },
+    {
+      label: "Credibility",
+      value: `${parseFloat(prDetails.credibilityMultiplier).toFixed(2)}x`,
+    },
+    {
+      label: "Repo Unique",
+      value: `${parseFloat(prDetails.repositoryUniquenessMultiplier).toFixed(2)}x`,
+    },
+    {
+      label: "Time Decay",
+      value: `${parseFloat(prDetails.timeDecayMultiplier).toFixed(2)}x`,
+    },
+    {
+      label: "Tag Bonus",
+      value: `${parseFloat(prDetails.gittensorTagMultiplier).toFixed(2)}x`,
     },
   ];
 
@@ -182,6 +217,43 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             >
               #{pullRequestNumber}
             </Typography>
+            <Box
+              sx={{
+                display: "inline-block",
+                px: 1,
+                py: 0.25,
+                borderRadius: 1,
+                backgroundColor:
+                  prDetails.prState === "CLOSED"
+                    ? "rgba(255, 123, 114, 0.2)"
+                    : prDetails.prState === "MERGED"
+                      ? "rgba(163, 113, 247, 0.2)"
+                      : "rgba(45, 125, 70, 0.2)",
+                border: "1px solid",
+                borderColor:
+                  prDetails.prState === "CLOSED"
+                    ? "rgba(255, 123, 114, 0.4)"
+                    : prDetails.prState === "MERGED"
+                      ? "rgba(163, 113, 247, 0.4)"
+                      : "rgba(45, 125, 70, 0.4)",
+              }}
+            >
+              <Typography
+                sx={{
+                  color:
+                    prDetails.prState === "CLOSED"
+                      ? "#ff7b72"
+                      : prDetails.prState === "MERGED"
+                        ? "#a371f7"
+                        : "#3fb950",
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
+                  textTransform: "capitalize",
+                }}
+              >
+                {prDetails.prState}
+              </Typography>
+            </Box>
           </Box>
           <Typography
             sx={{
@@ -191,28 +263,49 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               mb: 0.5,
             }}
           >
-            {prData.pullRequestTitle}
+            {prDetails.title}
           </Typography>
-          <Typography
-            onClick={() =>
-              navigate(
-                `/miners/repository?name=${encodeURIComponent(repository)}`,
-              )
-            }
-            sx={{
-              color: "rgba(255, 255, 255, 0.5)",
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "0.85rem",
-              cursor: "pointer",
-              transition: "color 0.2s",
-              "&:hover": {
-                color: "primary.main",
-                textDecoration: "underline",
-              },
-            }}
-          >
-            {repository}
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography
+              onClick={() =>
+                navigate(
+                  `/miners/repository?name=${encodeURIComponent(repository)}`,
+                )
+              }
+              sx={{
+                color: "rgba(255, 255, 255, 0.5)",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "0.85rem",
+                cursor: "pointer",
+                transition: "color 0.2s",
+                "&:hover": {
+                  color: "primary.main",
+                  textDecoration: "underline",
+                },
+              }}
+            >
+              {repository}
+            </Typography>
+            {prDetails.tier && (
+              <Chip
+                label={prDetails.tier}
+                size="small"
+                sx={{
+                  height: "20px",
+                  fontSize: "0.65rem",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  backgroundColor: "transparent",
+                  border: `1px solid ${getTierColor(prDetails.tier)}`,
+                  color: getTierColor(prDetails.tier),
+                  fontWeight: 600,
+                  borderRadius: "4px",
+                  "& .MuiChip-label": {
+                    px: 1,
+                  },
+                }}
+              />
+            )}
+          </Box>
         </Box>
       </Box>
 
@@ -323,6 +416,62 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
         ))}
       </Grid>
 
+      {/* Multipliers Breakdown */}
+      <Box sx={{ mb: 3 }}>
+        <Typography
+          sx={{
+            color: "rgba(255, 255, 255, 0.7)",
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: "0.8rem",
+            textTransform: "uppercase",
+            letterSpacing: "1px",
+            fontWeight: 600,
+            mb: 2,
+          }}
+        >
+          Score Multipliers
+        </Typography>
+        <Grid container spacing={2}>
+          {multipliers.map((item, index) => (
+            <Grid item xs={6} sm={4} md={2} key={index}>
+              <Box
+                sx={{
+                  backgroundColor: "rgba(255, 255, 255, 0.03)",
+                  borderRadius: 2,
+                  border: "1px solid rgba(255, 255, 255, 0.05)",
+                  p: 2,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textAlign: "center",
+                }}
+              >
+                <Typography
+                  sx={{
+                    color: "rgba(255, 255, 255, 0.5)",
+                    fontSize: "0.7rem",
+                    mb: 0.5,
+                  }}
+                >
+                  {item.label}
+                </Typography>
+                <Typography
+                  sx={{
+                    color: "#ffffff",
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: "1.1rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  {item.value}
+                </Typography>
+              </Box>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+
       {/* Additional Info */}
       <Grid container spacing={2}>
         {/* Author */}
@@ -351,7 +500,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             </Typography>
             <Box
               onClick={() =>
-                navigate(`/miners/details?githubId=${prData.githubId}`)
+                navigate(`/miners/details?githubId=${prDetails.githubId}`)
               }
               sx={{
                 display: "flex",
@@ -368,8 +517,8 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               }}
             >
               <Avatar
-                src={`https://avatars.githubusercontent.com/${prData.author}`}
-                alt={prData.author}
+                src={`https://avatars.githubusercontent.com/${prDetails.authorLogin}`}
+                alt={prDetails.authorLogin}
                 sx={{ width: 32, height: 32 }}
               />
               <Typography
@@ -381,7 +530,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                   transition: "color 0.2s",
                 }}
               >
-                {prData.author}
+                {prDetails.authorLogin}
               </Typography>
             </Box>
           </Box>
@@ -419,17 +568,19 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                 fontWeight: 500,
               }}
             >
-              {new Date(prData.mergedAt).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
+              {prDetails.mergedAt
+                ? new Date(prDetails.mergedAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })
+                : "Not Merged"}
             </Typography>
           </Box>
         </Grid>
 
         {/* Hotkey */}
-        {prData.hotkey && (
+        {prDetails.hotkey && (
           <Grid item xs={12}>
             <Box
               sx={{
@@ -459,7 +610,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                   wordBreak: "break-all",
                 }}
               >
-                {prData.hotkey}
+                {prDetails.hotkey}
               </Typography>
             </Box>
           </Grid>

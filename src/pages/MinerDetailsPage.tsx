@@ -4,8 +4,10 @@ import { Box } from "@mui/material";
 import { Page } from "../components/layout";
 import {
   MinerScoreCard,
+  MinerActivityViz,
   MinerRepositoriesTable,
   MinerPRsTable,
+  MinerTierPerformance,
   BackButton,
   SEO,
 } from "../components";
@@ -48,10 +50,16 @@ const MinerDetailsPage: React.FC = () => {
             px: { xs: 2, sm: 2, md: 0 },
           }}
         >
-          <BackButton to="/miners" />
+          <BackButton to="/top-miners" />
 
           {/* Miner Score Card */}
           <MinerScoreCard githubId={githubId} />
+
+          {/* Activity Visualization */}
+          <MinerActivityViz githubId={githubId} />
+
+          {/* Tier Performance */}
+          <MinerTierPerformance githubId={githubId} />
 
           {/* Top Repositories */}
           <MinerRepositoriesTable githubId={githubId} />

@@ -20,6 +20,11 @@ import {
   Select,
   MenuItem,
   FormControl,
+  Button,
+  Stack,
+  Chip,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import BarChartIcon from "@mui/icons-material/BarChart";
@@ -35,6 +40,12 @@ interface TopPRsTableProps {
   onSelectRepository: (repositoryFullName: string) => void;
 }
 
+// Utility function to truncate text
+const truncateText = (text: string, maxLength: number): string => {
+  if (!text) return "";
+  return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+};
+
 const TopPRsTable: React.FC<TopPRsTableProps> = ({
   prs,
   isLoading,
@@ -46,6 +57,10 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
   const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [tierFilter, setTierFilter] = useState<
+    "all" | "Gold" | "Silver" | "Bronze"
+  >("all");
+  const [useLogScale, setUseLogScale] = useState(true);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const rankedPRs = useMemo(() => {
@@ -53,60 +68,226 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
   }, [prs]);
 
   const filteredPRs = useMemo(() => {
-    if (!searchQuery) return rankedPRs;
-    const lowerQuery = searchQuery.toLowerCase();
-    return rankedPRs.filter(
-      (pr) =>
-        pr.pullRequestTitle?.toLowerCase().includes(lowerQuery) ||
-        pr.author?.toLowerCase().includes(lowerQuery) ||
-        pr.repository?.toLowerCase().includes(lowerQuery),
-    );
-  }, [rankedPRs, searchQuery]);
+    let filtered = rankedPRs;
+
+    // Apply tier filter
+    if (tierFilter !== "all") {
+      filtered = filtered.filter((pr) => pr.tier === tierFilter);
+    }
+
+    // Apply search filter
+    if (searchQuery) {
+      const lowerQuery = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (pr) =>
+          pr.pullRequestTitle?.toLowerCase().includes(lowerQuery) ||
+          pr.author?.toLowerCase().includes(lowerQuery) ||
+          pr.repository?.toLowerCase().includes(lowerQuery),
+      );
+    }
+
+    return filtered;
+  }, [rankedPRs, searchQuery, tierFilter]);
+
+  const tierCounts = useMemo(() => {
+    return {
+      all: rankedPRs.length,
+      gold: rankedPRs.filter((pr) => pr.tier === "Gold").length,
+      silver: rankedPRs.filter((pr) => pr.tier === "Silver").length,
+      bronze: rankedPRs.filter((pr) => pr.tier === "Bronze").length,
+    };
+  }, [rankedPRs]);
+
+  const getTierColor = (tier: string) => {
+    switch (tier) {
+      case "Gold":
+        return "#FFD700";
+      case "Silver":
+        return "#C0C0C0";
+      case "Bronze":
+        return "#CD7F32";
+      default:
+        return "#8b949e";
+    }
+  };
+
+  const TierFilterButton = ({
+    label,
+    value,
+    count,
+    color,
+  }: {
+    label: string;
+    value: typeof tierFilter;
+    count: number;
+    color: string;
+  }) => (
+    <Button
+      size="small"
+      onClick={() => {
+        setTierFilter(value);
+        setPage(0);
+      }}
+      sx={{
+        color: tierFilter === value ? "#fff" : "rgba(255,255,255,0.5)",
+        backgroundColor:
+          tierFilter === value ? "rgba(255,255,255,0.1)" : "transparent",
+        borderRadius: "6px",
+        px: 2,
+        minWidth: "auto",
+        textTransform: "none",
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: "0.8rem",
+        border:
+          tierFilter === value ? `1px solid ${color}` : "1px solid transparent",
+        "&:hover": {
+          backgroundColor: "rgba(255,255,255,0.15)",
+        },
+      }}
+    >
+      {label}{" "}
+      <span style={{ opacity: 0.6, marginLeft: "6px", fontSize: "0.75rem" }}>
+        {count}
+      </span>
+    </Button>
+  );
 
   const getChartOption = () => {
-    const chartData = filteredPRs;
-    const textColor = "rgba(255, 255, 255, 0.7)";
-    const axisLineColor = "rgba(255, 255, 255, 0.1)";
+    const chartData = filteredPRs.slice(0, 50);
+    const textColor = "rgba(255, 255, 255, 0.85)";
+    const gridColor = "rgba(255, 255, 255, 0.08)";
 
-    const xAxisData = chartData.map((item) => `#${item?.pullRequestNumber || ""}`);
-    const seriesData = chartData.map((item) => Number(parseFloat(item?.score || "0")));
+    const getTierColor = (tier: string) => {
+      switch (tier) {
+        case "Gold":
+          return "#FFD700";
+        case "Silver":
+          return "#C0C0C0";
+        case "Bronze":
+          return "#CD7F32";
+        default:
+          return "rgba(139, 148, 158, 0.9)";
+      }
+    };
+
+    const xAxisData = chartData.map(
+      (item) => `#${item?.pullRequestNumber || ""}`,
+    );
+
+    const stemData = chartData.map((item) => ({
+      value: Number(parseFloat(item?.score || "0")),
+      tier: item?.tier || "N/A",
+      title: item?.pullRequestTitle || "",
+      author: item?.author || "",
+      repository: item?.repository || "",
+      prNumber: item?.pullRequestNumber || 0,
+      rank: item?.rank || 0,
+    }));
+
+    const dotData = stemData.map((item) => ({
+      value: item.value,
+      tier: item.tier,
+      title: item.title,
+      author: item.author,
+      repository: item.repository,
+      prNumber: item.prNumber,
+      rank: item.rank,
+      itemStyle: {
+        color: getTierColor(item.tier),
+        shadowBlur: 10,
+        shadowColor: getTierColor(item.tier),
+      },
+    }));
 
     return {
       backgroundColor: "transparent",
       title: {
-        text: "Top Pull Requests by Score",
+        text: "Pull Request Performance Ranking",
+        subtext: "Individual PR scores with tier classification",
         left: "center",
-        textStyle: { color: "#fff", fontFamily: "JetBrains Mono" },
+        top: 20,
+        textStyle: {
+          color: "#ffffff",
+          fontFamily: "JetBrains Mono",
+          fontSize: 18,
+          fontWeight: 600,
+        },
+        subtextStyle: {
+          color: "rgba(255, 255, 255, 0.6)",
+          fontFamily: "JetBrains Mono",
+          fontSize: 11,
+        },
       },
       tooltip: {
         trigger: "axis",
-        backgroundColor: "rgba(20, 20, 20, 0.9)",
-        borderColor: "#333",
-        textStyle: { color: "#fff" },
+        axisPointer: {
+          type: "shadow",
+          shadowStyle: {
+            color: "rgba(255, 255, 255, 0.05)",
+          },
+        },
+        backgroundColor: "rgba(10, 10, 12, 0.98)",
+        borderColor: "rgba(255, 255, 255, 0.2)",
+        borderWidth: 1,
+        textStyle: {
+          color: "#fff",
+          fontFamily: "JetBrains Mono",
+          fontSize: 12,
+        },
+        padding: [14, 18],
+        formatter: (params: any) => {
+          const data = params[0]?.data || params[1]?.data;
+          if (!data) return "";
+          const tierColor = getTierColor(data.tier);
+
+          return `
+            <div style="font-family: 'JetBrains Mono', monospace;">
+              <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 8px;">
+                PR #${data.prNumber}
+              </div>
+              <div style="margin-bottom: 10px; color: rgba(255,255,255,0.85); font-size: 11px; max-width: 300px; white-space: normal; word-break: break-word; line-height: 1.4;">
+                ${data.title}
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: ${tierColor};"></div>
+                <span style="color: ${tierColor}; font-weight: 600; font-size: 13px;">${data.tier} Tier</span>
+              </div>
+              <div style="display: grid; gap: 6px; font-size: 11px;">
+                <div style="display: flex; justify-content: space-between; gap: 20px;">
+                  <span style="color: rgba(255,255,255,0.65);">Rank:</span>
+                  <span style="color: #fff; font-weight: 600;">#${data.rank}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 20px;">
+                  <span style="color: rgba(255,255,255,0.65);">Score:</span>
+                  <span style="color: #fff; font-weight: 600;">${data.value.toFixed(4)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 20px;">
+                  <span style="color: rgba(255,255,255,0.65);">Author:</span>
+                  <span style="color: #fff; font-weight: 600;">${data.author}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 20px;">
+                  <span style="color: rgba(255,255,255,0.65);">Repository:</span>
+                  <span style="color: #fff; font-weight: 600;">${data.repository.split("/")[1] || data.repository}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        },
       },
       grid: {
         left: "3%",
-        right: "4%",
-        bottom: "15%",
+        right: "3%",
+        bottom: "18%",
+        top: "18%",
         containLabel: true,
       },
       dataZoom: [
         {
-          type: "slider",
-          show: true,
-          start: 0,
-          end: 20,
-          height: 20,
-          bottom: 10,
-          borderColor: "rgba(255,255,255,0.1)",
-          fillerColor: "rgba(88, 166, 255, 0.2)",
-          handleStyle: { color: "#ffffff" },
-          textStyle: { color: textColor },
-        },
-        {
           type: "inside",
           start: 0,
-          end: 20,
+          end: 100,
+          zoomOnMouseWheel: true,
+          moveOnMouseMove: true,
         },
       ],
       xAxis: {
@@ -115,30 +296,90 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         axisLabel: {
           color: textColor,
           fontFamily: "JetBrains Mono",
+          fontSize: 11,
           interval: 0,
           rotate: 45,
+          margin: 12,
         },
-        axisLine: { lineStyle: { color: axisLineColor } },
+        axisLine: {
+          lineStyle: {
+            color: gridColor,
+            width: 1,
+          },
+        },
+        axisTick: {
+          show: false,
+        },
       },
       yAxis: {
-        type: "value",
-        axisLabel: { color: textColor, fontFamily: "JetBrains Mono" },
-        splitLine: { lineStyle: { color: axisLineColor } },
+        type: useLogScale ? "log" : "value",
+        min: useLogScale ? 1 : 0,
+        logBase: 10,
+        name: "PR Score",
+        nameTextStyle: {
+          color: textColor,
+          fontFamily: "JetBrains Mono",
+          fontSize: 12,
+        },
+        axisLabel: {
+          color: textColor,
+          fontFamily: "JetBrains Mono",
+          fontSize: 11,
+          formatter: (value: number) => {
+            // For small values in log scale, format appropriately
+            if (value < 0.01) return value.toExponential(1);
+            return value.toFixed(2);
+          },
+        },
+        splitLine: {
+          lineStyle: {
+            color: gridColor,
+            type: "dashed",
+            opacity: 0.5,
+          },
+        },
+        axisLine: {
+          show: false,
+        },
+        axisTick: {
+          show: false,
+        },
       },
       series: [
         {
-          data: seriesData,
+          name: "Stems",
           type: "bar",
-          itemStyle: {
-            color: "rgba(255, 255, 255, 0.7)",
-            borderRadius: [4, 4, 0, 0],
+          data: dotData.map((item) => ({
+            ...item,
+            itemStyle: {
+              color: getTierColor(item.tier),
+              opacity: 0.4,
+              borderRadius: [2, 2, 0, 0],
+            },
+          })),
+          barWidth: 2,
+          z: 1,
+          animationDuration: 1000,
+          animationEasing: "cubicOut",
+          animationDelay: (idx: number) => idx * 30,
+        },
+        {
+          name: "Dots",
+          type: "scatter",
+          data: dotData,
+          symbolSize: 14,
+          z: 2,
+          emphasis: {
+            scale: 1.5,
+            itemStyle: {
+              shadowBlur: 20,
+              borderColor: "#fff",
+              borderWidth: 2,
+            },
           },
-          showBackground: true,
-          backgroundStyle: {
-            color: "rgba(255, 255, 255, 0.05)",
-            borderRadius: [4, 4, 0, 0],
-          },
-          large: true,
+          animationDuration: 1000,
+          animationEasing: "cubicOut",
+          animationDelay: (idx: number) => idx * 30 + 100,
         },
       ],
     };
@@ -196,9 +437,44 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
         }}
       >
-        <Typography variant="body2" color="text.secondary">
-          Highest scoring individual pull requests across all repositories.
-        </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            Highest scoring individual pull requests across all repositories.
+          </Typography>
+          <Stack direction="row" spacing={1}>
+            <TierFilterButton
+              label="All"
+              value="all"
+              count={tierCounts.all}
+              color="#8b949e"
+            />
+            <TierFilterButton
+              label="Gold"
+              value="Gold"
+              count={tierCounts.gold}
+              color="#FFD700"
+            />
+            <TierFilterButton
+              label="Silver"
+              value="Silver"
+              count={tierCounts.silver}
+              color="#C0C0C0"
+            />
+            <TierFilterButton
+              label="Bronze"
+              value="Bronze"
+              count={tierCounts.bronze}
+              color="#CD7F32"
+            />
+          </Stack>
+        </Box>
 
         <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
           <Tooltip title={showChart ? "Hide Chart" : "Show Chart"}>
@@ -223,6 +499,38 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
               )}
             </IconButton>
           </Tooltip>
+
+          {showChart && (
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={useLogScale}
+                  onChange={(e) => setUseLogScale(e.target.checked)}
+                  size="small"
+                  sx={{
+                    "& .MuiSwitch-switchBase.Mui-checked": {
+                      color: "#primary.main",
+                    },
+                    "& .MuiSwitch-track": {
+                      backgroundColor: "rgba(255, 255, 255, 0.3)",
+                    },
+                  }}
+                />
+              }
+              label={
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontFamily: "JetBrains Mono",
+                    fontSize: "0.8rem",
+                    color: "rgba(255, 255, 255, 0.7)",
+                  }}
+                >
+                  Log Scale
+                </Typography>
+              }
+            />
+          )}
 
           <FormControl size="small">
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -302,7 +610,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           sx={{
             p: 2,
             borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-            height: "400px",
+            height: "600px",
             backgroundColor: "rgba(0,0,0,0.2)",
           }}
         >
@@ -317,7 +625,6 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
 
       <TableContainer
         sx={{
-          maxHeight: "600px",
           overflowY: "auto",
           "&::-webkit-scrollbar": {
             width: "8px",
@@ -371,7 +678,9 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                 <TableRow
                   key={`${pr.repository}-${pr.pullRequestNumber}`}
                   hover
-                  onClick={() => onSelectPR(pr.repository || "", pr.pullRequestNumber)}
+                  onClick={() =>
+                    onSelectPR(pr.repository || "", pr.pullRequestNumber)
+                  }
                   sx={{
                     cursor: "pointer",
                     "&:hover": {
@@ -384,20 +693,27 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                     {getRankIcon(pr.rank || 0)}
                   </TableCell>
                   <TableCell sx={{ ...bodyCellStyle, width: "40%" }}>
-                    <Typography
-                      component="span"
-                      sx={{
-                        color: "#ffffff",
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        "&:hover": {
-                          color: "primary.main",
-                          textDecoration: "underline",
-                        },
-                      }}
-                    >
-                      {pr.pullRequestTitle || ""}
-                    </Typography>
+                    <Tooltip title={pr.pullRequestTitle || ""} placement="top">
+                      <Typography
+                        component="span"
+                        sx={{
+                          color: "#ffffff",
+                          fontWeight: 500,
+                          cursor: "pointer",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          maxWidth: "100%",
+                          display: "inline-block",
+                          "&:hover": {
+                            color: "primary.main",
+                            textDecoration: "underline",
+                          },
+                        }}
+                      >
+                        {truncateText(pr.pullRequestTitle || "", 50)}
+                      </Typography>
+                    </Tooltip>
                   </TableCell>
                   <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
                     <Box
@@ -422,16 +738,23 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                         src={`https://avatars.githubusercontent.com/${pr.author}`}
                         sx={{ width: 20, height: 20 }}
                       />
-                      <Typography
-                        component="span"
-                        sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
-                          fontSize: "0.85rem",
-                          transition: "color 0.2s",
-                        }}
-                      >
-                        {pr.author || ""}
-                      </Typography>
+                      <Tooltip title={pr.author || ""} placement="top">
+                        <Typography
+                          component="span"
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.85rem",
+                            transition: "color 0.2s",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            maxWidth: "100%",
+                            display: "inline-block",
+                          }}
+                        >
+                          {truncateText(pr.author || "", 20)}
+                        </Typography>
+                      </Tooltip>
                     </Box>
                   </TableCell>
                   <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
@@ -463,21 +786,47 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                           backgroundColor:
                             (pr.repository || "").split("/")[0] === "opentensor"
                               ? "#ffffff"
-                              : (pr.repository || "").split("/")[0] === "bitcoin"
+                              : (pr.repository || "").split("/")[0] ===
+                                  "bitcoin"
                                 ? "#F7931A"
                                 : "transparent",
                         }}
                       />
-                      <Typography
-                        component="span"
+                      <Tooltip title={pr.repository || ""} placement="top">
+                        <Typography
+                          component="span"
+                          sx={{
+                            color: "#ffffff",
+                            fontWeight: 500,
+                            transition: "color 0.2s",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            maxWidth: "100%",
+                            display: "inline-block",
+                          }}
+                        >
+                          {truncateText(pr.repository || "", 30)}
+                        </Typography>
+                      </Tooltip>
+                      <Chip
+                        label={pr.tier || "N/A"}
+                        size="small"
                         sx={{
-                          color: "#ffffff",
-                          fontWeight: 500,
-                          transition: "color 0.2s",
+                          ml: 1,
+                          height: "20px",
+                          fontSize: "0.65rem",
+                          fontFamily: '"JetBrains Mono", monospace',
+                          backgroundColor: "transparent",
+                          border: `1px solid ${getTierColor(pr.tier)}`,
+                          color: getTierColor(pr.tier),
+                          fontWeight: 600,
+                          borderRadius: "4px",
+                          "& .MuiChip-label": {
+                            px: 1,
+                          },
                         }}
-                      >
-                        {pr.repository || ""}
-                      </Typography>
+                      />
                     </Box>
                   </TableCell>
                   <TableCell
@@ -529,8 +878,8 @@ const headerCellStyle = {
   fontWeight: 500,
   fontSize: "0.75rem",
   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  height: "56px",
-  py: 1.5,
+  height: "48px",
+  py: 1,
   boxSizing: "border-box" as const,
 };
 
@@ -538,9 +887,9 @@ const bodyCellStyle = {
   color: "#ffffff",
   fontFamily: '"JetBrains Mono", monospace',
   borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  fontSize: "0.85rem",
-  py: 1,
-  height: "60px",
+  fontSize: "0.75rem",
+  py: 0.75,
+  height: "52px",
   boxSizing: "border-box" as const,
 };
 

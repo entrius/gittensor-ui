@@ -6,12 +6,25 @@ import {
   Grid,
   CircularProgress,
   Avatar,
+  Chip,
+  Stack,
+  Divider,
 } from "@mui/material";
+import {
+  Language as WebsiteIcon,
+  Twitter as TwitterIcon,
+  LocationOn as LocationIcon,
+  Business as CompanyIcon,
+  CheckCircle as HireableIcon,
+  GitHub as GitHubIcon,
+  People as FollowersIcon,
+} from "@mui/icons-material";
 import {
   useMinerStats,
   useMinerPRs,
   useAllMinerStats,
   useAllMinerData,
+  useMinerGithubData,
 } from "../../api";
 
 interface MinerScoreCardProps {
@@ -23,7 +36,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
   const { data: minerStats, isLoading, error } = useMinerStats(githubId);
   // Fetch PRs to get username for avatar (only fetches first PR)
   const { data: prs } = useMinerPRs(githubId);
-  const username = prs?.[0]?.author || githubId;
+  // Fetch Rich Github Data
+  const { data: githubData } = useMinerGithubData(githubId);
+
+  const username = githubData?.login || prs?.[0]?.author || githubId;
 
   // Fetch all miners' stats to calculate rankings
   const { data: allMinersStats } = useAllMinerStats();
@@ -62,11 +78,18 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
         .sort((a, b) => Number(b.totalScore) - Number(a.totalScore))
         .findIndex((m) => m.githubId === githubId) + 1;
 
+    const credibilityRanking =
+      allMinersStats
+        .slice()
+        .sort((a, b) => Number(b.credibility || 0) - Number(a.credibility || 0))
+        .findIndex((m) => m.githubId === githubId) + 1;
+
     return {
       totalPrs: prRanking || null,
       linesChanged: linesRanking || null,
       uniqueRepos: reposRanking || null,
       score: scoreRanking || null,
+      credibility: credibilityRanking || null,
     };
   }, [allMinersStats, minerStats, githubId]);
 
@@ -146,36 +169,64 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
     value: string | number;
     rank: number | null | undefined;
     link?: string | null;
+    color?: string;
+    subValue?: string;
   }> = [
-    {
-      label: "Current Score",
-      value: Number(minerStats.totalScore).toFixed(4),
-      rank: rankings?.score,
-    },
-    {
-      label: "Total PRs",
-      value: Number(minerStats.totalPrs || 0),
-      rank: rankings?.totalPrs,
-    },
-    {
-      label: "Scored Lines",
-      value: Number(minerStats.totalLinesChanged || 0).toLocaleString(),
-      rank: rankings?.linesChanged,
-    },
-    {
-      label: "Unique Repos",
-      value: Number(minerStats.uniqueReposCount || 0),
-      rank: rankings?.uniqueRepos,
-    },
-    {
-      label: "Top PR",
-      value: topPR ? parseFloat(topPR.score || "0").toFixed(4) : "N/A",
-      rank: topPRRank,
-      link: topPR
-        ? `https://github.com/${topPR.repository}/pull/${topPR.pullRequestNumber}`
-        : null,
-    },
-  ];
+      {
+        label: "Credibility",
+        value: `${(Number(minerStats.credibility || 0) * 100).toFixed(1)}%`,
+        rank: null,
+        color:
+          (minerStats.credibility || 0) >= 0.9
+            ? "#4ade80" // High green
+            : (minerStats.credibility || 0) >= 0.7
+              ? "#a3e635" // Light green
+              : (minerStats.credibility || 0) >= 0.5
+                ? "#facc15" // Yellow
+                : (minerStats.credibility || 0) >= 0.3
+                  ? "#fb923c" // Orange
+                  : "#f87171", // Red
+        subValue: `${minerStats.totalMergedPrs || 0} Merged / ${minerStats.totalClosedPrs || 0} Closed`,
+      },
+      {
+        label: "Current Score",
+        value: Number(minerStats.totalScore).toFixed(4),
+        rank: rankings?.score,
+      },
+      {
+        label: "Total PRs",
+        value: Number(minerStats.totalPrs || 0),
+        rank: rankings?.totalPrs,
+      },
+      {
+        label: "Scored Lines",
+        value: Number(minerStats.totalLinesChanged || 0).toLocaleString(),
+        rank: rankings?.linesChanged,
+      },
+      {
+        label: "Unique Repos",
+        value: Number(minerStats.uniqueReposCount || 0),
+        rank: rankings?.uniqueRepos,
+      },
+      {
+        label: "Open PRs",
+        value: Number(minerStats.totalOpenPrs || 0),
+        rank: null,
+      },
+      {
+        label: "Open Collateral",
+        value: Number(minerStats.totalCollateralScore || 0).toFixed(4),
+        rank: null,
+      },
+      {
+        label: "Top PR",
+        value: topPR ? parseFloat(topPR.score || "0").toFixed(4) : "N/A",
+        rank: topPRRank,
+        link: topPR
+          ? `https://github.com/${topPR.repository}/pull/${topPR.pullRequestNumber}`
+          : null,
+      },
+    ];
 
   return (
     <Card
@@ -188,174 +239,320 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
       }}
       elevation={0}
     >
-      <Box sx={{ mb: 3, display: "flex", alignItems: "center", gap: 2 }}>
-        <Avatar
-          src={`https://avatars.githubusercontent.com/${username}`}
-          alt={username}
-          sx={{
-            width: 64,
-            height: 64,
-            border: "2px solid rgba(255, 255, 255, 0.1)",
-          }}
-        />
-        <Box>
-          <Typography
-            variant="h5"
+      <Box sx={{ mb: 4, display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3 }}>
+        {/* Identity Column */}
+        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2.5 }}>
+          <Avatar
+            src={`https://avatars.githubusercontent.com/${username}`}
+            alt={username}
             sx={{
-              color: "#ffffff",
-              fontFamily: '"JetBrains Mono", monospace',
-              mb: 0.5,
-              fontSize: "1.3rem",
-              fontWeight: 500,
+              width: 80,
+              height: 80,
+              border: "2px solid rgba(255, 255, 255, 0.1)",
             }}
-          >
-            {username}
-          </Typography>
-          <Typography
-            sx={{
-              color: "rgba(255, 255, 255, 0.6)",
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "0.85rem",
-            }}
-          >
-            {minerStats.hotkey ? minerStats.hotkey : "N/A"}
-          </Typography>
+          />
+          <Box>
+            <Typography
+              variant="h5"
+              sx={{
+                color: "#ffffff",
+                fontFamily: '"JetBrains Mono", monospace',
+                mb: 0.5,
+                fontSize: "1.5rem",
+                fontWeight: 600,
+              }}
+            >
+              {githubData?.name || username}
+            </Typography>
+            <Typography
+              component="a"
+              href={`https://github.com/${username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{
+                color: "primary.main",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "1rem",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 0.5,
+                "&:hover": { textDecoration: "underline" },
+                mb: 1
+              }}
+            >
+              <GitHubIcon fontSize="small" />
+              @{username}
+            </Typography>
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
+              <Typography
+                sx={{
+                  color: "rgba(255, 255, 255, 0.4)",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: "0.75rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px"
+                }}
+              >
+                Hotkey:
+              </Typography>
+              <Typography
+                sx={{
+                  color: "rgba(255, 255, 255, 0.6)",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: "0.75rem",
+                }}
+              >
+                {minerStats.hotkey || "N/A"}
+              </Typography>
+            </Box>
+          </Box>
         </Box>
+
+        {/* Divider for mobile */}
+        <Divider sx={{ display: { xs: "block", md: "none" }, borderColor: "rgba(255, 255, 255, 0.1)" }} />
+
+        {/* Extended Details Column */}
+        {githubData && (
+          <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            {/* Bio */}
+            {githubData.bio && (
+              <Typography
+                sx={{
+                  color: "rgba(255, 255, 255, 0.8)",
+                  fontStyle: "italic",
+                  mb: 2,
+                  fontSize: "0.95rem",
+                  maxWidth: "600px"
+                }}
+              >
+                {githubData.bio}
+              </Typography>
+            )}
+
+            {/* Badges/Tags */}
+            <Stack direction="row" gap={1.5} flexWrap="wrap">
+              {githubData.company && (
+                <Chip
+                  icon={<CompanyIcon style={{ fontSize: 16, color: "rgba(255, 255, 255, 0.7)" }} />}
+                  label={githubData.company}
+                  size="small"
+                  sx={{
+                    backgroundColor: "rgba(255, 255, 255, 0.05)",
+                    color: "rgba(255, 255, 255, 0.9)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)"
+                  }}
+                />
+              )}
+              {githubData.location && (
+                <Chip
+                  icon={<LocationIcon style={{ fontSize: 16, color: "rgba(255, 255, 255, 0.7)" }} />}
+                  label={githubData.location}
+                  size="small"
+                  sx={{
+                    backgroundColor: "rgba(255, 255, 255, 0.05)",
+                    color: "rgba(255, 255, 255, 0.9)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)"
+                  }}
+                />
+              )}
+              {githubData.blog && (
+                <Chip
+                  component="a"
+                  href={githubData.blog.startsWith('http') ? githubData.blog : `https://${githubData.blog}`}
+                  target="_blank"
+                  icon={<WebsiteIcon style={{ fontSize: 16, color: "#58a6ff" }} />}
+                  label="Website"
+                  clickable
+                  size="small"
+                  sx={{
+                    backgroundColor: "rgba(88, 166, 255, 0.1)",
+                    color: "#58a6ff",
+                    border: "1px solid rgba(88, 166, 255, 0.2)"
+                  }}
+                />
+              )}
+              {githubData.twitterUsername && (
+                <Chip
+                  component="a"
+                  href={`https://twitter.com/${githubData.twitterUsername}`}
+                  target="_blank"
+                  icon={<TwitterIcon style={{ fontSize: 16, color: "#1DA1F2" }} />}
+                  label={`@${githubData.twitterUsername}`}
+                  clickable
+                  size="small"
+                  sx={{
+                    backgroundColor: "rgba(29, 161, 242, 0.1)",
+                    color: "#1DA1F2",
+                    border: "1px solid rgba(29, 161, 242, 0.2)"
+                  }}
+                />
+              )}
+              {githubData.hireable && (
+                <Chip
+                  icon={<HireableIcon style={{ fontSize: 16 }} />}
+                  label="Open to Work"
+                  size="small"
+                  color="success"
+                  variant="outlined"
+                />
+              )}
+              <Chip
+                icon={<FollowersIcon style={{ fontSize: 16, color: "rgba(255, 255, 255, 0.7)" }} />}
+                label={`${githubData.followers} followers`}
+                size="small"
+                sx={{
+                  backgroundColor: "rgba(255, 255, 255, 0.05)",
+                  color: "rgba(255, 255, 255, 0.7)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)"
+                }}
+              />
+            </Stack>
+          </Box>
+        )}
       </Box>
 
       <Grid container spacing={2}>
         {statItems.map((item, index) => (
-          <Grid item xs={12} sm={6} md={4} lg={2.4} key={index}>
+          <Grid item xs={12} sm={6} md={3} key={index}>
             <Box
               sx={{
-                backgroundColor: "transparent",
-                borderRadius: 3,
-                border: "1px solid rgba(255, 255, 255, 0.1)",
+                backgroundColor: "rgba(255, 255, 255, 0.03)",
+                borderRadius: 2,
+                border: "1px solid rgba(255, 255, 255, 0.08)",
                 p: 2.5,
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: "center",
+                justifyContent: "space-between",
               }}
             >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                  mb: 1,
-                }}
-              >
-                <Typography
+              <Box>
+                <Box
                   sx={{
-                    color: "rgba(255, 255, 255, 0.5)",
-                    fontFamily: '"JetBrains Mono", monospace',
-                    fontSize: "0.7rem",
-                    textTransform: "uppercase",
-                    letterSpacing: "1px",
-                    fontWeight: 600,
-                  }}
-                >
-                  {item.label}
-                </Typography>
-                {item.rank && (
-                  <Box
-                    sx={{
-                      backgroundColor: "#000000",
-                      borderRadius: "2px",
-                      width: "20px",
-                      height: "20px",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                      border: "1px solid",
-                      borderColor:
-                        item.rank === 1
-                          ? "rgba(255, 215, 0, 0.4)"
-                          : item.rank === 2
-                            ? "rgba(192, 192, 192, 0.4)"
-                            : item.rank === 3
-                              ? "rgba(205, 127, 50, 0.4)"
-                              : "rgba(255, 255, 255, 0.15)",
-                      boxShadow:
-                        item.rank === 1
-                          ? "0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)"
-                          : item.rank === 2
-                            ? "0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)"
-                            : item.rank === 3
-                              ? "0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)"
-                              : "none",
-                    }}
-                  >
-                    <Typography
-                      component="span"
-                      sx={{
-                        color:
-                          item.rank === 1
-                            ? "#FFD700"
-                            : item.rank === 2
-                              ? "#C0C0C0"
-                              : item.rank === 3
-                                ? "#CD7F32"
-                                : "rgba(255, 255, 255, 0.6)",
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.6rem",
-                        fontWeight: 600,
-                        lineHeight: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      {item.rank}
-                    </Typography>
-                  </Box>
-                )}
-              </Box>
-              {item.link ? (
-                <a
-                  href={item.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: "#ffffff",
-                    textDecoration: "none",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    mb: 1.5,
                   }}
                 >
                   <Typography
                     sx={{
-                      color: "#ffffff",
+                      color: "rgba(255, 255, 255, 0.5)",
                       fontFamily: '"JetBrains Mono", monospace',
-                      fontSize: "1.5rem",
+                      fontSize: "0.75rem",
+                      textTransform: "uppercase",
+                      letterSpacing: "1px",
                       fontWeight: 600,
-                      wordBreak: "break-all",
-                      "&:hover": {
-                        color: "primary.main",
-                      },
-                      transition: "color 0.2s",
                     }}
                   >
-                    {String(item.value)}
+                    {item.label}
                   </Typography>
-                </a>
-              ) : (
+                  {item.rank && (
+                    <Box
+                      sx={{
+                        backgroundColor: "#000000",
+                        borderRadius: "2px",
+                        width: "18px",
+                        height: "18px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        border: "1px solid",
+                        borderColor:
+                          item.rank === 1
+                            ? "rgba(255, 215, 0, 0.4)"
+                            : item.rank === 2
+                              ? "rgba(192, 192, 192, 0.4)"
+                              : item.rank === 3
+                                ? "rgba(205, 127, 50, 0.4)"
+                                : "rgba(255, 255, 255, 0.15)",
+                        boxShadow:
+                          item.rank === 1
+                            ? "0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)"
+                            : item.rank === 2
+                              ? "0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)"
+                              : item.rank === 3
+                                ? "0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)"
+                                : "none",
+                      }}
+                    >
+                      <Typography
+                        component="span"
+                        sx={{
+                          color:
+                            item.rank === 1
+                              ? "#FFD700"
+                              : item.rank === 2
+                                ? "#C0C0C0"
+                                : item.rank === 3
+                                  ? "#CD7F32"
+                                  : "rgba(255, 255, 255, 0.6)",
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: "0.6rem",
+                          fontWeight: 600,
+                          lineHeight: 1,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {item.rank}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
                 <Typography
                   sx={{
-                    color: "#ffffff",
+                    color: item.color || "#ffffff",
                     fontFamily: '"JetBrains Mono", monospace',
-                    fontSize: "1.5rem",
+                    fontSize: "1.1rem",
                     fontWeight: 600,
                     wordBreak: "break-all",
+                    lineHeight: 1.2,
                   }}
                 >
                   {String(item.value)}
                 </Typography>
+              </Box>
+              {item.subValue && (
+                <Box
+                  sx={{
+                    mt: 1.5,
+                    borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+                    pt: 1,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center"
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      color: "rgba(255, 255, 255, 0.4)",
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: "0.7rem",
+                    }}
+                  >
+                    Merged: {minerStats.totalMergedPrs || 0}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      color: "rgba(255, 255, 255, 0.4)",
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: "0.7rem",
+                    }}
+                  >
+                    Closed: {minerStats.totalClosedPrs || 0}
+                  </Typography>
+                </Box>
               )}
             </Box>
           </Grid>
         ))}
       </Grid>
+
     </Card>
   );
 };

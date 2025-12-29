@@ -1,6 +1,12 @@
 // Miner-specific hooks - optimized to use new /miners endpoints
 import { useApiQuery } from "./ApiUtils";
-import { CommitLog, GithubMinerData, MinerEvaluation } from "./models/Dashboard";
+import { RepositoryMaintainer, RepositoryIssue } from "./models";
+import {
+  CommitLog,
+  GithubMinerData,
+  MinerEvaluation,
+  PullRequestDetails,
+} from "./models/Dashboard";
 
 export const useMinersQuery = <TResponse = void, TSelect = TResponse>(
   queryName: string,
@@ -54,3 +60,45 @@ export const useAllMinerStats = () =>
  */
 export const useMinerGithubData = (githubId: string) =>
   useMinersQuery<GithubMinerData>("useMinerGithubData", `/${githubId}/github`);
+
+/**
+ * Get detailed information for a specific pull request
+ * Uses the /miners/pr endpoint with repo and number query parameters
+ */
+export const usePullRequestDetails = (repo: string, number: number) =>
+  useMinersQuery<PullRequestDetails>(
+    "usePullRequestDetails",
+    "/pr",
+    undefined,
+    { repo, number },
+  );
+
+/**
+ * Get pull requests for a specific repository filtered by state
+ * Uses the /miners/repo/prs endpoint
+ */
+export const useRepositoryPRs = (repo: string, state?: string) =>
+  useMinersQuery<CommitLog[]>("useRepositoryPRs", "/repo/prs", undefined, {
+    repo,
+    state,
+  });
+
+/**
+ * Get all issues for a specific repository
+ * Uses the /miners/repo/issues endpoint
+ */
+export const useRepositoryIssues = (repo: string) =>
+  useMinersQuery<RepositoryIssue[]>(
+    "useRepositoryIssues",
+    "/repo/issues",
+    undefined,
+    { repo },
+  );
+
+export const useRepositoryMaintainers = (repo: string) =>
+  useMinersQuery<RepositoryMaintainer[]>(
+    "useRepositoryMaintainers",
+    "/repo/maintainers",
+    undefined,
+    { repo },
+  );
