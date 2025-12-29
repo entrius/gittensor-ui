@@ -141,85 +141,184 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   }, [rankedMiners, searchQuery]);
 
   const getChartOption = () => {
-    const chartData = filteredMiners;
-    const textColor = "rgba(255, 255, 255, 0.7)";
-    const axisLineColor = "rgba(255, 255, 255, 0.1)";
+    const chartData = filteredMiners.slice(0, 30); // Optimal for radial display
+    const textColor = "rgba(255, 255, 255, 0.9)";
 
-    const xAxisData = chartData.map(
-      (item) => item?.author || item?.githubId || "",
-    );
-    const seriesData = chartData.map((item) => Number(item?.totalScore) || 0);
+    const getRankColor = (rank: number, total: number) => {
+      // Top performers get warm colors, lower ranks get cooler colors
+      if (rank === 1) return "#FFD700"; // Gold
+      if (rank === 2) return "#C0C0C0"; // Silver  
+      if (rank === 3) return "#CD7F32"; // Bronze
+
+      // Gradient from warm to cool for the rest
+      const ratio = (rank - 4) / (total - 3);
+      const hue = 45 - (ratio * 200); // Orange (45) to Blue (245)
+      const saturation = 70 - (ratio * 20);
+      const lightness = 55 + (ratio * 15);
+
+      return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    };
+
+    const minerNames = chartData.map((item) => item?.author || item?.githubId || "");
+
+    const seriesData = chartData.map((item, index) => ({
+      value: Number(item?.totalScore) || 0,
+      name: item?.author || item?.githubId || "",
+      rank: item?.rank || index + 1,
+      credibility: item?.credibility || 0,
+      totalPRs: item?.totalPRs || 0,
+      linesAdded: item?.linesAdded || 0,
+      linesDeleted: item?.linesDeleted || 0,
+      linesChanged: item?.linesChanged || 0,
+      itemStyle: {
+        color: getRankColor(item?.rank || index + 1, chartData.length),
+        shadowBlur: 15,
+        shadowColor: getRankColor(item?.rank || index + 1, chartData.length),
+      },
+    }));
 
     return {
       backgroundColor: "transparent",
       title: {
-        text: "Top Miners by Total Score",
+        text: "Competitive Miner Arena",
+        subtext: "Radial length = Total Score | Color = Rank (warm to cool)",
         left: "center",
-        textStyle: { color: "#fff", fontFamily: "JetBrains Mono" },
-      },
-      tooltip: {
-        trigger: "axis",
-        backgroundColor: "rgba(20, 20, 20, 0.9)",
-        borderColor: "#333",
-        textStyle: { color: "#fff" },
-      },
-      grid: {
-        left: "3%",
-        right: "4%",
-        bottom: "15%",
-        containLabel: true,
-      },
-      dataZoom: [
-        {
-          type: "slider",
-          show: true,
-          start: 0,
-          end: 20,
-          height: 20,
-          bottom: 10,
-          borderColor: "rgba(255,255,255,0.1)",
-          fillerColor: "rgba(88, 166, 255, 0.2)",
-          handleStyle: { color: "#ffffff" },
-          textStyle: { color: textColor },
+        top: 20,
+        textStyle: {
+          color: "#ffffff",
+          fontFamily: "JetBrains Mono",
+          fontSize: 18,
+          fontWeight: 600,
         },
-        {
-          type: "inside",
-          start: 0,
-          end: 20,
+        subtextStyle: {
+          color: "rgba(255, 255, 255, 0.6)",
+          fontFamily: "JetBrains Mono",
+          fontSize: 11,
         },
-      ],
-      xAxis: {
+      },
+      polar: {
+        radius: ["15%", "80%"],
+        center: ["50%", "54%"],
+      },
+      angleAxis: {
         type: "category",
-        data: xAxisData,
+        data: minerNames,
+        startAngle: 90,
         axisLabel: {
           color: textColor,
           fontFamily: "JetBrains Mono",
-          interval: 0,
-          rotate: 45,
-          formatter: (label: string) =>
-            label.length > 15 ? label.substring(0, 12) + "..." : label,
+          fontSize: 10,
+          rotate: 0,
+          formatter: (value: string) => {
+            return value.length > 10 ? value.substring(0, 10) + "..." : value;
+          },
         },
-        axisLine: { lineStyle: { color: axisLineColor } },
+        axisLine: {
+          show: true,
+          lineStyle: {
+            color: "rgba(255, 255, 255, 0.1)",
+          },
+        },
+        axisTick: {
+          show: false,
+        },
+        splitLine: {
+          show: true,
+          lineStyle: {
+            color: "rgba(255, 255, 255, 0.05)",
+          },
+        },
       },
-      yAxis: {
+      radiusAxis: {
         type: "value",
-        axisLabel: { color: textColor, fontFamily: "JetBrains Mono" },
-        splitLine: { lineStyle: { color: axisLineColor } },
+        axisLabel: {
+          color: textColor,
+          fontFamily: "JetBrains Mono",
+          fontSize: 10,
+          formatter: (value: number) => {
+            if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
+            return value.toFixed(0);
+          },
+        },
+        axisLine: {
+          show: false,
+        },
+        splitLine: {
+          lineStyle: {
+            color: "rgba(255, 255, 255, 0.08)",
+            type: "dashed",
+          },
+        },
+      },
+      tooltip: {
+        trigger: "item",
+        backgroundColor: "rgba(10, 10, 12, 0.98)",
+        borderColor: "rgba(255, 255, 255, 0.2)",
+        borderWidth: 1,
+        textStyle: {
+          color: "#fff",
+          fontFamily: "JetBrains Mono",
+          fontSize: 12,
+        },
+        padding: [14, 18],
+        formatter: (params: any) => {
+          const data = params.data;
+          const rankColor = getRankColor(data.rank, chartData.length);
+
+          return `
+            <div style="font-family: 'JetBrains Mono', monospace;">
+              <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 8px;">
+                #${data.rank} ${data.name}
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: ${rankColor};"></div>
+                <span style="color: ${rankColor}; font-weight: 600; font-size: 13px;">Rank #${data.rank}</span>
+              </div>
+              <div style="display: grid; gap: 6px; font-size: 11px;">
+                <div style="display: flex; justify-content: space-between; gap: 20px;">
+                  <span style="color: rgba(255,255,255,0.65);">Total Score:</span>
+                  <span style="color: #fff; font-weight: 600;">${data.value.toFixed(2)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 20px;">
+                  <span style="color: rgba(255,255,255,0.65);">Pull Requests:</span>
+                  <span style="color: #fff; font-weight: 600;">${data.totalPRs}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 20px;">
+                  <span style="color: rgba(255,255,255,0.65);">Lines Added:</span>
+                  <span style="color: #7ee787; font-weight: 600;">+${data.linesAdded.toLocaleString()}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 20px;">
+                  <span style="color: rgba(255,255,255,0.65);">Lines Deleted:</span>
+                  <span style="color: #ff7b72; font-weight: 600;">-${data.linesDeleted.toLocaleString()}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 20px;">
+                  <span style="color: rgba(255,255,255,0.65);">Lines Changed:</span>
+                  <span style="color: #fff; font-weight: 600;">${data.linesChanged.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        },
       },
       series: [
         {
-          data: seriesData,
           type: "bar",
-          itemStyle: {
-            color: "rgba(255, 255, 255, 0.7)",
-            borderRadius: [4, 4, 0, 0],
+          data: seriesData,
+          coordinateSystem: "polar",
+          name: "Miner Score",
+          barWidth: "85%",
+          roundCap: true,
+          emphasis: {
+            focus: "series",
+            itemStyle: {
+              shadowBlur: 25,
+              borderColor: "#fff",
+              borderWidth: 2,
+            },
           },
-          showBackground: true,
-          backgroundStyle: {
-            color: "rgba(255, 255, 255, 0.05)",
-            borderRadius: [4, 4, 0, 0],
-          },
-          large: true,
+          animationDuration: 1500,
+          animationEasing: "elasticOut",
+          animationDelay: (idx: number) => idx * 50,
         },
       ],
     };
@@ -408,7 +507,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           sx={{
             p: 2,
             borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-            height: "400px",
+            height: "600px",
             backgroundColor: "rgba(0,0,0,0.2)",
           }}
         >

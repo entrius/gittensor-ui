@@ -130,49 +130,135 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
   );
 
   const getChartOption = () => {
-    const chartData = filteredPRs;
-    const textColor = "rgba(255, 255, 255, 0.7)";
-    const axisLineColor = "rgba(255, 255, 255, 0.1)";
+    const chartData = filteredPRs.slice(0, 50);
+    const textColor = "rgba(255, 255, 255, 0.85)";
+    const gridColor = "rgba(255, 255, 255, 0.08)";
+
+    const getTierColor = (tier: string) => {
+      switch (tier) {
+        case "Gold": return "#FFD700";
+        case "Silver": return "#C0C0C0";
+        case "Bronze": return "#CD7F32";
+        default: return "rgba(139, 148, 158, 0.9)";
+      }
+    };
 
     const xAxisData = chartData.map((item) => `#${item?.pullRequestNumber || ""}`);
-    const seriesData = chartData.map((item) => Number(parseFloat(item?.score || "0")));
+
+    const stemData = chartData.map((item) => ({
+      value: Number(parseFloat(item?.score || "0")),
+      tier: item?.tier || "N/A",
+      title: item?.pullRequestTitle || "",
+      author: item?.author || "",
+      repository: item?.repository || "",
+      prNumber: item?.pullRequestNumber || 0,
+      rank: item?.rank || 0,
+    }));
+
+    const dotData = stemData.map(item => ({
+      value: item.value,
+      tier: item.tier,
+      title: item.title,
+      author: item.author,
+      repository: item.repository,
+      prNumber: item.prNumber,
+      rank: item.rank,
+      itemStyle: {
+        color: getTierColor(item.tier),
+        shadowBlur: 10,
+        shadowColor: getTierColor(item.tier),
+      },
+    }));
 
     return {
       backgroundColor: "transparent",
       title: {
-        text: "Top Pull Requests by Score",
+        text: "Pull Request Performance Ranking",
+        subtext: "Individual PR scores with tier classification",
         left: "center",
-        textStyle: { color: "#fff", fontFamily: "JetBrains Mono" },
+        top: 20,
+        textStyle: {
+          color: "#ffffff",
+          fontFamily: "JetBrains Mono",
+          fontSize: 18,
+          fontWeight: 600,
+        },
+        subtextStyle: {
+          color: "rgba(255, 255, 255, 0.6)",
+          fontFamily: "JetBrains Mono",
+          fontSize: 11,
+        },
       },
       tooltip: {
         trigger: "axis",
-        backgroundColor: "rgba(20, 20, 20, 0.9)",
-        borderColor: "#333",
-        textStyle: { color: "#fff" },
+        axisPointer: {
+          type: "shadow",
+          shadowStyle: {
+            color: "rgba(255, 255, 255, 0.05)",
+          },
+        },
+        backgroundColor: "rgba(10, 10, 12, 0.98)",
+        borderColor: "rgba(255, 255, 255, 0.2)",
+        borderWidth: 1,
+        textStyle: {
+          color: "#fff",
+          fontFamily: "JetBrains Mono",
+          fontSize: 12,
+        },
+        padding: [14, 18],
+        formatter: (params: any) => {
+          const data = params[0]?.data || params[1]?.data;
+          if (!data) return "";
+          const tierColor = getTierColor(data.tier);
+
+          return `
+            <div style="font-family: 'JetBrains Mono', monospace;">
+              <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 8px;">
+                PR #${data.prNumber}
+              </div>
+              <div style="margin-bottom: 10px; color: rgba(255,255,255,0.85); font-size: 11px; max-width: 300px;">
+                ${data.title.length > 50 ? data.title.substring(0, 50) + '...' : data.title}
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: ${tierColor};"></div>
+                <span style="color: ${tierColor}; font-weight: 600; font-size: 13px;">${data.tier} Tier</span>
+              </div>
+              <div style="display: grid; gap: 6px; font-size: 11px;">
+                <div style="display: flex; justify-content: space-between; gap: 20px;">
+                  <span style="color: rgba(255,255,255,0.65);">Rank:</span>
+                  <span style="color: #fff; font-weight: 600;">#${data.rank}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 20px;">
+                  <span style="color: rgba(255,255,255,0.65);">Score:</span>
+                  <span style="color: #fff; font-weight: 600;">${data.value.toFixed(4)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 20px;">
+                  <span style="color: rgba(255,255,255,0.65);">Author:</span>
+                  <span style="color: #fff; font-weight: 600;">${data.author}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 20px;">
+                  <span style="color: rgba(255,255,255,0.65);">Repository:</span>
+                  <span style="color: #fff; font-weight: 600;">${data.repository.split('/')[1] || data.repository}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        },
       },
       grid: {
         left: "3%",
-        right: "4%",
-        bottom: "15%",
+        right: "3%",
+        bottom: "18%",
+        top: "18%",
         containLabel: true,
       },
       dataZoom: [
         {
-          type: "slider",
-          show: true,
-          start: 0,
-          end: 20,
-          height: 20,
-          bottom: 10,
-          borderColor: "rgba(255,255,255,0.1)",
-          fillerColor: "rgba(88, 166, 255, 0.2)",
-          handleStyle: { color: "#ffffff" },
-          textStyle: { color: textColor },
-        },
-        {
           type: "inside",
           start: 0,
-          end: 20,
+          end: 100,
+          zoomOnMouseWheel: true,
+          moveOnMouseMove: true,
         },
       ],
       xAxis: {
@@ -181,30 +267,93 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         axisLabel: {
           color: textColor,
           fontFamily: "JetBrains Mono",
+          fontSize: 11,
           interval: 0,
           rotate: 45,
+          margin: 12,
         },
-        axisLine: { lineStyle: { color: axisLineColor } },
+        axisLine: {
+          lineStyle: {
+            color: gridColor,
+            width: 1,
+          },
+        },
+        axisTick: {
+          show: false,
+        },
       },
       yAxis: {
         type: "value",
-        axisLabel: { color: textColor, fontFamily: "JetBrains Mono" },
-        splitLine: { lineStyle: { color: axisLineColor } },
+        name: "PR Score",
+        nameTextStyle: {
+          color: textColor,
+          fontFamily: "JetBrains Mono",
+          fontSize: 12,
+        },
+        axisLabel: {
+          color: textColor,
+          fontFamily: "JetBrains Mono",
+          fontSize: 11,
+          formatter: (value: number) => value.toFixed(2),
+        },
+        splitLine: {
+          lineStyle: {
+            color: gridColor,
+            type: "dashed",
+            opacity: 0.5,
+          },
+        },
+        axisLine: {
+          show: false,
+        },
+        axisTick: {
+          show: false,
+        },
       },
       series: [
         {
-          data: seriesData,
-          type: "bar",
-          itemStyle: {
-            color: "rgba(255, 255, 255, 0.7)",
-            borderRadius: [4, 4, 0, 0],
+          name: "Stems",
+          type: "custom",
+          renderItem: (params: any, api: any) => {
+            const categoryIndex = api.value(0);
+            const start = api.coord([categoryIndex, 0]);
+            const end = api.coord([categoryIndex, api.value(1)]);
+            const data = dotData[params.dataIndex];
+
+            return {
+              type: "line",
+              shape: {
+                x1: start[0],
+                y1: start[1],
+                x2: end[0],
+                y2: end[1],
+              },
+              style: {
+                stroke: getTierColor(data.tier),
+                lineWidth: 2,
+                opacity: 0.4,
+              },
+            };
           },
-          showBackground: true,
-          backgroundStyle: {
-            color: "rgba(255, 255, 255, 0.05)",
-            borderRadius: [4, 4, 0, 0],
+          data: stemData.map((item, idx) => [idx, item.value]),
+          z: 1,
+        },
+        {
+          name: "Dots",
+          type: "scatter",
+          data: dotData,
+          symbolSize: 14,
+          z: 2,
+          emphasis: {
+            scale: 1.5,
+            itemStyle: {
+              shadowBlur: 20,
+              borderColor: "#fff",
+              borderWidth: 2,
+            },
           },
-          large: true,
+          animationDuration: 1000,
+          animationEasing: "elasticOut",
         },
       ],
     };
@@ -376,7 +525,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           sx={{
             p: 2,
             borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-            height: "400px",
+            height: "600px",
             backgroundColor: "rgba(0,0,0,0.2)",
           }}
         >
