@@ -19,7 +19,6 @@ const RepositoryDetailsPage = React.lazy(
   () => import("./pages/RepositoryDetailsPage"),
 );
 const PRDetailsPage = React.lazy(() => import("./pages/PRDetailsPage"));
-const RoadmapPage = React.lazy(() => import("./pages/RoadmapPage"));
 const OnboardPage = React.lazy(() => import("./pages/OnboardPage"));
 
 // 404 page
@@ -46,7 +45,6 @@ const routesArray: AppRoute[] = [
     path: "/miners/pr",
     element: <PRDetailsPage />,
   },
-  { name: "roadmap", path: "/roadmap", element: <RoadmapPage /> },
   { name: "about", path: "/about", element: <AboutPage /> },
   { name: "faq", path: "/faq", element: <FAQPage /> },
   {

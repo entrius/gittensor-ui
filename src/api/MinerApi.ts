@@ -1,5 +1,6 @@
 // Miner-specific hooks - optimized to use new /miners endpoints
 import { useApiQuery } from "./ApiUtils";
+import { RepositoryMaintainer, RepositoryIssue } from "./models";
 import {
   CommitLog,
   GithubMinerData,
@@ -94,18 +95,6 @@ export const useRepositoryIssues = (repo: string) =>
     { repo },
   );
 
-export interface RepositoryIssue {
-  issueNumber: number;
-  repositoryFullName: string;
-  linkedPrNumber: number | null;
-  title: string;
-  createdAt: string | null;
-  closedAt: string | null;
-  state?: string;
-  author?: string;
-  url?: string;
-}
-
 export const useRepositoryMaintainers = (repo: string) =>
   useMinersQuery<RepositoryMaintainer[]>(
     "useRepositoryMaintainers",
@@ -113,10 +102,3 @@ export const useRepositoryMaintainers = (repo: string) =>
     undefined,
     { repo },
   );
-
-export interface RepositoryMaintainer {
-  login: string;
-  avatarUrl: string;
-  htmlUrl: string;
-  type: string;
-}

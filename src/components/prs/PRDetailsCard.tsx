@@ -6,7 +6,6 @@ import {
   CircularProgress,
   Avatar,
   Grid,
-  Divider,
   Chip,
 } from "@mui/material";
 import { useAllMinerData, usePullRequestDetails } from "../../api";
@@ -571,10 +570,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             >
               {prDetails.mergedAt
                 ? new Date(prDetails.mergedAt).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })
                 : "Not Merged"}
             </Typography>
           </Box>

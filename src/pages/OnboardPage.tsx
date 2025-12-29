@@ -3,7 +3,7 @@ import { Box, Tabs, Tab, Typography, Card, CardContent } from "@mui/material";
 import { Page } from "../components/layout";
 import { SEO } from "../components";
 import { useSearchParams } from "react-router-dom";
-import { RoadmapContent } from "./RoadmapPage";
+import { RoadmapContent } from "../components/onboard/RoadmapContent";
 import { AboutContent } from "./AboutPage";
 import { FAQContent } from "./FAQPage";
 

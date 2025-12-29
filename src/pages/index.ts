@@ -13,9 +13,6 @@ export * from "./NotFoundPage";
 export { default as MinerDetailsPage } from "./MinerDetailsPage";
 export * from "./MinerDetailsPage";
 
-export { default as RoadmapPage } from "./RoadmapPage";
-export * from "./RoadmapPage";
-
 export { default as RepositoryDetailsPage } from "./RepositoryDetailsPage";
 export * from "./RepositoryDetailsPage";
 
