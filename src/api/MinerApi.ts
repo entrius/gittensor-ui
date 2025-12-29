@@ -107,3 +107,18 @@ export interface RepositoryIssue {
   author?: string;
   url?: string;
 }
+
+export const useRepositoryMaintainers = (repo: string) =>
+  useMinersQuery<RepositoryMaintainer[]>(
+    "useRepositoryMaintainers",
+    "/repo/maintainers",
+    undefined,
+    { repo }
+  );
+
+export interface RepositoryMaintainer {
+  login: string;
+  avatarUrl: string;
+  htmlUrl: string;
+  type: string;
+}

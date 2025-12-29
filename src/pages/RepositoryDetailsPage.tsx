@@ -18,6 +18,7 @@ import {
   ReadmeViewer,
   RepositoryStats,
   ContributingViewer,
+  RepositoryMaintainers,
 } from "../components";
 
 interface TabPanelProps {
@@ -183,6 +184,9 @@ const RepositoryDetailsPage: React.FC = () => {
               <Box sx={{ pt: 0 }}>
                 {/* Repository Stats */}
                 <RepositoryStats repositoryFullName={repo} />
+
+                {/* Maintainers */}
+                <RepositoryMaintainers repositoryFullName={repo} />
 
                 {/* Contributors Table - it already has its own title "Top Miner Contributors" */}
                 <RepositoryContributorsTable repositoryFullName={repo} />
