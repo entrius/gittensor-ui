@@ -7,6 +7,9 @@ import { subDays, format } from "date-fns";
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import BlockIcon from '@mui/icons-material/Block';
 
 interface MinerActivityVizProps {
     githubId: string;
@@ -255,51 +258,91 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
 
     // Risk Assessment Logic
     const riskAssessment = useMemo(() => {
-        if (!minerStats) return { level: 'unknown', color: '#6b7280', icon: null, message: 'Insufficient data' };
+        if (!minerStats) return { level: 'unknown', color: '#6b7280', icon: null, message: 'Insufficient data', border: '1px solid #6b7280' };
 
         const credibility = minerStats.credibility || 0;
-        const closedPRs = minerStats.totalClosedPrs || 0;
-        const mergedPRs = minerStats.totalMergedPrs || 0;
-        const totalPRs = minerStats.totalPrs || 1;
+        const totalPRs = minerStats.totalPrs || 0;
 
-        // Calculate risk score
-        const closedRatio = closedPRs / totalPRs;
-
-        // High Risk: Low credibility OR high closed ratio
-        if (credibility < 0.5 || closedRatio > 0.3) {
+        // Elite: 100% Credibility AND established history (5+ PRs)
+        if (credibility >= 1 && totalPRs >= 5) {
             return {
-                level: 'high',
-                color: '#ef4444',
-                bgColor: 'rgba(239, 68, 68, 0.1)',
-                borderColor: 'rgba(239, 68, 68, 0.3)',
-                icon: <ErrorOutlineIcon sx={{ fontSize: 18 }} />,
-                message: 'High Risk - Review with caution',
-                recommendation: 'Requires thorough code review'
+                level: 'elite',
+                color: '#10b981',
+                bgColor: 'rgba(16, 185, 129, 0.1)',
+                borderColor: '#10b981',
+                border: '3px double #10b981',
+                icon: <WorkspacePremiumIcon sx={{ fontSize: 18 }} />,
+                message: 'Proven Expert - Prioritize Merge',
+                recommendation: 'Proven Expert - Prioritize Merge'
             };
         }
 
-        // Medium Risk: Medium credibility OR some closed PRs
-        if (credibility < 0.7 || closedRatio > 0.1) {
+        // High Priority: High credibility AND some history (3+ PRs)
+        if (credibility >= 0.7 && totalPRs >= 3) {
+            return {
+                level: 'low',
+                color: '#10b981',
+                bgColor: 'rgba(16, 185, 129, 0.1)',
+                borderColor: 'rgba(16, 185, 129, 0.3)',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                icon: <CheckCircleIcon sx={{ fontSize: 18 }} />,
+                message: 'High Trust - Expedite Code Review',
+                recommendation: 'High Trust - Expedite Code Review'
+            };
+        }
+
+        // New Contributor: Good credibility but low history (< 3 PRs)
+        if (credibility >= 0.5 && totalPRs < 3) {
+            return {
+                level: 'medium',
+                color: '#60a5fa',
+                bgColor: 'rgba(96, 165, 250, 0.1)',
+                borderColor: 'rgba(96, 165, 250, 0.3)',
+                border: '1px solid rgba(96, 165, 250, 0.3)',
+                icon: <InfoOutlinedIcon sx={{ fontSize: 18 }} />,
+                message: 'New Contributor - Standard Code Review',
+                recommendation: 'New Contributor - Standard Code Review'
+            };
+        }
+
+        // Standard Priority: Medium credibility
+        if (credibility >= 0.5) {
             return {
                 level: 'medium',
                 color: '#9ca3af',
                 bgColor: 'rgba(156, 163, 175, 0.1)',
                 borderColor: 'rgba(156, 163, 175, 0.25)',
+                border: '1px solid rgba(156, 163, 175, 0.25)',
                 icon: <WarningAmberIcon sx={{ fontSize: 18 }} />,
-                message: 'Moderate Risk - Standard review',
-                recommendation: 'Normal code review process'
+                message: 'Moderate Trust - Standard Code Review',
+                recommendation: 'Moderate Trust - Standard Code Review'
             };
         }
 
-        // Low Risk: High credibility and few/no closed PRs
+        // Untrusted: Very low credibility (< 0.1)
+        if (credibility < 0.1) {
+            return {
+                level: 'critical',
+                color: '#ef4444',
+                bgColor: 'rgba(239, 68, 68, 0.15)',
+                borderColor: '#ef4444',
+                border: '3px double #ef4444',
+                icon: <BlockIcon sx={{ fontSize: 18 }} />,
+                message: 'Untrusted - Heavy Code Review',
+                recommendation: 'Untrusted - Heavy Code Review'
+            };
+        }
+
+        // Low Priority: Low credibility (0.1 - 0.49)
         return {
-            level: 'low',
-            color: '#10b981',
-            bgColor: 'rgba(16, 185, 129, 0.1)',
-            borderColor: 'rgba(16, 185, 129, 0.3)',
-            icon: <CheckCircleIcon sx={{ fontSize: 18 }} />,
-            message: 'Low Risk - Trustworthy contributor',
-            recommendation: 'Standard review recommended'
+            level: 'high',
+            color: '#ef4444',
+            bgColor: 'rgba(239, 68, 68, 0.1)',
+            borderColor: 'rgba(239, 68, 68, 0.3)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            icon: <ErrorOutlineIcon sx={{ fontSize: 18 }} />,
+            message: 'Low Trust - Strict Code Review',
+            recommendation: 'Low Trust - Strict Code Review'
         };
     }, [minerStats]);
 
@@ -335,7 +378,7 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
                     size="small"
                     sx={{
                         backgroundColor: riskAssessment.bgColor,
-                        border: `1px solid ${riskAssessment.borderColor}`,
+                        border: riskAssessment.border || `1px solid ${riskAssessment.borderColor}`,
                         color: riskAssessment.color,
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.7rem',
