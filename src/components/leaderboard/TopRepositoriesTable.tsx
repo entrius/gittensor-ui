@@ -23,6 +23,8 @@ import {
     Button,
     Stack,
     Chip,
+    Switch,
+    FormControlLabel,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import BarChartIcon from "@mui/icons-material/BarChart";
@@ -66,6 +68,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     const [sortColumn, setSortColumn] = useState<SortColumn>("totalScore");
     const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
     const [tierFilter, setTierFilter] = useState<"all" | "Gold" | "Silver" | "Bronze">("all");
+    const [useLogScale, setUseLogScale] = useState(true);
     const cardRef = useRef<HTMLDivElement>(null);
 
     const rankedRepositories = useMemo(() => {
@@ -303,7 +306,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 },
             },
             yAxis: {
-                type: "value",
+                type: useLogScale ? "log" : "value",
+                min: useLogScale ? 1 : 0,
+                logBase: 10,
                 name: "Total Score",
                 nameTextStyle: {
                     color: textColor,
@@ -536,6 +541,38 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                                 )}
                             </IconButton>
                         </Tooltip>
+
+                        {showChart && (
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={useLogScale}
+                                        onChange={(e) => setUseLogScale(e.target.checked)}
+                                        size="small"
+                                        sx={{
+                                            "& .MuiSwitch-switchBase.Mui-checked": {
+                                                color: "#primary.main",
+                                            },
+                                            "& .MuiSwitch-track": {
+                                                backgroundColor: "rgba(255, 255, 255, 0.3)",
+                                            },
+                                        }}
+                                    />
+                                }
+                                label={
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            fontFamily: "JetBrains Mono",
+                                            fontSize: "0.8rem",
+                                            color: "rgba(255, 255, 255, 0.7)",
+                                        }}
+                                    >
+                                        Log Scale
+                                    </Typography>
+                                }
+                            />
+                        )}
 
                         <FormControl size="small">
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>

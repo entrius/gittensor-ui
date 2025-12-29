@@ -23,6 +23,8 @@ import {
   Button,
   Stack,
   Chip,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import BarChartIcon from "@mui/icons-material/BarChart";
@@ -56,6 +58,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [tierFilter, setTierFilter] = useState<"all" | "Gold" | "Silver" | "Bronze">("all");
+  const [useLogScale, setUseLogScale] = useState(true);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const rankedPRs = useMemo(() => {
@@ -216,8 +219,8 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
               <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 8px;">
                 PR #${data.prNumber}
               </div>
-              <div style="margin-bottom: 10px; color: rgba(255,255,255,0.85); font-size: 11px; max-width: 300px;">
-                ${data.title.length > 50 ? data.title.substring(0, 50) + '...' : data.title}
+              <div style="margin-bottom: 10px; color: rgba(255,255,255,0.85); font-size: 11px; max-width: 300px; white-space: normal; word-break: break-word; line-height: 1.4;">
+                ${data.title}
               </div>
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
                 <div style="width: 8px; height: 8px; border-radius: 50%; background: ${tierColor};"></div>
@@ -283,7 +286,9 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         },
       },
       yAxis: {
-        type: "value",
+        type: useLogScale ? "log" : "value",
+        min: useLogScale ? 1 : 0,
+        logBase: 10,
         name: "PR Score",
         nameTextStyle: {
           color: textColor,
@@ -294,7 +299,11 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           color: textColor,
           fontFamily: "JetBrains Mono",
           fontSize: 11,
-          formatter: (value: number) => value.toFixed(2),
+          formatter: (value: number) => {
+            // For small values in log scale, format appropriately
+            if (value < 0.01) return value.toExponential(1);
+            return value.toFixed(2);
+          },
         },
         splitLine: {
           lineStyle: {
@@ -313,30 +322,20 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
       series: [
         {
           name: "Stems",
-          type: "custom",
-          renderItem: (params: any, api: any) => {
-            const categoryIndex = api.value(0);
-            const start = api.coord([categoryIndex, 0]);
-            const end = api.coord([categoryIndex, api.value(1)]);
-            const data = dotData[params.dataIndex];
-
-            return {
-              type: "line",
-              shape: {
-                x1: start[0],
-                y1: start[1],
-                x2: end[0],
-                y2: end[1],
-              },
-              style: {
-                stroke: getTierColor(data.tier),
-                lineWidth: 2,
-                opacity: 0.4,
-              },
-            };
-          },
-          data: stemData.map((item, idx) => [idx, item.value]),
+          type: "bar",
+          data: dotData.map((item) => ({
+            ...item,
+            itemStyle: {
+              color: getTierColor(item.tier),
+              opacity: 0.4,
+              borderRadius: [2, 2, 0, 0],
+            },
+          })),
+          barWidth: 2,
           z: 1,
+          animationDuration: 1000,
+          animationEasing: "cubicOut",
+          animationDelay: (idx: number) => idx * 30,
         },
         {
           name: "Dots",
@@ -353,7 +352,8 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
             },
           },
           animationDuration: 1000,
-          animationEasing: "elasticOut",
+          animationEasing: "cubicOut",
+          animationDelay: (idx: number) => idx * 30 + 100,
         },
       ],
     };
@@ -446,6 +446,38 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
               )}
             </IconButton>
           </Tooltip>
+
+          {showChart && (
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={useLogScale}
+                  onChange={(e) => setUseLogScale(e.target.checked)}
+                  size="small"
+                  sx={{
+                    "& .MuiSwitch-switchBase.Mui-checked": {
+                      color: "#primary.main",
+                    },
+                    "& .MuiSwitch-track": {
+                      backgroundColor: "rgba(255, 255, 255, 0.3)",
+                    },
+                  }}
+                />
+              }
+              label={
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontFamily: "JetBrains Mono",
+                    fontSize: "0.8rem",
+                    color: "rgba(255, 255, 255, 0.7)",
+                  }}
+                >
+                  Log Scale
+                </Typography>
+              }
+            />
+          )}
 
           <FormControl size="small">
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
