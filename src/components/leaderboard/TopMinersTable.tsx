@@ -26,7 +26,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import TableChartIcon from "@mui/icons-material/TableChart";
-import ReactECharts from "echarts-for-react";
+import { SafeECharts } from "../common";
 
 interface MinerStats {
   githubId: string;
@@ -642,7 +642,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           }}
         >
           {showChart && filteredMiners.length > 0 && (
-            <ReactECharts
+            <SafeECharts
               ref={echartsRef}
               onEvents={onChartEvents}
               option={getChartOption()}

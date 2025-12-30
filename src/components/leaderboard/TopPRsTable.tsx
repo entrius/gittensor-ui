@@ -29,7 +29,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import TableChartIcon from "@mui/icons-material/TableChart";
-import ReactECharts from "echarts-for-react";
+import { SafeECharts } from "../common";
 import { CommitLog } from "../../api/models/Dashboard";
 
 interface TopPRsTableProps {
@@ -615,7 +615,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           }}
         >
           {showChart && filteredPRs.length > 0 && (
-            <ReactECharts
+            <SafeECharts
               option={getChartOption()}
               style={{ height: "100%", width: "100%" }}
             />

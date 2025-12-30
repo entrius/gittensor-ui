@@ -98,7 +98,7 @@ const RepositoryDetailsPage: React.FC = () => {
               <Grid item xs={12} md={8}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                   <Avatar
-                    src={`https://github.com/${owner}.png`}
+                    src={`https://avatars.githubusercontent.com/${owner}`}
                     variant="rounded"
                     sx={{
                       width: 32,

@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Box, Card, Typography, Grid, CircularProgress, Chip, Stack } from "@mui/material";
 import { ActivityCalendar } from "react-activity-calendar";
-import ReactECharts from "echarts-for-react";
+import { SafeECharts } from "../common";
 import { useMinerStats, useMinerPRs, useReposAndWeights, useAllMinerStats } from "../../api";
 import { subDays, format } from "date-fns";
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -130,7 +130,7 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
                 center: ['50%', '50%'],
                 radius: '50%',
                 shape: 'circle',
-                splitNumber: 4,
+                splitNumber: 5,
                 axisName: {
                     color: 'rgba(255, 255, 255, 0.6)',
                     fontFamily: '"JetBrains Mono", monospace',
@@ -143,8 +143,9 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
                             'rgba(255, 255, 255, 0.05)',
                             'rgba(255, 255, 255, 0.05)',
                             'rgba(255, 255, 255, 0.05)',
+                            'rgba(255, 255, 255, 0.05)',
                             'rgba(255, 255, 255, 0.05)'
-                        ].reverse()
+                        ]
                     }
                 },
                 splitArea: {
@@ -483,7 +484,7 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
                         </Typography>
 
                         <Box sx={{ height: "190px", width: "100%", mb: 0.75 }}>
-                            <ReactECharts
+                            <SafeECharts
                                 option={qualityOption}
                                 style={{ height: '100%', width: '100%' }}
                                 opts={{ renderer: 'svg' }}
@@ -542,7 +543,7 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
                             Performance Profile
                         </Typography>
                         <Box sx={{ height: "220px", width: "100%" }}>
-                            <ReactECharts
+                            <SafeECharts
                                 option={radarOption}
                                 style={{ height: '100%', width: '100%' }}
                                 opts={{ renderer: 'svg' }}

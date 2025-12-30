@@ -10,7 +10,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { ActivityCalendar } from "react-activity-calendar";
-import ReactECharts from "echarts-for-react";
+import { SafeECharts } from "../common";
 import {
   useAllMinerStats,
   useAllMinerData,
@@ -429,7 +429,7 @@ const GlobalActivityViz: React.FC = () => {
           </Typography>
 
           <Box sx={{ height: "200px", width: "100%", mb: 1.5 }}>
-            <ReactECharts
+            <SafeECharts
               option={qualityOption}
               style={{ height: "100%", width: "100%" }}
               opts={{ renderer: "svg" }}
@@ -591,8 +591,11 @@ const GlobalActivityViz: React.FC = () => {
                 >
                   <Box
                     component="img"
-                    src={`https://github.com/${repo.owner}.png`}
+                    src={`https://avatars.githubusercontent.com/${repo.owner}`}
                     alt={repo.fullName}
+                    onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                      e.currentTarget.style.display = "none";
+                    }}
                     sx={{
                       width: 40,
                       height: 40,

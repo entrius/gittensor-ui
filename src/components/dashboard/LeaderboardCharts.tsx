@@ -10,7 +10,7 @@ import {
   Stack,
   Button,
 } from "@mui/material";
-import ReactECharts from "echarts-for-react";
+import { SafeECharts } from "../common";
 import { useAllMinerData, useReposAndWeights } from "../../api";
 
 const truncateText = (text: string, maxLength: number): string => {
@@ -379,7 +379,7 @@ const LeaderboardCharts: React.FC = () => {
           return `
             <div style="font-family: 'JetBrains Mono', monospace;">
               <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.15);">
-                <img src="https://github.com/${repoOwner}.png" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid ${tierColor}; background-color: ${avatarBg};" />
+                <img src="https://avatars.githubusercontent.com/${repoOwner}" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid ${tierColor}; background-color: ${avatarBg};" onerror="this.style.display='none'" />
                 <div>
                   <div style="font-weight: 700; font-size: 14px; color: #fff;">${repoName}</div>
                   <div style="font-size: 11px; color: rgba(255,255,255,0.6);">${repoOwner}</div>
@@ -576,18 +576,10 @@ const LeaderboardCharts: React.FC = () => {
         </Box>
       </Box>
       <Box sx={{ flex: 1, p: 2, backgroundColor: "rgba(0,0,0,0.2)" }}>
-        {activeTab === 0 && (
-          <ReactECharts
-            option={getPRsChartOption()}
-            style={{ height: "100%", width: "100%" }}
-          />
-        )}
-        {activeTab === 1 && (
-          <ReactECharts
-            option={getReposChartOption()}
-            style={{ height: "100%", width: "100%" }}
-          />
-        )}
+        <SafeECharts
+          option={activeTab === 0 ? getPRsChartOption() : getReposChartOption()}
+          style={{ height: "100%", width: "100%" }}
+        />
       </Box>
     </Card>
   );
