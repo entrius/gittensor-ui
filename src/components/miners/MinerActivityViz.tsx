@@ -130,7 +130,7 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
                 center: ['50%', '50%'],
                 radius: '50%',
                 shape: 'circle',
-                splitNumber: 4,
+                splitNumber: 5,
                 axisName: {
                     color: 'rgba(255, 255, 255, 0.6)',
                     fontFamily: '"JetBrains Mono", monospace',
@@ -143,8 +143,9 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
                             'rgba(255, 255, 255, 0.05)',
                             'rgba(255, 255, 255, 0.05)',
                             'rgba(255, 255, 255, 0.05)',
+                            'rgba(255, 255, 255, 0.05)',
                             'rgba(255, 255, 255, 0.05)'
-                        ].reverse()
+                        ]
                     }
                 },
                 splitArea: {
