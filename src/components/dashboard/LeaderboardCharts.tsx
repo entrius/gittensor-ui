@@ -10,7 +10,7 @@ import {
   Stack,
   Button,
 } from "@mui/material";
-import { SafeECharts } from "../common";
+import ReactECharts from "echarts-for-react";
 import { useAllMinerData, useReposAndWeights } from "../../api";
 
 const truncateText = (text: string, maxLength: number): string => {
@@ -576,7 +576,7 @@ const LeaderboardCharts: React.FC = () => {
         </Box>
       </Box>
       <Box sx={{ flex: 1, p: 2, backgroundColor: "rgba(0,0,0,0.2)" }}>
-        <SafeECharts
+        <ReactECharts
           option={activeTab === 0 ? getPRsChartOption() : getReposChartOption()}
           style={{ height: "100%", width: "100%" }}
         />

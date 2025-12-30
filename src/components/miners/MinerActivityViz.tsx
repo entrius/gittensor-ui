@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Box, Card, Typography, Grid, CircularProgress, Chip, Stack } from "@mui/material";
 import { ActivityCalendar } from "react-activity-calendar";
-import { SafeECharts } from "../common";
+import ReactECharts from "echarts-for-react";
 import { useMinerStats, useMinerPRs, useReposAndWeights, useAllMinerStats } from "../../api";
 import { subDays, format } from "date-fns";
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -484,7 +484,7 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
                         </Typography>
 
                         <Box sx={{ height: "190px", width: "100%", mb: 0.75 }}>
-                            <SafeECharts
+                            <ReactECharts
                                 option={qualityOption}
                                 style={{ height: '100%', width: '100%' }}
                                 opts={{ renderer: 'svg' }}
@@ -543,7 +543,7 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
                             Performance Profile
                         </Typography>
                         <Box sx={{ height: "220px", width: "100%" }}>
-                            <SafeECharts
+                            <ReactECharts
                                 option={radarOption}
                                 style={{ height: '100%', width: '100%' }}
                                 opts={{ renderer: 'svg' }}

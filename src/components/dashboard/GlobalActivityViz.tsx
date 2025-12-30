@@ -10,7 +10,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { ActivityCalendar } from "react-activity-calendar";
-import { SafeECharts } from "../common";
+import ReactECharts from "echarts-for-react";
 import {
   useAllMinerStats,
   useAllMinerData,
@@ -429,7 +429,7 @@ const GlobalActivityViz: React.FC = () => {
           </Typography>
 
           <Box sx={{ height: "200px", width: "100%", mb: 1.5 }}>
-            <SafeECharts
+            <ReactECharts
               option={qualityOption}
               style={{ height: "100%", width: "100%" }}
               opts={{ renderer: "svg" }}

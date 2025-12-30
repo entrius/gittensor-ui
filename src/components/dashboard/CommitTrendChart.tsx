@@ -1,5 +1,5 @@
 import React from "react";
-import { SafeECharts } from "../common";
+import ReactECharts from "echarts-for-react";
 import {
   Card,
   CardContent,
@@ -181,7 +181,7 @@ const CommitTrendChart: React.FC = () => {
         >
           Lines Committed Trend
         </Typography>
-        <SafeECharts
+        <ReactECharts
           option={option}
           style={{ height: "100%", width: "100%", flex: "1 1 0", minHeight: 0 }}
           opts={{ renderer: "canvas" }}
