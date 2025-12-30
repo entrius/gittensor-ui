@@ -93,9 +93,9 @@ const DashboardPage: React.FC = () => {
 
             <Grid item xs={12} sm={6} md={6} lg={6} xl={3}>
               <KpiCard
-                title="Lines Committed"
-                value={stats?.recentLinesChanged}
-                subtitle="Last 90 Days"
+                title="Total Lines Committed"
+                value={stats?.totalLinesChanged}
+                subtitle="Cumulative code contributions"
                 sx={{ height: "100%" }}
               />
             </Grid>
