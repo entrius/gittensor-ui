@@ -9,3 +9,5 @@ export * from "./RepositoriesTable";
 
 export { default as LiveCommitLog } from "./LiveCommitLog";
 export * from "./LiveCommitLog";
+export { default as GlobalActivityViz } from "./GlobalActivityViz";
+export { default as LeaderboardCharts } from "./LeaderboardCharts";
