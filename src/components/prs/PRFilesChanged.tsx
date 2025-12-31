@@ -32,9 +32,14 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import ViewAgendaIcon from "@mui/icons-material/ViewAgenda"; // Unified
 import ViewColumnIcon from "@mui/icons-material/ViewColumn"; // Split
 import axios from "axios";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+
 import parseDiff, { Change, Chunk } from "parse-diff";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import CheckIcon from "@mui/icons-material/Check";
+import Tooltip from "@mui/material/Tooltip";
+import IconButton from "@mui/material/IconButton";
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Switch from '@mui/material/Switch';
 
 interface PRFile {
     sha: string;
@@ -298,8 +303,7 @@ const FileTreeItem: React.FC<{
 };
 
 // Split View Component
-// Split View Component
-const SplitDiffView: React.FC<{ patch: string }> = ({ patch }) => {
+const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({ patch, lineWrap }) => {
     const files = useMemo(() => parseDiff(patch), [patch]);
 
     // Scroll Synchronization Refs
@@ -310,15 +314,9 @@ const SplitDiffView: React.FC<{ patch: string }> = ({ patch }) => {
 
     if (!files || files.length === 0) return null;
 
-    const rows: {
-        left: Change | null;
-        right: Change | null;
-        type: "normal" | "add" | "del" | "modify" | "chunk-header";
-        headerContent?: string;
-    }[] = [];
+    const rows: unknown[] = [];
 
-    files[0].chunks.forEach((chunk) => {
-        // Add chunk header
+    files[0].chunks.forEach((chunk: any) => {
         rows.push({
             left: null,
             right: null,
@@ -326,12 +324,11 @@ const SplitDiffView: React.FC<{ patch: string }> = ({ patch }) => {
             headerContent: chunk.content,
         });
 
-        let deletions: Change[] = [];
-        let additions: Change[] = [];
+        let deletions: any[] = [];
+        let additions: any[] = [];
 
-        chunk.changes.forEach((change) => {
+        chunk.changes.forEach((change: any) => {
             if (change.type === "normal") {
-                // Flush buffer
                 const maxLen = Math.max(deletions.length, additions.length);
                 for (let i = 0; i < maxLen; i++) {
                     rows.push({
@@ -342,7 +339,6 @@ const SplitDiffView: React.FC<{ patch: string }> = ({ patch }) => {
                 }
                 deletions = [];
                 additions = [];
-                // Add normal row
                 rows.push({ left: change, right: change, type: "normal" });
             } else if (change.type === "del") {
                 deletions.push(change);
@@ -351,7 +347,6 @@ const SplitDiffView: React.FC<{ patch: string }> = ({ patch }) => {
             }
         });
 
-        // Flush remaining buffer
         const maxLen = Math.max(deletions.length, additions.length);
         for (let i = 0; i < maxLen; i++) {
             rows.push({
@@ -362,6 +357,121 @@ const SplitDiffView: React.FC<{ patch: string }> = ({ patch }) => {
         }
     });
 
+    // If Line Wrap is enabled, use a single table layout
+    if (lineWrap) {
+        return (
+            <TableContainer
+                className="split-diff-table"
+                sx={{
+                    overflowX: "auto",
+                    backgroundColor: "#0d1117",
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: "12px",
+                }}
+            >
+                <Table size="small" sx={{ tableLayout: "fixed", width: "100%" }}>
+                    <colgroup>
+                        <col style={{ width: "50px" }} />
+                        <col style={{ width: "50%" }} />
+                        <col style={{ width: "50px" }} />
+                        <col style={{ width: "50%" }} />
+                    </colgroup>
+                    <TableBody>
+                        {rows.map((row: any, idx) => {
+                            if (row.type === 'chunk-header') {
+                                return (
+                                    <TableRow key={idx} sx={{ backgroundColor: "#1c2128" }}>
+                                        <TableCell
+                                            colSpan={4}
+                                            sx={{
+                                                color: "#8b949e",
+                                                borderBottom: "1px solid #30363d",
+                                                py: 1,
+                                                px: 2,
+                                                fontFamily: "inherit",
+                                                fontSize: "12px",
+                                            }}
+                                        >
+                                            {row.headerContent}
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            }
+
+                            return (
+                                <TableRow key={idx}>
+                                    <TableCell
+                                        sx={{
+                                            color: "#6e7681",
+                                            borderRight: "1px solid #30363d",
+                                            borderBottom: "none",
+                                            textAlign: "right",
+                                            verticalAlign: "top",
+                                            backgroundColor: row.left?.type === "del" ? "rgba(248,81,73,0.15)" : "transparent",
+                                            userSelect: "none",
+                                            p: "4px 8px",
+                                            fontFamily: "inherit",
+                                            lineHeight: 1.5
+                                        }}
+                                    >
+                                        {row.left ? (row.left.type === 'normal' ? row.left.ln1 : row.left.ln) : ''}
+                                    </TableCell>
+                                    <TableCell
+                                        sx={{
+                                            borderRight: "1px solid #30363d",
+                                            borderBottom: "none",
+                                            verticalAlign: "top",
+                                            backgroundColor: row.left?.type === "del" ? "rgba(248,81,73,0.15)" : "transparent",
+                                            color: "#e6edf3",
+                                            whiteSpace: "pre-wrap",
+                                            wordBreak: "break-all",
+                                            p: "4px 8px",
+                                            fontFamily: "inherit",
+                                            lineHeight: 1.5
+                                        }}
+                                    >
+                                        {row.left ? (row.left.content.startsWith('-') || row.left.content.startsWith('+') ? row.left.content.substring(1) : row.left.content) : ''}
+                                    </TableCell>
+                                    <TableCell
+                                        sx={{
+                                            color: "#6e7681",
+                                            borderRight: "1px solid #30363d",
+                                            borderBottom: "none",
+                                            textAlign: "right",
+                                            verticalAlign: "top",
+                                            backgroundColor: row.right?.type === "add" ? "rgba(46,160,67,0.15)" : "transparent",
+                                            userSelect: "none",
+                                            p: "4px 8px",
+                                            fontFamily: "inherit",
+                                            lineHeight: 1.5
+                                        }}
+                                    >
+                                        {row.right ? (row.right.type === 'normal' ? row.right.ln2 : row.right.ln) : ''}
+                                    </TableCell>
+                                    <TableCell
+                                        sx={{
+                                            borderBottom: "none",
+                                            verticalAlign: "top",
+                                            backgroundColor: row.right?.type === "add" ? "rgba(46,160,67,0.15)" : "transparent",
+                                            color: "#e6edf3",
+                                            whiteSpace: "pre-wrap",
+                                            wordBreak: "break-all",
+                                            p: "4px 8px",
+                                            fontFamily: "inherit",
+                                            lineHeight: 1.5
+                                        }}
+                                    >
+                                        {row.right ? (row.right.content.startsWith('+') || row.right.content.startsWith('-') ? row.right.content.substring(1) : row.right.content) : ''}
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+        );
+    }
+
     const handleScroll = (side: 'left' | 'right') => {
         const source = side === 'left' ? leftRef.current : rightRef.current;
         const target = side === 'left' ? rightRef.current : leftRef.current;
@@ -370,7 +480,6 @@ const SplitDiffView: React.FC<{ patch: string }> = ({ patch }) => {
 
         if (!source || !target) return;
 
-        // Prevent feedback loop
         if (isSyncingSource.current) {
             isSyncingSource.current = false;
             return;
@@ -388,16 +497,16 @@ const SplitDiffView: React.FC<{ patch: string }> = ({ patch }) => {
                 width: '50%',
                 overflowX: 'auto',
                 borderRight: side === 'left' ? '1px solid #30363d' : 'none',
-                '&::-webkit-scrollbar': { height: '8px' }, // Custom scrollbar for better look
+                '&::-webkit-scrollbar': { height: '8px' },
                 '&::-webkit-scrollbar-thumb': { backgroundColor: '#30363d', borderRadius: '4px' }
             }}>
             <Table size="small" sx={{
                 width: '100%',
-                minWidth: 'max-content', // Forces table to grow with content
+                minWidth: 'max-content',
                 tableLayout: 'auto'
             }}>
                 <TableBody>
-                    {rows.map((row, idx) => {
+                    {rows.map((row: any, idx) => {
                         if (row.type === 'chunk-header') {
                             return (
                                 <TableRow key={idx} sx={{ height: '24px', backgroundColor: "#1c2128" }}>
@@ -442,7 +551,6 @@ const SplitDiffView: React.FC<{ patch: string }> = ({ patch }) => {
                         if (item && item.type === "add") bg = "rgba(46, 160, 67, 0.15)";
                         if (item && item.type === "del") bg = "rgba(248, 81, 73, 0.15)";
 
-                        // Consistent row height is crucial
                         return (
                             <TableRow key={idx} sx={{ height: '24px' }}>
                                 <TableCell
@@ -452,7 +560,6 @@ const SplitDiffView: React.FC<{ patch: string }> = ({ patch }) => {
                                         width: '50px',
                                         minWidth: '50px',
                                         backgroundColor: bg === "transparent" ? '#0d1117' : bg,
-                                        // If transparent, we need opaque to cover scrolled content. #0d1117 is page bg.
                                         color: "#6e7681",
                                         borderRight: "1px solid #30363d",
                                         borderBottom: "none",
@@ -474,12 +581,11 @@ const SplitDiffView: React.FC<{ patch: string }> = ({ patch }) => {
                                         color: "#e6edf3",
                                         borderBottom: "none",
                                         verticalAlign: "top",
-                                        whiteSpace: "pre", // FORCE NO WRAP
+                                        whiteSpace: "pre",
                                         p: "0 8px",
                                         fontFamily: "inherit",
                                         fontSize: "12px",
                                         lineHeight: "24px",
-                                        // Ensure it takes up space
                                         width: 'auto'
                                     }}
                                 >
@@ -510,15 +616,136 @@ const SplitDiffView: React.FC<{ patch: string }> = ({ patch }) => {
     );
 };
 
-// ... imports
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import CheckIcon from "@mui/icons-material/Check";
-import Tooltip from "@mui/material/Tooltip";
-import IconButton from "@mui/material/IconButton";
+// Unified View Component
+const UnifiedDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({ patch, lineWrap }) => {
+    const files = useMemo(() => parseDiff(patch), [patch]);
 
-// ... existing interfaces
+    if (!files || files.length === 0) return null;
 
-// Minimap Component
+    const rows: (Change | { type: "chunk-header"; content: string })[] = [];
+
+    files[0].chunks.forEach((chunk: any) => {
+        rows.push({ type: "chunk-header", content: chunk.content });
+        chunk.changes.forEach((change: any) => {
+            rows.push(change);
+        });
+    });
+
+    return (
+        <TableContainer
+            sx={{
+                overflowX: "auto",
+                backgroundColor: "#0d1117",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "12px",
+            }}
+        >
+            <Table size="small" sx={{ tableLayout: lineWrap ? "fixed" : "auto", width: "100%" }}>
+                <colgroup>
+                    <col style={{ width: "50px" }} />
+                    <col style={{ width: "50px" }} />
+                    <col style={{ width: "auto" }} />
+                </colgroup>
+                <TableBody>
+                    {rows.map((row, idx) => {
+                        if (row.type === 'chunk-header') {
+                            return (
+                                <TableRow key={idx} sx={{ backgroundColor: "#1c2128" }}>
+                                    <TableCell
+                                        colSpan={3}
+                                        sx={{
+                                            color: "#8b949e",
+                                            borderBottom: "1px solid #30363d",
+                                            py: 1,
+                                            px: 2,
+                                            fontFamily: "inherit",
+                                            fontSize: "12px",
+                                            whiteSpace: "pre"
+                                        }}
+                                    >
+                                        {(row as any).content}
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        }
+
+                        const change = row as Change;
+                        let bg = "transparent";
+                        if (change.type === "add") bg = "rgba(46, 160, 67, 0.15)";
+                        if (change.type === "del") bg = "rgba(248, 81, 73, 0.15)";
+
+                        return (
+                            <TableRow key={idx}>
+                                {/* Old Line Number */}
+                                <TableCell
+                                    sx={{
+                                        width: "50px",
+                                        minWidth: "50px",
+                                        backgroundColor: bg === "transparent" ? '#0d1117' : bg,
+                                        color: "#6e7681",
+                                        borderRight: "1px solid #30363d",
+                                        borderBottom: "none",
+                                        textAlign: "right",
+                                        verticalAlign: "top",
+                                        userSelect: "none",
+                                        p: "0 8px",
+                                        fontFamily: "inherit",
+                                        fontSize: "12px",
+                                        lineHeight: "24px",
+                                    }}
+                                >
+                                    {change.type === 'normal' ? change.ln1 : (change.type === 'del' ? change.ln : '')}
+                                </TableCell>
+
+                                {/* New Line Number */}
+                                <TableCell
+                                    sx={{
+                                        width: "50px",
+                                        minWidth: "50px",
+                                        backgroundColor: bg === "transparent" ? '#0d1117' : bg,
+                                        color: "#6e7681",
+                                        borderRight: "1px solid #30363d",
+                                        borderBottom: "none",
+                                        textAlign: "right",
+                                        verticalAlign: "top",
+                                        userSelect: "none",
+                                        p: "0 8px",
+                                        fontFamily: "inherit",
+                                        fontSize: "12px",
+                                        lineHeight: "24px",
+                                    }}
+                                >
+                                    {change.type === 'normal' ? change.ln2 : (change.type === 'add' ? change.ln : '')}
+                                </TableCell>
+
+                                {/* Content */}
+                                <TableCell
+                                    sx={{
+                                        backgroundColor: bg,
+                                        color: "#e6edf3",
+                                        borderBottom: "none",
+                                        verticalAlign: "top",
+                                        whiteSpace: lineWrap ? "pre-wrap" : "pre",
+                                        wordBreak: lineWrap ? "break-all" : "normal",
+                                        p: "0 8px",
+                                        fontFamily: "inherit",
+                                        fontSize: "12px",
+                                        lineHeight: "24px",
+                                        width: "100%"
+                                    }}
+                                >
+                                    {change.content.startsWith('+') || change.content.startsWith('-') ? change.content.substring(1) : change.content}
+                                </TableCell>
+                            </TableRow>
+                        );
+                    })}
+                </TableBody>
+            </Table>
+        </TableContainer>
+    );
+};
+
+
 // Minimap Component
 const DiffMinimap: React.FC<{
     files: any[];
@@ -711,7 +938,7 @@ const DiffMinimap: React.FC<{
 // For now, let's keep SplitDiffView self-contained but we need to parse for Minimap in parent?
 // Actually, let's just make a new wrapper component for the file content.
 
-const PRFileDiffViewer: React.FC<{ file: PRFile; viewMode: "unified" | "split" }> = ({ file, viewMode }) => {
+const PRFileDiffViewer: React.FC<{ file: PRFile; viewMode: "unified" | "split"; lineWrap: boolean }> = ({ file, viewMode, lineWrap }) => {
     // Memoize parseDiff result
     const parsedDiff = useMemo(() => {
         if (!file.patch) return [];
@@ -864,24 +1091,9 @@ const PRFileDiffViewer: React.FC<{ file: PRFile; viewMode: "unified" | "split" }
                         }}
                     >
                         {viewMode === "unified" ? (
-                            <SyntaxHighlighter
-                                language="diff"
-                                style={vscDarkPlus}
-                                customStyle={{
-                                    margin: 0,
-                                    padding: "1rem",
-                                    backgroundColor: "#0d1117",
-                                    fontSize: "13px",
-                                    lineHeight: "1.5",
-                                    // overflowX: "auto", 
-                                }}
-                                showLineNumbers={false}
-                                wrapLongLines={false}
-                            >
-                                {file.patch}
-                            </SyntaxHighlighter>
+                            <UnifiedDiffView patch={file.patch} lineWrap={lineWrap} />
                         ) : (
-                            <SplitDiffView patch={file.patch} />
+                            <SplitDiffView patch={file.patch} lineWrap={lineWrap} />
                         )}
                     </Box>
 
@@ -905,7 +1117,8 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
-    const [viewMode, setViewMode] = useState<"unified" | "split">("unified");
+    const [viewMode, setViewMode] = useState<"unified" | "split">("split");
+    const [lineWrap, setLineWrap] = useState(false);
 
     // ... existing useEffect ... (keep it)
     useEffect(() => {
@@ -1040,6 +1253,22 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
                             Files Changed ({files.length})
                         </Typography>
 
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={lineWrap}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLineWrap(e.target.checked)}
+                                    size="small"
+                                />
+                            }
+                            label={
+                                <Typography sx={{ fontSize: '0.75rem', color: '#8b949e', fontFamily: '"JetBrains Mono", monospace' }}>
+                                    Wrap Lines
+                                </Typography>
+                            }
+                            sx={{ m: 0 }}
+                        />
+
                         {/* View Mode Toggle */}
                         <ToggleButtonGroup
                             value={viewMode}
@@ -1104,13 +1333,12 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
             <Grid item xs={12} md={9}>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pb: 20 }}>
                     {files.map((file) => (
-                        <PRFileDiffViewer key={file.sha} file={file} viewMode={viewMode} />
+                        <PRFileDiffViewer key={file.sha} file={file} viewMode={viewMode} lineWrap={lineWrap} />
                     ))}
                 </Box>
             </Grid>
         </Grid>
     );
 };
-
 
 export default PRFilesChanged;
