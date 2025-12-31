@@ -35,7 +35,7 @@ const TopMinersPage: React.FC = () => {
 
   // Process miner stats for TopMinersTable
   const minerStats = useMemo(() => {
-    if (!allMinersStats) return [];
+    if (!Array.isArray(allMinersStats)) return [];
     return allMinersStats.map((stat) => ({
       githubId: stat.githubId || "",
       author: githubIdToUsername.get(stat.githubId) || undefined,

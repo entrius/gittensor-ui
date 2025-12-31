@@ -33,7 +33,7 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
         for (const path of paths) {
           try {
             const response = await axios.get(
-              `https://raw.githubusercontent.com/${repositoryFullName}/${branch}/${path}`,
+              `https://cdn.jsdelivr.net/gh/${repositoryFullName}@${branch}/${path}`,
             );
             if (response.status === 200 && response.data) {
               setContent(response.data);
@@ -91,7 +91,7 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
         : src.startsWith("/")
           ? src.slice(1)
           : src;
-      finalSrc = `https://raw.githubusercontent.com/${repositoryFullName}/${defaultBranch}/${cleanPath}`;
+      finalSrc = `https://cdn.jsdelivr.net/gh/${repositoryFullName}@${defaultBranch}/${cleanPath}`;
     }
 
     return (

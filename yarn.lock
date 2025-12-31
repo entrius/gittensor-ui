@@ -1241,7 +1241,7 @@ dunder-proto@^1.0.1:
 
 echarts-for-react@^3.0.5:
   version "3.0.5"
-  resolved "https://registry.yarnpkg.com/echarts-for-react/-/echarts-for-react-3.0.5.tgz#87d55e3278dbf7b5a7926a08ac9a663b0351bbc2"
+  resolved "https://registry.npmjs.org/echarts-for-react/-/echarts-for-react-3.0.5.tgz"
   integrity sha512-YpEI5Ty7O/2nvCfQ7ybNa+S90DwE8KYZWacGvJW4luUqywP7qStQ+pxDlYOmr4jGDu10mhEkiAuMKcUlT4W5vg==
   dependencies:
     fast-deep-equal "^3.1.3"
@@ -1249,7 +1249,7 @@ echarts-for-react@^3.0.5:
 
 echarts@^6.0.0:
   version "6.0.0"
-  resolved "https://registry.yarnpkg.com/echarts/-/echarts-6.0.0.tgz#2935aa7751c282d1abbbf7d719d397199a15b9e7"
+  resolved "https://registry.npmjs.org/echarts/-/echarts-6.0.0.tgz"
   integrity sha512-Tte/grDQRiETQP4xz3iZWSvoHrkCQtwqd6hs+mifXcjrCuo2iKWbajFObuLJVBlDIJlOzgQPd1hsaKt/3+OMkQ==
   dependencies:
     tslib "2.3.0"
@@ -2543,6 +2543,11 @@ parent-module@^1.0.0:
   dependencies:
     callsites "^3.0.0"
 
+parse-diff@^0.11.1:
+  version "0.11.1"
+  resolved "https://registry.npmjs.org/parse-diff/-/parse-diff-0.11.1.tgz"
+  integrity sha512-Oq4j8LAOPOcssanQkIjxosjATBIEJhCxMCxPhMu+Ci4wdNmAEdx0O+a7gzbR2PyKXgKPvRLIN5g224+dJAsKHA==
+
 parse-entities@^4.0.0:
   version "4.0.2"
   resolved "https://registry.npmjs.org/parse-entities/-/parse-entities-4.0.2.tgz"
@@ -3175,7 +3180,7 @@ yocto-queue@^0.1.0:
 
 zrender@6.0.0:
   version "6.0.0"
-  resolved "https://registry.yarnpkg.com/zrender/-/zrender-6.0.0.tgz#947077bc69cdea744134984927f132f3727f8079"
+  resolved "https://registry.npmjs.org/zrender/-/zrender-6.0.0.tgz"
   integrity sha512-41dFXEEXuJpNecuUQq6JlbybmnHaqqpGlbH1yxnA5V9MMP4SbohSVZsJIwz+zdjQXSSlR1Vc34EgH1zxyTDvhg==
   dependencies:
     tslib "2.3.0"

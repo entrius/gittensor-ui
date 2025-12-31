@@ -49,13 +49,13 @@ async function injectMetaTags(html, url) {
   const pathname = url.pathname;
   const searchParams = url.searchParams;
 
+  // This ensures data is accurate at post time while avoiding excessive cache invalidation
+  const cacheBuster = Date.now();
+
   let title = "Gittensor | Autonomous Software Development";
   let description =
     "The workforce for open source. Compete for rewards by contributing quality code to open source repositories.";
-  let image = "/gittensor-og.jpg"; // Fallback
-
-  // This ensures data is accurate at post time while avoiding excessive cache invalidation
-  const cacheBuster = Date.now();
+  let image = `https://api.gittensor.io/og-image?type=home&v=${cacheBuster}`; // Default to home OG image
 
   // Miner details page
   if (pathname === "/miners/details") {
@@ -108,10 +108,7 @@ async function injectMetaTags(html, url) {
     }
   }
 
-  // Home page
-  if (pathname === "/") {
-    image = `https://api.gittensor.io/og-image?type=home&v=${cacheBuster}`;
-  }
+  // Note: Home page and all other paths use the default home OG image set above
 
   // Replace meta tags - use [\s\S]*? to match across newlines
   let modifiedHtml = html

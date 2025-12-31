@@ -23,14 +23,14 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
         // Try 'main' branch first
         try {
           const response = await axios.get(
-            `https://raw.githubusercontent.com/${repositoryFullName}/main/README.md`,
+            `https://cdn.jsdelivr.net/gh/${repositoryFullName}@main/README.md`,
           );
           setContent(response.data);
           setDefaultBranch("main");
         } catch (err) {
           // Fallback to 'master' branch
           const response = await axios.get(
-            `https://raw.githubusercontent.com/${repositoryFullName}/master/README.md`,
+            `https://cdn.jsdelivr.net/gh/${repositoryFullName}@master/README.md`,
           );
           setContent(response.data);
           setDefaultBranch("master");
@@ -80,7 +80,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
         : src.startsWith("/")
           ? src.slice(1)
           : src;
-      finalSrc = `https://raw.githubusercontent.com/${repositoryFullName}/${defaultBranch}/${cleanPath}`;
+      finalSrc = `https://cdn.jsdelivr.net/gh/${repositoryFullName}@${defaultBranch}/${cleanPath}`;
     }
 
     return (
