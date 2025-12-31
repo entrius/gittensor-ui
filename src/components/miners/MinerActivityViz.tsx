@@ -424,32 +424,61 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
                         </Box>
 
                         <Box sx={{ width: "100%", overflowX: "auto", mb: 1 }}>
-                            <ActivityCalendar
-                                data={contributionData}
-                                theme={{
-                                    light: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
-                                    dark: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
-                                }}
-                                labels={{
-                                    legend: {
-                                        less: 'Less',
-                                        more: 'More',
-                                    },
-                                    months: [
-                                        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-                                    ],
-                                    totalCount: `{{count}} contributions in the last ${totalDaysShown} days`,
-                                    weekdays: [
-                                        'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'
-                                    ]
-                                }}
-                                blockSize={11}
-                                blockMargin={3}
-                                fontSize={11}
-                                style={{ color: '#fff' }}
-                                showWeekdayLabels={false}
-                            />
+                            {contributionData.length > 0 ? (
+                                <ActivityCalendar
+                                    data={contributionData}
+                                    theme={{
+                                        light: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
+                                        dark: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
+                                    }}
+                                    labels={{
+                                        legend: {
+                                            less: 'Less',
+                                            more: 'More',
+                                        },
+                                        months: [
+                                            'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                                            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                                        ],
+                                        totalCount: `{{count}} contributions in the last ${totalDaysShown} days`,
+                                        weekdays: [
+                                            'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'
+                                        ]
+                                    }}
+                                    blockSize={11}
+                                    blockMargin={3}
+                                    fontSize={11}
+                                    style={{ color: '#fff' }}
+                                    showWeekdayLabels={false}
+                                />
+                            ) : (
+                                <Box sx={{
+                                    py: 4,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    minHeight: 100
+                                }}>
+                                    <Typography sx={{
+                                        color: 'rgba(255, 255, 255, 0.5)',
+                                        fontFamily: '"JetBrains Mono", monospace',
+                                        fontSize: '0.85rem',
+                                        textAlign: 'center'
+                                    }}>
+                                        No contributions yet
+                                    </Typography>
+                                    <Typography sx={{
+                                        color: 'rgba(255, 255, 255, 0.3)',
+                                        fontFamily: '"JetBrains Mono", monospace',
+                                        fontSize: '0.75rem',
+                                        textAlign: 'center',
+                                        mt: 0.5
+                                    }}>
+                                        Activity will appear here once PRs are merged
+                                    </Typography>
+                                </Box>
+                            )}
                         </Box>
                         <Typography variant="caption" sx={{
                             color: "rgba(255, 255, 255, 0.25)",
