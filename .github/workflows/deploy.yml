@@ -64,9 +64,9 @@ jobs:
             --data '{"purge_everything":true}' \
             --fail-with-body || echo "Cache clear failed but continuing"
 
-      - name: Refresh Repository weights
-        id: weight-refresh
-        run: ssh my-vps '~/update-repository-weights.sh'
+      # - name: Refresh Repository weights
+      #  id: weight-refresh
+      #  run: ssh my-vps '~/update-repository-weights.sh'
 
       # for notifying of deploy or statusfailure
       - name: Notify Deploy Failure

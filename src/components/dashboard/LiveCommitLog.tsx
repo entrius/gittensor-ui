@@ -9,6 +9,7 @@ import {
   useMediaQuery,
   alpha,
   Avatar,
+  Chip,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import theme from "../../theme";
@@ -26,7 +27,8 @@ interface CommitLogEntry {
   deletions: number;
   commitCount: number;
   repository: string;
-  mergedAt: string;
+  mergedAt: string | null;
+  prState?: string;
   author: string;
   score: string;
   isNew?: boolean;
@@ -127,6 +129,27 @@ const LiveCommitLog: React.FC = () => {
     if (scoreNum >= 10) return "High";
     if (scoreNum >= 5) return "Medium";
     return "Low";
+  };
+
+  const getPRStatusChip = (entry: CommitLogEntry) => {
+    const state = entry.prState?.toLowerCase();
+
+    if (entry.mergedAt || state === "merged") {
+      return {
+        label: "Merged",
+        color: "#7ee787" as const, // GitHub green
+      };
+    } else if (state === "closed") {
+      return {
+        label: "Closed",
+        color: "#ff7b72" as const, // GitHub red
+      };
+    } else {
+      return {
+        label: "Open",
+        color: "#fb923c" as const, // Orange
+      };
+    }
   };
 
   return (
@@ -408,20 +431,39 @@ const LiveCommitLog: React.FC = () => {
                             opacity: 0.5,
                           }}
                         />
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            fontSize: isMobile
-                              ? "0.65rem"
-                              : isTablet
-                                ? "0.75rem"
-                                : "0.7rem",
-                            color: "text.secondary",
-                            fontFamily: '"JetBrains Mono", monospace',
-                          }}
-                        >
-                          {dayjs(entry.mergedAt).utc().format("MMM D, h:mm A")} UTC
-                        </Typography>
+                        {entry.mergedAt ? (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontSize: isMobile
+                                ? "0.65rem"
+                                : isTablet
+                                  ? "0.75rem"
+                                  : "0.7rem",
+                              color: "text.secondary",
+                              fontFamily: '"JetBrains Mono", monospace',
+                            }}
+                          >
+                            {dayjs(entry.mergedAt).utc().format("MMM D, h:mm A")} UTC
+                          </Typography>
+                        ) : (
+                          <Chip
+                            label={getPRStatusChip(entry).label}
+                            size="small"
+                            sx={{
+                              height: isMobile ? 16 : isTablet ? 18 : 16,
+                              fontSize: isMobile ? "0.55rem" : isTablet ? "0.6rem" : "0.58rem",
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontWeight: 600,
+                              backgroundColor: alpha(getPRStatusChip(entry).color, 0.2),
+                              color: getPRStatusChip(entry).color,
+                              border: `1px solid ${alpha(getPRStatusChip(entry).color, 0.3)}`,
+                              "& .MuiChip-label": {
+                                px: 0.75,
+                              },
+                            }}
+                          />
+                        )}
                       </Stack>
 
                       {/* Stats Row */}

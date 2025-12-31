@@ -24,11 +24,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
 
   const navItems = [
     { label: "dashboard", path: "/dashboard" },
-    { label: "miners", path: "/miners", badge: "new" },
-    { label: "repositories", path: "/repositories" },
-    { label: "roadmap", path: "/roadmap" },
-    { label: "about", path: "/about" },
-    { label: "faq", path: "/faq" },
+    { label: "leaderboard", path: "/top-miners", badge: "new" },
+    { label: "pull requests", path: "/top-prs" },
+    { label: "top repositories", path: "/top-repos" },
+    { label: "onboard", path: "/onboard" },
   ];
 
   return (
@@ -201,7 +200,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               color: "#888888",
             }}
           >
-            © Gittensor 2025
+            © Gittensor 2026
           </Typography>
         </Stack>
       </Box>

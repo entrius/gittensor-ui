@@ -2,11 +2,12 @@ import React from "react";
 import { useMediaQuery, Box, Grid } from "@mui/material";
 import { Page } from "../components/layout";
 import {
-  CommitTrendChart,
+  LeaderboardCharts,
   RepositoriesTable,
   KpiCard,
   LiveCommitLog,
   SEO,
+  GlobalActivityViz,
 } from "../components";
 import theme from "../theme";
 import { useStats } from "../api";
@@ -66,15 +67,10 @@ const DashboardPage: React.FC = () => {
             },
           }}
         >
-          {/* Top Row: Total Lines Committed + Monthly Rewards */}
-          <Grid item xs={12} md={6}>
-            <KpiCard
-              title="Total Lines Committed"
-              value={stats?.totalLinesChanged}
-              subtitle="Cumulative code contributions"
-              variant="large"
-            />
-          </Grid>
+          {/* Top Row: Global Activity Viz */}
+          <Box sx={{ width: "100%" }}>
+            <GlobalActivityViz />
+          </Box>
 
           {/* Middle Row: 4 KPI Cards - Responsive Grid */}
           <Grid container spacing={{ xs: 1.5, md: 2 }} sx={{ flexShrink: 0 }}>
@@ -97,9 +93,9 @@ const DashboardPage: React.FC = () => {
 
             <Grid item xs={12} sm={6} md={6} lg={6} xl={3}>
               <KpiCard
-                title="Lines Committed"
-                value={stats?.recentLinesChanged}
-                subtitle="Last 90 Days"
+                title="Total Lines Committed"
+                value={stats?.totalLinesChanged}
+                subtitle="Cumulative code contributions"
                 sx={{ height: "100%" }}
               />
             </Grid>
@@ -123,16 +119,16 @@ const DashboardPage: React.FC = () => {
               flexShrink: 0,
             }}
           >
-            {/* Chart */}
+            {/* Leaderboard Charts */}
             <Box
               sx={{
                 width: "100%",
-                height: isMobile ? "350px" : "400px",
+                height: isMobile ? "500px" : "550px",
                 flexShrink: 0,
-                minHeight: isMobile ? "350px" : "400px",
+                minHeight: isMobile ? "500px" : "550px",
               }}
             >
-              <CommitTrendChart />
+              <LeaderboardCharts />
             </Box>
 
             {/* Table */}

@@ -2,5 +2,11 @@ export { default as RepositoryWeightsTable } from "./RepositoryWeightsTable";
 export { default as LanguageWeightsTable } from "./LanguageWeightsTable";
 export { default as RepositoryDetails } from "./RepositoryDetails";
 export { default as RepositoryScoreCard } from "./RepositoryScoreCard";
-export { default as RepositoryContributorsTable } from "./RepositoryContributorsTable";
+export { default as RepositoryContributorsTable } from "./RepositoryContributorsTable"; export { default as RepositoryStats } from "./RepositoryStats";
+export { default as ContributingViewer } from "./ContributingViewer";
 export { default as RepositoryPRsTable } from "./RepositoryPRsTable";
+export { default as RepositoryIssuesTable } from "./RepositoryIssuesTable";
+export { default as ReadmeViewer } from "./ReadmeViewer";
+export { default as RepositoryCodeBrowser } from "./RepositoryCodeBrowser";
+export { default as RepositoryMaintainers } from "./RepositoryMaintainers";
+

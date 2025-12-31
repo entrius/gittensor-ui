@@ -1,18 +1,7 @@
 import React, { useMemo, useState } from "react";
-import {
-  Card,
-  Typography,
-  Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  CircularProgress,
-  Avatar,
-  TableSortLabel,
-} from "@mui/material";
+import { Box, Typography, CircularProgress, Avatar } from "@mui/material";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { useAllMinerData, useAllMinerStats } from "../../api";
 import { useNavigate } from "react-router-dom";
 
@@ -20,22 +9,15 @@ interface RepositoryContributorsTableProps {
   repositoryFullName: string;
 }
 
-type ContributorSortField =
-  | "rank"
-  | "contributor"
-  | "prs"
-  | "score"
-  | "minerRank";
-type SortOrder = "asc" | "desc";
-
 const RepositoryContributorsTable: React.FC<
   RepositoryContributorsTableProps
 > = ({ repositoryFullName }) => {
   const navigate = useNavigate();
   const { data: allPRs, isLoading } = useAllMinerData();
   const { data: allMinersStats } = useAllMinerStats();
-  const [sortField, setSortField] = useState<ContributorSortField>("score");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+
+  // State for how many items to show. Minimum 7.
+  const [visibleCount, setVisibleCount] = useState(7);
 
   // Build githubId -> miner rank map
   const minerRankMap = useMemo(() => {
@@ -56,7 +38,7 @@ const RepositoryContributorsTable: React.FC<
     if (!allPRs) return [];
 
     const allRepoPRs = allPRs.filter(
-      (pr) => pr.repository === repositoryFullName,
+      (pr) => pr.repository === repositoryFullName && pr.githubId,
     );
 
     const contributorsMap = new Map<
@@ -65,6 +47,7 @@ const RepositoryContributorsTable: React.FC<
     >();
 
     allRepoPRs.forEach((pr) => {
+      if (!pr.githubId) return; // Skip PRs without githubId
       const existing = contributorsMap.get(pr.githubId) || {
         author: pr.author,
         githubId: pr.githubId,
@@ -76,328 +59,263 @@ const RepositoryContributorsTable: React.FC<
       contributorsMap.set(pr.githubId, existing);
     });
 
-    return Array.from(contributorsMap.values());
+    // Default sort by score descending
+    return Array.from(contributorsMap.values()).sort(
+      (a, b) => b.score - a.score,
+    );
   }, [allPRs, repositoryFullName]);
 
-  // Sort contributors
-  const sortedContributors = useMemo(() => {
-    const sorted = [...contributors];
-    sorted.sort((a, b) => {
-      let compareValue = 0;
+  const displayedContributors = contributors.slice(0, visibleCount);
+  const totalContributors = contributors.length;
+  const hasMore = visibleCount < totalContributors;
 
-      switch (sortField) {
-        case "contributor":
-          compareValue = a.author.localeCompare(b.author);
-          break;
-        case "prs":
-          compareValue = a.prs - b.prs;
-          break;
-        case "score":
-          compareValue = a.score - b.score;
-          break;
-        case "rank":
-          compareValue = b.score - a.score;
-          break;
-        case "minerRank":
-          const aRank = minerRankMap.get(a.githubId) || 999999;
-          const bRank = minerRankMap.get(b.githubId) || 999999;
-          compareValue = aRank - bRank;
-          break;
-      }
+  const handleShowMore = () => {
+    // Expand fully
+    setVisibleCount(totalContributors);
+  };
 
-      return sortOrder === "asc" ? compareValue : -compareValue;
-    });
-    return sorted;
-  }, [contributors, sortField, sortOrder, minerRankMap]);
-
-  const handleSort = (field: ContributorSortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortOrder("desc");
-    }
+  const handleShowLess = () => {
+    // Reset to 7
+    setVisibleCount(7);
   };
 
   if (isLoading) {
     return (
-      <Card
-        sx={{
-          borderRadius: 3,
-          border: "1px solid rgba(255, 255, 255, 0.1)",
-          backgroundColor: "transparent",
-          p: 4,
-          textAlign: "center",
-        }}
-        elevation={0}
-      >
-        <CircularProgress size={40} sx={{ color: "primary.main" }} />
-      </Card>
+      <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+        <CircularProgress size={20} />
+      </Box>
     );
   }
 
   if (contributors.length === 0) {
-    return (
-      <Card
-        sx={{
-          borderRadius: 3,
-          border: "1px solid rgba(255, 255, 255, 0.1)",
-          backgroundColor: "transparent",
-          p: 4,
-        }}
-        elevation={0}
-      >
-        <Typography
-          sx={{
-            color: "rgba(255, 255, 255, 0.5)",
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: "0.9rem",
-            textAlign: "center",
-          }}
-        >
-          No contributors found
-        </Typography>
-      </Card>
-    );
+    return null;
   }
 
   return (
-    <Card
-      sx={{
-        borderRadius: 3,
-        border: "1px solid rgba(255, 255, 255, 0.1)",
-        backgroundColor: "transparent",
-        p: 0,
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-      }}
-      elevation={0}
-    >
+    <Box sx={{ display: "flex", flexDirection: "column", width: "100%" }}>
       <Box
         sx={{
-          p: 3,
-          borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
         }}
       >
         <Typography
-          variant="h6"
+          variant="subtitle2"
           sx={{
-            color: "#ffffff",
+            color: "text.secondary",
             fontFamily: '"JetBrains Mono", monospace',
-            fontSize: "1.1rem",
-            fontWeight: 500,
           }}
         >
-          Top Contributors
+          Top Miner Contributors{" "}
+          <Typography
+            component="span"
+            sx={{ color: "#8b949e", fontSize: "0.8em" }}
+          >
+            ({contributors.length})
+          </Typography>
         </Typography>
       </Box>
 
-      <TableContainer sx={{ maxHeight: "400px", overflow: "auto" }}>
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={headerCellStyle}>
-                <TableSortLabel
-                  active={sortField === "rank"}
-                  direction={sortField === "rank" ? sortOrder : "asc"}
-                  onClick={() => handleSort("rank")}
-                  sx={sortLabelStyle}
-                >
-                  Rank
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sx={headerCellStyle}>
-                <TableSortLabel
-                  active={sortField === "contributor"}
-                  direction={sortField === "contributor" ? sortOrder : "asc"}
-                  onClick={() => handleSort("contributor")}
-                  sx={sortLabelStyle}
-                >
-                  Contributor
-                </TableSortLabel>
-              </TableCell>
-              <TableCell align="right" sx={headerCellStyle}>
-                <TableSortLabel
-                  active={sortField === "prs"}
-                  direction={sortField === "prs" ? sortOrder : "desc"}
-                  onClick={() => handleSort("prs")}
-                  sx={sortLabelStyle}
-                >
-                  PRs
-                </TableSortLabel>
-              </TableCell>
-              <TableCell align="right" sx={headerCellStyle}>
-                <TableSortLabel
-                  active={sortField === "score"}
-                  direction={sortField === "score" ? sortOrder : "desc"}
-                  onClick={() => handleSort("score")}
-                  sx={sortLabelStyle}
-                >
-                  Score
-                </TableSortLabel>
-              </TableCell>
-              <TableCell align="right" sx={headerCellStyle}>
-                <TableSortLabel
-                  active={sortField === "minerRank"}
-                  direction={sortField === "minerRank" ? sortOrder : "asc"}
-                  onClick={() => handleSort("minerRank")}
-                  sx={sortLabelStyle}
-                >
-                  Miner Rank
-                </TableSortLabel>
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortedContributors.map((contributor, index) => (
-              <TableRow
-                key={contributor.githubId}
+      {/* Header Row */}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "32px 1fr 48px 75px",
+          gap: 1,
+          px: 1.5,
+          py: 1,
+          borderBottom: "1px solid rgba(255,255,255,0.1)",
+        }}
+      >
+        <Typography sx={{ fontSize: "11px", color: "text.secondary" }}>
+          #
+        </Typography>
+        <Typography sx={{ fontSize: "11px", color: "text.secondary" }}>
+          MINER
+        </Typography>
+        <Typography
+          sx={{
+            fontSize: "11px",
+            color: "text.secondary",
+            textAlign: "right",
+          }}
+        >
+          PRS
+        </Typography>
+        <Typography
+          sx={{
+            fontSize: "11px",
+            color: "text.secondary",
+            textAlign: "right",
+          }}
+        >
+          SCORE
+        </Typography>
+      </Box>
+
+      {/* Rows */}
+      <Box sx={{ display: "flex", flexDirection: "column" }}>
+        {displayedContributors.map((contributor, index) => {
+          const minerRank = minerRankMap.get(contributor.githubId);
+
+          return (
+            <Box
+              key={contributor.githubId}
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "32px 1fr 48px 75px",
+                gap: 1,
+                px: 1.5,
+                py: 1,
+                borderBottom: "1px solid rgba(255,255,255,0.05)",
+                alignItems: "center",
+                "&:hover": {
+                  backgroundColor: "rgba(255,255,255,0.04)",
+                },
+                transition: "background-color 0.1s",
+              }}
+            >
+              {/* Rank */}
+              <Box
                 sx={{
-                  "&:hover": {
-                    backgroundColor: "rgba(255, 255, 255, 0.05)",
-                  },
-                  transition: "background-color 0.2s",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: "12px",
+                  color: index < 3 ? "#fff" : "#8b949e",
+                  fontWeight: index < 3 ? 600 : 400,
                 }}
               >
-                <TableCell sx={bodyCellStyle}>
-                  <Box
+                {index + 1}
+              </Box>
+
+              {/* Contributor */}
+              <Box
+                onClick={() =>
+                  navigate(`/miners/details?githubId=${contributor.githubId}`)
+                }
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.5,
+                  overflow: "hidden",
+                  cursor: "pointer",
+                  "&:hover .contributor-name": {
+                    color: "#58a6ff",
+                    textDecoration: "underline",
+                  },
+                }}
+              >
+                <Avatar
+                  src={`https://avatars.githubusercontent.com/${contributor.author}`}
+                  sx={{
+                    width: 20,
+                    height: 20,
+                    border: "1px solid rgba(255,255,255,0.1)",
+                  }}
+                />
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    minWidth: 0,
+                  }}
+                >
+                  <Typography
+                    className="contributor-name"
                     sx={{
-                      backgroundColor: "#000000",
-                      borderRadius: "2px",
-                      width: "28px",
-                      height: "28px",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                      border: "1px solid",
-                      borderColor:
-                        index === 0
-                          ? "rgba(255, 215, 0, 0.4)"
-                          : index === 1
-                            ? "rgba(192, 192, 192, 0.4)"
-                            : index === 2
-                              ? "rgba(205, 127, 50, 0.4)"
-                              : "rgba(255, 255, 255, 0.15)",
-                      boxShadow:
-                        index === 0
-                          ? "0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)"
-                          : index === 1
-                            ? "0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)"
-                            : index === 2
-                              ? "0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)"
-                              : "none",
+                      fontSize: "13px",
+                      fontWeight: 500,
+                      color: "#c9d1d9",
+                      fontFamily:
+                        '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      transition: "color 0.1s",
                     }}
                   >
+                    {contributor.author}
+                  </Typography>
+                  {/* Miner Rank Subtext */}
+                  {minerRank && (
                     <Typography
-                      component="span"
                       sx={{
-                        color:
-                          index === 0
-                            ? "#FFD700"
-                            : index === 1
-                              ? "#C0C0C0"
-                              : index === 2
-                                ? "#CD7F32"
-                                : "rgba(255, 255, 255, 0.6)",
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.7rem",
-                        fontWeight: 600,
-                        lineHeight: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
+                        fontSize: "10px",
+                        color: "#8b949e",
+                        whiteSpace: "nowrap", // Force single line
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
                       }}
                     >
-                      {index + 1}
+                      Global Rank #{minerRank}
                     </Typography>
-                  </Box>
-                </TableCell>
-                <TableCell sx={bodyCellStyle}>
-                  <Box
-                    onClick={() =>
-                      navigate(
-                        `/miners/details?githubId=${contributor.githubId}`,
-                      )
-                    }
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.5,
-                      cursor: "pointer",
-                      "&:hover": {
-                        color: "primary.main",
-                        "& .MuiTypography-root": {
-                          textDecoration: "underline",
-                        },
-                      },
-                      transition: "color 0.2s",
-                    }}
-                  >
-                    <Avatar
-                      src={`https://avatars.githubusercontent.com/${contributor.author}`}
-                      alt={contributor.author}
-                      sx={{ width: 24, height: 24 }}
-                    />
-                    <Typography
-                      component="span"
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.85rem",
-                        transition: "color 0.2s",
-                      }}
-                    >
-                      {contributor.author}
-                    </Typography>
-                  </Box>
-                </TableCell>
-                <TableCell align="right" sx={bodyCellStyle}>
-                  {contributor.prs}
-                </TableCell>
-                <TableCell align="right" sx={bodyCellStyle}>
-                  {contributor.score.toFixed(4)}
-                </TableCell>
-                <TableCell align="right" sx={bodyCellStyle}>
-                  {minerRankMap.get(contributor.githubId) || "-"}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Card>
+                  )}
+                </Box>
+              </Box>
+
+              {/* PRs */}
+              <Box
+                sx={{
+                  textAlign: "right",
+                  fontSize: "12px",
+                  color: "#c9d1d9",
+                  fontFamily: '"JetBrains Mono", monospace',
+                }}
+              >
+                {contributor.prs}
+              </Box>
+
+              {/* Score */}
+              <Box
+                sx={{
+                  textAlign: "right",
+                  fontSize: "12px",
+                  color: "#c9d1d9",
+                  fontFamily: '"JetBrains Mono", monospace',
+                }}
+              >
+                {contributor.score.toFixed(2)}
+              </Box>
+            </Box>
+          );
+        })}
+
+        {/* Show More / Show Less Row */}
+        {contributors.length > 7 && (
+          <Box
+            onClick={hasMore ? handleShowMore : handleShowLess}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start", // Left align to match flow
+              px: 1.5,
+              py: 1.5,
+              cursor: "pointer",
+              color: "#8b949e",
+              fontSize: "12px",
+              "&:hover": {
+                color: "#fff",
+                backgroundColor: "rgba(255,255,255,0.02)",
+              },
+              transition: "all 0.1s",
+            }}
+          >
+            {hasMore ? (
+              <>
+                Show more{" "}
+                <KeyboardArrowDownIcon sx={{ fontSize: 16, ml: 0.5 }} />
+              </>
+            ) : (
+              <>
+                Show less <KeyboardArrowUpIcon sx={{ fontSize: 16, ml: 0.5 }} />
+              </>
+            )}
+          </Box>
+        )}
+      </Box>
+    </Box>
   );
-};
-
-const headerCellStyle = {
-  backgroundColor: "rgba(18, 18, 20, 0.95)",
-  backdropFilter: "blur(8px)",
-  color: "rgba(255, 255, 255, 0.7)",
-  fontFamily: '"JetBrains Mono", monospace',
-  fontWeight: 500,
-  fontSize: "0.75rem",
-  borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.5px",
-};
-
-const bodyCellStyle = {
-  color: "#ffffff",
-  fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  fontSize: "0.85rem",
-};
-
-const sortLabelStyle = {
-  color: "inherit",
-  "&:hover": { color: "rgba(255, 255, 255, 0.9)" },
-  "&.Mui-active": {
-    color: "rgba(255, 255, 255, 0.9)",
-    "& .MuiTableSortLabel-icon": {
-      color: "rgba(255, 255, 255, 0.9) !important",
-    },
-  },
 };
 
 export default RepositoryContributorsTable;
