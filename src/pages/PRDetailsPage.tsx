@@ -123,13 +123,12 @@ const PRDetailsPage: React.FC = () => {
                   hideHeader={true}
                 />
               )}
-              <PRFilesChanged
-                repository={repository}
-                pullRequestNumber={parseInt(pullRequestNumber)}
-              // Assuming prDetails contains base/head info or we default to main for now. 
-              // Without detailed head sha in standard response, we might fetch it inside.
-              // Let's pass what we have; the component will decide how to fetch tree.
-              />
+              {tabValue === 1 && (
+                <PRFilesChanged
+                  repository={repository}
+                  pullRequestNumber={parseInt(pullRequestNumber)}
+                />
+              )}
             </Box>
           </Box>
         </Box>
