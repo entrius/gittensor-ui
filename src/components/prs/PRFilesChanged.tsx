@@ -1,0 +1,1100 @@
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import {
+    Box,
+    Typography,
+    CircularProgress,
+    Paper,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+    Chip,
+    Grid,
+    List,
+    ListItemButton,
+    ListItemIcon,
+    ListItemText,
+    Collapse,
+    Badge,
+    ToggleButton,
+    ToggleButtonGroup,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableRow,
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import FolderIcon from "@mui/icons-material/Folder";
+import FolderOpenIcon from "@mui/icons-material/FolderOpen";
+import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import ViewAgendaIcon from "@mui/icons-material/ViewAgenda"; // Unified
+import ViewColumnIcon from "@mui/icons-material/ViewColumn"; // Split
+import axios from "axios";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import parseDiff, { Change, Chunk } from "parse-diff";
+
+interface PRFile {
+    sha: string;
+    filename: string;
+    status:
+    | "added"
+    | "removed"
+    | "modified"
+    | "renamed"
+    | "copied"
+    | "changed"
+    | "unchanged";
+    additions: number;
+    deletions: number;
+    changes: number;
+    blob_url: string;
+    raw_url: string;
+    contents_url: string;
+    patch?: string; // patch contains the diff
+}
+
+interface PRFilesChangedProps {
+    repository: string;
+    pullRequestNumber: number;
+    headSha?: string; // Optional SHA to fetch full tree from
+}
+
+// Tree types
+interface TreeNode {
+    name: string;
+    path: string;
+    children: Record<string, TreeNode>;
+    type: "blob" | "tree";
+    file?: PRFile; // If this node corresponds to a changed file
+    hasChanges?: boolean; // If this folder contains changed files
+    changeCount?: number; // Number of changed files inside
+}
+
+const buildFullTree = (
+    allFilesParams: { path: string; type: "blob" | "tree" }[],
+    changedFiles: PRFile[],
+) => {
+    const root: Record<string, TreeNode> = {};
+
+    // 1. Build structure from all files (full repo)
+    allFilesParams.forEach((item) => {
+        const parts = item.path.split("/");
+        let currentLevel = root;
+        let currentPath = "";
+
+        parts.forEach((part, index) => {
+            currentPath = currentPath ? `${currentPath}/${part}` : part;
+            const isLast = index === parts.length - 1;
+
+            if (!currentLevel[part]) {
+                currentLevel[part] = {
+                    name: part,
+                    path: currentPath,
+                    children: {},
+                    type: isLast ? item.type : "tree",
+                };
+            }
+            currentLevel = currentLevel[part].children;
+        });
+    });
+
+    // 2. Overlay changes
+    changedFiles.forEach((file) => {
+        const parts = file.filename.split("/");
+        let currentLevel = root;
+        let currentPath = "";
+
+        parts.forEach((part, index) => {
+            currentPath = currentPath ? `${currentPath}/${part}` : part;
+            const isLast = index === parts.length - 1;
+
+            if (!currentLevel[part]) {
+                // Create node if missing (e.g. added file or folder)
+                currentLevel[part] = {
+                    name: part,
+                    path: currentPath,
+                    children: {},
+                    type: isLast ? "blob" : "tree",
+                    // If it's a folder being created, we mark it changes?
+                    // Actually change count will update below.
+                };
+            }
+
+            const node = currentLevel[part];
+            node.hasChanges = true;
+            node.changeCount = (node.changeCount || 0) + 1;
+
+            // If it's the actual file, attach the PRFile data
+            if (isLast) {
+                node.file = file;
+                node.type = "blob"; // Ensure type is blob
+            }
+            currentLevel = node.children;
+        });
+    });
+
+    return root;
+};
+
+const FileTreeItem: React.FC<{
+    node: TreeNode;
+    level: number;
+    onSelect: (file: PRFile) => void;
+    selectedParams: { filename: string | null };
+}> = ({ node, level, onSelect, selectedParams }) => {
+    // Auto-expand if it has changes, otherwise collapse to reduce noise in full tree
+    const [open, setOpen] = useState(!!node.hasChanges);
+    const hasChildren = Object.keys(node.children).length > 0;
+    const isSelected =
+        node.file && selectedParams.filename === node.file.filename;
+
+    const handleClick = () => {
+        if (hasChildren) {
+            setOpen(!open);
+        }
+        if (node.file) {
+            onSelect(node.file);
+        }
+    };
+
+    const getIcon = () => {
+        if (hasChildren) {
+            const color = node.hasChanges ? "#d29922" : "#8b949e"; // Orange folder if changes inside
+            return open ? (
+                <FolderOpenIcon sx={{ fontSize: 16, color }} />
+            ) : (
+                <FolderIcon sx={{ fontSize: 16, color }} />
+            );
+        }
+
+        // File icons
+        let color = "#8b949e";
+        if (node.file) {
+            if (node.file.status === "added") color = "#2da44e";
+            if (node.file.status === "removed") color = "#cf222e";
+            if (node.file.status === "modified") color = "#d29922";
+        } else {
+            // Unchanged file
+            color = "rgba(139, 148, 158, 0.5)";
+        }
+        return <InsertDriveFileIcon sx={{ fontSize: 16, color }} />;
+    };
+
+    return (
+        <>
+            <ListItemButton
+                onClick={handleClick}
+                disableRipple
+                sx={{
+                    pl: level * 1.5 + 1,
+                    py: 0.25,
+                    minHeight: 28,
+                    height: "auto",
+                    backgroundColor: isSelected
+                        ? "rgba(56, 139, 253, 0.15)"
+                        : "transparent",
+                    borderLeft: isSelected
+                        ? "2px solid #388bfd"
+                        : "2px solid transparent",
+                    "&:hover": {
+                        backgroundColor: isSelected
+                            ? "rgba(56, 139, 253, 0.15)"
+                            : "rgba(255, 255, 255, 0.04)",
+                    },
+                    opacity: (node.file || node.hasChanges) ? 1 : 0.6, // Dim unchanged items
+                }}
+            >
+                <ListItemIcon
+                    sx={{
+                        minWidth: 20,
+                        mr: 0.5,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                    }}
+                >
+                    {hasChildren ? (
+                        <Box
+                            component="span"
+                            sx={{ display: "flex", alignItems: "center", opacity: 0.7 }}
+                        >
+                            {open ? (
+                                <KeyboardArrowDownIcon sx={{ fontSize: 14 }} />
+                            ) : (
+                                <KeyboardArrowRightIcon sx={{ fontSize: 14 }} />
+                            )}
+                        </Box>
+                    ) : (
+                        <Box sx={{ width: 14 }} />
+                    )}
+                </ListItemIcon>
+
+                <ListItemIcon
+                    sx={{
+                        minWidth: 20,
+                        mr: 0.5,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                    }}
+                >
+                    {getIcon()}
+                </ListItemIcon>
+
+                <ListItemText
+                    primary={
+                        <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {node.name}
+                            {node.hasChanges && !open && hasChildren && (
+                                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#d29922' }} />
+                            )}
+                        </Box>
+                    }
+                    primaryTypographyProps={{
+                        sx: {
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "12px",
+                            color: isSelected ? "#fff" : (node.file || node.hasChanges) ? "#c9d1d9" : "#8b949e",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            fontWeight: isSelected || node.hasChanges ? 600 : 400,
+                        },
+                    }}
+                />
+            </ListItemButton>
+            {hasChildren && (
+                <Collapse in={open} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding>
+                        {/* Sort: Folders first, changed files first? Or standard alpha? GitHub uses alpha usually but lets prioritize changed for visibility? 
+                Actually let's stick to standard folder-first alpha sort, but maybe put changed items on top? 
+                No, standard sort is less confusing.
+            */}
+                        {Object.values(node.children)
+                            .sort((a, b) => {
+                                const aIsFolder = Object.keys(a.children).length > 0;
+                                const bIsFolder = Object.keys(b.children).length > 0;
+                                if (aIsFolder && !bIsFolder) return -1;
+                                if (!aIsFolder && bIsFolder) return 1;
+                                return a.name.localeCompare(b.name);
+                            })
+                            .map((child) => (
+                                <FileTreeItem
+                                    key={child.path}
+                                    node={child}
+                                    level={level + 1}
+                                    onSelect={onSelect}
+                                    selectedParams={selectedParams}
+                                />
+                            ))}
+                    </List>
+                </Collapse>
+            )}
+        </>
+    );
+};
+
+// Split View Component
+const SplitDiffView: React.FC<{ patch: string }> = ({ patch }) => {
+    const files = useMemo(() => parseDiff(patch), [patch]);
+    if (!files || files.length === 0) return null;
+
+    const rows: {
+        left: Change | null;
+        right: Change | null;
+        type: "normal" | "add" | "del" | "modify" | "chunk-header";
+        headerContent?: string;
+    }[] = [];
+
+    files[0].chunks.forEach((chunk) => {
+        // Add chunk header
+        rows.push({
+            left: null,
+            right: null,
+            type: "chunk-header",
+            headerContent: chunk.content,
+        });
+
+        let deletions: Change[] = [];
+        let additions: Change[] = [];
+
+        chunk.changes.forEach((change) => {
+            if (change.type === "normal") {
+                // Flush buffer
+                const maxLen = Math.max(deletions.length, additions.length);
+                for (let i = 0; i < maxLen; i++) {
+                    rows.push({
+                        left: deletions[i] || null,
+                        right: additions[i] || null,
+                        type: "modify",
+                    });
+                }
+                deletions = [];
+                additions = [];
+                // Add normal row
+                rows.push({ left: change, right: change, type: "normal" });
+            } else if (change.type === "del") {
+                deletions.push(change);
+            } else if (change.type === "add") {
+                additions.push(change);
+            }
+        });
+
+        // Flush remaining buffer
+        const maxLen = Math.max(deletions.length, additions.length);
+        for (let i = 0; i < maxLen; i++) {
+            rows.push({
+                left: deletions[i] || null,
+                right: additions[i] || null,
+                type: "modify",
+            });
+        }
+    });
+
+    return (
+        <TableContainer
+            className="split-diff-table"
+            sx={{
+                overflowX: "auto",
+                backgroundColor: "#0d1117",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "12px",
+            }}
+        >
+            <Table size="small" sx={{ tableLayout: "fixed", width: "100%" }}>
+                <colgroup>
+                    <col style={{ width: "50px" }} />
+                    <col style={{ width: "50%" }} />
+                    <col style={{ width: "50px" }} />
+                    <col style={{ width: "50%" }} />
+                </colgroup>
+                <TableBody>
+                    {rows.map((row, idx) => {
+                        if (row.type === "chunk-header") {
+                            return (
+                                <TableRow key={idx} sx={{ backgroundColor: "#1c2128" }}>
+                                    <TableCell
+                                        colSpan={4}
+                                        sx={{
+                                            color: "#8b949e",
+                                            borderBottom: "1px solid #30363d",
+                                            py: 1,
+                                            px: 2,
+                                            fontFamily: "inherit",
+                                            fontSize: "12px",
+                                        }}
+                                    >
+                                        {row.headerContent}
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        }
+
+                        // Type guards / logic for line numbers
+                        const getLeftLn = () => {
+                            if (!row.left) return "";
+                            if (row.left.type === "normal") return row.left.ln1;
+                            if (row.left.type === "del") return row.left.ln;
+                            return "";
+                        };
+
+                        const getRightLn = () => {
+                            if (!row.right) return "";
+                            if (row.right.type === "normal") return row.right.ln2;
+                            if (row.right.type === "add") return row.right.ln;
+                            return "";
+                        };
+
+                        return (
+                            <TableRow key={idx}>
+                                {/* Left Side (Old) */}
+                                <TableCell
+                                    sx={{
+                                        color: "#6e7681",
+                                        borderRight: "1px solid #30363d",
+                                        borderBottom: "none",
+                                        textAlign: "right",
+                                        verticalAlign: "top",
+                                        backgroundColor: row.left?.type === "del" ? "rgba(248,81,73,0.15)" : "transparent",
+                                        userSelect: "none",
+                                        minWidth: "40px",
+                                        p: "4px 8px",
+                                        fontFamily: "inherit",
+                                        lineHeight: 1.5
+                                    }}
+                                >
+                                    {getLeftLn()}
+                                </TableCell>
+                                <TableCell
+                                    sx={{
+                                        borderRight: "1px solid #30363d",
+                                        borderBottom: "none",
+                                        verticalAlign: "top",
+                                        backgroundColor: row.left?.type === "del" ? "rgba(248,81,73,0.15)" : "transparent",
+                                        color: "#e6edf3",
+                                        whiteSpace: "pre-wrap",
+                                        wordBreak: "break-all",
+                                        p: "4px 8px",
+                                        fontFamily: "inherit",
+                                        lineHeight: 1.5
+                                    }}
+                                >
+                                    {row.left ? (
+                                        // parse-diff content includes the +/- operator, stripping it for display if needed
+                                        // usually normal has ' ', del has '-', add has '+'
+                                        // GitHub view doesn't show +/- in split
+                                        <span>{row.left.content.substring(1)}</span>
+                                    ) : null}
+                                </TableCell>
+
+                                {/* Right Side (New) */}
+                                <TableCell
+                                    sx={{
+                                        color: "#6e7681",
+                                        borderRight: "1px solid #30363d",
+                                        borderBottom: "none",
+                                        textAlign: "right",
+                                        verticalAlign: "top",
+                                        backgroundColor: row.right?.type === "add" ? "rgba(46,160,67,0.15)" : "transparent",
+                                        userSelect: "none",
+                                        minWidth: "40px",
+                                        p: "4px 8px",
+                                        fontFamily: "inherit",
+                                        lineHeight: 1.5
+                                    }}
+                                >
+                                    {getRightLn()}
+                                </TableCell>
+                                <TableCell
+                                    sx={{
+                                        borderBottom: "none",
+                                        verticalAlign: "top",
+                                        backgroundColor: row.right?.type === "add" ? "rgba(46,160,67,0.15)" : "transparent",
+                                        color: "#e6edf3",
+                                        whiteSpace: "pre-wrap",
+                                        wordBreak: "break-all",
+                                        p: "4px 8px",
+                                        fontFamily: "inherit",
+                                        lineHeight: 1.5
+                                    }}
+                                >
+                                    {row.right ? (
+                                        <span>{row.right.content.substring(1)}</span>
+                                    ) : null}
+                                </TableCell>
+                            </TableRow>
+                        );
+                    })}
+                </TableBody>
+            </Table>
+        </TableContainer>
+    );
+};
+
+// ... imports
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import CheckIcon from "@mui/icons-material/Check";
+import Tooltip from "@mui/material/Tooltip";
+import IconButton from "@mui/material/IconButton";
+
+// ... existing interfaces
+
+// Minimap Component
+// Minimap Component
+const DiffMinimap: React.FC<{
+    files: any[];
+    scrollContainerRef: React.RefObject<HTMLDivElement>;
+}> = ({ files, scrollContainerRef }) => {
+    const [scrollTop, setScrollTop] = useState(0);
+    const [viewportHeight, setViewportHeight] = useState(0);
+    const [contentHeight, setContentHeight] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+    const minimapRef = useRef<HTMLDivElement>(null);
+
+    // Parse chunks to lines structure for accurate mapping
+    const { lines, totalLines } = useMemo(() => {
+        if (!files || !files.length) return { lines: [], totalLines: 0 };
+        const chunks = files[0].chunks;
+        let tLines = 0;
+        const mapLines: { type: string; index: number }[] = [];
+
+        chunks.forEach((chunk: any) => {
+            // Chunk header counts as a line visually usually
+            tLines++;
+            mapLines.push({ type: 'header', index: tLines });
+
+            chunk.changes.forEach((change: any) => {
+                tLines++;
+                mapLines.push({ type: change.type, index: tLines });
+            });
+        });
+        return { lines: mapLines, totalLines: tLines };
+    }, [files]);
+
+    // Sync with scroll container
+    useEffect(() => {
+        const el = scrollContainerRef.current;
+        if (!el) return;
+
+        const handleScroll = () => {
+            if (!isDragging) {
+                setScrollTop(el.scrollTop);
+            }
+        };
+
+        const updateMetrics = () => {
+            setViewportHeight(el.clientHeight);
+            setContentHeight(el.scrollHeight);
+            // Also update scroll top in case of resize
+            setScrollTop(el.scrollTop);
+        };
+
+        el.addEventListener("scroll", handleScroll);
+        // Use ResizeObserver for robust updates
+        const ro = new ResizeObserver(updateMetrics);
+        ro.observe(el);
+
+        // Initial update
+        updateMetrics();
+
+        return () => {
+            el.removeEventListener("scroll", handleScroll);
+            ro.disconnect();
+        };
+    }, [scrollContainerRef, isDragging]);
+
+    // Interaction Handlers
+    const handleMinimapClick = (e: React.MouseEvent) => {
+        if (!minimapRef.current || !scrollContainerRef.current) return;
+        const rect = minimapRef.current.getBoundingClientRect();
+        const clickY = e.clientY - rect.top;
+        const percentage = clickY / rect.height;
+
+        const targetScroll = percentage * scrollContainerRef.current.scrollHeight - (viewportHeight / 2);
+        scrollContainerRef.current.scrollTo({ top: targetScroll, behavior: 'auto' });
+    };
+
+    const handleDragStart = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    useEffect(() => {
+        if (!isDragging) return;
+
+        const handleMove = (e: MouseEvent) => {
+            if (!minimapRef.current || !scrollContainerRef.current) return;
+            const rect = minimapRef.current.getBoundingClientRect();
+            // simple clamp
+            const relativeY = Math.max(0, Math.min(e.clientY - rect.top, rect.height));
+            const percentage = relativeY / rect.height;
+            const targetScroll = percentage * scrollContainerRef.current.scrollHeight - (viewportHeight / 2);
+
+            scrollContainerRef.current.scrollTop = targetScroll;
+            setScrollTop(targetScroll);
+        };
+
+        const handleUp = () => {
+            setIsDragging(false);
+        };
+
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleUp);
+        return () => {
+            window.removeEventListener('mousemove', handleMove);
+            window.removeEventListener('mouseup', handleUp);
+        }
+    }, [isDragging, viewportHeight]);
+
+
+    if (totalLines === 0) return null;
+
+    // We use percentages for CSS to avoid needing exact pixel height in render
+    const overlayTopPct = contentHeight ? (scrollTop / contentHeight) * 100 : 0;
+    const overlayHeightPct = contentHeight ? (viewportHeight / contentHeight) * 100 : 0;
+
+
+    return (
+        <Box
+            ref={minimapRef}
+            onClick={handleMinimapClick}
+            sx={{
+                width: "16px",
+                height: "100%",
+                position: "sticky", // Sticky relative to parent flex container
+                top: 0,
+                right: 0,
+                zIndex: 5,
+                backgroundColor: "rgba(13, 17, 23, 0.5)", // semi-transparent bg
+                borderLeft: "1px solid #30363d",
+                cursor: "pointer",
+                overflow: "hidden", // Hide map parts that overflow
+                "&:hover": {
+                    backgroundColor: "rgba(13, 17, 23, 0.8)",
+                }
+            }}
+        >
+            {/* Map Content (Scaled down) */}
+            <Box sx={{ width: '100%', height: '100%', position: 'relative', opacity: 0.6 }}>
+                {lines.map((line, i) => {
+                    // Draw lines as % positions
+                    const top = (i / totalLines) * 100;
+                    const height = (1 / totalLines) * 100;
+                    let color = "transparent";
+                    if (line.type === 'add') color = "#2da44e";
+                    if (line.type === 'del') color = "#cf222e";
+                    if (color === "transparent") return null;
+
+                    return (
+                        <Box
+                            key={i}
+                            sx={{
+                                position: 'absolute',
+                                top: `${top}%`,
+                                height: `max(1px, ${height}%)`,
+                                left: 0,
+                                right: 0,
+                                backgroundColor: color,
+                            }}
+                        />
+                    )
+                })}
+            </Box>
+
+            {/* Viewport Overlay */}
+            <Box
+                onMouseDown={handleDragStart}
+                sx={{
+                    position: 'absolute',
+                    top: `${overlayTopPct}%`,
+                    left: 0,
+                    right: 0,
+                    height: `${overlayHeightPct}%`,
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    borderTop: "1px solid rgba(255, 255, 255, 0.2)",
+                    borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
+                    transition: isDragging ? 'none' : 'top 0.1s',
+                    zIndex: 2,
+                    cursor: 'grab',
+                    "&:active": {
+                        cursor: 'grabbing',
+                        backgroundColor: "rgba(255, 255, 255, 0.2)",
+                    }
+                }}
+            />
+        </Box>
+    );
+};
+
+
+// Updated SplitDiffView to accept parsed files if desired, or parse internally.
+// Let's parse inside PRFileRow to share state?
+// For now, let's keep SplitDiffView self-contained but we need to parse for Minimap in parent?
+// Actually, let's just make a new wrapper component for the file content.
+
+const PRFileDiffViewer: React.FC<{ file: PRFile; viewMode: "unified" | "split" }> = ({ file, viewMode }) => {
+    // Memoize parseDiff result
+    const parsedDiff = useMemo(() => {
+        if (!file.patch) return [];
+        return parseDiff(file.patch);
+    }, [file.patch]);
+
+    const [copied, setCopied] = useState(false);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    const handleCopyPath = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(file.filename);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    if (!file.patch) {
+        return (
+            <Box sx={{ p: 4, textAlign: "center", color: "#8b949e" }}>
+                <Typography sx={{ fontSize: "0.9rem" }}>
+                    {file.status === "renamed"
+                        ? "File renamed without changes."
+                        : "Binary file or large diff not shown."}
+                </Typography>
+                <Typography
+                    component="a"
+                    href={file.blob_url}
+                    target="_blank"
+                    sx={{
+                        color: "#58a6ff",
+                        fontSize: "0.85rem",
+                        textDecoration: "none",
+                        "&:hover": { textDecoration: "underline" },
+                        mt: 1,
+                        display: "inline-block",
+                    }}
+                >
+                    View file
+                </Typography>
+            </Box>
+        );
+    }
+
+    return (
+        <Paper
+            id={`file-${file.sha}`}
+            elevation={0}
+            sx={{
+                border: "1px solid #30363d",
+                borderRadius: "6px",
+                backgroundColor: "#0d1117",
+                overflow: "hidden",
+                scrollMarginTop: "100px",
+                mb: 3
+            }}
+        >
+            <Accordion
+                defaultExpanded
+                disableGutters
+                sx={{
+                    backgroundColor: "#161b22",
+                    color: "#c9d1d9",
+                    boxShadow: "none",
+                    borderRadius: 0,
+                    "&:before": { display: "none" },
+                    "&.Mui-expanded": { margin: 0 },
+                }}
+            >
+                <AccordionSummary
+                    expandIcon={<ExpandMoreIcon sx={{ color: "#8b949e" }} />}
+                    sx={{
+                        borderBottom: "1px solid #30363d",
+                        minHeight: "48px",
+                        position: 'sticky', // STICKY HEADER
+                        top: 0,
+                        zIndex: 10,
+                        backgroundColor: "#161b22",
+                        "& .MuiAccordionSummary-content": {
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            margin: "12px 0",
+                            width: "100%"
+                        },
+                    }}
+                >
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            overflow: "hidden",
+                        }}
+                    >
+                        <Typography
+                            sx={{
+                                fontFamily: '"JetBrains Mono", monospace',
+                                fontSize: "0.9rem",
+                                fontWeight: 600,
+                            }}
+                        >
+                            {file.filename}
+                        </Typography>
+                        {file.status !== "modified" && (
+                            <Chip
+                                label={file.status}
+                                size="small"
+                                sx={{
+                                    height: "20px",
+                                    fontSize: "0.7rem",
+                                    backgroundColor: "rgba(255,255,255,0.1)",
+                                    color: "#8b949e",
+                                }}
+                            />
+                        )}
+                        <Tooltip title={copied ? "Copied!" : "Copy path"}>
+                            <IconButton
+                                size="small"
+                                onClick={handleCopyPath}
+                                sx={{ color: "#8b949e", ml: 1, p: 0.5 }}
+                            >
+                                {copied ? <CheckIcon sx={{ fontSize: 14, color: '#2da44e' }} /> : <ContentCopyIcon sx={{ fontSize: 14 }} />}
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
+
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                            mr: 1,
+                            flexShrink: 0,
+                        }}
+                    >
+                        <Typography sx={{ color: "#2da44e", fontSize: "0.85rem", fontWeight: 600 }}>+{file.additions}</Typography>
+                        <Typography sx={{ color: "#cf222e", fontSize: "0.85rem", fontWeight: 600 }}>-{file.deletions}</Typography>
+                    </Box>
+                </AccordionSummary>
+
+                <AccordionDetails sx={{ p: 0, backgroundColor: "#0d1117", position: 'relative', display: 'flex', maxHeight: '80vh' }}>
+                    {/* Diff Content */}
+                    <Box
+                        ref={scrollContainerRef}
+                        sx={{
+                            flex: 1,
+                            overflowX: 'auto',
+                            overflowY: 'auto',
+                            mr: '16px'
+                        }}
+                    >
+                        {viewMode === "unified" ? (
+                            <SyntaxHighlighter
+                                language="diff"
+                                style={vscDarkPlus}
+                                customStyle={{
+                                    margin: 0,
+                                    padding: "1rem",
+                                    backgroundColor: "#0d1117",
+                                    fontSize: "13px",
+                                    lineHeight: "1.5",
+                                    // overflowX: "auto", 
+                                }}
+                                showLineNumbers={false}
+                                wrapLongLines={false}
+                            >
+                                {file.patch}
+                            </SyntaxHighlighter>
+                        ) : (
+                            <SplitDiffView patch={file.patch} />
+                        )}
+                    </Box>
+
+                    {/* Minimap */}
+                    <DiffMinimap files={parsedDiff} scrollContainerRef={scrollContainerRef} />
+
+                </AccordionDetails>
+            </Accordion>
+        </Paper>
+    );
+};
+
+const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
+    repository,
+    pullRequestNumber,
+    headSha,
+}) => {
+    // ... existing state ...
+    const [files, setFiles] = useState<PRFile[]>([]);
+    const [fullTreeData, setFullTreeData] = useState<any[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+    const [selectedFile, setSelectedFile] = useState<string | null>(null);
+    const [viewMode, setViewMode] = useState<"unified" | "split">("unified");
+
+    // ... existing useEffect ... (keep it)
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const filesResponse = await axios.get(
+                    `https://api.github.com/repos/${repository}/pulls/${pullRequestNumber}/files?per_page=100`,
+                );
+                const changedFiles = filesResponse.data;
+                setFiles(changedFiles);
+
+                let treeSha = headSha || "main";
+                try {
+                    const treeResponse = await axios.get(
+                        `https://api.github.com/repos/${repository}/git/trees/${treeSha}?recursive=1`,
+                    );
+                    if (treeResponse.data.tree) {
+                        setFullTreeData(treeResponse.data.tree);
+                    }
+                } catch (treeErr) {
+                    console.error(
+                        "Failed to fetch full tree, falling back to sparse tree",
+                        treeErr,
+                    );
+                    setFullTreeData(
+                        changedFiles.map((f: any) => ({ path: f.filename, type: "blob" })),
+                    );
+                }
+            } catch (err: any) {
+                console.error("Failed to fetch PR data", err);
+                setError("Failed to load data.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (repository && pullRequestNumber) {
+            fetchData();
+        }
+    }, [repository, pullRequestNumber, headSha]);
+
+    const fileTree = useMemo(
+        () => buildFullTree(fullTreeData, files),
+        [fullTreeData, files],
+    );
+
+    const handleFileSelect = (file: PRFile) => {
+        setSelectedFile(file.filename);
+        const element = document.getElementById(`file-${file.sha}`);
+        if (element) {
+            const headerOffset = 100; // Account for sticky main header if any? 
+            // Actually standard scrollIntoView might put it under sticky elements.
+            // Better to calculate position.
+            // For now:
+            element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+    };
+
+    const handleViewModeChange = (
+        _event: React.MouseEvent<HTMLElement>,
+        newMode: "unified" | "split" | null,
+    ) => {
+        if (newMode !== null) {
+            setViewMode(newMode);
+        }
+    };
+
+    if (loading) {
+        return (
+            <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    if (error) {
+        return (
+            <Box
+                sx={{
+                    p: 3,
+                    border: "1px solid rgba(255,107,107,0.3)",
+                    borderRadius: 2,
+                    backgroundColor: "rgba(255,107,107,0.05)",
+                    color: "#ff6b6b",
+                    textAlign: "center",
+                }}
+            >
+                <Typography>{error}</Typography>
+            </Box>
+        );
+    }
+
+    return (
+        <Grid container spacing={3}>
+            {/* Sidebar - File Tree */}
+            <Grid item xs={12} md={3}>
+                <Box
+                    sx={{
+                        position: "sticky",
+                        top: 24,
+                        maxHeight: "calc(100vh - 100px)",
+                        overflowY: "auto",
+                        backgroundColor: "#0d1117",
+                        borderRadius: "8px",
+                        border: "1px solid #30363d",
+                        p: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                    }}
+                >
+                    <Box
+                        sx={{
+                            px: 2,
+                            py: 1.5,
+                            borderBottom: "1px solid #30363d",
+                            mb: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 2
+                        }}
+                    >
+                        <Typography
+                            sx={{
+                                fontFamily: '"JetBrains Mono", monospace',
+                                fontSize: "0.85rem",
+                                fontWeight: 600,
+                                color: "#fff",
+                            }}
+                        >
+                            Files Changed ({files.length})
+                        </Typography>
+
+                        {/* View Mode Toggle */}
+                        <ToggleButtonGroup
+                            value={viewMode}
+                            exclusive
+                            onChange={handleViewModeChange}
+                            aria-label="diff view mode"
+                            size="small"
+                            sx={{
+                                width: '100%',
+                                '& .MuiToggleButton-root': {
+                                    flex: 1,
+                                    color: '#8b949e',
+                                    borderColor: '#30363d',
+                                    fontFamily: '"JetBrains Mono", monospace',
+                                    fontSize: '0.75rem',
+                                    textTransform: 'none',
+                                    py: 0.5,
+                                    '&.Mui-selected': {
+                                        color: '#fff',
+                                        backgroundColor: 'rgba(56, 139, 253, 0.15)',
+                                        borderColor: '#388bfd',
+                                    },
+                                    '&:hover': {
+                                        backgroundColor: 'rgba(255,255,255,0.05)'
+                                    }
+                                }
+                            }}
+                        >
+                            <ToggleButton value="unified" aria-label="unified view">
+                                <ViewAgendaIcon sx={{ fontSize: 16, mr: 1 }} />
+                                Unified
+                            </ToggleButton>
+                            <ToggleButton value="split" aria-label="split view">
+                                <ViewColumnIcon sx={{ fontSize: 16, mr: 1 }} />
+                                Split
+                            </ToggleButton>
+                        </ToggleButtonGroup>
+                    </Box>
+                    <List component="nav" dense disablePadding>
+                        {Object.values(fileTree)
+                            .sort((a, b) => {
+                                const aIsFolder = Object.keys(a.children).length > 0;
+                                const bIsFolder = Object.keys(b.children).length > 0;
+                                if (aIsFolder && !bIsFolder) return -1;
+                                if (!aIsFolder && bIsFolder) return 1;
+                                return a.name.localeCompare(b.name);
+                            })
+                            .map((node) => (
+                                <FileTreeItem
+                                    key={node.path}
+                                    node={node}
+                                    level={0}
+                                    onSelect={handleFileSelect}
+                                    selectedParams={{ filename: selectedFile }}
+                                />
+                            ))}
+                    </List>
+                </Box>
+            </Grid>
+
+            {/* Content - File Diffs */}
+            <Grid item xs={12} md={9}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pb: 20 }}>
+                    {files.map((file) => (
+                        <PRFileDiffViewer key={file.sha} file={file} viewMode={viewMode} />
+                    ))}
+                </Box>
+            </Grid>
+        </Grid>
+    );
+};
+
+
+export default PRFilesChanged;
