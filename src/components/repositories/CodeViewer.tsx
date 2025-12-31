@@ -25,7 +25,7 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
     extension &&
     ["png", "jpg", "jpeg", "gif", "svg", "webp", "ico"].includes(extension);
   const rawUrl = filePath
-    ? `https://raw.githubusercontent.com/${repositoryFullName}/${defaultBranch}/${filePath}`
+    ? `https://cdn.jsdelivr.net/gh/${repositoryFullName}@${defaultBranch}/${filePath}`
     : "";
 
   useEffect(() => {
