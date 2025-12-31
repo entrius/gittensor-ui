@@ -3,8 +3,7 @@ import { Box, Card } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { Page } from "../components/layout";
 import { TopMinersTable, SEO } from "../components";
-import { useAllMinerStats, useAllMinerData } from "../api";
-import { CommitLog } from "../api/models/Dashboard";
+import { useAllMinerStats } from "../api";
 
 const TopMinersPage: React.FC = () => {
   const navigate = useNavigate();
@@ -13,32 +12,16 @@ const TopMinersPage: React.FC = () => {
   const allMinersStats = allMinerStatsQuery?.data;
   const isLoadingMinerStats = allMinerStatsQuery?.isLoading;
 
-  const allMinerDataQuery = useAllMinerData();
-  const allPRs = allMinerDataQuery?.data;
-
   const handleSelectMiner = (githubId: string) => {
     navigate(`/miners/details?githubId=${githubId}`);
   };
-
-  // Build githubId -> username mapping
-  const githubIdToUsername = useMemo(() => {
-    const map = new Map<string, string>();
-    if (Array.isArray(allPRs)) {
-      allPRs.forEach((pr: CommitLog) => {
-        if (pr && pr.githubId && pr.author) {
-          map.set(pr.githubId, pr.author);
-        }
-      });
-    }
-    return map;
-  }, [allPRs]);
 
   // Process miner stats for TopMinersTable
   const minerStats = useMemo(() => {
     if (!Array.isArray(allMinersStats)) return [];
     return allMinersStats.map((stat) => ({
       githubId: stat.githubId || "",
-      author: githubIdToUsername.get(stat.githubId) || undefined,
+      author: stat.githubUsername || undefined,
       totalScore: Number(stat.totalScore) || 0,
       baseTotalScore: Number(stat.baseTotalScore) || 0,
       totalPRs: Number(stat.totalPrs) || 0,
@@ -49,7 +32,7 @@ const TopMinersPage: React.FC = () => {
       uniqueReposCount: Number(stat.uniqueReposCount) || 0,
       credibility: Number(stat.credibility) || 0,
     }));
-  }, [allMinersStats, githubIdToUsername]);
+  }, [allMinersStats]);
 
   // Sort miners by total score
   const sortedMinerStats = useMemo(() => {
