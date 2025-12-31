@@ -298,8 +298,16 @@ const FileTreeItem: React.FC<{
 };
 
 // Split View Component
+// Split View Component
 const SplitDiffView: React.FC<{ patch: string }> = ({ patch }) => {
     const files = useMemo(() => parseDiff(patch), [patch]);
+
+    // Scroll Synchronization Refs
+    const leftRef = useRef<HTMLDivElement>(null);
+    const rightRef = useRef<HTMLDivElement>(null);
+    const isSyncingLeftScroll = useRef(false);
+    const isSyncingRightScroll = useRef(false);
+
     if (!files || files.length === 0) return null;
 
     const rows: {
@@ -354,37 +362,71 @@ const SplitDiffView: React.FC<{ patch: string }> = ({ patch }) => {
         }
     });
 
-    return (
-        <TableContainer
-            className="split-diff-table"
+    const handleScroll = (side: 'left' | 'right') => {
+        const source = side === 'left' ? leftRef.current : rightRef.current;
+        const target = side === 'left' ? rightRef.current : leftRef.current;
+        const isSyncingSource = side === 'left' ? isSyncingLeftScroll : isSyncingRightScroll;
+        const isSyncingTarget = side === 'left' ? isSyncingRightScroll : isSyncingLeftScroll;
+
+        if (!source || !target) return;
+
+        // Prevent feedback loop
+        if (isSyncingSource.current) {
+            isSyncingSource.current = false;
+            return;
+        }
+
+        isSyncingTarget.current = true;
+        target.scrollLeft = source.scrollLeft;
+    };
+
+    const renderPane = (side: 'left' | 'right') => (
+        <Box
+            ref={side === 'left' ? leftRef : rightRef}
+            onScroll={() => handleScroll(side)}
             sx={{
-                overflowX: "auto",
-                backgroundColor: "#0d1117",
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "12px",
-            }}
-        >
-            <Table size="small" sx={{ tableLayout: "fixed", width: "100%" }}>
-                <colgroup>
-                    <col style={{ width: "50px" }} />
-                    <col style={{ width: "50%" }} />
-                    <col style={{ width: "50px" }} />
-                    <col style={{ width: "50%" }} />
-                </colgroup>
+                width: '50%',
+                overflowX: 'auto',
+                borderRight: side === 'left' ? '1px solid #30363d' : 'none',
+                '&::-webkit-scrollbar': { height: '8px' }, // Custom scrollbar for better look
+                '&::-webkit-scrollbar-thumb': { backgroundColor: '#30363d', borderRadius: '4px' }
+            }}>
+            <Table size="small" sx={{
+                width: '100%',
+                minWidth: 'max-content', // Forces table to grow with content
+                tableLayout: 'auto'
+            }}>
                 <TableBody>
                     {rows.map((row, idx) => {
-                        if (row.type === "chunk-header") {
+                        if (row.type === 'chunk-header') {
                             return (
-                                <TableRow key={idx} sx={{ backgroundColor: "#1c2128" }}>
+                                <TableRow key={idx} sx={{ height: '24px', backgroundColor: "#1c2128" }}>
                                     <TableCell
-                                        colSpan={4}
+                                        sx={{
+                                            position: 'sticky',
+                                            left: 0,
+                                            width: '50px',
+                                            minWidth: '50px',
+                                            backgroundColor: '#1c2128',
+                                            borderBottom: "1px solid #30363d",
+                                            borderRight: "1px solid #30363d",
+                                            p: '4px 8px',
+                                            color: "#8b949e",
+                                            fontFamily: "inherit",
+                                            fontSize: "12px",
+                                            zIndex: 2
+                                        }}
+                                    >
+                                        ...
+                                    </TableCell>
+                                    <TableCell
                                         sx={{
                                             color: "#8b949e",
                                             borderBottom: "1px solid #30363d",
-                                            py: 1,
-                                            px: 2,
+                                            p: '4px 8px',
                                             fontFamily: "inherit",
                                             fontSize: "12px",
+                                            whiteSpace: 'pre'
                                         }}
                                     >
                                         {row.headerContent}
@@ -393,104 +435,78 @@ const SplitDiffView: React.FC<{ patch: string }> = ({ patch }) => {
                             );
                         }
 
-                        // Type guards / logic for line numbers
-                        const getLeftLn = () => {
-                            if (!row.left) return "";
-                            if (row.left.type === "normal") return row.left.ln1;
-                            if (row.left.type === "del") return row.left.ln;
-                            return "";
-                        };
+                        const item = side === 'left' ? row.left : row.right;
+                        const ln = item ? (item.type === 'normal' ? (side === 'left' ? item.ln1 : item.ln2) : item.ln) : '';
 
-                        const getRightLn = () => {
-                            if (!row.right) return "";
-                            if (row.right.type === "normal") return row.right.ln2;
-                            if (row.right.type === "add") return row.right.ln;
-                            return "";
-                        };
+                        let bg = "transparent";
+                        if (item && item.type === "add") bg = "rgba(46, 160, 67, 0.15)";
+                        if (item && item.type === "del") bg = "rgba(248, 81, 73, 0.15)";
 
+                        // Consistent row height is crucial
                         return (
-                            <TableRow key={idx}>
-                                {/* Left Side (Old) */}
+                            <TableRow key={idx} sx={{ height: '24px' }}>
                                 <TableCell
                                     sx={{
+                                        position: 'sticky',
+                                        left: 0,
+                                        width: '50px',
+                                        minWidth: '50px',
+                                        backgroundColor: bg === "transparent" ? '#0d1117' : bg,
+                                        // If transparent, we need opaque to cover scrolled content. #0d1117 is page bg.
                                         color: "#6e7681",
                                         borderRight: "1px solid #30363d",
                                         borderBottom: "none",
                                         textAlign: "right",
                                         verticalAlign: "top",
-                                        backgroundColor: row.left?.type === "del" ? "rgba(248,81,73,0.15)" : "transparent",
                                         userSelect: "none",
-                                        minWidth: "40px",
-                                        p: "4px 8px",
+                                        p: "0 8px",
                                         fontFamily: "inherit",
-                                        lineHeight: 1.5
+                                        fontSize: "12px",
+                                        lineHeight: "24px",
+                                        zIndex: 2
                                     }}
                                 >
-                                    {getLeftLn()}
+                                    {ln}
                                 </TableCell>
                                 <TableCell
                                     sx={{
-                                        borderRight: "1px solid #30363d",
-                                        borderBottom: "none",
-                                        verticalAlign: "top",
-                                        backgroundColor: row.left?.type === "del" ? "rgba(248,81,73,0.15)" : "transparent",
+                                        backgroundColor: bg,
                                         color: "#e6edf3",
-                                        whiteSpace: "pre-wrap",
-                                        wordBreak: "break-all",
-                                        p: "4px 8px",
-                                        fontFamily: "inherit",
-                                        lineHeight: 1.5
-                                    }}
-                                >
-                                    {row.left ? (
-                                        // parse-diff content includes the +/- operator, stripping it for display if needed
-                                        // usually normal has ' ', del has '-', add has '+'
-                                        // GitHub view doesn't show +/- in split
-                                        <span>{row.left.content.substring(1)}</span>
-                                    ) : null}
-                                </TableCell>
-
-                                {/* Right Side (New) */}
-                                <TableCell
-                                    sx={{
-                                        color: "#6e7681",
-                                        borderRight: "1px solid #30363d",
-                                        borderBottom: "none",
-                                        textAlign: "right",
-                                        verticalAlign: "top",
-                                        backgroundColor: row.right?.type === "add" ? "rgba(46,160,67,0.15)" : "transparent",
-                                        userSelect: "none",
-                                        minWidth: "40px",
-                                        p: "4px 8px",
-                                        fontFamily: "inherit",
-                                        lineHeight: 1.5
-                                    }}
-                                >
-                                    {getRightLn()}
-                                </TableCell>
-                                <TableCell
-                                    sx={{
                                         borderBottom: "none",
                                         verticalAlign: "top",
-                                        backgroundColor: row.right?.type === "add" ? "rgba(46,160,67,0.15)" : "transparent",
-                                        color: "#e6edf3",
-                                        whiteSpace: "pre-wrap",
-                                        wordBreak: "break-all",
-                                        p: "4px 8px",
+                                        whiteSpace: "pre", // FORCE NO WRAP
+                                        p: "0 8px",
                                         fontFamily: "inherit",
-                                        lineHeight: 1.5
+                                        fontSize: "12px",
+                                        lineHeight: "24px",
+                                        // Ensure it takes up space
+                                        width: 'auto'
                                     }}
                                 >
-                                    {row.right ? (
-                                        <span>{row.right.content.substring(1)}</span>
-                                    ) : null}
+                                    {item ? (item.content.startsWith('+') || item.content.startsWith('-') ? item.content.substring(1) : item.content) : ''}
                                 </TableCell>
                             </TableRow>
                         );
                     })}
                 </TableBody>
             </Table>
-        </TableContainer>
+        </Box>
+    );
+
+    return (
+        <Box
+            className="split-diff-container"
+            sx={{
+                display: 'flex',
+                width: '100%',
+                backgroundColor: "#0d1117",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "12px",
+            }}
+        >
+            {renderPane('left')}
+            {renderPane('right')}
+        </Box>
     );
 };
 
