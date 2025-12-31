@@ -18,6 +18,7 @@ import {
   CheckCircle as HireableIcon,
   GitHub as GitHubIcon,
   People as FollowersIcon,
+  EmojiEvents as TierIcon,
 } from "@mui/icons-material";
 import {
   useMinerStats,
@@ -190,7 +191,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
       },
       {
         label: "Current Score",
-        value: Number(minerStats.totalScore).toFixed(4),
+        value: Number(minerStats.totalScore).toFixed(2),
         rank: rankings?.score,
       },
       {
@@ -215,12 +216,15 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
       },
       {
         label: "Open Collateral",
-        value: Number(minerStats.totalCollateralScore || 0).toFixed(4),
+        value: Number(minerStats.totalCollateralScore || 0) > 0
+          ? `-${Number(minerStats.totalCollateralScore).toFixed(2)}`
+          : Number(minerStats.totalCollateralScore || 0).toFixed(2),
         rank: null,
+        color: Number(minerStats.totalCollateralScore || 0) > 0 ? "rgba(248, 113, 113, 0.8)" : undefined,
       },
       {
         label: "Top PR",
-        value: topPR ? parseFloat(topPR.score || "0").toFixed(4) : "N/A",
+        value: topPR ? parseFloat(topPR.score || "0").toFixed(2) : "N/A",
         rank: topPRRank,
         link: topPR
           ? `https://github.com/${topPR.repository}/pull/${topPR.pullRequestNumber}`
@@ -306,6 +310,53 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
               >
                 {minerStats.hotkey || "N/A"}
               </Typography>
+            </Box>
+
+            {/* Current Tier Badge */}
+            <Box sx={{ mt: 1.5 }}>
+              <Chip
+                icon={
+                  <TierIcon
+                    style={{
+                      fontSize: 16,
+                      color: minerStats.currentTier === "Gold"
+                        ? "#FFD700"
+                        : minerStats.currentTier === "Silver"
+                          ? "#C0C0C0"
+                          : minerStats.currentTier === "Bronze"
+                            ? "#CD7F32"
+                            : "rgba(255, 255, 255, 0.3)",
+                    }}
+                  />
+                }
+                label={minerStats.currentTier || "Unranked"}
+                size="small"
+                sx={{
+                  backgroundColor: minerStats.currentTier === "Gold"
+                    ? "rgba(255, 215, 0, 0.1)"
+                    : minerStats.currentTier === "Silver"
+                      ? "rgba(192, 192, 192, 0.1)"
+                      : minerStats.currentTier === "Bronze"
+                        ? "rgba(205, 127, 50, 0.1)"
+                        : "rgba(255, 255, 255, 0.03)",
+                  color: minerStats.currentTier === "Gold"
+                    ? "#FFD700"
+                    : minerStats.currentTier === "Silver"
+                      ? "#C0C0C0"
+                      : minerStats.currentTier === "Bronze"
+                        ? "#CD7F32"
+                        : "rgba(255, 255, 255, 0.4)",
+                  border: "1px solid",
+                  borderColor: minerStats.currentTier === "Gold"
+                    ? "rgba(255, 215, 0, 0.3)"
+                    : minerStats.currentTier === "Silver"
+                      ? "rgba(192, 192, 192, 0.3)"
+                      : minerStats.currentTier === "Bronze"
+                        ? "rgba(205, 127, 50, 0.3)"
+                        : "rgba(255, 255, 255, 0.1)",
+                  fontWeight: 600,
+                }}
+              />
             </Box>
           </Box>
         </Box>

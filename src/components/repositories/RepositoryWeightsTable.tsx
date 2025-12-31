@@ -22,15 +22,42 @@ import {
   MenuItem,
   FormControl,
   Avatar,
+  Chip,
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
 import { useReposAndWeights } from "../../api";
 import dayjs from "dayjs";
 
-type SortField = "owner" | "name" | "weight";
+type SortField = "owner" | "name" | "weight" | "tier";
 type SortOrder = "asc" | "desc";
 
 const baseGithubUrl = "https://github.com/";
+
+const getTierColor = (tier: string): string => {
+  switch (tier?.toLowerCase()) {
+    case "gold":
+      return "#FFD700";
+    case "silver":
+      return "#C0C0C0";
+    case "bronze":
+      return "#CD7F32";
+    default:
+      return "rgba(255, 255, 255, 0.4)";
+  }
+};
+
+const getTierOrder = (tier: string): number => {
+  switch (tier?.toLowerCase()) {
+    case "gold":
+      return 3;
+    case "silver":
+      return 2;
+    case "bronze":
+      return 1;
+    default:
+      return 0;
+  }
+};
 
 interface RepositoryWeightsTableProps {
   onSelectRepository?: (repositoryFullName: string) => void;
@@ -99,6 +126,10 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({ onSelec
       } else if (sortField === "name") {
         aValue = a.name;
         bValue = b.name;
+      } else if (sortField === "tier") {
+        const aOrder = getTierOrder(a.tier);
+        const bOrder = getTierOrder(b.tier);
+        return sortOrder === "asc" ? aOrder - bOrder : bOrder - aOrder;
       } else {
         aValue = a.weight;
         bValue = b.weight;
@@ -297,6 +328,33 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({ onSelec
                   </TableSortLabel>
                 </TableCell>
                 <TableCell
+                  align="center"
+                  sx={{
+                    backgroundColor: "rgba(18, 18, 20, 0.95)",
+                    backdropFilter: "blur(8px)",
+                    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                    height: "56px",
+                    py: 1.5,
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <TableSortLabel
+                    active={sortField === "tier"}
+                    direction={sortField === "tier" ? sortOrder : "desc"}
+                    onClick={() => handleSort("tier")}
+                    sx={{
+                      "&:hover": {
+                        color: "secondary.main",
+                      },
+                      "&.Mui-active": {
+                        color: "secondary.main",
+                      },
+                    }}
+                  >
+                    <Typography variant="dataLabel">Tier</Typography>
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell
                   align="right"
                   sx={{
                     backgroundColor: "rgba(18, 18, 20, 0.95)",
@@ -459,6 +517,32 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({ onSelec
                             )}
                           </Stack>
                         </Box>
+                      </TableCell>
+                      <TableCell
+                        align="center"
+                        sx={{
+                          height: "60px",
+                          py: 1,
+                          boxSizing: "border-box",
+                        }}
+                      >
+                        <Chip
+                          label={repo.tier || "—"}
+                          size="small"
+                          sx={{
+                            height: "22px",
+                            fontSize: "0.7rem",
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontWeight: 600,
+                            backgroundColor: "transparent",
+                            border: `1px solid ${getTierColor(repo.tier)}`,
+                            color: getTierColor(repo.tier),
+                            borderRadius: "4px",
+                            "& .MuiChip-label": {
+                              px: 1,
+                            },
+                          }}
+                        />
                       </TableCell>
                       <TableCell
                         align="right"

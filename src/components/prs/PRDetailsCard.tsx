@@ -105,62 +105,125 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     }
   };
 
-  const statItems = [
-    {
-      label: "Score",
-      value: parseFloat(prDetails.earnedScore).toFixed(4),
-      rank: prRank,
-    },
-    {
-      label: "Base Score",
-      value: parseFloat(prDetails.baseScore).toFixed(4),
-      rank: null,
-      color: "rgba(255, 255, 255, 0.7)",
-    },
-    {
-      label: "Lines Scored",
-      value: prDetails.totalLinesScored.toLocaleString(),
-      rank: null,
-    },
-    {
-      label: "Changes",
-      value: `+${prDetails.additions} / -${prDetails.deletions}`,
-      rank: null,
-      color: "rgba(255, 255, 255, 0.7)",
-    },
-    {
-      label: "Commits",
-      value: prDetails.commits,
-      rank: null,
-    },
-  ];
+  const isOpenPR = prDetails.prState === "OPEN";
 
-  const multipliers = [
-    {
-      label: "Repo Weight",
-      value: `${parseFloat(prDetails.repoWeightMultiplier).toFixed(2)}x`,
-    },
-    {
-      label: "Issue Bonus",
-      value: `${parseFloat(prDetails.issueMultiplier).toFixed(2)}x`,
-    },
-    {
-      label: "Credibility",
-      value: `${parseFloat(prDetails.credibilityMultiplier).toFixed(2)}x`,
-    },
-    {
-      label: "Repo Unique",
-      value: `${parseFloat(prDetails.repositoryUniquenessMultiplier).toFixed(2)}x`,
-    },
-    {
-      label: "Time Decay",
-      value: `${parseFloat(prDetails.timeDecayMultiplier).toFixed(2)}x`,
-    },
-    {
-      label: "Tag Bonus",
-      value: `${parseFloat(prDetails.gittensorTagMultiplier).toFixed(2)}x`,
-    },
-  ];
+  const statItems = isOpenPR
+    ? [
+        {
+          label: "Collateral",
+          value: parseFloat(prDetails.collateralScore || "0") > 0
+            ? `-${parseFloat(prDetails.collateralScore).toFixed(2)}`
+            : parseFloat(prDetails.collateralScore || "0").toFixed(2),
+          rank: null,
+          color: parseFloat(prDetails.collateralScore || "0") > 0
+            ? "rgba(248, 113, 113, 0.8)"
+            : undefined,
+        },
+        {
+          label: "Base Score",
+          value: parseFloat(prDetails.baseScore).toFixed(2),
+          rank: null,
+          color: "rgba(255, 255, 255, 0.7)",
+        },
+        {
+          label: "Lines Scored",
+          value: prDetails.totalLinesScored.toLocaleString(),
+          rank: null,
+        },
+        {
+          label: "Changes",
+          value: "",
+          rank: null,
+          additions: prDetails.additions,
+          deletions: prDetails.deletions,
+        },
+        {
+          label: "Commits",
+          value: prDetails.commits,
+          rank: null,
+        },
+      ]
+    : [
+        {
+          label: "Score",
+          value: parseFloat(prDetails.earnedScore).toFixed(2),
+          rank: prRank,
+        },
+        {
+          label: "Base Score",
+          value: parseFloat(prDetails.baseScore).toFixed(2),
+          rank: null,
+          color: "rgba(255, 255, 255, 0.7)",
+        },
+        {
+          label: "Lines Scored",
+          value: prDetails.totalLinesScored.toLocaleString(),
+          rank: null,
+        },
+        {
+          label: "Changes",
+          value: "",
+          rank: null,
+          additions: prDetails.additions,
+          deletions: prDetails.deletions,
+        },
+        {
+          label: "Commits",
+          value: prDetails.commits,
+          rank: null,
+        },
+      ];
+
+  // For OPEN PRs: collateral = base_score × repo_weight × issue_multiplier × gittensor_tag × 20%
+  // Only show applicable multipliers
+  const multipliers: Array<{
+    label: string;
+    value: string;
+  }> = isOpenPR
+    ? [
+        {
+          label: "Repo Weight",
+          value: `${parseFloat(prDetails.repoWeightMultiplier).toFixed(2)}x`,
+        },
+        {
+          label: "Issue Bonus",
+          value: `${parseFloat(prDetails.issueMultiplier).toFixed(2)}x`,
+        },
+        {
+          label: "Tag Bonus",
+          value: `${parseFloat(prDetails.gittensorTagMultiplier).toFixed(2)}x`,
+        },
+        {
+          label: "Collateral %",
+          value: "20%",
+        },
+      ]
+    : [
+        {
+          label: "Repo Weight",
+          value: `${parseFloat(prDetails.repoWeightMultiplier).toFixed(2)}x`,
+        },
+        {
+          label: "Issue Bonus",
+          value: `${parseFloat(prDetails.issueMultiplier).toFixed(2)}x`,
+        },
+        {
+          label: "Credibility*",
+          value: `${parseFloat(prDetails.credibilityMultiplier).toFixed(2)}x`,
+        },
+        {
+          label: "Repo Unique",
+          value: `${parseFloat(prDetails.repositoryUniquenessMultiplier).toFixed(2)}x`,
+        },
+        {
+          label: "Time Decay",
+          value: `${parseFloat(prDetails.timeDecayMultiplier).toFixed(2)}x`,
+        },
+        {
+          label: "Tag Bonus",
+          value: `${parseFloat(prDetails.gittensorTagMultiplier).toFixed(2)}x`,
+        },
+      ];
 
   return (
     <Card
@@ -404,17 +467,55 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                   </Box>
                 )}
               </Box>
-              <Typography
-                sx={{
-                  color: item.color || "#ffffff",
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: "1.5rem",
-                  fontWeight: 600,
-                  wordBreak: "break-all",
-                }}
-              >
-                {item.value}
-              </Typography>
+              {item.additions !== undefined && item.deletions !== undefined ? (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Typography
+                    component="span"
+                    sx={{
+                      color: "rgba(74, 222, 128, 0.8)",
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: "1.5rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    +{item.additions}
+                  </Typography>
+                  <Typography
+                    component="span"
+                    sx={{
+                      color: "rgba(255, 255, 255, 0.4)",
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: "1.5rem",
+                      fontWeight: 400,
+                    }}
+                  >
+                    /
+                  </Typography>
+                  <Typography
+                    component="span"
+                    sx={{
+                      color: "rgba(248, 113, 113, 0.8)",
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: "1.5rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    -{item.deletions}
+                  </Typography>
+                </Box>
+              ) : (
+                <Typography
+                  sx={{
+                    color: item.color || "#ffffff",
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: "1.5rem",
+                    fontWeight: 600,
+                    wordBreak: "break-all",
+                  }}
+                >
+                  {item.value}
+                </Typography>
+              )}
             </Box>
           </Grid>
         ))}
@@ -433,7 +534,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             mb: 2,
           }}
         >
-          Score Multipliers
+          {isOpenPR ? "Collateral Multipliers" : "Score Multipliers"}
         </Typography>
         <Grid container spacing={2}>
           {multipliers.map((item, index) => (
@@ -474,6 +575,19 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             </Grid>
           ))}
         </Grid>
+        {!isOpenPR && (
+          <Typography
+            sx={{
+              color: "rgba(255, 255, 255, 0.35)",
+              fontSize: "0.65rem",
+              fontStyle: "italic",
+              mt: 1.5,
+              textAlign: "center",
+            }}
+          >
+            *Credibility has been exponentially scaled by the tier scalar
+          </Typography>
+        )}
       </Box>
 
       {/* Additional Info */}

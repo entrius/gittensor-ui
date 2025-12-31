@@ -200,7 +200,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               color: "#888888",
             }}
           >
-            © Gittensor 2025
+            © Gittensor 2026
           </Typography>
         </Stack>
       </Box>
