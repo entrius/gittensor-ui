@@ -17,8 +17,8 @@ import {
     useReposAndWeights,
 } from "../../api";
 import { subDays, format } from "date-fns";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PublicIcon from "@mui/icons-material/Public";
+import CodeOffIcon from "@mui/icons-material/CodeOff";
 
 const GlobalActivityViz: React.FC = () => {
     const navigate = useNavigate();
@@ -254,6 +254,9 @@ const GlobalActivityViz: React.FC = () => {
         );
     }
 
+    // Empty state when no data
+    const hasNoData = !allPrs || allPrs.length === 0;
+
     return (
         <Card
             sx={{
@@ -307,6 +310,47 @@ const GlobalActivityViz: React.FC = () => {
                 />
             </Box>
 
+            {hasNoData ? (
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        py: 6,
+                        px: 3,
+                    }}
+                >
+                    <CodeOffIcon
+                        sx={{
+                            fontSize: 48,
+                            color: "rgba(255, 255, 255, 0.2)",
+                            mb: 2,
+                        }}
+                    />
+                    <Typography
+                        sx={{
+                            color: "rgba(255, 255, 255, 0.5)",
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.9rem",
+                            textAlign: "center",
+                        }}
+                    >
+                        No activity data available yet
+                    </Typography>
+                    <Typography
+                        sx={{
+                            color: "rgba(255, 255, 255, 0.3)",
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.75rem",
+                            mt: 0.5,
+                            textAlign: "center",
+                        }}
+                    >
+                        Activity will appear here once contributions are recorded
+                    </Typography>
+                </Box>
+            ) : (
             <Grid container sx={{ height: "100%" }}>
                 {/* Heatmap Section */}
                 <Grid
@@ -664,6 +708,7 @@ const GlobalActivityViz: React.FC = () => {
                     </Box>
                 </Grid>
             </Grid>
+            )}
         </Card>
     );
 };

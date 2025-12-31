@@ -9,7 +9,9 @@ import {
   Typography,
   Stack,
   Button,
+  CircularProgress,
 } from "@mui/material";
+import BarChartIcon from "@mui/icons-material/BarChart";
 import ReactECharts from "echarts-for-react";
 import { useAllMinerData, useReposAndWeights } from "../../api";
 
@@ -25,8 +27,11 @@ const LeaderboardCharts: React.FC = () => {
     "all" | "Gold" | "Silver" | "Bronze"
   >("all");
 
-  const { data: allPRs } = useAllMinerData();
-  const { data: repos } = useReposAndWeights();
+  const { data: allPRs, isLoading: isLoadingPRs } = useAllMinerData();
+  const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
+
+  const isLoading = isLoadingPRs || isLoadingRepos;
+  const hasNoData = !allPRs || allPRs.length === 0;
 
   // Process top PRs
   const topPRs = useMemo(() => {
@@ -576,10 +581,60 @@ const LeaderboardCharts: React.FC = () => {
         </Box>
       </Box>
       <Box sx={{ flex: 1, p: 2, backgroundColor: "rgba(0,0,0,0.2)" }}>
-        <ReactECharts
-          option={activeTab === 0 ? getPRsChartOption() : getReposChartOption()}
-          style={{ height: "100%", width: "100%" }}
-        />
+        {isLoading ? (
+          <Box
+            sx={{
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <CircularProgress size={30} />
+          </Box>
+        ) : hasNoData ? (
+          <Box
+            sx={{
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <BarChartIcon
+              sx={{
+                fontSize: 48,
+                color: "rgba(255, 255, 255, 0.2)",
+                mb: 2,
+              }}
+            />
+            <Typography
+              sx={{
+                color: "rgba(255, 255, 255, 0.5)",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "0.9rem",
+              }}
+            >
+              No leaderboard data available yet
+            </Typography>
+            <Typography
+              sx={{
+                color: "rgba(255, 255, 255, 0.3)",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "0.75rem",
+                mt: 0.5,
+              }}
+            >
+              Rankings will appear once PRs are recorded
+            </Typography>
+          </Box>
+        ) : (
+          <ReactECharts
+            option={activeTab === 0 ? getPRsChartOption() : getReposChartOption()}
+            style={{ height: "100%", width: "100%" }}
+          />
+        )}
       </Box>
     </Card>
   );
