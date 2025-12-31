@@ -25,10 +25,24 @@ interface RepoStats {
   prs: number;
   score: number;
   weight: number;
+  tier: string;
 }
 
 type SortField = "rank" | "repository" | "prs" | "score" | "weight";
 type SortOrder = "asc" | "desc";
+
+const getTierColor = (tier: string): string => {
+  switch (tier?.toLowerCase()) {
+    case "gold":
+      return "#FFD700";
+    case "silver":
+      return "#C0C0C0";
+    case "bronze":
+      return "#CD7F32";
+    default:
+      return "transparent";
+  }
+};
 
 const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   githubId,
@@ -39,13 +53,25 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   const [sortField, setSortField] = useState<SortField>("score");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
-  // Build repository weights map
+  // Build repository weights and tiers maps
   const repoWeights = useMemo(() => {
     const map = new Map<string, number>();
     if (Array.isArray(repos)) {
       repos.forEach((repo) => {
         if (repo && repo.fullName) {
           map.set(repo.fullName, parseFloat(repo.weight || "0"));
+        }
+      });
+    }
+    return map;
+  }, [repos]);
+
+  const repoTiers = useMemo(() => {
+    const map = new Map<string, string>();
+    if (Array.isArray(repos)) {
+      repos.forEach((repo) => {
+        if (repo && repo.fullName) {
+          map.set(repo.fullName, repo.tier || "");
         }
       });
     }
@@ -64,6 +90,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
         prs: 0,
         score: 0,
         weight: repoWeights.get(pr.repository) || 0,
+        tier: repoTiers.get(pr.repository) || "",
       };
       existing.prs += 1;
       existing.score += parseFloat(pr.score || "0");
@@ -71,7 +98,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     });
 
     return Array.from(statsMap.values());
-  }, [prs, repoWeights]);
+  }, [prs, repoWeights, repoTiers]);
 
   // Sort repository stats
   const sortedRepoStats = useMemo(() => {
@@ -390,6 +417,18 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                               : "transparent",
                       }}
                     />
+                    {repo.tier && (
+                      <Box
+                        sx={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: "50%",
+                          backgroundColor: getTierColor(repo.tier),
+                          flexShrink: 0,
+                        }}
+                        title={`${repo.tier} tier`}
+                      />
+                    )}
                     <Typography
                       component="span"
                       sx={{
