@@ -91,7 +91,7 @@ export type CommitLog = {
   githubId?: string; // Numeric GitHub ID - only present in /miners endpoints, not /dash/commits
   score: string; // Backend returns as string
   baseScore?: string; // Backend returns as string
-  tier: string; // Bronze, Silver, Gold - from joined repositories table
+  tier: string | null; // Bronze, Silver, Gold - from joined repositories table (null if repo not registered)
 };
 
 export type MinerEvaluation = {
@@ -99,6 +99,7 @@ export type MinerEvaluation = {
   uid: number;
   hotkey: string;
   githubId: string;
+  githubUsername?: string;
   failedReason: string;
   baseTotalScore: number;
   totalScore: number;
