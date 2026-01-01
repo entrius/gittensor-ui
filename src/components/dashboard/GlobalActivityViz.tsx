@@ -195,7 +195,7 @@ const GlobalActivityViz: React.FC = () => {
             title: {
                 text: `${credibilityPercent.toFixed(0)}%`,
                 left: "center",
-                top: "44%", // Adjusted down to align with visual center of ring
+                top: "34%", // Adjusted to align with visual center of ring
                 textStyle: {
                     color: "#fff",
                     fontSize: 28,
@@ -248,7 +248,7 @@ const GlobalActivityViz: React.FC = () => {
             title: {
                 text: `${credibilityPercent.toFixed(0)}%`,
                 left: "center",
-                top: "44%", // Adjusted down to align with visual center of ring
+                top: "34%", // Adjusted to align with visual center of ring
                 textStyle: {
                     color: "rgba(255, 255, 255, 0.7)",
                     fontSize: 24,
