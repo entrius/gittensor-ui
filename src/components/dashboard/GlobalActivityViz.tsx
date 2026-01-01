@@ -285,7 +285,7 @@ const GlobalActivityViz: React.FC = () => {
             title: {
                 text: `${credibilityPercent.toFixed(0)}%`,
                 left: "center",
-                top: "34%", // Adjusted to align with visual center of ring
+                top: "28%", // Adjusted to align with visual center of ring
                 textStyle: {
                     color: "#fff",
                     fontSize: 28,
@@ -338,7 +338,7 @@ const GlobalActivityViz: React.FC = () => {
             title: {
                 text: `${credibilityPercent.toFixed(0)}%`,
                 left: "center",
-                top: "34%", // Adjusted to align with visual center of ring
+                top: "28%", // Adjusted to align with visual center of ring
                 textStyle: {
                     color: "rgba(255, 255, 255, 0.7)",
                     fontSize: 24,
@@ -800,24 +800,33 @@ const GlobalActivityViz: React.FC = () => {
                         >
                             {/* Table Header */}
                             <Box sx={{
-                                display: "grid",
-                                gridTemplateColumns: "1.2fr 85px 75px 0.9fr 0.9fr 0.9fr 1.1fr 1.1fr",
-                                gap: 1,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1, // Reduced gap
                                 pb: 1,
-                                mb: 0.5,
-                                borderBottom: "1px solid rgba(255,255,255,0.1)",
-                                alignItems: "center"
+                                px: 1,
+                                borderBottom: "1px solid rgba(255,255,255,0.05)",
                             }}>
-                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700 }}>Tier</Typography>
-                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.1)" }}>Miners</Typography>
+                                {/* Tier Header */}
+                                <Box sx={{ width: "110px", pl: 1 }}>
+                                    <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600 }}>Tier</Typography>
+                                </Box>
 
-                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Credibility</Typography>
-                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Merged</Typography>
-                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Open</Typography>
-                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.1)" }}>Closed</Typography>
+                                {/* Miners Group Header */}
+                                <Box sx={{ width: "80px", display: "flex", justifyContent: "center", mr: 2 }}>
+                                    <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600 }}>Miners</Typography>
+                                </Box>
 
-                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Score</Typography>
-                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Avg/Miner</Typography>
+                                {/* Activity Group Header */}
+                                <Box sx={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
+                                    <Typography sx={{ gridColumn: "span 4", color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>M.O.C Ratio</Typography>
+                                </Box>
+
+                                {/* Score Group Header */}
+                                <Box sx={{ width: "180px", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+                                    <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>Score</Typography>
+                                    <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>Avg/Miner</Typography>
+                                </Box>
                             </Box>
 
                             {/* Table Rows */}
@@ -846,103 +855,140 @@ const GlobalActivityViz: React.FC = () => {
                                     <Box
                                         key={tier}
                                         sx={{
-                                            display: "grid",
-                                            gridTemplateColumns: "1.2fr 85px 75px 0.9fr 0.9fr 0.9fr 1.1fr 1.1fr",
-                                            gap: 1,
-                                            py: 0.5,
+                                            display: "flex",
                                             alignItems: "center",
-                                            borderBottom: isCandidate ? "none" : "1px solid rgba(255,255,255,0.03)",
+                                            gap: 1, // Reduced gap
+                                            py: 0.75,
+                                            px: 1,
                                             mt: isCandidate ? 1 : 0,
-                                            pt: isCandidate ? 1.5 : 0.5,
-                                            borderTop: isCandidate ? "1px dashed rgba(255,255,255,0.15)" : "none",
-                                            "&:hover": {
-                                                backgroundColor: "rgba(255,255,255,0.02)"
-                                            }
+                                            borderTop: isCandidate ? "1px solid rgba(255,255,255,0.1)" : "none",
                                         }}
                                     >
                                         {/* Tier Name with Badge */}
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                                        <Box sx={{ width: "110px", pl: 1, display: "flex", alignItems: "center", gap: 1.5 }}>
                                             {!isCandidate && (
-                                                <Box sx={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: color, flexShrink: 0 }} />
+                                                <Box sx={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: color, flexShrink: 0, boxShadow: `0 0 10px ${color}40` }} />
                                             )}
-                                            <Typography sx={{ color: "#fff", fontSize: "0.8rem", fontWeight: 700, fontFamily: '"JetBrains Mono", monospace' }}>
+                                            <Typography sx={{ color: "#fff", fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
                                                 {tier === "Candidate" ? "Unranked" : tier}
                                             </Typography>
                                         </Box>
 
-                                        {/* Miners Column (moved to 2nd) */}
-                                        <Box sx={{ borderRight: "1px solid rgba(255,255,255,0.1)", textAlign: "center" }}>
-                                            <Typography sx={{ color: "#fff", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                        {/* Miners Group */}
+                                        <Box sx={{
+                                            width: "80px",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            backgroundColor: "rgba(255,255,255,0.03)",
+                                            borderRadius: 1,
+                                            height: "48px",
+                                            border: "1px solid rgba(255,255,255,0.02)",
+                                            mr: 2 // Added margin right to push MOC section away
+                                        }}>
+                                            <Typography sx={{ color: "rgba(255,255,255,0.9)", fontSize: "0.9rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
                                                 {stats.total}
                                             </Typography>
                                         </Box>
 
-                                        {/* Mini Gauge (Credibility) */}
-                                        <Box sx={{ width: 44, height: 44, mx: "auto" }}>
-                                            <ReactECharts
-                                                option={{
-                                                    backgroundColor: "transparent",
-                                                    title: {
-                                                        text: (stats.merged + stats.closed) === 0 ? "N/A" : `${(stats.credibility * 100).toFixed(0)}`,
-                                                        left: "center",
-                                                        top: "32%", // Vertically centered
-                                                        textStyle: {
-                                                            color: (stats.merged + stats.closed) === 0 ? "rgba(255,255,255,0.3)" : stats.credibility >= 0.7 ? "#4ade80" : stats.credibility >= 0.4 ? "#fbbf24" : "#ef4444",
-                                                            fontSize: (stats.merged + stats.closed) === 0 ? 10 : 11,
-                                                            fontWeight: "bold",
-                                                            fontFamily: '"JetBrains Mono", monospace',
-                                                        },
-                                                    },
-                                                    series: [{
-                                                        type: "pie",
-                                                        radius: ["60%", "75%"],
-                                                        center: ["50%", "50%"], // Vertically centered
-                                                        avoidLabelOverlap: false,
-                                                        itemStyle: { borderRadius: 1, borderColor: "#0d1117", borderWidth: 0.5 },
-                                                        label: { show: false },
-                                                        emphasis: { scale: false },
-                                                        labelLine: { show: false },
-                                                        data: (stats.merged + stats.closed) === 0 ? [
-                                                            { value: 1, itemStyle: { color: "rgba(255,255,255,0.1)" } }
-                                                        ] : [
-                                                            { value: stats.merged, itemStyle: { color: "#4ade80" } },
-                                                            { value: stats.open, itemStyle: { color: "#52525b" } },
-                                                            { value: stats.closed, itemStyle: { color: "#ef4444" } },
-                                                        ],
-                                                    }],
-                                                }}
-                                                style={{ height: "100%", width: "100%" }}
-                                                opts={{ renderer: "svg" }}
-                                            />
+                                        {/* Activity Group */}
+                                        <Box sx={{
+                                            flex: 1,
+                                            display: "grid",
+                                            gridTemplateColumns: "repeat(4, 1fr)",
+                                            backgroundColor: "rgba(255,255,255,0.03)",
+                                            borderRadius: 1,
+                                            height: "48px",
+                                            alignItems: "center",
+                                            border: "1px solid rgba(255,255,255,0.02)"
+                                        }}>
+                                            {/* Mini Gauge (Credibility) */}
+                                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                <Box sx={{ width: 38, height: 38 }}>
+                                                    <ReactECharts
+                                                        option={{
+                                                            backgroundColor: "transparent",
+                                                            title: {
+                                                                text: (stats.merged + stats.closed) === 0 ? "N/A" : `${(stats.credibility * 100).toFixed(0)}`,
+                                                                left: "center",
+                                                                top: "middle", // Vertically centered
+                                                                textStyle: {
+                                                                    color: (stats.merged + stats.closed) === 0 ? "rgba(255,255,255,0.3)" : stats.credibility >= 0.7 ? "#4ade80" : stats.credibility >= 0.4 ? "#fbbf24" : "#ef4444",
+                                                                    fontSize: (stats.merged + stats.closed) === 0 ? 9 : 10,
+                                                                    fontWeight: "bold",
+                                                                    fontFamily: '"JetBrains Mono", monospace',
+                                                                },
+                                                            },
+                                                            series: [{
+                                                                type: "pie",
+                                                                radius: ["65%", "80%"],
+                                                                center: ["50%", "50%"], // Vertically centered
+                                                                avoidLabelOverlap: false,
+                                                                itemStyle: { borderRadius: 1, borderColor: "#0d1117", borderWidth: 0.5 },
+                                                                label: { show: false },
+                                                                emphasis: { scale: false },
+                                                                labelLine: { show: false },
+                                                                data: (stats.merged + stats.closed) === 0 ? [
+                                                                    { value: 1, itemStyle: { color: "rgba(255,255,255,0.1)" } }
+                                                                ] : [
+                                                                    { value: stats.merged, itemStyle: { color: "#4ade80" } },
+                                                                    { value: stats.open, itemStyle: { color: "#52525b" } },
+                                                                    { value: stats.closed, itemStyle: { color: "#ef4444" } },
+                                                                ],
+                                                            }],
+                                                        }}
+                                                        style={{ height: "100%", width: "100%" }}
+                                                        opts={{ renderer: "svg" }}
+                                                    />
+                                                </Box>
+                                            </Box>
+                                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                <Typography sx={{ color: "#4ade80", fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                    {stats.merged}
+                                                </Typography>
+                                            </Box>
+                                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                    {stats.open}
+                                                </Typography>
+                                            </Box>
+                                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                <Typography sx={{ color: "#ef4444", fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                    {stats.closed}
+                                                </Typography>
+                                            </Box>
                                         </Box>
 
-                                        {/* PR Stats Section */}
-                                        <Typography sx={{ color: "#4ade80", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', textAlign: "center" }}>
-                                            {stats.merged}
-                                        </Typography>
-                                        <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', textAlign: "center" }}>
-                                            {stats.open}
-                                        </Typography>
-                                        <Box sx={{ borderRight: "1px solid rgba(255,255,255,0.1)", textAlign: "center" }}>
-                                            <Typography sx={{ color: "#ef4444", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
-                                                {stats.closed}
-                                            </Typography>
+                                        {/* Score Group */}
+                                        <Box sx={{
+                                            width: "180px",
+                                            display: "grid",
+                                            gridTemplateColumns: "1fr 1fr",
+                                            backgroundColor: "rgba(255,255,255,0.03)",
+                                            borderRadius: 1,
+                                            height: "48px",
+                                            alignItems: "center",
+                                            border: "1px solid rgba(255,255,255,0.02)"
+                                        }}>
+                                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                <Typography sx={{ color: "rgba(255,255,255,0.9)", fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                    {((stats.totalScore ?? 0) as number).toFixed(0)}
+                                                </Typography>
+                                            </Box>
+                                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                <Typography sx={{ color: "#a78bfa", fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                    {((stats.avgScorePerMiner ?? 0) as number).toFixed(1)}
+                                                </Typography>
+                                            </Box>
                                         </Box>
-
-                                        {/* Score Section */}
-                                        <Typography sx={{ color: "rgba(255,255,255,0.8)", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', textAlign: "center" }}>
-                                            {((stats.totalScore ?? 0) as number).toFixed(0)}
-                                        </Typography>
-                                        <Typography sx={{ color: "#a78bfa", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', textAlign: "center" }}>
-                                            {((stats.avgScorePerMiner ?? 0) as number).toFixed(1)}
-                                        </Typography>
                                     </Box>
                                 );
                             })}
                         </Card>
                     </Grid >
                 </Grid >
-            )}
+            )
+            }
         </Box >
     );
 };
