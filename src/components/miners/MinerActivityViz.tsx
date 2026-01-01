@@ -497,7 +497,7 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
                         borderBottom: { xs: "1px solid rgba(255, 255, 255, 0.1)", md: "none" },
                         display: "flex",
                         flexDirection: "column",
-                        justifyContent: "center"
+                        justifyContent: "flex-start"
                     }}>
                         <Typography variant="subtitle2" sx={{
                             color: "rgba(255, 255, 255, 0.4)",
@@ -509,7 +509,7 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
                             letterSpacing: '0.5px',
                             textTransform: 'uppercase'
                         }}>
-                            PR Success Ratio
+                            M.O.C Ratio
                         </Typography>
 
                         <Box sx={{ height: "190px", width: "100%", mb: 0.75 }}>
@@ -557,7 +557,7 @@ const MinerActivityViz: React.FC<MinerActivityVizProps> = ({ githubId }) => {
                         p: 3,
                         display: "flex",
                         flexDirection: "column",
-                        justifyContent: "center"
+                        justifyContent: "flex-start"
                     }}>
                         <Typography variant="subtitle2" sx={{
                             color: "rgba(255, 255, 255, 0.4)",
