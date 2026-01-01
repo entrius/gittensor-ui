@@ -754,7 +754,7 @@ const GlobalActivityViz: React.FC = () => {
                                 {/* Candidate Section */}
                                 <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
                                     <Typography sx={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "0.85rem", fontWeight: 700, fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", textAlign: 'center', mb: 1 }}>
-                                        Candidate <Box component="span" sx={{ fontSize: "0.7rem", opacity: 0.7, textTransform: "none", fontWeight: 500 }}>(Unpaid)</Box>
+                                        Unranked <Box component="span" sx={{ fontSize: "0.7rem", opacity: 0.7, textTransform: "none", fontWeight: 500 }}>(Unpaid)</Box>
                                     </Typography>
 
                                     <Box sx={{ width: "100%", flex: 1, minHeight: "150px" }}>
@@ -866,7 +866,7 @@ const GlobalActivityViz: React.FC = () => {
                                                 <Box sx={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: color, flexShrink: 0 }} />
                                             )}
                                             <Typography sx={{ color: "#fff", fontSize: "0.7rem", fontWeight: 700, fontFamily: '"JetBrains Mono", monospace' }}>
-                                                {tier}
+                                                {tier === "Candidate" ? "Unranked" : tier}
                                             </Typography>
                                         </Box>
 
