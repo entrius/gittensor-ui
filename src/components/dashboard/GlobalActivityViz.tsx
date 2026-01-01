@@ -798,41 +798,26 @@ const GlobalActivityViz: React.FC = () => {
                             }}
                             elevation={0}
                         >
-                            <Typography
-                                variant="subtitle2"
-                                sx={{
-                                    color: "rgba(255, 255, 255, 0.4)",
-                                    mb: 1.5,
-                                    fontFamily: '"JetBrains Mono", monospace',
-                                    textAlign: "center",
-                                    fontSize: "0.75rem",
-                                    fontWeight: 600,
-                                    letterSpacing: "0.5px",
-                                    textTransform: "uppercase",
-                                }}
-                            >
-                                Tier Performance
-                            </Typography>
-
                             {/* Table Header */}
                             <Box sx={{
                                 display: "grid",
-                                gridTemplateColumns: "1.2fr 80px 60px 0.8fr 0.8fr 0.8fr 1.1fr 1fr",
+                                gridTemplateColumns: "1.2fr 85px 75px 0.9fr 0.9fr 0.9fr 1.1fr 1.1fr",
                                 gap: 1,
-                                pb: 0.5,
+                                pb: 1,
                                 mb: 0.5,
-                                borderBottom: "1px solid rgba(255,255,255,0.1)"
+                                borderBottom: "1px solid rgba(255,255,255,0.1)",
+                                alignItems: "center"
                             }}>
-                                <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.55rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600 }}>Tier</Typography>
-                                <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.55rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.1)" }}>Miners</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700 }}>Tier</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.1)" }}>Miners</Typography>
 
-                                <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.55rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>Credibility</Typography>
-                                <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.55rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>Merged</Typography>
-                                <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.55rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>Open</Typography>
-                                <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.55rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.1)" }}>Closed</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Credibility</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Merged</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Open</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.1)" }}>Closed</Typography>
 
-                                <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.55rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>Score</Typography>
-                                <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.55rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>Avg/Miner</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Score</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Avg/Miner</Typography>
                             </Box>
 
                             {/* Table Rows */}
@@ -862,11 +847,14 @@ const GlobalActivityViz: React.FC = () => {
                                         key={tier}
                                         sx={{
                                             display: "grid",
-                                            gridTemplateColumns: "1.2fr 80px 60px 0.8fr 0.8fr 0.8fr 1.1fr 1fr",
+                                            gridTemplateColumns: "1.2fr 85px 75px 0.9fr 0.9fr 0.9fr 1.1fr 1.1fr",
                                             gap: 1,
                                             py: 0.5,
                                             alignItems: "center",
-                                            borderBottom: "1px solid rgba(255,255,255,0.03)",
+                                            borderBottom: isCandidate ? "none" : "1px solid rgba(255,255,255,0.03)",
+                                            mt: isCandidate ? 1 : 0,
+                                            pt: isCandidate ? 1.5 : 0.5,
+                                            borderTop: isCandidate ? "1px dashed rgba(255,255,255,0.15)" : "none",
                                             "&:hover": {
                                                 backgroundColor: "rgba(255,255,255,0.02)"
                                             }
