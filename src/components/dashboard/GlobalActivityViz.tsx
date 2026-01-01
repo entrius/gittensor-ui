@@ -275,6 +275,34 @@ const GlobalActivityViz: React.FC = () => {
         };
     }, [allMinerStats, allPrs]);
 
+    // Calculate max values for heatmap scaling
+    // Calculate max values for heatmap scaling (excluding Candidate)
+    const { maxValues, getOpacity } = useMemo(() => {
+        const tiers = ["Gold", "Silver", "Bronze"];
+        const maxVals = tiers.reduce((acc, tier) => {
+            const stats = tierStats[tier as keyof typeof tierStats] || {};
+            // For safely accessing properties that might be missing in default obj
+            const s = stats as any;
+            return {
+                total: Math.max(acc.total, s.total || 0),
+                merged: Math.max(acc.merged, s.merged || 0),
+                open: Math.max(acc.open, s.open || 0),
+                closed: Math.max(acc.closed, s.closed || 0),
+                totalScore: Math.max(acc.totalScore, s.totalScore || 0),
+                avgScorePerMiner: Math.max(acc.avgScorePerMiner, s.avgScorePerMiner || 0),
+            };
+        }, { total: 0, merged: 0, open: 0, closed: 0, totalScore: 0, avgScorePerMiner: 0 });
+
+        const getOp = (value: number, max: number) => {
+            if (max === 0) return 0.6; // Higher default opacity
+            // Scale from 0.6 to 1.0 based on value vs max (less extreme)
+            const ratio = Math.min(value / max, 1); // Cap at 1
+            return (0.6 + 0.4 * ratio).toFixed(2);
+        };
+
+        return { maxValues: maxVals, getOpacity: getOp };
+    }, [tierStats]);
+
     // Graph for Active Miners
     const activeOption = useMemo(() => {
         const { merged, open, closed, credibility } = activeStats;
@@ -886,7 +914,7 @@ const GlobalActivityViz: React.FC = () => {
                                             border: "1px solid rgba(255,255,255,0.02)",
                                             mr: 2 // Added margin right to push MOC section away
                                         }}>
-                                            <Typography sx={{ color: "rgba(255,255,255,0.9)", fontSize: "0.9rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                            <Typography sx={{ color: isCandidate ? "rgba(255,255,255,0.9)" : `rgba(255,255,255,${getOpacity(stats.total, maxValues.total)})`, fontSize: "0.9rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
                                                 {stats.total}
                                             </Typography>
                                         </Box>
@@ -943,17 +971,17 @@ const GlobalActivityViz: React.FC = () => {
                                                 </Box>
                                             </Box>
                                             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                                <Typography sx={{ color: "#4ade80", fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                <Typography sx={{ color: isCandidate ? "#4ade80" : `rgba(74, 222, 128, ${getOpacity(stats.merged, maxValues.merged)})`, fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
                                                     {stats.merged}
                                                 </Typography>
                                             </Box>
                                             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                                <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                <Typography sx={{ color: isCandidate ? "rgba(255,255,255,0.6)" : `rgba(255,255,255,${getOpacity(stats.open, maxValues.open)})`, fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
                                                     {stats.open}
                                                 </Typography>
                                             </Box>
                                             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                                <Typography sx={{ color: "#ef4444", fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                <Typography sx={{ color: isCandidate ? "#ef4444" : `rgba(239, 68, 68, ${getOpacity(stats.closed, maxValues.closed)})`, fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
                                                     {stats.closed}
                                                 </Typography>
                                             </Box>
@@ -971,12 +999,12 @@ const GlobalActivityViz: React.FC = () => {
                                             border: "1px solid rgba(255,255,255,0.02)"
                                         }}>
                                             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                                <Typography sx={{ color: "rgba(255,255,255,0.9)", fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                <Typography sx={{ color: isCandidate ? "rgba(255,255,255,0.9)" : `rgba(255,255,255,${getOpacity(stats.totalScore, maxValues.totalScore)})`, fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
                                                     {((stats.totalScore ?? 0) as number).toFixed(0)}
                                                 </Typography>
                                             </Box>
                                             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                                <Typography sx={{ color: "#a78bfa", fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                <Typography sx={{ color: isCandidate ? "#a78bfa" : `rgba(167, 139, 250, ${getOpacity(stats.avgScorePerMiner, maxValues.avgScorePerMiner)})`, fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
                                                     {((stats.avgScorePerMiner ?? 0) as number).toFixed(1)}
                                                 </Typography>
                                             </Box>
