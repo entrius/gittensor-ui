@@ -25,8 +25,10 @@ import {
   Chip,
   Switch,
   FormControlLabel,
+  Divider,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import TableChartIcon from "@mui/icons-material/TableChart";
 import ReactECharts from "echarts-for-react";
@@ -54,11 +56,15 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
   onSelectRepository,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [tierFilter, setTierFilter] = useState<
     "all" | "Gold" | "Silver" | "Bronze"
+  >("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "open" | "closed" | "merged"
   >("all");
   const [useLogScale, setUseLogScale] = useState(true);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -75,6 +81,24 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
       filtered = filtered.filter((pr) => pr.tier === tierFilter);
     }
 
+    // Apply status filter
+    if (statusFilter !== "all") {
+      if (statusFilter === "merged") {
+        filtered = filtered.filter(
+          (pr) => pr.prState === "MERGED" || !!pr.mergedAt,
+        );
+      } else if (statusFilter === "open") {
+        filtered = filtered.filter(
+          (pr) =>
+            pr.prState === "OPEN" || (!pr.prState && !pr.mergedAt),
+        );
+      } else if (statusFilter === "closed") {
+        filtered = filtered.filter(
+          (pr) => pr.prState === "CLOSED" && !pr.mergedAt,
+        );
+      }
+    }
+
     // Apply search filter
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
@@ -87,7 +111,21 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
     }
 
     return filtered;
-  }, [rankedPRs, searchQuery, tierFilter]);
+  }, [rankedPRs, searchQuery, tierFilter, statusFilter]);
+
+  const statusCounts = useMemo(() => {
+    return {
+      all: rankedPRs.length,
+      open: rankedPRs.filter(
+        (pr) => pr.prState === "OPEN" || (!pr.prState && !pr.mergedAt),
+      ).length,
+      merged: rankedPRs.filter((pr) => pr.prState === "MERGED" || !!pr.mergedAt)
+        .length,
+      closed: rankedPRs.filter(
+        (pr) => pr.prState === "CLOSED" && !pr.mergedAt,
+      ).length,
+    };
+  }, [rankedPRs]);
 
   const tierCounts = useMemo(() => {
     return {
@@ -149,6 +187,48 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
       <span style={{ opacity: 0.6, marginLeft: "6px", fontSize: "0.75rem" }}>
         {count}
       </span>
+    </Button>
+  );
+
+  const FilterButton = ({
+    label,
+    value,
+    count,
+    color,
+  }: {
+    label: string;
+    value: typeof statusFilter;
+    count?: number;
+    color: string;
+  }) => (
+    <Button
+      size="small"
+      onClick={() => setStatusFilter(value)}
+      sx={{
+        color: statusFilter === value ? "#fff" : "rgba(255,255,255,0.5)",
+        backgroundColor:
+          statusFilter === value ? "rgba(255,255,255,0.1)" : "transparent",
+        borderRadius: "6px",
+        px: 2,
+        minWidth: "auto",
+        textTransform: "none",
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: "0.8rem",
+        border:
+          statusFilter === value
+            ? `1px solid ${color}`
+            : "1px solid transparent",
+        "&:hover": {
+          backgroundColor: "rgba(255,255,255,0.15)",
+        },
+      }}
+    >
+      {label}{" "}
+      {count !== undefined && (
+        <span style={{ opacity: 0.6, marginLeft: "6px", fontSize: "0.75rem" }}>
+          {count}
+        </span>
+      )}
     </Button>
   );
 
@@ -437,46 +517,38 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
         }}
       >
-        <Box
+        <Typography
+          variant="h6"
           sx={{
-            display: "flex",
-            gap: 2,
-            alignItems: "center",
-            flexWrap: "wrap",
+            color: "#ffffff",
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: "1.1rem",
+            fontWeight: 500,
           }}
         >
-          <Typography variant="body2" color="text.secondary">
-            Highest scoring individual pull requests across all repositories.
-          </Typography>
-          <Stack direction="row" spacing={1}>
-            <TierFilterButton
-              label="All"
-              value="all"
-              count={tierCounts.all}
-              color="#8b949e"
-            />
-            <TierFilterButton
-              label="Gold"
-              value="Gold"
-              count={tierCounts.gold}
-              color="#FFD700"
-            />
-            <TierFilterButton
-              label="Silver"
-              value="Silver"
-              count={tierCounts.silver}
-              color="#C0C0C0"
-            />
-            <TierFilterButton
-              label="Bronze"
-              value="Bronze"
-              count={tierCounts.bronze}
-              color="#CD7F32"
-            />
-          </Stack>
-        </Box>
+          Top Pull Requests <span style={{ opacity: 0.5, fontSize: "0.9rem" }}>({filteredPRs.length})</span>
+        </Typography>
 
         <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+          <Tooltip title={showFilters ? "Hide Filters" : "Show Filters"}>
+            <IconButton
+              onClick={() => setShowFilters(!showFilters)}
+              size="small"
+              sx={{
+                color: showFilters ? "#ffffff" : "rgba(255, 255, 255, 0.5)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                borderRadius: 2,
+                padding: "6px",
+                "&:hover": {
+                  backgroundColor: "rgba(255, 255, 255, 0.05)",
+                  borderColor: "rgba(255, 255, 255, 0.2)",
+                },
+              }}
+            >
+              <FilterListIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
           <Tooltip title={showChart ? "Hide Chart" : "Show Chart"}>
             <IconButton
               onClick={() => setShowChart(!showChart)}
@@ -605,6 +677,83 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         </Box>
       </Box>
 
+      <Collapse in={showFilters}>
+        <Box
+          sx={{
+            p: 2,
+            borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+            backgroundColor: "rgba(255, 255, 255, 0.02)",
+            display: "flex",
+            gap: 4,
+            flexWrap: "wrap",
+          }}
+        >
+          <Box>
+            <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.5)", display: "block", mb: 1, fontFamily: '"JetBrains Mono", monospace' }}>
+              TIER
+            </Typography>
+            <Stack direction="row" spacing={1}>
+              <TierFilterButton
+                label="All"
+                value="all"
+                count={tierCounts.all}
+                color="#8b949e"
+              />
+              <TierFilterButton
+                label="Gold"
+                value="Gold"
+                count={tierCounts.gold}
+                color="#FFD700"
+              />
+              <TierFilterButton
+                label="Silver"
+                value="Silver"
+                count={tierCounts.silver}
+                color="#C0C0C0"
+              />
+              <TierFilterButton
+                label="Bronze"
+                value="Bronze"
+                count={tierCounts.bronze}
+                color="#CD7F32"
+              />
+            </Stack>
+          </Box>
+
+          <Box>
+            <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.5)", display: "block", mb: 1, fontFamily: '"JetBrains Mono", monospace' }}>
+              STATUS
+            </Typography>
+            <Stack direction="row" spacing={1}>
+              <FilterButton
+                label="All"
+                value="all"
+                count={statusCounts.all}
+                color="#8b949e"
+              />
+              <FilterButton
+                label="Open"
+                value="open"
+                count={statusCounts.open}
+                color="#3fb950"
+              />
+              <FilterButton
+                label="Merged"
+                value="merged"
+                count={statusCounts.merged}
+                color="#a371f7"
+              />
+              <FilterButton
+                label="Closed"
+                value="closed"
+                count={statusCounts.closed}
+                color="#f85149"
+              />
+            </Stack>
+          </Box>
+        </Box>
+      </Collapse>
+
       <Collapse in={showChart}>
         <Box
           sx={{
@@ -658,6 +807,9 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
               </TableCell>
               <TableCell sx={{ ...headerCellStyle, width: "20%" }}>
                 Repository
+              </TableCell>
+              <TableCell sx={{ ...headerCellStyle, width: "10%" }}>
+                Status
               </TableCell>
               <TableCell
                 align="right"
@@ -787,7 +939,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                             (pr.repository || "").split("/")[0] === "opentensor"
                               ? "#ffffff"
                               : (pr.repository || "").split("/")[0] ===
-                                  "bitcoin"
+                                "bitcoin"
                                 ? "#F7931A"
                                 : "transparent",
                         }}
@@ -828,6 +980,41 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                         }}
                       />
                     </Box>
+
+                  </TableCell>
+                  <TableCell sx={{ ...bodyCellStyle, width: "10%" }}>
+                    {(() => {
+                      const state =
+                        pr.prState?.toUpperCase() ||
+                        (pr.mergedAt ? "MERGED" : "OPEN");
+                      let color = "#8b949e"; // default grey
+                      let label = state;
+
+                      if (state === "MERGED") {
+                        color = "#a371f7"; // purple
+                      } else if (state === "OPEN") {
+                        color = "#3fb950"; // green
+                      } else if (state === "CLOSED") {
+                        color = "#f85149"; // red
+                      }
+
+                      return (
+                        <Chip
+                          label={label}
+                          size="small"
+                          sx={{
+                            backgroundColor: "transparent",
+                            border: `1px solid ${color}`,
+                            color: color,
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontWeight: 600,
+                            height: "22px",
+                            fontSize: "0.7rem",
+                            borderRadius: "6px",
+                          }}
+                        />
+                      );
+                    })()}
                   </TableCell>
                   <TableCell
                     align="right"
@@ -866,7 +1053,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           },
         }}
       />
-    </Card>
+    </Card >
   );
 };
 
