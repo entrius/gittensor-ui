@@ -808,16 +808,16 @@ const GlobalActivityViz: React.FC = () => {
                                 borderBottom: "1px solid rgba(255,255,255,0.1)",
                                 alignItems: "center"
                             }}>
-                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700 }}>Tier</Typography>
-                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.1)" }}>Miners</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700 }}>Tier</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.1)" }}>Miners</Typography>
 
-                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Credibility</Typography>
-                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Merged</Typography>
-                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Open</Typography>
-                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.1)" }}>Closed</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Credibility</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Merged</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Open</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.1)" }}>Closed</Typography>
 
-                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Score</Typography>
-                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Avg/Miner</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Score</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>Avg/Miner</Typography>
                             </Box>
 
                             {/* Table Rows */}
@@ -865,30 +865,30 @@ const GlobalActivityViz: React.FC = () => {
                                             {!isCandidate && (
                                                 <Box sx={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: color, flexShrink: 0 }} />
                                             )}
-                                            <Typography sx={{ color: "#fff", fontSize: "0.7rem", fontWeight: 700, fontFamily: '"JetBrains Mono", monospace' }}>
+                                            <Typography sx={{ color: "#fff", fontSize: "0.8rem", fontWeight: 700, fontFamily: '"JetBrains Mono", monospace' }}>
                                                 {tier === "Candidate" ? "Unranked" : tier}
                                             </Typography>
                                         </Box>
 
                                         {/* Miners Column (moved to 2nd) */}
                                         <Box sx={{ borderRight: "1px solid rgba(255,255,255,0.1)", textAlign: "center" }}>
-                                            <Typography sx={{ color: "#fff", fontSize: "0.7rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                            <Typography sx={{ color: "#fff", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
                                                 {stats.total}
                                             </Typography>
                                         </Box>
 
                                         {/* Mini Gauge (Credibility) */}
-                                        <Box sx={{ width: 40, height: 40, mx: "auto" }}>
+                                        <Box sx={{ width: 44, height: 44, mx: "auto" }}>
                                             <ReactECharts
                                                 option={{
                                                     backgroundColor: "transparent",
                                                     title: {
                                                         text: (stats.merged + stats.closed) === 0 ? "N/A" : `${(stats.credibility * 100).toFixed(0)}`,
                                                         left: "center",
-                                                        top: "30%", // Vertically centered
+                                                        top: "32%", // Vertically centered
                                                         textStyle: {
                                                             color: (stats.merged + stats.closed) === 0 ? "rgba(255,255,255,0.3)" : stats.credibility >= 0.7 ? "#4ade80" : stats.credibility >= 0.4 ? "#fbbf24" : "#ef4444",
-                                                            fontSize: (stats.merged + stats.closed) === 0 ? 9 : 9,
+                                                            fontSize: (stats.merged + stats.closed) === 0 ? 10 : 11,
                                                             fontWeight: "bold",
                                                             fontFamily: '"JetBrains Mono", monospace',
                                                         },
@@ -917,23 +917,23 @@ const GlobalActivityViz: React.FC = () => {
                                         </Box>
 
                                         {/* PR Stats Section */}
-                                        <Typography sx={{ color: "#4ade80", fontSize: "0.7rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', textAlign: "center" }}>
+                                        <Typography sx={{ color: "#4ade80", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', textAlign: "center" }}>
                                             {stats.merged}
                                         </Typography>
-                                        <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: "0.7rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', textAlign: "center" }}>
+                                        <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', textAlign: "center" }}>
                                             {stats.open}
                                         </Typography>
                                         <Box sx={{ borderRight: "1px solid rgba(255,255,255,0.1)", textAlign: "center" }}>
-                                            <Typography sx={{ color: "#ef4444", fontSize: "0.7rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                            <Typography sx={{ color: "#ef4444", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
                                                 {stats.closed}
                                             </Typography>
                                         </Box>
 
                                         {/* Score Section */}
-                                        <Typography sx={{ color: "rgba(255,255,255,0.8)", fontSize: "0.7rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', textAlign: "center" }}>
+                                        <Typography sx={{ color: "rgba(255,255,255,0.8)", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', textAlign: "center" }}>
                                             {((stats.totalScore ?? 0) as number).toFixed(0)}
                                         </Typography>
-                                        <Typography sx={{ color: "#a78bfa", fontSize: "0.7rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', textAlign: "center" }}>
+                                        <Typography sx={{ color: "#a78bfa", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', textAlign: "center" }}>
                                             {((stats.avgScorePerMiner ?? 0) as number).toFixed(1)}
                                         </Typography>
                                     </Box>
