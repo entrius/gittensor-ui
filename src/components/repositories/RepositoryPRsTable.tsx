@@ -15,7 +15,7 @@ import {
   Stack,
   Button,
 } from "@mui/material";
-import { useAllMinerData } from "../../api";
+import { useAllMinerData, useAllMinerStats } from "../../api";
 import { useNavigate } from "react-router-dom";
 import FilterListIcon from "@mui/icons-material/FilterList";
 
@@ -34,6 +34,20 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   // Fetch ALL PRs at once to enable client-side filtering and accurate counts
   // This avoids server roundtrips on filter change and provides instant UI feedback
   const { data: allMinerPRs, isLoading } = useAllMinerData();
+  const { data: allMinersStats } = useAllMinerStats();
+
+  // Create miner tier map for quick lookup
+  const minerTierMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (allMinersStats) {
+      allMinersStats.forEach(miner => {
+        if (miner.githubId && miner.currentTier) {
+          map.set(miner.githubId, miner.currentTier);
+        }
+      });
+    }
+    return map;
+  }, [allMinersStats]);
 
   const allPRs = useMemo(() => {
     if (!allMinerPRs) return [];
@@ -255,12 +269,14 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                         {pr.pullRequestTitle}
                       </Box>
                     </TableCell>
+
                     <TableCell sx={bodyCellStyle}>
                       <Box
                         sx={{
                           display: "flex",
                           alignItems: "center",
                           gap: 1,
+                          opacity: (pr.githubId && minerTierMap.has(pr.githubId)) ? 1 : 0.5,
                         }}
                       >
                         <Avatar
@@ -333,8 +349,9 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
               </TableBody>
             </Table>
           </TableContainer>
-        )}
-    </Card>
+        )
+      }
+    </Card >
   );
 };
 
