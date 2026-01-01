@@ -127,29 +127,39 @@ const GlobalActivityViz: React.FC = () => {
             };
         }, [allPrs]);
 
-    // 2. Calculate Aggregated Stats for PR Success Ratio
     // 2. Calculate Aggregated Stats for PR Success Ratio (Active vs Inactive)
     const { activeStats, inactiveStats, tierStats } = useMemo(() => {
         const defaultStats = { merged: 0, open: 0, closed: 0, total: 0 };
+        const defaultTierStats = {
+            merged: 0,
+            open: 0,
+            closed: 0,
+            total: 0,
+            credibility: 0,
+            totalScore: 0,
+            uniqueRepos: 0,
+            avgScorePerMiner: 0,
+            totalPRs: 0
+        };
 
         if (!Array.isArray(allMinerStats))
             return {
                 activeStats: { ...defaultStats, credibility: 0 },
                 inactiveStats: { ...defaultStats, credibility: 0 },
                 tierStats: {
-                    Gold: { ...defaultStats },
-                    Silver: { ...defaultStats },
-                    Bronze: { ...defaultStats },
-                    Candidate: { ...defaultStats }
+                    Gold: { ...defaultTierStats },
+                    Silver: { ...defaultTierStats },
+                    Bronze: { ...defaultTierStats },
+                    Candidate: { ...defaultTierStats }
                 }
             };
 
         const active = { ...defaultStats };
         const inactive = { ...defaultStats };
-        const tiers: Record<string, typeof defaultStats> = {
-            Gold: { ...defaultStats },
-            Silver: { ...defaultStats },
-            Bronze: { ...defaultStats }
+        const tiers: Record<string, typeof defaultTierStats> = {
+            Gold: { ...defaultTierStats },
+            Silver: { ...defaultTierStats },
+            Bronze: { ...defaultTierStats }
         };
 
         allMinerStats.forEach((m) => {
@@ -162,28 +172,108 @@ const GlobalActivityViz: React.FC = () => {
             target.closed += m.totalClosedPrs || 0;
             target.total += 1; // Count miners
 
-            // Tier Stats
+            // Tier-specific Stats
             if (m.currentTier && tiers[m.currentTier]) {
                 const t = tiers[m.currentTier];
-                t.merged += m.totalMergedPrs || 0;
-                t.open += m.totalOpenPrs || 0;
-                t.closed += m.totalClosedPrs || 0;
+
+                // Use tier-specific fields from MinerEvaluation
+                if (m.currentTier === "Gold") {
+                    t.merged += m.goldMergedPrs || 0;
+                    t.closed += m.goldClosedPrs || 0;
+                    t.totalScore += Number(m.goldScore) || 0;
+                    t.open += (m.goldTotalPrs || 0) - (m.goldMergedPrs || 0) - (m.goldClosedPrs || 0);
+                } else if (m.currentTier === "Silver") {
+                    t.merged += m.silverMergedPrs || 0;
+                    t.closed += m.silverClosedPrs || 0;
+                    t.totalScore += Number(m.silverScore) || 0;
+                    t.open += (m.silverTotalPrs || 0) - (m.silverMergedPrs || 0) - (m.silverClosedPrs || 0);
+                } else if (m.currentTier === "Bronze") {
+                    t.merged += m.bronzeMergedPrs || 0;
+                    t.closed += m.bronzeClosedPrs || 0;
+                    t.totalScore += Number(m.bronzeScore) || 0;
+                    t.open += (m.bronzeTotalPrs || 0) - (m.bronzeMergedPrs || 0) - (m.bronzeClosedPrs || 0);
+                }
+
                 t.total += 1;
             }
         });
 
-        // Calculate Credibility
-        const calculateCredibility = (stats: typeof defaultStats) => {
+        // Calculate unique repositories per tier from allPrs
+        if (Array.isArray(allPrs)) {
+            const goldRepos = new Set<string>();
+            const silverRepos = new Set<string>();
+            const bronzeRepos = new Set<string>();
+            const candidateRepos = new Set<string>();
+
+            allPrs.forEach((pr) => {
+                if (pr && pr.repository && pr.tier) {
+                    if (pr.tier === "Gold") goldRepos.add(pr.repository);
+                    else if (pr.tier === "Silver") silverRepos.add(pr.repository);
+                    else if (pr.tier === "Bronze") bronzeRepos.add(pr.repository);
+                } else if (pr && pr.repository && !pr.tier) {
+                    // PRs without tier are candidate
+                    candidateRepos.add(pr.repository);
+                }
+            });
+
+            tiers.Gold.uniqueRepos = goldRepos.size;
+            tiers.Silver.uniqueRepos = silverRepos.size;
+            tiers.Bronze.uniqueRepos = bronzeRepos.size;
+        }
+
+        // Calculate Credibility for each tier
+        const calculateCredibility = (stats: typeof defaultTierStats) => {
             const totalResolved = stats.merged + stats.closed;
             return totalResolved > 0 ? stats.merged / totalResolved : 0;
         };
 
-        return {
-            activeStats: { ...active, credibility: calculateCredibility(active) },
-            inactiveStats: { ...inactive, credibility: calculateCredibility(inactive) },
-            tierStats: { ...tiers, Candidate: inactive }
+        // Apply credibility calculation and compute additional metrics
+        tiers.Gold.credibility = calculateCredibility(tiers.Gold);
+        tiers.Gold.totalPRs = tiers.Gold.merged + tiers.Gold.open + tiers.Gold.closed;
+        tiers.Gold.avgScorePerMiner = tiers.Gold.total > 0 ? tiers.Gold.totalScore / tiers.Gold.total : 0;
+
+        tiers.Silver.credibility = calculateCredibility(tiers.Silver);
+        tiers.Silver.totalPRs = tiers.Silver.merged + tiers.Silver.open + tiers.Silver.closed;
+        tiers.Silver.avgScorePerMiner = tiers.Silver.total > 0 ? tiers.Silver.totalScore / tiers.Silver.total : 0;
+
+        tiers.Bronze.credibility = calculateCredibility(tiers.Bronze);
+        tiers.Bronze.totalPRs = tiers.Bronze.merged + tiers.Bronze.open + tiers.Bronze.closed;
+        tiers.Bronze.avgScorePerMiner = tiers.Bronze.total > 0 ? tiers.Bronze.totalScore / tiers.Bronze.total : 0;
+
+        // Candidate tier stats (inactive miners)
+        const candidateTier = {
+            ...inactive,
+            credibility: inactive.merged + inactive.closed > 0
+                ? inactive.merged / (inactive.merged + inactive.closed)
+                : 0,
+            totalScore: allMinerStats
+                .filter(m => !m.currentTier || !["Bronze", "Silver", "Gold"].includes(m.currentTier))
+                .reduce((sum, m) => sum + (Number(m.totalScore) || 0), 0),
+            uniqueRepos: 0, // Will be calculated below
+            totalPRs: inactive.merged + inactive.open + inactive.closed,
+            avgScorePerMiner: 0 // Will be calculated after totalScore
         };
-    }, [allMinerStats]);
+
+        // Calculate average score per miner for candidates
+        candidateTier.avgScorePerMiner = candidateTier.total > 0 ? candidateTier.totalScore / candidateTier.total : 0;
+
+        // Get candidate unique repos count
+        if (Array.isArray(allPrs)) {
+            const candidateRepos = new Set<string>();
+            allPrs.forEach((pr) => {
+                if (pr && pr.repository && !pr.tier) {
+                    candidateRepos.add(pr.repository);
+                }
+            });
+            candidateTier.uniqueRepos = candidateRepos.size;
+        }
+
+        return {
+            activeStats: { ...active, credibility: active.merged + active.closed > 0 ? active.merged / (active.merged + active.closed) : 0 },
+            inactiveStats: { ...inactive, credibility: inactive.merged + inactive.closed > 0 ? inactive.merged / (inactive.merged + inactive.closed) : 0 },
+            tierStats: { ...tiers, Candidate: candidateTier }
+        };
+    }, [allMinerStats, allPrs]);
 
     // Graph for Active Miners
     const activeOption = useMemo(() => {
@@ -615,7 +705,7 @@ const GlobalActivityViz: React.FC = () => {
 
 
                     {/* 3. Combined Active & Candidate Stats */}
-                    <Grid item xs={12} md={6}>
+                    <Grid item xs={12} md={5}>
                         <Card
                             sx={{
                                 height: "100%",
@@ -694,15 +784,15 @@ const GlobalActivityViz: React.FC = () => {
                         </Card>
                     </Grid>
 
-                    {/* 4. Tier Performance Stats */}
-                    <Grid item xs={12} md={6}>
+                    {/* 4. Tier Performance Stats - AWS-Inspired Compact Table */}
+                    <Grid item xs={12} md={7}>
                         <Card
                             sx={{
                                 height: "100%",
                                 borderRadius: 3,
                                 border: "1px solid rgba(255, 255, 255, 0.1)",
                                 backgroundColor: "transparent",
-                                p: 3,
+                                p: 2,
                                 display: "flex",
                                 flexDirection: "column",
                             }}
@@ -712,7 +802,7 @@ const GlobalActivityViz: React.FC = () => {
                                 variant="subtitle2"
                                 sx={{
                                     color: "rgba(255, 255, 255, 0.4)",
-                                    mb: 2,
+                                    mb: 1.5,
                                     fontFamily: '"JetBrains Mono", monospace',
                                     textAlign: "center",
                                     fontSize: "0.75rem",
@@ -723,67 +813,144 @@ const GlobalActivityViz: React.FC = () => {
                             >
                                 Tier Performance
                             </Typography>
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: 1, flex: 1, justifyContent: 'center' }}>
-                                {["Gold", "Silver", "Bronze", "Candidate"].map((tier) => {
-                                    const stats = tierStats[tier as keyof typeof tierStats] || { total: 0, merged: 0, open: 0 };
-                                    const isCandidate = tier === "Candidate";
-                                    const color = tier === "Gold"
-                                        ? "#FFD700"
-                                        : tier === "Silver"
-                                            ? "#C0C0C0"
-                                            : tier === "Bronze"
-                                                ? "#CD7F32"
-                                                : "#ffffff";
 
-                                    return (
-                                        <Box key={tier} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", p: 1.25, borderRadius: 1, backgroundColor: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                                                {!isCandidate && (
-                                                    <Box
-                                                        sx={{
-                                                            width: 8,
-                                                            height: 8,
-                                                            borderRadius: "50%",
-                                                            backgroundColor: color,
-                                                            boxShadow: `0 0 8px ${color}40`,
-                                                            animation: "pulse 2s infinite",
-                                                            "@keyframes pulse": {
-                                                                "0%": {
-                                                                    boxShadow: `0 0 0 0 ${color}40`,
-                                                                },
-                                                                "70%": {
-                                                                    boxShadow: `0 0 0 6px ${color}00`,
-                                                                },
-                                                                "100%": {
-                                                                    boxShadow: `0 0 0 0 ${color}00`,
-                                                                },
-                                                            },
-                                                        }}
-                                                    />
-                                                )}
-                                                <Typography sx={{ color: "#fff", fontFamily: '"JetBrains Mono", monospace', fontSize: "0.8rem", fontWeight: 700, pl: isCandidate ? 0.5 : 0 }}>
-                                                    {tier}
-                                                </Typography>
-                                            </Box>
+                            {/* Table Header */}
+                            <Box sx={{
+                                display: "grid",
+                                gridTemplateColumns: "1.2fr 80px 60px 0.8fr 0.8fr 0.8fr 1.1fr 1fr",
+                                gap: 1,
+                                pb: 0.5,
+                                mb: 0.5,
+                                borderBottom: "1px solid rgba(255,255,255,0.1)"
+                            }}>
+                                <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.55rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600 }}>Tier</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.55rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.1)" }}>Miners</Typography>
 
-                                            <Box sx={{ display: "flex", gap: 3 }}>
-                                                <Box sx={{ textAlign: "right", minWidth: 35 }}>
-                                                    <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace' }}>Miners</Typography>
-                                                    <Typography sx={{ color: "#fff", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{stats.total}</Typography>
-                                                </Box>
-                                                <Box sx={{ textAlign: "right", minWidth: 35 }}>
-                                                    <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace' }}>Merged</Typography>
-                                                    <Typography sx={{ color: "#4ade80", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{stats.merged}</Typography>
-                                                </Box>
-                                                <Box sx={{ textAlign: "right", minWidth: 35 }}>
-                                                    <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace' }}>Open</Typography>
-                                                    <Typography sx={{ color: "#fff", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{stats.open}</Typography>
-                                                </Box>
-                                            </Box>
-                                        </Box>
-                                    );
-                                })}
+                                <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.55rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>Credibility</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.55rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>Merged</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.55rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>Open</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.55rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.1)" }}>Closed</Typography>
+
+                                <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.55rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>Score</Typography>
+                                <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.55rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>Avg/Miner</Typography>
                             </Box>
+
+                            {/* Table Rows */}
+                            {["Gold", "Silver", "Bronze", "Candidate"].map((tier) => {
+                                const stats = tierStats[tier as keyof typeof tierStats] || {
+                                    total: 0,
+                                    merged: 0,
+                                    open: 0,
+                                    closed: 0,
+                                    credibility: 0,
+                                    totalScore: 0,
+                                    uniqueRepos: 0,
+                                    totalPRs: 0,
+                                    avgScorePerMiner: 0
+                                };
+                                const isCandidate = tier === "Candidate";
+                                const color = tier === "Gold"
+                                    ? "#FFD700"
+                                    : tier === "Silver"
+                                        ? "#C0C0C0"
+                                        : tier === "Bronze"
+                                            ? "#CD7F32"
+                                            : "#ffffff";
+
+                                return (
+                                    <Box
+                                        key={tier}
+                                        sx={{
+                                            display: "grid",
+                                            gridTemplateColumns: "1.2fr 80px 60px 0.8fr 0.8fr 0.8fr 1.1fr 1fr",
+                                            gap: 1,
+                                            py: 0.5,
+                                            alignItems: "center",
+                                            borderBottom: "1px solid rgba(255,255,255,0.03)",
+                                            "&:hover": {
+                                                backgroundColor: "rgba(255,255,255,0.02)"
+                                            }
+                                        }}
+                                    >
+                                        {/* Tier Name with Badge */}
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                                            {!isCandidate && (
+                                                <Box sx={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: color, flexShrink: 0 }} />
+                                            )}
+                                            <Typography sx={{ color: "#fff", fontSize: "0.7rem", fontWeight: 700, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                {tier}
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Miners Column (moved to 2nd) */}
+                                        <Box sx={{ borderRight: "1px solid rgba(255,255,255,0.1)", textAlign: "center" }}>
+                                            <Typography sx={{ color: "#fff", fontSize: "0.7rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                {stats.total}
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Mini Gauge (Credibility) */}
+                                        <Box sx={{ width: 40, height: 40, mx: "auto" }}>
+                                            <ReactECharts
+                                                option={{
+                                                    backgroundColor: "transparent",
+                                                    title: {
+                                                        text: (stats.merged + stats.closed) === 0 ? "N/A" : `${(stats.credibility * 100).toFixed(0)}`,
+                                                        left: "center",
+                                                        top: "30%", // Vertically centered
+                                                        textStyle: {
+                                                            color: (stats.merged + stats.closed) === 0 ? "rgba(255,255,255,0.3)" : stats.credibility >= 0.7 ? "#4ade80" : stats.credibility >= 0.4 ? "#fbbf24" : "#ef4444",
+                                                            fontSize: (stats.merged + stats.closed) === 0 ? 9 : 9,
+                                                            fontWeight: "bold",
+                                                            fontFamily: '"JetBrains Mono", monospace',
+                                                        },
+                                                    },
+                                                    series: [{
+                                                        type: "pie",
+                                                        radius: ["60%", "75%"],
+                                                        center: ["50%", "50%"], // Vertically centered
+                                                        avoidLabelOverlap: false,
+                                                        itemStyle: { borderRadius: 1, borderColor: "#0d1117", borderWidth: 0.5 },
+                                                        label: { show: false },
+                                                        emphasis: { scale: false },
+                                                        labelLine: { show: false },
+                                                        data: (stats.merged + stats.closed) === 0 ? [
+                                                            { value: 1, itemStyle: { color: "rgba(255,255,255,0.1)" } }
+                                                        ] : [
+                                                            { value: stats.merged, itemStyle: { color: "#4ade80" } },
+                                                            { value: stats.open, itemStyle: { color: "#52525b" } },
+                                                            { value: stats.closed, itemStyle: { color: "#ef4444" } },
+                                                        ],
+                                                    }],
+                                                }}
+                                                style={{ height: "100%", width: "100%" }}
+                                                opts={{ renderer: "svg" }}
+                                            />
+                                        </Box>
+
+                                        {/* PR Stats Section */}
+                                        <Typography sx={{ color: "#4ade80", fontSize: "0.7rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', textAlign: "center" }}>
+                                            {stats.merged}
+                                        </Typography>
+                                        <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: "0.7rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', textAlign: "center" }}>
+                                            {stats.open}
+                                        </Typography>
+                                        <Box sx={{ borderRight: "1px solid rgba(255,255,255,0.1)", textAlign: "center" }}>
+                                            <Typography sx={{ color: "#ef4444", fontSize: "0.7rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                {stats.closed}
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Score Section */}
+                                        <Typography sx={{ color: "rgba(255,255,255,0.8)", fontSize: "0.7rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', textAlign: "center" }}>
+                                            {((stats.totalScore ?? 0) as number).toFixed(0)}
+                                        </Typography>
+                                        <Typography sx={{ color: "#a78bfa", fontSize: "0.7rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace', textAlign: "center" }}>
+                                            {((stats.avgScorePerMiner ?? 0) as number).toFixed(1)}
+                                        </Typography>
+                                    </Box>
+                                );
+                            })}
                         </Card>
                     </Grid >
                 </Grid >
