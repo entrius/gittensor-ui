@@ -818,8 +818,8 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                           fontSize: "0.65rem",
                           fontFamily: '"JetBrains Mono", monospace',
                           backgroundColor: "transparent",
-                          border: `1px solid ${getTierColor(pr.tier)}`,
-                          color: getTierColor(pr.tier),
+                          border: `1px solid ${getTierColor(pr.tier || "")}`,
+                          color: getTierColor(pr.tier || ""),
                           fontWeight: 600,
                           borderRadius: "4px",
                           "& .MuiChip-label": {
