@@ -25,9 +25,9 @@ const KpiCard: React.FC<KpiCardProps> = ({
 
   const formattedValue = value !== undefined && value !== null
     ? (typeof value === "string" && value.startsWith("$")
-        ? value // Already formatted with currency
-        : typeof value === "number" || typeof value === "string" 
-        ? Number(value).toLocaleString() 
+      ? value // Already formatted with currency
+      : typeof value === "number" || typeof value === "string"
+        ? Number(value).toLocaleString()
         : value)
     : undefined;
 
@@ -56,8 +56,8 @@ const KpiCard: React.FC<KpiCardProps> = ({
           variant={valueVariant}
           color="text.primary"
           fontWeight="bold"
-          sx={{ 
-            fontFamily: '"JetBrains Mono", monospace', 
+          sx={{
+            fontFamily: '"JetBrains Mono", monospace',
             my: isLarge ? (isMobile ? 0.5 : 1) : 0.5,
             fontSize: isMobile ? (isLarge ? "2rem" : "1.5rem") : undefined,
           }}
@@ -65,12 +65,12 @@ const KpiCard: React.FC<KpiCardProps> = ({
           {formattedValue ?? "-"}
         </Typography>
         {subtitle && (
-          <Typography 
-            variant="body2" 
-            color="#ffffff" 
-            sx={{ 
-              mt: isLarge ? 0.5 : 0.25, 
-              fontSize: isLarge ? (isMobile ? 12 : 14) : (isMobile ? 11 : 12) 
+          <Typography
+            variant="body2"
+            color="rgba(255, 255, 255, 0.5)"
+            sx={{
+              mt: isLarge ? 0.5 : 0.25,
+              fontSize: isLarge ? (isMobile ? 12 : 14) : (isMobile ? 11 : 12)
             }}
           >
             {subtitle}
