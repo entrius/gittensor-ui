@@ -15,7 +15,7 @@ import {
   Stack,
   Button,
 } from "@mui/material";
-import { useAllMinerData, useRepositoryPRs } from "../../api";
+import { useAllMinerData } from "../../api";
 import { useNavigate } from "react-router-dom";
 import FilterListIcon from "@mui/icons-material/FilterList";
 
@@ -33,7 +33,12 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
 
   // Fetch ALL PRs at once to enable client-side filtering and accurate counts
   // This avoids server roundtrips on filter change and provides instant UI feedback
-  const { data: allPRs, isLoading } = useRepositoryPRs(repositoryFullName, "all");
+  const { data: allMinerPRs, isLoading } = useAllMinerData();
+
+  const allPRs = useMemo(() => {
+    if (!allMinerPRs) return [];
+    return allMinerPRs.filter((pr) => pr.repository === repositoryFullName);
+  }, [allMinerPRs, repositoryFullName]);
 
   const counts = useMemo(() => {
     if (!allPRs) return { all: 0, open: 0, merged: 0, closed: 0 };
