@@ -8,6 +8,7 @@ import {
     CircularProgress,
     Chip,
     Tooltip,
+    Divider,
 } from "@mui/material";
 import { ActivityCalendar } from "react-activity-calendar";
 import ReactECharts from "echarts-for-react";
@@ -341,24 +342,11 @@ const GlobalActivityViz: React.FC = () => {
     const hasNoData = !allPrs || allPrs.length === 0;
 
     return (
-        <Card
-            sx={{
-                borderRadius: 3,
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                backgroundColor: "transparent",
-                p: 0,
-                overflow: "hidden",
-                mb: 0, // Removed bottom margin to fit in grid
-                height: "100%",
-            }}
-            elevation={0}
-        >
-            {/* Header */}
+        <Box sx={{ width: "100%" }}>
+            {/* Header / Title Section */}
             <Box
                 sx={{
-                    p: 2.5,
-                    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                    backgroundColor: "rgba(255, 255, 255, 0.02)",
+                    mb: 2,
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
@@ -394,15 +382,18 @@ const GlobalActivityViz: React.FC = () => {
             </Box>
 
             {hasNoData ? (
-                <Box
+                <Card
                     sx={{
+                        borderRadius: 3,
+                        border: "1px solid rgba(255, 255, 255, 0.1)",
+                        backgroundColor: "transparent",
+                        p: 6,
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
                         justifyContent: "center",
-                        py: 6,
-                        px: 3,
                     }}
+                    elevation={0}
                 >
                     <CodeOffIcon
                         sx={{
@@ -421,393 +412,383 @@ const GlobalActivityViz: React.FC = () => {
                     >
                         No activity data available yet
                     </Typography>
-                    <Typography
-                        sx={{
-                            color: "rgba(255, 255, 255, 0.3)",
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "0.75rem",
-                            mt: 0.5,
-                            textAlign: "center",
-                        }}
-                    >
-                        Activity will appear here once contributions are recorded
-                    </Typography>
-                </Box>
+                </Card>
             ) : (
-                <Grid container sx={{ height: "100%" }}>
-                    {/* Heatmap Section */}
-                    <Grid
-                        item
-                        xs={12}
-                        md={8}
-                        sx={{
-                            p: 3,
-                            borderRight: { md: "1px solid rgba(255, 255, 255, 0.1)" },
-                            borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                        }}
-                    >
-                        <Box sx={{ mb: 2.5 }}>
-                            <Typography
-                                variant="h3"
-                                sx={{
-                                    color: "#fff",
-                                    fontFamily: '"JetBrains Mono", monospace',
-                                    fontWeight: 700,
-                                    fontSize: "2.5rem",
-                                    lineHeight: 1,
-                                }}
-                            >
-                                {contributionsLast30Days.toLocaleString()}
-                            </Typography>
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    color: "rgba(255, 255, 255, 0.4)",
-                                    fontFamily: '"JetBrains Mono", monospace',
-                                    fontSize: "0.85rem",
-                                    mt: 0.5,
-                                }}
-                            >
-                                network contributions in the last 30 days
-                            </Typography>
-                        </Box>
-
-                        <Box sx={{ width: "100%", overflowX: "auto", mb: 1 }}>
-                            <ActivityCalendar
-                                data={contributionData}
-                                theme={{
-                                    light: ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"],
-                                    dark: ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"],
-                                }}
-                                labels={{
-                                    legend: { less: "Less", more: "More" },
-                                    months: [
-                                        "Jan",
-                                        "Feb",
-                                        "Mar",
-                                        "Apr",
-                                        "May",
-                                        "Jun",
-                                        "Jul",
-                                        "Aug",
-                                        "Sep",
-                                        "Oct",
-                                        "Nov",
-                                        "Dec",
-                                    ],
-                                    totalCount: `{{count}} network contributions in the last ${totalDaysShown} days`,
-                                    weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-                                }}
-                                blockSize={11}
-                                blockMargin={3}
-                                fontSize={11}
-                                style={{ color: "#fff" }}
-                                showWeekdayLabels={false}
-                                renderBlock={(block, activity) => (
-                                    <Tooltip
-                                        title={`${activity.count} contribution${activity.count !== 1 ? "s" : ""} on ${new Date(activity.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
-                                        arrow
-                                        placement="top"
-                                    >
-                                        {block}
-                                    </Tooltip>
-                                )}
-                            />
-                        </Box>
-                        <Typography
-                            variant="caption"
+                <Grid container spacing={2}>
+                    {/* 1. Heatmap Section (Large Card) */}
+                    <Grid item xs={12} md={8}>
+                        <Card
                             sx={{
-                                color: "rgba(255, 255, 255, 0.25)",
-                                display: "block",
-                                fontStyle: "italic",
-                                fontSize: "0.7rem",
+                                height: "100%",
+                                borderRadius: 3,
+                                border: "1px solid rgba(255, 255, 255, 0.1)",
+                                backgroundColor: "transparent",
+                                p: 3,
                             }}
+                            elevation={0}
                         >
-                            * Gittensor Network activity across all contributors
-                        </Typography>
+                            <Box sx={{ mb: 2.5 }}>
+                                <Typography
+                                    variant="h3"
+                                    sx={{
+                                        color: "#fff",
+                                        fontFamily: '"JetBrains Mono", monospace',
+                                        fontWeight: 700,
+                                        fontSize: "2.5rem",
+                                        lineHeight: 1,
+                                    }}
+                                >
+                                    {contributionsLast30Days.toLocaleString()}
+                                </Typography>
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        color: "rgba(255, 255, 255, 0.4)",
+                                        fontFamily: '"JetBrains Mono", monospace',
+                                        fontSize: "0.85rem",
+                                        mt: 0.5,
+                                    }}
+                                >
+                                    network contributions in the last 30 days
+                                </Typography>
+                            </Box>
+
+                            <Box sx={{ width: "100%", overflowX: "auto", mb: 1 }}>
+                                <ActivityCalendar
+                                    data={contributionData}
+                                    theme={{
+                                        light: ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"],
+                                        dark: ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"],
+                                    }}
+                                    labels={{
+                                        legend: { less: "Less", more: "More" },
+                                        months: [
+                                            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                                            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+                                        ],
+                                        totalCount: `{{count}} network contributions in the last ${totalDaysShown} days`,
+                                        weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+                                    }}
+                                    blockSize={11}
+                                    blockMargin={3}
+                                    fontSize={11}
+                                    style={{ color: "#fff" }}
+                                    showWeekdayLabels={false}
+                                    renderBlock={(block, activity) => (
+                                        <Tooltip
+                                            title={`${activity.count} contribution${activity.count !== 1 ? "s" : ""} on ${new Date(activity.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
+                                            arrow
+                                            placement="top"
+                                        >
+                                            {block}
+                                        </Tooltip>
+                                    )}
+                                />
+                            </Box>
+                        </Card>
                     </Grid>
 
-
-
-                    {/* Top Scoring Repositories (PFPs) */}
-                    <Grid
-                        item
-                        xs={12}
-                        md={4}
-                        sx={{
-                            p: 3,
-                            borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                            display: "flex",
-                            flexDirection: "column",
-                            justifyContent: "flex-start",
-                        }}
-                    >
-                        <Typography
-                            variant="subtitle2"
+                    {/* 2. Top Scored Repos (Smaller Card) */}
+                    <Grid item xs={12} md={4}>
+                        <Card
                             sx={{
-                                color: "rgba(255, 255, 255, 0.4)",
-                                mb: 2,
-                                fontFamily: '"JetBrains Mono", monospace',
-                                textAlign: "center",
-                                fontSize: "0.75rem",
-                                fontWeight: 600,
-                                letterSpacing: "0.5px",
-                                textTransform: "uppercase",
-                            }}
-                        >
-                            Top Scoring Repositories
-                        </Typography>
-
-                        <Box
-                            sx={{
+                                height: "100%",
+                                borderRadius: 3,
+                                border: "1px solid rgba(255, 255, 255, 0.1)",
+                                backgroundColor: "transparent",
+                                p: 3,
                                 display: "flex",
-                                flexWrap: "wrap",
-                                gap: 1.5,
-                                justifyContent: "center",
+                                flexDirection: "column",
                             }}
+                            elevation={0}
                         >
-                            {topRepos.slice(0, 11).map((repo) => (
-                                <Tooltip
-                                    key={repo.fullName}
-                                    title={`${repo.fullName} (Score: ${repo.totalScore.toFixed(0)})`}
-                                    arrow
-                                >
-                                    <Box
-                                        onClick={() =>
-                                            navigate(
-                                                `/miners/repository?name=${encodeURIComponent(repo.fullName)}`,
-                                            )
-                                        }
-                                        sx={{
-                                            textDecoration: "none",
-                                            cursor: "pointer",
-                                        }}
+                            <Typography
+                                variant="subtitle2"
+                                sx={{
+                                    color: "rgba(255, 255, 255, 0.4)",
+                                    mb: 2,
+                                    fontFamily: '"JetBrains Mono", monospace',
+                                    textAlign: "center",
+                                    fontSize: "0.75rem",
+                                    fontWeight: 600,
+                                    letterSpacing: "0.5px",
+                                    textTransform: "uppercase",
+                                }}
+                            >
+                                Top Scoring Repositories
+                            </Typography>
+
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    gap: 1.5,
+                                    justifyContent: "center",
+                                    alignContent: "flex-start",
+                                    flex: 1,
+                                }}
+                            >
+                                {topRepos.slice(0, 11).map((repo) => (
+                                    <Tooltip
+                                        key={repo.fullName}
+                                        title={`${repo.fullName} (Score: ${repo.totalScore.toFixed(0)})`}
+                                        arrow
                                     >
                                         <Box
-                                            component="img"
-                                            src={`https://avatars.githubusercontent.com/${repo.owner}`}
-                                            alt={repo.fullName}
-                                            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                                                e.currentTarget.style.display = "none";
+                                            onClick={() =>
+                                                navigate(
+                                                    `/miners/repository?name=${encodeURIComponent(repo.fullName)}`,
+                                                )
+                                            }
+                                            sx={{
+                                                textDecoration: "none",
+                                                cursor: "pointer",
                                             }}
+                                        >
+                                            <Box
+                                                component="img"
+                                                src={`https://avatars.githubusercontent.com/${repo.owner}`}
+                                                alt={repo.fullName}
+                                                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                                                    e.currentTarget.style.display = "none";
+                                                }}
+                                                sx={{
+                                                    width: 40,
+                                                    height: 40,
+                                                    borderRadius: "50%",
+                                                    border: "2px solid transparent",
+                                                    backgroundColor:
+                                                        repo.owner === "opentensor"
+                                                            ? "#ffffff"
+                                                            : repo.owner === "bitcoin"
+                                                                ? "#F7931A"
+                                                                : "transparent",
+                                                    transition: "all 0.2s",
+                                                    "&:hover": {
+                                                        transform: "scale(1.1)",
+                                                        borderColor: "#f78166",
+                                                        boxShadow: "0 0 8px rgba(247, 129, 102, 0.4)",
+                                                    },
+                                                }}
+                                            />
+                                        </Box>
+                                    </Tooltip>
+                                ))}
+                                {topRepos.length > 11 && (
+                                    <Tooltip title="View all top repositories" arrow>
+                                        <Box
+                                            onClick={() => navigate("/top-repos")}
                                             sx={{
                                                 width: 40,
                                                 height: 40,
                                                 borderRadius: "50%",
-                                                border: "2px solid transparent",
-                                                backgroundColor:
-                                                    repo.owner === "opentensor"
-                                                        ? "#ffffff"
-                                                        : repo.owner === "bitcoin"
-                                                            ? "#F7931A"
-                                                            : "transparent",
+                                                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                                                border: "1px solid rgba(255, 255, 255, 0.2)",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                cursor: "pointer",
                                                 transition: "all 0.2s",
                                                 "&:hover": {
                                                     transform: "scale(1.1)",
-                                                    borderColor: "#f78166",
-                                                    boxShadow: "0 0 8px rgba(247, 129, 102, 0.4)",
+                                                    backgroundColor: "rgba(255, 255, 255, 0.15)",
+                                                    borderColor: "rgba(255, 255, 255, 0.3)",
                                                 },
                                             }}
-                                        />
-                                    </Box>
-                                </Tooltip>
-                            ))}
-                            {topRepos.length > 11 && (
-                                <Tooltip title="View all top repositories" arrow>
-                                    <Box
-                                        onClick={() => navigate("/top-repos")}
-                                        sx={{
-                                            width: 40,
-                                            height: 40,
-                                            borderRadius: "50%",
-                                            backgroundColor: "rgba(255, 255, 255, 0.1)",
-                                            border: "1px solid rgba(255, 255, 255, 0.2)",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            cursor: "pointer",
-                                            transition: "all 0.2s",
-                                            "&:hover": {
-                                                transform: "scale(1.1)",
-                                                backgroundColor: "rgba(255, 255, 255, 0.15)",
-                                                borderColor: "rgba(255, 255, 255, 0.3)",
-                                            },
-                                        }}
-                                    >
-                                        <Typography
-                                            sx={{
-                                                color: "rgba(255, 255, 255, 0.7)",
-                                                fontSize: "0.75rem",
-                                                fontFamily: '"JetBrains Mono", monospace',
-                                                fontWeight: 600,
-                                            }}
                                         >
-                                            +{topRepos.length - 11}
-                                        </Typography>
-                                    </Box>
-                                </Tooltip>
-                            )}
-                        </Box>
-                    </Grid>
-
-                    {/* Moved: PR Success Ratio (Active vs Inactive) */}
-                    <Grid
-                        item
-                        xs={12}
-                        md={6}
-                        sx={{
-                            px: 3,
-                            pt: 3, pb: 1, // Added top padding and minimal bottom padding
-                            borderRight: { md: "1px solid rgba(255, 255, 255, 0.1)" },
-                            display: "flex",
-                            flexDirection: "column",
-                            justifyContent: "flex-start", // Start from top
-                            gap: 1, // Reduced gap between columns wrapper
-                        }}
-                    >
-                        <Box sx={{ display: "flex", width: "100%", gap: 2 }}>
-                            {/* Active (Paid) Column */}
-                            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-                                <Typography sx={{ color: "#10b981", fontSize: "0.85rem", fontWeight: 700, fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>
-                                    Active <Box component="span" sx={{ fontSize: "0.7rem", opacity: 0.7, textTransform: "none", fontWeight: 500 }}>(Paid)</Box>
-                                </Typography>
-
-                                <Box sx={{ width: "100%", height: "150px" }}>
-                                    <ReactECharts
-                                        option={activeOption}
-                                        style={{ height: "100%", width: "100%" }}
-                                        opts={{ renderer: "svg" }}
-                                    />
-                                </Box>
-
-                                <Box sx={{ display: "flex", gap: 3 }}>
-                                    <Box sx={{ textAlign: "center" }}>
-                                        <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Merged</Typography>
-                                        <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{activeStats.merged}</Typography>
-                                    </Box>
-                                    <Box sx={{ textAlign: "center" }}>
-                                        <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Open</Typography>
-                                        <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{activeStats.open}</Typography>
-                                    </Box>
-                                    <Box sx={{ textAlign: "center" }}>
-                                        <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Closed</Typography>
-                                        <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{activeStats.closed}</Typography>
-                                    </Box>
-                                </Box>
-                            </Box>
-
-                            {/* Divider */}
-                            <Box sx={{ width: "1px", backgroundColor: "rgba(255, 255, 255, 0.1)", my: 1 }} />
-
-                            {/* Candidate (Unpaid) Column */}
-                            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-                                <Typography sx={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "0.85rem", fontWeight: 700, fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>
-                                    Candidate <Box component="span" sx={{ fontSize: "0.7rem", opacity: 0.7, textTransform: "none", fontWeight: 500 }}>(Unpaid)</Box>
-                                </Typography>
-
-                                <Box sx={{ width: "100%", height: "150px" }}>
-                                    <ReactECharts
-                                        option={inactiveOption}
-                                        style={{ height: "100%", width: "100%" }}
-                                        opts={{ renderer: "svg" }}
-                                    />
-                                </Box>
-
-                                <Box sx={{ display: "flex", gap: 3 }}>
-                                    <Box sx={{ textAlign: "center" }}>
-                                        <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Merged</Typography>
-                                        <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{inactiveStats.merged}</Typography>
-                                    </Box>
-                                    <Box sx={{ textAlign: "center" }}>
-                                        <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Open</Typography>
-                                        <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{inactiveStats.open}</Typography>
-                                    </Box>
-                                    <Box sx={{ textAlign: "center" }}>
-                                        <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Closed</Typography>
-                                        <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{inactiveStats.closed}</Typography>
-                                    </Box>
-                                </Box>
-                            </Box>
-                        </Box>
-                    </Grid>
-
-                    {/* New: Tier Performance Stats */}
-                    <Grid
-                        item
-                        xs={12}
-                        md={6}
-                        sx={{
-                            p: 3,
-                            display: "flex",
-                            flexDirection: "column",
-                            justifyContent: "flex-start",
-                        }}
-                    >
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mt: 1 }}>
-                            {["Gold", "Silver", "Bronze", "Candidate"].map((tier) => {
-                                const stats = tierStats[tier as keyof typeof tierStats] || { total: 0, merged: 0, open: 0 };
-                                const isCandidate = tier === "Candidate";
-                                const color = tier === "Gold"
-                                    ? "#FFD700"
-                                    : tier === "Silver"
-                                        ? "#C0C0C0"
-                                        : tier === "Bronze"
-                                            ? "#CD7F32"
-                                            : "#ffffff";
-
-                                return (
-                                    <Box key={tier} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", p: 1.25, borderRadius: 1, backgroundColor: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                                            {!isCandidate && (
-                                                <Box
-                                                    sx={{
-                                                        width: 8,
-                                                        height: 8,
-                                                        borderRadius: "50%",
-                                                        backgroundColor: color,
-                                                        boxShadow: `0 0 8px ${color}40`,
-                                                        animation: "pulse 2s infinite",
-                                                        "@keyframes pulse": {
-                                                            "0%": {
-                                                                boxShadow: `0 0 0 0 ${color}40`,
-                                                            },
-                                                            "70%": {
-                                                                boxShadow: `0 0 0 6px ${color}00`,
-                                                            },
-                                                            "100%": {
-                                                                boxShadow: `0 0 0 0 ${color}00`,
-                                                            },
-                                                        },
-                                                    }}
-                                                />
-                                            )}
-                                            <Typography sx={{ color: "#fff", fontFamily: '"JetBrains Mono", monospace', fontSize: "0.8rem", fontWeight: 700, pl: isCandidate ? 0.5 : 0 }}>
-                                                {tier}
+                                            <Typography
+                                                sx={{
+                                                    color: "rgba(255, 255, 255, 0.7)",
+                                                    fontSize: "0.75rem",
+                                                    fontFamily: '"JetBrains Mono", monospace',
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                +{topRepos.length - 11}
                                             </Typography>
                                         </Box>
+                                    </Tooltip>
+                                )}
+                            </Box>
+                        </Card>
+                    </Grid>
 
-                                        <Box sx={{ display: "flex", gap: 3 }}>
-                                            <Box sx={{ textAlign: "right" }}>
-                                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace' }}>Miners</Typography>
-                                                <Typography sx={{ color: "#fff", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{stats.total}</Typography>
-                                            </Box>
-                                            <Box sx={{ textAlign: "right" }}>
-                                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace' }}>Merged</Typography>
-                                                <Typography sx={{ color: "#4ade80", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{stats.merged}</Typography>
-                                            </Box>
-                                            <Box sx={{ textAlign: "right" }}>
-                                                <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace' }}>Open</Typography>
-                                                <Typography sx={{ color: "#fff", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{stats.open}</Typography>
-                                            </Box>
+
+                    {/* 3. Combined Active & Candidate Stats */}
+                    <Grid item xs={12} md={6}>
+                        <Card
+                            sx={{
+                                height: "100%",
+                                borderRadius: 3,
+                                border: "1px solid rgba(255, 255, 255, 0.1)",
+                                backgroundColor: "transparent",
+                                p: 3,
+                                display: "flex",
+                                flexDirection: "column",
+                            }}
+                            elevation={0}
+                        >
+                            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, flex: 1 }}>
+                                {/* Active Section */}
+                                <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                                    <Typography sx={{ color: "#10b981", fontSize: "0.85rem", fontWeight: 700, fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", textAlign: 'center', mb: 1 }}>
+                                        Active <Box component="span" sx={{ fontSize: "0.7rem", opacity: 0.7, textTransform: "none", fontWeight: 500 }}>(Paid)</Box>
+                                    </Typography>
+
+                                    <Box sx={{ width: "100%", flex: 1, minHeight: "150px" }}>
+                                        <ReactECharts
+                                            option={activeOption}
+                                            style={{ height: "100%", width: "100%" }}
+                                            opts={{ renderer: "svg" }}
+                                        />
+                                    </Box>
+
+                                    <Box sx={{ display: "flex", gap: 3, mt: 1 }}>
+                                        <Box sx={{ textAlign: "center" }}>
+                                            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Merged</Typography>
+                                            <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{activeStats.merged}</Typography>
+                                        </Box>
+                                        <Box sx={{ textAlign: "center" }}>
+                                            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Open</Typography>
+                                            <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{activeStats.open}</Typography>
+                                        </Box>
+                                        <Box sx={{ textAlign: "center" }}>
+                                            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Closed</Typography>
+                                            <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{activeStats.closed}</Typography>
                                         </Box>
                                     </Box>
-                                );
-                            })}
-                        </Box>
+                                </Box>
+
+
+
+                                {/* Candidate Section */}
+                                <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                                    <Typography sx={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "0.85rem", fontWeight: 700, fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", textAlign: 'center', mb: 1 }}>
+                                        Candidate <Box component="span" sx={{ fontSize: "0.7rem", opacity: 0.7, textTransform: "none", fontWeight: 500 }}>(Unpaid)</Box>
+                                    </Typography>
+
+                                    <Box sx={{ width: "100%", flex: 1, minHeight: "150px" }}>
+                                        <ReactECharts
+                                            option={inactiveOption}
+                                            style={{ height: "100%", width: "100%" }}
+                                            opts={{ renderer: "svg" }}
+                                        />
+                                    </Box>
+
+                                    <Box sx={{ display: "flex", gap: 3, mt: 1 }}>
+                                        <Box sx={{ textAlign: "center" }}>
+                                            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Merged</Typography>
+                                            <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{inactiveStats.merged}</Typography>
+                                        </Box>
+                                        <Box sx={{ textAlign: "center" }}>
+                                            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Open</Typography>
+                                            <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{inactiveStats.open}</Typography>
+                                        </Box>
+                                        <Box sx={{ textAlign: "center" }}>
+                                            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Closed</Typography>
+                                            <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{inactiveStats.closed}</Typography>
+                                        </Box>
+                                    </Box>
+                                </Box>
+                            </Box>
+                        </Card>
                     </Grid>
-                </Grid>
+
+                    {/* 4. Tier Performance Stats */}
+                    <Grid item xs={12} md={6}>
+                        <Card
+                            sx={{
+                                height: "100%",
+                                borderRadius: 3,
+                                border: "1px solid rgba(255, 255, 255, 0.1)",
+                                backgroundColor: "transparent",
+                                p: 3,
+                                display: "flex",
+                                flexDirection: "column",
+                            }}
+                            elevation={0}
+                        >
+                            <Typography
+                                variant="subtitle2"
+                                sx={{
+                                    color: "rgba(255, 255, 255, 0.4)",
+                                    mb: 2,
+                                    fontFamily: '"JetBrains Mono", monospace',
+                                    textAlign: "center",
+                                    fontSize: "0.75rem",
+                                    fontWeight: 600,
+                                    letterSpacing: "0.5px",
+                                    textTransform: "uppercase",
+                                }}
+                            >
+                                Tier Performance
+                            </Typography>
+                            <Box sx={{ display: "flex", flexDirection: "column", gap: 1, flex: 1, justifyContent: 'center' }}>
+                                {["Gold", "Silver", "Bronze", "Candidate"].map((tier) => {
+                                    const stats = tierStats[tier as keyof typeof tierStats] || { total: 0, merged: 0, open: 0 };
+                                    const isCandidate = tier === "Candidate";
+                                    const color = tier === "Gold"
+                                        ? "#FFD700"
+                                        : tier === "Silver"
+                                            ? "#C0C0C0"
+                                            : tier === "Bronze"
+                                                ? "#CD7F32"
+                                                : "#ffffff";
+
+                                    return (
+                                        <Box key={tier} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", p: 1.25, borderRadius: 1, backgroundColor: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                                {!isCandidate && (
+                                                    <Box
+                                                        sx={{
+                                                            width: 8,
+                                                            height: 8,
+                                                            borderRadius: "50%",
+                                                            backgroundColor: color,
+                                                            boxShadow: `0 0 8px ${color}40`,
+                                                            animation: "pulse 2s infinite",
+                                                            "@keyframes pulse": {
+                                                                "0%": {
+                                                                    boxShadow: `0 0 0 0 ${color}40`,
+                                                                },
+                                                                "70%": {
+                                                                    boxShadow: `0 0 0 6px ${color}00`,
+                                                                },
+                                                                "100%": {
+                                                                    boxShadow: `0 0 0 0 ${color}00`,
+                                                                },
+                                                            },
+                                                        }}
+                                                    />
+                                                )}
+                                                <Typography sx={{ color: "#fff", fontFamily: '"JetBrains Mono", monospace', fontSize: "0.8rem", fontWeight: 700, pl: isCandidate ? 0.5 : 0 }}>
+                                                    {tier}
+                                                </Typography>
+                                            </Box>
+
+                                            <Box sx={{ display: "flex", gap: 3 }}>
+                                                <Box sx={{ textAlign: "right", minWidth: 35 }}>
+                                                    <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace' }}>Miners</Typography>
+                                                    <Typography sx={{ color: "#fff", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{stats.total}</Typography>
+                                                </Box>
+                                                <Box sx={{ textAlign: "right", minWidth: 35 }}>
+                                                    <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace' }}>Merged</Typography>
+                                                    <Typography sx={{ color: "#4ade80", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{stats.merged}</Typography>
+                                                </Box>
+                                                <Box sx={{ textAlign: "right", minWidth: 35 }}>
+                                                    <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.65rem", fontFamily: '"JetBrains Mono", monospace' }}>Open</Typography>
+                                                    <Typography sx={{ color: "#fff", fontSize: "0.8rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{stats.open}</Typography>
+                                                </Box>
+                                            </Box>
+                                        </Box>
+                                    );
+                                })}
+                            </Box>
+                        </Card>
+                    </Grid >
+                </Grid >
             )}
-        </Card>
+        </Box >
     );
 };
 
