@@ -506,7 +506,7 @@ const GlobalActivityViz: React.FC = () => {
             ) : (
                 <Grid container spacing={2}>
                     {/* 1. Heatmap Section (Large Card) */}
-                    <Grid item xs={12} md={8}>
+                    <Grid item xs={12} md={7}>
                         <Card
                             sx={{
                                 height: "100%",
@@ -578,7 +578,88 @@ const GlobalActivityViz: React.FC = () => {
                         </Card>
                     </Grid>
 
-                    {/* 2. Top Scored Repos (Smaller Card) */}
+                    {/* 3. Combined Active & Candidate Stats - MOVED & RESIZED to md=5 */}
+                    <Grid item xs={12} md={5}>
+                        <Card
+                            sx={{
+                                height: "100%",
+                                borderRadius: 3,
+                                border: "1px solid rgba(255, 255, 255, 0.1)",
+                                backgroundColor: "transparent",
+                                p: 3,
+                                display: "flex",
+                                flexDirection: "column",
+                            }}
+                            elevation={0}
+                        >
+                            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, flex: 1 }}>
+                                {/* Active Section */}
+                                <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                                    <Typography sx={{ color: "#10b981", fontSize: "0.85rem", fontWeight: 700, fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", textAlign: 'center', mb: 1 }}>
+                                        Active <Box component="span" sx={{ fontSize: "0.7rem", opacity: 0.7, textTransform: "none", fontWeight: 500 }}>(Paid)</Box>
+                                    </Typography>
+
+                                    <Box sx={{ width: "100%", flex: 1, minHeight: "150px" }}>
+                                        <ReactECharts
+                                            option={activeOption}
+                                            style={{ height: "100%", width: "100%" }}
+                                            opts={{ renderer: "svg" }}
+                                        />
+                                    </Box>
+
+                                    <Box sx={{ display: "flex", gap: 3, mt: 1 }}>
+                                        <Box sx={{ textAlign: "center" }}>
+                                            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Merged</Typography>
+                                            <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{activeStats.merged}</Typography>
+                                        </Box>
+                                        <Box sx={{ textAlign: "center" }}>
+                                            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Open</Typography>
+                                            <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{activeStats.open}</Typography>
+                                        </Box>
+                                        <Box sx={{ textAlign: "center" }}>
+                                            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Closed</Typography>
+                                            <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{activeStats.closed}</Typography>
+                                        </Box>
+                                    </Box>
+                                </Box>
+
+
+
+                                {/* Candidate Section */}
+                                <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                                    <Typography sx={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "0.85rem", fontWeight: 700, fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", textAlign: 'center', mb: 1 }}>
+                                        Unranked <Box component="span" sx={{ fontSize: "0.7rem", opacity: 0.7, textTransform: "none", fontWeight: 500 }}>(Unpaid)</Box>
+                                    </Typography>
+
+                                    <Box sx={{ width: "100%", flex: 1, minHeight: "150px" }}>
+                                        <ReactECharts
+                                            option={inactiveOption}
+                                            style={{ height: "100%", width: "100%" }}
+                                            opts={{ renderer: "svg" }}
+                                        />
+                                    </Box>
+
+                                    <Box sx={{ display: "flex", gap: 3, mt: 1 }}>
+                                        <Box sx={{ textAlign: "center" }}>
+                                            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Merged</Typography>
+                                            <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{inactiveStats.merged}</Typography>
+                                        </Box>
+                                        <Box sx={{ textAlign: "center" }}>
+                                            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Open</Typography>
+                                            <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{inactiveStats.open}</Typography>
+                                        </Box>
+                                        <Box sx={{ textAlign: "center" }}>
+                                            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Closed</Typography>
+                                            <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{inactiveStats.closed}</Typography>
+                                        </Box>
+                                    </Box>
+                                </Box>
+                            </Box>
+                        </Card>
+                    </Grid>
+
+
+                    {/* 2. Top Scored Repos (Smaller Card) - MOVED & RESIZED to md=4 */}
                     <Grid item xs={12} md={4}>
                         <Card
                             sx={{
@@ -703,89 +784,8 @@ const GlobalActivityViz: React.FC = () => {
                         </Card>
                     </Grid>
 
-
-                    {/* 3. Combined Active & Candidate Stats */}
-                    <Grid item xs={12} md={5}>
-                        <Card
-                            sx={{
-                                height: "100%",
-                                borderRadius: 3,
-                                border: "1px solid rgba(255, 255, 255, 0.1)",
-                                backgroundColor: "transparent",
-                                p: 3,
-                                display: "flex",
-                                flexDirection: "column",
-                            }}
-                            elevation={0}
-                        >
-                            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, flex: 1 }}>
-                                {/* Active Section */}
-                                <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                                    <Typography sx={{ color: "#10b981", fontSize: "0.85rem", fontWeight: 700, fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", textAlign: 'center', mb: 1 }}>
-                                        Active <Box component="span" sx={{ fontSize: "0.7rem", opacity: 0.7, textTransform: "none", fontWeight: 500 }}>(Paid)</Box>
-                                    </Typography>
-
-                                    <Box sx={{ width: "100%", flex: 1, minHeight: "150px" }}>
-                                        <ReactECharts
-                                            option={activeOption}
-                                            style={{ height: "100%", width: "100%" }}
-                                            opts={{ renderer: "svg" }}
-                                        />
-                                    </Box>
-
-                                    <Box sx={{ display: "flex", gap: 3, mt: 1 }}>
-                                        <Box sx={{ textAlign: "center" }}>
-                                            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Merged</Typography>
-                                            <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{activeStats.merged}</Typography>
-                                        </Box>
-                                        <Box sx={{ textAlign: "center" }}>
-                                            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Open</Typography>
-                                            <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{activeStats.open}</Typography>
-                                        </Box>
-                                        <Box sx={{ textAlign: "center" }}>
-                                            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Closed</Typography>
-                                            <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{activeStats.closed}</Typography>
-                                        </Box>
-                                    </Box>
-                                </Box>
-
-
-
-                                {/* Candidate Section */}
-                                <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                                    <Typography sx={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "0.85rem", fontWeight: 700, fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", textAlign: 'center', mb: 1 }}>
-                                        Unranked <Box component="span" sx={{ fontSize: "0.7rem", opacity: 0.7, textTransform: "none", fontWeight: 500 }}>(Unpaid)</Box>
-                                    </Typography>
-
-                                    <Box sx={{ width: "100%", flex: 1, minHeight: "150px" }}>
-                                        <ReactECharts
-                                            option={inactiveOption}
-                                            style={{ height: "100%", width: "100%" }}
-                                            opts={{ renderer: "svg" }}
-                                        />
-                                    </Box>
-
-                                    <Box sx={{ display: "flex", gap: 3, mt: 1 }}>
-                                        <Box sx={{ textAlign: "center" }}>
-                                            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Merged</Typography>
-                                            <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{inactiveStats.merged}</Typography>
-                                        </Box>
-                                        <Box sx={{ textAlign: "center" }}>
-                                            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Open</Typography>
-                                            <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{inactiveStats.open}</Typography>
-                                        </Box>
-                                        <Box sx={{ textAlign: "center" }}>
-                                            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Closed</Typography>
-                                            <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{inactiveStats.closed}</Typography>
-                                        </Box>
-                                    </Box>
-                                </Box>
-                            </Box>
-                        </Card>
-                    </Grid>
-
-                    {/* 4. Tier Performance Stats - AWS-Inspired Compact Table */}
-                    <Grid item xs={12} md={7}>
+                    {/* 4. Tier Performance Stats - Resized to md=8 */}
+                    <Grid item xs={12} md={8}>
                         <Card
                             sx={{
                                 height: "100%",
