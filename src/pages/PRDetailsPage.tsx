@@ -2,7 +2,14 @@ import React, { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Box, Tabs, Tab, CircularProgress, Typography } from "@mui/material";
 import { Page } from "../components/layout";
-import { PRDetailsCard, PRHeader, PRFilesChanged, BackButton, SEO, PRComments } from "../components";
+import {
+  PRDetailsCard,
+  PRHeader,
+  PRFilesChanged,
+  BackButton,
+  SEO,
+  PRComments,
+} from "../components";
 import { usePullRequestDetails } from "../api";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CodeIcon from "@mui/icons-material/Code";
@@ -136,7 +143,11 @@ const PRDetailsPage: React.FC = () => {
                 />
                 <Tab
                   label="Conversation"
-                  icon={<ChatBubbleOutlineIcon sx={{ fontSize: 16, mb: 0, mr: 1 }} />}
+                  icon={
+                    <ChatBubbleOutlineIcon
+                      sx={{ fontSize: 16, mb: 0, mr: 1 }}
+                    />
+                  }
                   iconPosition="start"
                 />
               </Tabs>
