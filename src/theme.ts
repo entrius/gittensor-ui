@@ -1,14 +1,112 @@
 import { createTheme } from "@mui/material/styles";
 
+// ============================================================================
+// Shared Color Constants (exported for use outside MUI components)
+// ============================================================================
+export const TIER_COLORS = {
+  gold: "#FFD700",
+  silver: "#C0C0C0",
+  bronze: "#CD7F32",
+} as const;
+
+export const STATUS_COLORS = {
+  merged: "#4ade80",
+  open: "#52525b",
+  closed: "#ef4444",
+  success: "#10b981",
+  warning: "#fbbf24",
+  error: "#ef4444",
+  info: "#60a5fa",
+  purple: "#a78bfa",
+} as const;
+
+export const TEXT_OPACITY = {
+  primary: 1,
+  secondary: 0.7,
+  tertiary: 0.5,
+  muted: 0.4,
+  faint: 0.3,
+  ghost: 0.2,
+} as const;
+
+// ============================================================================
+// Module Augmentation for Custom Theme Properties
+// ============================================================================
 declare module "@mui/material/styles" {
   interface TypographyVariants {
     dataValue: React.CSSProperties;
     dataLabel: React.CSSProperties;
+    mono: React.CSSProperties;
+    monoSmall: React.CSSProperties;
+    sectionTitle: React.CSSProperties;
+    tableHeader: React.CSSProperties;
+    statValue: React.CSSProperties;
+    statLabel: React.CSSProperties;
   }
 
   interface TypographyVariantsOptions {
     dataValue?: React.CSSProperties;
     dataLabel?: React.CSSProperties;
+    mono?: React.CSSProperties;
+    monoSmall?: React.CSSProperties;
+    sectionTitle?: React.CSSProperties;
+    tableHeader?: React.CSSProperties;
+    statValue?: React.CSSProperties;
+    statLabel?: React.CSSProperties;
+  }
+
+  interface Palette {
+    tier: {
+      gold: string;
+      silver: string;
+      bronze: string;
+    };
+    status: {
+      merged: string;
+      open: string;
+      closed: string;
+      success: string;
+      warning: string;
+      info: string;
+      purple: string;
+    };
+    border: {
+      subtle: string;
+      light: string;
+      medium: string;
+    };
+    surface: {
+      transparent: string;
+      subtle: string;
+      light: string;
+    };
+  }
+
+  interface PaletteOptions {
+    tier?: {
+      gold: string;
+      silver: string;
+      bronze: string;
+    };
+    status?: {
+      merged: string;
+      open: string;
+      closed: string;
+      success: string;
+      warning: string;
+      info: string;
+      purple: string;
+    };
+    border?: {
+      subtle: string;
+      light: string;
+      medium: string;
+    };
+    surface?: {
+      transparent: string;
+      subtle: string;
+      light: string;
+    };
   }
 }
 
@@ -16,12 +114,30 @@ declare module "@mui/material/Typography" {
   interface TypographyPropsVariantOverrides {
     dataValue: true;
     dataLabel: true;
+    mono: true;
+    monoSmall: true;
+    sectionTitle: true;
+    tableHeader: true;
+    statValue: true;
+    statLabel: true;
   }
 }
 
 declare module "@mui/material/Button" {
   interface ButtonPropsVariantOverrides {
     back: true;
+  }
+}
+
+declare module "@mui/material/Card" {
+  interface CardPropsVariantOverrides {
+    glass: true;
+  }
+}
+
+declare module "@mui/material/Chip" {
+  interface ChipPropsVariantOverrides {
+    status: true;
   }
 }
 
@@ -43,6 +159,34 @@ const theme = createTheme({
       secondary: "#7d7d7d",
     },
     divider: "#ffffff",
+    // Custom tier colors
+    tier: {
+      gold: TIER_COLORS.gold,
+      silver: TIER_COLORS.silver,
+      bronze: TIER_COLORS.bronze,
+    },
+    // Custom status colors
+    status: {
+      merged: STATUS_COLORS.merged,
+      open: STATUS_COLORS.open,
+      closed: STATUS_COLORS.closed,
+      success: STATUS_COLORS.success,
+      warning: STATUS_COLORS.warning,
+      info: STATUS_COLORS.info,
+      purple: STATUS_COLORS.purple,
+    },
+    // Border colors
+    border: {
+      subtle: "rgba(255, 255, 255, 0.05)",
+      light: "rgba(255, 255, 255, 0.1)",
+      medium: "rgba(255, 255, 255, 0.2)",
+    },
+    // Surface colors
+    surface: {
+      transparent: "transparent",
+      subtle: "rgba(255, 255, 255, 0.02)",
+      light: "rgba(255, 255, 255, 0.05)",
+    },
   },
   typography: {
     fontFamily:
@@ -85,6 +229,50 @@ const theme = createTheme({
       fontWeight: 400,
       letterSpacing: "0.05em",
       textTransform: "uppercase",
+    },
+    // Base monospace style
+    mono: {
+      fontFamily: '"JetBrains Mono", monospace',
+      fontWeight: 500,
+    },
+    // Small monospace for labels
+    monoSmall: {
+      fontFamily: '"JetBrains Mono", monospace',
+      fontSize: "0.7rem",
+      fontWeight: 600,
+      letterSpacing: "0.5px",
+      textTransform: "uppercase",
+    },
+    // Section titles
+    sectionTitle: {
+      fontFamily: '"JetBrains Mono", monospace',
+      fontSize: "1rem",
+      fontWeight: 600,
+      color: "#fff",
+    },
+    // Table headers
+    tableHeader: {
+      fontFamily: '"JetBrains Mono", monospace',
+      fontSize: "0.7rem",
+      fontWeight: 600,
+      letterSpacing: "0.5px",
+      textTransform: "uppercase",
+      color: "rgba(255, 255, 255, 0.3)",
+    },
+    // Large stat values
+    statValue: {
+      fontFamily: '"JetBrains Mono", monospace',
+      fontSize: "1.1rem",
+      fontWeight: 600,
+      color: "#fff",
+    },
+    // Stat labels
+    statLabel: {
+      fontFamily: '"JetBrains Mono", monospace',
+      fontSize: "0.7rem",
+      fontWeight: 500,
+      textTransform: "uppercase",
+      color: "rgba(255, 255, 255, 0.4)",
     },
   },
   components: {
@@ -132,6 +320,27 @@ const theme = createTheme({
           },
         },
       ],
+    },
+    MuiCard: {
+      defaultProps: {
+        elevation: 0,
+      },
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+          border: "1px solid rgba(255, 255, 255, 0.1)",
+          backgroundColor: "transparent",
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: "0.7rem",
+          fontWeight: 600,
+        },
+      },
     },
   },
 });

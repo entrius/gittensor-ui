@@ -651,7 +651,9 @@ const LeaderboardCharts: React.FC = () => {
           </Box>
         ) : (
           <ReactECharts
-            option={activeTab === 0 ? getPRsChartOption() : getReposChartOption()}
+            option={
+              activeTab === 0 ? getPRsChartOption() : getReposChartOption()
+            }
             style={{ height: "100%", width: "100%" }}
           />
         )}

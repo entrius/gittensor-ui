@@ -23,7 +23,10 @@ const PRDetailsPage: React.FC = () => {
     return null;
   }
 
-  const { data: prDetails, isLoading } = usePullRequestDetails(repository, parseInt(pullRequestNumber));
+  const { data: prDetails, isLoading } = usePullRequestDetails(
+    repository,
+    parseInt(pullRequestNumber),
+  );
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -38,12 +41,30 @@ const PRDetailsPage: React.FC = () => {
       />
 
       {isLoading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh" }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "50vh",
+          }}
+        >
           <CircularProgress />
         </Box>
       ) : !prDetails ? (
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh", flexDirection: "column", gap: 2 }}>
-          <Typography variant="h6" color="error">PR not found</Typography>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "50vh",
+            flexDirection: "column",
+            gap: 2,
+          }}
+        >
+          <Typography variant="h6" color="error">
+            PR not found
+          </Typography>
           <BackButton to="/top-prs" label="Back to Top PRs" />
         </Box>
       ) : (
@@ -85,7 +106,8 @@ const PRDetailsPage: React.FC = () => {
                 sx={{
                   "& .MuiTab-root": {
                     color: "#8b949e",
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+                    fontFamily:
+                      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
                     textTransform: "none",
                     fontWeight: 500,
                     minHeight: "48px",

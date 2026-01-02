@@ -32,5 +32,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         </Router>
       </ThemeProvider>
     </HelmetProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );
