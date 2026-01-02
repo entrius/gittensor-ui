@@ -206,3 +206,17 @@ export type PullRequestDetails = {
   updatedAt: string;
   tier: string; // Bronze, Silver, Gold
 };
+
+export type PullRequestComment = {
+  id: number;
+  user: {
+    login: string;
+    avatarUrl: string;
+    htmlUrl: string;
+  };
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+  htmlUrl: string;
+  authorAssociation: string;
+};

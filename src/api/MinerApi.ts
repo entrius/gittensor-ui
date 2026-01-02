@@ -74,6 +74,18 @@ export const usePullRequestDetails = (repo: string, number: number) =>
   );
 
 /**
+ * Get comments for a specific pull request
+ * Uses the /miners/pr/comments endpoint
+ */
+export const usePullRequestComments = (repo: string, number: number) =>
+  useMinersQuery<any[]>(
+    "usePullRequestComments",
+    "/pr/comments",
+    undefined,
+    { repo, number },
+  );
+
+/**
  * Get pull requests for a specific repository filtered by state
  * Uses the /miners/repo/prs endpoint
  */
