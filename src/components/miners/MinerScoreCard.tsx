@@ -218,6 +218,8 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
       label: "Open PRs",
       value: Number(minerStats.totalOpenPrs || 0),
       rank: null,
+      tooltip:
+        "Be careful not to exceed more than 10 open PRs. Exceeding this incurs drastic penalties to your score.",
     },
     {
       label: "Open Collateral",
