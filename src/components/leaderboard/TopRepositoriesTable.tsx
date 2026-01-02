@@ -817,132 +817,136 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           <TableBody>
             {filteredRepositories
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((repo) => (
-                <TableRow
-                  key={repo.repository}
-                  hover
-                  onClick={() => onSelectRepository(repo.repository || "")}
-                  sx={{
-                    cursor: "pointer",
-                    "&:hover": {
-                      backgroundColor: "rgba(255, 255, 255, 0.05)",
-                    },
-                    transition: "background-color 0.2s",
-                  }}
-                >
-                  <TableCell sx={{ ...bodyCellStyle, width: "60px", pr: 0 }}>
-                    {getRankIcon(repo.rank || 0)}
-                  </TableCell>
-                  <TableCell sx={{ ...bodyCellStyle, width: "35%", pl: 1.5 }}>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        cursor: "pointer",
-                        "&:hover": {
-                          "& .MuiTypography-root": {
-                            color: "primary.main",
-                            textDecoration: "underline",
-                          },
-                        },
-                      }}
-                    >
-                      <Avatar
-                        src={`https://avatars.githubusercontent.com/${(repo.repository || "").split("/")[0]}`}
-                        alt={(repo.repository || "").split("/")[0]}
+              .map((repo) => {
+                const hasScore = (repo.totalScore || 0) > 0;
+                return (
+                  <TableRow
+                    key={repo.repository}
+                    hover
+                    onClick={() => onSelectRepository(repo.repository || "")}
+                    sx={{
+                      cursor: "pointer",
+                      "&:hover": {
+                        backgroundColor: "rgba(255, 255, 255, 0.05)",
+                      },
+                      transition: "background-color 0.2s",
+                      opacity: hasScore ? 1 : 0.4,
+                    }}
+                  >
+                    <TableCell sx={{ ...bodyCellStyle, width: "60px", pr: 0 }}>
+                      {getRankIcon(repo.rank || 0)}
+                    </TableCell>
+                    <TableCell sx={{ ...bodyCellStyle, width: "35%", pl: 1.5 }}>
+                      <Box
                         sx={{
-                          width: 20,
-                          height: 20,
-                          border: "1px solid rgba(255, 255, 255, 0.2)",
-                          backgroundColor:
-                            (repo.repository || "").split("/")[0] ===
-                            "opentensor"
-                              ? "#ffffff"
-                              : (repo.repository || "").split("/")[0] ===
-                                  "bitcoin"
-                                ? "#F7931A"
-                                : "transparent",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          cursor: "pointer",
+                          "&:hover": {
+                            "& .MuiTypography-root": {
+                              color: "primary.main",
+                              textDecoration: "underline",
+                            },
+                          },
                         }}
-                      />
-                      <Tooltip title={repo.repository || ""} placement="top">
-                        <Typography
-                          component="span"
+                      >
+                        <Avatar
+                          src={`https://avatars.githubusercontent.com/${(repo.repository || "").split("/")[0]}`}
+                          alt={(repo.repository || "").split("/")[0]}
                           sx={{
-                            color: "#ffffff",
-                            fontWeight: 500,
-                            transition: "color 0.2s",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                            maxWidth: "100%",
-                            display: "inline-block",
+                            width: 20,
+                            height: 20,
+                            border: "1px solid rgba(255, 255, 255, 0.2)",
+                            backgroundColor:
+                              (repo.repository || "").split("/")[0] ===
+                                "opentensor"
+                                ? "#ffffff"
+                                : (repo.repository || "").split("/")[0] ===
+                                  "bitcoin"
+                                  ? "#F7931A"
+                                  : "transparent",
                           }}
-                        >
-                          {truncateText(repo.repository || "", 40)}
-                        </Typography>
-                      </Tooltip>
-                      <Chip
-                        label={repo.tier || "N/A"}
-                        size="small"
+                        />
+                        <Tooltip title={repo.repository || ""} placement="top">
+                          <Typography
+                            component="span"
+                            sx={{
+                              color: "#ffffff",
+                              fontWeight: 500,
+                              transition: "color 0.2s",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              maxWidth: "100%",
+                              display: "inline-block",
+                            }}
+                          >
+                            {truncateText(repo.repository || "", 40)}
+                          </Typography>
+                        </Tooltip>
+                        <Chip
+                          label={repo.tier || "N/A"}
+                          size="small"
+                          sx={{
+                            ml: 1,
+                            height: "20px",
+                            fontSize: "0.65rem",
+                            fontFamily: '"JetBrains Mono", monospace',
+                            backgroundColor: "transparent",
+                            border: `1px solid ${getTierColor(repo.tier)}`,
+                            color: getTierColor(repo.tier),
+                            fontWeight: 600,
+                            borderRadius: "4px",
+                            "& .MuiChip-label": {
+                              px: 1,
+                            },
+                          }}
+                        />
+                      </Box>
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{ ...bodyCellStyle, width: "12%" }}
+                    >
+                      <Typography
                         sx={{
-                          ml: 1,
-                          height: "20px",
-                          fontSize: "0.65rem",
                           fontFamily: '"JetBrains Mono", monospace',
-                          backgroundColor: "transparent",
-                          border: `1px solid ${getTierColor(repo.tier)}`,
-                          color: getTierColor(repo.tier),
-                          fontWeight: 600,
-                          borderRadius: "4px",
-                          "& .MuiChip-label": {
-                            px: 1,
-                          },
+                          fontSize: "0.75rem",
                         }}
-                      />
-                    </Box>
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...bodyCellStyle, width: "12%" }}
-                  >
-                    <Typography
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.75rem",
-                      }}
+                      >
+                        {repo.weight.toFixed(1)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{ ...bodyCellStyle, width: "18%" }}
                     >
-                      {repo.weight.toFixed(1)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...bodyCellStyle, width: "18%" }}
-                  >
-                    <Typography
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.75rem",
-                        fontWeight: 600,
-                      }}
+                      <Typography
+                        sx={{
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {Number(repo.totalScore || 0).toFixed(2)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{ ...bodyCellStyle, width: "15%" }}
                     >
-                      {Number(repo.totalScore || 0).toFixed(2)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...bodyCellStyle, width: "15%" }}
-                  >
-                    {repo.totalPRs || 0}
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...bodyCellStyle, width: "15%" }}
-                  >
-                    {repo.uniqueMiners?.size || 0}
-                  </TableCell>
-                </TableRow>
-              ))}
+                      {repo.totalPRs || 0}
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{ ...bodyCellStyle, width: "15%" }}
+                    >
+                      {repo.uniqueMiners?.size || 0}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
           </TableBody>
         </Table>
       </TableContainer>
