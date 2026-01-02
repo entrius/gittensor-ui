@@ -9,7 +9,9 @@ import {
   Chip,
   Stack,
   Divider,
+  Tooltip,
 } from "@mui/material";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import {
   Language as WebsiteIcon,
   Twitter as TwitterIcon,
@@ -172,6 +174,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
     link?: string | null;
     color?: string;
     subValue?: string;
+    tooltip?: string;
   }> = [
       {
         label: "Credibility",
@@ -188,6 +191,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                   ? "#fb923c" // Orange
                   : "#f87171", // Red
         subValue: `${minerStats.totalMergedPrs || 0} Merged / ${minerStats.totalClosedPrs || 0} Closed`,
+        tooltip: "Credibility is the ratio of merged PRs to total PR attempts (merged + closed). It represents your success rate.",
       },
       {
         label: "Current Score",
@@ -221,6 +225,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
           : Number(minerStats.totalCollateralScore || 0).toFixed(2),
         rank: null,
         color: Number(minerStats.totalCollateralScore || 0) > 0 ? "rgba(248, 113, 113, 0.8)" : undefined,
+        tooltip: "Open collateral is deducted from your total score while PRs are open, preventing low-quality PR spam.",
       },
       {
         label: "Top PR",
@@ -488,18 +493,63 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                     mb: 1.5,
                   }}
                 >
-                  <Typography
-                    sx={{
-                      color: "rgba(255, 255, 255, 0.5)",
-                      fontFamily: '"JetBrains Mono", monospace',
-                      fontSize: "0.75rem",
-                      textTransform: "uppercase",
-                      letterSpacing: "1px",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {item.label}
-                  </Typography>
+                  {item.tooltip ? (
+                    <Tooltip
+                      title={item.tooltip}
+                      arrow
+                      placement="top"
+                      slotProps={{
+                        tooltip: {
+                          sx: {
+                            backgroundColor: "rgba(30, 30, 30, 0.95)",
+                            color: "#ffffff",
+                            fontSize: "0.75rem",
+                            fontFamily: '"JetBrains Mono", monospace',
+                            padding: "8px 12px",
+                            borderRadius: "6px",
+                            border: "1px solid rgba(255, 255, 255, 0.1)",
+                            maxWidth: 240,
+                          },
+                        },
+                        arrow: {
+                          sx: {
+                            color: "rgba(30, 30, 30, 0.95)",
+                          },
+                        },
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          color: "rgba(255, 255, 255, 0.5)",
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: "0.75rem",
+                          textTransform: "uppercase",
+                          letterSpacing: "1px",
+                          fontWeight: 600,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.5,
+                          cursor: "help",
+                        }}
+                      >
+                        {item.label}
+                        <InfoOutlinedIcon sx={{ fontSize: "0.85rem" }} />
+                      </Typography>
+                    </Tooltip>
+                  ) : (
+                    <Typography
+                      sx={{
+                        color: "rgba(255, 255, 255, 0.5)",
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: "0.75rem",
+                        textTransform: "uppercase",
+                        letterSpacing: "1px",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {item.label}
+                    </Typography>
+                  )}
                   {item.rank && (
                     <Box
                       sx={{
