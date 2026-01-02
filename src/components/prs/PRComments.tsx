@@ -10,8 +10,6 @@ import {
 } from "@mui/material";
 import { usePullRequestComments } from "../../api";
 import { PullRequestDetails } from "../../api/models/Dashboard";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import "github-markdown-css/github-markdown-dark.css"; // Import standard GitHub Dark styles
 
 interface PRCommentsProps {
@@ -108,13 +106,12 @@ const PRComments: React.FC<PRCommentsProps> = ({
             gap: 2,
             position: "relative",
             zIndex: 1,
-            // Draw the timeline line connecting this item to the next
             "&::before": {
               content: index !== allItems.length - 1 ? '""' : "none",
               position: "absolute",
-              top: "40px", // Start below the avatar
-              bottom: "-24px", // Extend to the next item
-              left: "20px", // Center of the 40px avatar
+              top: "40px",
+              bottom: "-24px",
+              left: "20px",
               width: "2px",
               backgroundColor: colors.timeline.line,
               zIndex: 0,
@@ -151,7 +148,6 @@ const PRComments: React.FC<PRCommentsProps> = ({
               border: `1px solid ${colors.border.default}`,
               borderRadius: "6px",
               position: "relative",
-              // The "Triangle" Arrow
               "&::after": {
                 content: '""',
                 position: "absolute",
@@ -164,9 +160,6 @@ const PRComments: React.FC<PRCommentsProps> = ({
                 borderBottom: `1px solid ${colors.border.default}`, // Only bottom and left create the visible arrow borders
                 borderLeft: `1px solid ${colors.border.default}`,
                 transform: "rotate(45deg)",
-                // We clip it so it doesn't overlap the rounded corners or content weirdly
-                // But simple rotation works if backgrounds match.
-                // Re-enforcing the background to cover the timeline line if it were behind (it isn't, but safety)
               },
             }}
           >
@@ -324,8 +317,6 @@ const PRComments: React.FC<PRCommentsProps> = ({
                   borderRadius: "6px",
                   backgroundColor: "transparent",
                 },
-                // CSS Overrides for the markdown content to ensure it fits our 'Premium' look perfectly
-                // We specifically ensure bg colors match our cards
                 "& .markdown-body": {
                   backgroundColor: "transparent",
                   color: colors.fg.default,
@@ -343,7 +334,6 @@ const PRComments: React.FC<PRCommentsProps> = ({
                 },
               }}
             >
-              {/* Render fetched HTML (from backend/GitHub API) directly */}
               <div
                 className="markdown-body"
                 dangerouslySetInnerHTML={{ __html: item.body }}
