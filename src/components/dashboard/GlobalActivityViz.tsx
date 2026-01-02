@@ -407,37 +407,31 @@ const GlobalActivityViz: React.FC = () => {
             ],
         };
     }, [inactiveStats]);
+    // 3. Get repositories grouped by their tier
+    const topReposByTier = useMemo(() => {
+        // If repos is not loaded yet, return empty structure
+        if (!repos || !Array.isArray(repos)) return { Gold: [], Silver: [], Bronze: [] };
 
-    // 3. Calculate Top Repositories by Score (Total Score from PRs)
-    const topRepos = useMemo(() => {
-        if (!Array.isArray(allPrs) || !repos) return [];
+        // Group repos by their tier field
+        const result: Record<string, Array<{ fullName: string; owner: string }>> = { Gold: [], Silver: [], Bronze: [] };
 
-        const repoScores = new Map<string, number>();
-
-        allPrs.forEach((pr) => {
-            if (pr && pr.repository && pr.score) {
-                const currentScore = repoScores.get(pr.repository) || 0;
-                repoScores.set(pr.repository, currentScore + parseFloat(pr.score));
+        repos.forEach((repo) => {
+            const tier = repo.tier;
+            if (tier && result[tier]) {
+                result[tier].push({
+                    fullName: repo.fullName,
+                    owner: repo.owner
+                });
             }
         });
 
-        // Convert to array and sort
-        return Array.from(repoScores.entries())
-            .map(([fullName, score]) => {
-                const repoMeta = repos.find((r) => r.fullName === fullName);
-                // Use a fallback for owner if metadata not found
-                const owner = repoMeta ? repoMeta.owner : fullName.split("/")[0];
-                const weight = repoMeta ? repoMeta.weight : "0";
-                return {
-                    fullName,
-                    owner,
-                    totalScore: score,
-                    weight,
-                };
-            })
-            .sort((a, b) => b.totalScore - a.totalScore)
-            .slice(0, 100);
-    }, [allPrs, repos]);
+        // Shuffle each tier's repos for variety
+        Object.keys(result).forEach((tier) => {
+            result[tier] = result[tier].sort(() => Math.random() - 0.5);
+        });
+
+        return result;
+    }, [repos]);
 
     if (isLoadingPRs || isLoadingStats) {
         return (
@@ -687,129 +681,159 @@ const GlobalActivityViz: React.FC = () => {
                     </Grid>
 
 
-                    {/* 2. Top Scored Repos (Smaller Card) - MOVED & RESIZED to md=4 */}
+                    {/* 2. Top Repos by Tier (3 Stacked Cards) */}
                     <Grid item xs={12} md={4}>
-                        <Card
-                            sx={{
-                                height: "100%",
-                                borderRadius: 3,
-                                border: "1px solid rgba(255, 255, 255, 0.1)",
-                                backgroundColor: "transparent",
-                                p: 3,
-                                display: "flex",
-                                flexDirection: "column",
-                            }}
-                            elevation={0}
-                        >
-                            <Typography
-                                variant="subtitle2"
-                                sx={{
-                                    color: "rgba(255, 255, 255, 0.4)",
-                                    mb: 2,
-                                    fontFamily: '"JetBrains Mono", monospace',
-                                    textAlign: "center",
-                                    fontSize: "0.75rem",
-                                    fontWeight: 600,
-                                    letterSpacing: "0.5px",
-                                    textTransform: "uppercase",
-                                }}
-                            >
-                                Top Scoring Repositories
-                            </Typography>
-
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    flexWrap: "wrap",
-                                    gap: 1.5,
-                                    justifyContent: "center",
-                                    alignContent: "flex-start",
-                                    flex: 1,
-                                }}
-                            >
-                                {topRepos.slice(0, 11).map((repo) => (
-                                    <Tooltip
-                                        key={repo.fullName}
-                                        title={`${repo.fullName} (Score: ${repo.totalScore.toFixed(0)})`}
-                                        arrow
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1, height: "100%" }}>
+                            {(["Gold", "Silver", "Bronze"] as const).map((tier) => {
+                                const tierRepos = topReposByTier[tier] || [];
+                                const displayedCount = Math.min(tierRepos.length, 9);
+                                const remainingCount = tierRepos.length - displayedCount;
+                                const tierColors: Record<string, string> = {
+                                    Gold: "#FFD700",
+                                    Silver: "#C0C0C0",
+                                    Bronze: "#CD7F32"
+                                };
+                                return (
+                                    <Card
+                                        key={tier}
+                                        sx={{
+                                            flex: 1,
+                                            borderRadius: 3,
+                                            border: "1px solid rgba(255, 255, 255, 0.1)",
+                                            backgroundColor: "transparent",
+                                            p: 1.5,
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            overflow: "visible",
+                                        }}
+                                        elevation={0}
                                     >
-                                        <Box
-                                            onClick={() =>
-                                                navigate(
-                                                    `/miners/repository?name=${encodeURIComponent(repo.fullName)}`,
-                                                )
-                                            }
+                                        <Typography
+                                            variant="subtitle2"
                                             sx={{
-                                                textDecoration: "none",
-                                                cursor: "pointer",
+                                                color: tierColors[tier],
+                                                mb: 1,
+                                                fontFamily: '"JetBrains Mono", monospace',
+                                                textAlign: "center",
+                                                fontSize: "0.7rem",
+                                                fontWeight: 600,
+                                                letterSpacing: "0.5px",
+                                                textTransform: "uppercase",
                                             }}
                                         >
-                                            <Box
-                                                component="img"
-                                                src={`https://avatars.githubusercontent.com/${repo.owner}`}
-                                                alt={repo.fullName}
-                                                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                                                    e.currentTarget.style.display = "none";
-                                                }}
-                                                sx={{
-                                                    width: 40,
-                                                    height: 40,
-                                                    borderRadius: "50%",
-                                                    border: "2px solid transparent",
-                                                    backgroundColor:
-                                                        repo.owner === "opentensor"
-                                                            ? "#ffffff"
-                                                            : repo.owner === "bitcoin"
-                                                                ? "#F7931A"
-                                                                : "transparent",
-                                                    transition: "all 0.2s",
-                                                    "&:hover": {
-                                                        transform: "scale(1.1)",
-                                                        borderColor: "#f78166",
-                                                        boxShadow: "0 0 8px rgba(247, 129, 102, 0.4)",
-                                                    },
-                                                }}
-                                            />
-                                        </Box>
-                                    </Tooltip>
-                                ))}
-                                {topRepos.length > 11 && (
-                                    <Tooltip title="View all top repositories" arrow>
+                                            {tier} Tier Repositories
+                                        </Typography>
+
                                         <Box
-                                            onClick={() => navigate("/top-repos")}
                                             sx={{
-                                                width: 40,
-                                                height: 40,
-                                                borderRadius: "50%",
-                                                backgroundColor: "rgba(255, 255, 255, 0.1)",
-                                                border: "1px solid rgba(255, 255, 255, 0.2)",
                                                 display: "flex",
-                                                alignItems: "center",
+                                                flexWrap: "nowrap",
                                                 justifyContent: "center",
-                                                cursor: "pointer",
-                                                transition: "all 0.2s",
-                                                "&:hover": {
-                                                    transform: "scale(1.1)",
-                                                    backgroundColor: "rgba(255, 255, 255, 0.15)",
-                                                    borderColor: "rgba(255, 255, 255, 0.3)",
-                                                },
+                                                alignItems: "center",
+                                                flex: 1,
+                                                overflow: "visible",
+                                                position: "relative",
+                                                zIndex: 2,
+                                                pl: "12px",
                                             }}
                                         >
-                                            <Typography
-                                                sx={{
-                                                    color: "rgba(255, 255, 255, 0.7)",
-                                                    fontSize: "0.75rem",
-                                                    fontFamily: '"JetBrains Mono", monospace',
-                                                    fontWeight: 600,
-                                                }}
-                                            >
-                                                +{topRepos.length - 11}
-                                            </Typography>
+                                            {tierRepos.slice(0, 9).map((repo: { fullName: string; owner: string }) => (
+                                                <Tooltip
+                                                    key={repo.fullName}
+                                                    title={repo.fullName}
+                                                    arrow
+                                                >
+                                                    <Box
+                                                        onClick={() =>
+                                                            navigate(
+                                                                `/miners/repository?name=${encodeURIComponent(repo.fullName)}`,
+                                                            )
+                                                        }
+                                                        sx={{
+                                                            textDecoration: "none",
+                                                            cursor: "pointer",
+                                                        }}
+                                                    >
+                                                        <Box
+                                                            component="img"
+                                                            src={`https://avatars.githubusercontent.com/${repo.owner}`}
+                                                            alt={repo.fullName}
+                                                            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                                                                e.currentTarget.style.display = "none";
+                                                            }}
+                                                            sx={{
+                                                                width: 42,
+                                                                height: 42,
+                                                                borderRadius: "50%",
+                                                                border: `2px solid ${tierColors[tier]}40`,
+                                                                marginLeft: "-12px",
+                                                                backgroundColor:
+                                                                    repo.owner === "opentensor"
+                                                                        ? "#ffffff"
+                                                                        : repo.owner === "bitcoin"
+                                                                            ? "#F7931A"
+                                                                            : "#161b22",
+                                                                transition: "all 0.2s",
+                                                                position: "relative",
+                                                                zIndex: 1,
+                                                                "&:hover": {
+                                                                    transform: "scale(1.2)",
+                                                                    borderColor: tierColors[tier],
+                                                                    boxShadow: `0 0 12px ${tierColors[tier]}60`,
+                                                                    zIndex: 100,
+                                                                },
+                                                            }}
+                                                        />
+                                                    </Box>
+                                                </Tooltip>
+                                            ))}
+                                            {remainingCount > 0 && (
+                                                <Tooltip title="View all repositories" arrow>
+                                                    <Box
+                                                        onClick={() => navigate("/top-repos")}
+                                                        sx={{
+                                                            width: 42,
+                                                            height: 42,
+                                                            minWidth: 42,
+                                                            minHeight: 42,
+                                                            flexShrink: 0,
+                                                            borderRadius: "50%",
+                                                            backgroundColor: "rgba(255, 255, 255, 0.1)",
+                                                            border: "2px solid #0d1117",
+                                                            marginLeft: "-12px",
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            justifyContent: "center",
+                                                            cursor: "pointer",
+                                                            transition: "all 0.2s",
+                                                            position: "relative",
+                                                            zIndex: 1,
+                                                            "&:hover": {
+                                                                transform: "scale(1.2)",
+                                                                backgroundColor: "rgba(255, 255, 255, 0.15)",
+                                                                borderColor: "rgba(255, 255, 255, 0.3)",
+                                                                zIndex: 100,
+                                                            },
+                                                        }}
+                                                    >
+                                                        <Typography
+                                                            sx={{
+                                                                color: "rgba(255, 255, 255, 0.7)",
+                                                                fontSize: "0.7rem",
+                                                                fontWeight: 600,
+                                                                fontFamily: '"JetBrains Mono", monospace',
+                                                            }}
+                                                        >
+                                                            +{tierRepos.length}
+                                                        </Typography>
+                                                    </Box>
+                                                </Tooltip>
+                                            )}
                                         </Box>
-                                    </Tooltip>
-                                )}
-                            </Box>
-                        </Card>
+                                    </Card>
+                                );
+                            })}
+                        </Box>
                     </Grid>
 
                     {/* 4. Tier Performance Stats - Resized to md=8 */}
