@@ -20,64 +20,53 @@ const TopReposPage: React.FC = () => {
     );
   };
 
-  // Process repo stats for TopRepositoriesTable
+  // Process repo stats for TopRepositoriesTable - show ALL repos
   const repoStats = useMemo(() => {
-    if (!allPRs || !reposWithWeights) return [];
+    if (!reposWithWeights) return [];
 
-    const statsMap = new Map<
+    // Create a map to store PR stats for each repo
+    const prStatsMap = new Map<
       string,
       {
-        repository: string;
         totalScore: number;
         totalPRs: number;
         uniqueMiners: Set<string>;
-        weight: number;
-        tier: string;
       }
     >();
 
-    allPRs.forEach((pr: CommitLog) => {
-      if (!pr || !pr.repository) return;
+    // Process PRs to calculate stats
+    if (allPRs) {
+      allPRs.forEach((pr: CommitLog) => {
+        if (!pr || !pr.repository) return;
 
-      const current = statsMap.get(pr.repository) || {
-        repository: pr.repository,
-        totalScore: 0,
-        totalPRs: 0,
-        uniqueMiners: new Set<string>(),
-        weight: 0,
-        tier: "",
+        const current = prStatsMap.get(pr.repository) || {
+          totalScore: 0,
+          totalPRs: 0,
+          uniqueMiners: new Set<string>(),
+        };
+
+        current.totalScore += parseFloat(pr.score || "0");
+        current.totalPRs += 1;
+        if (pr.author) {
+          current.uniqueMiners.add(pr.author);
+        }
+
+        prStatsMap.set(pr.repository, current);
+      });
+    }
+
+    // Build the final list from ALL repos
+    return reposWithWeights.map((repo) => {
+      const prStats = prStatsMap.get(repo.fullName);
+      return {
+        repository: repo.fullName,
+        totalScore: prStats?.totalScore || 0,
+        totalPRs: prStats?.totalPRs || 0,
+        uniqueMiners: prStats?.uniqueMiners || new Set<string>(),
+        weight: repo.weight ? parseFloat(String(repo.weight)) : 0,
+        tier: repo.tier || "",
       };
-
-      current.totalScore += parseFloat(pr.score || "0");
-      current.totalPRs += 1;
-      if (pr.author) {
-        current.uniqueMiners.add(pr.author);
-      }
-
-      statsMap.set(pr.repository, current);
-    });
-
-    // Add weight and tier information from repositories
-    const repoDataMap = new Map(
-      reposWithWeights.map((repo) => [
-        repo.fullName,
-        { weight: repo.weight, tier: repo.tier },
-      ]),
-    );
-
-    statsMap.forEach((stats, repoName) => {
-      const repoData = repoDataMap.get(repoName);
-      if (repoData) {
-        stats.weight = repoData.weight
-          ? parseFloat(String(repoData.weight))
-          : 0;
-        stats.tier = repoData.tier || "";
-      }
-    });
-
-    return Array.from(statsMap.values()).sort(
-      (a, b) => b.totalScore - a.totalScore,
-    );
+    }).sort((a, b) => b.totalScore - a.totalScore);
   }, [allPRs, reposWithWeights]);
 
   return (
