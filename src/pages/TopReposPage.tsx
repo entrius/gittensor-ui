@@ -9,7 +9,11 @@ import { CommitLog } from "../api/models/Dashboard";
 const TopReposPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const initialTierFilter = searchParams.get("tier") as "Gold" | "Silver" | "Bronze" | null;
+  const initialTierFilter = searchParams.get("tier") as
+    | "Gold"
+    | "Silver"
+    | "Bronze"
+    | null;
   const allMinerDataQuery = useAllMinerData();
   const allPRs = allMinerDataQuery?.data;
   const isLoadingPRs = allMinerDataQuery?.isLoading;
@@ -58,17 +62,19 @@ const TopReposPage: React.FC = () => {
     }
 
     // Build the final list from ALL repos
-    return reposWithWeights.map((repo) => {
-      const prStats = prStatsMap.get(repo.fullName);
-      return {
-        repository: repo.fullName,
-        totalScore: prStats?.totalScore || 0,
-        totalPRs: prStats?.totalPRs || 0,
-        uniqueMiners: prStats?.uniqueMiners || new Set<string>(),
-        weight: repo.weight ? parseFloat(String(repo.weight)) : 0,
-        tier: repo.tier || "",
-      };
-    }).sort((a, b) => b.totalScore - a.totalScore);
+    return reposWithWeights
+      .map((repo) => {
+        const prStats = prStatsMap.get(repo.fullName);
+        return {
+          repository: repo.fullName,
+          totalScore: prStats?.totalScore || 0,
+          totalPRs: prStats?.totalPRs || 0,
+          uniqueMiners: prStats?.uniqueMiners || new Set<string>(),
+          weight: repo.weight ? parseFloat(String(repo.weight)) : 0,
+          tier: repo.tier || "",
+        };
+      })
+      .sort((a, b) => b.totalScore - a.totalScore);
   }, [allPRs, reposWithWeights]);
 
   return (

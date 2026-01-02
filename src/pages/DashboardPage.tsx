@@ -7,7 +7,7 @@ import {
   KpiCard,
   LiveCommitLog,
   SEO,
-  GlobalActivityViz,
+  GlobalActivity,
 } from "../components";
 import theme from "../theme";
 import { useStats } from "../api";
@@ -70,7 +70,7 @@ const DashboardPage: React.FC = () => {
         >
           {/* Top Row: Global Activity Viz */}
           <Box sx={{ width: "100%" }}>
-            <GlobalActivityViz />
+            <GlobalActivity />
           </Box>
 
           {/* Charts and Table Section */}
