@@ -519,10 +519,10 @@ const LeaderboardCharts: React.FC = () => {
         sx={{
           borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
           display: "flex",
-          flexDirection: { xs: "column", md: "row" },
+          flexDirection: { xs: "column", lg: "row" },
           justifyContent: "space-between",
-          alignItems: { xs: "flex-start", md: "center" },
-          gap: { xs: 2, md: 0 },
+          alignItems: { xs: "flex-start", lg: "center" },
+          gap: { xs: 2, lg: 0 },
           p: 2,
         }}
       >
@@ -553,7 +553,7 @@ const LeaderboardCharts: React.FC = () => {
             gap: 2,
             alignItems: "center",
             flexWrap: "wrap",
-            width: { xs: "100%", md: "auto" },
+            width: { xs: "100%", lg: "auto" },
           }}
         >
           <Stack
