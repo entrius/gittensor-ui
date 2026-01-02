@@ -205,7 +205,12 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
                 isNextTier={isNextTier}
                 tooltipMessage={
                   isLocked
-                    ? getTooltipMessage(tier.name, tier.level, isNextTier, config)
+                    ? getTooltipMessage(
+                        tier.name,
+                        tier.level,
+                        isNextTier,
+                        config,
+                      )
                     : undefined
                 }
                 unlockProgress={unlockProgress}

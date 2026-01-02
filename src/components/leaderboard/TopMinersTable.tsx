@@ -41,6 +41,7 @@ interface MinerStats {
   rank?: number;
   uniqueReposCount?: number;
   credibility?: number;
+  currentTier?: string;
 }
 
 type SortColumn =
@@ -743,10 +744,12 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                   }
                   sx={{
                     cursor: "pointer",
+                    opacity: miner.currentTier ? 1 : 0.5,
                     "&:hover": {
                       backgroundColor: "rgba(255, 255, 255, 0.05)",
+                      opacity: 1,
                     },
-                    transition: "background-color 0.2s",
+                    transition: "all 0.2s",
                   }}
                 >
                   <TableCell sx={{ ...bodyCellStyle, width: "80px" }}>

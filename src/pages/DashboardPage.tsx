@@ -7,7 +7,7 @@ import {
   KpiCard,
   LiveCommitLog,
   SEO,
-  GlobalActivityViz,
+  GlobalActivity,
 } from "../components";
 import theme from "../theme";
 import { useStats } from "../api";
@@ -16,7 +16,7 @@ const DashboardPage: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
   const isLargeScreen = useMediaQuery(theme.breakpoints.up("xl"));
-  const showSidebarRight = useMediaQuery(theme.breakpoints.up("lg")); // Only show sidebar on right for large screens
+  const showSidebarRight = useMediaQuery(theme.breakpoints.up("xl")); // Only show sidebar on right for extra large screens
 
   const { data: stats } = useStats();
 
@@ -51,6 +51,7 @@ const DashboardPage: React.FC = () => {
             gap: { xs: 2, sm: 1.5 },
             minHeight: 0,
             overflow: showSidebarRight ? "auto" : "visible",
+            minWidth: 0, // Add minWidth to fix flex overflow issues
             pr: showSidebarRight ? 1 : 0,
             "&::-webkit-scrollbar": {
               width: "8px",
@@ -69,10 +70,46 @@ const DashboardPage: React.FC = () => {
         >
           {/* Top Row: Global Activity Viz */}
           <Box sx={{ width: "100%" }}>
-            <GlobalActivityViz />
+            <GlobalActivity />
           </Box>
 
-          {/* Middle Row: 4 KPI Cards - Responsive Grid */}
+          {/* Charts and Table Section */}
+          <Box
+            sx={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              gap: 1.5,
+              minHeight: isMobile ? "600px" : 0,
+              flexShrink: 0,
+            }}
+          >
+            {/* Leaderboard Charts */}
+            <Box
+              sx={{
+                width: "100%",
+                height: isMobile ? "500px" : "550px",
+                flexShrink: 0,
+                minHeight: isMobile ? "500px" : "550px",
+              }}
+            >
+              <LeaderboardCharts />
+            </Box>
+
+            {/* Table */}
+            <Box
+              sx={{
+                width: "100%",
+                minHeight: isMobile ? "400px" : 0,
+                height: isMobile ? "400px" : "auto",
+                overflow: "hidden",
+              }}
+            >
+              <RepositoriesTable />
+            </Box>
+          </Box>
+
+          {/* KPI Cards - Moved Below Charts */}
           <Grid container spacing={{ xs: 1.5, md: 2 }} sx={{ flexShrink: 0 }}>
             <Grid item xs={12} sm={6} md={6} lg={6} xl={3}>
               <KpiCard
@@ -108,41 +145,6 @@ const DashboardPage: React.FC = () => {
               />
             </Grid>
           </Grid>
-          {/* Bottom Section: Chart and Table Stacked */}
-          <Box
-            sx={{
-              width: "100%",
-              display: "flex",
-              flexDirection: "column",
-              gap: 1.5,
-              minHeight: isMobile ? "600px" : 0,
-              flexShrink: 0,
-            }}
-          >
-            {/* Leaderboard Charts */}
-            <Box
-              sx={{
-                width: "100%",
-                height: isMobile ? "500px" : "550px",
-                flexShrink: 0,
-                minHeight: isMobile ? "500px" : "550px",
-              }}
-            >
-              <LeaderboardCharts />
-            </Box>
-
-            {/* Table */}
-            <Box
-              sx={{
-                width: "100%",
-                minHeight: isMobile ? "400px" : 0,
-                height: isMobile ? "400px" : "auto",
-                overflow: "hidden",
-              }}
-            >
-              <RepositoriesTable />
-            </Box>
-          </Box>
         </Box>
 
         {/* Right Sidebar - Live Commit Log */}

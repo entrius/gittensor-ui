@@ -19,15 +19,18 @@ const RepositoryContributorsTable: React.FC<
   // State for how many items to show. Minimum 7.
   const [visibleCount, setVisibleCount] = useState(7);
 
-  // Build githubId -> miner rank map
-  const minerRankMap = useMemo(() => {
-    const map = new Map<string, number>();
+  // Build githubId -> miner rank/tier map
+  const minerDataMap = useMemo(() => {
+    const map = new Map<string, { rank: number; tier?: string }>();
     if (Array.isArray(allMinersStats)) {
       const sorted = [...allMinersStats].sort(
         (a, b) => Number(b.totalScore) - Number(a.totalScore),
       );
       sorted.forEach((miner, index) => {
-        map.set(miner.githubId, index + 1);
+        map.set(miner.githubId, {
+          rank: index + 1,
+          tier: miner.currentTier,
+        });
       });
     }
     return map;
@@ -158,7 +161,9 @@ const RepositoryContributorsTable: React.FC<
       {/* Rows */}
       <Box sx={{ display: "flex", flexDirection: "column" }}>
         {displayedContributors.map((contributor, index) => {
-          const minerRank = minerRankMap.get(contributor.githubId);
+          const minerData = minerDataMap.get(contributor.githubId);
+          const minerRank = minerData?.rank;
+          const isInactive = !minerData?.tier;
 
           return (
             <Box
@@ -171,10 +176,12 @@ const RepositoryContributorsTable: React.FC<
                 py: 1,
                 borderBottom: "1px solid rgba(255,255,255,0.05)",
                 alignItems: "center",
+                opacity: isInactive ? 0.5 : 1,
                 "&:hover": {
                   backgroundColor: "rgba(255,255,255,0.04)",
+                  opacity: 1,
                 },
-                transition: "background-color 0.1s",
+                transition: "all 0.1s",
               }}
             >
               {/* Rank */}

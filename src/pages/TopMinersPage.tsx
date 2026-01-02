@@ -31,6 +31,7 @@ const TopMinersPage: React.FC = () => {
       hotkey: stat.hotkey || "N/A",
       uniqueReposCount: Number(stat.uniqueReposCount) || 0,
       credibility: Number(stat.credibility) || 0,
+      currentTier: stat.currentTier,
     }));
   }, [allMinersStats]);
 

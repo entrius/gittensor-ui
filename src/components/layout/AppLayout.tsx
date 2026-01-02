@@ -1,5 +1,12 @@
 import React, { Suspense, useRef, useState } from "react";
-import { Box, useMediaQuery, Drawer, IconButton, AppBar, Toolbar } from "@mui/material";
+import {
+  Box,
+  useMediaQuery,
+  Drawer,
+  IconButton,
+  AppBar,
+  Toolbar,
+} from "@mui/material";
 import { Outlet } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 import { LoadingPage } from "../../pages";
@@ -55,7 +62,8 @@ const AppLayout: React.FC = () => {
               style={{
                 height: "40px",
                 width: "auto",
-                filter: "brightness(0) invert(1) drop-shadow(0 0 6px rgba(255, 255, 255, 0.8))",
+                filter:
+                  "brightness(0) invert(1) drop-shadow(0 0 6px rgba(255, 255, 255, 0.8))",
               }}
             />
           </Toolbar>
@@ -77,7 +85,8 @@ const AppLayout: React.FC = () => {
               boxSizing: "border-box",
               width: 280,
               backgroundColor: "#000000",
-              backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
+              backgroundImage:
+                "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
               borderRight: "1px solid rgba(255, 255, 255, 0.1)",
             },
             "& .MuiBackdrop-root": {
@@ -91,8 +100,8 @@ const AppLayout: React.FC = () => {
 
       {/* Desktop Sidebar - Hidden on mobile, visible on larger screens */}
       {!isMobile && (
-        <Box 
-          sx={{ 
+        <Box
+          sx={{
             flexShrink: 0,
             width: "240px",
             minWidth: "240px",

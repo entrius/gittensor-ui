@@ -144,7 +144,13 @@ const LanguageWeightsTable: React.FC = () => {
         borderWidth: 1,
         textStyle: { color: "#fff", fontFamily: "JetBrains Mono" },
       },
-      grid: { left: "3%", right: "3%", bottom: "10%", top: "20%", containLabel: true },
+      grid: {
+        left: "3%",
+        right: "3%",
+        bottom: "10%",
+        top: "20%",
+        containLabel: true,
+      },
       xAxis: {
         type: "category",
         data: xAxisData,
@@ -170,7 +176,10 @@ const LanguageWeightsTable: React.FC = () => {
           itemStyle: {
             color: {
               type: "linear",
-              x: 0, y: 0, x2: 0, y2: 1,
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
               colorStops: [
                 { offset: 0, color: "#3f51b5" },
                 { offset: 1, color: "#2196f3" },
@@ -186,7 +195,10 @@ const LanguageWeightsTable: React.FC = () => {
   // Scroll to top when rows per page changes
   useEffect(() => {
     if (containerRef.current) {
-      containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      containerRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }
   }, [rowsPerPage]);
 
