@@ -8,10 +8,12 @@ import {
   PRFilesChanged,
   BackButton,
   SEO,
+  PRComments,
 } from "../components";
 import { usePullRequestDetails } from "../api";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CodeIcon from "@mui/icons-material/Code";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 
 const PRDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -139,6 +141,15 @@ const PRDetailsPage: React.FC = () => {
                   icon={<CodeIcon sx={{ fontSize: 16, mb: 0, mr: 1 }} />}
                   iconPosition="start"
                 />
+                <Tab
+                  label="Conversation"
+                  icon={
+                    <ChatBubbleOutlineIcon
+                      sx={{ fontSize: 16, mb: 0, mr: 1 }}
+                    />
+                  }
+                  iconPosition="start"
+                />
               </Tabs>
             </Box>
 
@@ -155,6 +166,13 @@ const PRDetailsPage: React.FC = () => {
                 <PRFilesChanged
                   repository={repository}
                   pullRequestNumber={parseInt(pullRequestNumber)}
+                />
+              )}
+              {tabValue === 2 && (
+                <PRComments
+                  repository={repository}
+                  pullRequestNumber={parseInt(pullRequestNumber)}
+                  prDetails={prDetails}
                 />
               )}
             </Box>

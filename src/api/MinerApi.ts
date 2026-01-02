@@ -23,7 +23,6 @@ export const useMinersQuery = <TResponse = void, TSelect = TResponse>(
 
 /**
  * Get all pull requests for a specific miner
- * Uses the optimized /miners/:githubId/prs endpoint
  */
 export const useMinerPRs = (githubId: string) =>
   useMinersQuery<CommitLog[]>("useMinerPRs", `/${githubId}/prs`);
@@ -37,7 +36,6 @@ export const useMinerStats = (githubId: string) =>
 
 /**
  * Get all miners' PR data
- * Uses the optimized /miners/all/prs endpoint
  */
 export const useAllMinerData = () =>
   useMinersQuery<CommitLog[]>("useAllMinerData", "/all/prs");
@@ -45,7 +43,6 @@ export const useAllMinerData = () =>
 /**
  * Get all miners' pre-computed stats for leaderboards
  * Much faster than aggregating PRs - uses the MinerEvaluations table
- * Max 256 miners in the subnet
  */
 export const useAllMinerStats = () =>
   useMinersQuery<MinerEvaluation[]>(
@@ -56,14 +53,12 @@ export const useAllMinerStats = () =>
 
 /**
  * Get GitHub profile data for a specific miner
- * Uses the /miners/:githubId/github endpoint
  */
 export const useMinerGithubData = (githubId: string) =>
   useMinersQuery<GithubMinerData>("useMinerGithubData", `/${githubId}/github`);
 
 /**
  * Get detailed information for a specific pull request
- * Uses the /miners/pr endpoint with repo and number query parameters
  */
 export const usePullRequestDetails = (repo: string, number: number) =>
   useMinersQuery<PullRequestDetails>(
@@ -74,8 +69,16 @@ export const usePullRequestDetails = (repo: string, number: number) =>
   );
 
 /**
+ * Get comments for a specific pull request
+ */
+export const usePullRequestComments = (repo: string, number: number) =>
+  useMinersQuery<any[]>("usePullRequestComments", "/pr/comments", undefined, {
+    repo,
+    number,
+  });
+
+/**
  * Get pull requests for a specific repository filtered by state
- * Uses the /miners/repo/prs endpoint
  */
 export const useRepositoryPRs = (repo: string, state?: string) =>
   useMinersQuery<CommitLog[]>("useRepositoryPRs", "/repo/prs", undefined, {
@@ -85,7 +88,6 @@ export const useRepositoryPRs = (repo: string, state?: string) =>
 
 /**
  * Get all issues for a specific repository
- * Uses the /miners/repo/issues endpoint
  */
 export const useRepositoryIssues = (repo: string) =>
   useMinersQuery<RepositoryIssue[]>(
