@@ -2,10 +2,18 @@ import React, { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Box, Tabs, Tab, CircularProgress, Typography } from "@mui/material";
 import { Page } from "../components/layout";
-import { PRDetailsCard, PRHeader, PRFilesChanged, BackButton, SEO } from "../components";
+import {
+  PRDetailsCard,
+  PRHeader,
+  PRFilesChanged,
+  BackButton,
+  SEO,
+  PRComments,
+} from "../components";
 import { usePullRequestDetails } from "../api";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CodeIcon from "@mui/icons-material/Code";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 
 const PRDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -22,7 +30,10 @@ const PRDetailsPage: React.FC = () => {
     return null;
   }
 
-  const { data: prDetails, isLoading } = usePullRequestDetails(repository, parseInt(pullRequestNumber));
+  const { data: prDetails, isLoading } = usePullRequestDetails(
+    repository,
+    parseInt(pullRequestNumber),
+  );
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -37,12 +48,30 @@ const PRDetailsPage: React.FC = () => {
       />
 
       {isLoading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh" }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "50vh",
+          }}
+        >
           <CircularProgress />
         </Box>
       ) : !prDetails ? (
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh", flexDirection: "column", gap: 2 }}>
-          <Typography variant="h6" color="error">PR not found</Typography>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "50vh",
+            flexDirection: "column",
+            gap: 2,
+          }}
+        >
+          <Typography variant="h6" color="error">
+            PR not found
+          </Typography>
           <BackButton to="/top-prs" label="Back to Top PRs" />
         </Box>
       ) : (
@@ -84,7 +113,8 @@ const PRDetailsPage: React.FC = () => {
                 sx={{
                   "& .MuiTab-root": {
                     color: "#8b949e",
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+                    fontFamily:
+                      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
                     textTransform: "none",
                     fontWeight: 500,
                     minHeight: "48px",
@@ -111,6 +141,15 @@ const PRDetailsPage: React.FC = () => {
                   icon={<CodeIcon sx={{ fontSize: 16, mb: 0, mr: 1 }} />}
                   iconPosition="start"
                 />
+                <Tab
+                  label="Conversation"
+                  icon={
+                    <ChatBubbleOutlineIcon
+                      sx={{ fontSize: 16, mb: 0, mr: 1 }}
+                    />
+                  }
+                  iconPosition="start"
+                />
               </Tabs>
             </Box>
 
@@ -127,6 +166,13 @@ const PRDetailsPage: React.FC = () => {
                 <PRFilesChanged
                   repository={repository}
                   pullRequestNumber={parseInt(pullRequestNumber)}
+                />
+              )}
+              {tabValue === 2 && (
+                <PRComments
+                  repository={repository}
+                  pullRequestNumber={parseInt(pullRequestNumber)}
+                  prDetails={prDetails}
                 />
               )}
             </Box>

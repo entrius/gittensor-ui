@@ -268,7 +268,11 @@ const LiveCommitLog: React.FC = () => {
                   <Box
                     key={entryId}
                     ref={isLastItem ? loadMoreRef : null}
-                    onClick={() => navigate(`/miners/pr?repo=${entry.repository}&number=${entry.pullRequestNumber}`)}
+                    onClick={() =>
+                      navigate(
+                        `/miners/pr?repo=${entry.repository}&number=${entry.pullRequestNumber}`,
+                      )
+                    }
                     sx={{
                       p: isMobile ? 0.75 : isTablet ? 1.25 : 1,
                       borderRadius: 3,
@@ -334,13 +338,18 @@ const LiveCommitLog: React.FC = () => {
                           flex={1}
                         >
                           <Avatar
-                            src={`https://avatars.githubusercontent.com/${entry.repository.split('/')[0]}`}
-                            alt={entry.repository.split('/')[0]}
+                            src={`https://avatars.githubusercontent.com/${entry.repository.split("/")[0]}`}
+                            alt={entry.repository.split("/")[0]}
                             sx={{
                               width: isMobile ? 14 : isTablet ? 18 : 16,
                               height: isMobile ? 14 : isTablet ? 18 : 16,
                               border: "1px solid rgba(255, 255, 255, 0.2)",
-                              backgroundColor: entry.repository.split('/')[0] === 'opentensor' ? '#ffffff' : entry.repository.split('/')[0] === 'bitcoin' ? '#F7931A' : 'transparent',
+                              backgroundColor:
+                                entry.repository.split("/")[0] === "opentensor"
+                                  ? "#ffffff"
+                                  : entry.repository.split("/")[0] === "bitcoin"
+                                    ? "#F7931A"
+                                    : "transparent",
                               flexShrink: 0,
                             }}
                           />
@@ -444,7 +453,10 @@ const LiveCommitLog: React.FC = () => {
                               fontFamily: '"JetBrains Mono", monospace',
                             }}
                           >
-                            {dayjs(entry.mergedAt).utc().format("MMM D, h:mm A")} UTC
+                            {dayjs(entry.mergedAt)
+                              .utc()
+                              .format("MMM D, h:mm A")}{" "}
+                            UTC
                           </Typography>
                         ) : (
                           <Chip
@@ -452,10 +464,17 @@ const LiveCommitLog: React.FC = () => {
                             size="small"
                             sx={{
                               height: isMobile ? 16 : isTablet ? 18 : 16,
-                              fontSize: isMobile ? "0.55rem" : isTablet ? "0.6rem" : "0.58rem",
+                              fontSize: isMobile
+                                ? "0.55rem"
+                                : isTablet
+                                  ? "0.6rem"
+                                  : "0.58rem",
                               fontFamily: '"JetBrains Mono", monospace',
                               fontWeight: 600,
-                              backgroundColor: alpha(getPRStatusChip(entry).color, 0.2),
+                              backgroundColor: alpha(
+                                getPRStatusChip(entry).color,
+                                0.2,
+                              ),
                               color: getPRStatusChip(entry).color,
                               border: `1px solid ${alpha(getPRStatusChip(entry).color, 0.3)}`,
                               "& .MuiChip-label": {

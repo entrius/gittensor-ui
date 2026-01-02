@@ -1,6 +1,8 @@
-export { default as MinerScoreCard } from "./MinerScoreCard";
+export { default as CredibilityChart } from "./CredibilityChart";
+export { default as MinerActivity } from "./MinerActivity";
 export { default as MinerPRsTable } from "./MinerPRsTable";
 export { default as MinerRepositoriesTable } from "./MinerRepositoriesTable";
-export { default as MinerActivityViz } from "./MinerActivityViz";
+export { default as MinerScoreCard } from "./MinerScoreCard";
 export { default as MinerTierPerformance } from "./MinerTierPerformance";
-
+export { default as PerformanceRadar } from "./PerformanceRadar";
+export { default as TrustBadge, getRiskAssessment } from "./TrustBadge";

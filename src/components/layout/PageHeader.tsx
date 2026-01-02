@@ -42,7 +42,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                 </Link>
               ) : (
                 <Typography key={breadcrumb.text}>{breadcrumb.text}</Typography>
-              )
+              ),
             )}
         </Breadcrumbs>
       )}

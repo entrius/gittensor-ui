@@ -4,7 +4,7 @@ import { Box } from "@mui/material";
 import { Page } from "../components/layout";
 import {
   MinerScoreCard,
-  MinerActivityViz,
+  MinerActivity,
   MinerRepositoriesTable,
   MinerPRsTable,
   MinerTierPerformance,
@@ -56,7 +56,7 @@ const MinerDetailsPage: React.FC = () => {
           <MinerScoreCard githubId={githubId} />
 
           {/* Activity Visualization */}
-          <MinerActivityViz githubId={githubId} />
+          <MinerActivity githubId={githubId} />
 
           {/* Tier Performance */}
           <MinerTierPerformance githubId={githubId} />

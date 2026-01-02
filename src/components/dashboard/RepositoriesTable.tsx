@@ -566,7 +566,11 @@ const RepositoriesTable: React.FC = () => {
                             <Typography
                               variant="body2"
                               fontWeight="medium"
-                              onClick={() => navigate(`/miners/repository?name=${repo.repositoryFullName}`)}
+                              onClick={() =>
+                                navigate(
+                                  `/miners/repository?name=${repo.repositoryFullName}`,
+                                )
+                              }
                               sx={{
                                 color: isInactive
                                   ? "error.dark"
