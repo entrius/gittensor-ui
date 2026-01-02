@@ -54,6 +54,7 @@ interface TopRepositoriesTableProps {
   repositories: RepoStats[];
   isLoading?: boolean;
   onSelectRepository: (repositoryFullName: string) => void;
+  initialTierFilter?: "Gold" | "Silver" | "Bronze";
 }
 
 // Utility function to truncate text
@@ -66,6 +67,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   repositories,
   isLoading,
   onSelectRepository,
+  initialTierFilter,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showChart, setShowChart] = useState(false);
@@ -75,7 +77,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [tierFilter, setTierFilter] = useState<
     "all" | "Gold" | "Silver" | "Bronze"
-  >("all");
+  >(initialTierFilter || "all");
   const [useLogScale, setUseLogScale] = useState(true);
   const cardRef = useRef<HTMLDivElement>(null);
 

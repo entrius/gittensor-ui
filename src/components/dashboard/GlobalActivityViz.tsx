@@ -788,9 +788,9 @@ const GlobalActivityViz: React.FC = () => {
                                                 </Tooltip>
                                             ))}
                                             {remainingCount > 0 && (
-                                                <Tooltip title="View all repositories" arrow>
+                                                <Tooltip title={`View all ${tier} tier repositories`} arrow>
                                                     <Box
-                                                        onClick={() => navigate("/top-repos")}
+                                                        onClick={() => navigate(`/top-repos?tier=${tier}`)}
                                                         sx={{
                                                             width: 42,
                                                             height: 42,

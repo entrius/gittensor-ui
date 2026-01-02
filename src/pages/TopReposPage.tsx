@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Box, Card } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Page } from "../components/layout";
 import { TopRepositoriesTable, SEO } from "../components";
 import { useAllMinerData, useReposAndWeights } from "../api";
@@ -8,6 +8,8 @@ import { CommitLog } from "../api/models/Dashboard";
 
 const TopReposPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialTierFilter = searchParams.get("tier") as "Gold" | "Silver" | "Bronze" | null;
   const allMinerDataQuery = useAllMinerData();
   const allPRs = allMinerDataQuery?.data;
   const isLoadingPRs = allMinerDataQuery?.isLoading;
@@ -99,6 +101,7 @@ const TopReposPage: React.FC = () => {
               repositories={repoStats}
               isLoading={isLoadingPRs || isLoadingRepos}
               onSelectRepository={handleSelectRepository}
+              initialTierFilter={initialTierFilter || undefined}
             />
           </Card>
         </Box>
