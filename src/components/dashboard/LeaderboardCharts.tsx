@@ -519,21 +519,26 @@ const LeaderboardCharts: React.FC = () => {
         sx={{
           borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
           display: "flex",
+          flexDirection: { xs: "column", md: "row" },
           justifyContent: "space-between",
-          alignItems: "center",
-          px: 2,
+          alignItems: { xs: "flex-start", md: "center" },
+          gap: { xs: 2, md: 0 },
+          p: 2,
         }}
       >
         <Tabs
           value={activeTab}
           onChange={(_, newValue) => setActiveTab(newValue)}
           sx={{
+            minHeight: "auto",
             "& .MuiTab-root": {
               color: "rgba(255, 255, 255, 0.6)",
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: "0.85rem",
               fontWeight: 500,
               textTransform: "none",
+              minHeight: "auto",
+              py: 1,
               "&.Mui-selected": { color: "#fff" },
             },
             "& .MuiTabs-indicator": { backgroundColor: "primary.main" },
@@ -542,8 +547,21 @@ const LeaderboardCharts: React.FC = () => {
           <Tab label="Top Pull Requests" />
           <Tab label="Top Repositories" />
         </Tabs>
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-          <Stack direction="row" spacing={1}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            alignItems: "center",
+            flexWrap: "wrap",
+            width: { xs: "100%", md: "auto" },
+          }}
+        >
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ flexWrap: "wrap", gap: 1 }}
+            useFlexGap
+          >
             <TierFilterButton label="All" value="all" color="#8b949e" />
             <TierFilterButton label="Gold" value="Gold" color="#FFD700" />
             <TierFilterButton label="Silver" value="Silver" color="#C0C0C0" />
@@ -572,11 +590,13 @@ const LeaderboardCharts: React.FC = () => {
                   fontFamily: "JetBrains Mono",
                   fontSize: "0.8rem",
                   color: "rgba(255, 255, 255, 0.7)",
+                  whiteSpace: "nowrap",
                 }}
               >
                 Log Scale
               </Typography>
             }
+            sx={{ ml: "auto" }}
           />
         </Box>
       </Box>

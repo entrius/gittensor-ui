@@ -21,6 +21,203 @@ import { subDays, format } from "date-fns";
 import PublicIcon from "@mui/icons-material/Public";
 import CodeOffIcon from "@mui/icons-material/CodeOff";
 
+const TierRepoCard: React.FC<{
+    tier: "Gold" | "Silver" | "Bronze";
+    repos: Array<{ fullName: string; owner: string }>;
+}> = ({ tier, repos }) => {
+    const navigate = useNavigate();
+    const containerRef = React.useRef<HTMLDivElement>(null);
+    const [maxItems, setMaxItems] = React.useState(9);
+
+    React.useLayoutEffect(() => {
+        if (!containerRef.current) return;
+
+        const updateMaxItems = () => {
+            if (!containerRef.current) return;
+            // Calculate width available for PFPs
+            // 30px per item (effective width due to overlap) + 12px initial padding
+            const width = containerRef.current.offsetWidth;
+            const padding = 24; // approx padding/safety
+            // Item width is 42px, but they overlap by 12px, so effective width is 30px per added item.
+            // First item takes 42px.
+            // Formula: 42 + (N-1)*30 <= Width
+            // (N-1)*30 <= Width - 42
+            // N-1 <= (Width - 42) / 30
+            // N <= ((Width - 42) / 30) + 1
+
+            // Simplified heuristic: floor((Width - padding) / 30)
+            // We want between 5 and 20
+            const calculated = Math.floor((width - padding) / 30);
+            const clamped = Math.max(5, Math.min(20, calculated));
+
+            setMaxItems(clamped);
+        };
+
+        const observer = new ResizeObserver(updateMaxItems);
+        observer.observe(containerRef.current);
+
+        // Initial call
+        updateMaxItems();
+
+        return () => observer.disconnect();
+    }, []);
+
+    const tierColors: Record<string, string> = {
+        Gold: "#FFD700",
+        Silver: "#C0C0C0",
+        Bronze: "#CD7F32"
+    };
+
+    // Calculate display items
+    // We reserve 1 slot for the overflow indicator if we have more items than max
+    const showOverflow = repos.length > maxItems;
+    const effectiveLimit = showOverflow ? maxItems - 1 : maxItems;
+    // Ensure we don't try to slice more than we have, though slice handles it
+    const displayedRepos = repos.slice(0, effectiveLimit);
+    const remainingCount = repos.length - displayedRepos.length;
+
+    return (
+        <Card
+            sx={{
+                flex: 1,
+                borderRadius: 3,
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                backgroundColor: "transparent",
+                p: 1.5,
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden", // Ensure clean clipping
+            }}
+            elevation={0}
+        >
+            <Typography
+                variant="subtitle2"
+                sx={{
+                    color: tierColors[tier],
+                    mb: 1,
+                    fontFamily: '"JetBrains Mono", monospace',
+                    textAlign: "center",
+                    fontSize: "0.7rem",
+                    fontWeight: 600,
+                    letterSpacing: "0.5px",
+                    textTransform: "uppercase",
+                }}
+            >
+                {tier} Tier Repositories
+            </Typography>
+
+            <Box
+                ref={containerRef}
+                sx={{
+                    display: "flex",
+                    flexWrap: "nowrap",
+                    justifyContent: "center", // Centered as requested
+                    alignItems: "center",
+                    flex: 1,
+                    overflow: "hidden", // Hide actual overflow
+                    position: "relative",
+                    zIndex: 2,
+                    pl: "12px", // Initial padding for first item to not be cut off if we were left aligned, 
+                    // but for center alignment, this acts as a spacer for the visual stack overlap offset
+                }}
+            >
+                {displayedRepos.map((repo) => (
+                    <Tooltip
+                        key={repo.fullName}
+                        title={repo.fullName}
+                        arrow
+                    >
+                        <Box
+                            onClick={() =>
+                                navigate(
+                                    `/miners/repository?name=${encodeURIComponent(repo.fullName)}`,
+                                )
+                            }
+                            sx={{
+                                textDecoration: "none",
+                                cursor: "pointer",
+                            }}
+                        >
+                            <Box
+                                component="img"
+                                src={`https://avatars.githubusercontent.com/${repo.owner}`}
+                                alt={repo.fullName}
+                                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                                    e.currentTarget.style.display = "none";
+                                }}
+                                sx={{
+                                    width: 42,
+                                    height: 42,
+                                    borderRadius: "50%",
+                                    border: `2px solid ${tierColors[tier]}40`,
+                                    marginLeft: "-12px",
+                                    backgroundColor:
+                                        repo.owner === "opentensor"
+                                            ? "#ffffff"
+                                            : repo.owner === "bitcoin"
+                                                ? "#F7931A"
+                                                : "#161b22",
+                                    transition: "all 0.2s",
+                                    position: "relative",
+                                    zIndex: 1,
+                                    "&:hover": {
+                                        transform: "scale(1.2)",
+                                        borderColor: tierColors[tier],
+                                        boxShadow: `0 0 12px ${tierColors[tier]}60`,
+                                        zIndex: 100,
+                                    },
+                                }}
+                            />
+                        </Box>
+                    </Tooltip>
+                ))}
+                {remainingCount > 0 && (
+                    <Tooltip title={`View all ${tier} tier repositories`} arrow>
+                        <Box
+                            onClick={() => navigate(`/top-repos?tier=${tier}`)}
+                            sx={{
+                                width: 42,
+                                height: 42,
+                                minWidth: 42,
+                                minHeight: 42,
+                                flexShrink: 0,
+                                borderRadius: "50%",
+                                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                                border: "2px solid #0d1117",
+                                marginLeft: "-12px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer",
+                                transition: "all 0.2s",
+                                position: "relative",
+                                zIndex: 1,
+                                "&:hover": {
+                                    transform: "scale(1.2)",
+                                    backgroundColor: "rgba(255, 255, 255, 0.15)",
+                                    borderColor: "rgba(255, 255, 255, 0.3)",
+                                    zIndex: 100,
+                                },
+                            }}
+                        >
+                            <Typography
+                                sx={{
+                                    color: "rgba(255, 255, 255, 0.7)",
+                                    fontSize: "0.7rem",
+                                    fontWeight: 600,
+                                    fontFamily: '"JetBrains Mono", monospace',
+                                }}
+                            >
+                                +{remainingCount}
+                            </Typography>
+                        </Box>
+                    </Tooltip>
+                )}
+            </Box>
+        </Card>
+    );
+};
+
 const GlobalActivityViz: React.FC = () => {
     const navigate = useNavigate();
     // We use all miner stats for aggregation
@@ -528,7 +725,7 @@ const GlobalActivityViz: React.FC = () => {
             ) : (
                 <Grid container spacing={2}>
                     {/* 1. Heatmap Section (Large Card) */}
-                    <Grid item xs={12} md={7}>
+                    <Grid item xs={12} lg={7}>
                         <Card
                             sx={{
                                 height: "100%",
@@ -600,10 +797,10 @@ const GlobalActivityViz: React.FC = () => {
                         </Card>
                     </Grid>
 
-                    {/* 3. Combined Active & Candidate Stats - MOVED & RESIZED to md=5 */}
-                    <Grid item xs={12} md={5}>
+                    {/* 3. Combined Active & Candidate Stats - MOVED & RESIZED to lg=5 */}
+                    <Grid item xs={12} lg={5}>
                         <Card
-                            sx={{
+                            sx={(theme) => ({
                                 height: "100%",
                                 borderRadius: 3,
                                 border: "1px solid rgba(255, 255, 255, 0.1)",
@@ -611,10 +808,16 @@ const GlobalActivityViz: React.FC = () => {
                                 p: 3,
                                 display: "flex",
                                 flexDirection: "column",
-                            }}
+                                // Targeted scaling for this specific card
+
+                                // Targeted responsive padding for different breakpoints
+                                [theme.breakpoints.between("lg", "xl")]: {
+                                    padding: "16px", // Reduced padding from default 24px (theme.spacing(3))
+                                }
+                            })}
                             elevation={0}
                         >
-                            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, flex: 1 }}>
+                            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: { xs: 3, lg: 1.5, xl: 3 }, flex: 1 }}>
                                 {/* Active Section */}
                                 <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
                                     <Typography sx={{ color: "#10b981", fontSize: "0.85rem", fontWeight: 700, fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", textAlign: 'center', mb: 1 }}>
@@ -682,162 +885,30 @@ const GlobalActivityViz: React.FC = () => {
 
 
                     {/* 2. Top Repos by Tier (3 Stacked Cards) */}
-                    <Grid item xs={12} md={4}>
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1, height: "100%" }}>
-                            {(["Gold", "Silver", "Bronze"] as const).map((tier) => {
-                                const tierRepos = topReposByTier[tier] || [];
-                                const displayedCount = Math.min(tierRepos.length, 9);
-                                const remainingCount = tierRepos.length - displayedCount;
-                                const tierColors: Record<string, string> = {
-                                    Gold: "#FFD700",
-                                    Silver: "#C0C0C0",
-                                    Bronze: "#CD7F32"
-                                };
-                                return (
-                                    <Card
-                                        key={tier}
-                                        sx={{
-                                            flex: 1,
-                                            borderRadius: 3,
-                                            border: "1px solid rgba(255, 255, 255, 0.1)",
-                                            backgroundColor: "transparent",
-                                            p: 1.5,
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            overflow: "visible",
-                                        }}
-                                        elevation={0}
-                                    >
-                                        <Typography
-                                            variant="subtitle2"
-                                            sx={{
-                                                color: tierColors[tier],
-                                                mb: 1,
-                                                fontFamily: '"JetBrains Mono", monospace',
-                                                textAlign: "center",
-                                                fontSize: "0.7rem",
-                                                fontWeight: 600,
-                                                letterSpacing: "0.5px",
-                                                textTransform: "uppercase",
-                                            }}
-                                        >
-                                            {tier} Tier Repositories
-                                        </Typography>
-
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                flexWrap: "nowrap",
-                                                justifyContent: "center",
-                                                alignItems: "center",
-                                                flex: 1,
-                                                overflow: "visible",
-                                                position: "relative",
-                                                zIndex: 2,
-                                                pl: "12px",
-                                            }}
-                                        >
-                                            {tierRepos.slice(0, 9).map((repo: { fullName: string; owner: string }) => (
-                                                <Tooltip
-                                                    key={repo.fullName}
-                                                    title={repo.fullName}
-                                                    arrow
-                                                >
-                                                    <Box
-                                                        onClick={() =>
-                                                            navigate(
-                                                                `/miners/repository?name=${encodeURIComponent(repo.fullName)}`,
-                                                            )
-                                                        }
-                                                        sx={{
-                                                            textDecoration: "none",
-                                                            cursor: "pointer",
-                                                        }}
-                                                    >
-                                                        <Box
-                                                            component="img"
-                                                            src={`https://avatars.githubusercontent.com/${repo.owner}`}
-                                                            alt={repo.fullName}
-                                                            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                                                                e.currentTarget.style.display = "none";
-                                                            }}
-                                                            sx={{
-                                                                width: 42,
-                                                                height: 42,
-                                                                borderRadius: "50%",
-                                                                border: `2px solid ${tierColors[tier]}40`,
-                                                                marginLeft: "-12px",
-                                                                backgroundColor:
-                                                                    repo.owner === "opentensor"
-                                                                        ? "#ffffff"
-                                                                        : repo.owner === "bitcoin"
-                                                                            ? "#F7931A"
-                                                                            : "#161b22",
-                                                                transition: "all 0.2s",
-                                                                position: "relative",
-                                                                zIndex: 1,
-                                                                "&:hover": {
-                                                                    transform: "scale(1.2)",
-                                                                    borderColor: tierColors[tier],
-                                                                    boxShadow: `0 0 12px ${tierColors[tier]}60`,
-                                                                    zIndex: 100,
-                                                                },
-                                                            }}
-                                                        />
-                                                    </Box>
-                                                </Tooltip>
-                                            ))}
-                                            {remainingCount > 0 && (
-                                                <Tooltip title={`View all ${tier} tier repositories`} arrow>
-                                                    <Box
-                                                        onClick={() => navigate(`/top-repos?tier=${tier}`)}
-                                                        sx={{
-                                                            width: 42,
-                                                            height: 42,
-                                                            minWidth: 42,
-                                                            minHeight: 42,
-                                                            flexShrink: 0,
-                                                            borderRadius: "50%",
-                                                            backgroundColor: "rgba(255, 255, 255, 0.1)",
-                                                            border: "2px solid #0d1117",
-                                                            marginLeft: "-12px",
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            justifyContent: "center",
-                                                            cursor: "pointer",
-                                                            transition: "all 0.2s",
-                                                            position: "relative",
-                                                            zIndex: 1,
-                                                            "&:hover": {
-                                                                transform: "scale(1.2)",
-                                                                backgroundColor: "rgba(255, 255, 255, 0.15)",
-                                                                borderColor: "rgba(255, 255, 255, 0.3)",
-                                                                zIndex: 100,
-                                                            },
-                                                        }}
-                                                    >
-                                                        <Typography
-                                                            sx={{
-                                                                color: "rgba(255, 255, 255, 0.7)",
-                                                                fontSize: "0.7rem",
-                                                                fontWeight: 600,
-                                                                fontFamily: '"JetBrains Mono", monospace',
-                                                            }}
-                                                        >
-                                                            +{tierRepos.length}
-                                                        </Typography>
-                                                    </Box>
-                                                </Tooltip>
-                                            )}
-                                        </Box>
-                                    </Card>
-                                );
-                            })}
+                    <Grid item xs={12} lg={4}>
+                        <Box sx={(theme) => ({
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 1,
+                            height: "100%",
+                            // Targeted scaling for this column of cards
+                            // Targeted scaling replaced with natural layout flow
+                            [theme.breakpoints.between("lg", "xl")]: {
+                                gap: 0.5, // Tighter gap on smaller desktops
+                            }
+                        })}>
+                            {(["Gold", "Silver", "Bronze"] as const).map((tier) => (
+                                <TierRepoCard
+                                    key={tier}
+                                    tier={tier}
+                                    repos={topReposByTier[tier] || []}
+                                />
+                            ))}
                         </Box>
                     </Grid>
 
-                    {/* 4. Tier Performance Stats - Resized to md=8 */}
-                    <Grid item xs={12} md={8}>
+                    {/* 4. Tier Performance Stats - Resized to lg=8 */}
+                    <Grid item xs={12} lg={8}>
                         <Card
                             sx={{
                                 height: "100%",
@@ -850,192 +921,196 @@ const GlobalActivityViz: React.FC = () => {
                             }}
                             elevation={0}
                         >
-                            {/* Table Header */}
-                            <Box sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1, // Reduced gap
-                                pb: 1,
-                                px: 1,
-                                borderBottom: "1px solid rgba(255,255,255,0.05)",
-                            }}>
-                                {/* Tier Header */}
-                                <Box sx={{ width: "110px", pl: 1 }}>
-                                    <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600 }}>Tier</Typography>
-                                </Box>
-
-                                {/* Miners Group Header */}
-                                <Box sx={{ width: "80px", display: "flex", justifyContent: "center", mr: 2 }}>
-                                    <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600 }}>Miners</Typography>
-                                </Box>
-
-                                {/* Activity Group Header */}
-                                <Box sx={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
-                                    <Typography sx={{ gridColumn: "span 4", color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>M.O.C Ratio</Typography>
-                                </Box>
-
-                                {/* Score Group Header */}
-                                <Box sx={{ width: "180px", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-                                    <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>Score</Typography>
-                                    <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>Avg/Miner</Typography>
-                                </Box>
-                            </Box>
-
-                            {/* Table Rows */}
-                            {["Gold", "Silver", "Bronze", "Candidate"].map((tier) => {
-                                const stats = tierStats[tier as keyof typeof tierStats] || {
-                                    total: 0,
-                                    merged: 0,
-                                    open: 0,
-                                    closed: 0,
-                                    credibility: 0,
-                                    totalScore: 0,
-                                    uniqueRepos: 0,
-                                    totalPRs: 0,
-                                    avgScorePerMiner: 0
-                                };
-                                const isCandidate = tier === "Candidate";
-                                const color = tier === "Gold"
-                                    ? "#FFD700"
-                                    : tier === "Silver"
-                                        ? "#C0C0C0"
-                                        : tier === "Bronze"
-                                            ? "#CD7F32"
-                                            : "#ffffff";
-
-                                return (
-                                    <Box
-                                        key={tier}
-                                        sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 1, // Reduced gap
-                                            py: 0.75,
-                                            px: 1,
-                                            mt: isCandidate ? 1 : 0,
-                                            borderTop: isCandidate ? "1px solid rgba(255,255,255,0.1)" : "none",
-                                        }}
-                                    >
-                                        {/* Tier Name with Badge */}
-                                        <Box sx={{ width: "110px", pl: 1, display: "flex", alignItems: "center", gap: 1.5 }}>
-                                            {!isCandidate && (
-                                                <Box sx={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: color, flexShrink: 0, boxShadow: `0 0 10px ${color}40` }} />
-                                            )}
-                                            <Typography sx={{ color: "#fff", fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
-                                                {tier === "Candidate" ? "Unranked" : tier}
-                                            </Typography>
+                            <Box sx={{ overflowX: "auto" }}>
+                                <Box sx={{ minWidth: "600px" }}>
+                                    {/* Table Header */}
+                                    <Box sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 1, // Reduced gap
+                                        pb: 1,
+                                        px: 1,
+                                        borderBottom: "1px solid rgba(255,255,255,0.05)",
+                                    }}>
+                                        {/* Tier Header */}
+                                        <Box sx={{ width: "110px", pl: 1 }}>
+                                            <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600 }}>Tier</Typography>
                                         </Box>
 
-                                        {/* Miners Group */}
-                                        <Box sx={{
-                                            width: "80px",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            backgroundColor: "rgba(255,255,255,0.03)",
-                                            borderRadius: 1,
-                                            height: "48px",
-                                            border: "1px solid rgba(255,255,255,0.02)",
-                                            mr: 2 // Added margin right to push MOC section away
-                                        }}>
-                                            <Typography sx={{ color: isCandidate ? "rgba(255,255,255,0.9)" : `rgba(255,255,255,${getOpacity(stats.total, maxValues.total)})`, fontSize: "0.9rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
-                                                {stats.total}
-                                            </Typography>
+                                        {/* Miners Group Header */}
+                                        <Box sx={{ width: "80px", display: "flex", justifyContent: "center", mr: 2 }}>
+                                            <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600 }}>Miners</Typography>
                                         </Box>
 
-                                        {/* Activity Group */}
-                                        <Box sx={{
-                                            flex: 1,
-                                            display: "grid",
-                                            gridTemplateColumns: "repeat(4, 1fr)",
-                                            backgroundColor: "rgba(255,255,255,0.03)",
-                                            borderRadius: 1,
-                                            height: "48px",
-                                            alignItems: "center",
-                                            border: "1px solid rgba(255,255,255,0.02)"
-                                        }}>
-                                            {/* Mini Gauge (Credibility) */}
-                                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                                <Box sx={{ width: 38, height: 38 }}>
-                                                    <ReactECharts
-                                                        option={{
-                                                            backgroundColor: "transparent",
-                                                            title: {
-                                                                text: (stats.merged + stats.closed) === 0 ? "N/A" : `${(stats.credibility * 100).toFixed(0)}`,
-                                                                left: "center",
-                                                                top: "middle", // Vertically centered
-                                                                textStyle: {
-                                                                    color: (stats.merged + stats.closed) === 0 ? "rgba(255,255,255,0.3)" : stats.credibility >= 0.7 ? "#4ade80" : stats.credibility >= 0.4 ? "#fbbf24" : "#ef4444",
-                                                                    fontSize: (stats.merged + stats.closed) === 0 ? 9 : 10,
-                                                                    fontWeight: "bold",
-                                                                    fontFamily: '"JetBrains Mono", monospace',
-                                                                },
-                                                            },
-                                                            series: [{
-                                                                type: "pie",
-                                                                radius: ["65%", "80%"],
-                                                                center: ["50%", "50%"], // Vertically centered
-                                                                avoidLabelOverlap: false,
-                                                                itemStyle: { borderRadius: 1, borderColor: "#0d1117", borderWidth: 0.5 },
-                                                                label: { show: false },
-                                                                emphasis: { scale: false },
-                                                                labelLine: { show: false },
-                                                                data: (stats.merged + stats.closed) === 0 ? [
-                                                                    { value: 1, itemStyle: { color: "rgba(255,255,255,0.1)" } }
-                                                                ] : [
-                                                                    { value: stats.merged, itemStyle: { color: "#4ade80" } },
-                                                                    { value: stats.open, itemStyle: { color: "#52525b" } },
-                                                                    { value: stats.closed, itemStyle: { color: "#ef4444" } },
-                                                                ],
-                                                            }],
-                                                        }}
-                                                        style={{ height: "100%", width: "100%" }}
-                                                        opts={{ renderer: "svg" }}
-                                                    />
-                                                </Box>
-                                            </Box>
-                                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                                <Typography sx={{ color: isCandidate ? "#4ade80" : `rgba(74, 222, 128, ${getOpacity(stats.merged, maxValues.merged)})`, fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
-                                                    {stats.merged}
-                                                </Typography>
-                                            </Box>
-                                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                                <Typography sx={{ color: isCandidate ? "rgba(255,255,255,0.6)" : `rgba(255,255,255,${getOpacity(stats.open, maxValues.open)})`, fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
-                                                    {stats.open}
-                                                </Typography>
-                                            </Box>
-                                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                                <Typography sx={{ color: isCandidate ? "#ef4444" : `rgba(239, 68, 68, ${getOpacity(stats.closed, maxValues.closed)})`, fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
-                                                    {stats.closed}
-                                                </Typography>
-                                            </Box>
+                                        {/* Activity Group Header */}
+                                        <Box sx={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
+                                            <Typography sx={{ gridColumn: "span 4", color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>M.O.C Ratio</Typography>
                                         </Box>
 
-                                        {/* Score Group */}
-                                        <Box sx={{
-                                            width: "180px",
-                                            display: "grid",
-                                            gridTemplateColumns: "1fr 1fr",
-                                            backgroundColor: "rgba(255,255,255,0.03)",
-                                            borderRadius: 1,
-                                            height: "48px",
-                                            alignItems: "center",
-                                            border: "1px solid rgba(255,255,255,0.02)"
-                                        }}>
-                                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                                <Typography sx={{ color: isCandidate ? "rgba(255,255,255,0.9)" : `rgba(255,255,255,${getOpacity(stats.totalScore, maxValues.totalScore)})`, fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
-                                                    {((stats.totalScore ?? 0) as number).toFixed(0)}
-                                                </Typography>
-                                            </Box>
-                                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                                <Typography sx={{ color: isCandidate ? "#a78bfa" : `rgba(167, 139, 250, ${getOpacity(stats.avgScorePerMiner, maxValues.avgScorePerMiner)})`, fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
-                                                    {((stats.avgScorePerMiner ?? 0) as number).toFixed(1)}
-                                                </Typography>
-                                            </Box>
+                                        {/* Score Group Header */}
+                                        <Box sx={{ width: "180px", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+                                            <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>Score</Typography>
+                                            <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", fontWeight: 600, textAlign: "center" }}>Avg/Miner</Typography>
                                         </Box>
                                     </Box>
-                                );
-                            })}
+
+                                    {/* Table Rows */}
+                                    {["Gold", "Silver", "Bronze", "Candidate"].map((tier) => {
+                                        const stats = tierStats[tier as keyof typeof tierStats] || {
+                                            total: 0,
+                                            merged: 0,
+                                            open: 0,
+                                            closed: 0,
+                                            credibility: 0,
+                                            totalScore: 0,
+                                            uniqueRepos: 0,
+                                            totalPRs: 0,
+                                            avgScorePerMiner: 0
+                                        };
+                                        const isCandidate = tier === "Candidate";
+                                        const color = tier === "Gold"
+                                            ? "#FFD700"
+                                            : tier === "Silver"
+                                                ? "#C0C0C0"
+                                                : tier === "Bronze"
+                                                    ? "#CD7F32"
+                                                    : "#ffffff";
+
+                                        return (
+                                            <Box
+                                                key={tier}
+                                                sx={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 1, // Reduced gap
+                                                    py: 0.75,
+                                                    px: 1,
+                                                    mt: isCandidate ? 1 : 0,
+                                                    borderTop: isCandidate ? "1px solid rgba(255,255,255,0.1)" : "none",
+                                                }}
+                                            >
+                                                {/* Tier Name with Badge */}
+                                                <Box sx={{ width: "110px", pl: 1, display: "flex", alignItems: "center", gap: 1.5 }}>
+                                                    {!isCandidate && (
+                                                        <Box sx={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: color, flexShrink: 0, boxShadow: `0 0 10px ${color}40` }} />
+                                                    )}
+                                                    <Typography sx={{ color: "#fff", fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                        {tier === "Candidate" ? "Unranked" : tier}
+                                                    </Typography>
+                                                </Box>
+
+                                                {/* Miners Group */}
+                                                <Box sx={{
+                                                    width: "80px",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    backgroundColor: "rgba(255,255,255,0.03)",
+                                                    borderRadius: 1,
+                                                    height: "48px",
+                                                    border: "1px solid rgba(255,255,255,0.02)",
+                                                    mr: 2 // Added margin right to push MOC section away
+                                                }}>
+                                                    <Typography sx={{ color: isCandidate ? "rgba(255,255,255,0.9)" : `rgba(255,255,255,${getOpacity(stats.total, maxValues.total)})`, fontSize: "0.9rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                        {stats.total}
+                                                    </Typography>
+                                                </Box>
+
+                                                {/* Activity Group */}
+                                                <Box sx={{
+                                                    flex: 1,
+                                                    display: "grid",
+                                                    gridTemplateColumns: "repeat(4, 1fr)",
+                                                    backgroundColor: "rgba(255,255,255,0.03)",
+                                                    borderRadius: 1,
+                                                    height: "48px",
+                                                    alignItems: "center",
+                                                    border: "1px solid rgba(255,255,255,0.02)"
+                                                }}>
+                                                    {/* Mini Gauge (Credibility) */}
+                                                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                        <Box sx={{ width: 38, height: 38 }}>
+                                                            <ReactECharts
+                                                                option={{
+                                                                    backgroundColor: "transparent",
+                                                                    title: {
+                                                                        text: (stats.merged + stats.closed) === 0 ? "N/A" : `${(stats.credibility * 100).toFixed(0)}`,
+                                                                        left: "center",
+                                                                        top: "middle", // Vertically centered
+                                                                        textStyle: {
+                                                                            color: (stats.merged + stats.closed) === 0 ? "rgba(255,255,255,0.3)" : stats.credibility >= 0.7 ? "#4ade80" : stats.credibility >= 0.4 ? "#fbbf24" : "#ef4444",
+                                                                            fontSize: (stats.merged + stats.closed) === 0 ? 9 : 10,
+                                                                            fontWeight: "bold",
+                                                                            fontFamily: '"JetBrains Mono", monospace',
+                                                                        },
+                                                                    },
+                                                                    series: [{
+                                                                        type: "pie",
+                                                                        radius: ["65%", "80%"],
+                                                                        center: ["50%", "50%"], // Vertically centered
+                                                                        avoidLabelOverlap: false,
+                                                                        itemStyle: { borderRadius: 1, borderColor: "#0d1117", borderWidth: 0.5 },
+                                                                        label: { show: false },
+                                                                        emphasis: { scale: false },
+                                                                        labelLine: { show: false },
+                                                                        data: (stats.merged + stats.closed) === 0 ? [
+                                                                            { value: 1, itemStyle: { color: "rgba(255,255,255,0.1)" } }
+                                                                        ] : [
+                                                                            { value: stats.merged, itemStyle: { color: "#4ade80" } },
+                                                                            { value: stats.open, itemStyle: { color: "#52525b" } },
+                                                                            { value: stats.closed, itemStyle: { color: "#ef4444" } },
+                                                                        ],
+                                                                    }],
+                                                                }}
+                                                                style={{ height: "100%", width: "100%" }}
+                                                                opts={{ renderer: "svg" }}
+                                                            />
+                                                        </Box>
+                                                    </Box>
+                                                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                        <Typography sx={{ color: isCandidate ? "#4ade80" : `rgba(74, 222, 128, ${getOpacity(stats.merged, maxValues.merged)})`, fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                            {stats.merged}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                        <Typography sx={{ color: isCandidate ? "rgba(255,255,255,0.6)" : `rgba(255,255,255,${getOpacity(stats.open, maxValues.open)})`, fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                            {stats.open}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                        <Typography sx={{ color: isCandidate ? "#ef4444" : `rgba(239, 68, 68, ${getOpacity(stats.closed, maxValues.closed)})`, fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                            {stats.closed}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+
+                                                {/* Score Group */}
+                                                <Box sx={{
+                                                    width: "180px",
+                                                    display: "grid",
+                                                    gridTemplateColumns: "1fr 1fr",
+                                                    backgroundColor: "rgba(255,255,255,0.03)",
+                                                    borderRadius: 1,
+                                                    height: "48px",
+                                                    alignItems: "center",
+                                                    border: "1px solid rgba(255,255,255,0.02)"
+                                                }}>
+                                                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                        <Typography sx={{ color: isCandidate ? "rgba(255,255,255,0.9)" : `rgba(255,255,255,${getOpacity(stats.totalScore, maxValues.totalScore)})`, fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                            {((stats.totalScore ?? 0) as number).toFixed(0)}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                        <Typography sx={{ color: isCandidate ? "#a78bfa" : `rgba(167, 139, 250, ${getOpacity(stats.avgScorePerMiner, maxValues.avgScorePerMiner)})`, fontSize: "0.85rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                            {((stats.avgScorePerMiner ?? 0) as number).toFixed(1)}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                            </Box>
+                                        );
+                                    })}
+                                </Box>
+                            </Box>
                         </Card>
                     </Grid >
                 </Grid >

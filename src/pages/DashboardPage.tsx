@@ -16,7 +16,7 @@ const DashboardPage: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
   const isLargeScreen = useMediaQuery(theme.breakpoints.up("xl"));
-  const showSidebarRight = useMediaQuery(theme.breakpoints.up("lg")); // Only show sidebar on right for large screens
+  const showSidebarRight = useMediaQuery(theme.breakpoints.up("xl")); // Only show sidebar on right for extra large screens
 
   const { data: stats } = useStats();
 
@@ -51,6 +51,7 @@ const DashboardPage: React.FC = () => {
             gap: { xs: 2, sm: 1.5 },
             minHeight: 0,
             overflow: showSidebarRight ? "auto" : "visible",
+            minWidth: 0, // Add minWidth to fix flex overflow issues
             pr: showSidebarRight ? 1 : 0,
             "&::-webkit-scrollbar": {
               width: "8px",
