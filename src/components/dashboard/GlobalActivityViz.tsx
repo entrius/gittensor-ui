@@ -805,7 +805,7 @@ const GlobalActivityViz: React.FC = () => {
                                 borderRadius: 3,
                                 border: "1px solid rgba(255, 255, 255, 0.1)",
                                 backgroundColor: "transparent",
-                                p: 3,
+                                p: { xs: 1.5, sm: 3 }, // Reduced padding on mobile
                                 display: "flex",
                                 flexDirection: "column",
                                 // Targeted scaling for this specific card
@@ -817,7 +817,7 @@ const GlobalActivityViz: React.FC = () => {
                             })}
                             elevation={0}
                         >
-                            <Box sx={{ display: "flex", flexDirection: "row", gap: { xs: 3, lg: 1.5, xl: 3 }, flex: 1 }}>
+                            <Box sx={{ display: "flex", flexDirection: "row", gap: { xs: 1, sm: 3, lg: 1.5, xl: 3 }, flex: 1 }}>
                                 {/* Active Section */}
                                 <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
                                     <Typography sx={{ color: "#10b981", fontSize: "0.85rem", fontWeight: 700, fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", textAlign: 'center', mb: 1 }}>
@@ -832,7 +832,7 @@ const GlobalActivityViz: React.FC = () => {
                                         />
                                     </Box>
 
-                                    <Box sx={{ display: "flex", gap: 3, mt: 1 }}>
+                                    <Box sx={{ display: "flex", gap: { xs: 1, sm: 3 }, mt: 1 }}>
                                         <Box sx={{ textAlign: "center" }}>
                                             <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Merged</Typography>
                                             <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{activeStats.merged}</Typography>
@@ -864,7 +864,7 @@ const GlobalActivityViz: React.FC = () => {
                                         />
                                     </Box>
 
-                                    <Box sx={{ display: "flex", gap: 3, mt: 1 }}>
+                                    <Box sx={{ display: "flex", gap: { xs: 1, sm: 3 }, mt: 1 }}>
                                         <Box sx={{ textAlign: "center" }}>
                                             <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase" }}>Merged</Typography>
                                             <Typography sx={{ color: "#fff", fontSize: "1.1rem", fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{inactiveStats.merged}</Typography>
