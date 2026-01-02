@@ -89,8 +89,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         );
       } else if (statusFilter === "open") {
         filtered = filtered.filter(
-          (pr) =>
-            pr.prState === "OPEN" || (!pr.prState && !pr.mergedAt),
+          (pr) => pr.prState === "OPEN" || (!pr.prState && !pr.mergedAt),
         );
       } else if (statusFilter === "closed") {
         filtered = filtered.filter(
@@ -121,9 +120,8 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
       ).length,
       merged: rankedPRs.filter((pr) => pr.prState === "MERGED" || !!pr.mergedAt)
         .length,
-      closed: rankedPRs.filter(
-        (pr) => pr.prState === "CLOSED" && !pr.mergedAt,
-      ).length,
+      closed: rankedPRs.filter((pr) => pr.prState === "CLOSED" && !pr.mergedAt)
+        .length,
     };
   }, [rankedPRs]);
 
@@ -526,7 +524,10 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
             fontWeight: 500,
           }}
         >
-          Top Pull Requests <span style={{ opacity: 0.5, fontSize: "0.9rem" }}>({filteredPRs.length})</span>
+          Top Pull Requests{" "}
+          <span style={{ opacity: 0.5, fontSize: "0.9rem" }}>
+            ({filteredPRs.length})
+          </span>
         </Typography>
 
         <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
@@ -689,7 +690,15 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           }}
         >
           <Box>
-            <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.5)", display: "block", mb: 1, fontFamily: '"JetBrains Mono", monospace' }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: "rgba(255,255,255,0.5)",
+                display: "block",
+                mb: 1,
+                fontFamily: '"JetBrains Mono", monospace',
+              }}
+            >
               TIER
             </Typography>
             <Stack direction="row" spacing={1}>
@@ -721,7 +730,15 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           </Box>
 
           <Box>
-            <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.5)", display: "block", mb: 1, fontFamily: '"JetBrains Mono", monospace' }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: "rgba(255,255,255,0.5)",
+                display: "block",
+                mb: 1,
+                fontFamily: '"JetBrains Mono", monospace',
+              }}
+            >
               STATUS
             </Typography>
             <Stack direction="row" spacing={1}>
@@ -939,7 +956,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                             (pr.repository || "").split("/")[0] === "opentensor"
                               ? "#ffffff"
                               : (pr.repository || "").split("/")[0] ===
-                                "bitcoin"
+                                  "bitcoin"
                                 ? "#F7931A"
                                 : "transparent",
                         }}
@@ -980,7 +997,6 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                         }}
                       />
                     </Box>
-
                   </TableCell>
                   <TableCell sx={{ ...bodyCellStyle, width: "10%" }}>
                     {(() => {
@@ -1053,7 +1069,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           },
         }}
       />
-    </Card >
+    </Card>
   );
 };
 

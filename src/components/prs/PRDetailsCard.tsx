@@ -111,13 +111,15 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     ? [
         {
           label: "Collateral",
-          value: parseFloat(prDetails.collateralScore || "0") > 0
-            ? `-${parseFloat(prDetails.collateralScore).toFixed(2)}`
-            : parseFloat(prDetails.collateralScore || "0").toFixed(2),
+          value:
+            parseFloat(prDetails.collateralScore || "0") > 0
+              ? `-${parseFloat(prDetails.collateralScore).toFixed(2)}`
+              : parseFloat(prDetails.collateralScore || "0").toFixed(2),
           rank: null,
-          color: parseFloat(prDetails.collateralScore || "0") > 0
-            ? "rgba(248, 113, 113, 0.8)"
-            : undefined,
+          color:
+            parseFloat(prDetails.collateralScore || "0") > 0
+              ? "rgba(248, 113, 113, 0.8)"
+              : undefined,
         },
         {
           label: "Base Score",
@@ -688,10 +690,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             >
               {prDetails.mergedAt
                 ? new Date(prDetails.mergedAt).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })
                 : "Not Merged"}
             </Typography>
           </Box>

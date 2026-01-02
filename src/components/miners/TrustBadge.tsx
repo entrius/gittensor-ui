@@ -24,7 +24,10 @@ interface RiskAssessment {
 
 const ICON_SIZE = { fontSize: 18 };
 
-export const getRiskAssessment = (credibility: number, totalPRs: number): RiskAssessment => {
+export const getRiskAssessment = (
+  credibility: number,
+  totalPRs: number,
+): RiskAssessment => {
   // Elite: 100% Credibility AND established history (5+ PRs)
   if (credibility >= 1 && totalPRs >= 5) {
     return {
@@ -99,7 +102,7 @@ export const getRiskAssessment = (credibility: number, totalPRs: number): RiskAs
 const TrustBadge: React.FC<TrustBadgeProps> = ({ credibility, totalPRs }) => {
   const assessment = useMemo(
     () => getRiskAssessment(credibility, totalPRs),
-    [credibility, totalPRs]
+    [credibility, totalPRs],
   );
 
   return (

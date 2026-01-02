@@ -1,5 +1,12 @@
 import React from "react";
-import { Card, CardContent, Typography, SxProps, Theme, useMediaQuery } from "@mui/material";
+import {
+  Card,
+  CardContent,
+  Typography,
+  SxProps,
+  Theme,
+  useMediaQuery,
+} from "@mui/material";
 import theme from "../../theme";
 
 interface KpiCardProps {
@@ -19,17 +26,20 @@ const KpiCard: React.FC<KpiCardProps> = ({
 }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isLarge = variant === "large";
-  const padding = isLarge ? { py: isMobile ? 2 : 2.5 } : { py: isMobile ? 1.5 : 2 };
+  const padding = isLarge
+    ? { py: isMobile ? 2 : 2.5 }
+    : { py: isMobile ? 1.5 : 2 };
   const valueVariant = isLarge ? "h2" : "h4";
-  const titleSize = isLarge ? (isMobile ? 14 : 16) : (isMobile ? 12 : 14);
+  const titleSize = isLarge ? (isMobile ? 14 : 16) : isMobile ? 12 : 14;
 
-  const formattedValue = value !== undefined && value !== null
-    ? (typeof value === "string" && value.startsWith("$")
-      ? value // Already formatted with currency
-      : typeof value === "number" || typeof value === "string"
-        ? Number(value).toLocaleString()
-        : value)
-    : undefined;
+  const formattedValue =
+    value !== undefined && value !== null
+      ? typeof value === "string" && value.startsWith("$")
+        ? value // Already formatted with currency
+        : typeof value === "number" || typeof value === "string"
+          ? Number(value).toLocaleString()
+          : value
+      : undefined;
 
   return (
     <Card
@@ -42,7 +52,13 @@ const KpiCard: React.FC<KpiCardProps> = ({
       }}
       elevation={0}
     >
-      <CardContent sx={{ textAlign: "center", ...padding, "&:last-child": { pb: padding.py } }}>
+      <CardContent
+        sx={{
+          textAlign: "center",
+          ...padding,
+          "&:last-child": { pb: padding.py },
+        }}
+      >
         <Typography
           variant="dataLabel"
           fontSize={titleSize}
@@ -70,7 +86,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
             color="rgba(255, 255, 255, 0.5)"
             sx={{
               mt: isLarge ? 0.5 : 0.25,
-              fontSize: isLarge ? (isMobile ? 12 : 14) : (isMobile ? 11 : 12)
+              fontSize: isLarge ? (isMobile ? 12 : 14) : isMobile ? 11 : 12,
             }}
           >
             {subtitle}

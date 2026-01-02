@@ -862,10 +862,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                             border: "1px solid rgba(255, 255, 255, 0.2)",
                             backgroundColor:
                               (repo.repository || "").split("/")[0] ===
-                                "opentensor"
+                              "opentensor"
                                 ? "#ffffff"
                                 : (repo.repository || "").split("/")[0] ===
-                                  "bitcoin"
+                                    "bitcoin"
                                   ? "#F7931A"
                                   : "transparent",
                           }}

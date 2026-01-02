@@ -44,7 +44,9 @@ const TierPerformanceTable: React.FC<TierPerformanceTableProps> = ({
   getOpacity,
 }) => {
   return (
-    <Card sx={{ height: "100%", p: 2, display: "flex", flexDirection: "column" }}>
+    <Card
+      sx={{ height: "100%", p: 2, display: "flex", flexDirection: "column" }}
+    >
       <Box sx={{ overflowX: "auto" }}>
         <Box sx={{ minWidth: "600px" }}>
           {/* Table Header */}
@@ -62,19 +64,45 @@ const TierPerformanceTable: React.FC<TierPerformanceTableProps> = ({
               <Typography variant="tableHeader">Tier</Typography>
             </Box>
 
-            <Box sx={{ width: "80px", display: "flex", justifyContent: "center", mr: 2 }}>
+            <Box
+              sx={{
+                width: "80px",
+                display: "flex",
+                justifyContent: "center",
+                mr: 2,
+              }}
+            >
               <Typography variant="tableHeader">Miners</Typography>
             </Box>
 
-            <Box sx={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
-              <Typography variant="tableHeader" sx={{ gridColumn: "span 4", textAlign: "center" }}>
+            <Box
+              sx={{
+                flex: 1,
+                display: "grid",
+                gridTemplateColumns: "repeat(4, 1fr)",
+              }}
+            >
+              <Typography
+                variant="tableHeader"
+                sx={{ gridColumn: "span 4", textAlign: "center" }}
+              >
                 M.O.C Ratio
               </Typography>
             </Box>
 
-            <Box sx={{ width: "180px", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-              <Typography variant="tableHeader" sx={{ textAlign: "center" }}>Score</Typography>
-              <Typography variant="tableHeader" sx={{ textAlign: "center" }}>Avg/Miner</Typography>
+            <Box
+              sx={{
+                width: "180px",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+              }}
+            >
+              <Typography variant="tableHeader" sx={{ textAlign: "center" }}>
+                Score
+              </Typography>
+              <Typography variant="tableHeader" sx={{ textAlign: "center" }}>
+                Avg/Miner
+              </Typography>
             </Box>
           </Box>
 
@@ -140,7 +168,15 @@ const TierRow: React.FC<TierRowProps> = ({
       }}
     >
       {/* Tier Name */}
-      <Box sx={{ width: "110px", pl: 1, display: "flex", alignItems: "center", gap: 1.5 }}>
+      <Box
+        sx={{
+          width: "110px",
+          pl: 1,
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+        }}
+      >
         {!isCandidate && (
           <Box
             sx={{
@@ -240,12 +276,20 @@ const TierRow: React.FC<TierRowProps> = ({
         <StatCell
           value={stats.totalScore.toFixed(0)}
           color="#fff"
-          opacity={isCandidate ? 0.9 : getOpacity(stats.totalScore, maxValues.totalScore)}
+          opacity={
+            isCandidate
+              ? 0.9
+              : getOpacity(stats.totalScore, maxValues.totalScore)
+          }
         />
         <StatCell
           value={stats.avgScorePerMiner.toFixed(1)}
           color={STATUS_COLORS.purple}
-          opacity={isCandidate ? 1 : getOpacity(stats.avgScorePerMiner, maxValues.avgScorePerMiner)}
+          opacity={
+            isCandidate
+              ? 1
+              : getOpacity(stats.avgScorePerMiner, maxValues.avgScorePerMiner)
+          }
         />
       </Box>
     </Box>
@@ -260,7 +304,10 @@ const StatCell: React.FC<{
   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
     <Typography
       sx={{
-        color: typeof opacity === "number" ? color : `${color.replace(")", `,${opacity})`).replace("rgb", "rgba")}`,
+        color:
+          typeof opacity === "number"
+            ? color
+            : `${color.replace(")", `,${opacity})`).replace("rgb", "rgba")}`,
         opacity: typeof opacity === "number" ? opacity : 1,
         fontSize: "0.85rem",
         fontWeight: 600,
@@ -301,15 +348,25 @@ const MiniGauge: React.FC<{ stats: TierStats }> = ({ stats }) => {
         radius: ["65%", "80%"],
         center: ["50%", "50%"],
         avoidLabelOverlap: false,
-        itemStyle: { borderRadius: 1, borderColor: "#0d1117", borderWidth: 0.5 },
+        itemStyle: {
+          borderRadius: 1,
+          borderColor: "#0d1117",
+          borderWidth: 0.5,
+        },
         label: { show: false },
         emphasis: { scale: false },
         labelLine: { show: false },
         data: hasData
           ? [
-              { value: stats.merged, itemStyle: { color: STATUS_COLORS.merged } },
+              {
+                value: stats.merged,
+                itemStyle: { color: STATUS_COLORS.merged },
+              },
               { value: stats.open, itemStyle: { color: STATUS_COLORS.open } },
-              { value: stats.closed, itemStyle: { color: STATUS_COLORS.closed } },
+              {
+                value: stats.closed,
+                itemStyle: { color: STATUS_COLORS.closed },
+              },
             ]
           : [{ value: 1, itemStyle: { color: "rgba(255,255,255,0.1)" } }],
       },
@@ -317,9 +374,15 @@ const MiniGauge: React.FC<{ stats: TierStats }> = ({ stats }) => {
   };
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <Box
+      sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+    >
       <Box sx={{ width: 38, height: 38 }}>
-        <ReactECharts option={option} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+        <ReactECharts
+          option={option}
+          style={{ height: "100%", width: "100%" }}
+          opts={{ renderer: "svg" }}
+        />
       </Box>
     </Box>
   );

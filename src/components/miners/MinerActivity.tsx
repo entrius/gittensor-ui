@@ -23,70 +23,101 @@ const MinerActivity: React.FC<MinerActivityProps> = ({ githubId }) => {
   const { data: allMinerStats } = useAllMinerStats();
 
   // Calculate contribution heatmap data
-  const { contributionData, contributionsLast30Days, totalDaysShown } = useMemo(() => {
-    if (!prs || prs.length === 0) {
-      return { contributionData: [], contributionsLast30Days: 0, totalDaysShown: 0 };
-    }
-
-    const today = new Date();
-    let earliestDate = today;
-
-    prs.forEach((pr) => {
-      if (pr.mergedAt) {
-        const d = new Date(pr.mergedAt);
-        if (d < earliestDate) earliestDate = d;
+  const { contributionData, contributionsLast30Days, totalDaysShown } =
+    useMemo(() => {
+      if (!prs || prs.length === 0) {
+        return {
+          contributionData: [],
+          contributionsLast30Days: 0,
+          totalDaysShown: 0,
+        };
       }
-    });
 
-    const diffTime = Math.abs(today.getTime() - earliestDate.getTime());
-    const daysDiff = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const daysToShow = Math.max(daysDiff, 1);
+      const today = new Date();
+      let earliestDate = today;
 
-    const dataMap = new Map<string, number>();
-    for (let i = daysToShow; i >= 0; i--) {
-      dataMap.set(format(subDays(today, i), "yyyy-MM-dd"), 0);
-    }
+      prs.forEach((pr) => {
+        if (pr.mergedAt) {
+          const d = new Date(pr.mergedAt);
+          if (d < earliestDate) earliestDate = d;
+        }
+      });
 
-    let last30Count = 0;
-    const thirtyDaysAgo = subDays(today, 30);
+      const diffTime = Math.abs(today.getTime() - earliestDate.getTime());
+      const daysDiff = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const daysToShow = Math.max(daysDiff, 1);
 
-    prs.forEach((pr) => {
-      if (!pr.mergedAt) return;
-      const date = new Date(pr.mergedAt);
-      if (isNaN(date.getTime())) return;
-
-      const dateStr = format(date, "yyyy-MM-dd");
-      if (dataMap.has(dateStr)) {
-        dataMap.set(dateStr, (dataMap.get(dateStr) || 0) + 1);
+      const dataMap = new Map<string, number>();
+      for (let i = daysToShow; i >= 0; i--) {
+        dataMap.set(format(subDays(today, i), "yyyy-MM-dd"), 0);
       }
-      if (date >= thirtyDaysAgo) last30Count++;
-    });
 
-    const data = Array.from(dataMap.entries())
-      .map(([date, count]) => {
-        let level: 0 | 1 | 2 | 3 | 4 = 0;
-        if (count > 0) level = 1;
-        if (count >= 2) level = 2;
-        if (count >= 3) level = 3;
-        if (count >= 5) level = 4;
-        return { date, count, level };
-      })
-      .sort((a, b) => a.date.localeCompare(b.date));
+      let last30Count = 0;
+      const thirtyDaysAgo = subDays(today, 30);
 
-    return { contributionData: data, contributionsLast30Days: last30Count, totalDaysShown: daysToShow };
-  }, [prs]);
+      prs.forEach((pr) => {
+        if (!pr.mergedAt) return;
+        const date = new Date(pr.mergedAt);
+        if (isNaN(date.getTime())) return;
+
+        const dateStr = format(date, "yyyy-MM-dd");
+        if (dataMap.has(dateStr)) {
+          dataMap.set(dateStr, (dataMap.get(dateStr) || 0) + 1);
+        }
+        if (date >= thirtyDaysAgo) last30Count++;
+      });
+
+      const data = Array.from(dataMap.entries())
+        .map(([date, count]) => {
+          let level: 0 | 1 | 2 | 3 | 4 = 0;
+          if (count > 0) level = 1;
+          if (count >= 2) level = 2;
+          if (count >= 3) level = 3;
+          if (count >= 5) level = 4;
+          return { date, count, level };
+        })
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+      return {
+        contributionData: data,
+        contributionsLast30Days: last30Count,
+        totalDaysShown: daysToShow,
+      };
+    }, [prs]);
 
   // Calculate radar chart values (normalized to 100)
   const radarValues = useMemo(() => {
     if (!minerStats || !allMinerStats || allMinerStats.length === 0) {
-      return { credibility: 0, complexity: 0, issuesSolved: 0, uniqueRepos: 0, totalPRs: 0, avgRepoWeight: 0 };
+      return {
+        credibility: 0,
+        complexity: 0,
+        issuesSolved: 0,
+        uniqueRepos: 0,
+        totalPRs: 0,
+        avgRepoWeight: 0,
+      };
     }
 
-    const maxCredibility = Math.max(...allMinerStats.map((m) => m.credibility || 0), 0.01);
-    const maxComplexity = Math.max(...allMinerStats.map((m) => m.totalLinesChanged || 0), 1);
-    const maxMergedPrs = Math.max(...allMinerStats.map((m) => m.totalMergedPrs || 0), 1);
-    const maxUniqueRepos = Math.max(...allMinerStats.map((m) => m.uniqueReposCount || 0), 1);
-    const maxTotalPrs = Math.max(...allMinerStats.map((m) => m.totalPrs || 0), 1);
+    const maxCredibility = Math.max(
+      ...allMinerStats.map((m) => m.credibility || 0),
+      0.01,
+    );
+    const maxComplexity = Math.max(
+      ...allMinerStats.map((m) => m.totalLinesChanged || 0),
+      1,
+    );
+    const maxMergedPrs = Math.max(
+      ...allMinerStats.map((m) => m.totalMergedPrs || 0),
+      1,
+    );
+    const maxUniqueRepos = Math.max(
+      ...allMinerStats.map((m) => m.uniqueReposCount || 0),
+      1,
+    );
+    const maxTotalPrs = Math.max(
+      ...allMinerStats.map((m) => m.totalPrs || 0),
+      1,
+    );
 
     let avgWeightVal = 0;
     if (prs && prs.length > 0 && repos && Array.isArray(repos)) {
@@ -96,7 +127,10 @@ const MinerActivity: React.FC<MinerActivityProps> = ({ githubId }) => {
           repoWeights.set(repo.fullName, parseFloat(repo.weight || "0"));
         }
       });
-      const totalWeight = prs.reduce((sum, pr) => sum + (repoWeights.get(pr.repository) || 0), 0);
+      const totalWeight = prs.reduce(
+        (sum, pr) => sum + (repoWeights.get(pr.repository) || 0),
+        0,
+      );
       avgWeightVal = Math.min(totalWeight / prs.length, 100);
     }
 
@@ -146,7 +180,10 @@ const MinerActivity: React.FC<MinerActivityProps> = ({ githubId }) => {
             sx={{
               p: 3,
               borderRight: { md: "1px solid rgba(255, 255, 255, 0.1)" },
-              borderBottom: { xs: "1px solid rgba(255, 255, 255, 0.1)", md: "none" },
+              borderBottom: {
+                xs: "1px solid rgba(255, 255, 255, 0.1)",
+                md: "none",
+              },
             }}
           >
             <ContributionHeatmap
@@ -167,7 +204,10 @@ const MinerActivity: React.FC<MinerActivityProps> = ({ githubId }) => {
             sx={{
               p: 3,
               borderRight: { md: "1px solid rgba(255, 255, 255, 0.1)" },
-              borderBottom: { xs: "1px solid rgba(255, 255, 255, 0.1)", md: "none" },
+              borderBottom: {
+                xs: "1px solid rgba(255, 255, 255, 0.1)",
+                md: "none",
+              },
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",

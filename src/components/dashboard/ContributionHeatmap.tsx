@@ -111,8 +111,18 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
             labels={{
               legend: { less: "Less", more: "More" },
               months: [
-                "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
               ],
               totalCount: `{{count}} contributions in the last ${totalDaysShown} days`,
               weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
@@ -155,11 +165,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
     return <Box>{content}</Box>;
   }
 
-  return (
-    <Card sx={{ height: "100%", p: 3 }}>
-      {content}
-    </Card>
-  );
+  return <Card sx={{ height: "100%", p: 3 }}>{content}</Card>;
 };
 
 export default ContributionHeatmap;
