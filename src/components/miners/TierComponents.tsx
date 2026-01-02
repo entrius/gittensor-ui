@@ -311,12 +311,12 @@ export const TierUnlockProgress: React.FC<TierUnlockProgressProps> = ({
 
 // TierCard component
 interface TierStats {
-  score: number | null;
-  credibility: number | null;
-  merged: number | null;
-  closed: number | null;
-  total: number | null;
-  collateral: number | null;
+  score?: number;
+  credibility?: number;
+  merged?: number;
+  closed?: number;
+  total?: number;
+  collateral?: number;
 }
 
 interface TierCardProps {
