@@ -817,7 +817,7 @@ const GlobalActivityViz: React.FC = () => {
                             })}
                             elevation={0}
                         >
-                            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: { xs: 3, lg: 1.5, xl: 3 }, flex: 1 }}>
+                            <Box sx={{ display: "flex", flexDirection: "row", gap: { xs: 3, lg: 1.5, xl: 3 }, flex: 1 }}>
                                 {/* Active Section */}
                                 <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
                                     <Typography sx={{ color: "#10b981", fontSize: "0.85rem", fontWeight: 700, fontFamily: '"JetBrains Mono", monospace', textTransform: "uppercase", textAlign: 'center', mb: 1 }}>
