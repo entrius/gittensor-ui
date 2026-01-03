@@ -1,5 +1,7 @@
 import React from "react";
-import { Box, Typography, Avatar, Chip } from "@mui/material";
+import { Box, Typography, Avatar, Chip, Tooltip } from "@mui/material";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { useNavigate } from "react-router-dom";
 
 interface PRHeaderProps {
@@ -29,8 +31,15 @@ const PRHeader: React.FC<PRHeaderProps> = ({
     }
   };
 
+  const isOpenPR = prDetails.prState === "OPEN";
+  const collateralScore = parseFloat(prDetails.collateralScore || "0");
+  const earnedScore = parseFloat(prDetails.earnedScore || "0");
+
+  // Low value: open PR with collateral score = 0
+  const isLowValuePR = isOpenPR && collateralScore === 0;
+
   return (
-    <Box sx={{ mb: 3, display: "flex", alignItems: "center", gap: 2 }}>
+    <Box sx={{ mb: 3, display: "flex", alignItems: "flex-start", gap: 2 }}>
       <Box
         onClick={() =>
           navigate(`/miners/repository?name=${encodeURIComponent(repository)}`)
@@ -161,6 +170,230 @@ const PRHeader: React.FC<PRHeaderProps> = ({
             />
           )}
         </Box>
+      </Box>
+
+      {/* Score Section */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-end",
+          gap: 0.75,
+        }}
+      >
+        {isOpenPR ? (
+          /* Open PR: Show Potential Score | Collateral */
+          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+            {/* Potential Score */}
+            <Box sx={{ textAlign: "right" }}>
+              <Tooltip
+                title="Potential score is an estimated earned score if this PR is merged. Some factors like the repository uniqueness multiplier depend on other miners' results at merge time and cannot be predicted exactly."
+                arrow
+                placement="top"
+                slotProps={{
+                  tooltip: {
+                    sx: {
+                      backgroundColor: "rgba(30, 30, 30, 0.95)",
+                      color: "#ffffff",
+                      fontSize: "0.75rem",
+                      fontFamily: '"JetBrains Mono", monospace',
+                      padding: "8px 12px",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      maxWidth: 280,
+                    },
+                  },
+                  arrow: {
+                    sx: {
+                      color: "rgba(30, 30, 30, 0.95)",
+                    },
+                  },
+                }}
+              >
+                <Typography
+                  sx={{
+                    color: "rgba(255, 255, 255, 0.5)",
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: "0.7rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                    mb: 0.5,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "flex-end",
+                    gap: 0.5,
+                    cursor: "pointer",
+                  }}
+                >
+                  Potential
+                  <InfoOutlinedIcon sx={{ fontSize: "0.85rem" }} />
+                </Typography>
+              </Tooltip>
+              <Typography
+                sx={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: "2rem",
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  color: "rgba(255, 255, 255, 0.6)",
+                }}
+              >
+                {(collateralScore * 5).toFixed(2)}
+              </Typography>
+            </Box>
+
+            {/* Divider */}
+            <Box
+              sx={{
+                width: "1px",
+                height: "50px",
+                backgroundColor: "rgba(255, 255, 255, 0.15)",
+                mt: 0.5,
+              }}
+            />
+
+            {/* Collateral */}
+            <Box sx={{ textAlign: "right" }}>
+              <Tooltip
+                title="Open collateral is deducted from your total score while PRs are open, preventing low-quality PR spam."
+                arrow
+                placement="top"
+                slotProps={{
+                  tooltip: {
+                    sx: {
+                      backgroundColor: "rgba(30, 30, 30, 0.95)",
+                      color: "#ffffff",
+                      fontSize: "0.75rem",
+                      fontFamily: '"JetBrains Mono", monospace',
+                      padding: "8px 12px",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      maxWidth: 240,
+                    },
+                  },
+                  arrow: {
+                    sx: {
+                      color: "rgba(30, 30, 30, 0.95)",
+                    },
+                  },
+                }}
+              >
+                <Typography
+                  sx={{
+                    color: "rgba(255, 255, 255, 0.5)",
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: "0.7rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                    mb: 0.5,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "flex-end",
+                    gap: 0.5,
+                    cursor: "pointer",
+                  }}
+                >
+                  Collateral
+                  <InfoOutlinedIcon sx={{ fontSize: "0.85rem" }} />
+                </Typography>
+              </Tooltip>
+              <Typography
+                sx={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: "2rem",
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  color:
+                    collateralScore > 0
+                      ? "rgba(248, 113, 113, 0.9)"
+                      : "rgba(255, 255, 255, 0.4)",
+                }}
+              >
+                {collateralScore > 0
+                  ? `-${collateralScore.toFixed(2)}`
+                  : collateralScore.toFixed(2)}
+              </Typography>
+            </Box>
+          </Box>
+        ) : (
+          /* Merged PR: Show Score */
+          <Box sx={{ textAlign: "right" }}>
+            <Typography
+              sx={{
+                color: "rgba(255, 255, 255, 0.5)",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "0.7rem",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+                mb: 0.5,
+              }}
+            >
+              Score
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "2rem",
+                fontWeight: 700,
+                lineHeight: 1,
+                color: "#ffffff",
+              }}
+            >
+              {earnedScore.toFixed(2)}
+            </Typography>
+          </Box>
+        )}
+
+        {/* Low Value Badge - only for open PRs with collateral = 0 */}
+        {isLowValuePR && (
+          <Tooltip
+            title="This open PR will receive no score as it has been deemed a low value contribution. Low value PRs have a low percentage of substantive changes (e.g., primarily typo fixes, documentation, test files, comments, or markdown changes relative to actual code changes)."
+            arrow
+            placement="left"
+            slotProps={{
+              tooltip: {
+                sx: {
+                  backgroundColor: "rgba(30, 30, 30, 0.95)",
+                  color: "#ffffff",
+                  fontSize: "0.75rem",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  padding: "12px 16px",
+                  borderRadius: "8px",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  maxWidth: 300,
+                },
+              },
+              arrow: {
+                sx: {
+                  color: "rgba(30, 30, 30, 0.95)",
+                },
+              },
+            }}
+          >
+            <Chip
+              icon={
+                <WarningAmberIcon
+                  sx={{ fontSize: 14, color: "rgba(250, 204, 21, 0.9)" }}
+                />
+              }
+              label="Low Value"
+              size="small"
+              sx={{
+                height: "22px",
+                backgroundColor: "rgba(250, 204, 21, 0.1)",
+                border: "1px solid rgba(250, 204, 21, 0.3)",
+                color: "rgba(250, 204, 21, 0.9)",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "0.65rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                "& .MuiChip-label": {
+                  px: 0.75,
+                },
+              }}
+            />
+          </Tooltip>
+        )}
       </Box>
     </Box>
   );

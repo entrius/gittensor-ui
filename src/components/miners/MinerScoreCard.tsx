@@ -28,6 +28,7 @@ import {
   useAllMinerStats,
   useAllMinerData,
   useMinerGithubData,
+  useGeneralConfig,
 } from "../../api";
 
 interface MinerScoreCardProps {
@@ -41,8 +42,22 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
   const { data: prs } = useMinerPRs(githubId);
   // Fetch Rich Github Data
   const { data: githubData } = useMinerGithubData(githubId);
+  // Fetch general config for open PR threshold
+  const { data: generalConfig } = useGeneralConfig();
 
   const username = githubData?.login || prs?.[0]?.author || githubId;
+
+  // Get threshold from config or fallback to 10
+  const openPrThreshold =
+    generalConfig?.repositoryPrScoring?.excessivePrPenaltyThreshold ?? 10;
+
+  // Get color for open PRs based on proximity to threshold
+  const getOpenPrColor = (openPrs: number, threshold: number) => {
+    if (openPrs >= threshold) return "rgba(248, 113, 113, 0.9)"; // red
+    if (openPrs >= threshold - 1) return "rgba(251, 146, 60, 0.9)"; // orange
+    if (openPrs >= threshold - 2) return "rgba(250, 204, 21, 0.9)"; // yellow
+    return undefined; // default white
+  };
 
   // Fetch all miners' stats to calculate rankings
   const { data: allMinersStats } = useAllMinerStats();
@@ -218,6 +233,11 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
       label: "Open PRs",
       value: Number(minerStats.totalOpenPrs || 0),
       rank: null,
+      color: getOpenPrColor(
+        Number(minerStats.totalOpenPrs || 0),
+        openPrThreshold,
+      ),
+      tooltip: `Be careful not to exceed more than ${openPrThreshold} open PRs. Exceeding this incurs drastic penalties to your score.`,
     },
     {
       label: "Open Collateral",
