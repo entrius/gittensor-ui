@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import {
   Card,
   Box,
@@ -8,7 +8,7 @@ import {
   Grid,
   Chip,
 } from "@mui/material";
-import { useAllMinerData, usePullRequestDetails } from "../../api";
+import { usePullRequestDetails } from "../../api";
 import { useNavigate } from "react-router-dom";
 
 interface PRDetailsCardProps {
@@ -26,29 +26,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   // Fetch detailed PR data directly
   const { data: prDetails, isLoading: isDetailsLoading } =
     usePullRequestDetails(repository, pullRequestNumber);
-
-  // Keep fetching all PRs only for ranking purposes (optional, could be optimized later)
-  const { data: allPRs } = useAllMinerData();
-
-  // Calculate PR ranking among all PRs
-  const prRank = useMemo(() => {
-    if (!prDetails || !allPRs) return null;
-
-    // Sort all PRs by score descending
-    const sortedPRs = allPRs
-      .slice()
-      .sort((a, b) => parseFloat(b.score || "0") - parseFloat(a.score || "0"));
-
-    // Find the rank of this specific PR
-    const rank =
-      sortedPRs.findIndex(
-        (pr) =>
-          pr.repository === repository &&
-          pr.pullRequestNumber === pullRequestNumber,
-      ) + 1;
-
-    return rank || null;
-  }, [prDetails, allPRs, repository, pullRequestNumber]);
 
   if (isDetailsLoading) {
     return (
@@ -107,74 +84,32 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
 
   const isOpenPR = prDetails.prState === "OPEN";
 
-  const statItems = isOpenPR
-    ? [
-        {
-          label: "Collateral",
-          value:
-            parseFloat(prDetails.collateralScore || "0") > 0
-              ? `-${parseFloat(prDetails.collateralScore).toFixed(2)}`
-              : parseFloat(prDetails.collateralScore || "0").toFixed(2),
-          rank: null,
-          color:
-            parseFloat(prDetails.collateralScore || "0") > 0
-              ? "rgba(248, 113, 113, 0.8)"
-              : undefined,
-        },
-        {
-          label: "Base Score",
-          value: parseFloat(prDetails.baseScore).toFixed(2),
-          rank: null,
-          color: "rgba(255, 255, 255, 0.7)",
-        },
-        {
-          label: "Lines Scored",
-          value: prDetails.totalLinesScored.toLocaleString(),
-          rank: null,
-        },
-        {
-          label: "Changes",
-          value: "",
-          rank: null,
-          additions: prDetails.additions,
-          deletions: prDetails.deletions,
-        },
-        {
-          label: "Commits",
-          value: prDetails.commits,
-          rank: null,
-        },
-      ]
-    : [
-        {
-          label: "Score",
-          value: parseFloat(prDetails.earnedScore).toFixed(2),
-          rank: prRank,
-        },
-        {
-          label: "Base Score",
-          value: parseFloat(prDetails.baseScore).toFixed(2),
-          rank: null,
-          color: "rgba(255, 255, 255, 0.7)",
-        },
-        {
-          label: "Lines Scored",
-          value: prDetails.totalLinesScored.toLocaleString(),
-          rank: null,
-        },
-        {
-          label: "Changes",
-          value: "",
-          rank: null,
-          additions: prDetails.additions,
-          deletions: prDetails.deletions,
-        },
-        {
-          label: "Commits",
-          value: prDetails.commits,
-          rank: null,
-        },
-      ];
+  // Score/Collateral is now shown in header, so only show other stats here
+  const statItems = [
+    {
+      label: "Base Score",
+      value: parseFloat(prDetails.baseScore).toFixed(2),
+      rank: null,
+      color: "rgba(255, 255, 255, 0.7)",
+    },
+    {
+      label: "Lines Scored",
+      value: prDetails.totalLinesScored.toLocaleString(),
+      rank: null,
+    },
+    {
+      label: "Changes",
+      value: "",
+      rank: null,
+      additions: prDetails.additions,
+      deletions: prDetails.deletions,
+    },
+    {
+      label: "Commits",
+      value: prDetails.commits,
+      rank: null,
+    },
+  ];
 
   // For OPEN PRs: collateral = base_score × repo_weight × issue_multiplier × gittensor_tag × 20%
   // Only show applicable multipliers

@@ -29,6 +29,7 @@ export interface LanguageFileScoring {
 
 export interface RepositoryPrScoring {
   defaultMergedPrBaseScore: number;
+  mergedPrContributionBonusScoreMax: number;
   uniquePrBoost: number;
   maxIssueCloseWindowDays: number;
   maxIssueAgeForMaxScore: number;
