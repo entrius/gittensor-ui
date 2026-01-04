@@ -351,6 +351,7 @@ const GlobalActivity: React.FC = () => {
                 display: "flex",
                 flexDirection: "column",
                 [theme.breakpoints.between("lg", "xl")]: { padding: "16px" },
+                overflow: "visible",
               })}
             >
               <Box
