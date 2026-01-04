@@ -47,7 +47,7 @@ export const FAQContent: React.FC = () => {
               may provide utility value to the incentive mechanism or other
               aspects of a subnet. Check Gittensor's token page on{" "}
               <a
-                href="https://taostats.io/subnets/netuid-74/"
+                href="https://taostats.io/subnets/74/chart"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ color: "inherit", textDecoration: "underline" }}
