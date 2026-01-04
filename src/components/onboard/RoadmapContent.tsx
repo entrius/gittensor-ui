@@ -118,7 +118,7 @@ const RoadmapItem: React.FC<RoadmapItemProps> = ({
           ml: isMobile ? "60px" : 0,
           pl: isMobile ? 0 : isEven ? 6 : 0,
           pr: isMobile ? 0 : isEven ? 0 : 6,
-          textAlign: isMobile ? "left" : isEven ? "left" : "right",
+          textAlign: "center",
         }}
       >
         <Box
@@ -129,12 +129,6 @@ const RoadmapItem: React.FC<RoadmapItemProps> = ({
               "linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
             border: "1px solid rgba(255, 255, 255, 0.08)",
             backdropFilter: "blur(10px)",
-            transition: "all 0.3s ease",
-            "&:hover": {
-              borderColor: "secondary.main",
-              transform: "translateY(-4px)",
-              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.4)",
-            },
           }}
         >
           {isMobile && (
