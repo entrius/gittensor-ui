@@ -53,6 +53,18 @@ export const FAQContent: React.FC = () => {
             </>
           }
         />
+        <FAQ
+          question="How are rewards calculated?"
+          answer="Your rewards are primarily determined by the weight of the repository you contribute to, the complexity of your Pull Request, and the age of the issue you resolve. We also factor in your 'credibility', which is the ratio of your merged PRs to your total closed/rejected PRs."
+        />
+        <FAQ
+          question="Do I need to stake TAO to become a miner?"
+          answer="No, miners do not need to stake TAO to participate. However, registering a miner UID on the subnet requires a registration fee (burn) in TAO, which fluctuates based on network demand."
+        />
+        <FAQ
+          question="What repositories can I contribute to?"
+          answer="You must contribute to an incentivized repository listed in our master list. Repositories are organized into three tiers (Bronze, Silver, Gold), and you must unlock each tier by meeting specific merged PR count and credibility requirements to earn rewards from it. Check the 'Scoring' tab for details on unlocking tiers."
+        />
       </Stack>
     </Box>
   );
