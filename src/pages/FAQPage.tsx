@@ -59,7 +59,22 @@ export const FAQContent: React.FC = () => {
         />
         <FAQ
           question="Do I need to stake TAO to become a miner?"
-          answer="No, miners do not need to stake TAO to participate. However, registering a miner UID on the subnet requires a registration fee (burn) in TAO, which fluctuates based on network demand."
+          answer={
+            <>
+              No, miners do not need to stake TAO to participate. However,
+              registering a miner UID on the subnet requires a registration fee
+              (burn) in TAO, which fluctuates based on network demand. See the{" "}
+              <a
+                href="https://docs.bittensor.com/miners"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "inherit", textDecoration: "underline" }}
+              >
+                official Bittensor documentation
+              </a>{" "}
+              for more details.
+            </>
+          }
         />
         <FAQ
           question="What repositories can I contribute to?"
