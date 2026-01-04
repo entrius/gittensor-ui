@@ -68,7 +68,7 @@ export const AboutContent: React.FC<AboutContentProps> = ({
     const daysInMonth = new Date(
       now.getFullYear(),
       now.getMonth() + 1,
-      0
+      0,
     ).getDate();
     return taoPrice * alphaPrice * dailyAlphaEmissions * daysInMonth;
   }, [stats?.prices]);
@@ -128,7 +128,8 @@ export const AboutContent: React.FC<AboutContentProps> = ({
               >
                 We have built a permissionless network where anyone can submit
                 Pull Requests to recognized repositories. When your code is
-                merged, you earn direct emissions. It's that simple: <strong style={{ color: "white" }}>Code, Merge, Earn.</strong>
+                merged, you earn direct emissions. It's that simple:{" "}
+                <strong style={{ color: "white" }}>Code, Merge, Earn.</strong>
               </Typography>
             </Grid>
             <Grid item xs={12} md={6}>
@@ -209,12 +210,12 @@ export const AboutContent: React.FC<AboutContentProps> = ({
                 title: "Direct Incentives",
                 desc: monthlyRewards
                   ? `Stop coding for free. Compete for a share of the $${monthlyRewards.toLocaleString(
-                    undefined,
-                    {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    }
-                  )} monthly reward pool by making open source contributions.`
+                      undefined,
+                      {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      },
+                    )} monthly reward pool by making open source contributions.`
                   : "Stop coding for free. Get paid in TAO for your open source contributions.",
               },
               {

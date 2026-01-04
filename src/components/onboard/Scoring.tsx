@@ -88,7 +88,11 @@ export const Scoring: React.FC = () => {
           border: "1px solid rgba(255, 255, 255, 0.08)",
         }}
       >
-        <Typography variant="h5" fontWeight="bold" sx={{ mb: 2, color: "#fff" }}>
+        <Typography
+          variant="h5"
+          fontWeight="bold"
+          sx={{ mb: 2, color: "#fff" }}
+        >
           Dive Deeper
         </Typography>
         <Typography
@@ -96,7 +100,8 @@ export const Scoring: React.FC = () => {
           color="text.secondary"
           sx={{ mb: 4, maxWidth: 600, mx: "auto" }}
         >
-          Learn about the exact formulas, multipliers, and weight calculations in our detailed documentation.
+          Learn about the exact formulas, multipliers, and weight calculations
+          in our detailed documentation.
         </Typography>
         <Button
           variant="contained"

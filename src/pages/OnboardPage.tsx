@@ -66,7 +66,6 @@ const OnboardPage: React.FC = () => {
           py: 4,
         }}
       >
-
         <Box
           sx={{
             maxWidth: 1200,

@@ -73,7 +73,9 @@ export const GettingStarted: React.FC = () => {
                   borderColor: item.active
                     ? "secondary.main"
                     : "rgba(255,255,255,0.1)",
-                  color: item.active ? "secondary.main" : "rgba(255, 255, 255, 0.5)",
+                  color: item.active
+                    ? "secondary.main"
+                    : "rgba(255, 255, 255, 0.5)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -117,8 +119,6 @@ export const GettingStarted: React.FC = () => {
         </Stack>
       </Box>
 
-
-
       <Box
         sx={{
           textAlign: "center",
@@ -129,7 +129,11 @@ export const GettingStarted: React.FC = () => {
           border: "1px solid rgba(255, 255, 255, 0.08)",
         }}
       >
-        <Typography variant="h5" fontWeight="bold" sx={{ mb: 2, color: "#fff" }}>
+        <Typography
+          variant="h5"
+          fontWeight="bold"
+          sx={{ mb: 2, color: "#fff" }}
+        >
           Ready to Deploy?
         </Typography>
         <Typography
@@ -137,7 +141,8 @@ export const GettingStarted: React.FC = () => {
           color="text.secondary"
           sx={{ mb: 4, maxWidth: 600, mx: "auto" }}
         >
-          Follow our comprehensive documentation to set up your environment and start mining today.
+          Follow our comprehensive documentation to set up your environment and
+          start mining today.
         </Typography>
         <Button
           variant="contained"

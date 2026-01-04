@@ -1,5 +1,12 @@
 import React from "react";
-import { Box, Stack, Typography, Grid, useTheme, useMediaQuery } from "@mui/material";
+import {
+  Box,
+  Stack,
+  Typography,
+  Grid,
+  useTheme,
+  useMediaQuery,
+} from "@mui/material";
 import {
   CurrencyExchange,
   Speed,
@@ -147,7 +154,11 @@ const RoadmapItem: React.FC<RoadmapItemProps> = ({
               {timeframe}
             </Typography>
           )}
-          <Typography variant="h5" fontWeight="bold" sx={{ mb: 1.5, color: "#fff" }}>
+          <Typography
+            variant="h5"
+            fontWeight="bold"
+            sx={{ mb: 1.5, color: "#fff" }}
+          >
             {title}
           </Typography>
           <Typography variant="body1" color="text.secondary" lineHeight={1.6}>
@@ -202,8 +213,6 @@ export const RoadmapContent: React.FC = () => {
       }}
     >
       <Box sx={{ maxWidth: 1000, width: "100%", px: { xs: 2, md: 4 } }}>
-
-
         <Stack spacing={{ xs: 0, md: 0 }} sx={{ mb: 12 }}>
           {roadmapItems.map((item, index) => (
             <RoadmapItem
@@ -236,7 +245,8 @@ export const RoadmapContent: React.FC = () => {
               right: -100,
               width: 300,
               height: 300,
-              background: "radial-gradient(circle, rgba(255, 215, 0, 0.05) 0%, transparent 70%)",
+              background:
+                "radial-gradient(circle, rgba(255, 215, 0, 0.05) 0%, transparent 70%)",
               borderRadius: "50%",
               pointerEvents: "none",
             }}
