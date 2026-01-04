@@ -202,14 +202,7 @@ export const RoadmapContent: React.FC = () => {
       }}
     >
       <Box sx={{ maxWidth: 1000, width: "100%", px: { xs: 2, md: 4 } }}>
-        <Typography
-          variant="h3"
-          fontWeight="bold"
-          align="center"
-          sx={{ mb: 8, color: "#fff" }}
-        >
-          Project Roadmap
-        </Typography>
+
 
         <Stack spacing={{ xs: 0, md: 0 }} sx={{ mb: 12 }}>
           {roadmapItems.map((item, index) => (
