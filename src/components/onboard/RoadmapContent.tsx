@@ -293,8 +293,8 @@ export const RoadmapContent: React.FC = () => {
               how software is built by enabling open, scalable, and
               market-driven contribution flows. It directly competes with and
               ultimately replaces the capabilities of Anthropic's Claude coding
-              workflows, Cursor, Windsurf, Devin, and existing AI coding
-              assistants.
+              workflows, Cursor, Windsurf, Devin, OpenAI's Codex, Google's
+              Antigravity, and every emerging AI coding assistant.
             </Typography>
 
             <Typography
