@@ -21,11 +21,42 @@ export const FAQContent: React.FC = () => {
         />
         <FAQ
           question="What is a subnet?"
-          answer="The implementation of an incentive mechanism with the outcome of some kind of digital asset, commodity, or service."
+          answer={
+            <>
+              The implementation of an incentive mechanism with the outcome of
+              some kind of digital asset, commodity, or service. Learn more at{" "}
+              <a
+                href="https://docs.learnbittensor.org/subnets/understanding-subnets"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "inherit", textDecoration: "underline" }}
+              >
+                Understanding Subnets
+              </a>
+              .
+            </>
+          }
         />
         <FAQ
           question="What are alpha tokens?"
-          answer="A subnet specific asset that is created within the Bittensor blockchain. New tokens are minted/distributed daily. It has a fluctuating price based on a subnet's liquidity pool. They also may provide utility value to the incentive mechanism or other aspects of a subnet."
+          answer={
+            <>
+              A subnet specific asset that is created within the Bittensor
+              blockchain. New tokens are minted/distributed daily. It has a
+              fluctuating price based on a subnet's liquidity pool. They also
+              may provide utility value to the incentive mechanism or other
+              aspects of a subnet. Check Gittensor's token page on{" "}
+              <a
+                href="https://taostats.io/subnets/netuid-74/"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "inherit", textDecoration: "underline" }}
+              >
+                Taostats
+              </a>
+              .
+            </>
+          }
         />
         <FAQ
           question="What is Gittensor?"
@@ -55,7 +86,24 @@ export const FAQContent: React.FC = () => {
         />
         <FAQ
           question="How are rewards calculated?"
-          answer="Your rewards are primarily determined by the weight of the repository you contribute to, the complexity of your Pull Request, and the age of the issue you resolve. We also factor in your 'credibility', which is the ratio of your merged PRs to your total closed/rejected PRs."
+          answer={
+            <>
+              Your rewards are primarily determined by the weight of the
+              repository you contribute to, the complexity of your Pull Request,
+              and the age of the issue you resolve. We also factor in your
+              'credibility', which is the ratio of your merged PRs to your total
+              closed/rejected PRs. See the{" "}
+              <a
+                href="https://docs.gittensor.io/scoring.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "inherit", textDecoration: "underline" }}
+              >
+                scoring documentation
+              </a>{" "}
+              for a complete breakdown.
+            </>
+          }
         />
         <FAQ
           question="Do I need to stake TAO to become a miner?"
