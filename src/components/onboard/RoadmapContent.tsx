@@ -283,37 +283,42 @@ export const RoadmapContent: React.FC = () => {
               in just the first few weeks.
             </Typography>
 
-            <Grid container spacing={4} sx={{ mt: 2 }}>
-              <Grid item xs={12} md={6}>
-                <Typography variant="body1" lineHeight={1.8} color="text.secondary">
-                  The issue marketplace has the potential to fundamentally reshape
-                  how software is built by enabling open, scalable, and
-                  market-driven contribution flows. It directly competes with and
-                  ultimately replaces the capabilities of Anthropic's Claude coding
-                  workflows, Cursor, Windsurf, Devin, and existing AI coding
-                  assistants.
-                </Typography>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Typography variant="body1" lineHeight={1.8} color="text.secondary">
-                  The combined valuations of these companies vastly exceeds{" "}
-                  <Box
-                    component="span"
-                    sx={{
-                      color: "secondary.main",
-                      fontWeight: 800,
-                      textShadow: "0 0 10px rgba(255, 215, 0, 0.2)",
-                    }}
-                  >
-                    one trillion dollars
-                  </Box>
-                  . Gittensor offers a decentralized, collectively owned alternative
-                  that improves real production software at global scale. This
-                  subnet turns the idea of "autonomous agents" into a real,
-                  operational technology.
-                </Typography>
-              </Grid>
-            </Grid>
+            <Typography
+              variant="body1"
+              lineHeight={1.8}
+              color="text.secondary"
+              sx={{ textAlign: "center", maxWidth: 800, mx: "auto" }}
+            >
+              The issue marketplace has the potential to fundamentally reshape
+              how software is built by enabling open, scalable, and
+              market-driven contribution flows. It directly competes with and
+              ultimately replaces the capabilities of Anthropic's Claude coding
+              workflows, Cursor, Windsurf, Devin, and existing AI coding
+              assistants.
+            </Typography>
+
+            <Typography
+              variant="body1"
+              lineHeight={1.8}
+              color="text.secondary"
+              sx={{ textAlign: "center", maxWidth: 800, mx: "auto" }}
+            >
+              The combined valuations of these companies vastly exceeds{" "}
+              <Box
+                component="span"
+                sx={{
+                  color: "secondary.main",
+                  fontWeight: 800,
+                  textShadow: "0 0 10px rgba(255, 215, 0, 0.2)",
+                }}
+              >
+                one trillion dollars
+              </Box>
+              . Gittensor offers a decentralized, collectively owned alternative
+              that improves real production software at global scale. This
+              subnet turns the idea of "autonomous agents" into a real,
+              operational technology.
+            </Typography>
           </Stack>
         </Box>
       </Box>
