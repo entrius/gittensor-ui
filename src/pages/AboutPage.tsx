@@ -2,6 +2,7 @@ import React from "react";
 import { Box, Typography, Grid } from "@mui/material";
 import { Page } from "../components/layout";
 import { SEO } from "../components";
+import { useStats } from "../api";
 
 interface SectionProps {
   title: string;
@@ -51,6 +52,27 @@ interface AboutContentProps {
 export const AboutContent: React.FC<AboutContentProps> = ({
   onStartMining,
 }) => {
+  const { data: stats } = useStats();
+
+  const monthlyRewards = React.useMemo(() => {
+    if (
+      !stats?.prices?.tao?.data?.price ||
+      !stats?.prices?.alpha?.data?.price
+    ) {
+      return undefined;
+    }
+    const taoPrice = stats.prices.tao.data.price;
+    const alphaPrice = stats.prices.alpha.data.price;
+    const dailyAlphaEmissions = 2952;
+    const now = new Date();
+    const daysInMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0
+    ).getDate();
+    return taoPrice * alphaPrice * dailyAlphaEmissions * daysInMonth;
+  }, [stats?.prices]);
+
   return (
     <Box
       sx={{
@@ -185,17 +207,25 @@ export const AboutContent: React.FC<AboutContentProps> = ({
               {
                 icon: <MonetizationOnIcon fontSize="large" />,
                 title: "Direct Incentives",
-                desc: "Stop coding for free. Get paid in TAO for every impactful contribution you make to open source.",
+                desc: monthlyRewards
+                  ? `Stop coding for free. Compete for a share of the $${monthlyRewards.toLocaleString(
+                    undefined,
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }
+                  )} monthly reward pool by making open source contributions.`
+                  : "Stop coding for free. Get paid in TAO for your open source contributions.",
               },
               {
                 icon: <VerifiedUserIcon fontSize="large" />,
                 title: "On-Chain Resume",
-                desc: "Build a verifiable reputation. Your contributions are recorded and rewarded transparently.",
+                desc: "Build a verifiable reputation. Your contributions are permanently recorded on-chain, creating proof of your engineering skills.",
               },
               {
                 icon: <CodeIcon fontSize="large" />,
                 title: "Freedom to Build",
-                desc: "No managers, no hours. Choose any supported repository, fix any issue, and submit your code.",
+                desc: "Work on your terms. No managers, no set hours. Simply pick a task, write code, and get paid.",
               },
             ].map((card, i) => (
               <Grid item xs={12} md={4} key={i}>
@@ -206,12 +236,6 @@ export const AboutContent: React.FC<AboutContentProps> = ({
                     borderRadius: 4,
                     background: "rgba(255, 255, 255, 0.02)",
                     border: "1px solid rgba(255, 255, 255, 0.08)",
-                    transition: "transform 0.2s",
-                    "&:hover": {
-                      transform: "translateY(-4px)",
-                      background: "rgba(255, 255, 255, 0.04)",
-                      borderColor: "secondary.main",
-                    },
                   }}
                 >
                   <Box sx={{ color: "secondary.main", mb: 2 }}>{card.icon}</Box>
