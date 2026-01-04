@@ -66,36 +66,6 @@ const OnboardPage: React.FC = () => {
           py: 4,
         }}
       >
-        {/* Hero / Intro Section */}
-        <Box sx={{ maxWidth: 800, textAlign: "center", mb: 6, px: 2 }}>
-          <Typography
-            variant="h3"
-            fontWeight="bold"
-            sx={{
-              mb: 2,
-              fontFamily: '"JetBrains Mono", monospace',
-              background: "linear-gradient(90deg, #fff 0%, #888 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
-            Get Paid to Code.
-          </Typography>
-          <Typography
-            variant="h6"
-            color="text.secondary"
-            sx={{ mb: 3, lineHeight: 1.6 }}
-          >
-            Gittensor turns open source contributions into a liquid asset. We
-            incentivize developers to build, fix, and improve recognized
-            repositories by rewarding merged Pull Requests with direct
-            emissions.
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Don't just code for free. Become a miner, solve issues, push code
-            and earn rewards for the code you create.
-          </Typography>
-        </Box>
 
         <Box
           sx={{
@@ -135,7 +105,15 @@ const OnboardPage: React.FC = () => {
         </Box>
 
         <Box sx={{ width: "100%" }}>
-          {activeTab === 0 && <AboutContent />}
+          {activeTab === 0 && (
+            <AboutContent
+              onStartMining={() => {
+                const newParams = new URLSearchParams(searchParams);
+                newParams.set("tab", "getting-started");
+                setSearchParams(newParams);
+              }}
+            />
+          )}
           {activeTab === 1 && <GettingStarted />}
           {activeTab === 2 && <Scoring />}
           {activeTab === 3 && (

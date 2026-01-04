@@ -37,78 +37,251 @@ const Section: React.FC<SectionProps> = ({ title, children }) => (
   </Box>
 );
 
-export const AboutContent: React.FC = () => {
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import CodeIcon from "@mui/icons-material/Code";
+import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
+import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
+import { Button, Stack } from "@mui/material";
+
+interface AboutContentProps {
+  onStartMining?: () => void;
+}
+
+export const AboutContent: React.FC<AboutContentProps> = ({
+  onStartMining,
+}) => {
   return (
     <Box
       sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
         width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
       }}
     >
       <Box
         sx={{
-          maxWidth: 1400,
+          maxWidth: 1000,
           width: "100%",
           px: { xs: 2, sm: 3, md: 4 },
         }}
       >
-        <Grid
-          container
-          spacing={{ xs: 3, sm: 3, lg: 3 }}
+        {/* 1. Context: What is Gittensor? */}
+        <Box sx={{ mb: 8 }}>
+          <Typography
+            variant="h4"
+            fontWeight="bold"
+            sx={{
+              mb: 3,
+              fontFamily: '"JetBrains Mono", monospace',
+              color: "#fff",
+            }}
+          >
+            The Marketplace for Open Source
+          </Typography>
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={6}>
+              <Typography
+                variant="body1"
+                sx={{
+                  color: "rgba(255, 255, 255, 0.8)",
+                  lineHeight: 1.8,
+                  fontSize: "1.05rem",
+                  mb: 2,
+                }}
+              >
+                Open source software powers the world, yet its builders are
+                rarely compensated for the immense value they create. Gittensor
+                changes this by transforming code contributions into a liquid
+                asset.
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{
+                  color: "rgba(255, 255, 255, 0.8)",
+                  lineHeight: 1.8,
+                  fontSize: "1.05rem",
+                }}
+              >
+                We have built a permissionless network where anyone can submit
+                Pull Requests to recognized repositories. When your code is
+                merged, you earn direct emissions. It's that simple: <strong style={{ color: "white" }}>Code, Merge, Earn.</strong>
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 4,
+                  background:
+                    "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  fontWeight="bold"
+                  sx={{ mb: 2, color: "secondary.main" }}
+                >
+                  How It Works
+                </Typography>
+                <Stack spacing={2}>
+                  {[
+                    {
+                      role: "Miners (You)",
+                      desc: "Submit high-quality PRs to OSS repos.",
+                    },
+                    {
+                      role: "Validators",
+                      desc: "Verify merged PRs and distribute rewards.",
+                    },
+                    {
+                      role: "The Network",
+                      desc: "Incentivizes production-ready software.",
+                    },
+                  ].map((item, i) => (
+                    <Box key={i} sx={{ display: "flex", gap: 2 }}>
+                      <Box
+                        sx={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: "50%",
+                          bgcolor: "secondary.main",
+                          mt: 1,
+                        }}
+                      />
+                      <Box>
+                        <Typography
+                          variant="subtitle2"
+                          fontWeight="bold"
+                          color="text.primary"
+                        >
+                          {item.role}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {item.desc}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ))}
+                </Stack>
+              </Box>
+            </Grid>
+          </Grid>
+        </Box>
+
+        {/* 2. Recruitment: Why Mine? */}
+        <Box sx={{ mb: 8 }}>
+          <Typography
+            variant="h5"
+            fontWeight="bold"
+            sx={{ mb: 4, textAlign: "center" }}
+          >
+            Why Become a Miner?
+          </Typography>
+          <Grid container spacing={3}>
+            {[
+              {
+                icon: <MonetizationOnIcon fontSize="large" />,
+                title: "Direct Incentives",
+                desc: "Stop coding for free. Get paid in TAO for every impactful contribution you make to open source.",
+              },
+              {
+                icon: <VerifiedUserIcon fontSize="large" />,
+                title: "On-Chain Resume",
+                desc: "Build a verifiable reputation. Your contributions are recorded and rewarded transparently.",
+              },
+              {
+                icon: <CodeIcon fontSize="large" />,
+                title: "Freedom to Build",
+                desc: "No managers, no hours. Choose any supported repository, fix any issue, and submit your code.",
+              },
+            ].map((card, i) => (
+              <Grid item xs={12} md={4} key={i}>
+                <Box
+                  sx={{
+                    p: 4,
+                    height: "100%",
+                    borderRadius: 4,
+                    background: "rgba(255, 255, 255, 0.02)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    transition: "transform 0.2s",
+                    "&:hover": {
+                      transform: "translateY(-4px)",
+                      background: "rgba(255, 255, 255, 0.04)",
+                      borderColor: "secondary.main",
+                    },
+                  }}
+                >
+                  <Box sx={{ color: "secondary.main", mb: 2 }}>{card.icon}</Box>
+                  <Typography
+                    variant="h6"
+                    fontWeight="bold"
+                    gutterBottom
+                    sx={{ color: "#fff" }}
+                  >
+                    {card.title}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    lineHeight={1.6}
+                    color="text.secondary"
+                  >
+                    {card.desc}
+                  </Typography>
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+
+        {/* 3. CTA: Check the Docs / Get Started */}
+        <Box
           sx={{
-            position: "relative",
+            textAlign: "center",
+            p: 6,
+            borderRadius: 4,
+            background:
+              "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(255,255,255,0.03) 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            mb: 8,
           }}
         >
-          {/* Row 1: Mission and How */}
-          <Grid item xs={12} sm={6}>
-            <Section title="Mission">
-              Open source software powers the world, but its builders rarely
-              receive ownership or reward for the value they create. Our mission
-              is to transform software into a global public resource, accessible
-              to everyone. We believe code should be treated as shared
-              infrastructure (Res communes omnium), open, collective, and self
-              advancing for the benefit of all.
-            </Section>
-          </Grid>
+          <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>
+            Ready to Start earning?
+          </Typography>
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{ mb: 4, maxWidth: 600, mx: "auto" }}
+          >
+            We have prepared a comprehensive guide to help you set up your
+            miner, register on the network, and make your first submission.
+          </Typography>
+          <Button
+            variant="contained"
+            color="secondary"
+            size="large"
+            href="https://docs.gittensor.io/"
+            target="_blank"
+            rel="noopener noreferrer"
+            endIcon={<OpenInNewIcon />}
+            sx={{
+              px: 5,
+              py: 2,
+              fontSize: "1.1rem",
+              fontWeight: "bold",
+              borderRadius: "50px",
+              boxShadow: "0 0 20px rgba(0, 0, 0, 0.3)",
+              textTransform: "none",
+            }}
+          >
+            View Documentation & Setup Guide
+          </Button>
+        </Box>
 
-          <Grid item xs={12} sm={6}>
-            <Section title="How">
-              Gittensor enables this mission through a permissionless software
-              marketplace. Anyone can build features, fix bugs, or improve code
-              in recognized repositories. If your work is accepted and merged,
-              the network rewards you automatically with emissions. Incentives
-              align around one metric: production ready software. The better and
-              more impactful your contribution, the more you earn.
-            </Section>
-          </Grid>
-
-          {/* Row 2: Miners and Validators */}
-          <Grid item xs={12} sm={6}>
-            <Section title="Miners">
-              OSS developers make pull requests (PRs) into recognized OSS
-              repositories on Github. Their goal is to get their code into the
-              production branch of a repository. Their compensation (emissions)
-              is then calculated based on many factors such as: PR size, files
-              affected, repository popularity, number of unique repositories
-              contributed to, etc...
-            </Section>
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <Section title="Validators">
-              Leverage the GitHub API to authenticate miners and verify their
-              contributions to OSS repositories. Validators query miners to
-              confirm GitHub Personal Access Token (PAT) ownership, analyze
-              merged pull requests for quality and impact, calculate reward
-              scores based on contribution metrics, and distribute alpha
-              emissions across the network while maintaining system integrity.
-            </Section>
-          </Grid>
-        </Grid>
-
-        {/* Community Section */}
+        {/* Community Section (Footer) */}
         <Box
           sx={{
             mt: { xs: 4, sm: 5, md: 6 },
@@ -118,6 +291,7 @@ export const AboutContent: React.FC = () => {
             border: "1px solid rgba(255, 255, 255, 0.1)",
             position: "relative",
             overflow: "hidden",
+            width: "100%",
           }}
         >
           <Typography
