@@ -20,22 +20,22 @@ const OnboardPage: React.FC = () => {
   // Determine active tab from URL query param or default to 0
   const tabParam = searchParams.get("tab");
   const tabNameToIndex: Record<string, number> = {
-    "getting-started": 0,
-    scoring: 1,
-    repositories: 2,
-    languages: 3,
-    roadmap: 4,
-    about: 5,
+    about: 0,
+    "getting-started": 1,
+    scoring: 2,
+    repositories: 3,
+    languages: 4,
+    roadmap: 5,
     faq: 6,
   };
 
   const indexToTabName: Record<number, string> = {
-    0: "getting-started",
-    1: "scoring",
-    2: "repositories",
-    3: "languages",
-    4: "roadmap",
-    5: "about",
+    0: "about",
+    1: "getting-started",
+    2: "scoring",
+    3: "repositories",
+    4: "languages",
+    5: "roadmap",
     6: "faq",
   };
 
@@ -124,20 +124,21 @@ const OnboardPage: React.FC = () => {
               },
             }}
           >
+            <Tab label="About" />
             <Tab label="Getting Started" />
             <Tab label="Scoring" />
             <Tab label="Repositories" />
             <Tab label="Languages" />
             <Tab label="Roadmap" />
-            <Tab label="About" />
             <Tab label="FAQ" />
           </Tabs>
         </Box>
 
         <Box sx={{ width: "100%" }}>
-          {activeTab === 0 && <GettingStarted />}
-          {activeTab === 1 && <Scoring />}
-          {activeTab === 2 && (
+          {activeTab === 0 && <AboutContent />}
+          {activeTab === 1 && <GettingStarted />}
+          {activeTab === 2 && <Scoring />}
+          {activeTab === 3 && (
             <Box
               sx={{
                 display: "flex",
@@ -162,7 +163,7 @@ const OnboardPage: React.FC = () => {
               </Card>
             </Box>
           )}
-          {activeTab === 3 && (
+          {activeTab === 4 && (
             <Box
               sx={{
                 display: "flex",
@@ -187,8 +188,7 @@ const OnboardPage: React.FC = () => {
               </Card>
             </Box>
           )}
-          {activeTab === 4 && <RoadmapContent />}
-          {activeTab === 5 && <AboutContent />}
+          {activeTab === 5 && <RoadmapContent />}
           {activeTab === 6 && <FAQContent />}
         </Box>
       </Box>
