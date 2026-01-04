@@ -63,7 +63,24 @@ export const FAQContent: React.FC = () => {
         />
         <FAQ
           question="What repositories can I contribute to?"
-          answer="You must contribute to an incentivized repository listed in our master list. Repositories are organized into three tiers (Bronze, Silver, Gold), and you must unlock each tier by meeting specific merged PR count and credibility requirements to earn rewards from it. Check the 'Scoring' tab for details on unlocking tiers."
+          answer={
+            <>
+              You must contribute to an incentivized repository listed in our
+              master list. Repositories are organized into three tiers (Bronze,
+              Silver, Gold), and you must unlock each tier by meeting specific
+              merged PR count and credibility requirements to earn rewards from
+              it. Check the{" "}
+              <a
+                href="https://docs.gittensor.io/scoring.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "inherit", textDecoration: "underline" }}
+              >
+                Scoring documentation
+              </a>{" "}
+              for details on unlocking tiers.
+            </>
+          }
         />
       </Stack>
     </Box>
