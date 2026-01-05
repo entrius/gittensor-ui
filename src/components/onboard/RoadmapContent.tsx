@@ -228,13 +228,14 @@ export const RoadmapContent: React.FC = () => {
         <Box
           sx={{
             p: { xs: 3, md: 6 },
-            borderRadius: 6,
+            mt: 4,
+            borderRadius: 4,
             background:
-              "linear-gradient(180deg, rgba(20, 20, 20, 0.8) 0%, rgba(10, 10, 10, 0.95) 100%)",
-            border: "1px solid rgba(255, 215, 0, 0.15)",
+              "linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            backdropFilter: "blur(10px)",
             position: "relative",
             overflow: "hidden",
-            boxShadow: "0 0 40px rgba(0, 0, 0, 0.5)",
           }}
         >
           {/* Decorative Elements */}
@@ -246,14 +247,14 @@ export const RoadmapContent: React.FC = () => {
               width: 300,
               height: 300,
               background:
-                "radial-gradient(circle, rgba(255, 215, 0, 0.05) 0%, transparent 70%)",
+                "radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 70%)",
               borderRadius: "50%",
               pointerEvents: "none",
             }}
           />
 
           <Typography
-            variant="h4"
+            variant="h5"
             fontWeight="bold"
             sx={{
               mb: 4,
@@ -267,54 +268,42 @@ export const RoadmapContent: React.FC = () => {
 
           <Stack spacing={3}>
             <Typography
-              variant="h6"
+              variant="body1"
               lineHeight={1.6}
               color="text.secondary"
               sx={{ textAlign: "center", maxWidth: 800, mx: "auto" }}
             >
-              Gittensor is the only subnet that turns code into a liquid,
-              incentivized, self-improving global asset. We produced more than{" "}
-              <Box component="span" sx={{ color: "#fff", fontWeight: "bold" }}>
-                300,000 lines of merged production code
-              </Box>{" "}
-              in just the first few weeks.
+              We are creating the first permissionless marketplace for software
+              development, ushering in a new economic paradigm where any entity
+              can access a global talent pool. In this true meritocracy,
+              software development becomes a commodity, judged solely by value
+              and quality, abstracting away the distinction between human
+              developers and AI agents.
             </Typography>
 
             <Typography
               variant="body1"
-              lineHeight={1.8}
+              lineHeight={1.6}
               color="text.secondary"
               sx={{ textAlign: "center", maxWidth: 800, mx: "auto" }}
             >
-              The issue marketplace has the potential to fundamentally reshape
-              how software is built by enabling open, scalable, and
-              market-driven contribution flows. It directly competes with and
-              ultimately replaces the capabilities of Anthropic's Claude coding
-              workflows, Cursor, Windsurf, Devin, OpenAI's Codex, Google's
-              Antigravity, and every emerging AI coding assistant.
+              By creating an open marketplace for coding tasks, we are
+              redefining how software is built. This decentralized approach
+              leverages collective intelligence to solve complex problems,
+              offering a scalable and community-owned foundation for the future
+              of software development.
             </Typography>
 
             <Typography
               variant="body1"
-              lineHeight={1.8}
+              lineHeight={1.6}
               color="text.secondary"
               sx={{ textAlign: "center", maxWidth: 800, mx: "auto" }}
             >
-              The combined valuations of these companies vastly exceeds{" "}
-              <Box
-                component="span"
-                sx={{
-                  color: "secondary.main",
-                  fontWeight: 800,
-                  textShadow: "0 0 10px rgba(255, 215, 0, 0.2)",
-                }}
-              >
-                one trillion dollars
-              </Box>
-              . Gittensor offers a decentralized, collectively owned alternative
-              that improves real production software at global scale. This
-              subnet turns the idea of "autonomous agents" into a real,
-              operational technology.
+              We are turning the concept of "autonomous agents" into operational
+              reality. Gittensor is not just a tool, it is a self-improving
+              ecosystem designed to maintain and evolve real-world applications
+              at a global scale.
             </Typography>
           </Stack>
         </Box>
