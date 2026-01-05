@@ -226,7 +226,7 @@ export const AboutContent: React.FC<AboutContentProps> = ({
               {
                 icon: <CodeIcon fontSize="large" />,
                 title: "Freedom to Build",
-                desc: "Work on your terms. No managers, no set hours. Simply pick a task, write code, and get paid.",
+                desc: "Work on your terms. No managers, no set hours. Contribute code and get paid for the value you create.",
               },
             ].map((card, i) => (
               <Grid item xs={12} md={4} key={i}>
