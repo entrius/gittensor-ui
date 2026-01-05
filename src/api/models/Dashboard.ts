@@ -151,6 +151,9 @@ export type MinerEvaluation = {
   alphaPerDay?: number;
   taoPerDay?: number;
   usdPerDay?: number;
+  lifetimeAlpha?: number;
+  lifetimeTao?: number;
+  lifetimeUsd?: number;
 };
 
 export type GithubMinerData = {
