@@ -17,6 +17,7 @@ import BugReportIcon from "@mui/icons-material/BugReport";
 import MergeTypeIcon from "@mui/icons-material/MergeType";
 import ArticleIcon from "@mui/icons-material/Article";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
+import FactCheckIcon from "@mui/icons-material/FactCheck";
 import { Page } from "../components/layout";
 import {
   RepositoryContributorsTable,
@@ -29,6 +30,7 @@ import {
   RepositoryStats,
   ContributingViewer,
   RepositoryMaintainers,
+  RepositoryCheckTab,
 } from "../components";
 
 interface TabPanelProps {
@@ -215,6 +217,12 @@ const RepositoryDetailsPage: React.FC = () => {
                 label="Contributing"
                 disableRipple
               />
+              <Tab
+                icon={<FactCheckIcon sx={{ fontSize: 16, mb: 0, mr: 1 }} />}
+                iconPosition="start"
+                label="Repo Check"
+                disableRipple
+              />
             </Tabs>
           </Box>
         </Container>
@@ -251,6 +259,11 @@ const RepositoryDetailsPage: React.FC = () => {
             {/* Contributing Tab */}
             <CustomTabPanel value={tabValue} index={4}>
               <ContributingViewer repositoryFullName={repo} />
+            </CustomTabPanel>
+
+            {/* Repo Check Tab */}
+            <CustomTabPanel value={tabValue} index={5}>
+              <RepositoryCheckTab repositoryFullName={repo} />
             </CustomTabPanel>
           </Grid>
 
