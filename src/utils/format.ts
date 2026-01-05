@@ -9,7 +9,7 @@
  */
 export const formatUsdEstimate = (
   value: number | undefined,
-  options?: { includeApproxPrefix?: boolean; showZero?: boolean }
+  options?: { includeApproxPrefix?: boolean; showZero?: boolean },
 ): string | null => {
   const { includeApproxPrefix = false, showZero = false } = options ?? {};
   const prefix = includeApproxPrefix ? "~" : "";

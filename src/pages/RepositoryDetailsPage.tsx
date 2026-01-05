@@ -122,10 +122,7 @@ const RepositoryDetailsPage: React.FC = () => {
                   >
                     {repo}
                   </Typography>
-                  <Chip
-                    variant="info"
-                    label="Public"
-                  />
+                  <Chip variant="info" label="Public" />
                 </Box>
               </Grid>
               <Grid

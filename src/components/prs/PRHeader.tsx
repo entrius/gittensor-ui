@@ -268,7 +268,8 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                       cursor: "pointer",
                     }}
                   >
-                    ~{formatUsdEstimate(predictedUsdPerDay, { showZero: true })}/day
+                    ~{formatUsdEstimate(predictedUsdPerDay, { showZero: true })}
+                    /day
                   </Typography>
                 </Tooltip>
               )}
@@ -407,7 +408,8 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                     cursor: "pointer",
                   }}
                 >
-                  ~{formatUsdEstimate(predictedUsdPerDay, { showZero: true })}/day
+                  ~{formatUsdEstimate(predictedUsdPerDay, { showZero: true })}
+                  /day
                 </Typography>
               </Tooltip>
             )}

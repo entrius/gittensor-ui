@@ -466,7 +466,10 @@ const LiveCommitLog: React.FC = () => {
                               height: isMobile ? 16 : isTablet ? 18 : 16,
                               fontSize: isMobile ? "0.55rem" : "0.6rem",
                               color: getPRStatusChip(entry).color,
-                              borderColor: alpha(getPRStatusChip(entry).color, 0.3),
+                              borderColor: alpha(
+                                getPRStatusChip(entry).color,
+                                0.3,
+                              ),
                             }}
                           />
                         )}
