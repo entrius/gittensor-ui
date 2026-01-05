@@ -4,105 +4,121 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 
 export const Scoring: React.FC = () => {
   return (
-    <Box sx={{ maxWidth: 1000, mx: "auto", p: { xs: 2, md: 0 } }}>
-      <Paper
-        elevation={0}
+    <Box sx={{ maxWidth: 1000, mx: "auto", px: { xs: 2, md: 4 }, py: 4 }}>
+      <Typography
+        variant="h4"
+        fontWeight="bold"
         sx={{
-          p: 4,
-          mb: 5,
-          background:
-            "linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)",
+          mb: 6,
+          fontFamily: '"JetBrains Mono", monospace',
+          color: "#fff",
+          textAlign: "center",
+        }}
+      >
+        Maximize Your Rewards
+      </Typography>
+
+      <Grid container spacing={3} sx={{ mb: 8 }}>
+        {[
+          {
+            title: "Merge PRs",
+            desc: "Focus on merging code changes to high weighted repositories. Your score's main factor is determined by the weight of the repository.",
+          },
+          {
+            title: "Solve Issues",
+            desc: "Link your PR to the issue it resolves (e.g. 'Closes #123'). Resolving older issues applies a higher bonus multiplier.",
+          },
+          {
+            title: "Tag Code",
+            desc: "Include the mandatory Gittensor tagline in your PR description. Without this tag, your work will not be rewarded.",
+          },
+          {
+            title: "Credibility",
+            desc: "Keep your merge rate high. A strong ratio of merged vs. closed PRs increases your credibility and unlocks tier multipliers.",
+          },
+        ].map((item, index) => (
+          <Grid item xs={12} md={3} key={index}>
+            <Box
+              sx={{
+                height: "100%",
+                p: 3,
+                borderRadius: 4,
+                background: "rgba(255, 255, 255, 0.02)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                transition: "transform 0.2s, border-color 0.2s",
+                "&:hover": {
+                  transform: "translateY(-4px)",
+                  background: "rgba(255, 255, 255, 0.04)",
+                  borderColor: "secondary.main",
+                },
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: "bold",
+                  color: "#fff",
+                  mb: 2,
+                  fontSize: "1.1rem",
+                }}
+              >
+                {item.title}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  lineHeight: 1.6,
+                }}
+              >
+                {item.desc}
+              </Typography>
+            </Box>
+          </Grid>
+        ))}
+      </Grid>
+
+      <Box
+        sx={{
+          textAlign: "center",
+          p: 6,
           borderRadius: 4,
-          border: "1px solid rgba(255,255,255,0.08)",
-          backdropFilter: "blur(20px)",
+          background:
+            "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(255,255,255,0.02) 100%)",
+          border: "1px solid rgba(255, 255, 255, 0.08)",
         }}
       >
         <Typography
-          variant="overline"
-          sx={{
-            display: "block",
-            mb: 4,
-            fontWeight: 700,
-            textAlign: "center",
-            letterSpacing: "0.2em",
-            color: "rgba(255,255,255,0.4)",
-          }}
+          variant="h5"
+          fontWeight="bold"
+          sx={{ mb: 2, color: "#fff" }}
         >
-          TL;DR: HOW TO MAXIMIZE REWARDS
+          Dive Deeper
         </Typography>
-
-        <Grid container spacing={3}>
-          {[
-            {
-              title: "Merge PRs",
-              desc: "Focus on merging code changes to high weighted repositories. Your score's main factor is determined by the weight of the repository.",
-            },
-            {
-              title: "Solve Issues",
-              desc: "Link your PR to the issue it resolves (e.g. 'Closes #123'). Resolving older issues applies a higher bonus multiplier.",
-            },
-            {
-              title: "Tag Code",
-              desc: "Include the mandatory Gittensor tagline in your PR description. Without this tag, your work will not be rewarded.",
-            },
-            {
-              title: "Credibility",
-              desc: "Keep your merge rate high. A strong ratio of merged vs. closed PRs increases your credibility and unlocks tier multipliers.",
-            },
-          ].map((item, index) => (
-            <Grid item xs={12} md={3} key={index}>
-              <Box
-                sx={{
-                  height: "100%",
-                  position: "relative",
-                  p: 3,
-                  borderRadius: 4,
-                  bgcolor: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.06)",
-                  overflow: "hidden",
-                }}
-              >
-                <Box sx={{ position: "relative", zIndex: 1 }}>
-                  <Typography
-                    variant="h6"
-                    sx={{ fontWeight: "bold", color: "#fff", mb: 1 }}
-                  >
-                    {item.title}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: "text.secondary",
-                      lineHeight: 1.5,
-                      display: "block",
-                    }}
-                  >
-                    {item.desc}
-                  </Typography>
-                </Box>
-              </Box>
-            </Grid>
-          ))}
-        </Grid>
-      </Paper>
-
-      <Box sx={{ textAlign: "center", mt: 4 }}>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-          For the complete scoring algorithm and detailed documentation, visit
-          our docs.
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          sx={{ mb: 4, maxWidth: 600, mx: "auto" }}
+        >
+          Learn about the exact formulas, multipliers, and weight calculations
+          in our detailed documentation.
         </Typography>
         <Button
           variant="contained"
+          color="secondary"
           size="large"
           href="https://docs.gittensor.io/scoring.html"
           target="_blank"
           rel="noopener noreferrer"
           endIcon={<OpenInNewIcon />}
           sx={{
-            textTransform: "none",
-            fontWeight: 600,
-            px: 4,
+            px: 5,
             py: 1.5,
+            fontSize: "1rem",
+            fontWeight: "bold",
+            borderRadius: "50px",
+            boxShadow: "0 0 20px rgba(0, 0, 0, 0.2)",
+            textTransform: "none",
           }}
         >
           View Scoring Documentation

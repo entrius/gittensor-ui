@@ -133,10 +133,21 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
         )}
       </Typography>
 
-      <Box sx={{ width: "100%", flex: 1, minHeight: "150px" }}>
+      <Box
+        sx={{
+          width: "100%",
+          flex: 1,
+          minHeight: "150px",
+          position: "relative",
+          zIndex: 1,
+          overflow: "visible",
+          "& div": { overflow: "visible !important" },
+          "& svg": { overflow: "visible !important" },
+        }}
+      >
         <ReactECharts
           option={chartOption}
-          style={{ height: "100%", width: "100%" }}
+          style={{ height: "100%", width: "100%", overflow: "visible" }}
           opts={{ renderer: "svg" }}
         />
       </Box>

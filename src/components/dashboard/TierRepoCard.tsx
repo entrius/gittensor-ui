@@ -44,7 +44,7 @@ const TierRepoCard: React.FC<TierRepoCardProps> = ({ tier, repos }) => {
         p: 1.5,
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
+        overflow: "visible",
       }}
     >
       <Typography
@@ -62,7 +62,7 @@ const TierRepoCard: React.FC<TierRepoCardProps> = ({ tier, repos }) => {
           justifyContent: "center",
           alignItems: "center",
           flex: 1,
-          overflow: "hidden",
+          overflow: "visible",
           position: "relative",
           zIndex: 2,
           pl: "12px",
