@@ -374,7 +374,15 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             </Box>
 
             {/* Current Tier Badge & Earnings */}
-            <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+            <Box
+              sx={{
+                mt: 1.5,
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                flexWrap: "wrap",
+              }}
+            >
               <Chip
                 variant="tier"
                 icon={<TierIcon />}
@@ -506,7 +514,8 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                         color: "rgba(96, 165, 250, 0.9)",
                       }}
                     >
-                      ~${Math.round(minerStats.lifetimeUsd).toLocaleString()} lifetime
+                      ~${Math.round(minerStats.lifetimeUsd).toLocaleString()}{" "}
+                      lifetime
                     </Typography>
                   </Box>
                 </Tooltip>
