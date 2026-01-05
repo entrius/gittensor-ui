@@ -43,7 +43,7 @@ export const FAQ: React.FC<FAQProps> = ({ question, answer }) => {
         />
       </Stack>
       <Collapse in={expanded}>
-        <Typography variant="body1" lineHeight={1.8} color="text.primary">
+        <Typography variant="body1" lineHeight={1.8} color="text.secondary">
           {answer}
         </Typography>
       </Collapse>
