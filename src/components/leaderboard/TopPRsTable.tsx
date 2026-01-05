@@ -1046,7 +1046,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                           includeApproxPrefix: true,
                         }) && (
                           <Tooltip
-                            title="Estimated daily earnings based on current network conditions"
+                            title="This is an estimation. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
                             arrow
                             placement="bottom"
                             slotProps={{

@@ -38,8 +38,8 @@ const PRHeader: React.FC<PRHeaderProps> = ({
   const earnedScore = parseFloat(prDetails.earnedScore || "0");
   const predictedUsdPerDay = prDetails.predictedUsdPerDay || 0;
 
-  // Low value: open PR with collateral score = 0
-  const isLowValuePR = isOpenPR && collateralScore === 0;
+  // Low value PR - use the field from API directly
+  const isLowValuePR = prDetails.lowValuePr === true;
 
   return (
     <Box sx={{ mb: 3, display: "flex", alignItems: "flex-start", gap: 2 }}>
@@ -236,7 +236,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               </Typography>
               {predictedUsdPerDay > 0 && (
                 <Tooltip
-                  title="Estimated daily earnings are approximations based on current network conditions. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
+                  title="This is an estimation. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
                   arrow
                   placement="bottom"
                   slotProps={{
@@ -376,7 +376,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
             </Typography>
             {!isClosed && predictedUsdPerDay > 0 && (
               <Tooltip
-                title="Estimated daily earnings are approximations based on current network conditions. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
+                title="This is an estimation. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
                 arrow
                 placement="bottom"
                 slotProps={{
@@ -416,10 +416,10 @@ const PRHeader: React.FC<PRHeaderProps> = ({
           </Box>
         )}
 
-        {/* Low Value Badge - only for open PRs with collateral = 0 */}
+        {/* Low Value Badge - shown for any PR state if lowValuePr is true */}
         {isLowValuePR && (
           <Tooltip
-            title="This open PR will receive no score as it has been deemed a low value contribution. Low value PRs have a low percentage of substantive changes (e.g., primarily typo fixes, documentation, test files, comments, or markdown changes relative to actual code changes)."
+            title="This PR received no score as it was deemed a low value contribution. Low value PRs have a low percentage of substantive changes (e.g., primarily typo fixes, documentation, test files, comments, or markdown changes relative to actual code changes)."
             arrow
             placement="left"
             slotProps={{

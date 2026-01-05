@@ -851,7 +851,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                   >
                     {formatUsdPerDay(miner.usdPerDay) && (
                       <Tooltip
-                        title="Estimated daily earnings based on current network conditions"
+                        title="This is an estimation. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
                         arrow
                         placement="top"
                         slotProps={{
