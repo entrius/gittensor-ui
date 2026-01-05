@@ -352,7 +352,9 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             </Box>
 
             {/* Current Tier Badge & Earnings */}
-            <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box
+              sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1.5 }}
+            >
               <Chip
                 icon={
                   <TierIcon
