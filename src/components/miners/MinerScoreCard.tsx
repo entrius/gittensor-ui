@@ -351,8 +351,8 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
               </Typography>
             </Box>
 
-            {/* Current Tier Badge */}
-            <Box sx={{ mt: 1.5 }}>
+            {/* Current Tier Badge & Earnings */}
+            <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1.5 }}>
               <Chip
                 icon={
                   <TierIcon
@@ -400,6 +400,61 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                   fontWeight: 600,
                 }}
               />
+              {minerStats.usdPerDay > 0 && (
+                <Tooltip
+                  title="Estimated daily earnings based on current network incentive distribution"
+                  arrow
+                  placement="top"
+                  slotProps={{
+                    tooltip: {
+                      sx: {
+                        backgroundColor: "rgba(15, 15, 17, 0.98)",
+                        color: "rgba(255, 255, 255, 0.85)",
+                        fontSize: "0.7rem",
+                        fontFamily: '"JetBrains Mono", monospace',
+                        padding: "8px 12px",
+                        borderRadius: "6px",
+                        border: "1px solid rgba(255, 255, 255, 0.08)",
+                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
+                      },
+                    },
+                    arrow: {
+                      sx: {
+                        color: "rgba(15, 15, 17, 0.98)",
+                      },
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      px: 1.25,
+                      py: 0.5,
+                      borderRadius: "6px",
+                      backgroundColor: "rgba(74, 222, 128, 0.08)",
+                      border: "1px solid rgba(74, 222, 128, 0.2)",
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                      "&:hover": {
+                        backgroundColor: "rgba(74, 222, 128, 0.12)",
+                        borderColor: "rgba(74, 222, 128, 0.3)",
+                      },
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: "0.8rem",
+                        fontWeight: 600,
+                        color: "rgba(74, 222, 128, 0.9)",
+                      }}
+                    >
+                      ~${Math.round(minerStats.usdPerDay)}/day
+                    </Typography>
+                  </Box>
+                </Tooltip>
+              )}
             </Box>
           </Box>
         </Box>

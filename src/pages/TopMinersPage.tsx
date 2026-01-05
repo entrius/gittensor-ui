@@ -32,6 +32,7 @@ const TopMinersPage: React.FC = () => {
       uniqueReposCount: Number(stat.uniqueReposCount) || 0,
       credibility: Number(stat.credibility) || 0,
       currentTier: stat.currentTier,
+      usdPerDay: Number(stat.usdPerDay) || 0,
     }));
   }, [allMinersStats]);
 

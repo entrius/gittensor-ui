@@ -92,6 +92,11 @@ export type CommitLog = {
   score: string; // Backend returns as string
   baseScore?: string; // Backend returns as string
   tier: string | null; // Bronze, Silver, Gold - from joined repositories table (null if repo not registered)
+  // Payout predictions (from /miners/all/prs endpoint)
+  potentialScore?: number;
+  predictedAlphaPerDay?: number;
+  predictedTaoPerDay?: number;
+  predictedUsdPerDay?: number;
 };
 
 export type MinerEvaluation = {
@@ -205,6 +210,11 @@ export type PullRequestDetails = {
   createdAt: string;
   updatedAt: string;
   tier: string; // Bronze, Silver, Gold
+  // Predicted daily payouts based on potential score
+  potentialScore?: number;
+  predictedAlphaPerDay?: number;
+  predictedTaoPerDay?: number;
+  predictedUsdPerDay?: number;
 };
 
 export type PullRequestComment = {

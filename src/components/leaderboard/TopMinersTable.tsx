@@ -42,6 +42,7 @@ interface MinerStats {
   uniqueReposCount?: number;
   credibility?: number;
   currentTier?: string;
+  usdPerDay?: number;
 }
 
 type SortColumn =
@@ -64,6 +65,15 @@ interface TopMinersTableProps {
 const truncateText = (text: string, maxLength: number): string => {
   if (!text) return "";
   return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+};
+
+// Format USD per day (whole dollars)
+const formatUsdPerDay = (value: number | undefined): string | null => {
+  if (!value || value <= 0) return null;
+  if (value >= 1) {
+    return `$${Math.round(value)}`;
+  }
+  return "<$1";
 };
 
 const TopMinersTable: React.FC<TopMinersTableProps> = ({
@@ -688,11 +698,17 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                 align="right"
                 sx={{
                   color: "secondary.main",
-                  width: "15%",
+                  width: "12%",
                 }}
               >
                 Score
               </SortableHeader>
+              <TableCell
+                sx={{
+                  ...headerCellStyle,
+                  width: "8%",
+                }}
+              />
               <SortableHeader
                 column="credibility"
                 align="right"
@@ -816,17 +832,66 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                   </TableCell>
                   <TableCell
                     align="right"
-                    sx={{ ...bodyCellStyle, width: "15%" }}
+                    sx={{ ...bodyCellStyle, width: "12%" }}
                   >
                     <Typography
                       sx={{
                         fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.75rem",
+                        fontSize: "0.8rem",
                         fontWeight: 600,
+                        color: "#ffffff",
                       }}
                     >
                       {Number(miner.totalScore || 0).toFixed(2)}
                     </Typography>
+                  </TableCell>
+                  <TableCell
+                    align="left"
+                    sx={{ ...bodyCellStyle, width: "8%", pl: 0.5 }}
+                  >
+                    {formatUsdPerDay(miner.usdPerDay) && (
+                      <Tooltip
+                        title="Estimated daily earnings based on current network conditions"
+                        arrow
+                        placement="top"
+                        slotProps={{
+                          tooltip: {
+                            sx: {
+                              backgroundColor: "rgba(15, 15, 17, 0.98)",
+                              color: "rgba(255, 255, 255, 0.85)",
+                              fontSize: "0.7rem",
+                              fontFamily: '"JetBrains Mono", monospace',
+                              padding: "8px 12px",
+                              borderRadius: "6px",
+                              border: "1px solid rgba(255, 255, 255, 0.08)",
+                              boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
+                            },
+                          },
+                          arrow: {
+                            sx: {
+                              color: "rgba(15, 15, 17, 0.98)",
+                            },
+                          },
+                        }}
+                      >
+                        <Typography
+                          component="span"
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.7rem",
+                            fontWeight: 500,
+                            color: "rgba(74, 222, 128, 0.7)",
+                            cursor: "pointer",
+                            transition: "color 0.15s ease",
+                            "&:hover": {
+                              color: "rgba(74, 222, 128, 0.95)",
+                            },
+                          }}
+                        >
+                          ({formatUsdPerDay(miner.usdPerDay)}/d)
+                        </Typography>
+                      </Tooltip>
+                    )}
                   </TableCell>
                   <TableCell
                     align="right"
