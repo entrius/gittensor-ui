@@ -123,13 +123,8 @@ const RepositoryDetailsPage: React.FC = () => {
                     {repo}
                   </Typography>
                   <Chip
+                    variant="info"
                     label="Public"
-                    size="small"
-                    variant="outlined"
-                    sx={{
-                      color: "text.secondary",
-                      borderColor: "rgba(255,255,255,0.2)",
-                    }}
                   />
                 </Box>
               </Grid>

@@ -155,20 +155,11 @@ const PRHeader: React.FC<PRHeaderProps> = ({
           </Typography>
           {prDetails.tier && (
             <Chip
+              variant="tier"
               label={prDetails.tier}
-              size="small"
               sx={{
-                height: "20px",
-                fontSize: "0.65rem",
-                fontFamily: '"JetBrains Mono", monospace',
-                backgroundColor: "transparent",
-                border: `1px solid ${getTierColor(prDetails.tier)}`,
                 color: getTierColor(prDetails.tier),
-                fontWeight: 600,
-                borderRadius: "4px",
-                "& .MuiChip-label": {
-                  px: 1,
-                },
+                borderColor: getTierColor(prDetails.tier),
               }}
             />
           )}
@@ -450,25 +441,14 @@ const PRHeader: React.FC<PRHeaderProps> = ({
             }}
           >
             <Chip
-              icon={
-                <WarningAmberIcon
-                  sx={{ fontSize: 14, color: "rgba(250, 204, 21, 0.9)" }}
-                />
-              }
+              variant="status"
+              icon={<WarningAmberIcon />}
               label="Low Value"
-              size="small"
               sx={{
-                height: "22px",
-                backgroundColor: "rgba(250, 204, 21, 0.1)",
-                border: "1px solid rgba(250, 204, 21, 0.3)",
                 color: "rgba(250, 204, 21, 0.9)",
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "0.65rem",
-                fontWeight: 600,
+                borderColor: "rgba(250, 204, 21, 0.3)",
                 cursor: "pointer",
-                "& .MuiChip-label": {
-                  px: 0.75,
-                },
+                "& .MuiChip-icon": { color: "rgba(250, 204, 21, 0.9)" },
               }}
             />
           </Tooltip>

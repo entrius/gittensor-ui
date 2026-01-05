@@ -137,7 +137,10 @@ declare module "@mui/material/Card" {
 
 declare module "@mui/material/Chip" {
   interface ChipPropsVariantOverrides {
+    tier: true;
     status: true;
+    info: true;
+    filter: true;
   }
 }
 
@@ -334,13 +337,82 @@ const theme = createTheme({
       },
     },
     MuiChip: {
+      defaultProps: {
+        size: "small",
+      },
       styleOverrides: {
         root: {
           fontFamily: '"JetBrains Mono", monospace',
-          fontSize: "0.7rem",
+          fontSize: "0.75rem",
           fontWeight: 600,
+          borderRadius: "16px",
+          height: "24px",
+          "& .MuiChip-label": {
+            px: 1.5,
+          },
+          "& .MuiChip-icon": {
+            fontSize: 14,
+          },
+        },
+        sizeSmall: {
+          height: "22px",
+          fontSize: "0.7rem",
+          "& .MuiChip-label": {
+            px: 1,
+          },
+          "& .MuiChip-icon": {
+            fontSize: 14,
+          },
         },
       },
+      variants: [
+        // Tier variant - for Gold/Silver/Bronze badges
+        {
+          props: { variant: "tier" },
+          style: {
+            backgroundColor: "transparent",
+            border: "1px solid",
+            borderRadius: "16px",
+          },
+        },
+        // Status variant - for merged/open/closed states
+        {
+          props: { variant: "status" },
+          style: {
+            backgroundColor: "transparent",
+            border: "1px solid",
+            borderRadius: "16px",
+          },
+        },
+        // Info variant - for neutral information chips
+        {
+          props: { variant: "info" },
+          style: {
+            backgroundColor: "rgba(255, 255, 255, 0.05)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            color: "rgba(255, 255, 255, 0.9)",
+            borderRadius: "16px",
+            "& .MuiChip-icon": {
+              color: "rgba(255, 255, 255, 0.7)",
+            },
+          },
+        },
+        // Filter variant - for deletable filter chips
+        {
+          props: { variant: "filter" },
+          style: {
+            backgroundColor: "rgba(255, 255, 255, 0.1)",
+            color: "#ffffff",
+            borderRadius: "16px",
+            "& .MuiChip-deleteIcon": {
+              color: "rgba(255, 255, 255, 0.7)",
+              "&:hover": {
+                color: "#ffffff",
+              },
+            },
+          },
+        },
+      ],
     },
   },
 });

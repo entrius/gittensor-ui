@@ -21,6 +21,8 @@ import {
   GitHub as GitHubIcon,
   People as FollowersIcon,
   EmojiEvents as TierIcon,
+  AttachMoney as EarningsIcon,
+  WarningAmber as WarningIcon,
 } from "@mui/icons-material";
 import {
   useMinerStats,
@@ -30,6 +32,7 @@ import {
   useMinerGithubData,
   useGeneralConfig,
 } from "../../api";
+import { TIER_COLORS } from "../../theme";
 
 interface MinerScoreCardProps {
   githubId: string;
@@ -188,8 +191,9 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
     rank: number | null | undefined;
     link?: string | null;
     color?: string;
-    subValue?: string;
+    subItems?: Array<{ label: string; value: string | number; color?: string }>;
     tooltip?: string;
+    icon?: "earnings" | "warning";
   }> = [
     {
       label: "Credibility",
@@ -205,7 +209,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
               : (minerStats.credibility || 0) >= 0.3
                 ? "#fb923c" // Orange
                 : "#f87171", // Red
-      subValue: `${minerStats.totalMergedPrs || 0} Merged / ${minerStats.totalClosedPrs || 0} Closed`,
+      subItems: [
+        { label: "Merged", value: minerStats.totalMergedPrs || 0 },
+        { label: "Closed", value: minerStats.totalClosedPrs || 0 },
+      ],
       tooltip:
         "Credibility is the ratio of merged PRs to total PR attempts (merged + closed). It represents your success rate.",
     },
@@ -213,16 +220,23 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
       label: "Current Score",
       value: Number(minerStats.totalScore).toFixed(2),
       rank: rankings?.score,
+      subItems: [
+        {
+          label: "Top PR",
+          value: topPR ? parseFloat(topPR.score || "0").toFixed(2) : "N/A",
+        },
+      ],
     },
     {
-      label: "Total PRs",
-      value: Number(minerStats.totalPrs || 0),
+      label: "PR Activity",
+      value: `${Number(minerStats.totalPrs || 0)} PRs`,
       rank: rankings?.totalPrs,
-    },
-    {
-      label: "Scored Lines",
-      value: Number(minerStats.totalLinesChanged || 0).toLocaleString(),
-      rank: rankings?.linesChanged,
+      subItems: [
+        {
+          label: "Lines",
+          value: Number(minerStats.totalLinesChanged || 0).toLocaleString(),
+        },
+      ],
     },
     {
       label: "Unique Repos",
@@ -230,36 +244,44 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
       rank: rankings?.uniqueRepos,
     },
     {
-      label: "Open PRs",
-      value: Number(minerStats.totalOpenPrs || 0),
+      label: "Open Risk",
+      value: `${Number(minerStats.totalOpenPrs || 0)} PRs`,
       rank: null,
       color: getOpenPrColor(
         Number(minerStats.totalOpenPrs || 0),
         openPrThreshold,
       ),
-      tooltip: `Be careful not to exceed more than ${openPrThreshold} open PRs. Exceeding this incurs drastic penalties to your score.`,
+      icon: "warning",
+      subItems: [
+        {
+          label: "Collateral",
+          value:
+            Number(minerStats.totalCollateralScore || 0) > 0
+              ? `-${Number(minerStats.totalCollateralScore).toFixed(2)}`
+              : "0.00",
+          color:
+            Number(minerStats.totalCollateralScore || 0) > 0
+              ? "rgba(248, 113, 113, 0.8)"
+              : undefined,
+        },
+      ],
+      tooltip: `Open PRs have collateral deducted from your score. Exceeding ${openPrThreshold} open PRs incurs drastic penalties.`,
     },
     {
-      label: "Open Collateral",
-      value:
-        Number(minerStats.totalCollateralScore || 0) > 0
-          ? `-${Number(minerStats.totalCollateralScore).toFixed(2)}`
-          : Number(minerStats.totalCollateralScore || 0).toFixed(2),
+      label: "Est. Earnings",
+      value: `~$${Math.round(minerStats.usdPerDay ?? 0)}/day`,
       rank: null,
-      color:
-        Number(minerStats.totalCollateralScore || 0) > 0
-          ? "rgba(248, 113, 113, 0.8)"
-          : undefined,
+      color: (minerStats.usdPerDay ?? 0) > 0 ? "#4ade80" : undefined,
+      icon: "earnings",
+      subItems: [
+        {
+          label: "Monthly",
+          value: `~$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}`,
+          color: (minerStats.usdPerDay ?? 0) > 0 ? "#4ade80" : undefined,
+        },
+      ],
       tooltip:
-        "Open collateral is deducted from your total score while PRs are open, preventing low-quality PR spam.",
-    },
-    {
-      label: "Top PR",
-      value: topPR ? parseFloat(topPR.score || "0").toFixed(2) : "N/A",
-      rank: topPRRank,
-      link: topPR
-        ? `https://github.com/${topPR.repository}/pull/${topPR.pullRequestNumber}`
-        : null,
+        "Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus.",
     },
   ];
 
@@ -351,112 +373,34 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
               </Typography>
             </Box>
 
-            {/* Current Tier Badge & Earnings */}
-            <Box
-              sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1.5 }}
-            >
+            {/* Current Tier Badge */}
+            <Box sx={{ mt: 1.5 }}>
               <Chip
-                icon={
-                  <TierIcon
-                    style={{
-                      fontSize: 16,
-                      color:
-                        minerStats.currentTier === "Gold"
-                          ? "#FFD700"
-                          : minerStats.currentTier === "Silver"
-                            ? "#C0C0C0"
-                            : minerStats.currentTier === "Bronze"
-                              ? "#CD7F32"
-                              : "rgba(255, 255, 255, 0.3)",
-                    }}
-                  />
-                }
+                variant="tier"
+                icon={<TierIcon />}
                 label={minerStats.currentTier || "Unranked"}
-                size="small"
                 sx={{
-                  backgroundColor:
-                    minerStats.currentTier === "Gold"
-                      ? "rgba(255, 215, 0, 0.1)"
-                      : minerStats.currentTier === "Silver"
-                        ? "rgba(192, 192, 192, 0.1)"
-                        : minerStats.currentTier === "Bronze"
-                          ? "rgba(205, 127, 50, 0.1)"
-                          : "rgba(255, 255, 255, 0.03)",
                   color:
                     minerStats.currentTier === "Gold"
-                      ? "#FFD700"
+                      ? TIER_COLORS.gold
                       : minerStats.currentTier === "Silver"
-                        ? "#C0C0C0"
+                        ? TIER_COLORS.silver
                         : minerStats.currentTier === "Bronze"
-                          ? "#CD7F32"
+                          ? TIER_COLORS.bronze
                           : "rgba(255, 255, 255, 0.4)",
-                  border: "1px solid",
                   borderColor:
                     minerStats.currentTier === "Gold"
-                      ? "rgba(255, 215, 0, 0.3)"
+                      ? TIER_COLORS.gold
                       : minerStats.currentTier === "Silver"
-                        ? "rgba(192, 192, 192, 0.3)"
+                        ? TIER_COLORS.silver
                         : minerStats.currentTier === "Bronze"
-                          ? "rgba(205, 127, 50, 0.3)"
-                          : "rgba(255, 255, 255, 0.1)",
-                  fontWeight: 600,
+                          ? TIER_COLORS.bronze
+                          : "rgba(255, 255, 255, 0.2)",
+                  "& .MuiChip-icon": {
+                    color: "inherit",
+                  },
                 }}
               />
-              {minerStats.usdPerDay > 0 && (
-                <Tooltip
-                  title="Estimated daily earnings based on current network incentive distribution"
-                  arrow
-                  placement="top"
-                  slotProps={{
-                    tooltip: {
-                      sx: {
-                        backgroundColor: "rgba(15, 15, 17, 0.98)",
-                        color: "rgba(255, 255, 255, 0.85)",
-                        fontSize: "0.7rem",
-                        fontFamily: '"JetBrains Mono", monospace',
-                        padding: "8px 12px",
-                        borderRadius: "6px",
-                        border: "1px solid rgba(255, 255, 255, 0.08)",
-                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
-                      },
-                    },
-                    arrow: {
-                      sx: {
-                        color: "rgba(15, 15, 17, 0.98)",
-                      },
-                    },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      px: 1.25,
-                      py: 0.5,
-                      borderRadius: "6px",
-                      backgroundColor: "rgba(74, 222, 128, 0.08)",
-                      border: "1px solid rgba(74, 222, 128, 0.2)",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                      "&:hover": {
-                        backgroundColor: "rgba(74, 222, 128, 0.12)",
-                        borderColor: "rgba(74, 222, 128, 0.3)",
-                      },
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
-                        color: "rgba(74, 222, 128, 0.9)",
-                      }}
-                    >
-                      ~${Math.round(minerStats.usdPerDay)}/day
-                    </Typography>
-                  </Box>
-                </Tooltip>
-              )}
             </Box>
           </Box>
         </Box>
@@ -498,44 +442,21 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             <Stack direction="row" gap={1.5} flexWrap="wrap">
               {githubData.company && (
                 <Chip
-                  icon={
-                    <CompanyIcon
-                      style={{
-                        fontSize: 16,
-                        color: "rgba(255, 255, 255, 0.7)",
-                      }}
-                    />
-                  }
+                  variant="info"
+                  icon={<CompanyIcon />}
                   label={githubData.company}
-                  size="small"
-                  sx={{
-                    backgroundColor: "rgba(255, 255, 255, 0.05)",
-                    color: "rgba(255, 255, 255, 0.9)",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
-                  }}
                 />
               )}
               {githubData.location && (
                 <Chip
-                  icon={
-                    <LocationIcon
-                      style={{
-                        fontSize: 16,
-                        color: "rgba(255, 255, 255, 0.7)",
-                      }}
-                    />
-                  }
+                  variant="info"
+                  icon={<LocationIcon />}
                   label={githubData.location}
-                  size="small"
-                  sx={{
-                    backgroundColor: "rgba(255, 255, 255, 0.05)",
-                    color: "rgba(255, 255, 255, 0.9)",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
-                  }}
                 />
               )}
               {githubData.blog && (
                 <Chip
+                  variant="status"
                   component="a"
                   href={
                     githubData.blog.startsWith("http")
@@ -543,59 +464,44 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                       : `https://${githubData.blog}`
                   }
                   target="_blank"
-                  icon={
-                    <WebsiteIcon style={{ fontSize: 16, color: "#58a6ff" }} />
-                  }
+                  icon={<WebsiteIcon />}
                   label="Website"
                   clickable
-                  size="small"
                   sx={{
-                    backgroundColor: "rgba(88, 166, 255, 0.1)",
                     color: "#58a6ff",
-                    border: "1px solid rgba(88, 166, 255, 0.2)",
+                    borderColor: "rgba(88, 166, 255, 0.3)",
+                    "& .MuiChip-icon": { color: "#58a6ff" },
                   }}
                 />
               )}
               {githubData.twitterUsername && (
                 <Chip
+                  variant="status"
                   component="a"
                   href={`https://twitter.com/${githubData.twitterUsername}`}
                   target="_blank"
-                  icon={
-                    <TwitterIcon style={{ fontSize: 16, color: "#1DA1F2" }} />
-                  }
+                  icon={<TwitterIcon />}
                   label={`@${githubData.twitterUsername}`}
                   clickable
-                  size="small"
                   sx={{
-                    backgroundColor: "rgba(29, 161, 242, 0.1)",
                     color: "#1DA1F2",
-                    border: "1px solid rgba(29, 161, 242, 0.2)",
+                    borderColor: "rgba(29, 161, 242, 0.3)",
+                    "& .MuiChip-icon": { color: "#1DA1F2" },
                   }}
                 />
               )}
               {githubData.hireable && (
                 <Chip
-                  icon={<HireableIcon style={{ fontSize: 16 }} />}
+                  icon={<HireableIcon />}
                   label="Open to Work"
-                  size="small"
                   color="success"
                   variant="outlined"
                 />
               )}
               <Chip
-                icon={
-                  <FollowersIcon
-                    style={{ fontSize: 16, color: "rgba(255, 255, 255, 0.7)" }}
-                  />
-                }
+                variant="info"
+                icon={<FollowersIcon />}
                 label={`${githubData.followers} followers`}
-                size="small"
-                sx={{
-                  backgroundColor: "rgba(255, 255, 255, 0.05)",
-                  color: "rgba(255, 255, 255, 0.7)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                }}
               />
             </Stack>
           </Box>
@@ -604,7 +510,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
 
       <Grid container spacing={2}>
         {statItems.map((item, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}>
+          <Grid item xs={12} sm={6} md={4} key={index}>
             <Box
               sx={{
                 backgroundColor: "rgba(255, 255, 255, 0.03)",
@@ -653,7 +559,12 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                     >
                       <Typography
                         sx={{
-                          color: "rgba(255, 255, 255, 0.5)",
+                          color:
+                            item.icon === "earnings"
+                              ? "#4ade80"
+                              : item.icon === "warning"
+                                ? "rgba(250, 204, 21, 0.9)"
+                                : "rgba(255, 255, 255, 0.5)",
                           fontFamily: '"JetBrains Mono", monospace',
                           fontSize: "0.75rem",
                           textTransform: "uppercase",
@@ -665,6 +576,12 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                           cursor: "pointer",
                         }}
                       >
+                        {item.icon === "earnings" && (
+                          <EarningsIcon sx={{ fontSize: "1rem" }} />
+                        )}
+                        {item.icon === "warning" && (
+                          <WarningIcon sx={{ fontSize: "1rem" }} />
+                        )}
                         {item.label}
                         <InfoOutlinedIcon sx={{ fontSize: "0.85rem" }} />
                       </Typography>
@@ -678,8 +595,24 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                         textTransform: "uppercase",
                         letterSpacing: "1px",
                         fontWeight: 600,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.5,
                       }}
                     >
+                      {item.icon === "earnings" && (
+                        <EarningsIcon
+                          sx={{ fontSize: "1rem", color: "#4ade80" }}
+                        />
+                      )}
+                      {item.icon === "warning" && (
+                        <WarningIcon
+                          sx={{
+                            fontSize: "1rem",
+                            color: "rgba(250, 204, 21, 0.9)",
+                          }}
+                        />
+                      )}
                       {item.label}
                     </Typography>
                   )}
@@ -751,7 +684,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                   {String(item.value)}
                 </Typography>
               </Box>
-              {item.subValue && (
+              {item.subItems && item.subItems.length > 0 && (
                 <Box
                   sx={{
                     mt: 1.5,
@@ -760,26 +693,21 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
+                    gap: 1,
                   }}
                 >
-                  <Typography
-                    sx={{
-                      color: "rgba(255, 255, 255, 0.4)",
-                      fontFamily: '"JetBrains Mono", monospace',
-                      fontSize: "0.7rem",
-                    }}
-                  >
-                    Merged: {minerStats.totalMergedPrs || 0}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      color: "rgba(255, 255, 255, 0.4)",
-                      fontFamily: '"JetBrains Mono", monospace',
-                      fontSize: "0.7rem",
-                    }}
-                  >
-                    Closed: {minerStats.totalClosedPrs || 0}
-                  </Typography>
+                  {item.subItems.map((sub, subIndex) => (
+                    <Typography
+                      key={subIndex}
+                      sx={{
+                        color: sub.color || "rgba(255, 255, 255, 0.4)",
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: "0.7rem",
+                      }}
+                    >
+                      {sub.label}: {sub.value}
+                    </Typography>
+                  ))}
                 </Box>
               )}
             </Box>

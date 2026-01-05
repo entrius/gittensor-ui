@@ -460,26 +460,13 @@ const LiveCommitLog: React.FC = () => {
                           </Typography>
                         ) : (
                           <Chip
+                            variant="status"
                             label={getPRStatusChip(entry).label}
-                            size="small"
                             sx={{
                               height: isMobile ? 16 : isTablet ? 18 : 16,
-                              fontSize: isMobile
-                                ? "0.55rem"
-                                : isTablet
-                                  ? "0.6rem"
-                                  : "0.58rem",
-                              fontFamily: '"JetBrains Mono", monospace',
-                              fontWeight: 600,
-                              backgroundColor: alpha(
-                                getPRStatusChip(entry).color,
-                                0.2,
-                              ),
+                              fontSize: isMobile ? "0.55rem" : "0.6rem",
                               color: getPRStatusChip(entry).color,
-                              border: `1px solid ${alpha(getPRStatusChip(entry).color, 0.3)}`,
-                              "& .MuiChip-label": {
-                                px: 0.75,
-                              },
+                              borderColor: alpha(getPRStatusChip(entry).color, 0.3),
                             }}
                           />
                         )}

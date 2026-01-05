@@ -147,6 +147,10 @@ export type MinerEvaluation = {
   // Additional stats
   totalAdditions?: number;
   totalDeletions?: number;
+
+  alphaPerDay?: number;
+  taoPerDay?: number;
+  usdPerDay?: number;
 };
 
 export type GithubMinerData = {

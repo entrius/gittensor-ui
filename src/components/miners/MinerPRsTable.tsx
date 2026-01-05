@@ -136,38 +136,16 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
             {selectedRepo && (
               <Chip
+                variant="filter"
                 label={`Repo: ${selectedRepo}`}
                 onDelete={() => setSelectedRepo(null)}
-                sx={{
-                  backgroundColor: "rgba(255, 255, 255, 0.1)",
-                  color: "#ffffff",
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: "0.75rem",
-                  "& .MuiChip-deleteIcon": {
-                    color: "rgba(255, 255, 255, 0.7)",
-                    "&:hover": {
-                      color: "#ffffff",
-                    },
-                  },
-                }}
               />
             )}
             {selectedAuthor && (
               <Chip
+                variant="filter"
                 label={`Author: ${selectedAuthor}`}
                 onDelete={() => setSelectedAuthor(null)}
-                sx={{
-                  backgroundColor: "rgba(255, 255, 255, 0.1)",
-                  color: "#ffffff",
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: "0.75rem",
-                  "& .MuiChip-deleteIcon": {
-                    color: "rgba(255, 255, 255, 0.7)",
-                    "&:hover": {
-                      color: "#ffffff",
-                    },
-                  },
-                }}
               />
             )}
           </Box>

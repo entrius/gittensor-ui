@@ -980,21 +980,12 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                         </Typography>
                       </Tooltip>
                       <Chip
+                        variant="tier"
                         label={pr.tier || "N/A"}
-                        size="small"
                         sx={{
                           ml: 1,
-                          height: "20px",
-                          fontSize: "0.65rem",
-                          fontFamily: '"JetBrains Mono", monospace',
-                          backgroundColor: "transparent",
-                          border: `1px solid ${getTierColor(pr.tier || "")}`,
                           color: getTierColor(pr.tier || ""),
-                          fontWeight: 600,
-                          borderRadius: "4px",
-                          "& .MuiChip-label": {
-                            px: 1,
-                          },
+                          borderColor: getTierColor(pr.tier || ""),
                         }}
                       />
                     </Box>
@@ -1017,17 +1008,11 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
 
                       return (
                         <Chip
+                          variant="status"
                           label={label}
-                          size="small"
                           sx={{
-                            backgroundColor: "transparent",
-                            border: `1px solid ${color}`,
                             color: color,
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontWeight: 600,
-                            height: "22px",
-                            fontSize: "0.7rem",
-                            borderRadius: "6px",
+                            borderColor: color,
                           }}
                         />
                       );
