@@ -3,6 +3,7 @@ import { Box, Typography, Avatar, Chip, Tooltip } from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { useNavigate } from "react-router-dom";
+import { formatUsdEstimate } from "../../utils";
 
 interface PRHeaderProps {
   repository: string;
@@ -39,16 +40,6 @@ const PRHeader: React.FC<PRHeaderProps> = ({
 
   // Low value: open PR with collateral score = 0
   const isLowValuePR = isOpenPR && collateralScore === 0;
-
-  // Format USD estimate (whole dollars only)
-  const formatUsdEstimate = (value: number) => {
-    if (value >= 1) {
-      return `$${Math.round(value)}`;
-    } else if (value > 0) {
-      return `<$1`;
-    }
-    return "$0";
-  };
 
   return (
     <Box sx={{ mb: 3, display: "flex", alignItems: "flex-start", gap: 2 }}>
@@ -286,7 +277,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                       cursor: "pointer",
                     }}
                   >
-                    ~{formatUsdEstimate(predictedUsdPerDay)}/day
+                    ~{formatUsdEstimate(predictedUsdPerDay, { showZero: true })}/day
                   </Typography>
                 </Tooltip>
               )}
@@ -425,7 +416,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                     cursor: "pointer",
                   }}
                 >
-                  ~{formatUsdEstimate(predictedUsdPerDay)}/day
+                  ~{formatUsdEstimate(predictedUsdPerDay, { showZero: true })}/day
                 </Typography>
               </Tooltip>
             )}

@@ -33,6 +33,7 @@ import BarChartIcon from "@mui/icons-material/BarChart";
 import TableChartIcon from "@mui/icons-material/TableChart";
 import ReactECharts from "echarts-for-react";
 import { CommitLog } from "../../api/models/Dashboard";
+import { formatUsdEstimate } from "../../utils";
 
 interface TopPRsTableProps {
   prs: CommitLog[];
@@ -46,15 +47,6 @@ interface TopPRsTableProps {
 const truncateText = (text: string, maxLength: number): string => {
   if (!text) return "";
   return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
-};
-
-// Format USD estimate (whole dollars only)
-const formatUsdEstimate = (value: number | undefined): string | null => {
-  if (!value || value <= 0) return null;
-  if (value >= 1) {
-    return `~$${Math.round(value)}`;
-  }
-  return "<$1";
 };
 
 const TopPRsTable: React.FC<TopPRsTableProps> = ({
@@ -1065,7 +1057,9 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                         {parseFloat(pr.score || "0").toFixed(4)}
                       </Typography>
                       {(pr.prState === "MERGED" || pr.mergedAt) &&
-                        formatUsdEstimate(pr.predictedUsdPerDay) && (
+                        formatUsdEstimate(pr.predictedUsdPerDay, {
+                          includeApproxPrefix: true,
+                        }) && (
                           <Tooltip
                             title="Estimated daily earnings based on current network conditions"
                             arrow
@@ -1105,7 +1099,10 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                                 },
                               }}
                             >
-                              {formatUsdEstimate(pr.predictedUsdPerDay)}/d
+                              {formatUsdEstimate(pr.predictedUsdPerDay, {
+                                includeApproxPrefix: true,
+                              })}
+                              /d
                             </Typography>
                           </Tooltip>
                         )}
