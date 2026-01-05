@@ -282,7 +282,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               </div>
               <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
                 <div style="color: rgba(255,255,255,0.7); margin-bottom: 4px;">Total Score: <span style="color: #fff; font-weight: 600;">${item.value.toFixed(2)}</span></div>
-                <div style="color: rgba(255,255,255,0.7); margin-bottom: 4px;">Weight: <span style="color: #fff; font-weight: 600;">${item.weight.toFixed(1)}</span></div>
+                <div style="color: rgba(255,255,255,0.7); margin-bottom: 4px;">Weight: <span style="color: #fff; font-weight: 600;">${item.weight.toFixed(2)}</span></div>
                 <div style="color: rgba(255,255,255,0.7); margin-bottom: 4px;">Pull Requests: <span style="color: #fff; font-weight: 600;">${item.prs}</span></div>
                 <div style="color: rgba(255,255,255,0.7);">Contributors: <span style="color: #fff; font-weight: 600;">${item.contributors}</span></div>
               </div>
@@ -862,10 +862,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                             border: "1px solid rgba(255, 255, 255, 0.2)",
                             backgroundColor:
                               (repo.repository || "").split("/")[0] ===
-                              "opentensor"
+                                "opentensor"
                                 ? "#ffffff"
                                 : (repo.repository || "").split("/")[0] ===
-                                    "bitcoin"
+                                  "bitcoin"
                                   ? "#F7931A"
                                   : "transparent",
                           }}
@@ -917,7 +917,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           fontSize: "0.75rem",
                         }}
                       >
-                        {repo.weight.toFixed(1)}
+                        {repo.weight.toFixed(2)}
                       </Typography>
                     </TableCell>
                     <TableCell
