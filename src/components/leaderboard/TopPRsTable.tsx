@@ -33,6 +33,7 @@ import BarChartIcon from "@mui/icons-material/BarChart";
 import TableChartIcon from "@mui/icons-material/TableChart";
 import ReactECharts from "echarts-for-react";
 import { CommitLog } from "../../api/models/Dashboard";
+import { formatUsdEstimate } from "../../utils";
 
 interface TopPRsTableProps {
   prs: CommitLog[];
@@ -979,21 +980,12 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                         </Typography>
                       </Tooltip>
                       <Chip
+                        variant="tier"
                         label={pr.tier || "N/A"}
-                        size="small"
                         sx={{
                           ml: 1,
-                          height: "20px",
-                          fontSize: "0.65rem",
-                          fontFamily: '"JetBrains Mono", monospace',
-                          backgroundColor: "transparent",
-                          border: `1px solid ${getTierColor(pr.tier || "")}`,
                           color: getTierColor(pr.tier || ""),
-                          fontWeight: 600,
-                          borderRadius: "4px",
-                          "& .MuiChip-label": {
-                            px: 1,
-                          },
+                          borderColor: getTierColor(pr.tier || ""),
                         }}
                       />
                     </Box>
@@ -1016,17 +1008,11 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
 
                       return (
                         <Chip
+                          variant="status"
                           label={label}
-                          size="small"
                           sx={{
-                            backgroundColor: "transparent",
-                            border: `1px solid ${color}`,
                             color: color,
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontWeight: 600,
-                            height: "22px",
-                            fontSize: "0.7rem",
-                            borderRadius: "6px",
+                            borderColor: color,
                           }}
                         />
                       );
@@ -1036,15 +1022,76 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                     align="right"
                     sx={{ ...bodyCellStyle, width: "15%" }}
                   >
-                    <Typography
+                    <Box
                       sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.75rem",
-                        fontWeight: 600,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "flex-end",
+                        gap: 0.25,
                       }}
                     >
-                      {parseFloat(pr.score || "0").toFixed(4)}
-                    </Typography>
+                      <Typography
+                        sx={{
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: "0.8rem",
+                          fontWeight: 600,
+                          color: "#ffffff",
+                          lineHeight: 1.2,
+                        }}
+                      >
+                        {parseFloat(pr.score || "0").toFixed(4)}
+                      </Typography>
+                      {(pr.prState === "MERGED" || pr.mergedAt) &&
+                        formatUsdEstimate(pr.predictedUsdPerDay, {
+                          includeApproxPrefix: true,
+                        }) && (
+                          <Tooltip
+                            title="This is an estimation. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
+                            arrow
+                            placement="bottom"
+                            slotProps={{
+                              tooltip: {
+                                sx: {
+                                  backgroundColor: "rgba(15, 15, 17, 0.98)",
+                                  color: "rgba(255, 255, 255, 0.85)",
+                                  fontSize: "0.7rem",
+                                  fontFamily: '"JetBrains Mono", monospace',
+                                  padding: "8px 12px",
+                                  borderRadius: "6px",
+                                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                                  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
+                                },
+                              },
+                              arrow: {
+                                sx: {
+                                  color: "rgba(15, 15, 17, 0.98)",
+                                },
+                              },
+                            }}
+                          >
+                            <Typography
+                              component="span"
+                              sx={{
+                                fontFamily: '"JetBrains Mono", monospace',
+                                fontSize: "0.65rem",
+                                fontWeight: 500,
+                                color: "rgba(74, 222, 128, 0.7)",
+                                cursor: "pointer",
+                                lineHeight: 1,
+                                transition: "color 0.15s ease",
+                                "&:hover": {
+                                  color: "rgba(74, 222, 128, 0.95)",
+                                },
+                              }}
+                            >
+                              {formatUsdEstimate(pr.predictedUsdPerDay, {
+                                includeApproxPrefix: true,
+                              })}
+                              /d
+                            </Typography>
+                          </Tooltip>
+                        )}
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}

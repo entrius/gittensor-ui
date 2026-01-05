@@ -888,21 +888,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           </Typography>
                         </Tooltip>
                         <Chip
+                          variant="tier"
                           label={repo.tier || "N/A"}
-                          size="small"
                           sx={{
                             ml: 1,
-                            height: "20px",
-                            fontSize: "0.65rem",
-                            fontFamily: '"JetBrains Mono", monospace',
-                            backgroundColor: "transparent",
-                            border: `1px solid ${getTierColor(repo.tier)}`,
                             color: getTierColor(repo.tier),
-                            fontWeight: 600,
-                            borderRadius: "4px",
-                            "& .MuiChip-label": {
-                              px: 1,
-                            },
+                            borderColor: getTierColor(repo.tier),
                           }}
                         />
                       </Box>

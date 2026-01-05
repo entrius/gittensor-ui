@@ -985,20 +985,11 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
                           }}
                         >
                           <Chip
+                            variant="tier"
                             label={repo.tier || "—"}
-                            size="small"
                             sx={{
-                              height: "22px",
-                              fontSize: "0.7rem",
-                              fontFamily: '"JetBrains Mono", monospace',
-                              fontWeight: 600,
-                              backgroundColor: "transparent",
-                              border: `1px solid ${getTierColor(repo.tier)}`,
                               color: getTierColor(repo.tier),
-                              borderRadius: "4px",
-                              "& .MuiChip-label": {
-                                px: 1,
-                              },
+                              borderColor: getTierColor(repo.tier),
                             }}
                           />
                           {!isMobile && (

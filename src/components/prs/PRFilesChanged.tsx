@@ -1149,14 +1149,9 @@ const PRFileDiffViewer: React.FC<{
             </Typography>
             {file.status !== "modified" && (
               <Chip
+                variant="info"
                 label={file.status}
-                size="small"
-                sx={{
-                  height: "20px",
-                  fontSize: "0.7rem",
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  color: "#8b949e",
-                }}
+                sx={{ color: "#8b949e" }}
               />
             )}
             <Tooltip title={copied ? "Copied!" : "Copy path"}>

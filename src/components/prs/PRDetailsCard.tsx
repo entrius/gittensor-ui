@@ -291,20 +291,11 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               </Typography>
               {prDetails.tier && (
                 <Chip
+                  variant="tier"
                   label={prDetails.tier}
-                  size="small"
                   sx={{
-                    height: "20px",
-                    fontSize: "0.65rem",
-                    fontFamily: '"JetBrains Mono", monospace',
-                    backgroundColor: "transparent",
-                    border: `1px solid ${getTierColor(prDetails.tier)}`,
                     color: getTierColor(prDetails.tier),
-                    fontWeight: 600,
-                    borderRadius: "4px",
-                    "& .MuiChip-label": {
-                      px: 1,
-                    },
+                    borderColor: getTierColor(prDetails.tier),
                   }}
                 />
               )}

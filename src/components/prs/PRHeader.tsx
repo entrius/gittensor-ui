@@ -3,6 +3,7 @@ import { Box, Typography, Avatar, Chip, Tooltip } from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { useNavigate } from "react-router-dom";
+import { formatUsdEstimate } from "../../utils";
 
 interface PRHeaderProps {
   repository: string;
@@ -32,11 +33,13 @@ const PRHeader: React.FC<PRHeaderProps> = ({
   };
 
   const isOpenPR = prDetails.prState === "OPEN";
+  const isClosed = prDetails.prState === "CLOSED";
   const collateralScore = parseFloat(prDetails.collateralScore || "0");
   const earnedScore = parseFloat(prDetails.earnedScore || "0");
+  const predictedUsdPerDay = prDetails.predictedUsdPerDay || 0;
 
-  // Low value: open PR with collateral score = 0
-  const isLowValuePR = isOpenPR && collateralScore === 0;
+  // Low value PR - use the field from API directly
+  const isLowValuePR = prDetails.lowValuePr === true;
 
   return (
     <Box sx={{ mb: 3, display: "flex", alignItems: "flex-start", gap: 2 }}>
@@ -152,20 +155,11 @@ const PRHeader: React.FC<PRHeaderProps> = ({
           </Typography>
           {prDetails.tier && (
             <Chip
+              variant="tier"
               label={prDetails.tier}
-              size="small"
               sx={{
-                height: "20px",
-                fontSize: "0.65rem",
-                fontFamily: '"JetBrains Mono", monospace',
-                backgroundColor: "transparent",
-                border: `1px solid ${getTierColor(prDetails.tier)}`,
                 color: getTierColor(prDetails.tier),
-                fontWeight: 600,
-                borderRadius: "4px",
-                "& .MuiChip-label": {
-                  px: 1,
-                },
+                borderColor: getTierColor(prDetails.tier),
               }}
             />
           )}
@@ -183,7 +177,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
       >
         {isOpenPR ? (
           /* Open PR: Show Potential Score | Collateral */
-          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2.5 }}>
             {/* Potential Score */}
             <Box sx={{ textAlign: "right" }}>
               <Tooltip
@@ -214,7 +208,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                   sx={{
                     color: "rgba(255, 255, 255, 0.5)",
                     fontFamily: '"JetBrains Mono", monospace',
-                    fontSize: "0.7rem",
+                    fontSize: "0.75rem",
                     textTransform: "uppercase",
                     letterSpacing: "0.5px",
                     mb: 0.5,
@@ -226,13 +220,13 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                   }}
                 >
                   Potential
-                  <InfoOutlinedIcon sx={{ fontSize: "0.85rem" }} />
+                  <InfoOutlinedIcon sx={{ fontSize: "0.9rem" }} />
                 </Typography>
               </Tooltip>
               <Typography
                 sx={{
                   fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: "2rem",
+                  fontSize: "2.25rem",
                   fontWeight: 700,
                   lineHeight: 1,
                   color: "rgba(255, 255, 255, 0.6)",
@@ -240,13 +234,52 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               >
                 {(collateralScore * 5).toFixed(2)}
               </Typography>
+              {predictedUsdPerDay > 0 && (
+                <Tooltip
+                  title="This is an estimation. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
+                  arrow
+                  placement="bottom"
+                  slotProps={{
+                    tooltip: {
+                      sx: {
+                        backgroundColor: "rgba(30, 30, 30, 0.95)",
+                        color: "#ffffff",
+                        fontSize: "0.75rem",
+                        fontFamily: '"JetBrains Mono", monospace',
+                        padding: "8px 12px",
+                        borderRadius: "6px",
+                        border: "1px solid rgba(255, 255, 255, 0.1)",
+                        maxWidth: 280,
+                      },
+                    },
+                    arrow: {
+                      sx: {
+                        color: "rgba(30, 30, 30, 0.95)",
+                      },
+                    },
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: "0.95rem",
+                      color: "rgba(74, 222, 128, 0.8)",
+                      mt: 0.5,
+                      cursor: "pointer",
+                    }}
+                  >
+                    ~{formatUsdEstimate(predictedUsdPerDay, { showZero: true })}
+                    /day
+                  </Typography>
+                </Tooltip>
+              )}
             </Box>
 
             {/* Divider */}
             <Box
               sx={{
                 width: "1px",
-                height: "50px",
+                height: "55px",
                 backgroundColor: "rgba(255, 255, 255, 0.15)",
                 mt: 0.5,
               }}
@@ -282,7 +315,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                   sx={{
                     color: "rgba(255, 255, 255, 0.5)",
                     fontFamily: '"JetBrains Mono", monospace',
-                    fontSize: "0.7rem",
+                    fontSize: "0.75rem",
                     textTransform: "uppercase",
                     letterSpacing: "0.5px",
                     mb: 0.5,
@@ -294,13 +327,13 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                   }}
                 >
                   Collateral
-                  <InfoOutlinedIcon sx={{ fontSize: "0.85rem" }} />
+                  <InfoOutlinedIcon sx={{ fontSize: "0.9rem" }} />
                 </Typography>
               </Tooltip>
               <Typography
                 sx={{
                   fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: "2rem",
+                  fontSize: "2.25rem",
                   fontWeight: 700,
                   lineHeight: 1,
                   color:
@@ -316,13 +349,13 @@ const PRHeader: React.FC<PRHeaderProps> = ({
             </Box>
           </Box>
         ) : (
-          /* Merged PR: Show Score */
+          /* Merged/Closed PR: Show Score */
           <Box sx={{ textAlign: "right" }}>
             <Typography
               sx={{
                 color: "rgba(255, 255, 255, 0.5)",
                 fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "0.7rem",
+                fontSize: "0.75rem",
                 textTransform: "uppercase",
                 letterSpacing: "0.5px",
                 mb: 0.5,
@@ -333,21 +366,60 @@ const PRHeader: React.FC<PRHeaderProps> = ({
             <Typography
               sx={{
                 fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "2rem",
+                fontSize: "2.25rem",
                 fontWeight: 700,
                 lineHeight: 1,
-                color: "#ffffff",
+                color: isClosed ? "rgba(255, 255, 255, 0.4)" : "#ffffff",
               }}
             >
               {earnedScore.toFixed(2)}
             </Typography>
+            {!isClosed && predictedUsdPerDay > 0 && (
+              <Tooltip
+                title="This is an estimation. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
+                arrow
+                placement="bottom"
+                slotProps={{
+                  tooltip: {
+                    sx: {
+                      backgroundColor: "rgba(30, 30, 30, 0.95)",
+                      color: "#ffffff",
+                      fontSize: "0.75rem",
+                      fontFamily: '"JetBrains Mono", monospace',
+                      padding: "8px 12px",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      maxWidth: 280,
+                    },
+                  },
+                  arrow: {
+                    sx: {
+                      color: "rgba(30, 30, 30, 0.95)",
+                    },
+                  },
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: "0.95rem",
+                    color: "rgba(74, 222, 128, 0.8)",
+                    mt: 0.5,
+                    cursor: "pointer",
+                  }}
+                >
+                  ~{formatUsdEstimate(predictedUsdPerDay, { showZero: true })}
+                  /day
+                </Typography>
+              </Tooltip>
+            )}
           </Box>
         )}
 
-        {/* Low Value Badge - only for open PRs with collateral = 0 */}
+        {/* Low Value Badge - shown for any PR state if lowValuePr is true */}
         {isLowValuePR && (
           <Tooltip
-            title="This open PR will receive no score as it has been deemed a low value contribution. Low value PRs have a low percentage of substantive changes (e.g., primarily typo fixes, documentation, test files, comments, or markdown changes relative to actual code changes)."
+            title="This PR received no score as it was deemed a low value contribution. Low value PRs have a low percentage of substantive changes (e.g., primarily typo fixes, documentation, test files, comments, or markdown changes relative to actual code changes)."
             arrow
             placement="left"
             slotProps={{
@@ -371,25 +443,14 @@ const PRHeader: React.FC<PRHeaderProps> = ({
             }}
           >
             <Chip
-              icon={
-                <WarningAmberIcon
-                  sx={{ fontSize: 14, color: "rgba(250, 204, 21, 0.9)" }}
-                />
-              }
+              variant="status"
+              icon={<WarningAmberIcon />}
               label="Low Value"
-              size="small"
               sx={{
-                height: "22px",
-                backgroundColor: "rgba(250, 204, 21, 0.1)",
-                border: "1px solid rgba(250, 204, 21, 0.3)",
                 color: "rgba(250, 204, 21, 0.9)",
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "0.65rem",
-                fontWeight: 600,
+                borderColor: "rgba(250, 204, 21, 0.3)",
                 cursor: "pointer",
-                "& .MuiChip-label": {
-                  px: 0.75,
-                },
+                "& .MuiChip-icon": { color: "rgba(250, 204, 21, 0.9)" },
               }}
             />
           </Tooltip>

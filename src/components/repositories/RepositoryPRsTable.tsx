@@ -404,17 +404,11 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
 
                       return (
                         <Chip
+                          variant="status"
                           label={label}
-                          size="small"
                           sx={{
-                            backgroundColor: "transparent",
-                            border: `1px solid ${color}`,
                             color: color,
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontWeight: 600,
-                            height: "22px",
-                            fontSize: "0.7rem",
-                            borderRadius: "6px",
+                            borderColor: color,
                           }}
                         />
                       );

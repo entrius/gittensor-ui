@@ -295,13 +295,12 @@ const GlobalActivity: React.FC = () => {
           Global Developer Activity
         </Typography>
         <Chip
-          icon={<PublicIcon sx={{ fontSize: 18 }} />}
+          variant="status"
+          icon={<PublicIcon />}
           label="Active Network - Continuous Development"
-          size="small"
           sx={{
-            backgroundColor: `${STATUS_COLORS.success}1a`,
-            border: `1px solid ${STATUS_COLORS.success}4d`,
             color: STATUS_COLORS.success,
+            borderColor: `${STATUS_COLORS.success}4d`,
             "& .MuiChip-icon": { color: STATUS_COLORS.success },
           }}
         />
