@@ -409,7 +409,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                   },
                 }}
               />
-              {minerStats.usdPerDay > 0 && (
+              {(minerStats.usdPerDay ?? 0) > 0 && (
                 <Tooltip
                   title="This is an estimation. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
                   arrow
@@ -459,12 +459,12 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                         color: "rgba(74, 222, 128, 0.9)",
                       }}
                     >
-                      ~${Math.round(minerStats.usdPerDay)}/day
+                      ~${Math.round(minerStats.usdPerDay ?? 0)}/day
                     </Typography>
                   </Box>
                 </Tooltip>
               )}
-              {minerStats.lifetimeUsd > 0 && (
+              {(minerStats.lifetimeUsd ?? 0) > 0 && (
                 <Tooltip
                   title="This is an estimation. Lifetime earnings are calculated from historical daily emission data. Actual payouts may vary."
                   arrow
@@ -514,7 +514,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                         color: "rgba(96, 165, 250, 0.9)",
                       }}
                     >
-                      ~${Math.round(minerStats.lifetimeUsd).toLocaleString()}{" "}
+                      ~${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()}{" "}
                       lifetime
                     </Typography>
                   </Box>
