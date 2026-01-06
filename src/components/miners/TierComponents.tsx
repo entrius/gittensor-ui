@@ -260,6 +260,7 @@ interface TierUnlockProgressProps {
   credibilityProgress: number;
   tierColor: string;
   borderColor: string;
+  title?: string;
 }
 
 export const TierUnlockProgress: React.FC<TierUnlockProgressProps> = ({
@@ -271,6 +272,7 @@ export const TierUnlockProgress: React.FC<TierUnlockProgressProps> = ({
   credibilityProgress,
   tierColor,
   borderColor,
+  title = "Unlock Progress",
 }) => (
   <Box
     sx={{
@@ -288,7 +290,7 @@ export const TierUnlockProgress: React.FC<TierUnlockProgressProps> = ({
         textTransform: "uppercase",
       }}
     >
-      Unlock Progress
+      {title}
     </Typography>
 
     <TierProgressBar
@@ -460,7 +462,7 @@ export const TierCard: React.FC<TierCardProps> = ({
           borderColor={borderColor}
         />
 
-        {isNextTier && unlockProgress && (
+        {unlockProgress && (
           <TierUnlockProgress
             mergedCount={unlockProgress.mergedCount}
             requiredMerges={unlockProgress.requiredMerges}
@@ -470,6 +472,7 @@ export const TierCard: React.FC<TierCardProps> = ({
             credibilityProgress={unlockProgress.credibilityProgress}
             tierColor={color}
             borderColor={borderColor}
+            title={isLocked ? "Unlock Progress" : "Maintenance Requirements"}
           />
         )}
       </Stack>

@@ -195,95 +195,93 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
     tooltip?: string;
     icon?: "earnings" | "warning";
   }> = [
-    {
-      label: "Credibility",
-      value: `${(Number(minerStats.credibility || 0) * 100).toFixed(1)}%`,
-      rank: null,
-      color:
-        (minerStats.credibility || 0) >= 0.9
-          ? "#4ade80" // High green
-          : (minerStats.credibility || 0) >= 0.7
-            ? "#a3e635" // Light green
-            : (minerStats.credibility || 0) >= 0.5
-              ? "#facc15" // Yellow
-              : (minerStats.credibility || 0) >= 0.3
-                ? "#fb923c" // Orange
-                : "#f87171", // Red
-      subItems: [
-        { label: "Merged", value: minerStats.totalMergedPrs || 0 },
-        { label: "Closed", value: minerStats.totalClosedPrs || 0 },
-      ],
-      tooltip:
-        "Credibility is the ratio of merged PRs to total PR attempts (merged + closed). It represents your success rate.",
-    },
-    {
-      label: "Current Score",
-      value: Number(minerStats.totalScore).toFixed(2),
-      rank: rankings?.score,
-      subItems: [
-        {
-          label: "Top PR",
-          value: topPR ? parseFloat(topPR.score || "0").toFixed(2) : "N/A",
-        },
-      ],
-    },
-    {
-      label: "PR Activity",
-      value: `${Number(minerStats.totalPrs || 0)} PRs`,
-      rank: rankings?.totalPrs,
-      subItems: [
-        {
-          label: "Lines",
-          value: Number(minerStats.totalLinesChanged || 0).toLocaleString(),
-        },
-      ],
-    },
-    {
-      label: "Unique Repos",
-      value: Number(minerStats.uniqueReposCount || 0),
-      rank: rankings?.uniqueRepos,
-    },
-    {
-      label: "Open Risk",
-      value: `${Number(minerStats.totalOpenPrs || 0)} PRs`,
-      rank: null,
-      color: getOpenPrColor(
-        Number(minerStats.totalOpenPrs || 0),
-        openPrThreshold,
-      ),
-      icon: "warning",
-      subItems: [
-        {
-          label: "Collateral",
-          value:
-            Number(minerStats.totalCollateralScore || 0) > 0
-              ? `-${Number(minerStats.totalCollateralScore).toFixed(2)}`
-              : "0.00",
-          color:
-            Number(minerStats.totalCollateralScore || 0) > 0
-              ? "rgba(248, 113, 113, 0.8)"
-              : undefined,
-        },
-      ],
-      tooltip: `Open PRs have collateral deducted from your score. Exceeding ${openPrThreshold} open PRs incurs drastic penalties.`,
-    },
-    {
-      label: "Est. Earnings",
-      value: `~$${Math.round(minerStats.usdPerDay ?? 0)}/day`,
-      rank: null,
-      color: (minerStats.usdPerDay ?? 0) > 0 ? "#4ade80" : undefined,
-      icon: "earnings",
-      subItems: [
-        {
-          label: "Monthly",
-          value: `~$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}`,
-          color: (minerStats.usdPerDay ?? 0) > 0 ? "#4ade80" : undefined,
-        },
-      ],
-      tooltip:
-        "Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus.",
-    },
-  ];
+      {
+        label: "Credibility",
+        value: `${(Number(minerStats.credibility || 0) * 100).toFixed(1)}%`,
+        rank: null,
+        color:
+          (minerStats.credibility || 0) >= 0.9
+            ? "#4ade80" // High green
+            : (minerStats.credibility || 0) >= 0.7
+              ? "#a3e635" // Light green
+              : (minerStats.credibility || 0) >= 0.5
+                ? "#facc15" // Yellow
+                : (minerStats.credibility || 0) >= 0.3
+                  ? "#fb923c" // Orange
+                  : "#f87171", // Red
+        subItems: [
+          { label: "Merged", value: minerStats.totalMergedPrs || 0 },
+          { label: "Closed", value: minerStats.totalClosedPrs || 0 },
+        ],
+        tooltip:
+          "Credibility is the ratio of merged PRs to total PR attempts (merged + closed). It represents your success rate.",
+      },
+      {
+        label: "Current Score",
+        value: Number(minerStats.totalScore).toFixed(2),
+        rank: rankings?.score,
+        subItems: [
+          {
+            label: "Top PR",
+            value: topPR ? parseFloat(topPR.score || "0").toFixed(2) : "N/A",
+          },
+        ],
+      },
+      {
+        label: "PR Activity",
+        value: `${Number(minerStats.totalPrs || 0)} PRs`,
+        rank: rankings?.totalPrs,
+        subItems: [
+          {
+            label: "Lines",
+            value: Number(minerStats.totalLinesChanged || 0).toLocaleString(),
+          },
+        ],
+      },
+      {
+        label: "Unique Repos",
+        value: Number(minerStats.uniqueReposCount || 0),
+        rank: rankings?.uniqueRepos,
+      },
+      {
+        label: "Open Risk",
+        value: `${Number(minerStats.totalOpenPrs || 0)} PRs`,
+        rank: null,
+        color: getOpenPrColor(
+          Number(minerStats.totalOpenPrs || 0),
+          openPrThreshold,
+        ),
+        subItems: [
+          {
+            label: "Collateral",
+            value:
+              Number(minerStats.totalCollateralScore || 0) > 0
+                ? `-${Number(minerStats.totalCollateralScore).toFixed(2)}`
+                : "0.00",
+            color:
+              Number(minerStats.totalCollateralScore || 0) > 0
+                ? "rgba(248, 113, 113, 0.8)"
+                : undefined,
+          },
+        ],
+        tooltip: `Open PRs have collateral deducted from your score. Exceeding ${openPrThreshold} open PRs incurs drastic penalties.`,
+      },
+      {
+        label: "Est. Earnings",
+        value: `~$${Math.round(minerStats.usdPerDay ?? 0)}/day`,
+        rank: null,
+        color: (minerStats.usdPerDay ?? 0) > 0 ? "#4ade80" : undefined,
+        subItems: [
+          {
+            label: "Monthly",
+            value: `~$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}`,
+            color: (minerStats.usdPerDay ?? 0) > 0 ? "#4ade80" : undefined,
+          },
+        ],
+        tooltip:
+          "Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus.",
+      },
+    ];
 
   return (
     <Card
@@ -684,9 +682,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                           color:
                             item.icon === "earnings"
                               ? "#4ade80"
-                              : item.icon === "warning"
-                                ? "rgba(250, 204, 21, 0.9)"
-                                : "rgba(255, 255, 255, 0.5)",
+                              : "rgba(255, 255, 255, 0.5)",
                           fontFamily: '"JetBrains Mono", monospace',
                           fontSize: "0.75rem",
                           textTransform: "uppercase",
@@ -700,9 +696,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                       >
                         {item.icon === "earnings" && (
                           <EarningsIcon sx={{ fontSize: "1rem" }} />
-                        )}
-                        {item.icon === "warning" && (
-                          <WarningIcon sx={{ fontSize: "1rem" }} />
                         )}
                         {item.label}
                         <InfoOutlinedIcon sx={{ fontSize: "0.85rem" }} />
@@ -725,14 +718,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                       {item.icon === "earnings" && (
                         <EarningsIcon
                           sx={{ fontSize: "1rem", color: "#4ade80" }}
-                        />
-                      )}
-                      {item.icon === "warning" && (
-                        <WarningIcon
-                          sx={{
-                            fontSize: "1rem",
-                            color: "rgba(250, 204, 21, 0.9)",
-                          }}
                         />
                       )}
                       {item.label}
