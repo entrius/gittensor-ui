@@ -173,7 +173,7 @@ export const TierProgressBar: React.FC<TierProgressBarProps> = ({
             fontFamily: '"JetBrains Mono", monospace',
           }}
         >
-          {current}/{required}
+          {current} <Box component="span" sx={{ color: "rgba(255, 255, 255, 0.5)" }}>(Req: {required})</Box>
         </Typography>
       </Box>
       <LinearProgress
