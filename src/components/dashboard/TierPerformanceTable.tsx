@@ -47,32 +47,32 @@ const TierPerformanceTable: React.FC<TierPerformanceTableProps> = ({
     <Card
       sx={{ height: "100%", p: 2, display: "flex", flexDirection: "column" }}
     >
-      <Box sx={{ overflowX: "auto" }}>
-        <Box sx={{ minWidth: "600px" }}>
+      <Box sx={{ width: "100%", overflowX: "auto" }}>
+        <Box sx={{ width: "100%", minWidth: "fit-content" }}>
           {/* Table Header */}
           <Box
             sx={{
               display: "flex",
               alignItems: "center",
-              gap: 1,
+              gap: { xs: 0.5, md: 1 },
               pb: 1,
-              px: 1,
+              px: { xs: 0.5, md: 1 },
               borderBottom: "1px solid rgba(255,255,255,0.05)",
             }}
           >
-            <Box sx={{ width: "110px", pl: 1 }}>
-              <Typography variant="tableHeader">Tier</Typography>
+            <Box sx={{ width: { xs: "70px", md: "110px" }, pl: { xs: 0.5, md: 1 } }}>
+              <Typography variant="tableHeader" sx={{ fontSize: { xs: "0.6rem", md: "0.7rem" } }}>Tier</Typography>
             </Box>
 
             <Box
               sx={{
-                width: "80px",
+                width: { xs: "50px", md: "80px" },
                 display: "flex",
                 justifyContent: "center",
-                mr: 2,
+                mr: { xs: 1, md: 2 },
               }}
             >
-              <Typography variant="tableHeader">Miners</Typography>
+              <Typography variant="tableHeader" sx={{ fontSize: { xs: "0.6rem", md: "0.7rem" } }}>Miners</Typography>
             </Box>
 
             <Box
@@ -84,7 +84,7 @@ const TierPerformanceTable: React.FC<TierPerformanceTableProps> = ({
             >
               <Typography
                 variant="tableHeader"
-                sx={{ gridColumn: "span 4", textAlign: "center" }}
+                sx={{ gridColumn: "span 4", textAlign: "center", fontSize: { xs: "0.6rem", md: "0.7rem" } }}
               >
                 M.O.C Ratio
               </Typography>
@@ -92,15 +92,15 @@ const TierPerformanceTable: React.FC<TierPerformanceTableProps> = ({
 
             <Box
               sx={{
-                width: "180px",
+                width: { xs: "100px", md: "180px" },
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
               }}
             >
-              <Typography variant="tableHeader" sx={{ textAlign: "center" }}>
+              <Typography variant="tableHeader" sx={{ textAlign: "center", fontSize: { xs: "0.6rem", md: "0.7rem" } }}>
                 Score
               </Typography>
-              <Typography variant="tableHeader" sx={{ textAlign: "center" }}>
+              <Typography variant="tableHeader" sx={{ textAlign: "center", fontSize: { xs: "0.6rem", md: "0.7rem" } }}>
                 Avg/Miner
               </Typography>
             </Box>
@@ -160,9 +160,9 @@ const TierRow: React.FC<TierRowProps> = ({
       sx={{
         display: "flex",
         alignItems: "center",
-        gap: 1,
-        py: 0.75,
-        px: 1,
+        gap: { xs: 0.5, md: 1 },
+        py: { xs: 0.5, md: 0.75 },
+        px: { xs: 0.5, md: 1 },
         mt: isCandidate ? 1 : 0,
         borderTop: isCandidate ? "1px solid rgba(255,255,255,0.1)" : "none",
       }}
@@ -170,11 +170,11 @@ const TierRow: React.FC<TierRowProps> = ({
       {/* Tier Name */}
       <Box
         sx={{
-          width: "110px",
-          pl: 1,
+          width: { xs: "70px", md: "110px" },
+          pl: { xs: 0.5, md: 1 },
           display: "flex",
           alignItems: "center",
-          gap: 1.5,
+          gap: { xs: 1, md: 1.5 },
         }}
       >
         {!isCandidate && (
@@ -192,7 +192,7 @@ const TierRow: React.FC<TierRowProps> = ({
         <Typography
           sx={{
             color: "#fff",
-            fontSize: "0.85rem",
+            fontSize: { xs: "0.7rem", md: "0.85rem" },
             fontWeight: 600,
             fontFamily: '"JetBrains Mono", monospace',
           }}
@@ -204,15 +204,15 @@ const TierRow: React.FC<TierRowProps> = ({
       {/* Miners Count */}
       <Box
         sx={{
-          width: "80px",
+          width: { xs: "50px", md: "80px" },
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: "rgba(255,255,255,0.03)",
           borderRadius: 1,
-          height: "48px",
+          height: { xs: "36px", md: "48px" },
           border: "1px solid rgba(255,255,255,0.02)",
-          mr: 2,
+          mr: { xs: 1, md: 2 },
         }}
       >
         <Typography
@@ -220,7 +220,7 @@ const TierRow: React.FC<TierRowProps> = ({
             color: isCandidate
               ? "rgba(255,255,255,0.9)"
               : `rgba(255,255,255,${getOpacity(stats.total, maxValues.total)})`,
-            fontSize: "0.9rem",
+            fontSize: { xs: "0.75rem", md: "0.9rem" },
             fontWeight: 600,
             fontFamily: '"JetBrains Mono", monospace',
           }}
@@ -237,7 +237,7 @@ const TierRow: React.FC<TierRowProps> = ({
           gridTemplateColumns: "repeat(4, 1fr)",
           backgroundColor: "rgba(255,255,255,0.03)",
           borderRadius: 1,
-          height: "48px",
+          height: { xs: "36px", md: "48px" },
           alignItems: "center",
           border: "1px solid rgba(255,255,255,0.02)",
         }}
@@ -263,12 +263,12 @@ const TierRow: React.FC<TierRowProps> = ({
       {/* Score Group */}
       <Box
         sx={{
-          width: "180px",
+          width: { xs: "100px", md: "180px" },
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           backgroundColor: "rgba(255,255,255,0.03)",
           borderRadius: 1,
-          height: "48px",
+          height: { xs: "36px", md: "48px" },
           alignItems: "center",
           border: "1px solid rgba(255,255,255,0.02)",
         }}
@@ -309,7 +309,7 @@ const StatCell: React.FC<{
             ? color
             : `${color.replace(")", `,${opacity})`).replace("rgb", "rgba")}`,
         opacity: typeof opacity === "number" ? opacity : 1,
-        fontSize: "0.85rem",
+        fontSize: { xs: "0.7rem", md: "0.85rem" },
         fontWeight: 600,
         fontFamily: '"JetBrains Mono", monospace',
       }}
@@ -358,16 +358,16 @@ const MiniGauge: React.FC<{ stats: TierStats }> = ({ stats }) => {
         labelLine: { show: false },
         data: hasData
           ? [
-              {
-                value: stats.merged,
-                itemStyle: { color: STATUS_COLORS.merged },
-              },
-              { value: stats.open, itemStyle: { color: STATUS_COLORS.open } },
-              {
-                value: stats.closed,
-                itemStyle: { color: STATUS_COLORS.closed },
-              },
-            ]
+            {
+              value: stats.merged,
+              itemStyle: { color: STATUS_COLORS.merged },
+            },
+            { value: stats.open, itemStyle: { color: STATUS_COLORS.open } },
+            {
+              value: stats.closed,
+              itemStyle: { color: STATUS_COLORS.closed },
+            },
+          ]
           : [{ value: 1, itemStyle: { color: "rgba(255,255,255,0.1)" } }],
       },
     ],
@@ -377,7 +377,7 @@ const MiniGauge: React.FC<{ stats: TierStats }> = ({ stats }) => {
     <Box
       sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
     >
-      <Box sx={{ width: 38, height: 38 }}>
+      <Box sx={{ width: { xs: 28, md: 38 }, height: { xs: 28, md: 38 } }}>
         <ReactECharts
           option={option}
           style={{ height: "100%", width: "100%" }}

@@ -152,7 +152,15 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
         />
       </Box>
 
-      <Box sx={{ display: "flex", gap: { xs: 1, sm: 3 }, mt: 1 }}>
+      <Box
+        sx={{
+          display: "flex",
+          gap: { xs: 1, sm: 2, md: 3, lg: 1, xl: 2 },
+          mt: 1,
+          width: "100%",
+          justifyContent: "center",
+        }}
+      >
         <StatItem label="Merged" value={merged} />
         <StatItem label="Open" value={open} />
         <StatItem label="Closed" value={closed} />
