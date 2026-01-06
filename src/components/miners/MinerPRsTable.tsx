@@ -12,6 +12,7 @@ import {
   CircularProgress,
   Avatar,
   Chip,
+  Button,
 } from "@mui/material";
 import { useMinerPRs } from "../../api";
 import { useNavigate } from "react-router-dom";
@@ -25,9 +26,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "merged">(
-    "all",
-  );
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "open" | "merged" | "closed"
+  >("all");
 
   // Filter PRs by selected repository, author, and status
   const filteredPRs = useMemo(() => {
@@ -40,12 +41,31 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       filtered = filtered.filter((pr) => pr.author === selectedAuthor);
     }
     if (statusFilter === "open") {
-      filtered = filtered.filter((pr) => !pr.mergedAt);
+      filtered = filtered.filter(
+        (pr) => pr.prState === "OPEN" || (!pr.prState && !pr.mergedAt),
+      );
     } else if (statusFilter === "merged") {
-      filtered = filtered.filter((pr) => pr.mergedAt);
+      filtered = filtered.filter((pr) => pr.mergedAt || pr.prState === "MERGED");
+    } else if (statusFilter === "closed") {
+      filtered = filtered.filter(
+        (pr) => pr.prState === "CLOSED" && !pr.mergedAt,
+      );
     }
     return filtered;
   }, [prs, selectedRepo, selectedAuthor, statusFilter]);
+
+  const statusCounts = useMemo(() => {
+    if (!prs) return { all: 0, open: 0, merged: 0, closed: 0 };
+    return {
+      all: prs.length,
+      open: prs.filter(
+        (pr) => pr.prState === "OPEN" || (!pr.prState && !pr.mergedAt),
+      ).length,
+      merged: prs.filter((pr) => pr.mergedAt || pr.prState === "MERGED").length,
+      closed: prs.filter((pr) => pr.prState === "CLOSED" && !pr.mergedAt)
+        .length,
+    };
+  }, [prs]);
 
   // Get unique repositories for quick filters
   const uniqueRepos = useMemo(() => {
@@ -133,7 +153,14 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               )
             </Typography>
           </Box>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1,
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
             {selectedRepo && (
               <Chip
                 variant="filter"
@@ -148,6 +175,42 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 onDelete={() => setSelectedAuthor(null)}
               />
             )}
+
+            {/* Status Filter Buttons */}
+            <Box sx={{ display: "flex", gap: 0.5 }}>
+              <FilterButton
+                label="All"
+                value="all"
+                count={statusCounts.all}
+                color="#8b949e"
+                selected={statusFilter === "all"}
+                onClick={() => setStatusFilter("all")}
+              />
+              <FilterButton
+                label="Open"
+                value="open"
+                count={statusCounts.open}
+                color="#3fb950"
+                selected={statusFilter === "open"}
+                onClick={() => setStatusFilter("open")}
+              />
+              <FilterButton
+                label="Merged"
+                value="merged"
+                count={statusCounts.merged}
+                color="#a371f7"
+                selected={statusFilter === "merged"}
+                onClick={() => setStatusFilter("merged")}
+              />
+              <FilterButton
+                label="Closed"
+                value="closed"
+                count={statusCounts.closed}
+                color="#f85149"
+                selected={statusFilter === "closed"}
+                onClick={() => setStatusFilter("closed")}
+              />
+            </Box>
           </Box>
         </Box>
       </Box>
@@ -367,7 +430,18 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     sx={{ ...bodyCellStyle, width: { xs: "25%", sm: "10%" } }}
                   >
                     <Box>
-                      {!pr.mergedAt && pr.collateralScore ? (
+                      {pr.prState === "CLOSED" && !pr.mergedAt ? (
+                        <Typography
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                            fontWeight: 600,
+                            color: "rgba(255, 255, 255, 0.3)",
+                          }}
+                        >
+                          -
+                        </Typography>
+                      ) : !pr.mergedAt && pr.collateralScore ? (
                         <Typography
                           sx={{
                             fontFamily: '"JetBrains Mono", monospace',
@@ -389,17 +463,19 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           {parseFloat(pr.score).toFixed(4)}
                         </Typography>
                       )}
-                      {!pr.mergedAt && pr.collateralScore && (
-                        <Typography
-                          sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "0.6rem",
-                            color: "rgba(255,255,255,0.5)",
-                          }}
-                        >
-                          Collateral
-                        </Typography>
-                      )}
+                      {!pr.mergedAt &&
+                        pr.collateralScore &&
+                        pr.prState !== "CLOSED" && (
+                          <Typography
+                            sx={{
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: "0.6rem",
+                              color: "rgba(255,255,255,0.5)",
+                            }}
+                          >
+                            Collateral
+                          </Typography>
+                        )}
                     </Box>
                   </TableCell>
                   <TableCell
@@ -452,5 +528,38 @@ const bodyCellStyle = {
   px: { xs: 0.5, sm: 2 },
   height: { xs: "52px", sm: "60px" },
 };
+
+const FilterButton: React.FC<{
+  label: string;
+  value: string;
+  count: number;
+  color: string;
+  selected: boolean;
+  onClick: () => void;
+}> = ({ label, value, count, color, selected, onClick }) => (
+  <Button
+    size="small"
+    onClick={onClick}
+    sx={{
+      color: selected ? "#fff" : "rgba(255,255,255,0.5)",
+      backgroundColor: selected ? "rgba(255,255,255,0.1)" : "transparent",
+      borderRadius: "6px",
+      px: 1.5,
+      minWidth: "auto",
+      textTransform: "none",
+      fontFamily: '"JetBrains Mono", monospace',
+      fontSize: "0.75rem",
+      border: selected ? `1px solid ${color}` : "1px solid transparent",
+      "&:hover": {
+        backgroundColor: "rgba(255,255,255,0.15)",
+      },
+    }}
+  >
+    {label}{" "}
+    <span style={{ opacity: 0.6, marginLeft: "6px", fontSize: "0.7rem" }}>
+      {count}
+    </span>
+  </Button>
+);
 
 export default MinerPRsTable;
