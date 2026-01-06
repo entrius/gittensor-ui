@@ -13,12 +13,14 @@ export const useMinersQuery = <TResponse = void, TSelect = TResponse>(
   url: string,
   refetchInterval?: number,
   queryParams?: Record<string, string | number | undefined>,
+  options?: { enabled?: boolean },
 ) =>
   useApiQuery<TResponse, TSelect>(
     queryName,
     `/miners${url}`,
     refetchInterval,
     queryParams,
+    options,
   );
 
 /**
@@ -60,12 +62,17 @@ export const useMinerGithubData = (githubId: string) =>
 /**
  * Get detailed information for a specific pull request
  */
-export const usePullRequestDetails = (repo: string, number: number) =>
+export const usePullRequestDetails = (
+  repo: string,
+  number: number,
+  options?: { enabled?: boolean },
+) =>
   useMinersQuery<PullRequestDetails>(
     "usePullRequestDetails",
     "/pr",
     undefined,
     { repo, number },
+    options,
   );
 
 /**

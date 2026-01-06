@@ -6,6 +6,7 @@ export const useApiQuery = <TResponse = void, TSelect = TResponse>(
   url: string,
   refetchInterval?: number,
   queryParams?: Record<string, string | number | undefined>,
+  options?: { enabled?: boolean },
 ) => {
   const encodedUrl = encodeURI(url);
   const baseUrl = import.meta.env.VITE_REACT_APP_BASE_URL;
@@ -18,7 +19,7 @@ export const useApiQuery = <TResponse = void, TSelect = TResponse>(
       return data;
     },
     retry: false,
-    enabled: true,
+    enabled: options?.enabled ?? true,
     refetchInterval: refetchInterval,
   });
 };

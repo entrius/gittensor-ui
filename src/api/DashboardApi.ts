@@ -8,6 +8,7 @@ import {
   Repository,
   LanguageWeight,
   CommitLog,
+  PullRequestDetails,
 } from "./models/Dashboard";
 
 export const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
@@ -15,12 +16,14 @@ export const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
   url: string,
   refetchInterval?: number,
   queryParams?: Record<string, string | number | undefined>,
+  options?: { enabled?: boolean },
 ) =>
   useApiQuery<TResponse, TSelect>(
     queryName,
     `/dash${url}`,
     refetchInterval,
     queryParams,
+    options,
   );
 
 export const useStats = () => useDashboardQuery<Stats>("useStats", "/stats");
@@ -82,3 +85,5 @@ export const useInfiniteCommitLog = (options?: {
     retry: false,
   });
 };
+
+
