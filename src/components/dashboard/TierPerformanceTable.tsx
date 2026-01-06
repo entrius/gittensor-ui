@@ -52,7 +52,8 @@ const TierPerformanceTable: React.FC<TierPerformanceTableProps> = ({
           {/* Table Header */}
           <Box
             sx={{
-              display: "flex",
+              display: "grid",
+              gridTemplateColumns: "12% 10% 1fr 24%",
               alignItems: "center",
               gap: { xs: 0.5, md: 1 },
               pb: 1,
@@ -60,16 +61,14 @@ const TierPerformanceTable: React.FC<TierPerformanceTableProps> = ({
               borderBottom: "1px solid rgba(255,255,255,0.05)",
             }}
           >
-            <Box sx={{ width: { xs: "70px", md: "110px" }, pl: { xs: 0.5, md: 1 } }}>
+            <Box sx={{ pl: { xs: 0.5, md: 1 } }}>
               <Typography variant="tableHeader" sx={{ fontSize: { xs: "0.6rem", md: "0.7rem" } }}>Tier</Typography>
             </Box>
 
             <Box
               sx={{
-                width: { xs: "50px", md: "80px" },
                 display: "flex",
                 justifyContent: "center",
-                mr: { xs: 1, md: 2 },
               }}
             >
               <Typography variant="tableHeader" sx={{ fontSize: { xs: "0.6rem", md: "0.7rem" } }}>Miners</Typography>
@@ -77,7 +76,6 @@ const TierPerformanceTable: React.FC<TierPerformanceTableProps> = ({
 
             <Box
               sx={{
-                flex: 1,
                 display: "grid",
                 gridTemplateColumns: "repeat(4, 1fr)",
               }}
@@ -92,7 +90,6 @@ const TierPerformanceTable: React.FC<TierPerformanceTableProps> = ({
 
             <Box
               sx={{
-                width: { xs: "100px", md: "180px" },
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
               }}
@@ -158,7 +155,8 @@ const TierRow: React.FC<TierRowProps> = ({
   return (
     <Box
       sx={{
-        display: "flex",
+        display: "grid",
+        gridTemplateColumns: "12% 10% 1fr 24%",
         alignItems: "center",
         gap: { xs: 0.5, md: 1 },
         py: { xs: 0.5, md: 0.75 },
@@ -168,9 +166,9 @@ const TierRow: React.FC<TierRowProps> = ({
       }}
     >
       {/* Tier Name */}
+      {/* Tier Name */}
       <Box
         sx={{
-          width: { xs: "70px", md: "110px" },
           pl: { xs: 0.5, md: 1 },
           display: "flex",
           alignItems: "center",
@@ -204,7 +202,6 @@ const TierRow: React.FC<TierRowProps> = ({
       {/* Miners Count */}
       <Box
         sx={{
-          width: { xs: "50px", md: "80px" },
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -212,7 +209,6 @@ const TierRow: React.FC<TierRowProps> = ({
           borderRadius: 1,
           height: { xs: "36px", md: "48px" },
           border: "1px solid rgba(255,255,255,0.02)",
-          mr: { xs: 1, md: 2 },
         }}
       >
         <Typography
@@ -232,7 +228,6 @@ const TierRow: React.FC<TierRowProps> = ({
       {/* M.O.C Ratio */}
       <Box
         sx={{
-          flex: 1,
           display: "grid",
           gridTemplateColumns: "repeat(4, 1fr)",
           backgroundColor: "rgba(255,255,255,0.03)",
@@ -263,7 +258,6 @@ const TierRow: React.FC<TierRowProps> = ({
       {/* Score Group */}
       <Box
         sx={{
-          width: { xs: "100px", md: "180px" },
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           backgroundColor: "rgba(255,255,255,0.03)",
