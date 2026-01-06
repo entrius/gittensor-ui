@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import ReactECharts from "echarts-for-react";
-import { STATUS_COLORS } from "../../theme";
+import { CHART_COLORS, STATUS_COLORS } from "../../theme";
 
 interface PRStats {
   merged: number;
@@ -70,7 +70,7 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
               value: merged,
               name: "Merged",
               itemStyle: {
-                color: STATUS_COLORS.merged,
+                color: CHART_COLORS.merged,
                 opacity: isPrimary ? 1 : 0.7,
               },
             },
@@ -78,7 +78,7 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
               value: open,
               name: "Open",
               itemStyle: {
-                color: STATUS_COLORS.open,
+                color: CHART_COLORS.open,
                 opacity: isPrimary ? 1 : 0.7,
               },
             },
@@ -86,7 +86,7 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
               value: closed,
               name: "Closed",
               itemStyle: {
-                color: STATUS_COLORS.closed,
+                color: CHART_COLORS.closed,
                 opacity: isPrimary ? 1 : 0.7,
               },
             },

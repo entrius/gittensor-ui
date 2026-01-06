@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Box, Typography } from "@mui/material";
 import ReactECharts from "echarts-for-react";
-import { STATUS_COLORS } from "../../theme";
+import { CHART_COLORS } from "../../theme";
 
 interface CredibilityChartProps {
   merged: number;
@@ -66,17 +66,17 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
             {
               value: merged,
               name: "Merged",
-              itemStyle: { color: STATUS_COLORS.merged },
+              itemStyle: { color: CHART_COLORS.merged },
             },
             {
               value: open,
               name: "Open",
-              itemStyle: { color: STATUS_COLORS.open },
+              itemStyle: { color: CHART_COLORS.open },
             },
             {
               value: closed,
               name: "Closed",
-              itemStyle: { color: STATUS_COLORS.closed },
+              itemStyle: { color: CHART_COLORS.closed },
             },
           ],
         },
@@ -124,17 +124,17 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
         <LegendItem
           label="Merged"
           value={merged}
-          color={STATUS_COLORS.merged}
+          color={CHART_COLORS.merged}
         />
         <LegendItem
           label="Open"
           value={open}
-          color="rgba(255, 255, 255, 0.6)"
+          color={CHART_COLORS.open}
         />
         <LegendItem
           label="Closed"
           value={closed}
-          color={STATUS_COLORS.closed}
+          color={CHART_COLORS.closed}
         />
       </Box>
     </Box>

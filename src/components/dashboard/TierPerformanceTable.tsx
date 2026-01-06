@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Card, Typography } from "@mui/material";
 import ReactECharts from "echarts-for-react";
-import { TIER_COLORS, STATUS_COLORS } from "../../theme";
+import { TIER_COLORS, STATUS_COLORS, CHART_COLORS } from "../../theme";
 
 interface TierStats {
   total: number;
@@ -192,7 +192,6 @@ const TierRow: React.FC<TierRowProps> = ({
       }}
     >
       {/* Tier Name */}
-      {/* Tier Name */}
       <Box
         sx={{
           pl: { xs: 0.5, md: 1 },
@@ -266,17 +265,17 @@ const TierRow: React.FC<TierRowProps> = ({
         <MiniGauge stats={stats} />
         <StatCell
           value={stats.merged}
-          color={STATUS_COLORS.merged}
+          color={CHART_COLORS.merged}
           opacity={isCandidate ? 1 : getOpacity(stats.merged, maxValues.merged)}
         />
         <StatCell
           value={stats.open}
-          color="rgba(255,255,255,0.6)"
+          color={CHART_COLORS.open}
           opacity={isCandidate ? 1 : getOpacity(stats.open, maxValues.open)}
         />
         <StatCell
           value={stats.closed}
-          color={STATUS_COLORS.closed}
+          color={CHART_COLORS.closed}
           opacity={isCandidate ? 1 : getOpacity(stats.closed, maxValues.closed)}
         />
       </Box>
@@ -304,7 +303,7 @@ const TierRow: React.FC<TierRowProps> = ({
         />
         <StatCell
           value={stats.avgScorePerMiner.toFixed(1)}
-          color={STATUS_COLORS.purple}
+          color={CHART_COLORS.merged}
           opacity={
             isCandidate
               ? 1
@@ -344,10 +343,10 @@ const MiniGauge: React.FC<{ stats: TierStats }> = ({ stats }) => {
   const credibilityColor = !hasData
     ? "rgba(255,255,255,0.3)"
     : stats.credibility >= 0.7
-      ? STATUS_COLORS.merged
+      ? CHART_COLORS.merged
       : stats.credibility >= 0.4
         ? STATUS_COLORS.warning
-        : STATUS_COLORS.closed;
+        : CHART_COLORS.closed;
 
   const option = {
     backgroundColor: "transparent",
@@ -380,12 +379,12 @@ const MiniGauge: React.FC<{ stats: TierStats }> = ({ stats }) => {
           ? [
               {
                 value: stats.merged,
-                itemStyle: { color: STATUS_COLORS.merged },
+                itemStyle: { color: CHART_COLORS.merged },
               },
-              { value: stats.open, itemStyle: { color: STATUS_COLORS.open } },
+              { value: stats.open, itemStyle: { color: CHART_COLORS.open } },
               {
                 value: stats.closed,
-                itemStyle: { color: STATUS_COLORS.closed },
+                itemStyle: { color: CHART_COLORS.closed },
               },
             ]
           : [{ value: 1, itemStyle: { color: "rgba(255,255,255,0.1)" } }],

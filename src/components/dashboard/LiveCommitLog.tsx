@@ -63,9 +63,9 @@ const CommitLogItem: React.FC<{
     details?.prState?.toUpperCase() === "CLOSED" ||
     entry.prState?.toLowerCase() === "closed";
 
-  let status = { label: "OPENED", color: "#9ca3af" };
-  if (isMerged) status = { label: "MERGED", color: "#7ee787" };
-  else if (isClosed) status = { label: "CLOSED", color: "#ff7b72" };
+  let status = { label: "OPEN", color: theme.palette.status.neutral };
+  if (isMerged) status = { label: "MERGED", color: theme.palette.status.merged };
+  else if (isClosed) status = { label: "CLOSED", color: theme.palette.status.closed };
 
   const timestampRaw =
     details?.mergedAt || details?.prCreatedAt || entry.mergedAt;
@@ -171,20 +171,16 @@ const CommitLogItem: React.FC<{
             spacing={1}
             sx={{ mb: 0.5 }}
           >
-            <Typography
+            <Chip
+              variant="status"
+              label={status.label}
+              size="small"
               sx={{
                 color: status.color,
-                fontFamily: '"JetBrains Mono", monospace',
-                fontWeight: 700,
-                fontSize: "0.75rem",
-                border: `1px solid ${alpha(status.color, 0.3)}`,
-                padding: "2px 6px",
-                borderRadius: "4px",
+                borderColor: alpha(status.color, 0.3),
                 backgroundColor: alpha(status.color, 0.1),
               }}
-            >
-              {status.label}
-            </Typography>
+            />
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
               {timestamp}
             </Typography>
@@ -219,7 +215,7 @@ const CommitLogItem: React.FC<{
             <Stack direction="row" spacing={0.5} alignItems="center">
               <Typography
                 variant="caption"
-                sx={{ color: "#7ee787", fontWeight: 600 }}
+                sx={{ color: theme.palette.diff.additions, fontWeight: 600 }}
               >
                 +{entry.additions}
               </Typography>
@@ -228,7 +224,7 @@ const CommitLogItem: React.FC<{
               </Typography>
               <Typography
                 variant="caption"
-                sx={{ color: "#ff7b72", fontWeight: 600 }}
+                sx={{ color: theme.palette.diff.deletions, fontWeight: 600 }}
               >
                 -{entry.deletions}
               </Typography>

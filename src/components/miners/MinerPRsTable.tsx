@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { useMinerPRs } from "../../api";
 import { useNavigate } from "react-router-dom";
+import theme from "../../theme";
 
 interface MinerPRsTableProps {
   githubId: string;
@@ -184,7 +185,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 label="All"
                 value="all"
                 count={statusCounts.all}
-                color="#8b949e"
+                color={theme.palette.status.neutral}
                 selected={statusFilter === "all"}
                 onClick={() => setStatusFilter("all")}
               />
@@ -192,7 +193,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 label="Open"
                 value="open"
                 count={statusCounts.open}
-                color="#3fb950"
+                color={theme.palette.status.open}
                 selected={statusFilter === "open"}
                 onClick={() => setStatusFilter("open")}
               />
@@ -200,7 +201,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 label="Merged"
                 value="merged"
                 count={statusCounts.merged}
-                color="#a371f7"
+                color={theme.palette.status.merged}
                 selected={statusFilter === "merged"}
                 onClick={() => setStatusFilter("merged")}
               />
@@ -208,7 +209,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 label="Closed"
                 value="closed"
                 count={statusCounts.closed}
-                color="#f85149"
+                color={theme.palette.status.closed}
                 selected={statusFilter === "closed"}
                 onClick={() => setStatusFilter("closed")}
               />
@@ -410,7 +411,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     <Box
                       component="span"
                       sx={{
-                        color: "#7ee787",
+                        color: theme.palette.diff.additions,
                         mr: 1,
                         fontFamily: '"JetBrains Mono", monospace',
                       }}
@@ -420,7 +421,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     <Box
                       component="span"
                       sx={{
-                        color: "#ff7b72",
+                        color: theme.palette.diff.deletions,
                         fontFamily: '"JetBrains Mono", monospace',
                       }}
                     >

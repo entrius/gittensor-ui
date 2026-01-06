@@ -14,14 +14,12 @@ const useMinersQuery = <TResponse = void, TSelect = TResponse>(
   url: string,
   refetchInterval?: number,
   queryParams?: Record<string, string | number | undefined>,
-  options?: { enabled?: boolean },
 ) =>
   useApiQuery<TResponse, TSelect>(
     queryName,
     `/miners${url}`,
     refetchInterval,
     queryParams,
-    options,
   );
 
 /**
