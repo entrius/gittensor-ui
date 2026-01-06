@@ -268,7 +268,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
       },
       {
         label: "Est. Earnings",
-        value: `$${Math.round(minerStats.usdPerDay ?? 0)}/day`,
+        value: `$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}`,
         rank: null,
         color: (minerStats.usdPerDay ?? 0) > 0 ? "#4ade80" : undefined,
         subItems: [
@@ -673,33 +673,60 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                     <Box
                       sx={{
                         display: "flex",
-                        alignItems: "baseline",
-                        columnGap: 1.5,
-                        rowGap: 0,
+                        alignItems: "center",
+                        gap: 2,
                         flexWrap: "wrap",
                       }}
                     >
-                      <Box component="span">{String(item.value)}</Box>
-                      {item.subItems && item.subItems[0] && (
-                        <Box
+                      <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
+                        <Typography
                           component="span"
                           sx={{
-                            fontSize: "0.9em",
-                            color: "rgba(255, 255, 255, 0.7)",
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.75rem",
+                            color: "rgba(255, 255, 255, 0.5)",
+                            textTransform: "uppercase",
                           }}
                         >
-                          <Box
+                          Daily:
+                        </Typography>
+                        <Typography
+                          component="span"
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "1.1rem",
+                            fontWeight: 600,
+                            color: item.color,
+                          }}
+                        >
+                          {String(item.value)}
+                        </Typography>
+                      </Box>
+
+                      {item.subItems && item.subItems[0] && (
+                        <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
+                          <Typography
                             component="span"
-                            sx={{ color: item.subItems[0].color || "#4ade80" }}
+                            sx={{
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: "0.75rem",
+                              color: "rgba(255, 255, 255, 0.5)",
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            Monthly:
+                          </Typography>
+                          <Typography
+                            component="span"
+                            sx={{
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: "1.1rem",
+                              fontWeight: 600,
+                              color: item.subItems[0].color,
+                            }}
                           >
                             {item.subItems[0].value}
-                          </Box>
-                          <Box
-                            component="span"
-                            sx={{ fontSize: "0.85em", ml: 0.2, opacity: 0.7 }}
-                          >
-                            /mo
-                          </Box>
+                          </Typography>
                         </Box>
                       )}
                     </Box>
