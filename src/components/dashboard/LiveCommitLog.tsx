@@ -445,8 +445,9 @@ const LiveCommitLog: React.FC = () => {
                   return dateB - dateA; // Newest first
                 })
                 .map((entry, index) => {
-                  const entryId = `${entry.pullRequestNumber}-${entry.mergedAt || entry.prCreatedAt || "OPEN"
-                    }`;
+                  const entryId = `${entry.pullRequestNumber}-${
+                    entry.mergedAt || entry.prCreatedAt || "OPEN"
+                  }`;
                   const isLastItem = index === logEntries.length - 1;
                   const isNew = newEntryIds.has(entryId);
 

@@ -184,13 +184,13 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
           const unlockProgress =
             (isNextTier || !isLocked) && config
               ? {
-                mergedCount,
-                requiredMerges,
-                mergeProgress,
-                credibility,
-                requiredCredibility,
-                credibilityProgress,
-              }
+                  mergedCount,
+                  requiredMerges,
+                  mergeProgress,
+                  credibility,
+                  requiredCredibility,
+                  credibilityProgress,
+                }
               : undefined;
 
           return (
@@ -206,11 +206,11 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
                 tooltipMessage={
                   isLocked
                     ? getTooltipMessage(
-                      tier.name,
-                      tier.level,
-                      isNextTier,
-                      config,
-                    )
+                        tier.name,
+                        tier.level,
+                        isNextTier,
+                        config,
+                      )
                     : undefined
                 }
                 unlockProgress={unlockProgress}
