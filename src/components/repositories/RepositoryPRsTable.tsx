@@ -369,10 +369,16 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                     {pr.commitCount}
                   </TableCell>
                   <TableCell align="right" sx={bodyCellStyle}>
-                    <Box component="span" sx={{ color: theme.palette.diff.additions, mr: 1 }}>
+                    <Box
+                      component="span"
+                      sx={{ color: theme.palette.diff.additions, mr: 1 }}
+                    >
                       +{pr.additions}
                     </Box>
-                    <Box component="span" sx={{ color: theme.palette.diff.deletions }}>
+                    <Box
+                      component="span"
+                      sx={{ color: theme.palette.diff.deletions }}
+                    >
                       -{pr.deletions}
                     </Box>
                   </TableCell>

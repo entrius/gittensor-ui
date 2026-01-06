@@ -121,21 +121,9 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
           flexWrap: "wrap",
         }}
       >
-        <LegendItem
-          label="Merged"
-          value={merged}
-          color={CHART_COLORS.merged}
-        />
-        <LegendItem
-          label="Open"
-          value={open}
-          color={CHART_COLORS.open}
-        />
-        <LegendItem
-          label="Closed"
-          value={closed}
-          color={CHART_COLORS.closed}
-        />
+        <LegendItem label="Merged" value={merged} color={CHART_COLORS.merged} />
+        <LegendItem label="Open" value={open} color={CHART_COLORS.open} />
+        <LegendItem label="Closed" value={closed} color={CHART_COLORS.closed} />
       </Box>
     </Box>
   );

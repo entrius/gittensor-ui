@@ -64,8 +64,10 @@ const CommitLogItem: React.FC<{
     entry.prState?.toLowerCase() === "closed";
 
   let status = { label: "OPEN", color: theme.palette.status.neutral };
-  if (isMerged) status = { label: "MERGED", color: theme.palette.status.merged };
-  else if (isClosed) status = { label: "CLOSED", color: theme.palette.status.closed };
+  if (isMerged)
+    status = { label: "MERGED", color: theme.palette.status.merged };
+  else if (isClosed)
+    status = { label: "CLOSED", color: theme.palette.status.closed };
 
   const timestampRaw =
     details?.mergedAt || details?.prCreatedAt || entry.mergedAt;
