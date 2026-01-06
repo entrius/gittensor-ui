@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import ReactECharts from "echarts-for-react";
-import { useAllMinerData, useReposAndWeights } from "../../api";
+import { useAllPrs, useReposAndWeights } from "../../api";
 
 const truncateText = (text: string, maxLength: number): string => {
   if (!text) return "";
@@ -27,7 +27,7 @@ const LeaderboardCharts: React.FC = () => {
     "all" | "Gold" | "Silver" | "Bronze"
   >("all");
 
-  const { data: allPRs, isLoading: isLoadingPRs } = useAllMinerData();
+  const { data: allPRs, isLoading: isLoadingPRs } = useAllPrs();
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
 
   const isLoading = isLoadingPRs || isLoadingRepos;

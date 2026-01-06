@@ -85,13 +85,15 @@ export type CommitLog = {
   commitCount: number;
   repository: string;
   mergedAt: string | null;
-  prState?: string;
+  prState: string;
   collateralScore?: string;
   author: string;
   githubId?: string; // Numeric GitHub ID - only present in /miners endpoints, not /dash/commits
   score: string; // Backend returns as string
   baseScore?: string; // Backend returns as string
   tier: string | null; // Bronze, Silver, Gold - from joined repositories table (null if repo not registered)
+
+  // TODO: these values do not come in the /dash/commits endpoint, refactor to perhaps make a new model to include these attributes
   // Payout predictions (from /miners/all/prs endpoint)
   potentialScore?: number;
   predictedAlphaPerDay?: number;
