@@ -70,7 +70,7 @@ const CommitLogItem: React.FC<{
   const timestampRaw =
     details?.mergedAt || details?.prCreatedAt || entry.mergedAt;
   const timestamp = timestampRaw
-    ? dayjs(timestampRaw).utc().format("HH:mm:ss UTC")
+    ? dayjs(timestampRaw).utc().format("MMM D, HH:mm:ss UTC")
     : "Loading...";
 
   return (
@@ -428,20 +428,26 @@ const LiveCommitLog: React.FC = () => {
             }}
           >
             <Stack spacing={isMobile ? 1 : isTablet ? 1.25 : 1}>
-              {logEntries.map((entry, index) => {
-                const entryId = `${entry.pullRequestNumber}-${entry.mergedAt || "OPEN"}`;
-                const isLastItem = index === logEntries.length - 1;
-                const isNew = newEntryIds.has(entryId);
+              {[...logEntries]
+                .sort((a, b) => {
+                  const dateA = a.mergedAt ? new Date(a.mergedAt).getTime() : 0;
+                  const dateB = b.mergedAt ? new Date(b.mergedAt).getTime() : 0;
+                  return dateB - dateA; // Newest first
+                })
+                .map((entry, index) => {
+                  const entryId = `${entry.pullRequestNumber}-${entry.mergedAt || "OPEN"}`;
+                  const isLastItem = index === logEntries.length - 1;
+                  const isNew = newEntryIds.has(entryId);
 
-                return (
-                  <CommitLogItem
-                    key={entryId}
-                    entry={entry}
-                    isNew={isNew}
-                    innerRef={isLastItem ? loadMoreRef : null}
-                  />
-                );
-              })}
+                  return (
+                    <CommitLogItem
+                      key={entryId}
+                      entry={entry}
+                      isNew={isNew}
+                      innerRef={isLastItem ? loadMoreRef : null}
+                    />
+                  );
+                })}
 
               {isFetchingNextPage && (
                 <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
