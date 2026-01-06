@@ -514,7 +514,8 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                         color: "rgba(96, 165, 250, 0.9)",
                       }}
                     >
-                      ~${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()}{" "}
+                      ~$
+                      {Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()}{" "}
                       lifetime
                     </Typography>
                   </Box>

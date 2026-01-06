@@ -45,7 +45,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         (pr) => pr.prState === "OPEN" || (!pr.prState && !pr.mergedAt),
       );
     } else if (statusFilter === "merged") {
-      filtered = filtered.filter((pr) => pr.mergedAt || pr.prState === "MERGED");
+      filtered = filtered.filter(
+        (pr) => pr.mergedAt || pr.prState === "MERGED",
+      );
     } else if (statusFilter === "closed") {
       filtered = filtered.filter(
         (pr) => pr.prState === "CLOSED" && !pr.mergedAt,

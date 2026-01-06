@@ -62,7 +62,12 @@ const TierPerformanceTable: React.FC<TierPerformanceTableProps> = ({
             }}
           >
             <Box sx={{ pl: { xs: 0.5, md: 1 } }}>
-              <Typography variant="tableHeader" sx={{ fontSize: { xs: "0.6rem", md: "0.7rem" } }}>Tier</Typography>
+              <Typography
+                variant="tableHeader"
+                sx={{ fontSize: { xs: "0.6rem", md: "0.7rem" } }}
+              >
+                Tier
+              </Typography>
             </Box>
 
             <Box
@@ -71,7 +76,12 @@ const TierPerformanceTable: React.FC<TierPerformanceTableProps> = ({
                 justifyContent: "center",
               }}
             >
-              <Typography variant="tableHeader" sx={{ fontSize: { xs: "0.6rem", md: "0.7rem" } }}>Miners</Typography>
+              <Typography
+                variant="tableHeader"
+                sx={{ fontSize: { xs: "0.6rem", md: "0.7rem" } }}
+              >
+                Miners
+              </Typography>
             </Box>
 
             <Box
@@ -82,7 +92,11 @@ const TierPerformanceTable: React.FC<TierPerformanceTableProps> = ({
             >
               <Typography
                 variant="tableHeader"
-                sx={{ gridColumn: "span 4", textAlign: "center", fontSize: { xs: "0.6rem", md: "0.7rem" } }}
+                sx={{
+                  gridColumn: "span 4",
+                  textAlign: "center",
+                  fontSize: { xs: "0.6rem", md: "0.7rem" },
+                }}
               >
                 M.O.C Ratio
               </Typography>
@@ -94,10 +108,22 @@ const TierPerformanceTable: React.FC<TierPerformanceTableProps> = ({
                 gridTemplateColumns: "1fr 1fr",
               }}
             >
-              <Typography variant="tableHeader" sx={{ textAlign: "center", fontSize: { xs: "0.6rem", md: "0.7rem" } }}>
+              <Typography
+                variant="tableHeader"
+                sx={{
+                  textAlign: "center",
+                  fontSize: { xs: "0.6rem", md: "0.7rem" },
+                }}
+              >
                 Score
               </Typography>
-              <Typography variant="tableHeader" sx={{ textAlign: "center", fontSize: { xs: "0.6rem", md: "0.7rem" } }}>
+              <Typography
+                variant="tableHeader"
+                sx={{
+                  textAlign: "center",
+                  fontSize: { xs: "0.6rem", md: "0.7rem" },
+                }}
+              >
                 Avg/Miner
               </Typography>
             </Box>
@@ -352,16 +378,16 @@ const MiniGauge: React.FC<{ stats: TierStats }> = ({ stats }) => {
         labelLine: { show: false },
         data: hasData
           ? [
-            {
-              value: stats.merged,
-              itemStyle: { color: STATUS_COLORS.merged },
-            },
-            { value: stats.open, itemStyle: { color: STATUS_COLORS.open } },
-            {
-              value: stats.closed,
-              itemStyle: { color: STATUS_COLORS.closed },
-            },
-          ]
+              {
+                value: stats.merged,
+                itemStyle: { color: STATUS_COLORS.merged },
+              },
+              { value: stats.open, itemStyle: { color: STATUS_COLORS.open } },
+              {
+                value: stats.closed,
+                itemStyle: { color: STATUS_COLORS.closed },
+              },
+            ]
           : [{ value: 1, itemStyle: { color: "rgba(255,255,255,0.1)" } }],
       },
     ],

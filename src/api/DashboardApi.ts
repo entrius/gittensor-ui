@@ -85,5 +85,3 @@ export const useInfiniteCommitLog = (options?: {
     retry: false,
   });
 };
-
-
