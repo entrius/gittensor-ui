@@ -268,18 +268,18 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
       },
       {
         label: "Est. Earnings",
-        value: `~$${Math.round(minerStats.usdPerDay ?? 0)}/day`,
+        value: `$${Math.round(minerStats.usdPerDay ?? 0)}/day`,
         rank: null,
         color: (minerStats.usdPerDay ?? 0) > 0 ? "#4ade80" : undefined,
         subItems: [
           {
             label: "Monthly",
-            value: `~$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}`,
+            value: `$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}`,
             color: (minerStats.usdPerDay ?? 0) > 0 ? "#4ade80" : undefined,
           },
           {
             label: "Lifetime",
-            value: `~$${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()}`,
+            value: `$${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()}`,
             // Color removed to reduce visual noise and prioritize active earnings
           },
         ],
