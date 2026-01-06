@@ -277,6 +277,11 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             value: `~$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}`,
             color: (minerStats.usdPerDay ?? 0) > 0 ? "#4ade80" : undefined,
           },
+          {
+            label: "Lifetime",
+            value: `~$${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()}`,
+            // Color removed to reduce visual noise and prioritize active earnings
+          },
         ],
         tooltip:
           "Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus.",
@@ -314,18 +319,43 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             }}
           />
           <Box>
-            <Typography
-              variant="h5"
-              sx={{
-                color: "#ffffff",
-                fontFamily: '"JetBrains Mono", monospace',
-                mb: 0.5,
-                fontSize: "1.5rem",
-                fontWeight: 600,
-              }}
-            >
-              {githubData?.name || username}
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 0.5 }}>
+              <Typography
+                variant="h5"
+                sx={{
+                  color: "#ffffff",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: "1.5rem",
+                  fontWeight: 600,
+                }}
+              >
+                {githubData?.name || username}
+              </Typography>
+              <Chip
+                variant="tier"
+                label={`${minerStats.currentTier || "Unranked"} Tier`}
+                sx={{
+                  height: "24px",
+                  fontSize: "0.75rem",
+                  color:
+                    minerStats.currentTier === "Gold"
+                      ? TIER_COLORS.gold
+                      : minerStats.currentTier === "Silver"
+                        ? TIER_COLORS.silver
+                        : minerStats.currentTier === "Bronze"
+                          ? TIER_COLORS.bronze
+                          : "rgba(255, 255, 255, 0.4)",
+                  borderColor:
+                    minerStats.currentTier === "Gold"
+                      ? TIER_COLORS.gold
+                      : minerStats.currentTier === "Silver"
+                        ? TIER_COLORS.silver
+                        : minerStats.currentTier === "Bronze"
+                          ? TIER_COLORS.bronze
+                          : "rgba(255, 255, 255, 0.2)",
+                }}
+              />
+            </Box>
             <Typography
               component="a"
               href={`https://github.com/${username}`}
@@ -372,156 +402,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             </Box>
 
             {/* Current Tier Badge & Earnings */}
-            <Box
-              sx={{
-                mt: 1.5,
-                display: "flex",
-                alignItems: "center",
-                gap: 1.5,
-                flexWrap: "wrap",
-              }}
-            >
-              <Chip
-                variant="tier"
-                icon={<TierIcon />}
-                label={minerStats.currentTier || "Unranked"}
-                sx={{
-                  color:
-                    minerStats.currentTier === "Gold"
-                      ? TIER_COLORS.gold
-                      : minerStats.currentTier === "Silver"
-                        ? TIER_COLORS.silver
-                        : minerStats.currentTier === "Bronze"
-                          ? TIER_COLORS.bronze
-                          : "rgba(255, 255, 255, 0.4)",
-                  borderColor:
-                    minerStats.currentTier === "Gold"
-                      ? TIER_COLORS.gold
-                      : minerStats.currentTier === "Silver"
-                        ? TIER_COLORS.silver
-                        : minerStats.currentTier === "Bronze"
-                          ? TIER_COLORS.bronze
-                          : "rgba(255, 255, 255, 0.2)",
-                  "& .MuiChip-icon": {
-                    color: "inherit",
-                  },
-                }}
-              />
-              {(minerStats.usdPerDay ?? 0) > 0 && (
-                <Tooltip
-                  title="This is an estimation. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
-                  arrow
-                  placement="top"
-                  slotProps={{
-                    tooltip: {
-                      sx: {
-                        backgroundColor: "rgba(15, 15, 17, 0.98)",
-                        color: "rgba(255, 255, 255, 0.85)",
-                        fontSize: "0.7rem",
-                        fontFamily: '"JetBrains Mono", monospace',
-                        padding: "8px 12px",
-                        borderRadius: "6px",
-                        border: "1px solid rgba(255, 255, 255, 0.08)",
-                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
-                      },
-                    },
-                    arrow: {
-                      sx: {
-                        color: "rgba(15, 15, 17, 0.98)",
-                      },
-                    },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      px: 1.25,
-                      py: 0.5,
-                      borderRadius: "6px",
-                      backgroundColor: "rgba(74, 222, 128, 0.08)",
-                      border: "1px solid rgba(74, 222, 128, 0.2)",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                      "&:hover": {
-                        backgroundColor: "rgba(74, 222, 128, 0.12)",
-                        borderColor: "rgba(74, 222, 128, 0.3)",
-                      },
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
-                        color: "rgba(74, 222, 128, 0.9)",
-                      }}
-                    >
-                      ~${Math.round(minerStats.usdPerDay ?? 0)}/day
-                    </Typography>
-                  </Box>
-                </Tooltip>
-              )}
-              {(minerStats.lifetimeUsd ?? 0) > 0 && (
-                <Tooltip
-                  title="This is an estimation. Lifetime earnings are calculated from historical daily emission data. Actual payouts may vary."
-                  arrow
-                  placement="top"
-                  slotProps={{
-                    tooltip: {
-                      sx: {
-                        backgroundColor: "rgba(15, 15, 17, 0.98)",
-                        color: "rgba(255, 255, 255, 0.85)",
-                        fontSize: "0.7rem",
-                        fontFamily: '"JetBrains Mono", monospace',
-                        padding: "8px 12px",
-                        borderRadius: "6px",
-                        border: "1px solid rgba(255, 255, 255, 0.08)",
-                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
-                      },
-                    },
-                    arrow: {
-                      sx: {
-                        color: "rgba(15, 15, 17, 0.98)",
-                      },
-                    },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      px: 1.25,
-                      py: 0.5,
-                      borderRadius: "6px",
-                      backgroundColor: "rgba(96, 165, 250, 0.08)",
-                      border: "1px solid rgba(96, 165, 250, 0.2)",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                      "&:hover": {
-                        backgroundColor: "rgba(96, 165, 250, 0.12)",
-                        borderColor: "rgba(96, 165, 250, 0.3)",
-                      },
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
-                        color: "rgba(96, 165, 250, 0.9)",
-                      }}
-                    >
-                      ~$
-                      {Math.round(
-                        minerStats.lifetimeUsd ?? 0,
-                      ).toLocaleString()}{" "}
-                      lifetime
-                    </Typography>
-                  </Box>
-                </Tooltip>
-              )}
-            </Box>
+
           </Box>
         </Box>
 
@@ -821,7 +702,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
           </Grid>
         ))}
       </Grid>
-    </Card>
+    </Card >
   );
 };
 
