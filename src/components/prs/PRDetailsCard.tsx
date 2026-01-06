@@ -7,9 +7,11 @@ import {
   Avatar,
   Grid,
   Chip,
+  alpha,
 } from "@mui/material";
 import { usePullRequestDetails } from "../../api";
 import { useNavigate } from "react-router-dom";
+import theme from "../../theme";
 
 interface PRDetailsCardProps {
   repository: string;
@@ -220,43 +222,38 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               >
                 #{pullRequestNumber}
               </Typography>
-              <Box
-                sx={{
-                  display: "inline-block",
-                  px: 1,
-                  py: 0.25,
-                  borderRadius: 1,
-                  backgroundColor:
-                    prDetails.prState === "CLOSED"
-                      ? "rgba(255, 123, 114, 0.2)"
-                      : prDetails.prState === "MERGED"
-                        ? "rgba(163, 113, 247, 0.2)"
-                        : "rgba(45, 125, 70, 0.2)",
-                  border: "1px solid",
-                  borderColor:
-                    prDetails.prState === "CLOSED"
-                      ? "rgba(255, 123, 114, 0.4)"
-                      : prDetails.prState === "MERGED"
-                        ? "rgba(163, 113, 247, 0.4)"
-                        : "rgba(45, 125, 70, 0.4)",
-                }}
-              >
-                <Typography
-                  sx={{
-                    color:
-                      prDetails.prState === "CLOSED"
-                        ? "#ff7b72"
-                        : prDetails.prState === "MERGED"
-                          ? "#a371f7"
-                          : "#3fb950",
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    textTransform: "capitalize",
-                  }}
-                >
-                  {prDetails.prState}
-                </Typography>
-              </Box>
+              {(() => {
+                const statusColor =
+                  prDetails.prState === "CLOSED"
+                    ? theme.palette.status.closed
+                    : prDetails.prState === "MERGED"
+                      ? theme.palette.status.merged
+                      : theme.palette.status.open;
+                return (
+                  <Box
+                    sx={{
+                      display: "inline-block",
+                      px: 1,
+                      py: 0.25,
+                      borderRadius: 1,
+                      backgroundColor: alpha(statusColor, 0.2),
+                      border: "1px solid",
+                      borderColor: alpha(statusColor, 0.4),
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        color: statusColor,
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {prDetails.prState}
+                    </Typography>
+                  </Box>
+                );
+              })()}
             </Box>
             <Typography
               sx={{
@@ -400,7 +397,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                   <Typography
                     component="span"
                     sx={{
-                      color: "rgba(74, 222, 128, 0.8)",
+                      color: alpha(theme.palette.diff.additions, 0.8),
                       fontFamily: '"JetBrains Mono", monospace',
                       fontSize: "1.5rem",
                       fontWeight: 600,
@@ -422,7 +419,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                   <Typography
                     component="span"
                     sx={{
-                      color: "rgba(248, 113, 113, 0.8)",
+                      color: alpha(theme.palette.diff.deletions, 0.8),
                       fontFamily: '"JetBrains Mono", monospace',
                       fontSize: "1.5rem",
                       fontWeight: 600,

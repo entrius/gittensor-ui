@@ -18,6 +18,7 @@ import {
 import { useAllPrs, useAllMiners } from "../../api";
 import { useNavigate } from "react-router-dom";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import theme from "../../theme";
 
 interface RepositoryPRsTableProps {
   repositoryFullName: string;
@@ -154,25 +155,25 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
               label="All"
               value="all"
               count={counts.all}
-              color="#8b949e"
+              color={theme.palette.status.neutral}
             />
             <FilterButton
               label="Open"
               value="open"
               count={counts.open}
-              color="#3fb950"
+              color={theme.palette.status.open}
             />
             <FilterButton
               label="Merged"
               value="merged"
               count={counts.merged}
-              color="#a371f7"
+              color={theme.palette.status.merged}
             />
             <FilterButton
               label="Closed"
               value="closed"
               count={counts.closed}
-              color="#f85149"
+              color={theme.palette.status.closed}
             />
           </Stack>
         </Box>
@@ -222,25 +223,25 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
             label="All"
             value="all"
             count={counts.all}
-            color="#8b949e"
+            color={theme.palette.status.neutral}
           />
           <FilterButton
             label="Open"
             value="open"
             count={counts.open}
-            color="#3fb950"
+            color={theme.palette.status.open}
           />
           <FilterButton
             label="Merged"
             value="merged"
             count={counts.merged}
-            color="#a371f7"
+            color={theme.palette.status.merged}
           />
           <FilterButton
             label="Closed"
             value="closed"
             count={counts.closed}
-            color="#f85149"
+            color={theme.palette.status.closed}
           />
         </Stack>
       </Box>
@@ -368,10 +369,16 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                     {pr.commitCount}
                   </TableCell>
                   <TableCell align="right" sx={bodyCellStyle}>
-                    <Box component="span" sx={{ color: "#7ee787", mr: 1 }}>
+                    <Box
+                      component="span"
+                      sx={{ color: theme.palette.diff.additions, mr: 1 }}
+                    >
                       +{pr.additions}
                     </Box>
-                    <Box component="span" sx={{ color: "#ff7b72" }}>
+                    <Box
+                      component="span"
+                      sx={{ color: theme.palette.diff.deletions }}
+                    >
                       -{pr.deletions}
                     </Box>
                   </TableCell>
@@ -391,15 +398,15 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                       const state =
                         pr.prState?.toUpperCase() ||
                         (pr.mergedAt ? "MERGED" : "OPEN");
-                      let color = "#8b949e"; // default grey
+                      let color = theme.palette.status.neutral;
                       let label = state;
 
                       if (state === "MERGED") {
-                        color = "#a371f7"; // purple
+                        color = theme.palette.status.merged;
                       } else if (state === "OPEN") {
-                        color = "#3fb950"; // green
+                        color = theme.palette.status.open;
                       } else if (state === "CLOSED") {
-                        color = "#f85149"; // red
+                        color = theme.palette.status.closed;
                       }
 
                       return (

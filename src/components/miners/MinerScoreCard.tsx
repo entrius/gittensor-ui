@@ -515,7 +515,9 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                       }}
                     >
                       ~$
-                      {Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()}{" "}
+                      {Math.round(
+                        minerStats.lifetimeUsd ?? 0,
+                      ).toLocaleString()}{" "}
                       lifetime
                     </Typography>
                   </Box>

@@ -34,6 +34,7 @@ import TableChartIcon from "@mui/icons-material/TableChart";
 import ReactECharts from "echarts-for-react";
 import { CommitLog } from "../../api/models/Dashboard";
 import { formatUsdEstimate } from "../../utils";
+import theme from "../../theme";
 
 interface TopPRsTableProps {
   prs: CommitLog[];
@@ -138,13 +139,13 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
   const getTierColor = (tier: string) => {
     switch (tier) {
       case "Gold":
-        return "#FFD700";
+        return theme.palette.tier.gold;
       case "Silver":
-        return "#C0C0C0";
+        return theme.palette.tier.silver;
       case "Bronze":
-        return "#CD7F32";
+        return theme.palette.tier.bronze;
       default:
-        return "#8b949e";
+        return theme.palette.status.neutral;
     }
   };
 
@@ -239,13 +240,13 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
     const getTierColor = (tier: string) => {
       switch (tier) {
         case "Gold":
-          return "#FFD700";
+          return theme.palette.tier.gold;
         case "Silver":
-          return "#C0C0C0";
+          return theme.palette.tier.silver;
         case "Bronze":
-          return "#CD7F32";
+          return theme.palette.tier.bronze;
         default:
-          return "rgba(139, 148, 158, 0.9)";
+          return theme.palette.status.neutral;
       }
     };
 
@@ -707,25 +708,25 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                 label="All"
                 value="all"
                 count={tierCounts.all}
-                color="#8b949e"
+                color={theme.palette.status.neutral}
               />
               <TierFilterButton
                 label="Gold"
                 value="Gold"
                 count={tierCounts.gold}
-                color="#FFD700"
+                color={theme.palette.tier.gold}
               />
               <TierFilterButton
                 label="Silver"
                 value="Silver"
                 count={tierCounts.silver}
-                color="#C0C0C0"
+                color={theme.palette.tier.silver}
               />
               <TierFilterButton
                 label="Bronze"
                 value="Bronze"
                 count={tierCounts.bronze}
-                color="#CD7F32"
+                color={theme.palette.tier.bronze}
               />
             </Stack>
           </Box>
@@ -747,25 +748,25 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                 label="All"
                 value="all"
                 count={statusCounts.all}
-                color="#8b949e"
+                color={theme.palette.status.neutral}
               />
               <FilterButton
                 label="Open"
                 value="open"
                 count={statusCounts.open}
-                color="#3fb950"
+                color={theme.palette.status.open}
               />
               <FilterButton
                 label="Merged"
                 value="merged"
                 count={statusCounts.merged}
-                color="#a371f7"
+                color={theme.palette.status.merged}
               />
               <FilterButton
                 label="Closed"
                 value="closed"
                 count={statusCounts.closed}
-                color="#f85149"
+                color={theme.palette.status.closed}
               />
             </Stack>
           </Box>
@@ -995,15 +996,15 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                       const state =
                         pr.prState?.toUpperCase() ||
                         (pr.mergedAt ? "MERGED" : "OPEN");
-                      let color = "#8b949e"; // default grey
+                      let color = theme.palette.status.neutral;
                       let label = state;
 
                       if (state === "MERGED") {
-                        color = "#a371f7"; // purple
+                        color = theme.palette.status.merged;
                       } else if (state === "OPEN") {
-                        color = "#3fb950"; // green
+                        color = theme.palette.status.open;
                       } else if (state === "CLOSED") {
-                        color = "#f85149"; // red
+                        color = theme.palette.status.closed;
                       }
 
                       return (
