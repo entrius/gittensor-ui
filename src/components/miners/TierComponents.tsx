@@ -258,6 +258,9 @@ interface TierUnlockProgressProps {
   mergedCount: number;
   requiredMerges: number;
   mergeProgress: number;
+  uniqueReposCount: number;
+  requiredUniqueRepos: number;
+  uniqueReposProgress: number;
   credibility: number;
   requiredCredibility: number;
   credibilityProgress: number;
@@ -270,6 +273,9 @@ export const TierUnlockProgress: React.FC<TierUnlockProgressProps> = ({
   mergedCount,
   requiredMerges,
   mergeProgress,
+  uniqueReposCount,
+  requiredUniqueRepos,
+  uniqueReposProgress,
   credibility,
   requiredCredibility,
   credibilityProgress,
@@ -305,6 +311,14 @@ export const TierUnlockProgress: React.FC<TierUnlockProgressProps> = ({
     />
 
     <TierProgressBar
+      label="Unique Repos"
+      current={uniqueReposCount}
+      required={requiredUniqueRepos}
+      progress={uniqueReposProgress}
+      tierColor={tierColor}
+    />
+
+    <TierProgressBar
       label="Credibility"
       current={credibility ? `${(credibility * 100).toFixed(0)}%` : "0%"}
       required={`${(requiredCredibility * 100).toFixed(0)}%`}
@@ -322,6 +336,7 @@ interface TierStats {
   closed?: number;
   total?: number;
   collateral?: number;
+  uniqueRepos?: number;
 }
 
 interface TierCardProps {
@@ -337,6 +352,9 @@ interface TierCardProps {
     mergedCount: number;
     requiredMerges: number;
     mergeProgress: number;
+    uniqueReposCount: number;
+    requiredUniqueRepos: number;
+    uniqueReposProgress: number;
     credibility: number;
     requiredCredibility: number;
     credibilityProgress: number;
@@ -470,6 +488,9 @@ export const TierCard: React.FC<TierCardProps> = ({
             mergedCount={unlockProgress.mergedCount}
             requiredMerges={unlockProgress.requiredMerges}
             mergeProgress={unlockProgress.mergeProgress}
+            uniqueReposCount={unlockProgress.uniqueReposCount}
+            requiredUniqueRepos={unlockProgress.requiredUniqueRepos}
+            uniqueReposProgress={unlockProgress.uniqueReposProgress}
             credibility={unlockProgress.credibility}
             requiredCredibility={unlockProgress.requiredCredibility}
             credibilityProgress={unlockProgress.credibilityProgress}

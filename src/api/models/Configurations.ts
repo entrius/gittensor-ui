@@ -2,6 +2,7 @@ export interface TierConfig {
   name: string;
   level: number;
   requiredMerges: number;
+  requiredUniqueReposMergedTo: number;
   requiredCredibility: number;
   credibilityScalar: number;
   mergedPrBaseScore: number;

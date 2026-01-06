@@ -143,6 +143,10 @@ export type MinerEvaluation = {
   bronzeCredibility?: number;
   silverCredibility?: number;
   goldCredibility?: number;
+  // Unique repo contribution counts per tier
+  bronzeUniqueRepos?: number;
+  silverUniqueRepos?: number;
+  goldUniqueRepos?: number;
   // Timestamps
   evaluatedAt: string;
   createdAt: string;
