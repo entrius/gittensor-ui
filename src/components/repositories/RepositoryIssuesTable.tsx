@@ -14,7 +14,7 @@ import {
   Button,
   Stack,
 } from "@mui/material";
-import { useRepositoryIssues } from "../../api/MinerApi";
+import { useRepositoryIssues } from "../../api";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 

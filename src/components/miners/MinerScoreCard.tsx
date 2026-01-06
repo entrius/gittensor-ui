@@ -27,8 +27,8 @@ import {
 import {
   useMinerStats,
   useMinerPRs,
-  useAllMinerStats,
-  useAllMinerData,
+  useAllMiners,
+  useAllPrs,
   useMinerGithubData,
   useGeneralConfig,
 } from "../../api";
@@ -63,10 +63,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
   };
 
   // Fetch all miners' stats to calculate rankings
-  const { data: allMinersStats } = useAllMinerStats();
+  const { data: allMinersStats } = useAllMiners();
 
   // Fetch all PRs to calculate top PR ranking
-  const { data: allPRs } = useAllMinerData();
+  const { data: allPRs } = useAllPrs();
 
   // Calculate rankings for each metric
   const rankings = useMemo(() => {
@@ -514,7 +514,8 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                         color: "rgba(96, 165, 250, 0.9)",
                       }}
                     >
-                      ~${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()}{" "}
+                      ~$
+                      {Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()}{" "}
                       lifetime
                     </Typography>
                   </Box>

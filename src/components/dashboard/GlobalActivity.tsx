@@ -10,11 +10,7 @@ import {
 import PublicIcon from "@mui/icons-material/Public";
 import CodeOffIcon from "@mui/icons-material/CodeOff";
 import { subDays, format } from "date-fns";
-import {
-  useAllMinerStats,
-  useAllMinerData,
-  useReposAndWeights,
-} from "../../api";
+import { useAllMiners, useAllPrs, useReposAndWeights } from "../../api";
 import { STATUS_COLORS } from "../../theme";
 import TierRepoCard from "./TierRepoCard";
 import ContributionHeatmap from "./ContributionHeatmap";
@@ -22,8 +18,8 @@ import PRStatusChart from "./PRStatusChart";
 import TierPerformanceTable from "./TierPerformanceTable";
 
 const GlobalActivity: React.FC = () => {
-  const { data: allMinerStats, isLoading: isLoadingStats } = useAllMinerStats();
-  const { data: allPrs, isLoading: isLoadingPRs } = useAllMinerData();
+  const { data: allMinerStats, isLoading: isLoadingStats } = useAllMiners();
+  const { data: allPrs, isLoading: isLoadingPRs } = useAllPrs();
   const { data: repos } = useReposAndWeights();
 
   // Calculate Heatmap Data
