@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Box, Typography, Skeleton, Divider } from "@mui/material";
 import {
   useReposAndWeights,
-  useAllMinerData,
+  useAllPrs,
   useRepositoryIssues,
 } from "../../api";
 
@@ -14,7 +14,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
   repositoryFullName,
 }) => {
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
-  const { data: allPRs, isLoading: isLoadingPRs } = useAllMinerData();
+  const { data: allPRs, isLoading: isLoadingPRs } = useAllPrs();
   const { data: issues, isLoading: isLoadingIssues } =
     useRepositoryIssues(repositoryFullName);
 

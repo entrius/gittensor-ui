@@ -3,7 +3,7 @@ import { Box, Card } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Page } from "../components/layout";
 import { TopRepositoriesTable, SEO } from "../components";
-import { useAllMinerData, useReposAndWeights } from "../api";
+import { useAllPrs, useReposAndWeights } from "../api";
 import { CommitLog } from "../api/models/Dashboard";
 
 const TopReposPage: React.FC = () => {
@@ -14,9 +14,7 @@ const TopReposPage: React.FC = () => {
     | "Silver"
     | "Bronze"
     | null;
-  const allMinerDataQuery = useAllMinerData();
-  const allPRs = allMinerDataQuery?.data;
-  const isLoadingPRs = allMinerDataQuery?.isLoading;
+  const { data: allPRs, isLoading: isLoadingPRs } = useAllPrs();
   const { data: reposWithWeights, isLoading: isLoadingRepos } =
     useReposAndWeights();
 

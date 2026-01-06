@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Box, Typography, CircularProgress, Avatar } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import { useAllMinerData, useAllMinerStats } from "../../api";
+import { useAllPrs, useAllMiners } from "../../api";
 import { useNavigate } from "react-router-dom";
 
 interface RepositoryContributorsTableProps {
@@ -13,8 +13,8 @@ const RepositoryContributorsTable: React.FC<
   RepositoryContributorsTableProps
 > = ({ repositoryFullName }) => {
   const navigate = useNavigate();
-  const { data: allPRs, isLoading } = useAllMinerData();
-  const { data: allMinersStats } = useAllMinerStats();
+  const { data: allPRs, isLoading } = useAllPrs();
+  const { data: allMinersStats } = useAllMiners();
 
   // State for how many items to show. Minimum 7.
   const [visibleCount, setVisibleCount] = useState(7);

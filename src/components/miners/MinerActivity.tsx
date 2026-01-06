@@ -5,7 +5,7 @@ import {
   useMinerStats,
   useMinerPRs,
   useReposAndWeights,
-  useAllMinerStats,
+  useAllMiners,
 } from "../../api";
 import { ContributionHeatmap } from "../dashboard";
 import TrustBadge from "./TrustBadge";
@@ -20,7 +20,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({ githubId }) => {
   const { data: minerStats } = useMinerStats(githubId);
   const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
   const { data: repos } = useReposAndWeights();
-  const { data: allMinerStats } = useAllMinerStats();
+  const { data: allMinerStats } = useAllMiners();
 
   // Calculate contribution heatmap data
   const { contributionData, contributionsLast30Days, totalDaysShown } =
