@@ -669,7 +669,43 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                     lineHeight: 1.2,
                   }}
                 >
-                  {String(item.value)}
+                  {item.label === "Est. Earnings" ? (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "baseline",
+                        columnGap: 1.5,
+                        rowGap: 0,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <Box component="span">{String(item.value)}</Box>
+                      {item.subItems && item.subItems[0] && (
+                        <Box
+                          component="span"
+                          sx={{
+                            fontSize: "0.9em",
+                            color: "rgba(255, 255, 255, 0.7)",
+                          }}
+                        >
+                          <Box
+                            component="span"
+                            sx={{ color: item.subItems[0].color || "#4ade80" }}
+                          >
+                            {item.subItems[0].value}
+                          </Box>
+                          <Box
+                            component="span"
+                            sx={{ fontSize: "0.85em", ml: 0.2, opacity: 0.7 }}
+                          >
+                            /mo
+                          </Box>
+                        </Box>
+                      )}
+                    </Box>
+                  ) : (
+                    String(item.value)
+                  )}
                 </Typography>
               </Box>
               {item.subItems && item.subItems.length > 0 && (
@@ -684,18 +720,22 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                     gap: 1,
                   }}
                 >
-                  {item.subItems.map((sub, subIndex) => (
-                    <Typography
-                      key={subIndex}
-                      sx={{
-                        color: sub.color || "rgba(255, 255, 255, 0.4)",
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.7rem",
-                      }}
-                    >
-                      {sub.label}: {sub.value}
-                    </Typography>
-                  ))}
+                  {item.subItems.map((sub, subIndex) => {
+                    if (item.label === "Est. Earnings" && subIndex === 0)
+                      return null;
+                    return (
+                      <Typography
+                        key={subIndex}
+                        sx={{
+                          color: sub.color || "rgba(255, 255, 255, 0.4)",
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: "0.7rem",
+                        }}
+                      >
+                        {sub.label}: {sub.value}
+                      </Typography>
+                    );
+                  })}
                 </Box>
               )}
             </Box>
