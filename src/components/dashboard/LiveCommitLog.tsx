@@ -28,6 +28,7 @@ interface CommitLogEntry {
   commitCount: number;
   repository: string;
   mergedAt: string | null;
+  prCreatedAt: string;
   prState?: string;
   author: string;
   score: string;
@@ -70,7 +71,10 @@ const CommitLogItem: React.FC<{
     status = { label: "CLOSED", color: theme.palette.status.closed };
 
   const timestampRaw =
-    details?.mergedAt || details?.prCreatedAt || entry.mergedAt;
+    details?.mergedAt ||
+    details?.prCreatedAt ||
+    entry.mergedAt ||
+    entry.prCreatedAt;
   const timestamp = timestampRaw
     ? dayjs(timestampRaw).utc().format("MMM D, HH:mm:ss UTC")
     : "Loading...";
@@ -269,7 +273,7 @@ const LiveCommitLog: React.FC = () => {
     if (apiCommits.length === 0) return;
 
     const getCommitId = (c: CommitLogEntry) =>
-      `${c.pullRequestNumber}-${c.mergedAt || c.prState || "OPEN"}`;
+      `${c.pullRequestNumber}-${c.mergedAt || c.prCreatedAt || c.prState || "OPEN"}`;
 
     setSeenEntryIds((prevSeen) => {
       const newSeen = new Set(prevSeen);
@@ -428,12 +432,22 @@ const LiveCommitLog: React.FC = () => {
             <Stack spacing={isMobile ? 1 : isTablet ? 1.25 : 1}>
               {[...logEntries]
                 .sort((a, b) => {
-                  const dateA = a.mergedAt ? new Date(a.mergedAt).getTime() : 0;
-                  const dateB = b.mergedAt ? new Date(b.mergedAt).getTime() : 0;
+                  const dateA = a.mergedAt
+                    ? new Date(a.mergedAt).getTime()
+                    : a.prCreatedAt
+                      ? new Date(a.prCreatedAt).getTime()
+                      : 0;
+                  const dateB = b.mergedAt
+                    ? new Date(b.mergedAt).getTime()
+                    : b.prCreatedAt
+                      ? new Date(b.prCreatedAt).getTime()
+                      : 0;
                   return dateB - dateA; // Newest first
                 })
                 .map((entry, index) => {
-                  const entryId = `${entry.pullRequestNumber}-${entry.mergedAt || "OPEN"}`;
+                  const entryId = `${entry.pullRequestNumber}-${
+                    entry.mergedAt || entry.prCreatedAt || "OPEN"
+                  }`;
                   const isLastItem = index === logEntries.length - 1;
                   const isNew = newEntryIds.has(entryId);
 

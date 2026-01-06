@@ -251,7 +251,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
         Number(minerStats.totalOpenPrs || 0),
         openPrThreshold,
       ),
-      icon: "warning",
       subItems: [
         {
           label: "Collateral",
@@ -269,15 +268,19 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
     },
     {
       label: "Est. Earnings",
-      value: `~$${Math.round(minerStats.usdPerDay ?? 0)}/day`,
+      value: `$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}`,
       rank: null,
       color: (minerStats.usdPerDay ?? 0) > 0 ? "#4ade80" : undefined,
-      icon: "earnings",
       subItems: [
         {
           label: "Monthly",
-          value: `~$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}`,
+          value: `$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}`,
           color: (minerStats.usdPerDay ?? 0) > 0 ? "#4ade80" : undefined,
+        },
+        {
+          label: "Lifetime",
+          value: `$${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()}`,
+          // Color removed to reduce visual noise and prioritize active earnings
         },
       ],
       tooltip:
@@ -316,18 +319,100 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             }}
           />
           <Box>
-            <Typography
-              variant="h5"
+            <Box
               sx={{
-                color: "#ffffff",
-                fontFamily: '"JetBrains Mono", monospace',
+                display: "flex",
+                alignItems: "baseline",
+                gap: 1.5,
                 mb: 0.5,
-                fontSize: "1.5rem",
-                fontWeight: 600,
               }}
             >
-              {githubData?.name || username}
-            </Typography>
+              <Box
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "stretch",
+                  border: "1px solid",
+                  borderColor:
+                    minerStats.currentTier === "Gold"
+                      ? "rgba(255, 215, 0, 0.5)"
+                      : minerStats.currentTier === "Silver"
+                        ? "rgba(192, 192, 192, 0.5)"
+                        : minerStats.currentTier === "Bronze"
+                          ? "rgba(205, 127, 50, 0.5)"
+                          : "rgba(255, 255, 255, 0.2)",
+                  borderRadius: "6px",
+                  overflow: "hidden",
+                  backgroundColor: "rgba(0,0,0,0.2)",
+                }}
+              >
+                <Box
+                  sx={{
+                    px: 2,
+                    py: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    backgroundColor: "rgba(255,255,255,0.02)",
+                  }}
+                >
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      color: "#ffffff",
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: "1.25rem",
+                      fontWeight: 700,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {githubData?.name || username}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    px: 1.5,
+                    display: "flex",
+                    alignItems: "center",
+                    borderLeft: "1px solid",
+                    borderColor:
+                      minerStats.currentTier === "Gold"
+                        ? "rgba(255, 215, 0, 0.3)"
+                        : minerStats.currentTier === "Silver"
+                          ? "rgba(192, 192, 192, 0.3)"
+                          : minerStats.currentTier === "Bronze"
+                            ? "rgba(205, 127, 50, 0.3)"
+                            : "rgba(255, 255, 255, 0.1)",
+                    backgroundColor:
+                      minerStats.currentTier === "Gold"
+                        ? "rgba(255, 215, 0, 0.1)"
+                        : minerStats.currentTier === "Silver"
+                          ? "rgba(192, 192, 192, 0.1)"
+                          : minerStats.currentTier === "Bronze"
+                            ? "rgba(205, 127, 50, 0.1)"
+                            : "transparent",
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: "0.75rem",
+                      color:
+                        minerStats.currentTier === "Gold"
+                          ? TIER_COLORS.gold
+                          : minerStats.currentTier === "Silver"
+                            ? TIER_COLORS.silver
+                            : minerStats.currentTier === "Bronze"
+                              ? TIER_COLORS.bronze
+                              : "rgba(255, 255, 255, 0.4)",
+                      textTransform: "uppercase",
+                      letterSpacing: "1px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {minerStats.currentTier || "Unranked"} Tier
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
             <Typography
               component="a"
               href={`https://github.com/${username}`}
@@ -374,156 +459,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             </Box>
 
             {/* Current Tier Badge & Earnings */}
-            <Box
-              sx={{
-                mt: 1.5,
-                display: "flex",
-                alignItems: "center",
-                gap: 1.5,
-                flexWrap: "wrap",
-              }}
-            >
-              <Chip
-                variant="tier"
-                icon={<TierIcon />}
-                label={minerStats.currentTier || "Unranked"}
-                sx={{
-                  color:
-                    minerStats.currentTier === "Gold"
-                      ? TIER_COLORS.gold
-                      : minerStats.currentTier === "Silver"
-                        ? TIER_COLORS.silver
-                        : minerStats.currentTier === "Bronze"
-                          ? TIER_COLORS.bronze
-                          : "rgba(255, 255, 255, 0.4)",
-                  borderColor:
-                    minerStats.currentTier === "Gold"
-                      ? TIER_COLORS.gold
-                      : minerStats.currentTier === "Silver"
-                        ? TIER_COLORS.silver
-                        : minerStats.currentTier === "Bronze"
-                          ? TIER_COLORS.bronze
-                          : "rgba(255, 255, 255, 0.2)",
-                  "& .MuiChip-icon": {
-                    color: "inherit",
-                  },
-                }}
-              />
-              {(minerStats.usdPerDay ?? 0) > 0 && (
-                <Tooltip
-                  title="This is an estimation. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
-                  arrow
-                  placement="top"
-                  slotProps={{
-                    tooltip: {
-                      sx: {
-                        backgroundColor: "rgba(15, 15, 17, 0.98)",
-                        color: "rgba(255, 255, 255, 0.85)",
-                        fontSize: "0.7rem",
-                        fontFamily: '"JetBrains Mono", monospace',
-                        padding: "8px 12px",
-                        borderRadius: "6px",
-                        border: "1px solid rgba(255, 255, 255, 0.08)",
-                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
-                      },
-                    },
-                    arrow: {
-                      sx: {
-                        color: "rgba(15, 15, 17, 0.98)",
-                      },
-                    },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      px: 1.25,
-                      py: 0.5,
-                      borderRadius: "6px",
-                      backgroundColor: "rgba(74, 222, 128, 0.08)",
-                      border: "1px solid rgba(74, 222, 128, 0.2)",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                      "&:hover": {
-                        backgroundColor: "rgba(74, 222, 128, 0.12)",
-                        borderColor: "rgba(74, 222, 128, 0.3)",
-                      },
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
-                        color: "rgba(74, 222, 128, 0.9)",
-                      }}
-                    >
-                      ~${Math.round(minerStats.usdPerDay ?? 0)}/day
-                    </Typography>
-                  </Box>
-                </Tooltip>
-              )}
-              {(minerStats.lifetimeUsd ?? 0) > 0 && (
-                <Tooltip
-                  title="This is an estimation. Lifetime earnings are calculated from historical daily emission data. Actual payouts may vary."
-                  arrow
-                  placement="top"
-                  slotProps={{
-                    tooltip: {
-                      sx: {
-                        backgroundColor: "rgba(15, 15, 17, 0.98)",
-                        color: "rgba(255, 255, 255, 0.85)",
-                        fontSize: "0.7rem",
-                        fontFamily: '"JetBrains Mono", monospace',
-                        padding: "8px 12px",
-                        borderRadius: "6px",
-                        border: "1px solid rgba(255, 255, 255, 0.08)",
-                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
-                      },
-                    },
-                    arrow: {
-                      sx: {
-                        color: "rgba(15, 15, 17, 0.98)",
-                      },
-                    },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      px: 1.25,
-                      py: 0.5,
-                      borderRadius: "6px",
-                      backgroundColor: "rgba(96, 165, 250, 0.08)",
-                      border: "1px solid rgba(96, 165, 250, 0.2)",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                      "&:hover": {
-                        backgroundColor: "rgba(96, 165, 250, 0.12)",
-                        borderColor: "rgba(96, 165, 250, 0.3)",
-                      },
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
-                        color: "rgba(96, 165, 250, 0.9)",
-                      }}
-                    >
-                      ~$
-                      {Math.round(
-                        minerStats.lifetimeUsd ?? 0,
-                      ).toLocaleString()}{" "}
-                      lifetime
-                    </Typography>
-                  </Box>
-                </Tooltip>
-              )}
-            </Box>
           </Box>
         </Box>
 
@@ -684,9 +619,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                           color:
                             item.icon === "earnings"
                               ? "#4ade80"
-                              : item.icon === "warning"
-                                ? "rgba(250, 204, 21, 0.9)"
-                                : "rgba(255, 255, 255, 0.5)",
+                              : "rgba(255, 255, 255, 0.5)",
                           fontFamily: '"JetBrains Mono", monospace',
                           fontSize: "0.75rem",
                           textTransform: "uppercase",
@@ -700,9 +633,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                       >
                         {item.icon === "earnings" && (
                           <EarningsIcon sx={{ fontSize: "1rem" }} />
-                        )}
-                        {item.icon === "warning" && (
-                          <WarningIcon sx={{ fontSize: "1rem" }} />
                         )}
                         {item.label}
                         <InfoOutlinedIcon sx={{ fontSize: "0.85rem" }} />
@@ -725,14 +655,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                       {item.icon === "earnings" && (
                         <EarningsIcon
                           sx={{ fontSize: "1rem", color: "#4ade80" }}
-                        />
-                      )}
-                      {item.icon === "warning" && (
-                        <WarningIcon
-                          sx={{
-                            fontSize: "1rem",
-                            color: "rgba(250, 204, 21, 0.9)",
-                          }}
                         />
                       )}
                       {item.label}
@@ -803,7 +725,82 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                     lineHeight: 1.2,
                   }}
                 >
-                  {String(item.value)}
+                  {item.label === "Est. Earnings" ? (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "baseline",
+                          gap: 0.5,
+                        }}
+                      >
+                        <Typography
+                          component="span"
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.75rem",
+                            color: "rgba(255, 255, 255, 0.5)",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Daily:
+                        </Typography>
+                        <Typography
+                          component="span"
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "1.1rem",
+                            fontWeight: 600,
+                            color: item.color,
+                          }}
+                        >
+                          {String(item.value)}
+                        </Typography>
+                      </Box>
+
+                      {item.subItems && item.subItems[0] && (
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "baseline",
+                            gap: 0.5,
+                          }}
+                        >
+                          <Typography
+                            component="span"
+                            sx={{
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: "0.75rem",
+                              color: "rgba(255, 255, 255, 0.5)",
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            Monthly:
+                          </Typography>
+                          <Typography
+                            component="span"
+                            sx={{
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: "1.1rem",
+                              fontWeight: 600,
+                              color: item.subItems[0].color,
+                            }}
+                          >
+                            {item.subItems[0].value}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  ) : (
+                    String(item.value)
+                  )}
                 </Typography>
               </Box>
               {item.subItems && item.subItems.length > 0 && (
@@ -818,18 +815,22 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                     gap: 1,
                   }}
                 >
-                  {item.subItems.map((sub, subIndex) => (
-                    <Typography
-                      key={subIndex}
-                      sx={{
-                        color: sub.color || "rgba(255, 255, 255, 0.4)",
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.7rem",
-                      }}
-                    >
-                      {sub.label}: {sub.value}
-                    </Typography>
-                  ))}
+                  {item.subItems.map((sub, subIndex) => {
+                    if (item.label === "Est. Earnings" && subIndex === 0)
+                      return null;
+                    return (
+                      <Typography
+                        key={subIndex}
+                        sx={{
+                          color: sub.color || "rgba(255, 255, 255, 0.4)",
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: "0.7rem",
+                        }}
+                      >
+                        {sub.label}: {sub.value}
+                      </Typography>
+                    );
+                  })}
                 </Box>
               )}
             </Box>

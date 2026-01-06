@@ -182,7 +182,7 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
           );
 
           const unlockProgress =
-            isNextTier && config
+            (isNextTier || !isLocked) && config
               ? {
                   mergedCount,
                   requiredMerges,

@@ -8,8 +8,8 @@ export const TIER_COLORS = {
 } as const;
 
 export const STATUS_COLORS = {
-  merged: "#a371f7", // Purple - merged PRs
-  open: "#3fb950", // Green - open PRs
+  merged: "#3fb950", // Green - merged PRs
+  open: "#8b949e", // Gray - open PRs
   closed: "#ff7b72", // Red - closed PRs
   neutral: "#9ca3af", // Grey - default/neutral state
   success: "#4ade80", // Green - success states
@@ -25,8 +25,8 @@ export const DIFF_COLORS = {
 
 // Chart colors - different from status colors for better visual distinction in pie/donut charts
 export const CHART_COLORS = {
-  merged: "#4ade80", // Green - successful merges
-  open: "#52525b", // Grey - pending/open
+  merged: "#3fb950", // Green - successful merges
+  open: "#8b949e", // Grey - pending/open
   closed: "#ef4444", // Red - closed without merge
 } as const;
 
@@ -369,7 +369,7 @@ const theme = createTheme({
           fontFamily: '"JetBrains Mono", monospace',
           fontSize: "0.75rem",
           fontWeight: 600,
-          borderRadius: "16px",
+          borderRadius: "6px",
           height: "24px",
           "& .MuiChip-label": {
             px: 1.5,
@@ -396,7 +396,7 @@ const theme = createTheme({
           style: {
             backgroundColor: "transparent",
             border: "1px solid",
-            borderRadius: "16px",
+            borderRadius: "6px",
           },
         },
         // Status variant - for merged/open/closed states
@@ -405,7 +405,7 @@ const theme = createTheme({
           style: {
             backgroundColor: "transparent",
             border: "1px solid",
-            borderRadius: "16px",
+            borderRadius: "6px",
           },
         },
         // Info variant - for neutral information chips
@@ -415,7 +415,7 @@ const theme = createTheme({
             backgroundColor: "rgba(255, 255, 255, 0.05)",
             border: "1px solid rgba(255, 255, 255, 0.1)",
             color: "rgba(255, 255, 255, 0.9)",
-            borderRadius: "16px",
+            borderRadius: "6px",
             "& .MuiChip-icon": {
               color: "rgba(255, 255, 255, 0.7)",
             },
@@ -427,7 +427,7 @@ const theme = createTheme({
           style: {
             backgroundColor: "rgba(255, 255, 255, 0.1)",
             color: "#ffffff",
-            borderRadius: "16px",
+            borderRadius: "6px",
             "& .MuiChip-deleteIcon": {
               color: "rgba(255, 255, 255, 0.7)",
               "&:hover": {
