@@ -319,42 +319,92 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             }}
           />
           <Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 0.5 }}>
-              <Typography
-                variant="h5"
+            <Box sx={{ display: "flex", alignItems: "baseline", gap: 1.5, mb: 0.5 }}>
+              <Box
                 sx={{
-                  color: "#ffffff",
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: "1.5rem",
-                  fontWeight: 600,
-                }}
-              >
-                {githubData?.name || username}
-              </Typography>
-              <Chip
-                variant="tier"
-                label={`${minerStats.currentTier || "Unranked"} Tier`}
-                sx={{
-                  height: "24px",
-                  fontSize: "0.75rem",
-                  color:
-                    minerStats.currentTier === "Gold"
-                      ? TIER_COLORS.gold
-                      : minerStats.currentTier === "Silver"
-                        ? TIER_COLORS.silver
-                        : minerStats.currentTier === "Bronze"
-                          ? TIER_COLORS.bronze
-                          : "rgba(255, 255, 255, 0.4)",
+                  display: "inline-flex",
+                  alignItems: "stretch",
+                  border: "1px solid",
                   borderColor:
                     minerStats.currentTier === "Gold"
-                      ? TIER_COLORS.gold
+                      ? "rgba(255, 215, 0, 0.5)"
                       : minerStats.currentTier === "Silver"
-                        ? TIER_COLORS.silver
+                        ? "rgba(192, 192, 192, 0.5)"
                         : minerStats.currentTier === "Bronze"
-                          ? TIER_COLORS.bronze
+                          ? "rgba(205, 127, 50, 0.5)"
                           : "rgba(255, 255, 255, 0.2)",
+                  borderRadius: "6px",
+                  overflow: "hidden",
+                  backgroundColor: "rgba(0,0,0,0.2)",
                 }}
-              />
+              >
+                <Box
+                  sx={{
+                    px: 2,
+                    py: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    backgroundColor: "rgba(255,255,255,0.02)",
+                  }}
+                >
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      color: "#ffffff",
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: "1.25rem",
+                      fontWeight: 700,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {githubData?.name || username}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    px: 1.5,
+                    display: "flex",
+                    alignItems: "center",
+                    borderLeft: "1px solid",
+                    borderColor:
+                      minerStats.currentTier === "Gold"
+                        ? "rgba(255, 215, 0, 0.3)"
+                        : minerStats.currentTier === "Silver"
+                          ? "rgba(192, 192, 192, 0.3)"
+                          : minerStats.currentTier === "Bronze"
+                            ? "rgba(205, 127, 50, 0.3)"
+                            : "rgba(255, 255, 255, 0.1)",
+                    backgroundColor:
+                      minerStats.currentTier === "Gold"
+                        ? "rgba(255, 215, 0, 0.1)"
+                        : minerStats.currentTier === "Silver"
+                          ? "rgba(192, 192, 192, 0.1)"
+                          : minerStats.currentTier === "Bronze"
+                            ? "rgba(205, 127, 50, 0.1)"
+                            : "transparent",
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: "0.75rem",
+                      color:
+                        minerStats.currentTier === "Gold"
+                          ? TIER_COLORS.gold
+                          : minerStats.currentTier === "Silver"
+                            ? TIER_COLORS.silver
+                            : minerStats.currentTier === "Bronze"
+                              ? TIER_COLORS.bronze
+                              : "rgba(255, 255, 255, 0.4)",
+                      textTransform: "uppercase",
+                      letterSpacing: "1px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {minerStats.currentTier || "Unranked"} Tier
+                  </Typography>
+                </Box>
+              </Box>
             </Box>
             <Typography
               component="a"
