@@ -43,9 +43,7 @@ export const usePullRequestDetails = (repo: string, number: number) =>
  * @param number - Pull request number
  */
 export const usePullRequestComments = (repo: string, number: number) =>
-  usePrsQuery<any[]>(
-    "usePullRequestComments",
-    "/comments",
-    undefined,
-    { repo, number },
-  );
+  usePrsQuery<any[]>("usePullRequestComments", "/comments", undefined, {
+    repo,
+    number,
+  });

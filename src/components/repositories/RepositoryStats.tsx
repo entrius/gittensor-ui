@@ -1,10 +1,6 @@
 import React, { useMemo } from "react";
 import { Box, Typography, Skeleton, Divider } from "@mui/material";
-import {
-  useReposAndWeights,
-  useAllPrs,
-  useRepositoryIssues,
-} from "../../api";
+import { useReposAndWeights, useAllPrs, useRepositoryIssues } from "../../api";
 
 interface RepositoryStatsProps {
   repositoryFullName: string;

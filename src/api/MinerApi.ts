@@ -1,6 +1,10 @@
 // Miner API hooks - uses /miners endpoints
 import { useApiQuery } from "./ApiUtils";
-import { GithubMinerData, MinerEvaluation, CommitLog } from "./models/Dashboard";
+import {
+  GithubMinerData,
+  MinerEvaluation,
+  CommitLog,
+} from "./models/Dashboard";
 
 /**
  * Helper to create /miners endpoint queries
