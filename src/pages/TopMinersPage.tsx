@@ -3,12 +3,12 @@ import { Box, Card } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { Page } from "../components/layout";
 import { TopMinersTable, SEO } from "../components";
-import { useAllMinerStats } from "../api";
+import { useAllMiners } from "../api";
 
 const TopMinersPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const allMinerStatsQuery = useAllMinerStats();
+  const allMinerStatsQuery = useAllMiners();
   const allMinersStats = allMinerStatsQuery?.data;
   const isLoadingMinerStats = allMinerStatsQuery?.isLoading;
 
@@ -32,6 +32,7 @@ const TopMinersPage: React.FC = () => {
       uniqueReposCount: Number(stat.uniqueReposCount) || 0,
       credibility: Number(stat.credibility) || 0,
       currentTier: stat.currentTier,
+      usdPerDay: Number(stat.usdPerDay) || 0,
     }));
   }, [allMinersStats]);
 

@@ -228,37 +228,25 @@ const PRComments: React.FC<PRCommentsProps> = ({
                 {item.authorAssociation &&
                   item.authorAssociation !== "NONE" && (
                     <Chip
+                      variant="status"
                       label={item.authorAssociation
                         .toLowerCase()
                         .replace("_", " ")}
-                      size="small"
                       sx={{
-                        height: "20px",
-                        fontSize: "11px",
-                        fontWeight: 500,
-                        backgroundColor: "transparent",
                         color: colors.fg.muted,
-                        border: `1px solid ${colors.border.default}`,
-                        borderRadius: "10px",
+                        borderColor: colors.border.default,
                         textTransform: "capitalize",
-                        "& .MuiChip-label": { px: 1 },
                       }}
                     />
                   )}
                 {/* Description Badge - Special styling */}
                 {item.isDescription && (
                   <Chip
+                    variant="status"
                     label="Description"
-                    size="small"
                     sx={{
-                      height: "20px",
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      backgroundColor: "rgba(56, 139, 253, 0.15)", // Premium Blue Tint
                       color: "#58a6ff",
-                      border: "1px solid rgba(56, 139, 253, 0.4)",
-                      borderRadius: "10px",
-                      "& .MuiChip-label": { px: 1 },
+                      borderColor: "rgba(56, 139, 253, 0.4)",
                     }}
                   />
                 )}

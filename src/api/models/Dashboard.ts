@@ -85,13 +85,21 @@ export type CommitLog = {
   commitCount: number;
   repository: string;
   mergedAt: string | null;
-  prState?: string;
+  prCreatedAt: string;
+  prState: string;
   collateralScore?: string;
   author: string;
   githubId?: string; // Numeric GitHub ID - only present in /miners endpoints, not /dash/commits
   score: string; // Backend returns as string
   baseScore?: string; // Backend returns as string
   tier: string | null; // Bronze, Silver, Gold - from joined repositories table (null if repo not registered)
+
+  // TODO: these values do not come in the /dash/commits endpoint, refactor to perhaps make a new model to include these attributes
+  // Payout predictions (from /miners/all/prs endpoint)
+  potentialScore?: number;
+  predictedAlphaPerDay?: number;
+  predictedTaoPerDay?: number;
+  predictedUsdPerDay?: number;
 };
 
 export type MinerEvaluation = {
@@ -135,6 +143,10 @@ export type MinerEvaluation = {
   bronzeCredibility?: number;
   silverCredibility?: number;
   goldCredibility?: number;
+  // Unique repo contribution counts per tier
+  bronzeUniqueRepos?: number;
+  silverUniqueRepos?: number;
+  goldUniqueRepos?: number;
   // Timestamps
   evaluatedAt: string;
   createdAt: string;
@@ -142,6 +154,13 @@ export type MinerEvaluation = {
   // Additional stats
   totalAdditions?: number;
   totalDeletions?: number;
+
+  alphaPerDay?: number;
+  taoPerDay?: number;
+  usdPerDay?: number;
+  lifetimeAlpha?: number;
+  lifetimeTao?: number;
+  lifetimeUsd?: number;
 };
 
 export type GithubMinerData = {
@@ -205,6 +224,11 @@ export type PullRequestDetails = {
   createdAt: string;
   updatedAt: string;
   tier: string; // Bronze, Silver, Gold
+  // Predicted daily payouts based on potential score
+  potentialScore?: number;
+  predictedAlphaPerDay?: number;
+  predictedTaoPerDay?: number;
+  predictedUsdPerDay?: number;
 };
 
 export type PullRequestComment = {

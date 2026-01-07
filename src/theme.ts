@@ -1,8 +1,6 @@
 import { createTheme } from "@mui/material/styles";
 
-// ============================================================================
 // Shared Color Constants (exported for use outside MUI components)
-// ============================================================================
 export const TIER_COLORS = {
   gold: "#FFD700",
   silver: "#C0C0C0",
@@ -10,14 +8,26 @@ export const TIER_COLORS = {
 } as const;
 
 export const STATUS_COLORS = {
-  merged: "#4ade80",
-  open: "#52525b",
-  closed: "#ef4444",
-  success: "#10b981",
-  warning: "#fbbf24",
-  error: "#ef4444",
-  info: "#60a5fa",
-  purple: "#a78bfa",
+  merged: "#3fb950", // Green - merged PRs
+  open: "#8b949e", // Gray - open PRs
+  closed: "#ff7b72", // Red - closed PRs
+  neutral: "#9ca3af", // Grey - default/neutral state
+  success: "#4ade80", // Green - success states
+  warning: "#fbbf24", // Amber - warning states
+  error: "#ef4444", // Red - error states (same as closed)
+  info: "#60a5fa", // Blue - info states
+} as const;
+
+export const DIFF_COLORS = {
+  additions: "#7ee787", // Green - line additions
+  deletions: "#ef4444", // Red - line deletions (same as closed/error)
+} as const;
+
+// Chart colors - different from status colors for better visual distinction in pie/donut charts
+export const CHART_COLORS = {
+  merged: "#3fb950", // Green - successful merges
+  open: "#8b949e", // Grey - pending/open
+  closed: "#ef4444", // Red - closed without merge
 } as const;
 
 export const TEXT_OPACITY = {
@@ -29,9 +39,7 @@ export const TEXT_OPACITY = {
   ghost: 0.2,
 } as const;
 
-// ============================================================================
 // Module Augmentation for Custom Theme Properties
-// ============================================================================
 declare module "@mui/material/styles" {
   interface TypographyVariants {
     dataValue: React.CSSProperties;
@@ -65,10 +73,15 @@ declare module "@mui/material/styles" {
       merged: string;
       open: string;
       closed: string;
+      neutral: string;
       success: string;
       warning: string;
+      error: string;
       info: string;
-      purple: string;
+    };
+    diff: {
+      additions: string;
+      deletions: string;
     };
     border: {
       subtle: string;
@@ -92,10 +105,15 @@ declare module "@mui/material/styles" {
       merged: string;
       open: string;
       closed: string;
+      neutral: string;
       success: string;
       warning: string;
+      error: string;
       info: string;
-      purple: string;
+    };
+    diff?: {
+      additions: string;
+      deletions: string;
     };
     border?: {
       subtle: string;
@@ -137,7 +155,10 @@ declare module "@mui/material/Card" {
 
 declare module "@mui/material/Chip" {
   interface ChipPropsVariantOverrides {
+    tier: true;
     status: true;
+    info: true;
+    filter: true;
   }
 }
 
@@ -170,10 +191,16 @@ const theme = createTheme({
       merged: STATUS_COLORS.merged,
       open: STATUS_COLORS.open,
       closed: STATUS_COLORS.closed,
+      neutral: STATUS_COLORS.neutral,
       success: STATUS_COLORS.success,
       warning: STATUS_COLORS.warning,
+      error: STATUS_COLORS.error,
       info: STATUS_COLORS.info,
-      purple: STATUS_COLORS.purple,
+    },
+    // Diff colors for additions/deletions
+    diff: {
+      additions: DIFF_COLORS.additions,
+      deletions: DIFF_COLORS.deletions,
     },
     // Border colors
     border: {
@@ -334,13 +361,82 @@ const theme = createTheme({
       },
     },
     MuiChip: {
+      defaultProps: {
+        size: "small",
+      },
       styleOverrides: {
         root: {
           fontFamily: '"JetBrains Mono", monospace',
-          fontSize: "0.7rem",
+          fontSize: "0.75rem",
           fontWeight: 600,
+          borderRadius: "6px",
+          height: "24px",
+          "& .MuiChip-label": {
+            px: 1.5,
+          },
+          "& .MuiChip-icon": {
+            fontSize: 14,
+          },
+        },
+        sizeSmall: {
+          height: "22px",
+          fontSize: "0.7rem",
+          "& .MuiChip-label": {
+            px: 1,
+          },
+          "& .MuiChip-icon": {
+            fontSize: 14,
+          },
         },
       },
+      variants: [
+        // Tier variant - for Gold/Silver/Bronze badges
+        {
+          props: { variant: "tier" },
+          style: {
+            backgroundColor: "transparent",
+            border: "1px solid",
+            borderRadius: "6px",
+          },
+        },
+        // Status variant - for merged/open/closed states
+        {
+          props: { variant: "status" },
+          style: {
+            backgroundColor: "transparent",
+            border: "1px solid",
+            borderRadius: "6px",
+          },
+        },
+        // Info variant - for neutral information chips
+        {
+          props: { variant: "info" },
+          style: {
+            backgroundColor: "rgba(255, 255, 255, 0.05)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            color: "rgba(255, 255, 255, 0.9)",
+            borderRadius: "6px",
+            "& .MuiChip-icon": {
+              color: "rgba(255, 255, 255, 0.7)",
+            },
+          },
+        },
+        // Filter variant - for deletable filter chips
+        {
+          props: { variant: "filter" },
+          style: {
+            backgroundColor: "rgba(255, 255, 255, 0.1)",
+            color: "#ffffff",
+            borderRadius: "6px",
+            "& .MuiChip-deleteIcon": {
+              color: "rgba(255, 255, 255, 0.7)",
+              "&:hover": {
+                color: "#ffffff",
+              },
+            },
+          },
+        },
+      ],
     },
   },
 });

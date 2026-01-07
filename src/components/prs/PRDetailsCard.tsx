@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import {
   Card,
   Box,
@@ -7,9 +7,11 @@ import {
   Avatar,
   Grid,
   Chip,
+  alpha,
 } from "@mui/material";
-import { useAllMinerData, usePullRequestDetails } from "../../api";
+import { usePullRequestDetails } from "../../api";
 import { useNavigate } from "react-router-dom";
+import theme from "../../theme";
 
 interface PRDetailsCardProps {
   repository: string;
@@ -26,29 +28,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   // Fetch detailed PR data directly
   const { data: prDetails, isLoading: isDetailsLoading } =
     usePullRequestDetails(repository, pullRequestNumber);
-
-  // Keep fetching all PRs only for ranking purposes (optional, could be optimized later)
-  const { data: allPRs } = useAllMinerData();
-
-  // Calculate PR ranking among all PRs
-  const prRank = useMemo(() => {
-    if (!prDetails || !allPRs) return null;
-
-    // Sort all PRs by score descending
-    const sortedPRs = allPRs
-      .slice()
-      .sort((a, b) => parseFloat(b.score || "0") - parseFloat(a.score || "0"));
-
-    // Find the rank of this specific PR
-    const rank =
-      sortedPRs.findIndex(
-        (pr) =>
-          pr.repository === repository &&
-          pr.pullRequestNumber === pullRequestNumber,
-      ) + 1;
-
-    return rank || null;
-  }, [prDetails, allPRs, repository, pullRequestNumber]);
 
   if (isDetailsLoading) {
     return (
@@ -107,74 +86,32 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
 
   const isOpenPR = prDetails.prState === "OPEN";
 
-  const statItems = isOpenPR
-    ? [
-        {
-          label: "Collateral",
-          value:
-            parseFloat(prDetails.collateralScore || "0") > 0
-              ? `-${parseFloat(prDetails.collateralScore).toFixed(2)}`
-              : parseFloat(prDetails.collateralScore || "0").toFixed(2),
-          rank: null,
-          color:
-            parseFloat(prDetails.collateralScore || "0") > 0
-              ? "rgba(248, 113, 113, 0.8)"
-              : undefined,
-        },
-        {
-          label: "Base Score",
-          value: parseFloat(prDetails.baseScore).toFixed(2),
-          rank: null,
-          color: "rgba(255, 255, 255, 0.7)",
-        },
-        {
-          label: "Lines Scored",
-          value: prDetails.totalLinesScored.toLocaleString(),
-          rank: null,
-        },
-        {
-          label: "Changes",
-          value: "",
-          rank: null,
-          additions: prDetails.additions,
-          deletions: prDetails.deletions,
-        },
-        {
-          label: "Commits",
-          value: prDetails.commits,
-          rank: null,
-        },
-      ]
-    : [
-        {
-          label: "Score",
-          value: parseFloat(prDetails.earnedScore).toFixed(2),
-          rank: prRank,
-        },
-        {
-          label: "Base Score",
-          value: parseFloat(prDetails.baseScore).toFixed(2),
-          rank: null,
-          color: "rgba(255, 255, 255, 0.7)",
-        },
-        {
-          label: "Lines Scored",
-          value: prDetails.totalLinesScored.toLocaleString(),
-          rank: null,
-        },
-        {
-          label: "Changes",
-          value: "",
-          rank: null,
-          additions: prDetails.additions,
-          deletions: prDetails.deletions,
-        },
-        {
-          label: "Commits",
-          value: prDetails.commits,
-          rank: null,
-        },
-      ];
+  // Score/Collateral is now shown in header, so only show other stats here
+  const statItems = [
+    {
+      label: "Base Score",
+      value: parseFloat(prDetails.baseScore).toFixed(2),
+      rank: null,
+      color: "rgba(255, 255, 255, 0.7)",
+    },
+    {
+      label: "Lines Scored",
+      value: prDetails.totalLinesScored.toLocaleString(),
+      rank: null,
+    },
+    {
+      label: "Changes",
+      value: "",
+      rank: null,
+      additions: prDetails.additions,
+      deletions: prDetails.deletions,
+    },
+    {
+      label: "Commits",
+      value: prDetails.commits,
+      rank: null,
+    },
+  ];
 
   // For OPEN PRs: collateral = base_score × repo_weight × issue_multiplier × gittensor_tag × 20%
   // Only show applicable multipliers
@@ -285,43 +222,38 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               >
                 #{pullRequestNumber}
               </Typography>
-              <Box
-                sx={{
-                  display: "inline-block",
-                  px: 1,
-                  py: 0.25,
-                  borderRadius: 1,
-                  backgroundColor:
-                    prDetails.prState === "CLOSED"
-                      ? "rgba(255, 123, 114, 0.2)"
-                      : prDetails.prState === "MERGED"
-                        ? "rgba(163, 113, 247, 0.2)"
-                        : "rgba(45, 125, 70, 0.2)",
-                  border: "1px solid",
-                  borderColor:
-                    prDetails.prState === "CLOSED"
-                      ? "rgba(255, 123, 114, 0.4)"
-                      : prDetails.prState === "MERGED"
-                        ? "rgba(163, 113, 247, 0.4)"
-                        : "rgba(45, 125, 70, 0.4)",
-                }}
-              >
-                <Typography
-                  sx={{
-                    color:
-                      prDetails.prState === "CLOSED"
-                        ? "#ff7b72"
-                        : prDetails.prState === "MERGED"
-                          ? "#a371f7"
-                          : "#3fb950",
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    textTransform: "capitalize",
-                  }}
-                >
-                  {prDetails.prState}
-                </Typography>
-              </Box>
+              {(() => {
+                const statusColor =
+                  prDetails.prState === "CLOSED"
+                    ? theme.palette.status.closed
+                    : prDetails.prState === "MERGED"
+                      ? theme.palette.status.merged
+                      : theme.palette.status.open;
+                return (
+                  <Box
+                    sx={{
+                      display: "inline-block",
+                      px: 1,
+                      py: 0.25,
+                      borderRadius: 1,
+                      backgroundColor: alpha(statusColor, 0.2),
+                      border: "1px solid",
+                      borderColor: alpha(statusColor, 0.4),
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        color: statusColor,
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {prDetails.prState}
+                    </Typography>
+                  </Box>
+                );
+              })()}
             </Box>
             <Typography
               sx={{
@@ -356,20 +288,11 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               </Typography>
               {prDetails.tier && (
                 <Chip
+                  variant="tier"
                   label={prDetails.tier}
-                  size="small"
                   sx={{
-                    height: "20px",
-                    fontSize: "0.65rem",
-                    fontFamily: '"JetBrains Mono", monospace',
-                    backgroundColor: "transparent",
-                    border: `1px solid ${getTierColor(prDetails.tier)}`,
                     color: getTierColor(prDetails.tier),
-                    fontWeight: 600,
-                    borderRadius: "4px",
-                    "& .MuiChip-label": {
-                      px: 1,
-                    },
+                    borderColor: getTierColor(prDetails.tier),
                   }}
                 />
               )}
@@ -474,7 +397,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                   <Typography
                     component="span"
                     sx={{
-                      color: "rgba(74, 222, 128, 0.8)",
+                      color: alpha(theme.palette.diff.additions, 0.8),
                       fontFamily: '"JetBrains Mono", monospace',
                       fontSize: "1.5rem",
                       fontWeight: 600,
@@ -496,7 +419,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                   <Typography
                     component="span"
                     sx={{
-                      color: "rgba(248, 113, 113, 0.8)",
+                      color: alpha(theme.palette.diff.deletions, 0.8),
                       fontFamily: '"JetBrains Mono", monospace',
                       fontSize: "1.5rem",
                       fontWeight: 600,

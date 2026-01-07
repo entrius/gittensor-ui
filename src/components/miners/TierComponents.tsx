@@ -173,7 +173,10 @@ export const TierProgressBar: React.FC<TierProgressBarProps> = ({
             fontFamily: '"JetBrains Mono", monospace',
           }}
         >
-          {current}/{required}
+          {current}{" "}
+          <Box component="span" sx={{ color: "rgba(255, 255, 255, 0.5)" }}>
+            (Req: {required})
+          </Box>
         </Typography>
       </Box>
       <LinearProgress
@@ -255,22 +258,30 @@ interface TierUnlockProgressProps {
   mergedCount: number;
   requiredMerges: number;
   mergeProgress: number;
+  uniqueReposCount: number;
+  requiredUniqueRepos: number;
+  uniqueReposProgress: number;
   credibility: number;
   requiredCredibility: number;
   credibilityProgress: number;
   tierColor: string;
   borderColor: string;
+  title?: string;
 }
 
 export const TierUnlockProgress: React.FC<TierUnlockProgressProps> = ({
   mergedCount,
   requiredMerges,
   mergeProgress,
+  uniqueReposCount,
+  requiredUniqueRepos,
+  uniqueReposProgress,
   credibility,
   requiredCredibility,
   credibilityProgress,
   tierColor,
   borderColor,
+  title = "Unlock Progress",
 }) => (
   <Box
     sx={{
@@ -288,7 +299,7 @@ export const TierUnlockProgress: React.FC<TierUnlockProgressProps> = ({
         textTransform: "uppercase",
       }}
     >
-      Unlock Progress
+      {title}
     </Typography>
 
     <TierProgressBar
@@ -296,6 +307,14 @@ export const TierUnlockProgress: React.FC<TierUnlockProgressProps> = ({
       current={mergedCount}
       required={requiredMerges}
       progress={mergeProgress}
+      tierColor={tierColor}
+    />
+
+    <TierProgressBar
+      label="Unique Repos"
+      current={uniqueReposCount}
+      required={requiredUniqueRepos}
+      progress={uniqueReposProgress}
       tierColor={tierColor}
     />
 
@@ -317,6 +336,7 @@ interface TierStats {
   closed?: number;
   total?: number;
   collateral?: number;
+  uniqueRepos?: number;
 }
 
 interface TierCardProps {
@@ -332,6 +352,9 @@ interface TierCardProps {
     mergedCount: number;
     requiredMerges: number;
     mergeProgress: number;
+    uniqueReposCount: number;
+    requiredUniqueRepos: number;
+    uniqueReposProgress: number;
     credibility: number;
     requiredCredibility: number;
     credibilityProgress: number;
@@ -460,16 +483,20 @@ export const TierCard: React.FC<TierCardProps> = ({
           borderColor={borderColor}
         />
 
-        {isNextTier && unlockProgress && (
+        {unlockProgress && (
           <TierUnlockProgress
             mergedCount={unlockProgress.mergedCount}
             requiredMerges={unlockProgress.requiredMerges}
             mergeProgress={unlockProgress.mergeProgress}
+            uniqueReposCount={unlockProgress.uniqueReposCount}
+            requiredUniqueRepos={unlockProgress.requiredUniqueRepos}
+            uniqueReposProgress={unlockProgress.uniqueReposProgress}
             credibility={unlockProgress.credibility}
             requiredCredibility={unlockProgress.requiredCredibility}
             credibilityProgress={unlockProgress.credibilityProgress}
             tierColor={color}
             borderColor={borderColor}
+            title={isLocked ? "Unlock Progress" : "Maintenance Requirements"}
           />
         )}
       </Stack>

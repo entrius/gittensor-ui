@@ -43,10 +43,11 @@ const getTooltipMessage = (
   }
 
   const reqMerges = config.requiredMerges;
+  const reqUniqueRepos = config.requiredUniqueReposMergedTo;
   const reqCred = (config.requiredCredibility * 100).toFixed(0);
 
   if (isNextTier) {
-    return `${tierName} tier unlock in progress. Requires ${reqMerges} successful merges with ${reqCred}%+ credibility to ${tierName.toLowerCase()} tier repositories.`;
+    return `${tierName} tier unlock in progress. Requires ${reqMerges} successful merges to ${reqUniqueRepos} unique ${tierName.toLowerCase()} tier repositories with ${reqCred}%+ credibility.`;
   }
 
   const prevTier = getPreviousTierName(tierLevel);
@@ -92,6 +93,7 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
         closed: minerStats.bronzeClosedPrs,
         total: minerStats.bronzeTotalPrs,
         collateral: minerStats.bronzeCollateralScore,
+        uniqueRepos: minerStats.bronzeUniqueRepos,
       },
     },
     {
@@ -107,6 +109,7 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
         closed: minerStats.silverClosedPrs,
         total: minerStats.silverTotalPrs,
         collateral: minerStats.silverCollateralScore,
+        uniqueRepos: minerStats.silverUniqueRepos,
       },
     },
     {
@@ -122,6 +125,7 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
         closed: minerStats.goldClosedPrs,
         total: minerStats.goldTotalPrs,
         collateral: minerStats.goldCollateralScore,
+        uniqueRepos: minerStats.goldUniqueRepos,
       },
     },
   ];
@@ -168,12 +172,18 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
 
           // Calculate progress towards unlocking this tier
           const mergedCount = tier.stats.merged || 0;
+          const uniqueReposCount = tier.stats.uniqueRepos || 0;
           const credibility = tier.stats.credibility || 0;
           const requiredMerges = config?.requiredMerges || 3;
+          const requiredUniqueRepos = config?.requiredUniqueReposMergedTo || 3;
           const requiredCredibility = config?.requiredCredibility || 0.7;
 
           const mergeProgress = Math.min(
             (mergedCount / requiredMerges) * 100,
+            100,
+          );
+          const uniqueReposProgress = Math.min(
+            (uniqueReposCount / requiredUniqueRepos) * 100,
             100,
           );
           const credibilityProgress = Math.min(
@@ -182,11 +192,14 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
           );
 
           const unlockProgress =
-            isNextTier && config
+            (isNextTier || !isLocked) && config
               ? {
                   mergedCount,
                   requiredMerges,
                   mergeProgress,
+                  uniqueReposCount,
+                  requiredUniqueRepos,
+                  uniqueReposProgress,
                   credibility,
                   requiredCredibility,
                   credibilityProgress,

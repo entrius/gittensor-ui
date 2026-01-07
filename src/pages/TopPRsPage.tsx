@@ -3,11 +3,11 @@ import { Box, Card } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { Page } from "../components/layout";
 import { TopPRsTable, SEO } from "../components";
-import { useAllMinerData } from "../api";
+import { useAllPrs } from "../api";
 
 const TopPRsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { data: allPRs, isLoading: isLoadingPRs } = useAllMinerData();
+  const { data: allPRs, isLoading: isLoadingPRs } = useAllPrs();
 
   const handleSelectMiner = (githubId: string) => {
     navigate(`/miners/details?githubId=${githubId}`);

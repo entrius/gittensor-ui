@@ -107,13 +107,13 @@ const TrustBadge: React.FC<TrustBadgeProps> = ({ credibility, totalPRs }) => {
 
   return (
     <Chip
+      variant="status"
       icon={assessment.icon as React.ReactElement}
       label={assessment.message}
-      size="small"
       sx={{
-        backgroundColor: assessment.bgColor,
-        border: assessment.border,
         color: assessment.color,
+        borderColor: assessment.color,
+        border: assessment.border,
         "& .MuiChip-icon": { color: assessment.color },
       }}
     />

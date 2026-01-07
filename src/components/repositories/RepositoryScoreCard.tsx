@@ -7,7 +7,7 @@ import {
   CircularProgress,
   Avatar,
 } from "@mui/material";
-import { useAllMinerData } from "../../api";
+import { useAllPrs } from "../../api";
 
 interface RepositoryScoreCardProps {
   repositoryFullName: string;
@@ -16,7 +16,7 @@ interface RepositoryScoreCardProps {
 const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
   repositoryFullName,
 }) => {
-  const { data: allPRs, isLoading } = useAllMinerData();
+  const { data: allPRs, isLoading } = useAllPrs();
 
   const repoStats = useMemo(() => {
     if (!allPRs) return null;

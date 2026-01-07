@@ -14,7 +14,7 @@ import {
   Button,
   Stack,
 } from "@mui/material";
-import { useRepositoryIssues } from "../../api/MinerApi";
+import { useRepositoryIssues } from "../../api";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 
@@ -274,27 +274,19 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                     </TableCell>
                     <TableCell sx={bodyCellStyle}>
                       <Chip
+                        variant="status"
                         icon={
                           isOpen ? (
-                            <RadioButtonUncheckedIcon sx={{ fontSize: 14 }} />
+                            <RadioButtonUncheckedIcon />
                           ) : (
-                            <CheckCircleIcon sx={{ fontSize: 14 }} />
+                            <CheckCircleIcon />
                           )
                         }
                         label={isOpen ? "OPEN" : "CLOSED"}
-                        size="small"
                         sx={{
-                          backgroundColor: "transparent",
-                          border: `1px solid ${isOpen ? "#3fb950" : "#a371f7"}`,
                           color: isOpen ? "#3fb950" : "#a371f7",
-                          fontFamily: '"JetBrains Mono", monospace',
-                          fontWeight: 600,
-                          height: "22px",
-                          fontSize: "0.7rem",
-                          borderRadius: "6px",
-                          "& .MuiChip-icon": {
-                            color: "inherit",
-                          },
+                          borderColor: isOpen ? "#3fb950" : "#a371f7",
+                          "& .MuiChip-icon": { color: "inherit" },
                         }}
                       />
                     </TableCell>

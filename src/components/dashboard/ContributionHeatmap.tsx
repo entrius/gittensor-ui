@@ -12,15 +12,10 @@ interface ContributionHeatmapProps {
   data: ContributionData[];
   contributionsLast30Days: number;
   totalDaysShown: number;
-  /** Custom subtitle text. Defaults to "network contributions in the last 30 days" */
   subtitle?: string;
-  /** Footer text shown below the heatmap */
   footerText?: string;
-  /** Empty state title when no data */
   emptyTitle?: string;
-  /** Empty state subtitle when no data */
   emptySubtitle?: string;
-  /** If true, renders without Card wrapper */
   bare?: boolean;
 }
 
