@@ -845,7 +845,9 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           <TableBody>
             {filteredPRs
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((pr) => (
+              .map((pr) => {
+                const isLowValue = pr.lowValuePr === true;
+                const rowContent = (
                 <TableRow
                   key={`${pr.repository}-${pr.pullRequestNumber}`}
                   hover
@@ -854,8 +856,14 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                   }
                   sx={{
                     cursor: "pointer",
+                    ...(isLowValue && {
+                      backgroundColor: "rgba(250, 204, 21, 0.10)",
+                      borderLeft: "3px solid rgba(250, 204, 21, 0.5)",
+                    }),
                     "&:hover": {
-                      backgroundColor: "rgba(255, 255, 255, 0.05)",
+                      backgroundColor: isLowValue
+                        ? "rgba(250, 204, 21, 0.15)"
+                        : "rgba(255, 255, 255, 0.05)",
                     },
                     transition: "background-color 0.2s",
                   }}
@@ -874,8 +882,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
-                          maxWidth: "100%",
-                          display: "inline-block",
+                          display: "block",
                           "&:hover": {
                             color: "primary.main",
                             textDecoration: "underline",
@@ -1095,7 +1102,37 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                     </Box>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+                return isLowValue ? (
+                  <Tooltip
+                    key={`${pr.repository}-${pr.pullRequestNumber}`}
+                    title="This PR is marked as low value due to minimal code changes, documentation-only updates, or other factors that reduce its scoring weight. Low value PRs do not count towards score or tier unlock requirements."
+                    arrow
+                    placement="top"
+                    slotProps={{
+                      tooltip: {
+                        sx: {
+                          backgroundColor: "rgba(30, 30, 30, 0.95)",
+                          color: "#ffffff",
+                          fontSize: "0.75rem",
+                          fontFamily: '"JetBrains Mono", monospace',
+                          padding: "12px 16px",
+                          borderRadius: "8px",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                          maxWidth: 300,
+                        },
+                      },
+                      arrow: {
+                        sx: {
+                          color: "rgba(30, 30, 30, 0.95)",
+                        },
+                      },
+                    }}
+                  >
+                    {rowContent}
+                  </Tooltip>
+                ) : rowContent;
+              })}
           </TableBody>
         </Table>
       </TableContainer>

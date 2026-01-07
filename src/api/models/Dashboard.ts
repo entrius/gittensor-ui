@@ -100,6 +100,9 @@ export type CommitLog = {
   predictedAlphaPerDay?: number;
   predictedTaoPerDay?: number;
   predictedUsdPerDay?: number;
+
+  // Low value PR indicator
+  lowValuePr?: boolean;
 };
 
 export type MinerEvaluation = {
@@ -229,6 +232,8 @@ export type PullRequestDetails = {
   predictedAlphaPerDay?: number;
   predictedTaoPerDay?: number;
   predictedUsdPerDay?: number;
+  // Low value PR indicator
+  lowValuePr?: boolean;
 };
 
 export type PullRequestComment = {

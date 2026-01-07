@@ -13,6 +13,7 @@ import {
   Avatar,
   Chip,
   Button,
+  Tooltip,
 } from "@mui/material";
 import { useMinerPRs } from "../../api";
 import { useNavigate } from "react-router-dom";
@@ -305,7 +306,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredPRs.map((pr, index) => (
+              {filteredPRs.map((pr, index) => {
+                const isLowValue = pr.lowValuePr === true;
+                const rowContent = (
                 <TableRow
                   key={`${pr.repository}-${pr.pullRequestNumber}-${index}`}
                   onClick={() => {
@@ -315,8 +318,14 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   }}
                   sx={{
                     cursor: "pointer",
+                    ...(isLowValue && {
+                      backgroundColor: "rgba(250, 204, 21, 0.10)",
+                      borderLeft: "3px solid rgba(250, 204, 21, 0.5)",
+                    }),
                     "&:hover": {
-                      backgroundColor: "rgba(255, 255, 255, 0.05)",
+                      backgroundColor: isLowValue
+                        ? "rgba(250, 204, 21, 0.15)"
+                        : "rgba(255, 255, 255, 0.05)",
                     },
                     transition: "background-color 0.2s",
                   }}
@@ -350,7 +359,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   >
                     <Box
                       sx={{
-                        maxWidth: "100%",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
@@ -498,7 +506,37 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                         : "Open"}
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+                return isLowValue ? (
+                  <Tooltip
+                    key={`${pr.repository}-${pr.pullRequestNumber}-${index}`}
+                    title="This PR is marked as low value due to minimal code changes, documentation-only updates, or other factors that reduce its scoring weight. Low value PRs do not count towards score or tier unlock requirements."
+                    arrow
+                    placement="top"
+                    slotProps={{
+                      tooltip: {
+                        sx: {
+                          backgroundColor: "rgba(30, 30, 30, 0.95)",
+                          color: "#ffffff",
+                          fontSize: "0.75rem",
+                          fontFamily: '"JetBrains Mono", monospace',
+                          padding: "12px 16px",
+                          borderRadius: "8px",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                          maxWidth: 300,
+                        },
+                      },
+                      arrow: {
+                        sx: {
+                          color: "rgba(30, 30, 30, 0.95)",
+                        },
+                      },
+                    }}
+                  >
+                    {rowContent}
+                  </Tooltip>
+                ) : rowContent;
+              })}
             </TableBody>
           </Table>
         </TableContainer>
