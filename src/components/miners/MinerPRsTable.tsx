@@ -309,203 +309,203 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               {filteredPRs.map((pr, index) => {
                 const isLowValue = pr.lowValuePr === true;
                 const rowContent = (
-                <TableRow
-                  key={`${pr.repository}-${pr.pullRequestNumber}-${index}`}
-                  onClick={() => {
-                    navigate(
-                      `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
-                    );
-                  }}
-                  sx={{
-                    cursor: "pointer",
-                    ...(isLowValue && {
-                      backgroundColor: "rgba(250, 204, 21, 0.10)",
-                      borderLeft: "3px solid rgba(250, 204, 21, 0.5)",
-                    }),
-                    "&:hover": {
-                      backgroundColor: isLowValue
-                        ? "rgba(250, 204, 21, 0.15)"
-                        : "rgba(255, 255, 255, 0.05)",
-                    },
-                    transition: "background-color 0.2s",
-                  }}
-                >
-                  <TableCell
+                  <TableRow
+                    key={`${pr.repository}-${pr.pullRequestNumber}-${index}`}
+                    onClick={() => {
+                      navigate(
+                        `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
+                      );
+                    }}
                     sx={{
-                      ...bodyCellStyle,
-                      width: { xs: "20%", sm: "10%" },
-                      fontSize: { xs: "0.75rem", sm: "0.85rem" },
+                      cursor: "pointer",
+                      ...(isLowValue && {
+                        backgroundColor: "rgba(250, 204, 21, 0.10)",
+                        borderLeft: "3px solid rgba(250, 204, 21, 0.5)",
+                      }),
+                      "&:hover": {
+                        backgroundColor: isLowValue
+                          ? "rgba(250, 204, 21, 0.15)"
+                          : "rgba(255, 255, 255, 0.05)",
+                      },
+                      transition: "background-color 0.2s",
                     }}
                   >
-                    <a
-                      href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        color: "#ffffff",
-                        textDecoration: "none",
-                        fontWeight: 500,
-                      }}
-                    >
-                      #{pr.pullRequestNumber}
-                    </a>
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      ...bodyCellStyle,
-                      width: { xs: "55%", sm: "30%" },
-                      fontSize: { xs: "0.75rem", sm: "0.85rem" },
-                    }}
-                  >
-                    <Box
+                    <TableCell
                       sx={{
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
+                        ...bodyCellStyle,
+                        width: { xs: "20%", sm: "10%" },
+                        fontSize: { xs: "0.75rem", sm: "0.85rem" },
                       }}
                     >
-                      {pr.pullRequestTitle}
-                    </Box>
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      ...bodyCellStyle,
-                      width: "20%",
-                      display: { xs: "none", sm: "table-cell" },
-                    }}
-                  >
-                    <Box
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedRepo(pr.repository);
-                      }}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1.5,
-                        cursor: "pointer",
-                        "&:hover": {
-                          color: "primary.main",
-                        },
-                        transition: "color 0.2s",
-                      }}
-                    >
-                      <Avatar
-                        src={`https://avatars.githubusercontent.com/${pr.repository.split("/")[0]}`}
-                        alt={pr.repository.split("/")[0]}
-                        sx={{
-                          width: 20,
-                          height: 20,
-                          border: "1px solid rgba(255, 255, 255, 0.2)",
-                          backgroundColor:
-                            pr.repository.split("/")[0] === "opentensor"
-                              ? "#ffffff"
-                              : pr.repository.split("/")[0] === "bitcoin"
-                                ? "#F7931A"
-                                : "transparent",
+                      <a
+                        href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          color: "#ffffff",
+                          textDecoration: "none",
+                          fontWeight: 500,
                         }}
-                      />
-                      {pr.repository}
-                    </Box>
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      ...bodyCellStyle,
-                      width: "15%",
-                      display: { xs: "none", md: "table-cell" },
-                    }}
-                  >
-                    <Box
-                      component="span"
+                      >
+                        #{pr.pullRequestNumber}
+                      </a>
+                    </TableCell>
+                    <TableCell
                       sx={{
-                        color: theme.palette.diff.additions,
-                        mr: 1,
-                        fontFamily: '"JetBrains Mono", monospace',
+                        ...bodyCellStyle,
+                        width: { xs: "55%", sm: "30%" },
+                        fontSize: { xs: "0.75rem", sm: "0.85rem" },
                       }}
                     >
-                      +{pr.additions}
-                    </Box>
-                    <Box
-                      component="span"
+                      <Box
+                        sx={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {pr.pullRequestTitle}
+                      </Box>
+                    </TableCell>
+                    <TableCell
                       sx={{
-                        color: theme.palette.diff.deletions,
-                        fontFamily: '"JetBrains Mono", monospace',
+                        ...bodyCellStyle,
+                        width: "20%",
+                        display: { xs: "none", sm: "table-cell" },
                       }}
                     >
-                      -{pr.deletions}
-                    </Box>
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...bodyCellStyle, width: { xs: "25%", sm: "10%" } }}
-                  >
-                    <Box>
-                      {pr.prState === "CLOSED" && !pr.mergedAt ? (
-                        <Typography
+                      <Box
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedRepo(pr.repository);
+                        }}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1.5,
+                          cursor: "pointer",
+                          "&:hover": {
+                            color: "primary.main",
+                          },
+                          transition: "color 0.2s",
+                        }}
+                      >
+                        <Avatar
+                          src={`https://avatars.githubusercontent.com/${pr.repository.split("/")[0]}`}
+                          alt={pr.repository.split("/")[0]}
                           sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: { xs: "0.7rem", sm: "0.75rem" },
-                            fontWeight: 600,
-                            color: "rgba(255, 255, 255, 0.3)",
+                            width: 20,
+                            height: 20,
+                            border: "1px solid rgba(255, 255, 255, 0.2)",
+                            backgroundColor:
+                              pr.repository.split("/")[0] === "opentensor"
+                                ? "#ffffff"
+                                : pr.repository.split("/")[0] === "bitcoin"
+                                  ? "#F7931A"
+                                  : "transparent",
                           }}
-                        >
-                          -
-                        </Typography>
-                      ) : !pr.mergedAt && pr.collateralScore ? (
-                        <Typography
-                          sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: { xs: "0.7rem", sm: "0.75rem" },
-                            fontWeight: 600,
-                            color: "#fb923c",
-                          }}
-                        >
-                          {parseFloat(pr.collateralScore).toFixed(4)}
-                        </Typography>
-                      ) : (
-                        <Typography
-                          sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: { xs: "0.7rem", sm: "0.75rem" },
-                            fontWeight: 600,
-                          }}
-                        >
-                          {parseFloat(pr.score).toFixed(4)}
-                        </Typography>
-                      )}
-                      {!pr.mergedAt &&
-                        pr.collateralScore &&
-                        pr.prState !== "CLOSED" && (
+                        />
+                        {pr.repository}
+                      </Box>
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{
+                        ...bodyCellStyle,
+                        width: "15%",
+                        display: { xs: "none", md: "table-cell" },
+                      }}
+                    >
+                      <Box
+                        component="span"
+                        sx={{
+                          color: theme.palette.diff.additions,
+                          mr: 1,
+                          fontFamily: '"JetBrains Mono", monospace',
+                        }}
+                      >
+                        +{pr.additions}
+                      </Box>
+                      <Box
+                        component="span"
+                        sx={{
+                          color: theme.palette.diff.deletions,
+                          fontFamily: '"JetBrains Mono", monospace',
+                        }}
+                      >
+                        -{pr.deletions}
+                      </Box>
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{ ...bodyCellStyle, width: { xs: "25%", sm: "10%" } }}
+                    >
+                      <Box>
+                        {pr.prState === "CLOSED" && !pr.mergedAt ? (
                           <Typography
                             sx={{
                               fontFamily: '"JetBrains Mono", monospace',
-                              fontSize: "0.6rem",
-                              color: "rgba(255,255,255,0.5)",
+                              fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                              fontWeight: 600,
+                              color: "rgba(255, 255, 255, 0.3)",
                             }}
                           >
-                            Collateral
+                            -
+                          </Typography>
+                        ) : !pr.mergedAt && pr.collateralScore ? (
+                          <Typography
+                            sx={{
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                              fontWeight: 600,
+                              color: "#fb923c",
+                            }}
+                          >
+                            {parseFloat(pr.collateralScore).toFixed(4)}
+                          </Typography>
+                        ) : (
+                          <Typography
+                            sx={{
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                              fontWeight: 600,
+                            }}
+                          >
+                            {parseFloat(pr.score).toFixed(4)}
                           </Typography>
                         )}
-                    </Box>
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      ...bodyCellStyle,
-                      width: "15%",
-                      display: { xs: "none", sm: "table-cell" },
-                      fontSize: { xs: "0.75rem", sm: "0.85rem" },
-                      color: "rgba(255,255,255,0.7)",
-                    }}
-                  >
-                    {pr.mergedAt
-                      ? new Date(pr.mergedAt).toLocaleDateString()
-                      : pr.prState === "CLOSED"
-                        ? "Closed"
-                        : "Open"}
-                  </TableCell>
-                </TableRow>
+                        {!pr.mergedAt &&
+                          pr.collateralScore &&
+                          pr.prState !== "CLOSED" && (
+                            <Typography
+                              sx={{
+                                fontFamily: '"JetBrains Mono", monospace',
+                                fontSize: "0.6rem",
+                                color: "rgba(255,255,255,0.5)",
+                              }}
+                            >
+                              Collateral
+                            </Typography>
+                          )}
+                      </Box>
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{
+                        ...bodyCellStyle,
+                        width: "15%",
+                        display: { xs: "none", sm: "table-cell" },
+                        fontSize: { xs: "0.75rem", sm: "0.85rem" },
+                        color: "rgba(255,255,255,0.7)",
+                      }}
+                    >
+                      {pr.mergedAt
+                        ? new Date(pr.mergedAt).toLocaleDateString()
+                        : pr.prState === "CLOSED"
+                          ? "Closed"
+                          : "Open"}
+                    </TableCell>
+                  </TableRow>
                 );
                 return isLowValue ? (
                   <Tooltip
@@ -535,7 +535,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   >
                     {rowContent}
                   </Tooltip>
-                ) : rowContent;
+                ) : (
+                  rowContent
+                );
               })}
             </TableBody>
           </Table>

@@ -224,7 +224,8 @@ const CommitLogItem: React.FC<{
                   sx={{
                     color: "#facc15",
                     borderColor: alpha("#facc15", 0.4),
-                    background: "linear-gradient(135deg, rgba(250, 204, 21, 0.2) 0%, rgba(250, 204, 21, 0.1) 100%)",
+                    background:
+                      "linear-gradient(135deg, rgba(250, 204, 21, 0.2) 0%, rgba(250, 204, 21, 0.1) 100%)",
                   }}
                 />
               </Tooltip>
