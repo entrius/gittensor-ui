@@ -32,7 +32,6 @@ export const useRepositoryMaintainers = (repo: string) =>
 /**
  * Get all issues for a specific repository
  * @param repo - Full repository name (e.g., "opentensor/btcli")
- * NOTE: Backend endpoint not yet implemented
  */
 export const useRepositoryIssues = (repo: string) =>
   useReposQuery<RepositoryIssue[]>(
@@ -44,7 +43,6 @@ export const useRepositoryIssues = (repo: string) =>
  * Get pull requests for a specific repository filtered by state
  * @param repo - Full repository name (e.g., "opentensor/btcli")
  * @param state - Optional filter: "open", "closed", "merged"
- * NOTE: Backend endpoint not yet implemented
  */
 export const useRepositoryPRs = (repo: string, state?: string) =>
   useReposQuery<CommitLog[]>(

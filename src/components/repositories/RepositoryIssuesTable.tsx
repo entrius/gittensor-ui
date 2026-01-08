@@ -166,13 +166,13 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
             label="Open"
             value="open"
             count={counts.open}
-            color="#3fb950"
+            color="#8b949e"
           />
           <FilterButton
             label="Closed"
             value="closed"
             count={counts.closed}
-            color="#a371f7"
+            color="#3fb950"
           />
         </Stack>
       </Box>
@@ -284,8 +284,8 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                         }
                         label={isOpen ? "OPEN" : "CLOSED"}
                         sx={{
-                          color: isOpen ? "#3fb950" : "#a371f7",
-                          borderColor: isOpen ? "#3fb950" : "#a371f7",
+                          color: isOpen ? "#8b949e" : "#3fb950",
+                          borderColor: isOpen ? "#8b949e" : "#3fb950",
                           "& .MuiChip-icon": { color: "inherit" },
                         }}
                       />
