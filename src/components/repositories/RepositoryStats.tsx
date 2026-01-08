@@ -23,8 +23,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
 
     // Filter PRs for this repo - only count merged PRs
     const repoPRs = allPRs.filter(
-      (pr) =>
-        pr.repository === repositoryFullName && pr.prState === "MERGED",
+      (pr) => pr.repository === repositoryFullName && pr.prState === "MERGED",
     );
     const totalScore = repoPRs.reduce(
       (acc, pr) => acc + parseFloat(pr.score || "0"),
