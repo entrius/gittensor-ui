@@ -857,15 +857,18 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                     sx={{
                       cursor: "pointer",
                       ...(isLowValue && {
-                        backgroundColor: "rgba(250, 204, 21, 0.10)",
-                        borderLeft: "3px solid rgba(250, 204, 21, 0.5)",
+                        opacity: 0.5,
+                        "& .MuiTableCell-root": {
+                          color: "rgba(255, 255, 255, 0.5)",
+                        },
                       }),
                       "&:hover": {
-                        backgroundColor: isLowValue
-                          ? "rgba(250, 204, 21, 0.15)"
-                          : "rgba(255, 255, 255, 0.05)",
+                        backgroundColor: "rgba(255, 255, 255, 0.05)",
+                        ...(isLowValue && {
+                          opacity: 0.7,
+                        }),
                       },
-                      transition: "background-color 0.2s",
+                      transition: "all 0.2s",
                     }}
                   >
                     <TableCell sx={{ ...bodyCellStyle, width: "80px" }}>
@@ -1114,6 +1117,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                     title="This PR is marked as low value due to minimal code changes, documentation-only updates, or other factors that reduce its scoring weight. Low value PRs do not count towards score or tier unlock requirements."
                     arrow
                     placement="top"
+                    followCursor
                     slotProps={{
                       tooltip: {
                         sx: {

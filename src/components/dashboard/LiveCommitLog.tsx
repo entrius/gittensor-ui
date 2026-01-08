@@ -222,10 +222,10 @@ const CommitLogItem: React.FC<{
                   label="Low Value"
                   size="small"
                   sx={{
-                    color: "#facc15",
-                    borderColor: alpha("#facc15", 0.4),
+                    color: "rgba(156, 163, 175, 0.9)",
+                    borderColor: "rgba(156, 163, 175, 0.4)",
                     background:
-                      "linear-gradient(135deg, rgba(250, 204, 21, 0.2) 0%, rgba(250, 204, 21, 0.1) 100%)",
+                      "linear-gradient(135deg, rgba(156, 163, 175, 0.2) 0%, rgba(156, 163, 175, 0.1) 100%)",
                   }}
                 />
               </Tooltip>
