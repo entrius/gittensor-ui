@@ -19,17 +19,19 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
   }, [repos, repositoryFullName]);
 
   const stats = useMemo(() => {
-    if (!allPRs) return { totalPRs: 0, totalScore: 0 };
+    if (!allPRs) return { mergedPRs: 0, totalScore: 0 };
 
-    // Filter PRs for this repo
-    const repoPRs = allPRs.filter((pr) => pr.repository === repositoryFullName);
+    // Filter PRs for this repo - only count merged PRs
+    const repoPRs = allPRs.filter(
+      (pr) => pr.repository === repositoryFullName && pr.prState === "MERGED",
+    );
     const totalScore = repoPRs.reduce(
       (acc, pr) => acc + parseFloat(pr.score || "0"),
       0,
     );
 
     return {
-      totalPRs: repoPRs.length,
+      mergedPRs: repoPRs.length,
       totalScore,
     };
   }, [allPRs, repositoryFullName]);
@@ -193,7 +195,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
               fontSize: "13px",
             }}
           >
-            {stats.totalPRs}
+            {stats.mergedPRs}
           </Typography>
         </Box>
 

@@ -36,12 +36,15 @@ const RepositoryContributorsTable: React.FC<
     return map;
   }, [allMinersStats]);
 
-  // Get contributors for this repository
+  // Get contributors for this repository - only count merged PRs
   const contributors = useMemo(() => {
     if (!allPRs) return [];
 
     const allRepoPRs = allPRs.filter(
-      (pr) => pr.repository === repositoryFullName && pr.githubId,
+      (pr) =>
+        pr.repository === repositoryFullName &&
+        pr.githubId &&
+        pr.prState === "MERGED",
     );
 
     const contributorsMap = new Map<

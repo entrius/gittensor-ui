@@ -845,257 +845,305 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           <TableBody>
             {filteredPRs
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((pr) => (
-                <TableRow
-                  key={`${pr.repository}-${pr.pullRequestNumber}`}
-                  hover
-                  onClick={() =>
-                    onSelectPR(pr.repository || "", pr.pullRequestNumber)
-                  }
-                  sx={{
-                    cursor: "pointer",
-                    "&:hover": {
-                      backgroundColor: "rgba(255, 255, 255, 0.05)",
-                    },
-                    transition: "background-color 0.2s",
-                  }}
-                >
-                  <TableCell sx={{ ...bodyCellStyle, width: "80px" }}>
-                    {getRankIcon(pr.rank || 0)}
-                  </TableCell>
-                  <TableCell sx={{ ...bodyCellStyle, width: "40%" }}>
-                    <Tooltip title={pr.pullRequestTitle || ""} placement="top">
-                      <Typography
-                        component="span"
-                        sx={{
-                          color: "#ffffff",
-                          fontWeight: 500,
-                          cursor: "pointer",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          maxWidth: "100%",
-                          display: "inline-block",
-                          "&:hover": {
-                            color: "primary.main",
-                            textDecoration: "underline",
-                          },
-                        }}
+              .map((pr) => {
+                const isLowValue = pr.lowValuePr === true;
+                const rowContent = (
+                  <TableRow
+                    key={`${pr.repository}-${pr.pullRequestNumber}`}
+                    hover
+                    onClick={() =>
+                      onSelectPR(pr.repository || "", pr.pullRequestNumber)
+                    }
+                    sx={{
+                      cursor: "pointer",
+                      ...(isLowValue && {
+                        opacity: 0.5,
+                        "& .MuiTableCell-root": {
+                          color: "rgba(255, 255, 255, 0.5)",
+                        },
+                      }),
+                      "&:hover": {
+                        backgroundColor: "rgba(255, 255, 255, 0.05)",
+                        ...(isLowValue && {
+                          opacity: 0.7,
+                        }),
+                      },
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    <TableCell sx={{ ...bodyCellStyle, width: "80px" }}>
+                      {getRankIcon(pr.rank || 0)}
+                    </TableCell>
+                    <TableCell sx={{ ...bodyCellStyle, width: "40%" }}>
+                      <Tooltip
+                        title={pr.pullRequestTitle || ""}
+                        placement="top"
                       >
-                        {truncateText(pr.pullRequestTitle || "", 50)}
-                      </Typography>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
-                    <Box
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectMiner(pr.githubId || pr.author || "");
-                      }}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        cursor: "pointer",
-                        "&:hover": {
-                          "& .MuiTypography-root": {
-                            color: "primary.main",
-                            textDecoration: "underline",
-                          },
-                        },
-                      }}
-                    >
-                      <Avatar
-                        src={`https://avatars.githubusercontent.com/${pr.author}`}
-                        sx={{ width: 20, height: 20 }}
-                      />
-                      <Tooltip title={pr.author || ""} placement="top">
-                        <Typography
-                          component="span"
-                          sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "0.85rem",
-                            transition: "color 0.2s",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                            maxWidth: "100%",
-                            display: "inline-block",
-                          }}
-                        >
-                          {truncateText(pr.author || "", 20)}
-                        </Typography>
-                      </Tooltip>
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
-                    <Box
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectRepository(pr.repository || "");
-                      }}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1.5,
-                        cursor: "pointer",
-                        "&:hover": {
-                          "& .MuiTypography-root": {
-                            color: "primary.main",
-                            textDecoration: "underline",
-                          },
-                        },
-                      }}
-                    >
-                      <Avatar
-                        src={`https://avatars.githubusercontent.com/${(pr.repository || "").split("/")[0]}`}
-                        alt={(pr.repository || "").split("/")[0]}
-                        sx={{
-                          width: 20,
-                          height: 20,
-                          border: "1px solid rgba(255, 255, 255, 0.2)",
-                          backgroundColor:
-                            (pr.repository || "").split("/")[0] === "opentensor"
-                              ? "#ffffff"
-                              : (pr.repository || "").split("/")[0] ===
-                                  "bitcoin"
-                                ? "#F7931A"
-                                : "transparent",
-                        }}
-                      />
-                      <Tooltip title={pr.repository || ""} placement="top">
                         <Typography
                           component="span"
                           sx={{
                             color: "#ffffff",
                             fontWeight: 500,
-                            transition: "color 0.2s",
+                            cursor: "pointer",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
-                            maxWidth: "100%",
-                            display: "inline-block",
+                            display: "block",
+                            "&:hover": {
+                              color: "primary.main",
+                              textDecoration: "underline",
+                            },
                           }}
                         >
-                          {truncateText(pr.repository || "", 30)}
+                          {truncateText(pr.pullRequestTitle || "", 50)}
                         </Typography>
                       </Tooltip>
-                      <Chip
-                        variant="tier"
-                        label={pr.tier || "N/A"}
-                        sx={{
-                          ml: 1,
-                          color: getTierColor(pr.tier || ""),
-                          borderColor: getTierColor(pr.tier || ""),
+                    </TableCell>
+                    <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
+                      <Box
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectMiner(pr.githubId || pr.author || "");
                         }}
-                      />
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={{ ...bodyCellStyle, width: "10%" }}>
-                    {(() => {
-                      const state =
-                        pr.prState?.toUpperCase() ||
-                        (pr.mergedAt ? "MERGED" : "OPEN");
-                      let color = theme.palette.status.neutral;
-                      let label = state;
-
-                      if (state === "MERGED") {
-                        color = theme.palette.status.merged;
-                      } else if (state === "OPEN") {
-                        color = theme.palette.status.open;
-                      } else if (state === "CLOSED") {
-                        color = theme.palette.status.closed;
-                      }
-
-                      return (
-                        <Chip
-                          variant="status"
-                          label={label}
-                          sx={{
-                            color: color,
-                            borderColor: color,
-                          }}
-                        />
-                      );
-                    })()}
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...bodyCellStyle, width: "15%" }}
-                  >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "flex-end",
-                        gap: 0.25,
-                      }}
-                    >
-                      <Typography
                         sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
-                          fontSize: "0.8rem",
-                          fontWeight: 600,
-                          color: "#ffffff",
-                          lineHeight: 1.2,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          cursor: "pointer",
+                          "&:hover": {
+                            "& .MuiTypography-root": {
+                              color: "primary.main",
+                              textDecoration: "underline",
+                            },
+                          },
                         }}
                       >
-                        {parseFloat(pr.score || "0").toFixed(4)}
-                      </Typography>
-                      {(pr.prState === "MERGED" || pr.mergedAt) &&
-                        formatUsdEstimate(pr.predictedUsdPerDay, {
-                          includeApproxPrefix: true,
-                        }) && (
-                          <Tooltip
-                            title="This is an estimation. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
-                            arrow
-                            placement="bottom"
-                            slotProps={{
-                              tooltip: {
-                                sx: {
-                                  backgroundColor: "rgba(15, 15, 17, 0.98)",
-                                  color: "rgba(255, 255, 255, 0.85)",
-                                  fontSize: "0.7rem",
-                                  fontFamily: '"JetBrains Mono", monospace',
-                                  padding: "8px 12px",
-                                  borderRadius: "6px",
-                                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                                  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
-                                },
-                              },
-                              arrow: {
-                                sx: {
-                                  color: "rgba(15, 15, 17, 0.98)",
-                                },
-                              },
+                        <Avatar
+                          src={`https://avatars.githubusercontent.com/${pr.author}`}
+                          sx={{ width: 20, height: 20 }}
+                        />
+                        <Tooltip title={pr.author || ""} placement="top">
+                          <Typography
+                            component="span"
+                            sx={{
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: "0.85rem",
+                              transition: "color 0.2s",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              maxWidth: "100%",
+                              display: "inline-block",
                             }}
                           >
-                            <Typography
-                              component="span"
-                              sx={{
-                                fontFamily: '"JetBrains Mono", monospace',
-                                fontSize: "0.65rem",
-                                fontWeight: 500,
-                                color: "rgba(74, 222, 128, 0.7)",
-                                cursor: "pointer",
-                                lineHeight: 1,
-                                transition: "color 0.15s ease",
-                                "&:hover": {
-                                  color: "rgba(74, 222, 128, 0.95)",
+                            {truncateText(pr.author || "", 20)}
+                          </Typography>
+                        </Tooltip>
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ ...bodyCellStyle, width: "20%" }}>
+                      <Box
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectRepository(pr.repository || "");
+                        }}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1.5,
+                          cursor: "pointer",
+                          "&:hover": {
+                            "& .MuiTypography-root": {
+                              color: "primary.main",
+                              textDecoration: "underline",
+                            },
+                          },
+                        }}
+                      >
+                        <Avatar
+                          src={`https://avatars.githubusercontent.com/${(pr.repository || "").split("/")[0]}`}
+                          alt={(pr.repository || "").split("/")[0]}
+                          sx={{
+                            width: 20,
+                            height: 20,
+                            border: "1px solid rgba(255, 255, 255, 0.2)",
+                            backgroundColor:
+                              (pr.repository || "").split("/")[0] ===
+                              "opentensor"
+                                ? "#ffffff"
+                                : (pr.repository || "").split("/")[0] ===
+                                    "bitcoin"
+                                  ? "#F7931A"
+                                  : "transparent",
+                          }}
+                        />
+                        <Tooltip title={pr.repository || ""} placement="top">
+                          <Typography
+                            component="span"
+                            sx={{
+                              color: "#ffffff",
+                              fontWeight: 500,
+                              transition: "color 0.2s",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              maxWidth: "100%",
+                              display: "inline-block",
+                            }}
+                          >
+                            {truncateText(pr.repository || "", 30)}
+                          </Typography>
+                        </Tooltip>
+                        <Chip
+                          variant="tier"
+                          label={pr.tier || "N/A"}
+                          sx={{
+                            ml: 1,
+                            color: getTierColor(pr.tier || ""),
+                            borderColor: getTierColor(pr.tier || ""),
+                          }}
+                        />
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ ...bodyCellStyle, width: "10%" }}>
+                      {(() => {
+                        const state =
+                          pr.prState?.toUpperCase() ||
+                          (pr.mergedAt ? "MERGED" : "OPEN");
+                        let color = theme.palette.status.neutral;
+                        let label = state;
+
+                        if (state === "MERGED") {
+                          color = theme.palette.status.merged;
+                        } else if (state === "OPEN") {
+                          color = theme.palette.status.open;
+                        } else if (state === "CLOSED") {
+                          color = theme.palette.status.closed;
+                        }
+
+                        return (
+                          <Chip
+                            variant="status"
+                            label={label}
+                            sx={{
+                              color: color,
+                              borderColor: color,
+                            }}
+                          />
+                        );
+                      })()}
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{ ...bodyCellStyle, width: "15%" }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-end",
+                          gap: 0.25,
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.8rem",
+                            fontWeight: 600,
+                            color: "#ffffff",
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {parseFloat(pr.score || "0").toFixed(4)}
+                        </Typography>
+                        {(pr.prState === "MERGED" || pr.mergedAt) &&
+                          formatUsdEstimate(pr.predictedUsdPerDay, {
+                            includeApproxPrefix: true,
+                          }) && (
+                            <Tooltip
+                              title="This is an estimation. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
+                              arrow
+                              placement="bottom"
+                              slotProps={{
+                                tooltip: {
+                                  sx: {
+                                    backgroundColor: "rgba(15, 15, 17, 0.98)",
+                                    color: "rgba(255, 255, 255, 0.85)",
+                                    fontSize: "0.7rem",
+                                    fontFamily: '"JetBrains Mono", monospace',
+                                    padding: "8px 12px",
+                                    borderRadius: "6px",
+                                    border:
+                                      "1px solid rgba(255, 255, 255, 0.08)",
+                                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
+                                  },
+                                },
+                                arrow: {
+                                  sx: {
+                                    color: "rgba(15, 15, 17, 0.98)",
+                                  },
                                 },
                               }}
                             >
-                              {formatUsdEstimate(pr.predictedUsdPerDay, {
-                                includeApproxPrefix: true,
-                              })}
-                              /d
-                            </Typography>
-                          </Tooltip>
-                        )}
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
+                              <Typography
+                                component="span"
+                                sx={{
+                                  fontFamily: '"JetBrains Mono", monospace',
+                                  fontSize: "0.65rem",
+                                  fontWeight: 500,
+                                  color: "rgba(74, 222, 128, 0.7)",
+                                  cursor: "pointer",
+                                  lineHeight: 1,
+                                  transition: "color 0.15s ease",
+                                  "&:hover": {
+                                    color: "rgba(74, 222, 128, 0.95)",
+                                  },
+                                }}
+                              >
+                                {formatUsdEstimate(pr.predictedUsdPerDay, {
+                                  includeApproxPrefix: true,
+                                })}
+                                /d
+                              </Typography>
+                            </Tooltip>
+                          )}
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                );
+                return isLowValue ? (
+                  <Tooltip
+                    key={`${pr.repository}-${pr.pullRequestNumber}`}
+                    title="This PR is marked as low value due to minimal code changes, documentation-only updates, or other factors that reduce its scoring weight. Low value PRs do not count towards score or tier unlock requirements."
+                    arrow
+                    placement="top"
+                    followCursor
+                    slotProps={{
+                      tooltip: {
+                        sx: {
+                          backgroundColor: "rgba(30, 30, 30, 0.95)",
+                          color: "#ffffff",
+                          fontSize: "0.75rem",
+                          fontFamily: '"JetBrains Mono", monospace',
+                          padding: "12px 16px",
+                          borderRadius: "8px",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                          maxWidth: 300,
+                        },
+                      },
+                      arrow: {
+                        sx: {
+                          color: "rgba(30, 30, 30, 0.95)",
+                        },
+                      },
+                    }}
+                  >
+                    {rowContent}
+                  </Tooltip>
+                ) : (
+                  rowContent
+                );
+              })}
           </TableBody>
         </Table>
       </TableContainer>
