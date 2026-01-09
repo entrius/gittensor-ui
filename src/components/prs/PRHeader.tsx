@@ -331,45 +331,47 @@ const PRHeader: React.FC<PRHeaderProps> = ({
             >
               {earnedScore.toFixed(2)}
             </Typography>
-            {!isClosed && predictedUsdPerDay != null && predictedUsdPerDay > 0 && (
-              <Tooltip
-                title="This is an estimation. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
-                arrow
-                placement="bottom"
-                slotProps={{
-                  tooltip: {
-                    sx: {
-                      backgroundColor: "rgba(30, 30, 30, 0.95)",
-                      color: "#ffffff",
-                      fontSize: "0.75rem",
-                      fontFamily: '"JetBrains Mono", monospace',
-                      padding: "8px 12px",
-                      borderRadius: "6px",
-                      border: "1px solid rgba(255, 255, 255, 0.1)",
-                      maxWidth: 280,
+            {!isClosed &&
+              predictedUsdPerDay != null &&
+              predictedUsdPerDay > 0 && (
+                <Tooltip
+                  title="This is an estimation. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
+                  arrow
+                  placement="bottom"
+                  slotProps={{
+                    tooltip: {
+                      sx: {
+                        backgroundColor: "rgba(30, 30, 30, 0.95)",
+                        color: "#ffffff",
+                        fontSize: "0.75rem",
+                        fontFamily: '"JetBrains Mono", monospace',
+                        padding: "8px 12px",
+                        borderRadius: "6px",
+                        border: "1px solid rgba(255, 255, 255, 0.1)",
+                        maxWidth: 280,
+                      },
                     },
-                  },
-                  arrow: {
-                    sx: {
-                      color: "rgba(30, 30, 30, 0.95)",
+                    arrow: {
+                      sx: {
+                        color: "rgba(30, 30, 30, 0.95)",
+                      },
                     },
-                  },
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontFamily: '"JetBrains Mono", monospace',
-                    fontSize: "0.95rem",
-                    color: "rgba(74, 222, 128, 0.8)",
-                    mt: 0.5,
-                    cursor: "pointer",
                   }}
                 >
-                  ~{formatUsdEstimate(predictedUsdPerDay, { showZero: true })}
-                  /day
-                </Typography>
-              </Tooltip>
-            )}
+                  <Typography
+                    sx={{
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: "0.95rem",
+                      color: "rgba(74, 222, 128, 0.8)",
+                      mt: 0.5,
+                      cursor: "pointer",
+                    }}
+                  >
+                    ~{formatUsdEstimate(predictedUsdPerDay, { showZero: true })}
+                    /day
+                  </Typography>
+                </Tooltip>
+              )}
           </Box>
         )}
 
