@@ -96,10 +96,11 @@ export type CommitLog = {
 
   // TODO: these values do not come in the /dash/commits endpoint, refactor to perhaps make a new model to include these attributes
   // Payout predictions (from /miners/all/prs endpoint)
+  // Note: dollar values are null for open PRs, only calculated for merged PRs
   potentialScore?: number;
-  predictedAlphaPerDay?: number;
-  predictedTaoPerDay?: number;
-  predictedUsdPerDay?: number;
+  predictedAlphaPerDay?: number | null;
+  predictedTaoPerDay?: number | null;
+  predictedUsdPerDay?: number | null;
 
   // Low value PR indicator
   lowValuePr?: boolean;
@@ -228,10 +229,11 @@ export type PullRequestDetails = {
   updatedAt: string;
   tier: string; // Bronze, Silver, Gold
   // Predicted daily payouts based on potential score
+  // Note: dollar values are null for open PRs, only calculated for merged PRs
   potentialScore?: number;
-  predictedAlphaPerDay?: number;
-  predictedTaoPerDay?: number;
-  predictedUsdPerDay?: number;
+  predictedAlphaPerDay?: number | null;
+  predictedTaoPerDay?: number | null;
+  predictedUsdPerDay?: number | null;
   // Low value PR indicator
   lowValuePr?: boolean;
 };
