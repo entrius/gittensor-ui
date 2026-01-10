@@ -92,40 +92,35 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
       allRepos
         .sort((a, b) => b[1].totalScore - a[1].totalScore)
         .findIndex(
-          ([repo]) =>
-            repo.toLowerCase() === repositoryFullName.toLowerCase(),
+          ([repo]) => repo.toLowerCase() === repositoryFullName.toLowerCase(),
         ) + 1;
 
     const prsRank =
       allRepos
         .sort((a, b) => b[1].totalPRs - a[1].totalPRs)
         .findIndex(
-          ([repo]) =>
-            repo.toLowerCase() === repositoryFullName.toLowerCase(),
+          ([repo]) => repo.toLowerCase() === repositoryFullName.toLowerCase(),
         ) + 1;
 
     const contributorsRank =
       allRepos
         .sort((a, b) => b[1].uniqueContributors - a[1].uniqueContributors)
         .findIndex(
-          ([repo]) =>
-            repo.toLowerCase() === repositoryFullName.toLowerCase(),
+          ([repo]) => repo.toLowerCase() === repositoryFullName.toLowerCase(),
         ) + 1;
 
     const linesRank =
       allRepos
         .sort((a, b) => b[1].totalLines - a[1].totalLines)
         .findIndex(
-          ([repo]) =>
-            repo.toLowerCase() === repositoryFullName.toLowerCase(),
+          ([repo]) => repo.toLowerCase() === repositoryFullName.toLowerCase(),
         ) + 1;
 
     const commitsRank =
       allRepos
         .sort((a, b) => b[1].totalCommits - a[1].totalCommits)
         .findIndex(
-          ([repo]) =>
-            repo.toLowerCase() === repositoryFullName.toLowerCase(),
+          ([repo]) => repo.toLowerCase() === repositoryFullName.toLowerCase(),
         ) + 1;
 
     return {
