@@ -54,7 +54,9 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
 
   const allPRs = useMemo(() => {
     if (!allMinerPRs) return [];
-    return allMinerPRs.filter((pr) => pr.repository === repositoryFullName);
+    return allMinerPRs.filter(
+      (pr) => pr.repository.toLowerCase() === repositoryFullName.toLowerCase(),
+    );
   }, [allMinerPRs, repositoryFullName]);
 
   const counts = useMemo(() => {

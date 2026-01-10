@@ -15,15 +15,18 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
     useRepositoryIssues(repositoryFullName);
 
   const repository = useMemo(() => {
-    return repos?.find((r) => r.fullName === repositoryFullName);
+    return repos?.find(
+      (r) => r.fullName.toLowerCase() === repositoryFullName.toLowerCase(),
+    );
   }, [repos, repositoryFullName]);
 
   const stats = useMemo(() => {
     if (!allPRs) return { mergedPRs: 0, totalScore: 0 };
 
-    // Filter PRs for this repo - only count merged PRs
     const repoPRs = allPRs.filter(
-      (pr) => pr.repository === repositoryFullName && pr.prState === "MERGED",
+      (pr) =>
+        pr.repository.toLowerCase() === repositoryFullName.toLowerCase() &&
+        pr.prState === "MERGED",
     );
     const totalScore = repoPRs.reduce(
       (acc, pr) => acc + parseFloat(pr.score || "0"),
