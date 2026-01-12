@@ -14,12 +14,14 @@ const useMinersQuery = <TResponse = void, TSelect = TResponse>(
   url: string,
   refetchInterval?: number,
   queryParams?: Record<string, string | number | undefined>,
+  enabled?: boolean,
 ) =>
   useApiQuery<TResponse, TSelect>(
     queryName,
     `/miners${url}`,
     refetchInterval,
     queryParams,
+    enabled,
   );
 
 /**
@@ -40,13 +42,27 @@ export const useMinerStats = (githubId: string) =>
 /**
  * Get all pull requests for a specific miner
  * @param githubId - Numeric GitHub ID (e.g., "583231"), NOT username
+ * @param enabled - Optional flag to enable/disable the query
  */
-export const useMinerPRs = (githubId: string) =>
-  useMinersQuery<CommitLog[]>("useMinerPRs", `/${githubId}/prs`);
+export const useMinerPRs = (githubId: string, enabled?: boolean) =>
+  useMinersQuery<CommitLog[]>(
+    "useMinerPRs",
+    `/${githubId}/prs`,
+    undefined,
+    undefined,
+    enabled,
+  );
 
 /**
  * Get GitHub profile data for a specific miner
  * @param githubId - Numeric GitHub ID (e.g., "583231"), NOT username
+ * @param enabled - Optional flag to enable/disable the query
  */
-export const useMinerGithubData = (githubId: string) =>
-  useMinersQuery<GithubMinerData>("useMinerGithubData", `/${githubId}/github`);
+export const useMinerGithubData = (githubId: string, enabled?: boolean) =>
+  useMinersQuery<GithubMinerData>(
+    "useMinerGithubData",
+    `/${githubId}/github`,
+    undefined,
+    undefined,
+    enabled,
+  );

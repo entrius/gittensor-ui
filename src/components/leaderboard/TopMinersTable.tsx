@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ReactECharts from "echarts-for-react";
+import { useMinerGithubData, useMinerPRs, useGeneralConfig } from "../../api";
 import { TIER_COLORS, CHART_COLORS } from "../../theme";
 
 interface MinerStats {
@@ -83,7 +84,21 @@ interface MinerCardProps {
 
 const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
   const tierColors = getTierColors(miner.currentTier);
-  const username = miner.author || miner.githubId || "";
+
+  // Helper to check for numeric IDs or missing values
+  const isNumericId = (val: string | undefined) => !val || /^\d+$/.test(val);
+
+  // Fetch profile if author is missing or looks like an ID
+  const shouldFetch = isNumericId(miner.author);
+  const { data: githubData } = useMinerGithubData(miner.githubId, shouldFetch);
+  // Also fetch PRs as fallback if github data is missing (common for unranked miners)
+  const { data: prs } = useMinerPRs(miner.githubId, shouldFetch);
+
+  const username = githubData?.login
+    || prs?.[0]?.author
+    || (!isNumericId(miner.author) ? miner.author : miner.githubId)
+    || miner.githubId
+    || "";
   const credibilityPercent = (miner.credibility || 0) * 100;
 
   // Tier-based gradient background
