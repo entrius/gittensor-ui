@@ -189,9 +189,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
             }}>
               {username}
             </Typography>
-            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.65rem", color: "rgba(255,255,255,0.4)" }}>
-              {miner.githubId}
-            </Typography>
+
           </Box>
         </Box>
         <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.65rem", fontWeight: 700, color: tierColors.text, textTransform: "uppercase", mt: 0.5, opacity: 0.8 }}>
@@ -338,91 +336,79 @@ const MinerSection: React.FC<MinerSectionProps> = ({
   const [expanded, setExpanded] = useState(defaultExpanded);
   const theme = useTheme();
 
-  // Responsive grid Logic (Matching the Grid item props below: xs=12 sm=12 md=6 xl=4)
-  // Columns per row: xs=1, sm=1, md=2, xl=3
-  const isXl = useMediaQuery(theme.breakpoints.up('xl'));
-  const isMd = useMediaQuery(theme.breakpoints.up('md'));
-  const isSm = useMediaQuery(theme.breakpoints.up('sm'));
+  // Determine how many items to show
+  // User Requirement: "see at least top 3 in very tier without expanding the view"
+  const INITIAL_DISPLAY_COUNT = 3;
 
-  let columns = 1;
-  if (isXl) columns = 3;
-  else if (isMd) columns = 2;
-  else columns = 1;
-
-  // Limit = columns (one row)
-  const limit = columns;
-  const shouldTruncate = !expanded && miners.length > limit;
-
-  // If truncating, we show (limit - 1) miners, and the last slot is the "More" card
-  // So total items = limit (filling exactly one row)
-  const visibleMiners = shouldTruncate ? miners.slice(0, limit - 1) : miners;
-  const showMoreCount = miners.length - (limit - 1);
+  // If not expanded, show INITIAL_DISPLAY_COUNT. If expanded, show all.
+  const visibleMiners = expanded ? miners : miners.slice(0, INITIAL_DISPLAY_COUNT);
+  const hasMoreMiners = miners.length > INITIAL_DISPLAY_COUNT;
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, borderBottom: `1px solid ${color.border}`, pb: 1 }}>
+    <Card
+      sx={{
+        backgroundColor: "rgba(13, 17, 23, 0.4)",
+        border: `1px solid ${color.border}`,
+        borderRadius: 3,
+        // Optional glow effect for tiers
+        boxShadow: color.text !== '#8b949e' ? `0 0 20px -10px ${color.border}` : 'none',
+        display: "flex",
+        flexDirection: "column",
+      }}
+      elevation={0}
+    >
+      <Box sx={{
+        px: 3,
+        py: 2,
+        borderBottom: `1px solid ${color.border}`,
+        display: 'flex',
+        alignItems: 'center',
+        background: `linear-gradient(90deg, ${color.border}10, transparent)`
+      }}>
         <Typography variant="h6" sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '1.1rem', fontWeight: 600, color: color.text }}>
           {title}
         </Typography>
         <Typography sx={{ ml: 2, color: 'text.secondary', fontSize: '0.9rem' }}>
           ({count})
         </Typography>
-
-        {expanded && shouldTruncate === false && miners.length > limit && (
-          <Box
-            onClick={() => setExpanded(false)}
-            sx={{ ml: 'auto', cursor: 'pointer', color: 'text.secondary', fontSize: '0.8rem', '&:hover': { color: 'white' } }}
-          >
-            Show Less
-          </Box>
-        )}
       </Box>
 
-      <Grid container spacing={2}>
-        {visibleMiners.map((miner) => (
-          <Grid item xs={12} sm={12} md={6} xl={4} key={miner.hotkey}>
-            <MinerCard miner={miner} onClick={() => onSelectMiner(miner.githubId || miner.author || "")} />
-          </Grid>
-        ))}
+      <Box sx={{ p: 3, flex: 1 }}>
+        <Grid container spacing={2}>
+          {visibleMiners.map((miner) => (
+            <Grid item xs={12} sm={12} md={6} xl={4} key={miner.hotkey}>
+              <MinerCard miner={miner} onClick={() => onSelectMiner(miner.githubId || miner.author || "")} />
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
 
-        {shouldTruncate && (
-          <Grid item xs={12} sm={12} md={6} xl={4}>
-            <Card
-              onClick={() => setExpanded(true)}
-              sx={{
-                height: '100%',
-                minHeight: compact ? 0 : 180,
-                display: 'flex',
-                flexDirection: compact ? 'row' : 'column',
-                gap: compact ? 1.5 : 0,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                border: '1px dashed rgba(255, 255, 255, 0.2)',
-                borderRadius: 2,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                py: compact ? 2 : 0,
-                px: compact ? 2 : 0,
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                  borderColor: color.text,
-                  transform: 'translateY(-2px)',
-                  color: color.text
-                }
-              }}
-            >
-              <Typography variant={compact ? "h6" : "h4"} sx={{ color: 'inherit', mb: compact ? 0 : 1, fontWeight: 300 }}>
-                +{showMoreCount}
-              </Typography>
-              <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>
-                View More
-              </Typography>
-            </Card>
-          </Grid>
-        )}
-      </Grid>
-    </Box>
+      {/* Footer Toggle Button */}
+      {hasMoreMiners && (
+        <Box
+          onClick={() => setExpanded(!expanded)}
+          sx={{
+            py: 1, // Reduced padding
+            borderTop: `1px solid ${color.border}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+            color: 'text.secondary',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.03)',
+              color: 'text.primary',
+            }
+          }}
+        >
+          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' }}>
+            {expanded ? "Show Less" : `View ${miners.length - INITIAL_DISPLAY_COUNT} More`}
+          </Typography>
+        </Box>
+      )}
+    </Card>
   );
 };
 
@@ -511,28 +497,41 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   const headerActions = (
     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
 
-      {/* Sort Select */}
-      <FormControl size="small" sx={{ minWidth: 140 }}>
-        <Select
-          value={sortOption}
-          onChange={(e) => setSortOption(e.target.value as SortOption)}
-          displayEmpty
-          variant="standard"
-          disableUnderline
-          sx={{
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: "0.8rem",
-            color: "#fff",
-            "& .MuiSelect-select": { py: 0.5 },
-            "& .MuiSvgIcon-root": { color: "rgba(255, 255, 255, 0.5)" },
-          }}
-        >
-          <MenuItem value="totalScore">Sort: Score</MenuItem>
-          <MenuItem value="usdPerDay">Sort: Earnings</MenuItem>
-          <MenuItem value="totalPRs">Sort: PRs</MenuItem>
-          <MenuItem value="credibility">Sort: Credibility</MenuItem>
-        </Select>
-      </FormControl>
+      {/* Sort Buttons */}
+      <Box sx={{ display: 'flex', gap: 0.5 }}>
+        {[
+          { label: 'Score', value: 'totalScore' },
+          { label: 'Earnings', value: 'usdPerDay' },
+          { label: 'PRs', value: 'totalPRs' },
+          { label: 'Credibility', value: 'credibility' },
+        ].map((option) => (
+          <Box
+            key={option.value}
+            onClick={() => setSortOption(option.value as SortOption)}
+            sx={{
+              px: 1.5,
+              height: 32,
+              display: "flex",
+              alignItems: "center",
+              borderRadius: 2,
+              cursor: 'pointer',
+              backgroundColor: sortOption === option.value ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+              color: sortOption === option.value ? '#fff' : '#8b949e',
+              border: '1px solid',
+              borderColor: sortOption === option.value ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+              transition: 'all 0.2s',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                color: '#e6edf3',
+              },
+            }}
+          >
+            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.75rem", fontWeight: 600 }}>
+              {option.label}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
 
       {/* Search Input */}
       <TextField
@@ -574,7 +573,16 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           <SectionCard
             title={`Miners (${groupedMiners.totalFiltered})`}
             action={headerActions}
-            sx={{ mb: 3 }}
+            sx={{
+              mb: 3,
+              position: "sticky",
+              top: 0,
+              zIndex: 100,
+              backgroundColor: "rgba(13, 17, 23, 0.8)", // Semi-transparent
+              backdropFilter: "blur(12px)", // X/Twitter style frosted glass
+              borderBottom: "1px solid rgba(255, 255, 255, 0.1)", // Subtle separator
+              boxShadow: "none" // Remove default shadow for cleaner blend
+            }}
           >
             {null}
           </SectionCard>
@@ -637,7 +645,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 
         {/* RIGHT COLUMN: Sidebar Stats */}
         <Grid item xs={12} lg={3}>
-          <Stack spacing={3}>
+          <Stack spacing={3} sx={{ position: "sticky", top: 24 }}>
 
             {/* CARD 1: Network Stats */}
             <SectionCard title="Network Stats">
