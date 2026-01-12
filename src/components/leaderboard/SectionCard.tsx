@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, Box, Typography, CardContent } from "@mui/material";
+import { Card, Box, Typography, CardContent, Grid } from "@mui/material";
 
 export const SectionCard: React.FC<{
     children: React.ReactNode;
@@ -7,71 +7,95 @@ export const SectionCard: React.FC<{
     title?: string;
     action?: React.ReactNode;
     centerContent?: React.ReactNode;
-}> = ({ children, sx, title, action, centerContent }) => (
-    <Card
-        sx={{
-            borderRadius: 3,
-            border: "1px solid rgba(255, 255, 255, 0.1)",
-            backgroundColor: "#000000",
-            display: "flex",
-            flexDirection: "column",
-            ...sx,
-        }}
-        elevation={0}
-    >
-        {/* Optional Header */}
-        {(title || action || centerContent) && (
-            <Box
-                sx={{
-                    p: 2,
-                    pb: 1,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    position: "relative",
-                }}
-            >
-                {title && (
-                    <Typography
-                        variant="h6"
-                        sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "1.25rem",
-                            fontWeight: 600,
-                        }}
-                    >
-                        {title}
-                    </Typography>
-                )}
+}> = ({ children, sx, title, action, centerContent }) => {
+    const hasAction = !!action;
+    const hasCenter = !!centerContent;
 
-                {/* Centered Content (Absolute Position) */}
-                {centerContent && (
-                    <Box
-                        sx={{
-                            position: "absolute",
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            display: "flex",
-                        }}
-                    >
-                        {centerContent}
-                    </Box>
-                )}
-
-                {action && <Box>{action}</Box>}
-            </Box>
-        )}
-
-        <CardContent
+    return (
+        <Card
             sx={{
-                p: 0,
-                "&:last-child": { pb: 0 },
-                flex: 1,
+                borderRadius: 3,
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                backgroundColor: "#000000",
                 display: "flex",
                 flexDirection: "column",
+                ...sx,
             }}
+            elevation={0}
         >
-            {children}
-        </CardContent>
-    </Card>
-);
+            {/* Header with Grid Layout for better scaling */}
+            {(title || action || centerContent) && (
+                <Grid
+                    container
+                    sx={{
+                        p: 2,
+                        pb: 1,
+                        alignItems: "center",
+                        position: "relative"
+                    }}
+                >
+                    {/* Title Section */}
+                    {title && (
+                        <Grid item xs={hasAction ? 6 : 12} lg={hasCenter ? 3 : (hasAction ? 6 : 12)}>
+                            <Typography
+                                variant="h6"
+                                sx={{
+                                    fontFamily: '"JetBrains Mono", monospace',
+                                    fontSize: "1.25rem",
+                                    fontWeight: 600,
+                                }}
+                            >
+                                {title}
+                            </Typography>
+                        </Grid>
+                    )}
+
+                    {/* Center Content (Sort Buttons) */}
+                    {hasCenter && (
+                        <Grid
+                            item
+                            xs={12}
+                            lg={6}
+                            order={{ xs: 3, lg: 2 }}
+                            sx={{
+                                display: "flex",
+                                justifyContent: "center",
+                                mt: { xs: 2, lg: 0 } // Add margin on mobile when stacked
+                            }}
+                        >
+                            {centerContent}
+                        </Grid>
+                    )}
+
+                    {/* Action Section (Search) */}
+                    {hasAction && (
+                        <Grid
+                            item
+                            xs={6}
+                            lg={hasCenter ? 3 : 6}
+                            order={{ xs: 2, lg: 3 }}
+                            sx={{
+                                display: "flex",
+                                justifyContent: "flex-end"
+                            }}
+                        >
+                            <Box>{action}</Box>
+                        </Grid>
+                    )}
+                </Grid>
+            )}
+
+            <CardContent
+                sx={{
+                    p: 0,
+                    "&:last-child": { pb: 0 },
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                }}
+            >
+                {children}
+            </CardContent>
+        </Card>
+    );
+};

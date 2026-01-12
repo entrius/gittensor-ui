@@ -741,7 +741,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 
   // Header Actions - Split into Sort (Center) and Search (Right)
   const sortButtons = (
-    <Box sx={{ display: "flex", gap: 0.5 }}>
+    <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", justifyContent: "center" }}>
       {[
         { label: "Score", value: "totalScore" },
         { label: "Earnings", value: "usdPerDay" },
