@@ -20,7 +20,7 @@ import {
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ReactECharts from "echarts-for-react";
-import { TIER_COLORS } from "../../theme";
+import { TIER_COLORS, CHART_COLORS } from "../../theme";
 
 interface MinerStats {
   githubId: string;
@@ -83,225 +83,190 @@ interface MinerCardProps {
 
 const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
   const tierColors = getTierColors(miner.currentTier);
-  const rankColors = getRankColors(miner.rank || 0);
   const username = miner.author || miner.githubId || "";
   const credibilityPercent = (miner.credibility || 0) * 100;
-  const isTopThree = (miner.rank || 0) <= 3;
-  const isActive = !!miner.currentTier;
+
+  // Tier-based gradient background
+  const tierGradient =
+    miner.currentTier === "Gold"
+      ? "linear-gradient(135deg, rgba(255, 215, 0, 0.08) 0%, rgba(255, 215, 0, 0.02) 100%)"
+      : miner.currentTier === "Silver"
+        ? "linear-gradient(135deg, rgba(192, 192, 192, 0.08) 0%, rgba(192, 192, 192, 0.02) 100%)"
+        : miner.currentTier === "Bronze"
+          ? "linear-gradient(135deg, rgba(205, 127, 50, 0.08) 0%, rgba(205, 127, 50, 0.02) 100%)"
+          : "rgba(22, 27, 34, 0.8)";
+  const borderColor = miner.currentTier ? tierColors.border : "rgba(48, 54, 61, 0.4)";
 
   // ==========================================================================
-  // INACTIVE STATE (Collapsed)
+  // INACTIVE CARD
   // ==========================================================================
-  if (!isActive) {
+  if (!miner.currentTier) {
     return (
       <Card
         onClick={onClick}
         sx={{
-          p: 0,
-          backgroundColor: "rgba(13, 17, 23, 0.6)",
+          p: 1,
+          backgroundColor: "rgba(13, 17, 23, 0.4)",
           border: "1px solid rgba(48, 54, 61, 0.4)",
           borderRadius: 2,
           cursor: "pointer",
-          transition: "all 0.15s ease",
+          transition: "all 0.2s ease",
           display: "flex",
           alignItems: "center",
-          px: 2,
-          py: 1.5,
           gap: 1.5,
           "&:hover": {
-            backgroundColor: "rgba(13, 17, 23, 0.9)",
-            borderColor: "rgba(48, 54, 61, 0.8)",
+            backgroundColor: "rgba(13, 17, 23, 0.8)",
+            borderColor: "rgba(110, 118, 129, 0.5)",
             transform: "translateY(-1px)",
           },
         }}
         elevation={0}
       >
-
         <Avatar
           src={`https://avatars.githubusercontent.com/${username}`}
           sx={{ width: 24, height: 24, border: "1px solid rgba(48, 54, 61, 0.5)", filter: "grayscale(100%)", opacity: 0.7 }}
         />
-        <Typography sx={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', fontSize: "0.85rem", fontWeight: 500, color: "#8b949e", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <Typography sx={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', fontSize: "0.9rem", fontWeight: 500, color: "#8b949e", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {username}
         </Typography>
-        <Box sx={{ px: 1, py: 0.25, borderRadius: 1, backgroundColor: "rgba(110, 118, 129, 0.1)", border: "1px solid rgba(110, 118, 129, 0.2)" }}>
-          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.6rem", fontWeight: 600, color: "#8b949e", textTransform: "uppercase" }}>
-            Inactive
-          </Typography>
-        </Box>
+        <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.7rem", fontWeight: 600, color: "#484f58", textTransform: "uppercase", border: "1px solid rgba(48, 54, 61, 0.5)", borderRadius: 1, px: 0.75, py: 0.1 }}>
+          Unranked
+        </Typography>
       </Card>
     );
   }
 
   // ==========================================================================
-  // ACTIVE STATE (Full Card) - Compact/Square
+  // ACTIVE CARD - Compact Premium Design
   // ==========================================================================
   return (
     <Card
       onClick={onClick}
       sx={{
-        p: 0,
-        backgroundColor: "rgba(22, 27, 34, 0.8)",
+        p: 1.5,
+        background: tierGradient,
         backdropFilter: "blur(12px)",
-        border: `1px solid ${isTopThree ? tierColors.border : "rgba(48, 54, 61, 0.6)"}`,
+        border: `1px solid ${borderColor}`,
         borderRadius: 2,
         cursor: "pointer",
         transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
+        gap: 1.5,
         position: "relative",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
         "&:hover": {
-          backgroundColor: "rgba(22, 27, 34, 0.95)",
+          backgroundColor: "rgba(22, 27, 34, 0.6)",
           borderColor: tierColors.text,
-          transform: "translateY(-4px)",
-          boxShadow: `0 12px 32px -8px rgba(0, 0, 0, 0.5), 0 0 0 1px ${tierColors.border}40`,
-          "& .miner-avatar": { transform: "scale(1.05)", boxShadow: `0 0 16px ${tierColors.border}60` },
+          transform: "translateY(-2px)",
+          boxShadow: `0 8px 24px -6px rgba(0, 0, 0, 0.6), 0 0 0 1px ${tierColors.border}40`,
         },
       }}
       elevation={0}
     >
-      {/* Tier Badge - Compact */}
-      <Box
-        sx={{
-          position: "absolute",
-          top: 0,
-          right: 0,
-          px: 1,
-          py: 0.25,
-          borderBottomLeftRadius: 6,
-          backgroundColor: tierColors.bg,
-          borderBottom: `1px solid ${tierColors.border}`,
-          borderLeft: `1px solid ${tierColors.border}`,
-        }}
-      >
-        <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.55rem", fontWeight: 800, color: tierColors.text, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+      {/* Header: Identity + Rank */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
+          <Box sx={{ position: 'relative' }}>
+            <Avatar
+              src={`https://avatars.githubusercontent.com/${username}`}
+              sx={{ width: 36, height: 36, border: `2px solid ${tierColors.border}`, boxShadow: `0 0 10px ${tierColors.border}20` }}
+            />
+            <Box sx={{
+              position: 'absolute', bottom: -4, right: -4,
+              backgroundColor: '#0d1117', border: `1px solid ${tierColors.border}`, borderRadius: '4px',
+              px: 0.5, py: 0
+            }}>
+              <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.6rem", fontWeight: 700, color: tierColors.text }}>#{miner.rank}</Typography>
+            </Box>
+          </Box>
+          <Box sx={{ overflow: "hidden" }}>
+            <Typography sx={{
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+              fontSize: "1rem", fontWeight: 700, color: "#ffffff",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
+            }}>
+              {username}
+            </Typography>
+            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.65rem", color: "rgba(255,255,255,0.4)" }}>
+              {miner.githubId}
+            </Typography>
+          </Box>
+        </Box>
+        <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.65rem", fontWeight: 700, color: tierColors.text, textTransform: "uppercase", mt: 0.5, opacity: 0.8 }}>
           {miner.currentTier}
         </Typography>
       </Box>
 
-      {/* Header: Avatar + Name (Rank removed) */}
-      <Box sx={{ p: 1.5, pb: 0.5, display: "flex", alignItems: "center", gap: 1.5, pt: 2 }}>
-
-        {/* Avatar */}
-        <Avatar
-          className="miner-avatar"
-          src={`https://avatars.githubusercontent.com/${username}`}
-          sx={{
-            width: 40, height: 40, // Smaller
-            border: `2px solid ${tierColors.border}`,
-            backgroundColor: "#0d1117",
-            transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
-          }}
-        />
-
-        {/* Name */}
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography sx={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif', fontSize: "0.9rem", fontWeight: 600, color: "#e6edf3", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", transition: "color 0.2s", "&:hover": { color: "#58a6ff" } }}>
-            {username}
-          </Typography>
-          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.6rem", color: "#8b949e" }}>
-            Rank #{miner.rank}
+      {/* Main Stats: Earnings & Credibility */}
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
+        {/* Earnings */}
+        <Box>
+          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "1.6rem", fontWeight: 800, color: "#3fb950", lineHeight: 1 }}>
+              ${Math.round(miner.usdPerDay || 0).toLocaleString()}
+            </Typography>
+            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.75rem", color: "#8b949e" }}>/day</Typography>
+          </Box>
+          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.7rem", color: "#3fb950", opacity: 0.7, mt: 0.2 }}>
+            ~${Math.round((miner.usdPerDay || 0) * 30).toLocaleString()}/mo
           </Typography>
         </Box>
-      </Box>
 
-      {/* Content Row: Earnings + Stats */}
-      {/* Content Row: Earnings + Stats */}
-      <Box sx={{ px: 2, pb: 2, display: "flex", gap: 1, alignItems: "center", minHeight: 90 }}>
-
-        {/* Left: Earnings Box (Stacked) */}
-        <Box
-          sx={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            minWidth: 0
-          }}
-        >
-          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.6rem", color: "#8b949e", textTransform: "uppercase", mb: 0.5 }}>
-            Earnings
-          </Typography>
-
-          {(miner.usdPerDay || 0) > 0 ? (
-            <>
-              <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
-                <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "1.4rem", fontWeight: 700, color: "#3fb950", lineHeight: 1 }}>
-                  ${Math.round(miner.usdPerDay || 0).toLocaleString()}
-                </Typography>
-                <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.75rem", color: "#8b949e" }}>/d</Typography>
-              </Box>
-              <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.65rem", color: "#3fb950", opacity: 0.8, mt: 0.5 }}>
-                ~${Math.round((miner.usdPerDay || 0) * 30).toLocaleString()}/mo
-              </Typography>
-            </>
-          ) : (
-            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.85rem", color: "#484f58", fontStyle: "italic" }}>No active earnings</Typography>
-          )}
-        </Box>
-
-        {/* Divider */}
-        <Box sx={{ width: "1px", height: 40, backgroundColor: "rgba(48, 54, 61, 0.4)", mx: 0.5 }} />
-
-        {/* Right: Donut & PR List */}
-        <Box sx={{ flex: 1.2, display: "flex", alignItems: "center", gap: 1 }}>
-          {/* Donut */}
-          <Box sx={{ width: 52, height: 52, flexShrink: 0, position: "relative" }}>
-            <ReactECharts
-              option={{
-                backgroundColor: "transparent",
-                title: {
-                  text: `${credibilityPercent.toFixed(0)}%`, left: "center", top: "28%",
-                  textStyle: { color: "#e6edf3", fontSize: 9, fontWeight: "bold", fontFamily: '"JetBrains Mono", monospace' },
+        {/* Credibility Donut */}
+        <Box sx={{ position: 'relative', width: 56, height: 56, flexShrink: 0 }}>
+          <ReactECharts
+            option={{
+              backgroundColor: "transparent",
+              series: [{
+                type: 'pie',
+                radius: ['65%', '90%'],
+                silent: true,
+                label: { show: false },
+                itemStyle: {
+                  borderRadius: 3,
+                  borderColor: "rgba(13, 17, 23, 0.8)", // Dark border to create separation
+                  borderWidth: 2
                 },
-                series: [{
-                  type: "pie", radius: ["55%", "85%"], center: ["50%", "50%"],
-                  itemStyle: { borderRadius: 2, borderColor: "rgba(13, 17, 23, 1)", borderWidth: 2 },
-                  label: { show: false },
-                  data: [
-                    { value: miner.totalMergedPrs || 0, itemStyle: { color: "#3fb950" } },
-                    { value: miner.totalOpenPrs || 0, itemStyle: { color: "#8b949e" } },
-                    { value: miner.totalClosedPrs || 0, itemStyle: { color: "#f85149" } },
-                  ],
-                }],
-              }}
-              style={{ height: "100%", width: "100%" }}
-              opts={{ renderer: "svg" }}
-            />
-          </Box>
-          {/* List */}
-          <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 0.25, minWidth: 0 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Box sx={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#3fb950" }} />
-              <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.65rem", color: "#c9d1d9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{miner.totalMergedPrs || 0} merged</Typography>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Box sx={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#8b949e" }} />
-              <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.65rem", color: "#8b949e", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{miner.totalOpenPrs || 0} open</Typography>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Box sx={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#f85149" }} />
-              <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.65rem", color: "#8b949e", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{miner.totalClosedPrs || 0} closed</Typography>
-            </Box>
+                data: [
+                  { value: (miner.totalMergedPrs || 0), itemStyle: { color: CHART_COLORS.merged } },
+                  { value: (miner.totalOpenPrs || 0), itemStyle: { color: CHART_COLORS.open } },
+                  { value: (miner.totalClosedPrs || 0), itemStyle: { color: CHART_COLORS.closed } }
+                ]
+              }]
+            }}
+            style={{ width: '100%', height: '100%' }}
+            opts={{ renderer: 'svg' }}
+          />
+          <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Typography sx={{ fontSize: '0.75rem', color: credibilityPercent >= 80 ? '#3fb950' : '#8b949e', fontWeight: 700 }}>
+              {credibilityPercent.toFixed(0)}%
+            </Typography>
           </Box>
         </Box>
       </Box>
 
-      {/* Footer Stats - Compact */}
-      <Box sx={{ px: 1.5, py: 1, borderTop: "1px solid rgba(48, 54, 61, 0.5)", display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "rgba(0, 0, 0, 0.1)" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.65rem", color: "#8b949e" }}>SCORE</Typography>
-          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.75rem", color: "#e6edf3", fontWeight: 700 }}>{Number(miner.totalScore || 0).toFixed(1)}</Typography>
+      {/* Footer: Stats Grid */}
+      <Box sx={{
+        display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 1,
+        backgroundColor: "rgba(0,0,0,0.2)", borderRadius: 1.5, p: 1, alignItems: "center"
+      }}>
+        <Box>
+          <Typography sx={{ fontSize: '0.6rem', color: '#8b949e', textTransform: 'uppercase', mb: 0.2 }}>Merged</Typography>
+          <Typography sx={{ fontSize: '0.85rem', color: '#3fb950', fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{miner.totalMergedPrs || 0}</Typography>
         </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Tooltip title="Lines added" arrow>
-            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.65rem", color: "#3fb950" }}>+{(miner.linesAdded || 0).toLocaleString()}</Typography>
-          </Tooltip>
-          <Tooltip title="Lines deleted" arrow>
-            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.65rem", color: "#f85149" }}>-{(miner.linesDeleted || 0).toLocaleString()}</Typography>
-          </Tooltip>
+        <Box>
+          <Typography sx={{ fontSize: '0.6rem', color: '#8b949e', textTransform: 'uppercase', mb: 0.2 }}>Open</Typography>
+          <Typography sx={{ fontSize: '0.85rem', color: '#c9d1d9', fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{miner.totalOpenPrs || 0}</Typography>
+        </Box>
+        <Box>
+          <Typography sx={{ fontSize: '0.6rem', color: '#8b949e', textTransform: 'uppercase', mb: 0.2 }}>Closed</Typography>
+          <Typography sx={{ fontSize: '0.85rem', color: '#f85149', fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>{miner.totalClosedPrs || 0}</Typography>
+        </Box>
+        <Box sx={{ textAlign: "right", borderLeft: "1px solid rgba(255,255,255,0.1)", pl: 1.5 }}>
+          <Typography sx={{ fontSize: '0.6rem', color: '#8b949e', textTransform: 'uppercase', mb: 0.2 }}>Score</Typography>
+          <Typography sx={{ fontSize: '0.9rem', color: '#e6edf3', fontWeight: 700, fontFamily: '"JetBrains Mono", monospace' }}>{Number(miner.totalScore).toFixed(1)}</Typography>
         </Box>
       </Box>
     </Card>
@@ -329,7 +294,7 @@ const SectionCard: React.FC<{ children: React.ReactNode; sx?: any; title?: strin
     {/* Optional Header */}
     {(title || action) && (
       <Box sx={{ p: 2, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        {title && <Typography variant="h6" sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '1rem', fontWeight: 600 }}>{title}</Typography>}
+        {title && <Typography variant="h6" sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '1.25rem', fontWeight: 600 }}>{title}</Typography>}
         {action && <Box>{action}</Box>}
       </Box>
     )}
@@ -678,26 +643,26 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             <SectionCard title="Network Stats">
               <Box sx={{ pt: 1, px: 2, pb: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Typography sx={{ fontSize: "0.85rem", color: "#8b949e" }}>Total Miners</Typography>
-                  <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 600, color: "#e6edf3" }}>
+                  <Typography sx={{ fontSize: "1rem", color: "#8b949e" }}>Total Miners</Typography>
+                  <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 600, fontSize: "1.2rem", color: "#e6edf3" }}>
                     {networkStats.totalMiners}
                   </Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Typography sx={{ fontSize: "0.85rem", color: "#8b949e" }}>Active Tier</Typography>
-                  <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 600, color: "#e6edf3" }}>
+                  <Typography sx={{ fontSize: "1rem", color: "#8b949e" }}>Active Tier</Typography>
+                  <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 600, fontSize: "1.2rem", color: "#e6edf3" }}>
                     {networkStats.activeTier}
                   </Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Typography sx={{ fontSize: "0.85rem", color: "#8b949e" }}>Total PRs</Typography>
-                  <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 600, color: "#e6edf3" }}>
+                  <Typography sx={{ fontSize: "1rem", color: "#8b949e" }}>Total PRs</Typography>
+                  <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 600, fontSize: "1.2rem", color: "#e6edf3" }}>
                     {networkStats.totalPRs}
                   </Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Typography sx={{ fontSize: "0.85rem", color: "#8b949e" }}>Daily Pool</Typography>
-                  <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 600, color: "#3fb950" }}>
+                  <Typography sx={{ fontSize: "1rem", color: "#8b949e" }}>Daily Pool</Typography>
+                  <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 600, fontSize: "1.2rem", color: "#3fb950" }}>
                     ${networkStats.dailyPool.toLocaleString()}
                   </Typography>
                 </Box>
@@ -708,9 +673,9 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             <SectionCard title="Top Earners">
               <Box sx={{ px: 2, pb: 2 }}>
                 <Box sx={{ display: "flex", py: 1, borderBottom: "1px solid rgba(48, 54, 61, 0.5)", mb: 1 }}>
-                  <Typography sx={{ fontSize: "0.7rem", color: "#8b949e", width: 24 }}>#</Typography>
-                  <Typography sx={{ fontSize: "0.7rem", color: "#8b949e", flex: 1 }}>MINER</Typography>
-                  <Typography sx={{ fontSize: "0.7rem", color: "#8b949e" }}>$/DAY</Typography>
+                  <Typography sx={{ fontSize: "0.8rem", color: "#8b949e", width: 24 }}>#</Typography>
+                  <Typography sx={{ fontSize: "0.8rem", color: "#8b949e", flex: 1 }}>MINER</Typography>
+                  <Typography sx={{ fontSize: "0.8rem", color: "#8b949e" }}>$/DAY</Typography>
                 </Box>
                 {topEarners.map((miner, i) => (
                   <Box
@@ -724,17 +689,17 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                       "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.03)", borderRadius: 1 }
                     }}
                   >
-                    <Typography sx={{ fontSize: "0.8rem", color: "#8b949e", width: 24 }}>{i + 1}</Typography>
+                    <Typography sx={{ fontSize: "1rem", color: "#8b949e", width: 24 }}>{i + 1}</Typography>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, flex: 1, minWidth: 0 }}>
                       <Avatar
                         src={`https://avatars.githubusercontent.com/${miner.author || miner.githubId}`}
                         sx={{ width: 20, height: 20 }}
                       />
-                      <Typography sx={{ fontSize: "0.85rem", color: "#c9d1d9", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <Typography sx={{ fontSize: "1rem", color: "#c9d1d9", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {miner.author || miner.githubId}
                       </Typography>
                     </Box>
-                    <Typography sx={{ fontSize: "0.85rem", color: "#3fb950", fontFamily: '"JetBrains Mono", monospace' }}>
+                    <Typography sx={{ fontSize: "1.1rem", color: "#3fb950", fontFamily: '"JetBrains Mono", monospace' }}>
                       ${Math.round(miner.usdPerDay || 0).toLocaleString()}
                     </Typography>
                   </Box>
@@ -746,9 +711,9 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             <SectionCard title="Most Active">
               <Box sx={{ px: 2, pb: 2 }}>
                 <Box sx={{ display: "flex", py: 1, borderBottom: "1px solid rgba(48, 54, 61, 0.5)", mb: 1 }}>
-                  <Typography sx={{ fontSize: "0.7rem", color: "#8b949e", width: 24 }}>#</Typography>
-                  <Typography sx={{ fontSize: "0.7rem", color: "#8b949e", flex: 1 }}>MINER</Typography>
-                  <Typography sx={{ fontSize: "0.7rem", color: "#8b949e" }}>PRS</Typography>
+                  <Typography sx={{ fontSize: "0.8rem", color: "#8b949e", width: 24 }}>#</Typography>
+                  <Typography sx={{ fontSize: "0.8rem", color: "#8b949e", flex: 1 }}>MINER</Typography>
+                  <Typography sx={{ fontSize: "0.8rem", color: "#8b949e" }}>PRS</Typography>
                 </Box>
                 {mostActive.map((miner, i) => (
                   <Box
@@ -762,17 +727,17 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                       "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.03)", borderRadius: 1 }
                     }}
                   >
-                    <Typography sx={{ fontSize: "0.8rem", color: "#8b949e", width: 24 }}>{i + 1}</Typography>
+                    <Typography sx={{ fontSize: "1rem", color: "#8b949e", width: 24 }}>{i + 1}</Typography>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, flex: 1, minWidth: 0 }}>
                       <Avatar
                         src={`https://avatars.githubusercontent.com/${miner.author || miner.githubId}`}
                         sx={{ width: 20, height: 20 }}
                       />
-                      <Typography sx={{ fontSize: "0.85rem", color: "#c9d1d9", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <Typography sx={{ fontSize: "1rem", color: "#c9d1d9", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {miner.author || miner.githubId}
                       </Typography>
                     </Box>
-                    <Typography sx={{ fontSize: "0.85rem", color: "#e6edf3", fontFamily: '"JetBrains Mono", monospace' }}>
+                    <Typography sx={{ fontSize: "1.1rem", color: "#e6edf3", fontFamily: '"JetBrains Mono", monospace' }}>
                       {miner.totalPRs}
                     </Typography>
                   </Box>
