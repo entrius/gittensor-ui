@@ -359,9 +359,9 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                     sx={{
                       color: "#ffffff",
                       fontFamily: '"JetBrains Mono", monospace',
-                      fontSize: "1.25rem",
+                      fontSize: "1.5rem",
                       fontWeight: 700,
-                      lineHeight: 1,
+                      lineHeight: 1.2,
                     }}
                   >
                     {githubData?.name || username}
@@ -394,7 +394,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                   <Typography
                     sx={{
                       fontFamily: '"JetBrains Mono", monospace',
-                      fontSize: "0.75rem",
+                      fontSize: "0.875rem",
                       color:
                         minerStats.currentTier === "Gold"
                           ? TIER_COLORS.gold
@@ -421,7 +421,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
               sx={{
                 color: "primary.main",
                 fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "1rem",
+                fontSize: "1.1rem",
                 textDecoration: "none",
                 display: "inline-flex",
                 alignItems: "center",
@@ -621,7 +621,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                               ? "#4ade80"
                               : "rgba(255, 255, 255, 0.5)",
                           fontFamily: '"JetBrains Mono", monospace',
-                          fontSize: "0.75rem",
+                          fontSize: "0.9rem",
                           textTransform: "uppercase",
                           letterSpacing: "1px",
                           fontWeight: 600,
@@ -643,7 +643,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                       sx={{
                         color: "rgba(255, 255, 255, 0.5)",
                         fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.75rem",
+                        fontSize: "0.9rem",
                         textTransform: "uppercase",
                         letterSpacing: "1px",
                         fontWeight: 600,
@@ -719,7 +719,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                   sx={{
                     color: item.color || "#ffffff",
                     fontFamily: '"JetBrains Mono", monospace',
-                    fontSize: "1.1rem",
+                    fontSize: "1.75rem",
                     fontWeight: 600,
                     wordBreak: "break-all",
                     lineHeight: 1.2,
@@ -756,7 +756,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                           component="span"
                           sx={{
                             fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "1.1rem",
+                            fontSize: "1.5rem",
                             fontWeight: 600,
                             color: item.color,
                           }}
@@ -788,7 +788,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                             component="span"
                             sx={{
                               fontFamily: '"JetBrains Mono", monospace',
-                              fontSize: "1.1rem",
+                              fontSize: "1.5rem",
                               fontWeight: 600,
                               color: item.subItems[0].color,
                             }}
@@ -824,7 +824,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                         sx={{
                           color: sub.color || "rgba(255, 255, 255, 0.4)",
                           fontFamily: '"JetBrains Mono", monospace',
-                          fontSize: "0.7rem",
+                          fontSize: "0.85rem",
                         }}
                       >
                         {sub.label}: {sub.value}

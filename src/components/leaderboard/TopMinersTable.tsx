@@ -1,32 +1,27 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Box,
   Card,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
+  CardContent,
+  Stack,
   Typography,
   CircularProgress,
   Avatar,
   TextField,
   InputAdornment,
-  Tooltip,
-  IconButton,
-  Collapse,
-  TablePagination,
+  Chip,
   Select,
   MenuItem,
   FormControl,
-  Switch,
-  FormControlLabel,
+  Grid,
+  Tooltip,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import BarChartIcon from "@mui/icons-material/BarChart";
-import TableChartIcon from "@mui/icons-material/TableChart";
 import ReactECharts from "echarts-for-react";
+import { useMinerGithubData, useMinerPRs, useGeneralConfig } from "../../api";
+import { TIER_COLORS, CHART_COLORS } from "../../theme";
 
 interface MinerStats {
   githubId: string;
@@ -43,17 +38,13 @@ interface MinerStats {
   credibility?: number;
   currentTier?: string;
   usdPerDay?: number;
+  totalMergedPrs?: number;
+  totalOpenPrs?: number;
+  totalClosedPrs?: number;
 }
 
-type SortColumn =
-  | "miner"
-  | "totalScore"
-  | "credibility"
-  | "totalPRs"
-  | "linesAdded"
-  | "linesDeleted"
-  | "linesChanged";
-type SortDirection = "asc" | "desc";
+type SortOption = "totalScore" | "usdPerDay" | "totalPRs" | "credibility";
+type TierFilter = "all" | "Gold" | "Silver" | "Bronze";
 
 interface TopMinersTableProps {
   miners: MinerStats[];
@@ -61,423 +52,788 @@ interface TopMinersTableProps {
   onSelectMiner: (githubId: string) => void;
 }
 
-// Utility function to truncate text
-const truncateText = (text: string, maxLength: number): string => {
-  if (!text) return "";
-  return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
-};
-
-// Format USD per day (whole dollars)
-const formatUsdPerDay = (value: number | undefined): string | null => {
-  if (!value || value <= 0) return null;
-  if (value >= 1) {
-    return `$${Math.round(value)}`;
+// Get tier styling
+const getTierColors = (tier: string | undefined) => {
+  switch (tier) {
+    case "Gold":
+      return {
+        border: "rgba(255, 215, 0, 0.5)",
+        text: TIER_COLORS.gold,
+        bg: "rgba(255, 215, 0, 0.1)",
+      };
+    case "Silver":
+      return {
+        border: "rgba(192, 192, 192, 0.5)",
+        text: TIER_COLORS.silver,
+        bg: "rgba(192, 192, 192, 0.1)",
+      };
+    case "Bronze":
+      return {
+        border: "rgba(205, 127, 50, 0.5)",
+        text: TIER_COLORS.bronze,
+        bg: "rgba(205, 127, 50, 0.1)",
+      };
+    default:
+      return {
+        border: "rgba(255, 255, 255, 0.15)",
+        text: "rgba(255, 255, 255, 0.5)",
+        bg: "rgba(255, 255, 255, 0.02)",
+      };
   }
-  return "<$1";
 };
 
+// Get rank colors
+const getRankColors = (rank: number) => {
+  if (rank === 1) return { color: "#FFD700", icon: "🥇" };
+  if (rank === 2) return { color: "#C0C0C0", icon: "🥈" };
+  if (rank === 3) return { color: "#CD7F32", icon: "🥉" };
+  return { color: "rgba(255, 255, 255, 0.6)", icon: null };
+};
+
+// ============================================================================
+// MINER CARD - Redesigned for better UI/UX
+// ============================================================================
+interface MinerCardProps {
+  miner: MinerStats;
+  onClick: () => void;
+}
+
+const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
+  const tierColors = getTierColors(miner.currentTier);
+
+  // Helper to check for numeric IDs or missing values
+  const isNumericId = (val: string | undefined) => !val || /^\d+$/.test(val);
+
+  // Fetch profile if author is missing or looks like an ID
+  const shouldFetch = isNumericId(miner.author);
+  const { data: githubData } = useMinerGithubData(miner.githubId, shouldFetch);
+  // Also fetch PRs as fallback if github data is missing (common for unranked miners)
+  const { data: prs } = useMinerPRs(miner.githubId, shouldFetch);
+
+  const username =
+    githubData?.login ||
+    prs?.[0]?.author ||
+    (!isNumericId(miner.author) ? miner.author : miner.githubId) ||
+    miner.githubId ||
+    "";
+  const credibilityPercent = (miner.credibility || 0) * 100;
+
+  // Tier-based gradient background
+  const tierGradient =
+    miner.currentTier === "Gold"
+      ? "linear-gradient(135deg, rgba(255, 215, 0, 0.08) 0%, rgba(255, 215, 0, 0.02) 100%)"
+      : miner.currentTier === "Silver"
+        ? "linear-gradient(135deg, rgba(192, 192, 192, 0.08) 0%, rgba(192, 192, 192, 0.02) 100%)"
+        : miner.currentTier === "Bronze"
+          ? "linear-gradient(135deg, rgba(205, 127, 50, 0.08) 0%, rgba(205, 127, 50, 0.02) 100%)"
+          : "rgba(22, 27, 34, 0.8)";
+  const borderColor = miner.currentTier
+    ? tierColors.border
+    : "rgba(48, 54, 61, 0.4)";
+
+  // ==========================================================================
+  // INACTIVE CARD
+  // ==========================================================================
+  if (!miner.currentTier) {
+    return (
+      <Card
+        onClick={onClick}
+        sx={{
+          p: 1.5,
+          cursor: "pointer",
+          backgroundColor: "#000000",
+          border: "1px solid rgba(48, 54, 61, 0.4)",
+          borderRadius: 2,
+          transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+          "&:hover": {
+            backgroundColor: "rgba(13, 17, 23, 0.8)",
+            borderColor: "rgba(110, 118, 129, 0.5)",
+            transform: "translateY(-1px)",
+          },
+        }}
+        elevation={0}
+      >
+        <Avatar
+          src={`https://avatars.githubusercontent.com/${username}`}
+          sx={{
+            width: 24,
+            height: 24,
+            border: "1px solid rgba(48, 54, 61, 0.5)",
+            filter: "grayscale(100%)",
+            opacity: 0.7,
+          }}
+        />
+        <Typography
+          sx={{
+            fontFamily:
+              '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+            fontSize: "0.9rem",
+            fontWeight: 500,
+            color: "#8b949e",
+            flex: 1,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {username}
+        </Typography>
+        <Typography
+          sx={{
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: "0.7rem",
+            fontWeight: 600,
+            color: "#484f58",
+            textTransform: "uppercase",
+            border: "1px solid rgba(48, 54, 61, 0.5)",
+            borderRadius: 1,
+            px: 0.75,
+            py: 0.1,
+          }}
+        >
+          Unranked
+        </Typography>
+      </Card>
+    );
+  }
+
+  // ==========================================================================
+  // ACTIVE CARD - Compact Premium Design
+  // ==========================================================================
+  return (
+    <Card
+      onClick={onClick}
+      sx={{
+        p: 1.5,
+        backgroundColor: "#000000",
+        backdropFilter: "blur(12px)",
+        border: `1px solid ${borderColor}`,
+        borderRadius: 2,
+        cursor: "pointer",
+        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        gap: 1.5,
+        position: "relative",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+        "&:hover": {
+          backgroundColor: "rgba(22, 27, 34, 0.6)",
+          borderColor: tierColors.text,
+          transform: "translateY(-2px)",
+          boxShadow: `0 8px 24px -6px rgba(0, 0, 0, 0.6), 0 0 0 1px ${tierColors.border}40`,
+        },
+      }}
+      elevation={0}
+    >
+      {/* Header: Identity + Rank */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+        }}
+      >
+        <Box
+          sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}
+        >
+          <Box sx={{ position: "relative" }}>
+            <Avatar
+              src={`https://avatars.githubusercontent.com/${username}`}
+              sx={{
+                width: 36,
+                height: 36,
+                border: `2px solid ${tierColors.border}`,
+                boxShadow: `0 0 10px ${tierColors.border}20`,
+              }}
+            />
+            <Box
+              sx={{
+                position: "absolute",
+                bottom: -4,
+                right: -4,
+                backgroundColor: "#0d1117",
+                border: `1px solid ${tierColors.border}`,
+                borderRadius: "4px",
+                px: 0.5,
+                py: 0,
+              }}
+            >
+              <Typography
+                sx={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: "0.6rem",
+                  fontWeight: 700,
+                  color: tierColors.text,
+                }}
+              >
+                #{miner.rank}
+              </Typography>
+            </Box>
+          </Box>
+          <Box sx={{ overflow: "hidden" }}>
+            <Typography
+              sx={{
+                fontFamily:
+                  '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+                fontSize: "1rem",
+                fontWeight: 700,
+                color: "#ffffff",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {username}
+            </Typography>
+          </Box>
+        </Box>
+        <Typography
+          sx={{
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: "0.65rem",
+            fontWeight: 700,
+            color: tierColors.text,
+            textTransform: "uppercase",
+            mt: 0.5,
+            opacity: 0.8,
+          }}
+        >
+          {miner.currentTier}
+        </Typography>
+      </Box>
+
+      {/* Main Stats: Earnings & Credibility */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 2,
+        }}
+      >
+        {/* Earnings */}
+        <Box>
+          <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
+            <Typography
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "1.6rem",
+                fontWeight: 800,
+                color: "#3fb950",
+                lineHeight: 1,
+              }}
+            >
+              ${Math.round(miner.usdPerDay || 0).toLocaleString()}
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "0.75rem",
+                color: "#8b949e",
+              }}
+            >
+              /day
+            </Typography>
+          </Box>
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "0.7rem",
+              color: "#3fb950",
+              opacity: 0.7,
+              mt: 0.2,
+            }}
+          >
+            ~${Math.round((miner.usdPerDay || 0) * 30).toLocaleString()}/mo
+          </Typography>
+        </Box>
+
+        {/* Credibility Donut */}
+        <Box
+          sx={{ position: "relative", width: 56, height: 56, flexShrink: 0 }}
+        >
+          <ReactECharts
+            option={{
+              backgroundColor: "transparent",
+              series: [
+                {
+                  type: "pie",
+                  radius: ["65%", "90%"],
+                  silent: true,
+                  label: { show: false },
+                  itemStyle: {
+                    borderRadius: 3,
+                    borderColor: "rgba(13, 17, 23, 0.8)", // Dark border to create separation
+                    borderWidth: 2,
+                  },
+                  data: [
+                    {
+                      value: miner.totalMergedPrs || 0,
+                      itemStyle: { color: CHART_COLORS.merged },
+                    },
+                    {
+                      value: miner.totalOpenPrs || 0,
+                      itemStyle: { color: CHART_COLORS.open },
+                    },
+                    {
+                      value: miner.totalClosedPrs || 0,
+                      itemStyle: { color: CHART_COLORS.closed },
+                    },
+                  ],
+                },
+              ],
+            }}
+            style={{ width: "100%", height: "100%" }}
+            opts={{ renderer: "svg" }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: "0.75rem",
+                color: credibilityPercent >= 80 ? "#3fb950" : "#8b949e",
+                fontWeight: 700,
+              }}
+            >
+              {credibilityPercent.toFixed(0)}%
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Footer: Stats Grid */}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr 1fr auto",
+          gap: 1,
+          backgroundColor: "rgba(0,0,0,0.2)",
+          borderRadius: 1.5,
+          p: 1,
+          alignItems: "center",
+        }}
+      >
+        <Box>
+          <Typography
+            sx={{
+              fontSize: "0.6rem",
+              color: "#8b949e",
+              textTransform: "uppercase",
+              mb: 0.2,
+            }}
+          >
+            Merged
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: "0.85rem",
+              color: "#3fb950",
+              fontWeight: 600,
+              fontFamily: '"JetBrains Mono", monospace',
+            }}
+          >
+            {miner.totalMergedPrs || 0}
+          </Typography>
+        </Box>
+        <Box>
+          <Typography
+            sx={{
+              fontSize: "0.6rem",
+              color: "#8b949e",
+              textTransform: "uppercase",
+              mb: 0.2,
+            }}
+          >
+            Open
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: "0.85rem",
+              color: "#c9d1d9",
+              fontWeight: 600,
+              fontFamily: '"JetBrains Mono", monospace',
+            }}
+          >
+            {miner.totalOpenPrs || 0}
+          </Typography>
+        </Box>
+        <Box>
+          <Typography
+            sx={{
+              fontSize: "0.6rem",
+              color: "#8b949e",
+              textTransform: "uppercase",
+              mb: 0.2,
+            }}
+          >
+            Closed
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: "0.85rem",
+              color: "#f85149",
+              fontWeight: 600,
+              fontFamily: '"JetBrains Mono", monospace',
+            }}
+          >
+            {miner.totalClosedPrs || 0}
+          </Typography>
+        </Box>
+        <Box
+          sx={{
+            textAlign: "right",
+            borderLeft: "1px solid rgba(255,255,255,0.1)",
+            pl: 1.5,
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: "0.6rem",
+              color: "#8b949e",
+              textTransform: "uppercase",
+              mb: 0.2,
+            }}
+          >
+            Score
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: "0.9rem",
+              color: "#e6edf3",
+              fontWeight: 700,
+              fontFamily: '"JetBrains Mono", monospace',
+            }}
+          >
+            {Number(miner.totalScore).toFixed(1)}
+          </Typography>
+        </Box>
+      </Box>
+    </Card>
+  );
+};
+
+// ============================================================================
+// STYLED SECTION CARD (Dashboard Style)
+// ============================================================================
+// ============================================================================
+// STYLED SECTION CARD (Dashboard Style)
+// ============================================================================
+const SectionCard: React.FC<{
+  children: React.ReactNode;
+  sx?: any;
+  title?: string;
+  action?: React.ReactNode;
+  centerContent?: React.ReactNode;
+}> = ({ children, sx, title, action, centerContent }) => (
+  <Card
+    sx={{
+      borderRadius: 3,
+      border: "1px solid rgba(255, 255, 255, 0.1)",
+      backgroundColor: "#000000",
+      display: "flex",
+      flexDirection: "column",
+      ...sx,
+    }}
+    elevation={0}
+  >
+    {/* Optional Header */}
+    {(title || action || centerContent) && (
+      <Box
+        sx={{
+          p: 2,
+          pb: 1,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          position: "relative",
+        }}
+      >
+        {title && (
+          <Typography
+            variant="h6"
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "1.25rem",
+              fontWeight: 600,
+            }}
+          >
+            {title}
+          </Typography>
+        )}
+
+        {/* Centered Content (Absolute Position) */}
+        {centerContent && (
+          <Box
+            sx={{
+              position: "absolute",
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
+            }}
+          >
+            {centerContent}
+          </Box>
+        )}
+
+        {action && <Box>{action}</Box>}
+      </Box>
+    )}
+
+    <CardContent
+      sx={{
+        p: 0,
+        "&:last-child": { pb: 0 },
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {children}
+    </CardContent>
+  </Card>
+);
+
+// ============================================================================
+// MINER SECTION (Expandable Grid)
+// ============================================================================
+interface MinerSectionProps {
+  title?: string;
+  count: number;
+  miners: MinerStats[];
+  color: { border: string; text: string; bg?: string };
+  onSelectMiner: (githubId: string) => void;
+  defaultExpanded?: boolean;
+  compact?: boolean;
+}
+
+const MinerSection: React.FC<MinerSectionProps> = ({
+  title,
+  count,
+  miners,
+  color,
+  onSelectMiner,
+  defaultExpanded = false,
+  compact = false,
+}) => {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const theme = useTheme();
+
+  // Determine how many items to show
+  // User Requirement: "see at least top 3 in very tier without expanding the view"
+  const INITIAL_DISPLAY_COUNT = 3;
+
+  // If not expanded, show INITIAL_DISPLAY_COUNT. If expanded, show all.
+  const visibleMiners = expanded
+    ? miners
+    : miners.slice(0, INITIAL_DISPLAY_COUNT);
+  const hasMoreMiners = miners.length > INITIAL_DISPLAY_COUNT;
+
+  return (
+    <Card
+      sx={{
+        backgroundColor: "#000000", // Black background (outline only)
+        border: `1px solid ${color.border}`,
+        borderRadius: 3,
+        // Optional glow effect for tiers
+        boxShadow:
+          color.text !== "#8b949e" ? `0 0 20px -10px ${color.border}` : "none",
+        display: "flex",
+        flexDirection: "column",
+      }}
+      elevation={0}
+    >
+      {title && (
+        <Box
+          sx={{
+            px: 3,
+            pt: 3, // Increased top padding for spacing
+            pb: 1,
+            display: "flex",
+            justifyContent: "center", // Center content
+            alignItems: "center",
+            // Removed borderBottom to match reference
+            // background: `linear-gradient(90deg, ${color.border}10, transparent)` // Removed gradient
+          }}
+        >
+          <Typography
+            variant="h6"
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "1rem",
+              fontWeight: 700,
+              color: color.text,
+              textTransform: "uppercase", // All caps
+              letterSpacing: "0.1em", // Tracking
+            }}
+          >
+            {title}
+          </Typography>
+          {/* Removed count from header to match clean reference style, or keep it? 
+              Reference doesn't show count in title, it shows it in the bubble.
+              I will hide the count in the title for now to match exactly. 
+          */}
+        </Box>
+      )}
+
+      <Box sx={{ p: 3, pt: 2, flex: 1 }}>
+        <Grid container spacing={2}>
+          {visibleMiners.map((miner) => (
+            <Grid item xs={12} sm={12} md={6} xl={4} key={miner.hotkey}>
+              <MinerCard
+                miner={miner}
+                onClick={() =>
+                  onSelectMiner(miner.githubId || miner.author || "")
+                }
+              />
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+
+      {/* Footer Toggle Button */}
+      {hasMoreMiners && (
+        <Box
+          onClick={() => setExpanded(!expanded)}
+          sx={{
+            py: 1, // Reduced padding
+            borderTop: `1px solid ${color.border}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            transition: "all 0.2s",
+            backgroundColor: "rgba(0, 0, 0, 0.2)",
+            color: "text.secondary",
+            "&:hover": {
+              backgroundColor: "rgba(255, 255, 255, 0.03)",
+              color: "text.primary",
+            },
+          }}
+        >
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+            }}
+          >
+            {expanded
+              ? "Show Less"
+              : `View ${miners.length - INITIAL_DISPLAY_COUNT} More`}
+          </Typography>
+        </Box>
+      )}
+    </Card>
+  );
+};
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
 const TopMinersTable: React.FC<TopMinersTableProps> = ({
   miners,
   isLoading,
   onSelectMiner,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [showChart, setShowChart] = useState(false);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [sortColumn, setSortColumn] = useState<SortColumn>("totalScore");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-  const [useLogScale, setUseLogScale] = useState(true);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const echartsRef = useRef<any>(null);
+  // Removed tierFilter state
+  const [sortOption, setSortOption] = useState<SortOption>("totalScore");
 
-  const rankedMiners = useMemo(() => {
-    // First sort by the selected column
-    const sorted = [...miners].sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
-
-      switch (sortColumn) {
-        case "miner":
-          aValue = (a.author || a.githubId || "").toLowerCase();
-          bValue = (b.author || b.githubId || "").toLowerCase();
-          break;
+  // Helper to sort a list of miners
+  const sortMinersList = (list: MinerStats[], option: SortOption) => {
+    return [...list].sort((a, b) => {
+      switch (option) {
         case "totalScore":
-          aValue = a.totalScore || 0;
-          bValue = b.totalScore || 0;
-          break;
-        case "credibility":
-          aValue = a.credibility || 0;
-          bValue = b.credibility || 0;
-          break;
+          return (b.totalScore || 0) - (a.totalScore || 0);
+        case "usdPerDay":
+          return (b.usdPerDay || 0) - (a.usdPerDay || 0);
         case "totalPRs":
-          aValue = a.totalPRs || 0;
-          bValue = b.totalPRs || 0;
-          break;
-        case "linesAdded":
-          aValue = a.linesAdded || 0;
-          bValue = b.linesAdded || 0;
-          break;
-        case "linesDeleted":
-          aValue = a.linesDeleted || 0;
-          bValue = b.linesDeleted || 0;
-          break;
-        case "linesChanged":
-          aValue = a.linesChanged || 0;
-          bValue = b.linesChanged || 0;
-          break;
+          return (b.totalPRs || 0) - (a.totalPRs || 0);
+        case "credibility":
+          return (b.credibility || 0) - (a.credibility || 0);
         default:
           return 0;
       }
-
-      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
-      return 0;
     });
-
-    // Then assign ranks based on sorted order
-    return sorted.map((miner, index) => ({ ...miner, rank: index + 1 }));
-  }, [miners, sortColumn, sortDirection]);
-
-  const handleSort = (column: SortColumn) => {
-    if (sortColumn === column) {
-      // Toggle direction if clicking the same column
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      // Set new column with default direction (desc for numbers, asc for text)
-      setSortColumn(column);
-      setSortDirection(column === "miner" ? "asc" : "desc");
-    }
-    setPage(0);
   };
 
-  const filteredMiners = useMemo(() => {
-    if (!searchQuery) return rankedMiners;
-    const lowerQuery = searchQuery.toLowerCase();
-    return rankedMiners.filter(
-      (miner) =>
-        miner.githubId?.toLowerCase().includes(lowerQuery) ||
-        miner.author?.toLowerCase().includes(lowerQuery) ||
-        miner.hotkey?.toLowerCase().includes(lowerQuery),
-    );
-  }, [rankedMiners, searchQuery]);
+  // Process and filter miners
+  const groupedMiners = useMemo(() => {
+    let result = [...miners];
+    result = result.map((miner, index) => ({ ...miner, rank: index + 1 }));
 
-  const chartData = useMemo(() => {
-    return filteredMiners.slice(0, 30);
-  }, [filteredMiners]);
+    // 1. Filter by Search
+    if (searchQuery) {
+      const lowerQuery = searchQuery.toLowerCase();
+      result = result.filter(
+        (m) =>
+          m.githubId?.toLowerCase().includes(lowerQuery) ||
+          m.author?.toLowerCase().includes(lowerQuery),
+      );
+    }
 
-  const onChartEvents = useMemo(
-    () => ({
-      mouseover: (params: any) => {
-        if (
-          params.componentType === "angleAxis" &&
-          params.targetType === "axisLabel"
-        ) {
-          const name = params.value;
-          const dataIndex = chartData.findIndex(
-            (item) => (item.author || item.githubId || "") === name,
-          );
+    // 2. Group by Tier
+    const gold = result.filter((m) => m.currentTier === "Gold");
+    const silver = result.filter((m) => m.currentTier === "Silver");
+    const bronze = result.filter((m) => m.currentTier === "Bronze");
+    const others = result.filter((m) => !m.currentTier);
 
-          if (dataIndex !== -1 && echartsRef.current) {
-            const instance = echartsRef.current.getEchartsInstance();
-            instance.dispatchAction({
-              type: "showTip",
-              seriesIndex: 0,
-              dataIndex: dataIndex,
-            });
-            instance.dispatchAction({
-              type: "highlight",
-              seriesIndex: 0,
-              dataIndex: dataIndex,
-            });
-          }
-        }
-      },
-      mouseout: (params: any) => {
-        if (
-          params.componentType === "angleAxis" &&
-          params.targetType === "axisLabel"
-        ) {
-          if (echartsRef.current) {
-            const instance = echartsRef.current.getEchartsInstance();
-            instance.dispatchAction({
-              type: "downplay",
-              seriesIndex: 0,
-            });
-            instance.dispatchAction({
-              type: "hideTip",
-            });
-          }
-        }
-      },
-    }),
-    [chartData],
-  );
-
-  const getChartOption = () => {
-    const textColor = "rgba(255, 255, 255, 0.9)";
-
-    const getRankColor = (rank: number, total: number) => {
-      if (rank === 1) return "#FFD700"; // Gold
-      if (rank === 2) return "#C0C0C0"; // Silver
-      if (rank === 3) return "#CD7F32"; // Bronze
-
-      const ratio = (rank - 4) / Math.max(total - 3, 1);
-      const hue = 45 - ratio * 200;
-      const saturation = 70 - ratio * 20;
-      const lightness = 55 + ratio * 15;
-
-      return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-    };
-
-    const minerNames = chartData.map(
-      (item) => item?.author || item?.githubId || "",
-    );
-
-    const seriesData = chartData.map((item, index) => {
-      const val = Number(item?.totalScore) || 0;
-      // Manual log transform for stability on polar charts
-      // If we use log scale, we plot log10(val).
-      // We clamp val at 1 (score 1) so log10(1) = 0.
-      const plotValue = useLogScale ? Math.log10(Math.max(val, 1)) : val;
-
-      return {
-        value: plotValue,
-        rawValue: val, // Keep original for tooltip
-        name: item?.author || item?.githubId || "",
-        rank: item?.rank || index + 1,
-        credibility: item?.credibility || 0,
-        totalPRs: item?.totalPRs || 0,
-        linesAdded: item?.linesAdded || 0,
-        linesDeleted: item?.linesDeleted || 0,
-        linesChanged: item?.linesChanged || 0,
-        itemStyle: {
-          color: getRankColor(item?.rank || index + 1, chartData.length),
-          shadowBlur: 15,
-          shadowColor: getRankColor(item?.rank || index + 1, chartData.length),
-        },
-      };
-    });
-
+    // 3. Sort each Group
     return {
-      backgroundColor: "transparent",
-      title: {
-        text: "Competitive Miner Arena",
-        subtext: "Radial length = Total Score | Color = Rank (warm to cool)",
-        left: "center",
-        top: 0, // Moved up
-        textStyle: {
-          color: "#ffffff",
-          fontFamily: "JetBrains Mono",
-          fontSize: 18,
-          fontWeight: 600,
-        },
-        subtextStyle: {
-          color: "rgba(255, 255, 255, 0.6)",
-          fontFamily: "JetBrains Mono",
-          fontSize: 11,
-        },
-      },
-      polar: {
-        radius: ["20%", "70%"], // Adjusted radius to prevent cutoff
-        center: ["50%", "55%"],
-      },
-      angleAxis: {
-        type: "category",
-        data: minerNames,
-        startAngle: 90,
-        triggerEvent: true, // Enable hover events on labels
-        axisLabel: {
-          color: textColor,
-          fontFamily: "JetBrains Mono",
-          fontSize: 11,
-          fontWeight: 500,
-          interval: 0,
-          formatter: (value: string) => {
-            // Increased truncation limit for better visibility
-            return value.length > 15 ? value.substring(0, 15) + "..." : value;
-          },
-        },
-        axisPointer: {
-          show: true,
-          type: "shadow",
-          label: {
-            show: false, // We don't need the label box, just the shadow highlight
-          },
-          shadowStyle: {
-            color: "rgba(255, 255, 255, 0.08)", // Subtle highlight for the sector
-          },
-        },
-        axisLine: {
-          show: true,
-          lineStyle: {
-            color: "rgba(255, 255, 255, 0.1)",
-          },
-        },
-        axisTick: { show: false },
-        splitLine: {
-          show: true,
-          lineStyle: {
-            color: "rgba(255, 255, 255, 0.05)",
-          },
-        },
-      },
-      radiusAxis: {
-        type: "value",
-        min: 0, // In log mode, 0 means 10^0 = 1. In linear mode, it's 0.
-        axisLabel: {
-          show: false,
-        },
-        axisLine: { show: false },
-        splitLine: {
-          lineStyle: {
-            color: "rgba(255, 255, 255, 0.08)",
-            type: "dashed",
-          },
-        },
-      },
-      tooltip: {
-        trigger: "item",
-        backgroundColor: "rgba(10, 10, 12, 0.98)",
-        borderColor: "rgba(255, 255, 255, 0.2)",
-        borderWidth: 1,
-        textStyle: {
-          color: "#fff",
-          fontFamily: "JetBrains Mono",
-          fontSize: 12,
-        },
-        padding: [14, 18],
-        formatter: (params: any) => {
-          // Handle both axis trigger and item trigger if needed, but 'trigger: item' usually handles series
-          const data = params.data;
-          if (!data || !data.name) return "";
-
-          const rankColor = getRankColor(data.rank, chartData.length);
-
-          return `
-            <div style="font-family: 'JetBrains Mono', monospace;">
-              <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 8px;">
-                #${data.rank} ${data.name}
-              </div>
-              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                <div style="width: 8px; height: 8px; border-radius: 50%; background: ${rankColor};"></div>
-                <span style="color: ${rankColor}; font-weight: 600; font-size: 13px;">Rank #${data.rank}</span>
-              </div>
-              <div style="display: grid; gap: 6px; font-size: 11px;">
-                <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Total Score:</span>
-                  <span style="color: #fff; font-weight: 600;">${data.rawValue !== undefined ? data.rawValue.toFixed(2) : data.value.toFixed(2)}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Pull Requests:</span>
-                  <span style="color: #fff; font-weight: 600;">${data.totalPRs}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Lines Added:</span>
-                  <span style="color: #7ee787; font-weight: 600;">+${data.linesAdded.toLocaleString()}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Lines Deleted:</span>
-                  <span style="color: #ff7b72; font-weight: 600;">-${data.linesDeleted.toLocaleString()}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Lines Changed:</span>
-                  <span style="color: #fff; font-weight: 600;">${data.linesChanged.toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-          `;
-        },
-      },
-      series: [
-        {
-          type: "bar",
-          data: seriesData,
-          coordinateSystem: "polar",
-          name: "Miner Score",
-          barWidth: "85%",
-          roundCap: true,
-          emphasis: {
-            focus: "series",
-            itemStyle: {
-              shadowBlur: 25,
-              borderColor: "#fff",
-              borderWidth: 2,
-            },
-          },
-          animationDuration: 1500,
-          animationEasing: "elasticOut",
-          animationDelay: (idx: number) => idx * 50,
-        },
-      ],
+      gold: sortMinersList(gold, sortOption),
+      silver: sortMinersList(silver, sortOption),
+      bronze: sortMinersList(bronze, sortOption),
+      others: sortMinersList(
+        others,
+        sortOption === "totalScore" ? "credibility" : sortOption,
+      ),
+      totalFiltered: result.length,
     };
-  };
+  }, [miners, searchQuery, sortOption]);
 
-  const handleChangePage = (_event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const SortableHeader = ({
-    column,
-    children,
-    align = "left",
-    sx = {},
-  }: {
-    column: SortColumn;
-    children: React.ReactNode;
-    align?: "left" | "right";
-    sx?: any;
-  }) => (
-    <TableCell
-      align={align}
-      sx={{
-        ...headerCellStyle,
-        ...(sx || {}),
-        cursor: "pointer",
-        userSelect: "none",
-        "&:hover": {
-          backgroundColor: "rgba(255, 255, 255, 0.05)",
-        },
-      }}
-      onClick={() => handleSort(column)}
-    >
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: align === "right" ? "flex-end" : "flex-start",
-          gap: 0.5,
-        }}
-      >
-        {children}
-        {sortColumn === column && (
-          <Typography
-            component="span"
-            sx={{ fontSize: "0.7rem", opacity: 0.7 }}
-          >
-            {sortDirection === "asc" ? "▲" : "▼"}
-          </Typography>
-        )}
-      </Box>
-    </TableCell>
+  // Stats (Use original unfiltered list for stats)
+  const topEarners = useMemo(
+    () =>
+      [...miners]
+        .sort((a, b) => (b.usdPerDay || 0) - (a.usdPerDay || 0))
+        .slice(0, 5),
+    [miners],
   );
 
-  useEffect(() => {
-    setPage(0);
-  }, [searchQuery]);
+  const mostActive = useMemo(
+    () =>
+      [...miners]
+        .sort((a, b) => (b.totalPRs || 0) - (a.totalPRs || 0))
+        .slice(0, 5),
+    [miners],
+  );
 
-  useEffect(() => {
-    if (cardRef.current) {
-      cardRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [rowsPerPage]);
+  // Network Stats Data
+  const networkStats = useMemo(
+    () => ({
+      totalMiners: miners.length,
+      activeTier: miners.filter((m) => m.currentTier).length,
+      totalPRs: miners.reduce((acc, m) => acc + (m.totalPRs || 0), 0),
+      dailyPool: miners.reduce((acc, m) => acc + (m.usdPerDay || 0), 0),
+    }),
+    [miners],
+  );
 
   if (isLoading) {
     return (
@@ -487,582 +843,443 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     );
   }
 
-  return (
-    <Card
-      ref={cardRef}
-      sx={{
-        borderRadius: 3,
-        border: "1px solid rgba(255, 255, 255, 0.1)",
-        backgroundColor: "transparent",
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-      }}
-      elevation={0}
-    >
-      <Box
-        sx={{
-          p: 2,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 2,
-          borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-        }}
-      >
-        <Typography variant="body2" color="text.secondary">
-          Leading contributors ranked by current score across all repositories.
-        </Typography>
-
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-          <Tooltip title={showChart ? "Hide Chart" : "Show Chart"}>
-            <IconButton
-              onClick={() => setShowChart(!showChart)}
-              size="small"
-              sx={{
-                color: showChart ? "#ffffff" : "rgba(255, 255, 255, 0.5)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                borderRadius: 2,
-                padding: "6px",
-                "&:hover": {
-                  backgroundColor: "rgba(255, 255, 255, 0.05)",
-                  borderColor: "rgba(255, 255, 255, 0.2)",
-                },
-              }}
-            >
-              {showChart ? (
-                <TableChartIcon fontSize="small" />
-              ) : (
-                <BarChartIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Tooltip>
-
-          {showChart && (
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={useLogScale}
-                  onChange={(e) => setUseLogScale(e.target.checked)}
-                  size="small"
-                  sx={{
-                    "& .MuiSwitch-switchBase.Mui-checked": {
-                      color: "#primary.main",
-                    },
-                    "& .MuiSwitch-track": {
-                      backgroundColor: "rgba(255, 255, 255, 0.3)",
-                    },
-                  }}
-                />
-              }
-              label={
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontFamily: "JetBrains Mono",
-                    fontSize: "0.8rem",
-                    color: "rgba(255, 255, 255, 0.7)",
-                  }}
-                >
-                  Log Scale
-                </Typography>
-              }
-            />
-          )}
-
-          <FormControl size="small">
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Typography
-                variant="body2"
-                sx={{
-                  color: "rgba(255, 255, 255, 0.7)",
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: "0.8rem",
-                }}
-              >
-                Rows:
-              </Typography>
-              <Select
-                value={rowsPerPage}
-                onChange={(e) => {
-                  setRowsPerPage(e.target.value as number);
-                  setPage(0);
-                }}
-                sx={{
-                  color: "#ffffff",
-                  fontFamily: '"JetBrains Mono", monospace',
-                  backgroundColor: "rgba(0, 0, 0, 0.4)",
-                  fontSize: "0.8rem",
-                  height: "36px",
-                  borderRadius: 2,
-                  minWidth: "80px",
-                  "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
-                  "&:hover fieldset": {
-                    borderColor: "rgba(255, 255, 255, 0.2)",
-                  },
-                  "&.Mui-focused fieldset": { borderColor: "primary.main" },
-                  "& .MuiSelect-select": { py: 0.75 },
-                }}
-              >
-                <MenuItem value={10}>10</MenuItem>
-                <MenuItem value={25}>25</MenuItem>
-                <MenuItem value={50}>50</MenuItem>
-              </Select>
-            </Box>
-          </FormControl>
-
-          <TextField
-            placeholder="Search..."
-            size="small"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon
-                    sx={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "1rem" }}
-                  />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              width: "200px",
-              "& .MuiOutlinedInput-root": {
-                color: "#ffffff",
-                fontFamily: '"JetBrains Mono", monospace',
-                backgroundColor: "rgba(0, 0, 0, 0.4)",
-                fontSize: "0.8rem",
-                height: "36px",
-                borderRadius: 2,
-                "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
-                "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.2)" },
-                "&.Mui-focused fieldset": { borderColor: "primary.main" },
-              },
-            }}
-          />
-        </Box>
-      </Box>
-
-      <Collapse in={showChart}>
+  // Header Actions - Split into Sort (Center) and Search (Right)
+  const sortButtons = (
+    <Box sx={{ display: "flex", gap: 0.5 }}>
+      {[
+        { label: "Score", value: "totalScore" },
+        { label: "Earnings", value: "usdPerDay" },
+        { label: "PRs", value: "totalPRs" },
+        { label: "Credibility", value: "credibility" },
+      ].map((option) => (
         <Box
+          key={option.value}
+          onClick={() => setSortOption(option.value as SortOption)}
           sx={{
-            p: 2,
-            borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-            height: "600px",
-            backgroundColor: "rgba(0,0,0,0.2)",
+            px: 1.5,
+            height: 32,
+            display: "flex",
+            alignItems: "center",
+            borderRadius: 2,
+            cursor: "pointer",
+            backgroundColor:
+              sortOption === option.value
+                ? "rgba(255, 255, 255, 0.1)"
+                : "transparent",
+            color: sortOption === option.value ? "#fff" : "#8b949e",
+            border: "1px solid",
+            borderColor:
+              sortOption === option.value
+                ? "rgba(255, 255, 255, 0.2)"
+                : "transparent",
+            transition: "all 0.2s",
+            "&:hover": {
+              backgroundColor: "rgba(255, 255, 255, 0.05)",
+              color: "#e6edf3",
+            },
           }}
         >
-          {showChart && filteredMiners.length > 0 && (
-            <ReactECharts
-              ref={echartsRef}
-              onEvents={onChartEvents}
-              option={getChartOption()}
-              style={{ height: "100%", width: "100%" }}
-            />
-          )}
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "0.75rem",
+              fontWeight: 600,
+            }}
+          >
+            {option.label}
+          </Typography>
         </Box>
-      </Collapse>
+      ))}
+    </Box>
+  );
 
-      <TableContainer
-        sx={{
-          overflowY: "auto",
-          "&::-webkit-scrollbar": {
-            width: "8px",
-          },
-          "&::-webkit-scrollbar-track": {
-            backgroundColor: "transparent",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            backgroundColor: "rgba(255, 255, 255, 0.1)",
-            borderRadius: "4px",
-            "&:hover": {
-              backgroundColor: "rgba(255, 255, 255, 0.2)",
-            },
-          },
-        }}
-      >
-        <Table
-          stickyHeader
-          sx={{ tableLayout: "fixed", width: "100%", minWidth: "1000px" }}
-        >
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ ...headerCellStyle, width: "80px" }}>
-                Rank
-              </TableCell>
-              <SortableHeader column="miner" sx={{ width: "30%" }}>
-                Miner
-              </SortableHeader>
-              <SortableHeader
-                column="totalScore"
-                align="right"
-                sx={{
-                  color: "secondary.main",
-                  width: "12%",
-                }}
-              >
-                Score
-              </SortableHeader>
-              <TableCell
-                sx={{
-                  ...headerCellStyle,
-                  width: "8%",
-                }}
+  const searchAction = (
+    <TextField
+      placeholder="Search..."
+      size="small"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            <SearchIcon
+              sx={{ color: "rgba(255, 255, 255, 0.4)", fontSize: "1rem" }}
+            />
+          </InputAdornment>
+        ),
+      }}
+      sx={{
+        width: 180,
+        "& .MuiOutlinedInput-root": {
+          color: "#ffffff",
+          fontFamily: '"JetBrains Mono", monospace',
+          backgroundColor: "rgba(0, 0, 0, 0.2)",
+          fontSize: "0.8rem",
+          borderRadius: 2,
+          height: 32,
+          "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
+          "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.2)" },
+          "&.Mui-focused fieldset": { borderColor: "rgba(255, 255, 255, 0.3)" },
+        },
+      }}
+    />
+  );
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <Grid container spacing={3}>
+        {/* LEFT COLUMN: Main Miner Section (Unwrapped) */}
+        <Grid item xs={12} lg={9}>
+          {/* Header Card */}
+          <SectionCard
+            title={`Miners (${groupedMiners.totalFiltered})`}
+            centerContent={sortButtons}
+            action={searchAction}
+            sx={{
+              mb: 3,
+              position: "sticky",
+              top: 0,
+              zIndex: 100,
+              backgroundColor: "rgba(0, 0, 0, 0.65)", // X-style semi-transparent
+              backdropFilter: "blur(12px)", // Liquid glass effect
+              borderBottom: "1px solid rgba(255, 255, 255, 0.1)", // Subtle separator
+              boxShadow: "none", // Remove default shadow for cleaner blend
+            }}
+          >
+            {null}
+          </SectionCard>
+
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {/* GOLD SECTION */}
+            {groupedMiners.gold.length > 0 && (
+              <MinerSection
+                title="GOLD TIER"
+                count={groupedMiners.gold.length}
+                miners={groupedMiners.gold}
+                color={getTierColors("Gold")}
+                onSelectMiner={onSelectMiner}
               />
-              <SortableHeader
-                column="credibility"
-                align="right"
+            )}
+
+            {/* SILVER SECTION */}
+            {groupedMiners.silver.length > 0 && (
+              <MinerSection
+                title="SILVER TIER"
+                count={groupedMiners.silver.length}
+                miners={groupedMiners.silver}
+                color={getTierColors("Silver")}
+                onSelectMiner={onSelectMiner}
+              />
+            )}
+
+            {/* BRONZE SECTION */}
+            {groupedMiners.bronze.length > 0 && (
+              <MinerSection
+                title="BRONZE TIER"
+                count={groupedMiners.bronze.length}
+                miners={groupedMiners.bronze}
+                color={getTierColors("Bronze")}
+                onSelectMiner={onSelectMiner}
+              />
+            )}
+
+            {/* INACTIVE / OTHER SECTION */}
+            {groupedMiners.others.length > 0 && (
+              <MinerSection
+                title="Unranked"
+                count={groupedMiners.others.length}
+                miners={groupedMiners.others}
+                color={{ border: "rgba(255,255,255,0.1)", text: "#8b949e" }}
+                onSelectMiner={onSelectMiner}
+                compact={true}
+              />
+            )}
+
+            {groupedMiners.totalFiltered === 0 && (
+              <Box sx={{ py: 8, textAlign: "center", color: "text.secondary" }}>
+                <Typography>No miners found matching your filters.</Typography>
+              </Box>
+            )}
+          </Box>
+        </Grid>
+
+        {/* RIGHT COLUMN: Sidebar Stats */}
+        <Grid item xs={12} lg={3}>
+          <Stack spacing={3} sx={{ position: "sticky", top: 24 }}>
+            {/* CARD 1: Network Stats */}
+            <SectionCard title="Network Stats">
+              <Box
                 sx={{
-                  width: "10%",
+                  pt: 1,
+                  px: 2,
+                  pb: 2,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
                 }}
               >
-                Credibility
-              </SortableHeader>
-              <SortableHeader
-                column="totalPRs"
-                align="right"
-                sx={{ width: "10%" }}
-              >
-                PRs
-              </SortableHeader>
-              <SortableHeader
-                column="linesAdded"
-                align="right"
-                sx={{ width: "11%" }}
-              >
-                Lines Added
-              </SortableHeader>
-              <SortableHeader
-                column="linesDeleted"
-                align="right"
-                sx={{ width: "11%" }}
-              >
-                Lines Deleted
-              </SortableHeader>
-              <SortableHeader
-                column="linesChanged"
-                align="right"
-                sx={{ width: "11%" }}
-              >
-                Lines Changed
-              </SortableHeader>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredMiners
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((miner) => (
-                <TableRow
-                  key={`${miner.githubId}-${miner.hotkey}`}
-                  hover
-                  onClick={() =>
-                    onSelectMiner(miner.githubId || miner.author || "")
-                  }
+                <Box
                   sx={{
-                    cursor: "pointer",
-                    opacity: miner.currentTier ? 1 : 0.5,
-                    "&:hover": {
-                      backgroundColor: "rgba(255, 255, 255, 0.05)",
-                      opacity: 1,
-                    },
-                    transition: "all 0.2s",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                   }}
                 >
-                  <TableCell sx={{ ...bodyCellStyle, width: "80px" }}>
-                    {getRankIcon(miner.rank || 0)}
-                  </TableCell>
-                  <TableCell sx={{ ...bodyCellStyle, width: "30%" }}>
+                  <Typography sx={{ fontSize: "1rem", color: "#8b949e" }}>
+                    Total Miners
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontWeight: 600,
+                      fontSize: "1.2rem",
+                      color: "#e6edf3",
+                    }}
+                  >
+                    {networkStats.totalMiners}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Typography sx={{ fontSize: "1rem", color: "#8b949e" }}>
+                    Active Tier
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontWeight: 600,
+                      fontSize: "1.2rem",
+                      color: "#e6edf3",
+                    }}
+                  >
+                    {networkStats.activeTier}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Typography sx={{ fontSize: "1rem", color: "#8b949e" }}>
+                    Total PRs
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontWeight: 600,
+                      fontSize: "1.2rem",
+                      color: "#e6edf3",
+                    }}
+                  >
+                    {networkStats.totalPRs}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Typography sx={{ fontSize: "1rem", color: "#8b949e" }}>
+                    Daily Pool
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontWeight: 600,
+                      fontSize: "1.2rem",
+                      color: "#3fb950",
+                    }}
+                  >
+                    ${networkStats.dailyPool.toLocaleString()}
+                  </Typography>
+                </Box>
+              </Box>
+            </SectionCard>
+
+            {/* CARD 2: Top Earners */}
+            <SectionCard title="Top Earners">
+              <Box sx={{ px: 2, pb: 2 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    py: 1,
+                    borderBottom: "1px solid rgba(48, 54, 61, 0.5)",
+                    mb: 1,
+                  }}
+                >
+                  <Typography
+                    sx={{ fontSize: "0.8rem", color: "#8b949e", width: 24 }}
+                  >
+                    #
+                  </Typography>
+                  <Typography
+                    sx={{ fontSize: "0.8rem", color: "#8b949e", flex: 1 }}
+                  >
+                    MINER
+                  </Typography>
+                  <Typography sx={{ fontSize: "0.8rem", color: "#8b949e" }}>
+                    $/DAY
+                  </Typography>
+                </Box>
+                {topEarners.map((miner, i) => (
+                  <Box
+                    key={miner.hotkey}
+                    onClick={() =>
+                      onSelectMiner(miner.githubId || miner.author || "")
+                    }
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      py: 1,
+                      cursor: "pointer",
+                      "&:hover": {
+                        backgroundColor: "rgba(255, 255, 255, 0.03)",
+                        borderRadius: 1,
+                      },
+                    }}
+                  >
+                    <Typography
+                      sx={{ fontSize: "1rem", color: "#8b949e", width: 24 }}
+                    >
+                      {i + 1}
+                    </Typography>
                     <Box
                       sx={{
                         display: "flex",
                         alignItems: "center",
-                        gap: 1.5,
+                        gap: 1,
+                        flex: 1,
+                        minWidth: 0,
                       }}
                     >
                       <Avatar
                         src={`https://avatars.githubusercontent.com/${miner.author || miner.githubId}`}
-                        alt={miner.author || miner.githubId}
-                        sx={{
-                          width: 20,
-                          height: 20,
-                          border: "1px solid rgba(255, 255, 255, 0.2)",
-                        }}
+                        sx={{ width: 20, height: 20 }}
                       />
-                      <Box>
-                        <Tooltip
-                          title={miner.author || miner.githubId || ""}
-                          placement="top"
-                        >
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontWeight: 600,
-                              color: "#ffffff",
-                              fontSize: "0.85rem",
-                              fontFamily: '"JetBrains Mono", monospace',
-                              transition: "color 0.2s",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                              maxWidth: "100%",
-                              "&:hover": {
-                                color: "primary.main",
-                                textDecoration: "underline",
-                              },
-                            }}
-                          >
-                            {truncateText(
-                              miner.author || miner.githubId || "",
-                              25,
-                            )}
-                          </Typography>
-                        </Tooltip>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: "rgba(255, 255, 255, 0.4)",
-                            fontSize: "0.7rem",
-                            fontFamily: '"JetBrains Mono", monospace',
-                          }}
-                        >
-                          {(miner.hotkey || "").substring(0, 8)}...
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...bodyCellStyle, width: "12%" }}
-                  >
-                    <Typography
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
-                        color: "#ffffff",
-                      }}
-                    >
-                      {Number(miner.totalScore || 0).toFixed(2)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell
-                    align="left"
-                    sx={{ ...bodyCellStyle, width: "8%", pl: 0.5 }}
-                  >
-                    {formatUsdPerDay(miner.usdPerDay) && (
-                      <Tooltip
-                        title="This is an estimation. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
-                        arrow
-                        placement="top"
-                        slotProps={{
-                          tooltip: {
-                            sx: {
-                              backgroundColor: "rgba(15, 15, 17, 0.98)",
-                              color: "rgba(255, 255, 255, 0.85)",
-                              fontSize: "0.7rem",
-                              fontFamily: '"JetBrains Mono", monospace',
-                              padding: "8px 12px",
-                              borderRadius: "6px",
-                              border: "1px solid rgba(255, 255, 255, 0.08)",
-                              boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
-                            },
-                          },
-                          arrow: {
-                            sx: {
-                              color: "rgba(15, 15, 17, 0.98)",
-                            },
-                          },
+                      <Typography
+                        sx={{
+                          fontSize: "1rem",
+                          color: "#c9d1d9",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
                         }}
                       >
-                        <Typography
-                          component="span"
-                          sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "0.7rem",
-                            fontWeight: 500,
-                            color: "rgba(74, 222, 128, 0.7)",
-                            cursor: "pointer",
-                            transition: "color 0.15s ease",
-                            "&:hover": {
-                              color: "rgba(74, 222, 128, 0.95)",
-                            },
-                          }}
-                        >
-                          ({formatUsdPerDay(miner.usdPerDay)}/d)
-                        </Typography>
-                      </Tooltip>
-                    )}
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...bodyCellStyle, width: "10%" }}
-                  >
+                        {miner.author || miner.githubId}
+                      </Typography>
+                    </Box>
                     <Typography
                       sx={{
+                        fontSize: "1.1rem",
+                        color: "#3fb950",
                         fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.75rem",
-                        fontWeight: 600,
-                        color: "#ffffff",
                       }}
                     >
-                      {((miner.credibility || 0) * 100).toFixed(1)}%
+                      ${Math.round(miner.usdPerDay || 0).toLocaleString()}
                     </Typography>
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...bodyCellStyle, width: "10%" }}
-                  >
-                    {miner.totalPRs || 0}
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...bodyCellStyle, width: "11%" }}
-                  >
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#7ee787",
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.85rem",
-                      }}
-                    >
-                      +{(miner.linesAdded || 0).toLocaleString()}
-                    </Typography>
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...bodyCellStyle, width: "11%" }}
-                  >
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#ff7b72",
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.85rem",
-                      }}
-                    >
-                      -{(miner.linesDeleted || 0).toLocaleString()}
-                    </Typography>
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...bodyCellStyle, width: "11%" }}
-                  >
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.85rem",
-                      }}
-                    >
-                      {(miner.linesChanged || 0).toLocaleString()}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <TablePagination
-        rowsPerPageOptions={[]}
-        component="div"
-        count={filteredMiners.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-        showFirstButton
-        showLastButton
-        sx={{
-          borderTop: "1px solid rgba(255, 255, 255, 0.1)",
-          color: "rgba(255, 255, 255, 0.7)",
-          ".MuiTablePagination-displayedRows": {
-            fontFamily: '"JetBrains Mono", monospace',
-          },
-        }}
-      />
-    </Card>
-  );
-};
+                  </Box>
+                ))}
+              </Box>
+            </SectionCard>
 
-const headerCellStyle = {
-  backgroundColor: "rgba(18, 18, 20, 0.95)",
-  backdropFilter: "blur(8px)",
-  color: "#ffffff",
-  fontFamily: '"JetBrains Mono", monospace',
-  fontWeight: 500,
-  fontSize: "0.75rem",
-  borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  height: "48px",
-  py: 1,
-  boxSizing: "border-box" as const,
-};
-
-const bodyCellStyle = {
-  color: "#ffffff",
-  fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  fontSize: "0.75rem",
-  py: 0.75,
-  height: "52px",
-  boxSizing: "border-box" as const,
-};
-
-const getRankIcon = (rank: number) => {
-  return (
-    <Box
-      sx={{
-        backgroundColor: "#000000",
-        borderRadius: "2px",
-        width: "22px",
-        height: "22px",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-        border: "1px solid",
-        borderColor:
-          rank === 1
-            ? "rgba(255, 215, 0, 0.4)"
-            : rank === 2
-              ? "rgba(192, 192, 192, 0.4)"
-              : rank === 3
-                ? "rgba(205, 127, 50, 0.4)"
-                : "rgba(255, 255, 255, 0.15)",
-        boxShadow:
-          rank === 1
-            ? "0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)"
-            : rank === 2
-              ? "0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)"
-              : rank === 3
-                ? "0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)"
-                : "none",
-      }}
-    >
-      <Typography
-        component="span"
-        sx={{
-          color:
-            rank === 1
-              ? "#FFD700"
-              : rank === 2
-                ? "#C0C0C0"
-                : rank === 3
-                  ? "#CD7F32"
-                  : "rgba(255, 255, 255, 0.6)",
-          fontFamily: '"JetBrains Mono", monospace',
-          fontSize: "0.65rem",
-          fontWeight: 600,
-          lineHeight: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {rank}
-      </Typography>
+            {/* CARD 3: Most Active */}
+            <SectionCard title="Most Active">
+              <Box sx={{ px: 2, pb: 2 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    py: 1,
+                    borderBottom: "1px solid rgba(48, 54, 61, 0.5)",
+                    mb: 1,
+                  }}
+                >
+                  <Typography
+                    sx={{ fontSize: "0.8rem", color: "#8b949e", width: 24 }}
+                  >
+                    #
+                  </Typography>
+                  <Typography
+                    sx={{ fontSize: "0.8rem", color: "#8b949e", flex: 1 }}
+                  >
+                    MINER
+                  </Typography>
+                  <Typography sx={{ fontSize: "0.8rem", color: "#8b949e" }}>
+                    PRS
+                  </Typography>
+                </Box>
+                {mostActive.map((miner, i) => (
+                  <Box
+                    key={miner.hotkey}
+                    onClick={() =>
+                      onSelectMiner(miner.githubId || miner.author || "")
+                    }
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      py: 1,
+                      cursor: "pointer",
+                      "&:hover": {
+                        backgroundColor: "rgba(255, 255, 255, 0.03)",
+                        borderRadius: 1,
+                      },
+                    }}
+                  >
+                    <Typography
+                      sx={{ fontSize: "1rem", color: "#8b949e", width: 24 }}
+                    >
+                      {i + 1}
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        flex: 1,
+                        minWidth: 0,
+                      }}
+                    >
+                      <Avatar
+                        src={`https://avatars.githubusercontent.com/${miner.author || miner.githubId}`}
+                        sx={{ width: 20, height: 20 }}
+                      />
+                      <Typography
+                        sx={{
+                          fontSize: "1rem",
+                          color: "#c9d1d9",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {miner.author || miner.githubId}
+                      </Typography>
+                    </Box>
+                    <Typography
+                      sx={{
+                        fontSize: "1.1rem",
+                        color: "#e6edf3",
+                        fontFamily: '"JetBrains Mono", monospace',
+                      }}
+                    >
+                      {miner.totalPRs}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </SectionCard>
+          </Stack>
+        </Grid>
+      </Grid>
     </Box>
   );
 };
-
 export default TopMinersTable;

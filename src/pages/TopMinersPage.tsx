@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Box, Card } from "@mui/material";
+import { Box } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { Page } from "../components/layout";
 import { TopMinersTable, SEO } from "../components";
@@ -33,6 +33,10 @@ const TopMinersPage: React.FC = () => {
       credibility: Number(stat.credibility) || 0,
       currentTier: stat.currentTier,
       usdPerDay: Number(stat.usdPerDay) || 0,
+      // PR status counts for credibility donut
+      totalMergedPrs: Number(stat.totalMergedPrs) || 0,
+      totalOpenPrs: Number(stat.totalOpenPrs) || 0,
+      totalClosedPrs: Number(stat.totalClosedPrs) || 0,
     }));
   }, [allMinersStats]);
 
@@ -58,21 +62,11 @@ const TopMinersPage: React.FC = () => {
         }}
       >
         <Box sx={{ maxWidth: 1200, width: "100%" }}>
-          <Card
-            sx={{
-              borderRadius: 3,
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              backgroundColor: "transparent",
-              overflow: "hidden",
-            }}
-            elevation={0}
-          >
-            <TopMinersTable
-              miners={sortedMinerStats}
-              isLoading={isLoadingMinerStats}
-              onSelectMiner={handleSelectMiner}
-            />
-          </Card>
+          <TopMinersTable
+            miners={sortedMinerStats}
+            isLoading={isLoadingMinerStats}
+            onSelectMiner={handleSelectMiner}
+          />
         </Box>
       </Box>
     </Page>
