@@ -42,7 +42,7 @@ const RepositoryContributorsTable: React.FC<
 
     const allRepoPRs = allPRs.filter(
       (pr) =>
-        pr.repository === repositoryFullName &&
+        pr.repository.toLowerCase() === repositoryFullName.toLowerCase() &&
         pr.githubId &&
         pr.prState === "MERGED",
     );

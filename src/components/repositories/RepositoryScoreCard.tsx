@@ -22,7 +22,7 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
     if (!allPRs) return null;
 
     const allRepoPRs = allPRs.filter(
-      (pr) => pr.repository === repositoryFullName,
+      (pr) => pr.repository.toLowerCase() === repositoryFullName.toLowerCase(),
     );
 
     if (allRepoPRs.length === 0) return null;
@@ -91,27 +91,37 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
     const scoreRank =
       allRepos
         .sort((a, b) => b[1].totalScore - a[1].totalScore)
-        .findIndex(([repo]) => repo === repositoryFullName) + 1;
+        .findIndex(
+          ([repo]) => repo.toLowerCase() === repositoryFullName.toLowerCase(),
+        ) + 1;
 
     const prsRank =
       allRepos
         .sort((a, b) => b[1].totalPRs - a[1].totalPRs)
-        .findIndex(([repo]) => repo === repositoryFullName) + 1;
+        .findIndex(
+          ([repo]) => repo.toLowerCase() === repositoryFullName.toLowerCase(),
+        ) + 1;
 
     const contributorsRank =
       allRepos
         .sort((a, b) => b[1].uniqueContributors - a[1].uniqueContributors)
-        .findIndex(([repo]) => repo === repositoryFullName) + 1;
+        .findIndex(
+          ([repo]) => repo.toLowerCase() === repositoryFullName.toLowerCase(),
+        ) + 1;
 
     const linesRank =
       allRepos
         .sort((a, b) => b[1].totalLines - a[1].totalLines)
-        .findIndex(([repo]) => repo === repositoryFullName) + 1;
+        .findIndex(
+          ([repo]) => repo.toLowerCase() === repositoryFullName.toLowerCase(),
+        ) + 1;
 
     const commitsRank =
       allRepos
         .sort((a, b) => b[1].totalCommits - a[1].totalCommits)
-        .findIndex(([repo]) => repo === repositoryFullName) + 1;
+        .findIndex(
+          ([repo]) => repo.toLowerCase() === repositoryFullName.toLowerCase(),
+        ) + 1;
 
     return {
       totalScore,
