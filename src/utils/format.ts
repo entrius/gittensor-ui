@@ -8,7 +8,7 @@
  * @returns Formatted string like "$5", "<$1", or null if value is invalid/zero
  */
 export const formatUsdEstimate = (
-  value: number | undefined,
+  value: number | null | undefined,
   options?: { includeApproxPrefix?: boolean; showZero?: boolean },
 ): string | null => {
   const { includeApproxPrefix = false, showZero = false } = options ?? {};
