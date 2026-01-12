@@ -120,12 +120,12 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
       <Card
         onClick={onClick}
         sx={{
-          p: 1,
-          backgroundColor: "rgba(13, 17, 23, 0.4)",
+          p: 1.5,
+          cursor: "pointer",
+          backgroundColor: "#000000",
           border: "1px solid rgba(48, 54, 61, 0.4)",
           borderRadius: 2,
-          cursor: "pointer",
-          transition: "all 0.2s ease",
+          transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
           display: "flex",
           alignItems: "center",
           gap: 1.5,
@@ -159,7 +159,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
       onClick={onClick}
       sx={{
         p: 1.5,
-        background: tierGradient,
+        backgroundColor: "#000000",
         backdropFilter: "blur(12px)",
         border: `1px solid ${borderColor}`,
         borderRadius: 2,
@@ -297,7 +297,7 @@ const SectionCard: React.FC<{ children: React.ReactNode; sx?: any; title?: strin
     sx={{
       borderRadius: 3,
       border: "1px solid rgba(255, 255, 255, 0.1)",
-      backgroundColor: "transparent",
+      backgroundColor: "#000000",
       display: "flex",
       flexDirection: "column",
       ...sx,
@@ -370,7 +370,7 @@ const MinerSection: React.FC<MinerSectionProps> = ({
   return (
     <Card
       sx={{
-        backgroundColor: "rgba(13, 17, 23, 0.4)",
+        backgroundColor: "#000000", // Black background (outline only)
         border: `1px solid ${color.border}`,
         borderRadius: 3,
         // Optional glow effect for tiers
@@ -383,22 +383,32 @@ const MinerSection: React.FC<MinerSectionProps> = ({
       {title && (
         <Box sx={{
           px: 3,
-          py: 2,
-          borderBottom: `1px solid ${color.border}`,
+          pt: 3, // Increased top padding for spacing
+          pb: 1,
           display: 'flex',
+          justifyContent: 'center', // Center content
           alignItems: 'center',
-          background: `linear-gradient(90deg, ${color.border}10, transparent)`
+          // Removed borderBottom to match reference
+          // background: `linear-gradient(90deg, ${color.border}10, transparent)` // Removed gradient
         }}>
-          <Typography variant="h6" sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '1.1rem', fontWeight: 600, color: color.text }}>
+          <Typography variant="h6" sx={{
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '1rem',
+            fontWeight: 700,
+            color: color.text,
+            textTransform: 'uppercase', // All caps
+            letterSpacing: '0.1em' // Tracking
+          }}>
             {title}
           </Typography>
-          <Typography sx={{ ml: 2, color: 'text.secondary', fontSize: '0.9rem' }}>
-            ({count})
-          </Typography>
+          {/* Removed count from header to match clean reference style, or keep it? 
+              Reference doesn't show count in title, it shows it in the bubble.
+              I will hide the count in the title for now to match exactly. 
+          */}
         </Box>
       )}
 
-      <Box sx={{ p: 3, flex: 1 }}>
+      <Box sx={{ p: 3, pt: 2, flex: 1 }}>
         <Grid container spacing={2}>
           {visibleMiners.map((miner) => (
             <Grid item xs={12} sm={12} md={6} xl={4} key={miner.hotkey}>
@@ -601,8 +611,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
               position: "sticky",
               top: 0,
               zIndex: 100,
-              backgroundColor: "rgba(13, 17, 23, 0.8)", // Semi-transparent
-              backdropFilter: "blur(12px)", // X/Twitter style frosted glass
+              backgroundColor: "rgba(0, 0, 0, 0.65)", // X-style semi-transparent
+              backdropFilter: "blur(12px)", // Liquid glass effect
               borderBottom: "1px solid rgba(255, 255, 255, 0.1)", // Subtle separator
               boxShadow: "none" // Remove default shadow for cleaner blend
             }}
@@ -615,7 +625,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             {/* GOLD SECTION */}
             {groupedMiners.gold.length > 0 && (
               <MinerSection
-                // title="Gold Tier 🥇" -> removed as per request
+                title="GOLD TIER"
                 count={groupedMiners.gold.length}
                 miners={groupedMiners.gold}
                 color={getTierColors('Gold')}
@@ -626,7 +636,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             {/* SILVER SECTION */}
             {groupedMiners.silver.length > 0 && (
               <MinerSection
-                // title="Silver Tier 🥈" -> removed as per request
+                title="SILVER TIER"
                 count={groupedMiners.silver.length}
                 miners={groupedMiners.silver}
                 color={getTierColors('Silver')}
@@ -637,7 +647,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             {/* BRONZE SECTION */}
             {groupedMiners.bronze.length > 0 && (
               <MinerSection
-                // title="Bronze Tier 🥉" -> removed as per request
+                title="BRONZE TIER"
                 count={groupedMiners.bronze.length}
                 miners={groupedMiners.bronze}
                 color={getTierColors('Bronze')}
