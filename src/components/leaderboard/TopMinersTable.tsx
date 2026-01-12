@@ -208,7 +208,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
     <Card
       onClick={onClick}
       sx={{
-        p: 1.5,
+        p: 1,
         backgroundColor: "#000000",
         backdropFilter: "blur(12px)",
         border: `1px solid ${borderColor}`,
@@ -218,7 +218,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        gap: 1.5,
+        gap: 1,
         position: "relative",
         boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
         "&:hover": {
@@ -581,9 +581,9 @@ const MinerSection: React.FC<MinerSectionProps> = ({
       {title && (
         <Box
           sx={{
-            px: 3,
-            pt: 3, // Increased top padding for spacing
-            pb: 1,
+            px: 2,
+            pt: 1.5, // Reduced top padding
+            pb: 0.5,
             display: "flex",
             justifyContent: "center", // Center content
             alignItems: "center",
@@ -611,10 +611,10 @@ const MinerSection: React.FC<MinerSectionProps> = ({
         </Box>
       )}
 
-      <Box sx={{ p: 3, pt: 2, flex: 1 }}>
+      <Box sx={{ p: 1.5, pt: 1, flex: 1 }}>
         <Grid container spacing={2}>
           {visibleMiners.map((miner) => (
-            <Grid item xs={12} sm={12} md={6} xl={4} key={miner.hotkey}>
+            <Grid item xs={12} sm={12} md={6} lg={4} xl={4} key={miner.hotkey}>
               <MinerCard
                 miner={miner}
                 onClick={() =>
@@ -822,14 +822,14 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   );
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 2 }}>
       {/* Header Card */}
       <SectionCard
         title={`Miners (${groupedMiners.totalFiltered})`}
         centerContent={sortButtons}
         action={searchAction}
         sx={{
-          mb: 3,
+          mb: 2,
           position: "sticky",
           top: 0,
           zIndex: 100,
@@ -842,7 +842,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
         {null}
       </SectionCard>
 
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {/* GOLD SECTION */}
         {groupedMiners.gold.length > 0 && (
           <MinerSection
