@@ -292,7 +292,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
 // ============================================================================
 // STYLED SECTION CARD (Dashboard Style)
 // ============================================================================
-const SectionCard: React.FC<{ children: React.ReactNode; sx?: any; title?: string; action?: React.ReactNode }> = ({ children, sx, title, action }) => (
+const SectionCard: React.FC<{ children: React.ReactNode; sx?: any; title?: string; action?: React.ReactNode; centerContent?: React.ReactNode }> = ({ children, sx, title, action, centerContent }) => (
   <Card
     sx={{
       borderRadius: 3,
@@ -305,9 +305,17 @@ const SectionCard: React.FC<{ children: React.ReactNode; sx?: any; title?: strin
     elevation={0}
   >
     {/* Optional Header */}
-    {(title || action) && (
-      <Box sx={{ p: 2, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    {(title || action || centerContent) && (
+      <Box sx={{ p: 2, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
         {title && <Typography variant="h6" sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '1.25rem', fontWeight: 600 }}>{title}</Typography>}
+
+        {/* Centered Content (Absolute Position) */}
+        {centerContent && (
+          <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex' }}>
+            {centerContent}
+          </Box>
+        )}
+
         {action && <Box>{action}</Box>}
       </Box>
     )}
@@ -508,75 +516,72 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     );
   }
 
-  // Header Actions (Search + Sort ONLY)
-  const headerActions = (
-    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-
-      {/* Sort Buttons */}
-      <Box sx={{ display: 'flex', gap: 0.5 }}>
-        {[
-          { label: 'Score', value: 'totalScore' },
-          { label: 'Earnings', value: 'usdPerDay' },
-          { label: 'PRs', value: 'totalPRs' },
-          { label: 'Credibility', value: 'credibility' },
-        ].map((option) => (
-          <Box
-            key={option.value}
-            onClick={() => setSortOption(option.value as SortOption)}
-            sx={{
-              px: 1.5,
-              height: 32,
-              display: "flex",
-              alignItems: "center",
-              borderRadius: 2,
-              cursor: 'pointer',
-              backgroundColor: sortOption === option.value ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-              color: sortOption === option.value ? '#fff' : '#8b949e',
-              border: '1px solid',
-              borderColor: sortOption === option.value ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-              transition: 'all 0.2s',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                color: '#e6edf3',
-              },
-            }}
-          >
-            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.75rem", fontWeight: 600 }}>
-              {option.label}
-            </Typography>
-          </Box>
-        ))}
-      </Box>
-
-      {/* Search Input */}
-      <TextField
-        placeholder="Search..."
-        size="small"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon sx={{ color: "rgba(255, 255, 255, 0.4)", fontSize: "1rem" }} />
-            </InputAdornment>
-          ),
-        }}
-        sx={{
-          width: 180,
-          "& .MuiOutlinedInput-root": {
-            color: "#ffffff",
-            fontFamily: '"JetBrains Mono", monospace',
-            backgroundColor: "rgba(0, 0, 0, 0.2)",
-            fontSize: "0.8rem",
-            borderRadius: 2,
+  // Header Actions - Split into Sort (Center) and Search (Right)
+  const sortButtons = (
+    <Box sx={{ display: 'flex', gap: 0.5 }}>
+      {[
+        { label: 'Score', value: 'totalScore' },
+        { label: 'Earnings', value: 'usdPerDay' },
+        { label: 'PRs', value: 'totalPRs' },
+        { label: 'Credibility', value: 'credibility' },
+      ].map((option) => (
+        <Box
+          key={option.value}
+          onClick={() => setSortOption(option.value as SortOption)}
+          sx={{
+            px: 1.5,
             height: 32,
-            "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
-            "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.2)" },
-            "&.Mui-focused fieldset": { borderColor: "rgba(255, 255, 255, 0.3)" },
-          },
-        }}
-      />
+            display: "flex",
+            alignItems: "center",
+            borderRadius: 2,
+            cursor: 'pointer',
+            backgroundColor: sortOption === option.value ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+            color: sortOption === option.value ? '#fff' : '#8b949e',
+            border: '1px solid',
+            borderColor: sortOption === option.value ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+            transition: 'all 0.2s',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              color: '#e6edf3',
+            },
+          }}
+        >
+          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.75rem", fontWeight: 600 }}>
+            {option.label}
+          </Typography>
+        </Box>
+      ))}
     </Box>
+  );
+
+  const searchAction = (
+    <TextField
+      placeholder="Search..."
+      size="small"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            <SearchIcon sx={{ color: "rgba(255, 255, 255, 0.4)", fontSize: "1rem" }} />
+          </InputAdornment>
+        ),
+      }}
+      sx={{
+        width: 180,
+        "& .MuiOutlinedInput-root": {
+          color: "#ffffff",
+          fontFamily: '"JetBrains Mono", monospace',
+          backgroundColor: "rgba(0, 0, 0, 0.2)",
+          fontSize: "0.8rem",
+          borderRadius: 2,
+          height: 32,
+          "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
+          "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.2)" },
+          "&.Mui-focused fieldset": { borderColor: "rgba(255, 255, 255, 0.3)" },
+        },
+      }}
+    />
   );
 
   return (
@@ -587,7 +592,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           {/* Header Card */}
           <SectionCard
             title={`Miners (${groupedMiners.totalFiltered})`}
-            action={headerActions}
+            centerContent={sortButtons}
+            action={searchAction}
             sx={{
               mb: 3,
               position: "sticky",
