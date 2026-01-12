@@ -338,11 +338,11 @@ const SectionCard: React.FC<{ children: React.ReactNode; sx?: any; title?: strin
 // MINER SECTION (Expandable Grid)
 // ============================================================================
 interface MinerSectionProps {
-  title: React.ReactNode;
+  title?: string;
   count: number;
   miners: MinerStats[];
-  color: { border: string; text: string };
-  onSelectMiner: (id: string) => void;
+  color: { border: string; text: string; bg?: string };
+  onSelectMiner: (githubId: string) => void;
   defaultExpanded?: boolean;
   compact?: boolean;
 }
@@ -380,21 +380,23 @@ const MinerSection: React.FC<MinerSectionProps> = ({
       }}
       elevation={0}
     >
-      <Box sx={{
-        px: 3,
-        py: 2,
-        borderBottom: `1px solid ${color.border}`,
-        display: 'flex',
-        alignItems: 'center',
-        background: `linear-gradient(90deg, ${color.border}10, transparent)`
-      }}>
-        <Typography variant="h6" sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '1.1rem', fontWeight: 600, color: color.text }}>
-          {title}
-        </Typography>
-        <Typography sx={{ ml: 2, color: 'text.secondary', fontSize: '0.9rem' }}>
-          ({count})
-        </Typography>
-      </Box>
+      {title && (
+        <Box sx={{
+          px: 3,
+          py: 2,
+          borderBottom: `1px solid ${color.border}`,
+          display: 'flex',
+          alignItems: 'center',
+          background: `linear-gradient(90deg, ${color.border}10, transparent)`
+        }}>
+          <Typography variant="h6" sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '1.1rem', fontWeight: 600, color: color.text }}>
+            {title}
+          </Typography>
+          <Typography sx={{ ml: 2, color: 'text.secondary', fontSize: '0.9rem' }}>
+            ({count})
+          </Typography>
+        </Box>
+      )}
 
       <Box sx={{ p: 3, flex: 1 }}>
         <Grid container spacing={2}>
@@ -613,7 +615,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             {/* GOLD SECTION */}
             {groupedMiners.gold.length > 0 && (
               <MinerSection
-                title="Gold Tier 🥇"
+                // title="Gold Tier 🥇" -> removed as per request
                 count={groupedMiners.gold.length}
                 miners={groupedMiners.gold}
                 color={getTierColors('Gold')}
@@ -624,7 +626,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             {/* SILVER SECTION */}
             {groupedMiners.silver.length > 0 && (
               <MinerSection
-                title="Silver Tier 🥈"
+                // title="Silver Tier 🥈" -> removed as per request
                 count={groupedMiners.silver.length}
                 miners={groupedMiners.silver}
                 color={getTierColors('Silver')}
@@ -635,7 +637,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             {/* BRONZE SECTION */}
             {groupedMiners.bronze.length > 0 && (
               <MinerSection
-                title="Bronze Tier 🥉"
+                // title="Bronze Tier 🥉" -> removed as per request
                 count={groupedMiners.bronze.length}
                 miners={groupedMiners.bronze}
                 color={getTierColors('Bronze')}
