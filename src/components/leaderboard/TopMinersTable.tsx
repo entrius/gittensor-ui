@@ -917,12 +917,12 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                     </Typography>
                   </TableCell>
                   <TableCell
-                    align="left"
+                    align="center"
                     sx={{ ...bodyCellStyle, width: "8%", pl: 0.5 }}
                   >
                     {formatUsdPerDay(miner.usdPerDay) && (
                       <Tooltip
-                        title="This is an estimation. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
+                        title="Estimated daily earnings based on current network incentive distribution. Actual payouts depend on validator consensus."
                         arrow
                         placement="top"
                         slotProps={{
@@ -945,22 +945,49 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                           },
                         }}
                       >
-                        <Typography
-                          component="span"
+                        <Box
                           sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "0.7rem",
-                            fontWeight: 500,
-                            color: "rgba(74, 222, 128, 0.7)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                            px: 1,
+                            py: 0.5,
+                            borderRadius: "4px",
+                            backgroundColor: "rgba(74, 222, 128, 0.12)",
+                            border: "1px solid rgba(74, 222, 128, 0.25)",
                             cursor: "pointer",
-                            transition: "color 0.15s ease",
+                            transition: "all 0.15s ease",
                             "&:hover": {
-                              color: "rgba(74, 222, 128, 0.95)",
+                              backgroundColor: "rgba(74, 222, 128, 0.2)",
+                              borderColor: "rgba(74, 222, 128, 0.4)",
                             },
                           }}
                         >
-                          ({formatUsdPerDay(miner.usdPerDay)}/d)
-                        </Typography>
+                          <Typography
+                            component="span"
+                            sx={{
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: "0.75rem",
+                              fontWeight: 600,
+                              color: "#4ade80",
+                              lineHeight: 1,
+                            }}
+                          >
+                            {formatUsdPerDay(miner.usdPerDay)}
+                          </Typography>
+                          <Typography
+                            component="span"
+                            sx={{
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: "0.6rem",
+                              fontWeight: 500,
+                              color: "rgba(74, 222, 128, 0.7)",
+                              lineHeight: 1,
+                            }}
+                          >
+                            /day
+                          </Typography>
+                        </Box>
                       </Tooltip>
                     )}
                   </TableCell>
