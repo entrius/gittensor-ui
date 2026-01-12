@@ -27,6 +27,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import TableChartIcon from "@mui/icons-material/TableChart";
 import ReactECharts from "echarts-for-react";
+import { TIER_COLORS } from "../../theme";
 
 interface MinerStats {
   githubId: string;
@@ -789,44 +790,114 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                         }}
                       />
                       <Box>
-                        <Tooltip
-                          title={miner.author || miner.githubId || ""}
-                          placement="top"
-                        >
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontWeight: 600,
-                              color: "#ffffff",
-                              fontSize: "0.85rem",
-                              fontFamily: '"JetBrains Mono", monospace',
-                              transition: "color 0.2s",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                              maxWidth: "100%",
-                              "&:hover": {
-                                color: "primary.main",
-                                textDecoration: "underline",
-                              },
-                            }}
-                          >
-                            {truncateText(
-                              miner.author || miner.githubId || "",
-                              25,
-                            )}
-                          </Typography>
-                        </Tooltip>
-                        <Typography
-                          variant="caption"
+                        <Box
                           sx={{
-                            color: "rgba(255, 255, 255, 0.4)",
-                            fontSize: "0.7rem",
-                            fontFamily: '"JetBrains Mono", monospace',
+                            display: "inline-flex",
+                            alignItems: "stretch",
+                            border: "1px solid",
+                            borderColor:
+                              miner.currentTier === "Gold"
+                                ? "rgba(255, 215, 0, 0.5)"
+                                : miner.currentTier === "Silver"
+                                  ? "rgba(192, 192, 192, 0.5)"
+                                  : miner.currentTier === "Bronze"
+                                    ? "rgba(205, 127, 50, 0.5)"
+                                    : "rgba(255, 255, 255, 0.2)",
+                            borderRadius: "4px",
+                            overflow: "hidden",
+                            backgroundColor: "rgba(0,0,0,0.2)",
                           }}
                         >
-                          {(miner.hotkey || "").substring(0, 8)}...
-                        </Typography>
+                          <Tooltip
+                            title={miner.author || miner.githubId || ""}
+                            placement="top"
+                          >
+                            <Box
+                              sx={{
+                                px: 1,
+                                py: 0.5,
+                                display: "flex",
+                                alignItems: "center",
+                                backgroundColor: "rgba(255,255,255,0.02)",
+                                cursor: "pointer",
+                                "&:hover": {
+                                  "& .miner-username": {
+                                    color: "primary.main",
+                                    textDecoration: "underline",
+                                  },
+                                },
+                              }}
+                            >
+                              <Typography
+                                className="miner-username"
+                                variant="body2"
+                                sx={{
+                                  fontWeight: 600,
+                                  color: "#ffffff",
+                                  fontSize: "0.8rem",
+                                  fontFamily: '"JetBrains Mono", monospace',
+                                  transition: "color 0.2s",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                  lineHeight: 1,
+                                }}
+                              >
+                                {truncateText(
+                                  miner.author || miner.githubId || "",
+                                  18,
+                                )}
+                              </Typography>
+                            </Box>
+                          </Tooltip>
+                          {miner.currentTier && (
+                            <Box
+                              sx={{
+                                px: 0.75,
+                                display: "flex",
+                                alignItems: "center",
+                                borderLeft: "1px solid",
+                                borderColor:
+                                  miner.currentTier === "Gold"
+                                    ? "rgba(255, 215, 0, 0.3)"
+                                    : miner.currentTier === "Silver"
+                                      ? "rgba(192, 192, 192, 0.3)"
+                                      : miner.currentTier === "Bronze"
+                                        ? "rgba(205, 127, 50, 0.3)"
+                                        : "rgba(255, 255, 255, 0.1)",
+                                backgroundColor:
+                                  miner.currentTier === "Gold"
+                                    ? "rgba(255, 215, 0, 0.1)"
+                                    : miner.currentTier === "Silver"
+                                      ? "rgba(192, 192, 192, 0.1)"
+                                      : miner.currentTier === "Bronze"
+                                        ? "rgba(205, 127, 50, 0.1)"
+                                        : "transparent",
+                              }}
+                            >
+                              <Typography
+                                sx={{
+                                  fontFamily: '"JetBrains Mono", monospace',
+                                  fontSize: "0.6rem",
+                                  color:
+                                    miner.currentTier === "Gold"
+                                      ? TIER_COLORS.gold
+                                      : miner.currentTier === "Silver"
+                                        ? TIER_COLORS.silver
+                                        : miner.currentTier === "Bronze"
+                                          ? TIER_COLORS.bronze
+                                          : "rgba(255, 255, 255, 0.4)",
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.5px",
+                                  fontWeight: 700,
+                                  lineHeight: 1,
+                                }}
+                              >
+                                {miner.currentTier} Tier
+                              </Typography>
+                            </Box>
+                          )}
+                        </Box>
                       </Box>
                     </Box>
                   </TableCell>
@@ -1006,6 +1077,7 @@ const bodyCellStyle = {
   py: 0.75,
   height: "52px",
   boxSizing: "border-box" as const,
+  verticalAlign: "middle" as const,
 };
 
 const getRankIcon = (rank: number) => {
