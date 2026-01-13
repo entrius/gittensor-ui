@@ -489,18 +489,20 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
         </Tooltip>
       )}
 
-      {/* Main Stats Row: $ + Donut + MOC all together */}
+      {/* Main Stats Row: $ | Donut | MOC - responsive layout */}
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          flexWrap: "nowrap",
+          gap: 1,
           position: "relative",
           zIndex: 1,
         }}
       >
         {/* Earnings + Lines of Code */}
-        <Box sx={{ flex: 1 }}>
+        <Box sx={{ minWidth: 80 }}>
           <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
             <Typography
               sx={{
@@ -547,95 +549,109 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
           </Box>
         </Box>
 
-        {/* Donut + MOC stacked vertically */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          {/* Credibility Donut */}
+        {/* Credibility Donut - Centered */}
+        <Box
+          sx={{
+            position: "relative",
+            width: { xs: 48, sm: 56 },
+            height: { xs: 48, sm: 56 },
+            flexShrink: 0,
+          }}
+        >
           <Box
             sx={{
-              position: "relative",
-              width: 48,
-              height: 48,
-              flexShrink: 0,
+              width: "100%",
+              height: "100%",
             }}
           >
-            <Box
-              sx={{
-                width: "100%",
-                height: "100%",
-              }}
-            >
-              <ReactECharts
-                option={{
-                  backgroundColor: "transparent",
-                  series: [
-                    {
-                      type: "pie",
-                      radius: ["65%", "90%"],
-                      silent: true,
-                      label: { show: false },
-                      itemStyle: {
-                        borderRadius: 3,
-                        borderColor: "#000000",
-                        borderWidth: 2,
-                      },
-                      data: [
-                        {
-                          value: miner.totalMergedPrs || 0,
-                          itemStyle: { color: CHART_COLORS.merged },
-                        },
-                        {
-                          value: miner.totalOpenPrs || 0,
-                          itemStyle: { color: CHART_COLORS.open },
-                        },
-                        {
-                          value: miner.totalClosedPrs || 0,
-                          itemStyle: { color: CHART_COLORS.closed },
-                        },
-                      ],
+            <ReactECharts
+              option={{
+                backgroundColor: "transparent",
+                series: [
+                  {
+                    type: "pie",
+                    radius: ["65%", "90%"],
+                    silent: true,
+                    label: { show: false },
+                    itemStyle: {
+                      borderRadius: 3,
+                      borderColor: "#000000",
+                      borderWidth: 2,
                     },
-                  ],
-                }}
-                style={{ width: "100%", height: "100%" }}
-                opts={{ renderer: "svg" }}
-              />
-            </Box>
-            <Box
+                    data: [
+                      {
+                        value: miner.totalMergedPrs || 0,
+                        itemStyle: { color: "rgba(63, 185, 80, 0.65)" }, // Muted green
+                      },
+                      {
+                        value: miner.totalOpenPrs || 0,
+                        itemStyle: { color: "rgba(139, 148, 158, 0.65)" }, // Muted gray
+                      },
+                      {
+                        value: miner.totalClosedPrs || 0,
+                        itemStyle: { color: "rgba(248, 81, 73, 0.65)" }, // Muted red
+                      },
+                    ],
+                  },
+                ],
+              }}
+              style={{ width: "100%", height: "100%" }}
+              opts={{ renderer: "svg" }}
+            />
+          </Box>
+          <Box
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Typography
               sx={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                fontSize: "0.7rem",
+                color: credibilityPercent >= 80 ? "#3fb950" : credibilityPercent >= 50 ? "#8b949e" : "#f85149",
+                fontWeight: 800,
+                fontFamily: '"JetBrains Mono", monospace',
               }}
             >
-              <Typography
-                sx={{
-                  fontSize: "0.7rem",
-                  color: credibilityPercent >= 80 ? "#3fb950" : credibilityPercent >= 50 ? "#8b949e" : "#f85149",
-                  fontWeight: 800,
-                  fontFamily: '"JetBrains Mono", monospace',
-                }}
-              >
-                {credibilityPercent.toFixed(0)}%
-              </Typography>
-            </Box>
+              {credibilityPercent.toFixed(0)}%
+            </Typography>
           </Box>
+        </Box>
 
-          {/* M.O.C Stacked Vertically - No bullets, bigger text */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 0 }}>
-            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.85rem", fontWeight: 700, color: "rgba(63, 185, 80, 0.65)", lineHeight: 1.2 }}>
-              {miner.totalMergedPrs || 0}
-            </Typography>
-            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.85rem", fontWeight: 700, color: "#8b949e", lineHeight: 1.2 }}>
-              {miner.totalOpenPrs || 0}
-            </Typography>
-            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.85rem", fontWeight: 700, color: "rgba(248, 81, 73, 0.65)", lineHeight: 1.2 }}>
-              {miner.totalClosedPrs || 0}
-            </Typography>
-          </Box>
+        {/* M.O.C with Labels - Grid for Vertical Alignment */}
+        <Box sx={{ display: "grid", gridTemplateColumns: "auto auto", rowGap: 0, columnGap: 1.5, minWidth: 50, alignItems: "center" }}>
+          {/* Merged */}
+          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.7rem", color: "rgba(255,255,255,0.4)", textAlign: "right" }}>
+            <Box component="span" sx={{ display: { xs: "inline", md: "none", lg: "inline" } }}>Merged</Box>
+            <Box component="span" sx={{ display: { xs: "none", md: "inline", lg: "none" } }}>M</Box>
+          </Typography>
+          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.85rem", fontWeight: 700, color: "rgba(63, 185, 80, 0.65)", lineHeight: 1.2 }}>
+            {miner.totalMergedPrs || 0}
+          </Typography>
+
+          {/* Open */}
+          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.7rem", color: "rgba(255,255,255,0.4)", textAlign: "right" }}>
+            <Box component="span" sx={{ display: { xs: "inline", md: "none", lg: "inline" } }}>Open</Box>
+            <Box component="span" sx={{ display: { xs: "none", md: "inline", lg: "none" } }}>O</Box>
+          </Typography>
+          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.85rem", fontWeight: 700, color: "#8b949e", lineHeight: 1.2 }}>
+            {miner.totalOpenPrs || 0}
+          </Typography>
+
+          {/* Closed */}
+          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.7rem", color: "rgba(255,255,255,0.4)", textAlign: "right" }}>
+            <Box component="span" sx={{ display: { xs: "inline", md: "none", lg: "inline" } }}>Closed</Box>
+            <Box component="span" sx={{ display: { xs: "none", md: "inline", lg: "none" } }}>C</Box>
+          </Typography>
+          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.85rem", fontWeight: 700, color: "rgba(248, 81, 73, 0.65)", lineHeight: 1.2 }}>
+            {miner.totalClosedPrs || 0}
+          </Typography>
         </Box>
       </Box>
 
@@ -751,7 +767,7 @@ const MinerSection: React.FC<MinerSectionProps> = ({
       <Box sx={{ p: 1.5, pt: 1, flex: 1 }}>
         <Grid container spacing={2}>
           {visibleMiners.map((miner) => (
-            <Grid item xs={12} sm={6} md={4} lg={4} xl={4} key={miner.hotkey}>
+            <Grid item xs={12} sm={6} md={6} lg={6} xl={4} key={miner.hotkey}>
               <MinerCard
                 miner={miner}
                 onClick={() =>
