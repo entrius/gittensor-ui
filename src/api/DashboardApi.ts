@@ -1,15 +1,14 @@
-import { useApiQuery } from "./ApiUtils";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import axios from "axios";
+import { useApiQuery } from './ApiUtils';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import {
-  RepoChanges,
-  CommitsTrend,
-  Stats,
-  Repository,
-  LanguageWeight,
-  CommitLog,
-  PullRequestDetails,
-} from "./models/Dashboard";
+  type RepoChanges,
+  type CommitsTrend,
+  type Stats,
+  type Repository,
+  type LanguageWeight,
+  type CommitLog,
+} from './models/Dashboard';
 
 export const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
   queryName: string,
@@ -26,23 +25,23 @@ export const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
     enabled,
   );
 
-export const useStats = () => useDashboardQuery<Stats>("useStats", "/stats");
+export const useStats = () => useDashboardQuery<Stats>('useStats', '/stats');
 
 export const useHistoricalTrend = () =>
-  useDashboardQuery<CommitsTrend[]>("useHistoricalTrend", "/lines/hist-trend");
+  useDashboardQuery<CommitsTrend[]>('useHistoricalTrend', '/lines/hist-trend');
 
 export const useRepoChanges = (options?: { refetchInterval?: number }) =>
   useDashboardQuery<RepoChanges[]>(
-    "useRepoChanges",
-    "/repos/commits",
+    'useRepoChanges',
+    '/repos/commits',
     options?.refetchInterval,
   );
 
 export const useReposAndWeights = () =>
-  useDashboardQuery<Repository[]>("useReposAndWeights", "/repos");
+  useDashboardQuery<Repository[]>('useReposAndWeights', '/repos');
 
 export const useLanguagesAndWeights = () =>
-  useDashboardQuery<LanguageWeight[]>("useLanguagesAndWeights", "/languages");
+  useDashboardQuery<LanguageWeight[]>('useLanguagesAndWeights', '/languages');
 
 export const useCommitLog = (
   options?: { refetchInterval?: number },
@@ -50,8 +49,8 @@ export const useCommitLog = (
   limit?: number,
 ) =>
   useDashboardQuery<CommitLog[]>(
-    "useCommitLog",
-    "/commits",
+    'useCommitLog',
+    '/commits',
     options?.refetchInterval,
     { page, limit },
   );
@@ -63,9 +62,9 @@ export const useInfiniteCommitLog = (options?: {
   const limit = 15;
 
   return useInfiniteQuery({
-    queryKey: ["useInfiniteCommitLog"],
+    queryKey: ['useInfiniteCommitLog'],
     queryFn: async ({ pageParam }: { pageParam: number }) => {
-      const url = `/dash/commits`;
+      const url = '/dash/commits';
       const requestUrl = baseUrl ? `${baseUrl}${url}` : url;
       const { data } = await axios.get<CommitLog[]>(requestUrl, {
         params: { page: pageParam, limit },

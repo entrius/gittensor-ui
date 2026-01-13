@@ -1,13 +1,13 @@
 import {
   Box,
-  BoxProps,
+  type BoxProps,
   Breadcrumbs,
   Container,
   Typography,
   Link,
   Stack,
-} from "@mui/material";
-import React from "react";
+} from '@mui/material';
+import React from 'react';
 
 export type Breadcrumb = { text: string; link?: string; action?: () => void };
 
@@ -25,9 +25,9 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   <Box
     sx={{
       py: 2,
-      backgroundColor: "white",
+      backgroundColor: 'white',
       borderBottom: 1,
-      border: "none",
+      border: 'none',
     }}
     {...props}
   >

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Tab,
@@ -10,15 +10,15 @@ import {
   Grid,
   Chip,
   Avatar,
-} from "@mui/material";
-import GitHubIcon from "@mui/icons-material/GitHub";
-import CodeIcon from "@mui/icons-material/Code";
-import BugReportIcon from "@mui/icons-material/BugReport";
-import MergeTypeIcon from "@mui/icons-material/MergeType";
-import ArticleIcon from "@mui/icons-material/Article";
-import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
-import FactCheckIcon from "@mui/icons-material/FactCheck";
-import { Page } from "../components/layout";
+} from '@mui/material';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import CodeIcon from '@mui/icons-material/Code';
+import BugReportIcon from '@mui/icons-material/BugReport';
+import MergeTypeIcon from '@mui/icons-material/MergeType';
+import ArticleIcon from '@mui/icons-material/Article';
+import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
+import { Page } from '../components/layout';
 import {
   RepositoryContributorsTable,
   RepositoryPRsTable,
@@ -31,7 +31,7 @@ import {
   ContributingViewer,
   RepositoryMaintainers,
   RepositoryCheckTab,
-} from "../components";
+} from '../components';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -58,14 +58,14 @@ function CustomTabPanel(props: TabPanelProps) {
 const RepositoryDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const repo = searchParams.get("name");
+  const repo = searchParams.get('name');
   const [tabValue, setTabValue] = useState(0);
 
-  const owner = repo ? repo.split("/")[0] : "";
+  const owner = repo ? repo.split('/')[0] : '';
 
   // If no repo is provided, redirect to miners page
   if (!repo) {
-    navigate("/miners");
+    navigate('/miners');
     return null;
   }
 
@@ -83,8 +83,8 @@ const RepositoryDetailsPage: React.FC = () => {
       {/* Header Section */}
       <Box
         sx={{
-          borderBottom: "1px solid rgba(255,255,255,0.1)",
-          backgroundColor: "rgba(0,0,0,0.2)",
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          backgroundColor: 'rgba(0,0,0,0.2)',
         }}
       >
         <Container maxWidth="xl">
@@ -98,20 +98,20 @@ const RepositoryDetailsPage: React.FC = () => {
               alignItems="center"
             >
               <Grid item xs={12} md={8}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Avatar
                     src={`https://avatars.githubusercontent.com/${owner}`}
                     variant="rounded"
                     sx={{
                       width: 32,
                       height: 32,
-                      borderRadius: "4px",
+                      borderRadius: '4px',
                       backgroundColor:
-                        owner === "opentensor"
-                          ? "#ffffff"
-                          : owner === "bitcoin"
-                            ? "#F7931A"
-                            : "transparent",
+                        owner === 'opentensor'
+                          ? '#ffffff'
+                          : owner === 'bitcoin'
+                            ? '#F7931A'
+                            : 'transparent',
                     }}
                   />
                   <Typography
@@ -119,7 +119,7 @@ const RepositoryDetailsPage: React.FC = () => {
                     sx={{
                       fontFamily: '"JetBrains Mono", monospace',
                       fontWeight: 600,
-                      color: "#fff",
+                      color: '#fff',
                     }}
                   >
                     {repo}
@@ -132,8 +132,8 @@ const RepositoryDetailsPage: React.FC = () => {
                 xs={12}
                 md={4}
                 sx={{
-                  display: "flex",
-                  justifyContent: { xs: "flex-start", md: "flex-end" },
+                  display: 'flex',
+                  justifyContent: { xs: 'flex-start', md: 'flex-end' },
                 }}
               >
                 <Button
@@ -142,9 +142,9 @@ const RepositoryDetailsPage: React.FC = () => {
                   href={`https://github.com/${repo}`}
                   target="_blank"
                   sx={{
-                    borderColor: "rgba(255,255,255,0.2)",
-                    color: "#fff",
-                    "&:hover": { borderColor: "primary.main" },
+                    borderColor: 'rgba(255,255,255,0.2)',
+                    color: '#fff',
+                    '&:hover': { borderColor: 'primary.main' },
                   }}
                 >
                   View on GitHub
@@ -157,23 +157,23 @@ const RepositoryDetailsPage: React.FC = () => {
               onChange={handleTabChange}
               aria-label="repository tabs"
               sx={{
-                "& .MuiTab-root": {
-                  color: "#8b949e",
+                '& .MuiTab-root': {
+                  color: '#8b949e',
                   fontFamily:
                     '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
-                  textTransform: "none",
+                  textTransform: 'none',
                   fontWeight: 500,
-                  minHeight: "48px",
-                  fontSize: "14px",
-                  "&.Mui-selected": {
-                    color: "#fff",
+                  minHeight: '48px',
+                  fontSize: '14px',
+                  '&.Mui-selected': {
+                    color: '#fff',
                     fontWeight: 600,
                   },
                 },
-                "& .MuiTabs-indicator": {
-                  backgroundColor: "#f78166",
-                  height: "3px",
-                  borderRadius: "3px 3px 0 0",
+                '& .MuiTabs-indicator': {
+                  backgroundColor: '#f78166',
+                  height: '3px',
+                  borderRadius: '3px 3px 0 0',
                 },
               }}
             >
@@ -261,7 +261,7 @@ const RepositoryDetailsPage: React.FC = () => {
 
           {/* Sidebar */}
           <Grid item xs={12} md={3}>
-            <Box sx={{ position: "sticky", top: 24 }}>
+            <Box sx={{ position: 'sticky', top: 24 }}>
               <Box sx={{ pt: 0 }}>
                 {/* Repository Stats */}
                 <RepositoryStats repositoryFullName={repo} />

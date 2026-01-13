@@ -1,52 +1,52 @@
-import React from "react";
+import React from 'react';
 import {
   Box,
   Typography,
   Tooltip,
-  TooltipProps,
+  type TooltipProps,
   LinearProgress,
   Stack,
-} from "@mui/material";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+} from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 
 // Shared tooltip styling
-const tooltipSlotProps: TooltipProps["slotProps"] = {
+const tooltipSlotProps: TooltipProps['slotProps'] = {
   tooltip: {
     sx: {
-      backgroundColor: "rgba(30, 30, 30, 0.95)",
-      color: "#ffffff",
-      fontSize: "0.75rem",
+      backgroundColor: 'rgba(30, 30, 30, 0.95)',
+      color: '#ffffff',
+      fontSize: '0.75rem',
       fontFamily: '"JetBrains Mono", monospace',
-      padding: "8px 12px",
-      borderRadius: "6px",
-      border: "1px solid rgba(255, 255, 255, 0.1)",
+      padding: '8px 12px',
+      borderRadius: '6px',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
       maxWidth: 240,
     },
   },
   arrow: {
     sx: {
-      color: "rgba(30, 30, 30, 0.95)",
+      color: 'rgba(30, 30, 30, 0.95)',
     },
   },
 };
 
-const largeTooltipSlotProps: TooltipProps["slotProps"] = {
+const largeTooltipSlotProps: TooltipProps['slotProps'] = {
   tooltip: {
     sx: {
-      backgroundColor: "rgba(30, 30, 30, 0.95)",
-      color: "#ffffff",
-      fontSize: "0.8rem",
+      backgroundColor: 'rgba(30, 30, 30, 0.95)',
+      color: '#ffffff',
+      fontSize: '0.8rem',
       fontFamily: '"JetBrains Mono", monospace',
-      padding: "10px 14px",
-      borderRadius: "8px",
-      border: "1px solid rgba(255, 255, 255, 0.1)",
+      padding: '10px 14px',
+      borderRadius: '8px',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
       maxWidth: 280,
     },
   },
   arrow: {
     sx: {
-      color: "rgba(30, 30, 30, 0.95)",
+      color: 'rgba(30, 30, 30, 0.95)',
     },
   },
 };
@@ -56,14 +56,14 @@ interface StyledTooltipProps {
   title: string;
   children: React.ReactElement;
   large?: boolean;
-  placement?: TooltipProps["placement"];
+  placement?: TooltipProps['placement'];
 }
 
 export const StyledTooltip: React.FC<StyledTooltipProps> = ({
   title,
   children,
   large = false,
-  placement = "top",
+  placement = 'top',
 }) => (
   <Tooltip
     title={title}
@@ -88,24 +88,24 @@ export const TierStatItem: React.FC<TierStatItemProps> = ({
   label,
   value,
   tooltip,
-  valueColor = "#ffffff",
+  valueColor = '#ffffff',
   large = false,
 }) => {
   const labelContent = (
     <Typography
       sx={{
-        color: "rgba(255, 255, 255, 0.5)",
-        fontSize: "0.7rem",
+        color: 'rgba(255, 255, 255, 0.5)',
+        fontSize: '0.7rem',
         fontFamily: '"JetBrains Mono", monospace',
-        textTransform: "uppercase",
-        display: "flex",
-        alignItems: "center",
+        textTransform: 'uppercase',
+        display: 'flex',
+        alignItems: 'center',
         gap: 0.5,
-        cursor: tooltip ? "pointer" : "default",
+        cursor: tooltip ? 'pointer' : 'default',
       }}
     >
       {label}
-      {tooltip && <InfoOutlinedIcon sx={{ fontSize: "0.75rem" }} />}
+      {tooltip && <InfoOutlinedIcon sx={{ fontSize: '0.75rem' }} />}
     </Typography>
   );
 
@@ -119,7 +119,7 @@ export const TierStatItem: React.FC<TierStatItemProps> = ({
       <Typography
         sx={{
           color: valueColor,
-          fontSize: large ? "1.1rem" : "0.95rem",
+          fontSize: large ? '1.1rem' : '0.95rem',
           fontFamily: '"JetBrains Mono", monospace',
           fontWeight: 600,
         }}
@@ -152,15 +152,15 @@ export const TierProgressBar: React.FC<TierProgressBarProps> = ({
     <Box sx={{ mb: 1 }}>
       <Box
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
+          display: 'flex',
+          justifyContent: 'space-between',
           mb: 0.5,
         }}
       >
         <Typography
           sx={{
-            color: "rgba(255, 255, 255, 0.7)",
-            fontSize: "0.7rem",
+            color: 'rgba(255, 255, 255, 0.7)',
+            fontSize: '0.7rem',
             fontFamily: '"JetBrains Mono", monospace',
           }}
         >
@@ -168,13 +168,13 @@ export const TierProgressBar: React.FC<TierProgressBarProps> = ({
         </Typography>
         <Typography
           sx={{
-            color: isComplete ? "#4ade80" : "#ffffff",
-            fontSize: "0.7rem",
+            color: isComplete ? '#4ade80' : '#ffffff',
+            fontSize: '0.7rem',
             fontFamily: '"JetBrains Mono", monospace',
           }}
         >
-          {current}{" "}
-          <Box component="span" sx={{ color: "rgba(255, 255, 255, 0.5)" }}>
+          {current}{' '}
+          <Box component="span" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
             (Req: {required})
           </Box>
         </Typography>
@@ -185,9 +185,9 @@ export const TierProgressBar: React.FC<TierProgressBarProps> = ({
         sx={{
           height: 4,
           borderRadius: 2,
-          backgroundColor: "rgba(255, 255, 255, 0.1)",
-          "& .MuiLinearProgress-bar": {
-            backgroundColor: isComplete ? "#4ade80" : tierColor,
+          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          '& .MuiLinearProgress-bar': {
+            backgroundColor: isComplete ? '#4ade80' : tierColor,
             borderRadius: 2,
           },
         }}
@@ -213,19 +213,19 @@ export const TierPRActivity: React.FC<TierPRActivityProps> = ({
   <Box sx={{ pt: 1, borderTop: `1px solid ${borderColor}` }}>
     <Typography
       sx={{
-        color: "rgba(255, 255, 255, 0.5)",
-        fontSize: "0.7rem",
+        color: 'rgba(255, 255, 255, 0.5)',
+        fontSize: '0.7rem',
         fontFamily: '"JetBrains Mono", monospace',
         mb: 0.5,
       }}
     >
       PR Activity
     </Typography>
-    <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
       <Typography
         sx={{
-          color: "#ffffff",
-          fontSize: "0.8rem",
+          color: '#ffffff',
+          fontSize: '0.8rem',
           fontFamily: '"JetBrains Mono", monospace',
         }}
       >
@@ -233,8 +233,8 @@ export const TierPRActivity: React.FC<TierPRActivityProps> = ({
       </Typography>
       <Typography
         sx={{
-          color: "#ffffff",
-          fontSize: "0.8rem",
+          color: '#ffffff',
+          fontSize: '0.8rem',
           fontFamily: '"JetBrains Mono", monospace',
         }}
       >
@@ -242,8 +242,8 @@ export const TierPRActivity: React.FC<TierPRActivityProps> = ({
       </Typography>
       <Typography
         sx={{
-          color: "#ffffff",
-          fontSize: "0.8rem",
+          color: '#ffffff',
+          fontSize: '0.8rem',
           fontFamily: '"JetBrains Mono", monospace',
         }}
       >
@@ -281,7 +281,7 @@ export const TierUnlockProgress: React.FC<TierUnlockProgressProps> = ({
   credibilityProgress,
   tierColor,
   borderColor,
-  title = "Unlock Progress",
+  title = 'Unlock Progress',
 }) => (
   <Box
     sx={{
@@ -292,11 +292,11 @@ export const TierUnlockProgress: React.FC<TierUnlockProgressProps> = ({
   >
     <Typography
       sx={{
-        color: "rgba(255, 255, 255, 0.5)",
-        fontSize: "0.7rem",
+        color: 'rgba(255, 255, 255, 0.5)',
+        fontSize: '0.7rem',
         fontFamily: '"JetBrains Mono", monospace',
         mb: 1,
-        textTransform: "uppercase",
+        textTransform: 'uppercase',
       }}
     >
       {title}
@@ -320,7 +320,7 @@ export const TierUnlockProgress: React.FC<TierUnlockProgressProps> = ({
 
     <TierProgressBar
       label="Credibility"
-      current={credibility ? `${(credibility * 100).toFixed(0)}%` : "0%"}
+      current={credibility ? `${(credibility * 100).toFixed(0)}%` : '0%'}
       required={`${(requiredCredibility * 100).toFixed(0)}%`}
       progress={credibilityProgress}
       tierColor={tierColor}
@@ -375,15 +375,15 @@ export const TierCard: React.FC<TierCardProps> = ({
   const opened = (stats.total || 0) - (stats.merged || 0) - (stats.closed || 0);
 
   const getFilterStyles = () => {
-    if (!isLocked) return { opacity: 1, filter: "none" };
-    if (isNextTier) return { opacity: 0.85, filter: "grayscale(35%)" };
-    return { opacity: 0.4, filter: "grayscale(85%)" };
+    if (!isLocked) return { opacity: 1, filter: 'none' };
+    if (isNextTier) return { opacity: 0.85, filter: 'grayscale(35%)' };
+    return { opacity: 0.4, filter: 'grayscale(85%)' };
   };
 
   const getHoverStyles = () => {
     if (!isLocked) return {};
-    if (isNextTier) return { opacity: 0.95, filter: "grayscale(15%)" };
-    return { opacity: 0.5, filter: "grayscale(70%)" };
+    if (isNextTier) return { opacity: 0.95, filter: 'grayscale(15%)' };
+    return { opacity: 0.5, filter: 'grayscale(70%)' };
   };
 
   const getBorderStyles = () => {
@@ -407,33 +407,33 @@ export const TierCard: React.FC<TierCardProps> = ({
         borderRadius: 2,
         ...getBorderStyles(),
         p: 2,
-        height: "100%",
+        height: '100%',
         ...filterStyles,
-        position: "relative",
-        transition: "all 0.2s ease",
-        "&:hover": getHoverStyles(),
+        position: 'relative',
+        transition: 'all 0.2s ease',
+        '&:hover': getHoverStyles(),
       }}
     >
       {isLocked && (
         <Box
           sx={{
-            position: "absolute",
+            position: 'absolute',
             top: 8,
             right: 8,
-            color: "rgba(255, 255, 255, 0.4)",
+            color: 'rgba(255, 255, 255, 0.4)',
           }}
         >
-          <LockOutlinedIcon sx={{ fontSize: "1rem" }} />
+          <LockOutlinedIcon sx={{ fontSize: '1rem' }} />
         </Box>
       )}
       <Typography
         sx={{
-          color: color,
+          color,
           fontFamily: '"JetBrains Mono", monospace',
-          fontSize: "0.95rem",
+          fontSize: '0.95rem',
           fontWeight: 700,
-          textTransform: "uppercase",
-          letterSpacing: "1px",
+          textTransform: 'uppercase',
+          letterSpacing: '1px',
           mb: 1.5,
           pb: 1,
           borderBottom: `1px solid ${borderColor}`,
@@ -445,32 +445,32 @@ export const TierCard: React.FC<TierCardProps> = ({
       <Stack spacing={1.5}>
         <TierStatItem
           label="Score"
-          value={stats.score ? Number(stats.score).toFixed(4) : "0.0000"}
+          value={stats.score ? Number(stats.score).toFixed(4) : '0.0000'}
           large
         />
 
-        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
           <TierStatItem
             label="Credibility"
             value={
               stats.credibility
                 ? `${(Number(stats.credibility) * 100).toFixed(1)}%`
-                : "N/A"
+                : 'N/A'
             }
             tooltip="Credibility is the ratio of merged PRs to total PR attempts (merged + closed). It represents your success rate."
             valueColor={
               stats.credibility && stats.credibility >= 0.7
-                ? "#4ade80"
-                : "#ffffff"
+                ? '#4ade80'
+                : '#ffffff'
             }
           />
-          <Box sx={{ textAlign: "right" }}>
+          <Box sx={{ textAlign: 'right' }}>
             <TierStatItem
               label="Collateral"
               value={
                 stats.collateral
                   ? Number(stats.collateral).toFixed(4)
-                  : "0.0000"
+                  : '0.0000'
               }
             />
           </Box>
@@ -496,7 +496,7 @@ export const TierCard: React.FC<TierCardProps> = ({
             credibilityProgress={unlockProgress.credibilityProgress}
             tierColor={color}
             borderColor={borderColor}
-            title={isLocked ? "Unlock Progress" : "Maintenance Requirements"}
+            title={isLocked ? 'Unlock Progress' : 'Maintenance Requirements'}
           />
         )}
       </Stack>

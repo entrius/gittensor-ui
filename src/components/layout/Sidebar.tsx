@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Box,
   Button,
@@ -6,8 +6,8 @@ import {
   Typography,
   ButtonBase,
   Divider,
-} from "@mui/material";
-import { useNavigate, useLocation } from "react-router-dom";
+} from '@mui/material';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface SidebarProps {
   onNavigate?: () => void;
@@ -23,20 +23,20 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
   };
 
   const navItems = [
-    { label: "dashboard", path: "/dashboard" },
-    { label: "leaderboard", path: "/top-miners", badge: "new" },
-    { label: "pull requests", path: "/top-prs" },
-    { label: "top repositories", path: "/top-repos" },
-    { label: "onboard", path: "/onboard" },
+    { label: 'dashboard', path: '/dashboard' },
+    { label: 'leaderboard', path: '/top-miners', badge: 'new' },
+    { label: 'pull requests', path: '/top-prs' },
+    { label: 'top repositories', path: '/top-repos' },
+    { label: 'onboard', path: '/onboard' },
   ];
 
   return (
     <Box
       sx={{
-        width: "100%",
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
+        width: '100%',
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
         px: 3,
         py: 4,
       }}
@@ -44,11 +44,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
       {/* Logo */}
       <ButtonBase
         disableRipple
-        onClick={() => handleNavigate("/")}
+        onClick={() => handleNavigate('/')}
         sx={{
           mb: 3,
-          justifyContent: "center",
-          width: "100%",
+          justifyContent: 'center',
+          width: '100%',
           py: 1,
         }}
       >
@@ -56,10 +56,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
           src="/gt-logo.svg"
           alt="Gittensor"
           style={{
-            height: "60px",
-            width: "auto",
+            height: '60px',
+            width: 'auto',
             filter:
-              "brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))",
+              'brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))',
           }}
         />
       </ButtonBase>
@@ -71,26 +71,26 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
             key={item.path}
             onClick={() => handleNavigate(item.path)}
             sx={{
-              justifyContent: "flex-start",
+              justifyContent: 'flex-start',
               py: 1.5,
               px: 2,
-              color: "#ffffff",
+              color: '#ffffff',
               fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "0.95rem",
-              textTransform: "none",
+              fontSize: '0.95rem',
+              textTransform: 'none',
               backgroundColor:
                 location.pathname === item.path
-                  ? "rgba(255, 255, 255, 0.1)"
-                  : "transparent",
+                  ? 'rgba(255, 255, 255, 0.1)'
+                  : 'transparent',
               borderLeft:
                 location.pathname === item.path
-                  ? "2px solid #ffffff"
-                  : "2px solid transparent",
+                  ? '2px solid #ffffff'
+                  : '2px solid transparent',
               borderRadius: 0,
-              textAlign: "left",
-              "&:hover": {
-                backgroundColor: "rgba(255, 255, 255, 0.05)",
-                color: "primary.main",
+              textAlign: 'left',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                color: 'primary.main',
               },
             }}
           >
@@ -100,9 +100,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
                 component="span"
                 sx={{
                   fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: "0.65rem",
-                  color: "secondary.main",
-                  fontStyle: "italic",
+                  fontSize: '0.65rem',
+                  color: 'secondary.main',
+                  fontStyle: 'italic',
                   ml: 1,
                 }}
               >
@@ -118,7 +118,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
 
       {/* Footer */}
       <Box sx={{ mt: 2 }}>
-        <Divider sx={{ borderColor: "#3d3d3d", mb: 2 }} />
+        <Divider sx={{ borderColor: '#3d3d3d', mb: 2 }} />
         <Stack direction="column" spacing={1} alignItems="center">
           <Stack
             direction="row"
@@ -135,9 +135,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               target="_blank"
               rel="noopener noreferrer"
               sx={{
-                fontSize: "0.65rem",
-                textDecoration: "none",
-                "&:hover": { textDecoration: "underline" },
+                fontSize: '0.65rem',
+                textDecoration: 'none',
+                '&:hover': { textDecoration: 'underline' },
               }}
             >
               Community
@@ -146,10 +146,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               orientation="vertical"
               flexItem
               sx={{
-                borderColor: "#3d3d3d",
+                borderColor: '#3d3d3d',
                 mx: 0.5,
-                height: "12px",
-                alignSelf: "center",
+                height: '12px',
+                alignSelf: 'center',
               }}
             />
             <Typography
@@ -160,9 +160,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               target="_blank"
               rel="noopener noreferrer"
               sx={{
-                fontSize: "0.65rem",
-                textDecoration: "none",
-                "&:hover": { textDecoration: "underline" },
+                fontSize: '0.65rem',
+                textDecoration: 'none',
+                '&:hover': { textDecoration: 'underline' },
               }}
             >
               Github
@@ -171,10 +171,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               orientation="vertical"
               flexItem
               sx={{
-                borderColor: "#3d3d3d",
+                borderColor: '#3d3d3d',
                 mx: 0.5,
-                height: "12px",
-                alignSelf: "center",
+                height: '12px',
+                alignSelf: 'center',
               }}
             />
             <Typography
@@ -185,9 +185,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               target="_blank"
               rel="noopener noreferrer"
               sx={{
-                fontSize: "0.65rem",
-                textDecoration: "none",
-                "&:hover": { textDecoration: "underline" },
+                fontSize: '0.65rem',
+                textDecoration: 'none',
+                '&:hover': { textDecoration: 'underline' },
               }}
             >
               X
@@ -196,8 +196,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
           <Typography
             variant="caption"
             sx={{
-              fontSize: "0.6rem",
-              color: "#888888",
+              fontSize: '0.6rem',
+              color: '#888888',
             }}
           >
             © Gittensor 2026

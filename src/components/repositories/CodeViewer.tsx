@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { Box, Typography, CircularProgress, Alert } from "@mui/material";
-import axios from "axios";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import ReactMarkdown from "react-markdown";
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, CircularProgress, Alert } from '@mui/material';
+import axios from 'axios';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import ReactMarkdown from 'react-markdown';
 
 interface CodeViewerProps {
   repositoryFullName: string;
@@ -14,19 +14,19 @@ interface CodeViewerProps {
 const CodeViewer: React.FC<CodeViewerProps> = ({
   repositoryFullName,
   filePath,
-  defaultBranch = "main",
+  defaultBranch = 'main',
 }) => {
   const [content, setContent] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const extension = filePath?.split(".").pop()?.toLowerCase();
+  const extension = filePath?.split('.').pop()?.toLowerCase();
   const isImage =
     extension &&
-    ["png", "jpg", "jpeg", "gif", "svg", "webp", "ico"].includes(extension);
+    ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico'].includes(extension);
   const rawUrl = filePath
     ? `https://cdn.jsdelivr.net/gh/${repositoryFullName}@${defaultBranch}/${filePath}`
-    : "";
+    : '';
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -46,9 +46,9 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
         }); // Force text
         setContent(response.data);
       } catch (err) {
-        console.error("Failed to fetch file content", err);
+        console.error('Failed to fetch file content', err);
         setError(
-          "Could not load file content. It might be binary or too large.",
+          'Could not load file content. It might be binary or too large.',
         );
       } finally {
         setLoading(false);
@@ -63,11 +63,11 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
       <Box
         sx={{
           p: 4,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100%",
-          color: "text.secondary",
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100%',
+          color: 'text.secondary',
         }}
       >
         <Typography>Select a file to view code</Typography>
@@ -77,7 +77,7 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
         <CircularProgress />
       </Box>
     );
@@ -95,12 +95,12 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
     return (
       <Box
         sx={{
-          height: "100%",
-          width: "100%",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#0d1117",
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#0d1117',
           p: 4,
         }}
       >
@@ -109,12 +109,12 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
           src={rawUrl}
           alt={filePath}
           sx={{
-            maxWidth: "100%",
-            maxHeight: "100%",
-            objectFit: "contain",
-            border: "1px solid #30363d",
-            borderRadius: "6px",
-            backgroundColor: "#161b22", // slight background to see transparent pngs better
+            maxWidth: '100%',
+            maxHeight: '100%',
+            objectFit: 'contain',
+            border: '1px solid #30363d',
+            borderRadius: '6px',
+            backgroundColor: '#161b22', // slight background to see transparent pngs better
           }}
         />
       </Box>
@@ -122,36 +122,36 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
   }
 
   // Special rendering for markdown
-  if (extension === "md") {
+  if (extension === 'md') {
     return (
       <Box
         sx={{
           p: 3,
-          height: "100%",
-          overflow: "auto",
-          "& img": { maxWidth: "100%" },
-          "& pre": {
-            backgroundColor: "#1e1e1e",
+          height: '100%',
+          overflow: 'auto',
+          '& img': { maxWidth: '100%' },
+          '& pre': {
+            backgroundColor: '#1e1e1e',
             p: 2,
             borderRadius: 1,
-            overflowX: "auto",
+            overflowX: 'auto',
           },
-          "& code": {
-            fontFamily: "monospace",
-            backgroundColor: "rgba(255,255,255,0.1)",
+          '& code': {
+            fontFamily: 'monospace',
+            backgroundColor: 'rgba(255,255,255,0.1)',
             px: 0.5,
             borderRadius: 0.5,
           },
-          "& h1, & h2, & h3": {
-            color: "#fff",
-            borderBottom: "1px solid #30363d",
+          '& h1, & h2, & h3': {
+            color: '#fff',
+            borderBottom: '1px solid #30363d',
             pb: 1,
           },
-          color: "#c9d1d9",
+          color: '#c9d1d9',
           lineHeight: 1.6,
         }}
       >
-        <ReactMarkdown>{content || ""}</ReactMarkdown>
+        <ReactMarkdown>{content || ''}</ReactMarkdown>
       </Box>
     );
   }
@@ -159,25 +159,25 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
   return (
     <Box
       sx={{
-        height: "100%",
-        width: "100%",
-        overflow: "auto",
-        backgroundColor: "#1e1e1e",
-        fontSize: "14px",
+        height: '100%',
+        width: '100%',
+        overflow: 'auto',
+        backgroundColor: '#1e1e1e',
+        fontSize: '14px',
       }}
     >
       <SyntaxHighlighter
-        language={extension || "text"}
+        language={extension || 'text'}
         style={vscDarkPlus}
         customStyle={{
           margin: 0,
-          padding: "1.5rem",
-          minHeight: "100%",
-          backgroundColor: "transparent",
+          padding: '1.5rem',
+          minHeight: '100%',
+          backgroundColor: 'transparent',
         }}
         showLineNumbers={true}
       >
-        {content || ""}
+        {content || ''}
       </SyntaxHighlighter>
     </Box>
   );

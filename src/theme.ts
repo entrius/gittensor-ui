@@ -1,33 +1,33 @@
-import { createTheme } from "@mui/material/styles";
+import { createTheme } from '@mui/material/styles';
 
 // Shared Color Constants (exported for use outside MUI components)
 export const TIER_COLORS = {
-  gold: "#FFD700",
-  silver: "#C0C0C0",
-  bronze: "#CD7F32",
+  gold: '#FFD700',
+  silver: '#C0C0C0',
+  bronze: '#CD7F32',
 } as const;
 
 export const STATUS_COLORS = {
-  merged: "#3fb950", // Green - merged PRs
-  open: "#8b949e", // Gray - open PRs
-  closed: "#ff7b72", // Red - closed PRs
-  neutral: "#9ca3af", // Grey - default/neutral state
-  success: "#4ade80", // Green - success states
-  warning: "#fbbf24", // Amber - warning states
-  error: "#ef4444", // Red - error states (same as closed)
-  info: "#60a5fa", // Blue - info states
+  merged: '#3fb950', // Green - merged PRs
+  open: '#8b949e', // Gray - open PRs
+  closed: '#ff7b72', // Red - closed PRs
+  neutral: '#9ca3af', // Grey - default/neutral state
+  success: '#4ade80', // Green - success states
+  warning: '#fbbf24', // Amber - warning states
+  error: '#ef4444', // Red - error states (same as closed)
+  info: '#60a5fa', // Blue - info states
 } as const;
 
 export const DIFF_COLORS = {
-  additions: "#7ee787", // Green - line additions
-  deletions: "#ef4444", // Red - line deletions (same as closed/error)
+  additions: '#7ee787', // Green - line additions
+  deletions: '#ef4444', // Red - line deletions (same as closed/error)
 } as const;
 
 // Chart colors - different from status colors for better visual distinction in pie/donut charts
 export const CHART_COLORS = {
-  merged: "#3fb950", // Green - successful merges
-  open: "#8b949e", // Grey - pending/open
-  closed: "#ef4444", // Red - closed without merge
+  merged: '#3fb950', // Green - successful merges
+  open: '#8b949e', // Grey - pending/open
+  closed: '#ef4444', // Red - closed without merge
 } as const;
 
 export const TEXT_OPACITY = {
@@ -40,7 +40,7 @@ export const TEXT_OPACITY = {
 } as const;
 
 // Module Augmentation for Custom Theme Properties
-declare module "@mui/material/styles" {
+declare module '@mui/material/styles' {
   interface TypographyVariants {
     dataValue: React.CSSProperties;
     dataLabel: React.CSSProperties;
@@ -128,7 +128,7 @@ declare module "@mui/material/styles" {
   }
 }
 
-declare module "@mui/material/Typography" {
+declare module '@mui/material/Typography' {
   interface TypographyPropsVariantOverrides {
     dataValue: true;
     dataLabel: true;
@@ -141,19 +141,19 @@ declare module "@mui/material/Typography" {
   }
 }
 
-declare module "@mui/material/Button" {
+declare module '@mui/material/Button' {
   interface ButtonPropsVariantOverrides {
     back: true;
   }
 }
 
-declare module "@mui/material/Card" {
+declare module '@mui/material/Card' {
   interface CardPropsVariantOverrides {
     glass: true;
   }
 }
 
-declare module "@mui/material/Chip" {
+declare module '@mui/material/Chip' {
   interface ChipPropsVariantOverrides {
     tier: true;
     status: true;
@@ -164,22 +164,22 @@ declare module "@mui/material/Chip" {
 
 const theme = createTheme({
   palette: {
-    mode: "dark",
+    mode: 'dark',
     primary: {
-      main: "#1d37fc",
+      main: '#1d37fc',
     },
     secondary: {
-      main: "#fff30d",
+      main: '#fff30d',
     },
     background: {
-      default: "#000000",
-      paper: "#0a0f1f",
+      default: '#000000',
+      paper: '#0a0f1f',
     },
     text: {
-      primary: "#ffffff",
-      secondary: "#7d7d7d",
+      primary: '#ffffff',
+      secondary: '#7d7d7d',
     },
-    divider: "#ffffff",
+    divider: '#ffffff',
     // Custom tier colors
     tier: {
       gold: TIER_COLORS.gold,
@@ -204,15 +204,15 @@ const theme = createTheme({
     },
     // Border colors
     border: {
-      subtle: "rgba(255, 255, 255, 0.05)",
-      light: "rgba(255, 255, 255, 0.1)",
-      medium: "rgba(255, 255, 255, 0.2)",
+      subtle: 'rgba(255, 255, 255, 0.05)',
+      light: 'rgba(255, 255, 255, 0.1)',
+      medium: 'rgba(255, 255, 255, 0.2)',
     },
     // Surface colors
     surface: {
-      transparent: "transparent",
-      subtle: "rgba(255, 255, 255, 0.02)",
-      light: "rgba(255, 255, 255, 0.05)",
+      transparent: 'transparent',
+      subtle: 'rgba(255, 255, 255, 0.02)',
+      light: 'rgba(255, 255, 255, 0.05)',
     },
   },
   typography: {
@@ -248,14 +248,14 @@ const theme = createTheme({
     dataValue: {
       fontFamily: '"JetBrains Mono", "Courier New", monospace',
       fontWeight: 500,
-      letterSpacing: "0.02em",
+      letterSpacing: '0.02em',
     },
     dataLabel: {
       fontFamily: '"JetBrains Mono", "Courier New", monospace',
-      fontSize: "0.75rem",
+      fontSize: '0.75rem',
       fontWeight: 400,
-      letterSpacing: "0.05em",
-      textTransform: "uppercase",
+      letterSpacing: '0.05em',
+      textTransform: 'uppercase',
     },
     // Base monospace style
     mono: {
@@ -265,41 +265,41 @@ const theme = createTheme({
     // Small monospace for labels
     monoSmall: {
       fontFamily: '"JetBrains Mono", monospace',
-      fontSize: "0.7rem",
+      fontSize: '0.7rem',
       fontWeight: 600,
-      letterSpacing: "0.5px",
-      textTransform: "uppercase",
+      letterSpacing: '0.5px',
+      textTransform: 'uppercase',
     },
     // Section titles
     sectionTitle: {
       fontFamily: '"JetBrains Mono", monospace',
-      fontSize: "1rem",
+      fontSize: '1rem',
       fontWeight: 600,
-      color: "#fff",
+      color: '#fff',
     },
     // Table headers
     tableHeader: {
       fontFamily: '"JetBrains Mono", monospace',
-      fontSize: "0.7rem",
+      fontSize: '0.7rem',
       fontWeight: 600,
-      letterSpacing: "0.5px",
-      textTransform: "uppercase",
-      color: "rgba(255, 255, 255, 0.3)",
+      letterSpacing: '0.5px',
+      textTransform: 'uppercase',
+      color: 'rgba(255, 255, 255, 0.3)',
     },
     // Large stat values
     statValue: {
       fontFamily: '"JetBrains Mono", monospace',
-      fontSize: "1.1rem",
+      fontSize: '1.1rem',
       fontWeight: 600,
-      color: "#fff",
+      color: '#fff',
     },
     // Stat labels
     statLabel: {
       fontFamily: '"JetBrains Mono", monospace',
-      fontSize: "0.7rem",
+      fontSize: '0.7rem',
       fontWeight: 500,
-      textTransform: "uppercase",
-      color: "rgba(255, 255, 255, 0.4)",
+      textTransform: 'uppercase',
+      color: 'rgba(255, 255, 255, 0.4)',
     },
   },
   components: {
@@ -319,30 +319,30 @@ const theme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: "rgb(190, 52, 85)",
+          backgroundColor: 'rgb(190, 52, 85)',
         },
       },
     },
     MuiButton: {
       variants: [
         {
-          props: { variant: "back" },
+          props: { variant: 'back' },
           style: {
-            color: "rgba(255, 255, 255, 0.7)",
+            color: 'rgba(255, 255, 255, 0.7)',
             fontFamily: '"JetBrains Mono", monospace',
-            fontSize: "0.8rem",
+            fontSize: '0.8rem',
             fontWeight: 500,
-            letterSpacing: "0.5px",
-            textTransform: "none",
-            backgroundColor: "#000000",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
-            borderRadius: "8px",
-            padding: "8px 16px",
-            transition: "all 0.2s",
-            "&:hover": {
-              color: "#ffffff",
-              backgroundColor: "rgba(0, 0, 0, 0.8)",
-              borderColor: "rgba(255, 255, 255, 0.2)",
+            letterSpacing: '0.5px',
+            textTransform: 'none',
+            backgroundColor: '#000000',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '8px',
+            padding: '8px 16px',
+            transition: 'all 0.2s',
+            '&:hover': {
+              color: '#ffffff',
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              borderColor: 'rgba(255, 255, 255, 0.2)',
             },
           },
         },
@@ -355,36 +355,36 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          border: "1px solid rgba(255, 255, 255, 0.1)",
-          backgroundColor: "transparent",
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          backgroundColor: 'transparent',
         },
       },
     },
     MuiChip: {
       defaultProps: {
-        size: "small",
+        size: 'small',
       },
       styleOverrides: {
         root: {
           fontFamily: '"JetBrains Mono", monospace',
-          fontSize: "0.75rem",
+          fontSize: '0.75rem',
           fontWeight: 600,
-          borderRadius: "6px",
-          height: "24px",
-          "& .MuiChip-label": {
+          borderRadius: '6px',
+          height: '24px',
+          '& .MuiChip-label': {
             px: 1.5,
           },
-          "& .MuiChip-icon": {
+          '& .MuiChip-icon': {
             fontSize: 14,
           },
         },
         sizeSmall: {
-          height: "22px",
-          fontSize: "0.7rem",
-          "& .MuiChip-label": {
+          height: '22px',
+          fontSize: '0.7rem',
+          '& .MuiChip-label': {
             px: 1,
           },
-          "& .MuiChip-icon": {
+          '& .MuiChip-icon': {
             fontSize: 14,
           },
         },
@@ -392,46 +392,46 @@ const theme = createTheme({
       variants: [
         // Tier variant - for Gold/Silver/Bronze badges
         {
-          props: { variant: "tier" },
+          props: { variant: 'tier' },
           style: {
-            backgroundColor: "transparent",
-            border: "1px solid",
-            borderRadius: "6px",
+            backgroundColor: 'transparent',
+            border: '1px solid',
+            borderRadius: '6px',
           },
         },
         // Status variant - for merged/open/closed states
         {
-          props: { variant: "status" },
+          props: { variant: 'status' },
           style: {
-            backgroundColor: "transparent",
-            border: "1px solid",
-            borderRadius: "6px",
+            backgroundColor: 'transparent',
+            border: '1px solid',
+            borderRadius: '6px',
           },
         },
         // Info variant - for neutral information chips
         {
-          props: { variant: "info" },
+          props: { variant: 'info' },
           style: {
-            backgroundColor: "rgba(255, 255, 255, 0.05)",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
-            color: "rgba(255, 255, 255, 0.9)",
-            borderRadius: "6px",
-            "& .MuiChip-icon": {
-              color: "rgba(255, 255, 255, 0.7)",
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: 'rgba(255, 255, 255, 0.9)',
+            borderRadius: '6px',
+            '& .MuiChip-icon': {
+              color: 'rgba(255, 255, 255, 0.7)',
             },
           },
         },
         // Filter variant - for deletable filter chips
         {
-          props: { variant: "filter" },
+          props: { variant: 'filter' },
           style: {
-            backgroundColor: "rgba(255, 255, 255, 0.1)",
-            color: "#ffffff",
-            borderRadius: "6px",
-            "& .MuiChip-deleteIcon": {
-              color: "rgba(255, 255, 255, 0.7)",
-              "&:hover": {
-                color: "#ffffff",
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            color: '#ffffff',
+            borderRadius: '6px',
+            '& .MuiChip-deleteIcon': {
+              color: 'rgba(255, 255, 255, 0.7)',
+              '&:hover': {
+                color: '#ffffff',
               },
             },
           },

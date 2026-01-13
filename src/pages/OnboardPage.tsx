@@ -1,27 +1,27 @@
-import React from "react";
-import { Box, Tabs, Tab, Typography, Card, CardContent } from "@mui/material";
-import { Page } from "../components/layout";
-import { SEO } from "../components";
-import { useSearchParams } from "react-router-dom";
-import { RoadmapContent } from "../components/onboard/RoadmapContent";
-import { AboutContent } from "./AboutPage";
-import { FAQContent } from "./FAQPage";
+import React from 'react';
+import { Box, Tabs, Tab, Card, CardContent } from '@mui/material';
+import { Page } from '../components/layout';
+import { SEO } from '../components';
+import { useSearchParams } from 'react-router-dom';
+import { RoadmapContent } from '../components/onboard/RoadmapContent';
+import { AboutContent } from './AboutPage';
+import { FAQContent } from './FAQPage';
 
-import { GettingStarted } from "../components/onboard/GettingStarted";
-import { Scoring } from "../components/onboard/Scoring";
+import { GettingStarted } from '../components/onboard/GettingStarted';
+import { Scoring } from '../components/onboard/Scoring';
 import {
   RepositoryWeightsTable,
   LanguageWeightsTable,
-} from "../components/repositories";
+} from '../components/repositories';
 
 const OnboardPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Determine active tab from URL query param or default to 0
-  const tabParam = searchParams.get("tab");
+  const tabParam = searchParams.get('tab');
   const tabNameToIndex: Record<string, number> = {
     about: 0,
-    "getting-started": 1,
+    'getting-started': 1,
     scoring: 2,
     repositories: 3,
     languages: 4,
@@ -30,13 +30,13 @@ const OnboardPage: React.FC = () => {
   };
 
   const indexToTabName: Record<number, string> = {
-    0: "about",
-    1: "getting-started",
-    2: "scoring",
-    3: "repositories",
-    4: "languages",
-    5: "roadmap",
-    6: "faq",
+    0: 'about',
+    1: 'getting-started',
+    2: 'scoring',
+    3: 'repositories',
+    4: 'languages',
+    5: 'roadmap',
+    6: 'faq',
   };
 
   const activeTab =
@@ -46,7 +46,7 @@ const OnboardPage: React.FC = () => {
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     const newParams = new URLSearchParams(searchParams);
-    newParams.set("tab", indexToTabName[newValue]);
+    newParams.set('tab', indexToTabName[newValue]);
     setSearchParams(newParams);
   };
 
@@ -58,20 +58,20 @@ const OnboardPage: React.FC = () => {
       />
       <Box
         sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          minHeight: { xs: "auto", md: "calc(100vh - 80px)" },
-          width: "100%",
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          minHeight: { xs: 'auto', md: 'calc(100vh - 80px)' },
+          width: '100%',
           py: 4,
         }}
       >
         <Box
           sx={{
             maxWidth: 1200,
-            width: "100%",
+            width: '100%',
             mb: 4,
-            borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
           }}
         >
           <Tabs
@@ -82,13 +82,13 @@ const OnboardPage: React.FC = () => {
             allowScrollButtonsMobile
             sx={{
               px: 2,
-              "& .MuiTab-root": {
-                textTransform: "none",
+              '& .MuiTab-root': {
+                textTransform: 'none',
                 fontWeight: 500,
-                fontSize: "1rem",
-                color: "rgba(255, 255, 255, 0.6)",
-                "&.Mui-selected": {
-                  color: "primary.main",
+                fontSize: '1rem',
+                color: 'rgba(255, 255, 255, 0.6)',
+                '&.Mui-selected': {
+                  color: 'primary.main',
                 },
               },
             }}
@@ -103,34 +103,26 @@ const OnboardPage: React.FC = () => {
           </Tabs>
         </Box>
 
-        <Box sx={{ width: "100%" }}>
-          {activeTab === 0 && (
-            <AboutContent
-              onStartMining={() => {
-                const newParams = new URLSearchParams(searchParams);
-                newParams.set("tab", "getting-started");
-                setSearchParams(newParams);
-              }}
-            />
-          )}
+        <Box sx={{ width: '100%' }}>
+          {activeTab === 0 && <AboutContent />}
           {activeTab === 1 && <GettingStarted />}
           {activeTab === 2 && <Scoring />}
           {activeTab === 3 && (
             <Box
               sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: "100%",
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
               }}
             >
               <Card
                 sx={{
                   borderRadius: 3,
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                  backgroundColor: "transparent",
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  backgroundColor: 'transparent',
                   maxWidth: 1200,
-                  width: "100%",
+                  width: '100%',
                 }}
                 elevation={0}
               >
@@ -143,19 +135,19 @@ const OnboardPage: React.FC = () => {
           {activeTab === 4 && (
             <Box
               sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: "100%",
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
               }}
             >
               <Card
                 sx={{
                   borderRadius: 3,
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                  backgroundColor: "transparent",
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  backgroundColor: 'transparent',
                   maxWidth: 1200,
-                  width: "100%",
+                  width: '100%',
                 }}
                 elevation={0}
               >

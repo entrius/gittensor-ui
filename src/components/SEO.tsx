@@ -1,47 +1,47 @@
-import React from "react";
-import { Helmet } from "react-helmet-async";
+import React from 'react';
+import { Helmet } from 'react-helmet-async';
 
 export interface SEOProps {
   title: string;
   description: string;
   image?: string;
-  type?: "website" | "article";
+  type?: 'website' | 'article';
   url?: string;
   siteName?: string;
   twitterHandle?: string;
 }
 
-const DEFAULT_IMAGE = "/gittensor-og.jpg";
-const SITE_NAME = "Gittensor";
+const DEFAULT_IMAGE = '/gittensor-og.jpg';
+const SITE_NAME = 'Gittensor';
 
 export const SEO: React.FC<SEOProps> = ({
   title,
   description,
   image = DEFAULT_IMAGE,
-  type = "website",
+  type = 'website',
   url,
   siteName = SITE_NAME,
   twitterHandle,
 }) => {
   // Get the current URL if not provided
   const currentUrl =
-    url || (typeof window !== "undefined" ? window.location.href : "");
+    url || (typeof window !== 'undefined' ? window.location.href : '');
 
   // Ensure the image URL is absolute
-  const absoluteImageUrl = image.startsWith("http")
+  const absoluteImageUrl = image.startsWith('http')
     ? image
-    : `${typeof window !== "undefined" ? window.location.origin : ""}${image}`;
+    : `${typeof window !== 'undefined' ? window.location.origin : ''}${image}`;
 
   // Browser tab title - just the site name for homepage, otherwise "PageTitle | Gittensor"
   const browserTitle =
-    title === "Autonomous Software Development"
+    title === 'Autonomous Software Development'
       ? siteName
       : `${title} | ${siteName}`;
 
   // Full title for OG/Twitter tags
   const ogTitle =
-    title === "Autonomous Software Development"
-      ? "Gittensor | Autonomous Software Development"
+    title === 'Autonomous Software Development'
+      ? 'Gittensor | Autonomous Software Development'
       : `${title} | Gittensor`;
 
   return (

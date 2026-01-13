@@ -1,6 +1,6 @@
-import React, { useMemo } from "react";
-import { Box, Typography, Skeleton, Divider } from "@mui/material";
-import { useReposAndWeights, useAllPrs, useRepositoryIssues } from "../../api";
+import React, { useMemo } from 'react';
+import { Box, Typography, Skeleton, Divider } from '@mui/material';
+import { useReposAndWeights, useAllPrs, useRepositoryIssues } from '../../api';
 
 interface RepositoryStatsProps {
   repositoryFullName: string;
@@ -14,22 +14,29 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
   const { data: issues, isLoading: isLoadingIssues } =
     useRepositoryIssues(repositoryFullName);
 
-  const repository = useMemo(() => {
-    return repos?.find((r) => r.fullName === repositoryFullName);
-  }, [repos, repositoryFullName]);
+  const repository = useMemo(
+    () =>
+      repos?.find(
+        (r) => r.fullName.toLowerCase() === repositoryFullName.toLowerCase(),
+      ),
+    [repos, repositoryFullName],
+  );
 
   const stats = useMemo(() => {
-    if (!allPRs) return { totalPRs: 0, totalScore: 0 };
+    if (!allPRs) return { mergedPRs: 0, totalScore: 0 };
 
-    // Filter PRs for this repo
-    const repoPRs = allPRs.filter((pr) => pr.repository === repositoryFullName);
+    const repoPRs = allPRs.filter(
+      (pr) =>
+        pr.repository.toLowerCase() === repositoryFullName.toLowerCase() &&
+        pr.prState === 'MERGED',
+    );
     const totalScore = repoPRs.reduce(
-      (acc, pr) => acc + parseFloat(pr.score || "0"),
+      (acc, pr) => acc + parseFloat(pr.score || '0'),
       0,
     );
 
     return {
-      totalPRs: repoPRs.length,
+      mergedPRs: repoPRs.length,
       totalScore,
     };
   }, [allPRs, repositoryFullName]);
@@ -48,14 +55,14 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
       <Box sx={{ mb: 4 }}>
         <Typography
           variant="subtitle2"
-          sx={{ color: "#fff", fontWeight: 600, mb: 2, fontSize: "14px" }}
+          sx={{ color: '#fff', fontWeight: 600, mb: 2, fontSize: '14px' }}
         >
           Repository Stats
         </Typography>
         <Skeleton
           variant="rectangular"
           height={160}
-          sx={{ bgcolor: "rgba(255,255,255,0.05)", borderRadius: 2 }}
+          sx={{ bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2 }}
         />
       </Box>
     );
@@ -67,14 +74,14 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
 
   const getTierColor = (tier: string) => {
     switch (tier) {
-      case "Gold":
-        return "#FFD700";
-      case "Silver":
-        return "#C0C0C0";
-      case "Bronze":
-        return "#CD7F32";
+      case 'Gold':
+        return '#FFD700';
+      case 'Silver':
+        return '#C0C0C0';
+      case 'Bronze':
+        return '#CD7F32';
       default:
-        return "#8b949e";
+        return '#8b949e';
     }
   };
 
@@ -82,32 +89,32 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
     <Box sx={{ mb: 4 }}>
       <Typography
         variant="subtitle2"
-        sx={{ color: "#fff", fontWeight: 600, mb: 2, fontSize: "14px" }}
+        sx={{ color: '#fff', fontWeight: 600, mb: 2, fontSize: '14px' }}
       >
         Repository Stats
       </Typography>
 
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         {/* Weight */}
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
           <Typography
             variant="body2"
-            sx={{ fontSize: "13px", color: "#8b949e" }}
+            sx={{ fontSize: '13px', color: '#8b949e' }}
           >
             Weight
           </Typography>
           <Typography
             variant="body2"
             sx={{
-              color: "#fff",
+              color: '#fff',
               fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "13px",
+              fontSize: '13px',
             }}
           >
             {repository.weight}
@@ -117,14 +124,14 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
         {/* Tier */}
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
           <Typography
             variant="body2"
-            sx={{ fontSize: "13px", color: "#8b949e" }}
+            sx={{ fontSize: '13px', color: '#8b949e' }}
           >
             Tier
           </Typography>
@@ -133,7 +140,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
             sx={{
               color: getTierColor(repository.tier),
               fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "13px",
+              fontSize: '13px',
               fontWeight: 500,
             }}
           >
@@ -141,28 +148,28 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
           </Typography>
         </Box>
 
-        <Divider sx={{ borderColor: "rgba(255,255,255,0.1)", my: 0.5 }} />
+        <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', my: 0.5 }} />
 
         {/* Total Score */}
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
           <Typography
             variant="body2"
-            sx={{ fontSize: "13px", color: "#8b949e" }}
+            sx={{ fontSize: '13px', color: '#8b949e' }}
           >
             Total Score
           </Typography>
           <Typography
             variant="body2"
             sx={{
-              color: "#fff",
+              color: '#fff',
               fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "13px",
+              fontSize: '13px',
             }}
           >
             {stats.totalScore.toLocaleString(undefined, {
@@ -174,49 +181,49 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
         {/* Merged PRs */}
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
           <Typography
             variant="body2"
-            sx={{ fontSize: "13px", color: "#8b949e" }}
+            sx={{ fontSize: '13px', color: '#8b949e' }}
           >
             Merged PRs
           </Typography>
           <Typography
             variant="body2"
             sx={{
-              color: "#fff",
+              color: '#fff',
               fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "13px",
+              fontSize: '13px',
             }}
           >
-            {stats.totalPRs}
+            {stats.mergedPRs}
           </Typography>
         </Box>
 
         {/* Closed Issues */}
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
           <Typography
             variant="body2"
-            sx={{ fontSize: "13px", color: "#8b949e" }}
+            sx={{ fontSize: '13px', color: '#8b949e' }}
           >
             Closed Issues
           </Typography>
           <Typography
             variant="body2"
             sx={{
-              color: "#fff",
+              color: '#fff',
               fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "13px",
+              fontSize: '13px',
             }}
           >
             {issueStats.closedIssues}

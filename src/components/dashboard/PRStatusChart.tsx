@@ -1,7 +1,7 @@
-import React, { useMemo } from "react";
-import { Box, Stack, Typography } from "@mui/material";
-import ReactECharts from "echarts-for-react";
-import { CHART_COLORS, STATUS_COLORS } from "../../theme";
+import React, { useMemo } from 'react';
+import { Box, Stack, Typography } from '@mui/material';
+import ReactECharts from 'echarts-for-react';
+import { CHART_COLORS, STATUS_COLORS } from '../../theme';
 
 interface PRStats {
   merged: number;
@@ -14,61 +14,61 @@ interface PRStatusChartProps {
   stats: PRStats;
   title: string;
   subtitle?: string;
-  variant?: "primary" | "secondary";
+  variant?: 'primary' | 'secondary';
 }
 
 const PRStatusChart: React.FC<PRStatusChartProps> = ({
   stats,
   title,
   subtitle,
-  variant = "primary",
+  variant = 'primary',
 }) => {
   const { merged, open, closed, credibility } = stats;
   const credibilityPercent = credibility * 100;
-  const isPrimary = variant === "primary";
+  const isPrimary = variant === 'primary';
 
   const chartOption = useMemo(
     () => ({
-      backgroundColor: "transparent",
+      backgroundColor: 'transparent',
       title: {
         text: `${credibilityPercent.toFixed(0)}%`,
-        left: "center",
-        top: "28%",
+        left: 'center',
+        top: '28%',
         textStyle: {
-          color: isPrimary ? "#fff" : "rgba(255, 255, 255, 0.7)",
+          color: isPrimary ? '#fff' : 'rgba(255, 255, 255, 0.7)',
           fontSize: isPrimary ? 28 : 24,
-          fontWeight: "bold",
+          fontWeight: 'bold',
           fontFamily: '"JetBrains Mono", monospace',
-          textVerticalAlign: "middle",
+          textVerticalAlign: 'middle',
         },
       },
       tooltip: {
-        trigger: "item",
-        formatter: "{b}: {c} ({d}%)",
-        backgroundColor: "rgba(0, 0, 0, 0.9)",
-        borderColor: "rgba(255, 255, 255, 0.15)",
+        trigger: 'item',
+        formatter: '{b}: {c} ({d}%)',
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
         borderWidth: 1,
-        textStyle: { color: "#fff", fontFamily: '"JetBrains Mono", monospace' },
+        textStyle: { color: '#fff', fontFamily: '"JetBrains Mono", monospace' },
       },
       series: [
         {
-          name: "PR Status",
-          type: "pie",
-          radius: ["70%", "85%"],
-          center: ["50%", "42%"],
+          name: 'PR Status',
+          type: 'pie',
+          radius: ['70%', '85%'],
+          center: ['50%', '42%'],
           avoidLabelOverlap: false,
           itemStyle: {
             borderRadius: 4,
-            borderColor: "#0d1117",
+            borderColor: '#0d1117',
             borderWidth: 2,
           },
-          label: { show: false, position: "center" },
+          label: { show: false, position: 'center' },
           emphasis: { label: { show: false }, scale: true, scaleSize: 3 },
           labelLine: { show: false },
           data: [
             {
               value: merged,
-              name: "Merged",
+              name: 'Merged',
               itemStyle: {
                 color: CHART_COLORS.merged,
                 opacity: isPrimary ? 1 : 0.7,
@@ -76,7 +76,7 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
             },
             {
               value: open,
-              name: "Open",
+              name: 'Open',
               itemStyle: {
                 color: CHART_COLORS.open,
                 opacity: isPrimary ? 1 : 0.7,
@@ -84,7 +84,7 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
             },
             {
               value: closed,
-              name: "Closed",
+              name: 'Closed',
               itemStyle: {
                 color: CHART_COLORS.closed,
                 opacity: isPrimary ? 1 : 0.7,
@@ -101,30 +101,30 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
     <Box
       sx={{
         flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
       }}
     >
       <Typography
         sx={{
-          color: isPrimary ? STATUS_COLORS.success : "rgba(255, 255, 255, 0.5)",
-          fontSize: "0.85rem",
+          color: isPrimary ? STATUS_COLORS.success : 'rgba(255, 255, 255, 0.5)',
+          fontSize: '0.85rem',
           fontWeight: 700,
           fontFamily: '"JetBrains Mono", monospace',
-          textTransform: "uppercase",
-          textAlign: "center",
+          textTransform: 'uppercase',
+          textAlign: 'center',
           mb: 1,
         }}
       >
-        {title}{" "}
+        {title}{' '}
         {subtitle && (
           <Box
             component="span"
             sx={{
-              fontSize: "0.7rem",
+              fontSize: '0.7rem',
               opacity: 0.7,
-              textTransform: "none",
+              textTransform: 'none',
               fontWeight: 500,
             }}
           >
@@ -135,30 +135,30 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
 
       <Box
         sx={{
-          width: "100%",
+          width: '100%',
           flex: 1,
-          minHeight: "150px",
-          position: "relative",
+          minHeight: '150px',
+          position: 'relative',
           zIndex: 1,
-          overflow: "visible",
-          "& div": { overflow: "visible !important" },
-          "& svg": { overflow: "visible !important" },
+          overflow: 'visible',
+          '& div': { overflow: 'visible !important' },
+          '& svg': { overflow: 'visible !important' },
         }}
       >
         <ReactECharts
           option={chartOption}
-          style={{ height: "100%", width: "100%", overflow: "visible" }}
-          opts={{ renderer: "svg" }}
+          style={{ height: '100%', width: '100%', overflow: 'visible' }}
+          opts={{ renderer: 'svg' }}
         />
       </Box>
 
       <Box
         sx={{
-          display: "flex",
+          display: 'flex',
           gap: { xs: 1, sm: 2, md: 3, lg: 1, xl: 2 },
           mt: 1,
-          width: "100%",
-          justifyContent: "center",
+          width: '100%',
+          justifyContent: 'center',
         }}
       >
         <StatItem label="Merged" value={merged} />

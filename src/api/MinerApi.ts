@@ -1,10 +1,10 @@
 // Miner API hooks - uses /miners endpoints
-import { useApiQuery } from "./ApiUtils";
+import { useApiQuery } from './ApiUtils';
 import {
-  GithubMinerData,
-  MinerEvaluation,
-  CommitLog,
-} from "./models/Dashboard";
+  type GithubMinerData,
+  type MinerEvaluation,
+  type CommitLog,
+} from './models/Dashboard';
 
 /**
  * Helper to create /miners endpoint queries
@@ -14,12 +14,14 @@ const useMinersQuery = <TResponse = void, TSelect = TResponse>(
   url: string,
   refetchInterval?: number,
   queryParams?: Record<string, string | number | undefined>,
+  enabled?: boolean,
 ) =>
   useApiQuery<TResponse, TSelect>(
     queryName,
     `/miners${url}`,
     refetchInterval,
     queryParams,
+    enabled,
   );
 
 /**
@@ -28,25 +30,39 @@ const useMinersQuery = <TResponse = void, TSelect = TResponse>(
  * Ideal for leaderboards
  */
 export const useAllMiners = () =>
-  useMinersQuery<MinerEvaluation[]>("useAllMiners", "");
+  useMinersQuery<MinerEvaluation[]>('useAllMiners', '');
 
 /**
  * Get pre-computed stats for a specific miner
  * @param githubId - Numeric GitHub ID (e.g., "583231"), NOT username
  */
 export const useMinerStats = (githubId: string) =>
-  useMinersQuery<MinerEvaluation>("useMinerStats", `/${githubId}`);
+  useMinersQuery<MinerEvaluation>('useMinerStats', `/${githubId}`);
 
 /**
  * Get all pull requests for a specific miner
  * @param githubId - Numeric GitHub ID (e.g., "583231"), NOT username
+ * @param enabled - Optional flag to enable/disable the query
  */
-export const useMinerPRs = (githubId: string) =>
-  useMinersQuery<CommitLog[]>("useMinerPRs", `/${githubId}/prs`);
+export const useMinerPRs = (githubId: string, enabled?: boolean) =>
+  useMinersQuery<CommitLog[]>(
+    'useMinerPRs',
+    `/${githubId}/prs`,
+    undefined,
+    undefined,
+    enabled,
+  );
 
 /**
  * Get GitHub profile data for a specific miner
  * @param githubId - Numeric GitHub ID (e.g., "583231"), NOT username
+ * @param enabled - Optional flag to enable/disable the query
  */
-export const useMinerGithubData = (githubId: string) =>
-  useMinersQuery<GithubMinerData>("useMinerGithubData", `/${githubId}/github`);
+export const useMinerGithubData = (githubId: string, enabled?: boolean) =>
+  useMinersQuery<GithubMinerData>(
+    'useMinerGithubData',
+    `/${githubId}/github`,
+    undefined,
+    undefined,
+    enabled,
+  );

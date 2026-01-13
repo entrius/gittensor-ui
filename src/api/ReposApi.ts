@@ -1,7 +1,7 @@
 // Repository API hooks - uses /repos endpoints
-import { useApiQuery } from "./ApiUtils";
-import { RepositoryMaintainer, RepositoryIssue } from "./models";
-import { CommitLog } from "./models/Dashboard";
+import { useApiQuery } from './ApiUtils';
+import { type RepositoryMaintainer, type RepositoryIssue } from './models';
+import { type CommitLog } from './models/Dashboard';
 
 /**
  * Helper to create /repos endpoint queries
@@ -25,18 +25,17 @@ const useReposQuery = <TResponse = void, TSelect = TResponse>(
  */
 export const useRepositoryMaintainers = (repo: string) =>
   useReposQuery<RepositoryMaintainer[]>(
-    "useRepositoryMaintainers",
+    'useRepositoryMaintainers',
     `/${encodeURIComponent(repo)}/maintainers`,
   );
 
 /**
  * Get all issues for a specific repository
  * @param repo - Full repository name (e.g., "opentensor/btcli")
- * NOTE: Backend endpoint not yet implemented
  */
 export const useRepositoryIssues = (repo: string) =>
   useReposQuery<RepositoryIssue[]>(
-    "useRepositoryIssues",
+    'useRepositoryIssues',
     `/${encodeURIComponent(repo)}/issues`,
   );
 
@@ -44,11 +43,10 @@ export const useRepositoryIssues = (repo: string) =>
  * Get pull requests for a specific repository filtered by state
  * @param repo - Full repository name (e.g., "opentensor/btcli")
  * @param state - Optional filter: "open", "closed", "merged"
- * NOTE: Backend endpoint not yet implemented
  */
 export const useRepositoryPRs = (repo: string, state?: string) =>
   useReposQuery<CommitLog[]>(
-    "useRepositoryPRs",
+    'useRepositoryPRs',
     `/${encodeURIComponent(repo)}/prs`,
     undefined,
     state ? { state } : undefined,
