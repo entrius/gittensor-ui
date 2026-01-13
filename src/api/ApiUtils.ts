@@ -17,7 +17,7 @@ export const useApiQuery = <TResponse = void, TSelect = TResponse>(
       const { data } = await axios.get(requestUrl, { params: queryParams });
       return data;
     },
-    retry: false,
+    retry: 2,
     enabled: enabled ?? true,
     refetchInterval: refetchInterval,
   });

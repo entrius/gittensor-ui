@@ -19,6 +19,9 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import TrendingDownIcon from "@mui/icons-material/TrendingDown";
+import CodeIcon from "@mui/icons-material/Code";
 import ReactECharts from "echarts-for-react";
 import { useMinerGithubData, useMinerPRs, useGeneralConfig } from "../../api";
 import { TIER_COLORS, CHART_COLORS } from "../../theme";
@@ -43,6 +46,10 @@ export interface MinerStats {
   totalMergedPrs?: number;
   totalOpenPrs?: number;
   totalClosedPrs?: number;
+  // New fields for enhanced cards
+  totalAdditions?: number;
+  totalDeletions?: number;
+  updatedAt?: string;
 }
 
 type SortOption = "totalScore" | "usdPerDay" | "totalPRs" | "credibility";
@@ -100,6 +107,30 @@ interface MinerCardProps {
   onClick: () => void;
 }
 
+// Helper: Format large numbers compactly (e.g., 12500 -> "12.5k")
+const formatCompact = (num: number): string => {
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}m`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
+  return num.toString();
+};
+
+// Helper: Get relative time string
+const getRelativeTime = (dateStr: string | undefined): string => {
+  if (!dateStr) return "N/A";
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+  return `${Math.floor(diffDays / 30)}mo ago`;
+};
+
 const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
   const tierColors = getTierColors(miner.currentTier);
 
@@ -121,6 +152,27 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
     "";
   const credibilityPercent = (miner.credibility || 0) * 100;
 
+  // Derived data for enhanced features
+  const additions = miner.totalAdditions || miner.linesAdded || 0;
+  const deletions = miner.totalDeletions || miner.linesDeleted || 0;
+
+  // Trend indicator: based on credibility (high = trending up)
+  const showTrendUp = credibilityPercent >= 75;
+  const showTrendDown = credibilityPercent < 40 && credibilityPercent > 0;
+
+  // Build sparkline data from PRs with state for coloring - show full history
+  const sparklineData = useMemo(() => {
+    if (!prs || prs.length === 0) return [];
+    // Get all PRs in API order (Newest First) and reverse them (Oldest First) to match the Table display logic
+    // Table shows Newest at Top. Sparkline shows Newest on Right.
+    // So we just need to reverse the API list.
+    const sorted = [...prs].reverse();
+    return sorted.map((pr: any) => ({
+      score: parseFloat(pr.score) || 0,
+      state: (pr.prState || 'open').toLowerCase(),
+    }));
+  }, [prs]);
+
   // Tier-based gradient background
   const tierGradient =
     miner.currentTier === "Gold"
@@ -133,6 +185,15 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
   const borderColor = miner.currentTier
     ? tierColors.border
     : "rgba(48, 54, 61, 0.4)";
+
+  // Enhanced tier glow
+  const tierGlow = miner.currentTier === "Gold"
+    ? `0 0 20px rgba(255, 215, 0, 0.15), 0 0 40px rgba(255, 215, 0, 0.05)`
+    : miner.currentTier === "Silver"
+      ? `0 0 20px rgba(192, 192, 192, 0.12), 0 0 40px rgba(192, 192, 192, 0.04)`
+      : miner.currentTier === "Bronze"
+        ? `0 0 20px rgba(205, 127, 50, 0.12), 0 0 40px rgba(205, 127, 50, 0.04)`
+        : "none";
 
   // ==========================================================================
   // INACTIVE CARD
@@ -204,40 +265,42 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
   }
 
   // ==========================================================================
-  // ACTIVE CARD - Compact Premium Design
+  // ACTIVE CARD - Premium Enhanced Design
   // ==========================================================================
   return (
     <Card
       onClick={onClick}
       sx={{
-        p: 1.5,
+        p: 2,
         backgroundColor: "#000000",
         backdropFilter: "blur(12px)",
         border: `1px solid ${borderColor}`,
-        borderRadius: 2,
+        borderRadius: 2.5,
         cursor: "pointer",
-        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        gap: 1.5,
+        gap: 2,
         position: "relative",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+        boxShadow: tierGlow,
+        overflow: "hidden",
         "&:hover": {
           backgroundColor: "rgba(22, 27, 34, 0.6)",
-          borderColor: tierColors.text,
-          transform: "translateY(-2px)",
-          boxShadow: `0 8px 24px -6px rgba(0, 0, 0, 0.6), 0 0 0 1px ${tierColors.border}40`,
+          boxShadow: `0 12px 32px -8px rgba(0, 0, 0, 0.7), ${tierGlow}, 0 0 0 1px ${tierColors.border}60`,
         },
       }}
       elevation={0}
     >
+
       {/* Header: Identity + Rank + Score */}
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "flex-start",
+          alignItems: "center",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         <Box
@@ -247,10 +310,10 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
             <Avatar
               src={`https://avatars.githubusercontent.com/${username}`}
               sx={{
-                width: 36,
-                height: 36,
+                width: 40,
+                height: 40,
                 border: `2px solid ${tierColors.border}`,
-                boxShadow: `0 0 10px ${tierColors.border}20`,
+                boxShadow: `0 0 12px ${tierColors.border}30`,
               }}
             />
             <Box
@@ -297,16 +360,13 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
 
         {/* Score moved to Top Right */}
         <Box sx={{ textAlign: "right" }}>
-          <Typography sx={{ fontSize: "0.6rem", color: "#8b949e", textTransform: "uppercase", mb: 0.2, lineHeight: 1 }}>
-            Score
-          </Typography>
           <Typography
             sx={{
               fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "1.2rem",
+              fontSize: "1.3rem",
               fontWeight: 700,
               color: "#e6edf3",
-              lineHeight: 1
+              lineHeight: 1,
             }}
           >
             {Number(miner.totalScore).toFixed(1)}
@@ -314,29 +374,110 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
         </Box>
       </Box>
 
-      {/* Main Stats: 2-row layout for better alignment */}
+      {/* Activity Sparkline - +/- chart: Merged up, Open down (collateral), Closed = 0 */}
+      {sparklineData.length > 0 && (
+        <Tooltip
+          title="PR History — ↑ Green: Merged, ↓ Gray: Open (collateral), — Red: Closed"
+          placement="top"
+          arrow
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center", // Center baseline
+              gap: "2px", // Smaller gap for more bars
+              height: 28, // Taller to accommodate +/-
+              px: 0,
+              position: "relative",
+              zIndex: 1,
+              cursor: "help",
+            }}
+          >
+            {sparklineData.map((item, idx) => {
+              const maxVal = Math.max(...sparklineData.map(d => d.score), 1);
+              const normalizedHeight = (item.score / maxVal) * 12; // Max 12px in either direction
+
+              if (item.state === 'merged') {
+                // Merged: Green bar going UP
+                return (
+                  <Box
+                    key={idx}
+                    sx={{
+                      flex: 1,
+                      height: Math.max(3, normalizedHeight),
+                      borderRadius: "2px 2px 0 0",
+                      backgroundColor: CHART_COLORS.merged,
+                      alignSelf: "flex-end",
+                      marginBottom: "14px", // Push up from center
+                      transition: "height 0.3s ease",
+                    }}
+                  />
+                );
+              } else if (item.state === 'open') {
+                // Open: Gray bar going DOWN (collateral)
+                return (
+                  <Box
+                    key={idx}
+                    sx={{
+                      flex: 1,
+                      height: Math.max(3, normalizedHeight),
+                      borderRadius: "0 0 2px 2px",
+                      backgroundColor: "#8b949e", // Gray for open
+                      alignSelf: "flex-start",
+                      marginTop: "14px", // Push down from center
+                      transition: "height 0.3s ease",
+                    }}
+                  />
+                );
+              } else {
+                // Closed: Thin red line at baseline (0 value)
+                return (
+                  <Box
+                    key={idx}
+                    sx={{
+                      flex: 1,
+                      height: 2,
+                      borderRadius: 1,
+                      backgroundColor: CHART_COLORS.closed,
+                      alignSelf: "center",
+                    }}
+                  />
+                );
+              }
+            })}
+            {/* Center baseline indicator */}
+            <Box
+              sx={{
+                position: "absolute",
+                left: 0,
+                right: 0,
+                top: "50%",
+                height: "1px",
+                backgroundColor: "rgba(255,255,255,0.1)",
+                pointerEvents: "none",
+              }}
+            />
+          </Box>
+        </Tooltip>
+      )}
+
+      {/* Main Stats Row: $ + Donut + MOC all together */}
       <Box
         sx={{
           display: "flex",
-          flexDirection: "column",
-          gap: 1.5,
-          flex: 1,
+          justifyContent: "space-between",
+          alignItems: "center",
+          position: "relative",
+          zIndex: 1,
         }}
       >
-        {/* Row 1: Earnings and Donut (Vertically Aligned) */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center"
-          }}
-        >
-          {/* Earnings - Day Only */}
+        {/* Earnings + Lines of Code */}
+        <Box sx={{ flex: 1 }}>
           <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
             <Typography
               sx={{
                 fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "1.4rem",
+                fontSize: "1.5rem",
                 fontWeight: 800,
                 color: "#3fb950",
                 lineHeight: 1,
@@ -354,45 +495,82 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
               /day
             </Typography>
           </Box>
+          {/* Lines of Code */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 0.5 }}>
+            <CodeIcon sx={{ fontSize: "0.8rem", color: "#6e7681" }} />
+            <Typography
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "0.7rem",
+                color: "#3fb950",
+              }}
+            >
+              +{formatCompact(additions)}
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "0.7rem",
+                color: "#f85149",
+              }}
+            >
+              -{formatCompact(deletions)}
+            </Typography>
+          </Box>
+        </Box>
 
+        {/* Donut + MOC stacked vertically */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
           {/* Credibility Donut */}
           <Box
-            sx={{ position: "relative", width: 64, height: 64, flexShrink: 0 }}
+            sx={{
+              position: "relative",
+              width: 56,
+              height: 56,
+              flexShrink: 0,
+            }}
           >
-            <ReactECharts
-              option={{
-                backgroundColor: "transparent",
-                series: [
-                  {
-                    type: "pie",
-                    radius: ["70%", "95%"],
-                    silent: true,
-                    label: { show: false },
-                    itemStyle: {
-                      borderRadius: 3,
-                      borderColor: "#000000",
-                      borderWidth: 2,
-                    },
-                    data: [
-                      {
-                        value: miner.totalMergedPrs || 0,
-                        itemStyle: { color: CHART_COLORS.merged },
-                      },
-                      {
-                        value: miner.totalOpenPrs || 0,
-                        itemStyle: { color: CHART_COLORS.open },
-                      },
-                      {
-                        value: miner.totalClosedPrs || 0,
-                        itemStyle: { color: CHART_COLORS.closed },
-                      },
-                    ],
-                  },
-                ],
+            <Box
+              sx={{
+                width: "100%",
+                height: "100%",
               }}
-              style={{ width: "100%", height: "100%" }}
-              opts={{ renderer: "svg" }}
-            />
+            >
+              <ReactECharts
+                option={{
+                  backgroundColor: "transparent",
+                  series: [
+                    {
+                      type: "pie",
+                      radius: ["65%", "90%"],
+                      silent: true,
+                      label: { show: false },
+                      itemStyle: {
+                        borderRadius: 3,
+                        borderColor: "#000000",
+                        borderWidth: 2,
+                      },
+                      data: [
+                        {
+                          value: miner.totalMergedPrs || 0,
+                          itemStyle: { color: CHART_COLORS.merged },
+                        },
+                        {
+                          value: miner.totalOpenPrs || 0,
+                          itemStyle: { color: CHART_COLORS.open },
+                        },
+                        {
+                          value: miner.totalClosedPrs || 0,
+                          itemStyle: { color: CHART_COLORS.closed },
+                        },
+                      ],
+                    },
+                  ],
+                }}
+                style={{ width: "100%", height: "100%" }}
+                opts={{ renderer: "svg" }}
+              />
+            </Box>
             <Box
               sx={{
                 position: "absolute",
@@ -407,73 +585,56 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
             >
               <Typography
                 sx={{
-                  fontSize: "0.8rem",
-                  color: credibilityPercent >= 80 ? "#3fb950" : "#8b949e",
+                  fontSize: "0.7rem",
+                  color: credibilityPercent >= 80 ? "#3fb950" : credibilityPercent >= 50 ? "#8b949e" : "#f85149",
                   fontWeight: 800,
+                  fontFamily: '"JetBrains Mono", monospace',
                 }}
               >
                 {credibilityPercent.toFixed(0)}%
               </Typography>
             </Box>
           </Box>
-        </Box>
 
-        {/* Row 2: Repos and MOC Ratio */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center"
-          }}
-        >
-          {/* Top Repos - Dynamic List */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              minWidth: 0, // Critical for shrinking
-              flex: 1, // Allow it to take up space but shrink
-              mr: 2, // Gap before MOC
-            }}
-          >
-            {(() => {
-              // Extract unique repos from PRs (if available)
-              const uniqueRepos = prs
-                ? [...new Map(prs.map((pr: any) => [pr.repository, pr.repository])).values()]
-                  .map((repo: string) => ({
-                    fullName: repo,
-                    owner: repo.split('/')[0]
-                  }))
-                : [];
-
-              return (
-                <MinerRepoList
-                  repos={uniqueRepos}
-                  tierBorderColor={tierColors.border}
-                />
-              );
-            })()}
-          </Box>
-
-          {/* M.O.C Ratio */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.75rem", fontWeight: 700, color: "#3fb950" }}>
+          {/* M.O.C Stacked Vertically - No bullets, bigger text */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.85rem", fontWeight: 700, color: "#3fb950", lineHeight: 1.2 }}>
               {miner.totalMergedPrs || 0}
             </Typography>
-            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.75rem", color: "rgba(255,255,255,0.2)" }}>
-              /
-            </Typography>
-            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.75rem", fontWeight: 700, color: "#8b949e" }}>
+            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.85rem", fontWeight: 700, color: "#8b949e", lineHeight: 1.2 }}>
               {miner.totalOpenPrs || 0}
             </Typography>
-            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.75rem", color: "rgba(255,255,255,0.2)" }}>
-              /
-            </Typography>
-            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.75rem", fontWeight: 700, color: "#f85149" }}>
+            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.85rem", fontWeight: 700, color: "#f85149", lineHeight: 1.2 }}>
               {miner.totalClosedPrs || 0}
             </Typography>
           </Box>
         </Box>
+      </Box>
+
+      {/* Footer Row: Repos spanning full width */}
+      <Box
+        sx={{
+          pt: 0.5,
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        {(() => {
+          const uniqueRepos = prs
+            ? [...new Map(prs.map((pr: any) => [pr.repository, pr.repository])).values()]
+              .map((repo: string) => ({
+                fullName: repo,
+                owner: repo.split('/')[0]
+              }))
+            : [];
+
+          return (
+            <MinerRepoList
+              repos={uniqueRepos}
+              tierBorderColor={tierColors.border}
+            />
+          );
+        })()}
       </Box>
     </Card>
   );

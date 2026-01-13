@@ -34,12 +34,12 @@ export const MinerRepoList: React.FC<MinerRepoListProps> = ({
             const overlap = 10;
             const effectiveWidthPerItem = itemSize - overlap;
 
-            // Rough calc: (Width - FirstItemExtraBase - BubbleReserve) / EffectiveWidth
-            const reserveForBubble = 45; // slightly more for safety
-            const calculatedCurrent = Math.floor((width - reserveForBubble) / effectiveWidthPerItem);
+            // Fill full width - only reserve space for +X badge if needed (same as one avatar)
+            // This ensures +X only appears when we're at the right edge
+            const calculatedCurrent = Math.floor((width - itemSize) / effectiveWidthPerItem) + 1;
 
-            // Ensure at least 3 items if possible, max 6 to prevent crowding with larger icons
-            setMaxItems(Math.max(3, Math.min(6, calculatedCurrent)));
+            // Ensure at least 3 items if possible
+            setMaxItems(Math.max(3, calculatedCurrent));
         };
 
         const observer = new ResizeObserver(updateMaxItems);
@@ -47,7 +47,7 @@ export const MinerRepoList: React.FC<MinerRepoListProps> = ({
         updateMaxItems();
 
         return () => observer.disconnect();
-    }, []);
+    }, [repos.length]);
 
     if (!repos || repos.length === 0) {
         return (
