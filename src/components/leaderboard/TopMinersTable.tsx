@@ -274,7 +274,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
         p: 2,
         backgroundColor: "#000000",
         backdropFilter: "blur(12px)",
-        border: `1px solid ${borderColor}`,
+        border: "1px solid rgba(48, 54, 61, 0.5)", // Neutral border
         borderRadius: 2.5,
         cursor: "pointer",
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -283,11 +283,12 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
         flexDirection: "column",
         gap: 2,
         position: "relative",
-        boxShadow: tierGlow,
+        boxShadow: "none", // No glow by default
         overflow: "hidden",
         "&:hover": {
           backgroundColor: "rgba(22, 27, 34, 0.6)",
-          boxShadow: `0 12px 32px -8px rgba(0, 0, 0, 0.7), ${tierGlow}, 0 0 0 1px ${tierColors.border}60`,
+          boxShadow: `0 12px 32px -8px rgba(0, 0, 0, 0.7), ${tierGlow}`, // Tier glow on hover
+          borderColor: tierColors.border, // Color border on hover
         },
       }}
       elevation={0}
@@ -679,11 +680,9 @@ const MinerSection: React.FC<MinerSectionProps> = ({
     <Card
       sx={{
         backgroundColor: "#000000", // Black background (outline only)
-        border: `1px solid ${color.border}`,
+        border: "1px solid rgba(48, 54, 61, 0.5)", // Normal outline (neutral)
         borderRadius: 3,
-        // Optional glow effect for tiers
-        boxShadow:
-          color.text !== "#8b949e" ? `0 0 20px -10px ${color.border}` : "none",
+        boxShadow: "none", // Remove glow
         display: "flex",
         flexDirection: "column",
       }}
@@ -743,7 +742,7 @@ const MinerSection: React.FC<MinerSectionProps> = ({
           onClick={() => setExpanded(!expanded)}
           sx={{
             py: 1, // Reduced padding
-            borderTop: `1px solid ${color.border}`,
+            borderTop: "1px solid rgba(48, 54, 61, 0.5)", // Neutral border
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
