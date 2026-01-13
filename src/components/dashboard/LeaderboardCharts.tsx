@@ -17,7 +17,7 @@ import { useAllPrs, useReposAndWeights } from '../../api';
 
 const truncateText = (text: string, maxLength: number): string => {
   if (!text) return '';
-  return text.length > maxLength ? `${text.substring(0, maxLength)  }...` : text;
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 };
 
 const LeaderboardCharts: React.FC = () => {

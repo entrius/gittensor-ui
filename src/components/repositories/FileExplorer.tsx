@@ -209,26 +209,26 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
   onSelectFile,
   selectedFile,
 }) => (
-    <Box
-      sx={{
-        width: '100%',
-        height: '100%',
-        overflowY: 'auto',
-        overflowX: 'hidden',
-      }}
-    >
-      <List component="nav" dense>
-        {files.map((node) => (
-          <FileItem
-            key={node.path}
-            node={node}
-            level={0}
-            onSelect={onSelectFile}
-            selectedFile={selectedFile}
-          />
-        ))}
-      </List>
-    </Box>
-  );
+  <Box
+    sx={{
+      width: '100%',
+      height: '100%',
+      overflowY: 'auto',
+      overflowX: 'hidden',
+    }}
+  >
+    <List component="nav" dense>
+      {files.map((node) => (
+        <FileItem
+          key={node.path}
+          node={node}
+          level={0}
+          onSelect={onSelectFile}
+          selectedFile={selectedFile}
+        />
+      ))}
+    </List>
+  </Box>
+);
 
 export default FileExplorer;

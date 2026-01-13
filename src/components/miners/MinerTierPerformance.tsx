@@ -1,6 +1,10 @@
 import React from 'react';
 import { Box, Typography, Grid, Card, CircularProgress } from '@mui/material';
-import { useMinerStats, useTierConfigurations, type TierConfig } from '../../api';
+import {
+  useMinerStats,
+  useTierConfigurations,
+  type TierConfig,
+} from '../../api';
 import { TierCard } from './TierComponents';
 
 const TIER_LEVELS: Record<string, number> = {
@@ -17,9 +21,8 @@ const getTierLevel = (tier: string | undefined | null): number => {
 const getTierConfig = (
   tierName: string,
   tierConfigs: TierConfig[] | undefined,
-): TierConfig | undefined => tierConfigs?.find(
-    (t) => t.name.toLowerCase() === tierName.toLowerCase(),
-  );
+): TierConfig | undefined =>
+  tierConfigs?.find((t) => t.name.toLowerCase() === tierName.toLowerCase());
 
 const getPreviousTierName = (level: number): string => {
   const tierNames = ['', 'Bronze', 'Silver', 'Gold'];

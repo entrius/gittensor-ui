@@ -42,7 +42,10 @@ const TopMinersPage: React.FC = () => {
   }, [allMinersStats]);
 
   // Sort miners by total score
-  const sortedMinerStats = useMemo(() => [...minerStats].sort((a, b) => b.totalScore - a.totalScore), [minerStats]);
+  const sortedMinerStats = useMemo(
+    () => [...minerStats].sort((a, b) => b.totalScore - a.totalScore),
+    [minerStats],
+  );
 
   // Dashboard-like responsive logic
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));

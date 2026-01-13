@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  Box,
-  Stack,
-  Typography,
-  useTheme,
-  useMediaQuery,
-} from '@mui/material';
+import { Box, Stack, Typography, useTheme, useMediaQuery } from '@mui/material';
 import {
   CurrencyExchange,
   Speed,

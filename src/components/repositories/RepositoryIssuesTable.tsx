@@ -45,12 +45,16 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     return issues;
   }, [issues, filter]);
 
-  const sortedIssues = useMemo(() => [...filteredIssues].sort((a, b) => {
-      // Sort by creation date, most recent first
-      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return dateB - dateA;
-    }), [filteredIssues]);
+  const sortedIssues = useMemo(
+    () =>
+      [...filteredIssues].sort((a, b) => {
+        // Sort by creation date, most recent first
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      }),
+    [filteredIssues],
+  );
 
   const FilterButton = ({
     label,

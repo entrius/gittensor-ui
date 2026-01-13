@@ -10,11 +10,11 @@ interface RepositoryDetailsProps {
 const RepositoryDetails: React.FC<RepositoryDetailsProps> = ({
   repositoryFullName,
 }) => (
-    <>
-      <RepositoryScoreCard repositoryFullName={repositoryFullName} />
-      <RepositoryContributorsTable repositoryFullName={repositoryFullName} />
-      <RepositoryPRsTable repositoryFullName={repositoryFullName} />
-    </>
-  );
+  <>
+    <RepositoryScoreCard repositoryFullName={repositoryFullName} />
+    <RepositoryContributorsTable repositoryFullName={repositoryFullName} />
+    <RepositoryPRsTable repositoryFullName={repositoryFullName} />
+  </>
+);
 
 export default RepositoryDetails;

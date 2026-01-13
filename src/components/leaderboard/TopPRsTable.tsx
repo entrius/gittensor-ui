@@ -46,7 +46,7 @@ interface TopPRsTableProps {
 // Utility function to truncate text
 const truncateText = (text: string, maxLength: number): string => {
   if (!text) return '';
-  return text.length > maxLength ? `${text.substring(0, maxLength)  }...` : text;
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 };
 
 const TopPRsTable: React.FC<TopPRsTableProps> = ({
@@ -70,7 +70,10 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
   const [useLogScale, setUseLogScale] = useState(true);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const rankedPRs = useMemo(() => prs.map((pr, index) => ({ ...pr, rank: index + 1 })), [prs]);
+  const rankedPRs = useMemo(
+    () => prs.map((pr, index) => ({ ...pr, rank: index + 1 })),
+    [prs],
+  );
 
   const filteredPRs = useMemo(() => {
     let filtered = rankedPRs;
@@ -111,7 +114,8 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
     return filtered;
   }, [rankedPRs, searchQuery, tierFilter, statusFilter]);
 
-  const statusCounts = useMemo(() => ({
+  const statusCounts = useMemo(
+    () => ({
       all: rankedPRs.length,
       open: rankedPRs.filter(
         (pr) => pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
@@ -120,14 +124,19 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         .length,
       closed: rankedPRs.filter((pr) => pr.prState === 'CLOSED' && !pr.mergedAt)
         .length,
-    }), [rankedPRs]);
+    }),
+    [rankedPRs],
+  );
 
-  const tierCounts = useMemo(() => ({
+  const tierCounts = useMemo(
+    () => ({
       all: rankedPRs.length,
       gold: rankedPRs.filter((pr) => pr.tier === 'Gold').length,
       silver: rankedPRs.filter((pr) => pr.tier === 'Silver').length,
       bronze: rankedPRs.filter((pr) => pr.tier === 'Bronze').length,
-    }), [rankedPRs]);
+    }),
+    [rankedPRs],
+  );
 
   const getTierColor = (tier: string) => {
     switch (tier) {
@@ -1186,58 +1195,58 @@ const bodyCellStyle = {
 };
 
 const getRankIcon = (rank: number) => (
-    <Box
+  <Box
+    sx={{
+      backgroundColor: '#000000',
+      borderRadius: '2px',
+      width: '22px',
+      height: '22px',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+      border: '1px solid',
+      borderColor:
+        rank === 1
+          ? 'rgba(255, 215, 0, 0.4)'
+          : rank === 2
+            ? 'rgba(192, 192, 192, 0.4)'
+            : rank === 3
+              ? 'rgba(205, 127, 50, 0.4)'
+              : 'rgba(255, 255, 255, 0.15)',
+      boxShadow:
+        rank === 1
+          ? '0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)'
+          : rank === 2
+            ? '0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)'
+            : rank === 3
+              ? '0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)'
+              : 'none',
+    }}
+  >
+    <Typography
+      component="span"
       sx={{
-        backgroundColor: '#000000',
-        borderRadius: '2px',
-        width: '22px',
-        height: '22px',
-        display: 'inline-flex',
+        color:
+          rank === 1
+            ? '#FFD700'
+            : rank === 2
+              ? '#C0C0C0'
+              : rank === 3
+                ? '#CD7F32'
+                : 'rgba(255, 255, 255, 0.6)',
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: '0.65rem',
+        fontWeight: 600,
+        lineHeight: 1,
+        display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        flexShrink: 0,
-        border: '1px solid',
-        borderColor:
-          rank === 1
-            ? 'rgba(255, 215, 0, 0.4)'
-            : rank === 2
-              ? 'rgba(192, 192, 192, 0.4)'
-              : rank === 3
-                ? 'rgba(205, 127, 50, 0.4)'
-                : 'rgba(255, 255, 255, 0.15)',
-        boxShadow:
-          rank === 1
-            ? '0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)'
-            : rank === 2
-              ? '0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)'
-              : rank === 3
-                ? '0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)'
-                : 'none',
       }}
     >
-      <Typography
-        component="span"
-        sx={{
-          color:
-            rank === 1
-              ? '#FFD700'
-              : rank === 2
-                ? '#C0C0C0'
-                : rank === 3
-                  ? '#CD7F32'
-                  : 'rgba(255, 255, 255, 0.6)',
-          fontFamily: '"JetBrains Mono", monospace',
-          fontSize: '0.65rem',
-          fontWeight: 600,
-          lineHeight: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {rank}
-      </Typography>
-    </Box>
-  );
+      {rank}
+    </Typography>
+  </Box>
+);
 
 export default TopPRsTable;

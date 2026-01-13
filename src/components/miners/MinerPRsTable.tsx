@@ -71,7 +71,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     };
   }, [prs]);
 
-  
   if (isLoading) {
     return (
       <Card

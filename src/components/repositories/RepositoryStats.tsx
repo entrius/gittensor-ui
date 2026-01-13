@@ -14,9 +14,13 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
   const { data: issues, isLoading: isLoadingIssues } =
     useRepositoryIssues(repositoryFullName);
 
-  const repository = useMemo(() => repos?.find(
-      (r) => r.fullName.toLowerCase() === repositoryFullName.toLowerCase(),
-    ), [repos, repositoryFullName]);
+  const repository = useMemo(
+    () =>
+      repos?.find(
+        (r) => r.fullName.toLowerCase() === repositoryFullName.toLowerCase(),
+      ),
+    [repos, repositoryFullName],
+  );
 
   const stats = useMemo(() => {
     if (!allPRs) return { mergedPRs: 0, totalScore: 0 };

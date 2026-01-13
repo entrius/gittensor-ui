@@ -86,9 +86,13 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     return allPRs;
   }, [allPRs, filter]);
 
-  const sortedPRs = useMemo(() => [...filteredPRs].sort(
-      (a, b) => parseFloat(b.score || '0') - parseFloat(a.score || '0'),
-    ), [filteredPRs]);
+  const sortedPRs = useMemo(
+    () =>
+      [...filteredPRs].sort(
+        (a, b) => parseFloat(b.score || '0') - parseFloat(a.score || '0'),
+      ),
+    [filteredPRs],
+  );
 
   const FilterButton = ({
     label,

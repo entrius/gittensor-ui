@@ -130,11 +130,11 @@ const CommitTrendChart: React.FC = () => {
             colorStops: [
               {
                 offset: 0,
-                color: `${theme.palette.primary.main  }40`,
+                color: `${theme.palette.primary.main}40`,
               },
               {
                 offset: 1,
-                color: `${theme.palette.primary.main  }10`,
+                color: `${theme.palette.primary.main}10`,
               },
             ],
           },

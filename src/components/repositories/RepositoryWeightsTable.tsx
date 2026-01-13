@@ -414,7 +414,7 @@ const RepositoryWeightsTable: React.FC = () => {
           rotate: 45,
           interval: 0,
           formatter: (val: string) =>
-            val.length > 15 ? `${val.slice(0, 12)  }...` : val,
+            val.length > 15 ? `${val.slice(0, 12)}...` : val,
         },
         axisLine: { lineStyle: { color: gridColor } },
       },

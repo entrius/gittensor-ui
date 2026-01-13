@@ -9,7 +9,12 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import { SectionCard } from './SectionCard';
 import { MinerSection } from './MinerSection';
-import { type MinerStats, type SortOption, getTierColors, FONTS } from './types';
+import {
+  type MinerStats,
+  type SortOption,
+  getTierColors,
+  FONTS,
+} from './types';
 
 // Re-export MinerStats for backward compatibility
 export type { MinerStats } from './types';
@@ -29,7 +34,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   const [sortOption, setSortOption] = useState<SortOption>('totalScore');
 
   // Helper to sort a list of miners
-  const sortMinersList = (list: MinerStats[], option: SortOption) => [...list].sort((a, b) => {
+  const sortMinersList = (list: MinerStats[], option: SortOption) =>
+    [...list].sort((a, b) => {
       switch (option) {
         case 'totalScore':
           return (b.totalScore || 0) - (a.totalScore || 0);

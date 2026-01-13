@@ -60,7 +60,7 @@ interface TopRepositoriesTableProps {
 // Utility function to truncate text
 const truncateText = (text: string, maxLength: number): string => {
   if (!text) return '';
-  return text.length > maxLength ? `${text.substring(0, maxLength)  }...` : text;
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 };
 
 const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
@@ -317,7 +317,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           rotate: 45,
           margin: 12,
           formatter: (label: string) =>
-            label.length > 15 ? `${label.substring(0, 12)  }...` : label,
+            label.length > 15 ? `${label.substring(0, 12)}...` : label,
         },
         axisLine: {
           lineStyle: {
@@ -468,12 +468,15 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     }
   };
 
-  const tierCounts = useMemo(() => ({
+  const tierCounts = useMemo(
+    () => ({
       all: rankedRepositories.length,
       gold: rankedRepositories.filter((r) => r.tier === 'Gold').length,
       silver: rankedRepositories.filter((r) => r.tier === 'Silver').length,
       bronze: rankedRepositories.filter((r) => r.tier === 'Bronze').length,
-    }), [rankedRepositories]);
+    }),
+    [rankedRepositories],
+  );
 
   const TierFilterButton = ({
     label,
@@ -987,58 +990,58 @@ const bodyCellStyle = {
 };
 
 const getRankIcon = (rank: number) => (
-    <Box
+  <Box
+    sx={{
+      backgroundColor: '#000000',
+      borderRadius: '2px',
+      width: '22px',
+      height: '22px',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+      border: '1px solid',
+      borderColor:
+        rank === 1
+          ? 'rgba(255, 215, 0, 0.4)'
+          : rank === 2
+            ? 'rgba(192, 192, 192, 0.4)'
+            : rank === 3
+              ? 'rgba(205, 127, 50, 0.4)'
+              : 'rgba(255, 255, 255, 0.15)',
+      boxShadow:
+        rank === 1
+          ? '0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)'
+          : rank === 2
+            ? '0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)'
+            : rank === 3
+              ? '0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)'
+              : 'none',
+    }}
+  >
+    <Typography
+      component="span"
       sx={{
-        backgroundColor: '#000000',
-        borderRadius: '2px',
-        width: '22px',
-        height: '22px',
-        display: 'inline-flex',
+        color:
+          rank === 1
+            ? '#FFD700'
+            : rank === 2
+              ? '#C0C0C0'
+              : rank === 3
+                ? '#CD7F32'
+                : 'rgba(255, 255, 255, 0.6)',
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: '0.65rem',
+        fontWeight: 600,
+        lineHeight: 1,
+        display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        flexShrink: 0,
-        border: '1px solid',
-        borderColor:
-          rank === 1
-            ? 'rgba(255, 215, 0, 0.4)'
-            : rank === 2
-              ? 'rgba(192, 192, 192, 0.4)'
-              : rank === 3
-                ? 'rgba(205, 127, 50, 0.4)'
-                : 'rgba(255, 255, 255, 0.15)',
-        boxShadow:
-          rank === 1
-            ? '0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)'
-            : rank === 2
-              ? '0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)'
-              : rank === 3
-                ? '0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)'
-                : 'none',
       }}
     >
-      <Typography
-        component="span"
-        sx={{
-          color:
-            rank === 1
-              ? '#FFD700'
-              : rank === 2
-                ? '#C0C0C0'
-                : rank === 3
-                  ? '#CD7F32'
-                  : 'rgba(255, 255, 255, 0.6)',
-          fontFamily: '"JetBrains Mono", monospace',
-          fontSize: '0.65rem',
-          fontWeight: 600,
-          lineHeight: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {rank}
-      </Typography>
-    </Box>
-  );
+      {rank}
+    </Typography>
+  </Box>
+);
 
 export default TopRepositoriesTable;
