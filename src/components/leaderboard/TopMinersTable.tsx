@@ -527,8 +527,6 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
   );
 };
 
-
-
 // ============================================================================
 // MINER SECTION (Expandable Grid)
 // ============================================================================
@@ -741,7 +739,14 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 
   // Header Actions - Split into Sort (Center) and Search (Right)
   const sortButtons = (
-    <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", justifyContent: "center" }}>
+    <Box
+      sx={{
+        display: "flex",
+        gap: 0.5,
+        flexWrap: "wrap",
+        justifyContent: "center",
+      }}
+    >
       {[
         { label: "Score", value: "totalScore" },
         { label: "Earnings", value: "usdPerDay" },
