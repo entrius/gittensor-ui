@@ -107,10 +107,11 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
   const isNumericId = (val: string | undefined) => !val || /^\d+$/.test(val);
 
   // Fetch profile if author is missing or looks like an ID
-  const shouldFetch = isNumericId(miner.author);
-  const { data: githubData } = useMinerGithubData(miner.githubId, shouldFetch);
-  // Also fetch PRs as fallback if github data is missing (common for unranked miners)
-  const { data: prs } = useMinerPRs(miner.githubId, shouldFetch);
+  const shouldFetchProfile = isNumericId(miner.author);
+  const { data: githubData } = useMinerGithubData(miner.githubId, shouldFetchProfile);
+
+  // Always fetch PRs to get repository data for the card
+  const { data: prs } = useMinerPRs(miner.githubId, true);
 
   const username =
     githubData?.login ||
