@@ -1,19 +1,19 @@
-import React from "react";
+import React from 'react';
 import {
   Card,
   CardContent,
   Typography,
-  SxProps,
-  Theme,
+  type SxProps,
+  type Theme,
   useMediaQuery,
-} from "@mui/material";
-import theme from "../../theme";
+} from '@mui/material';
+import theme from '../../theme';
 
 interface KpiCardProps {
   title: string;
   value?: string | number;
   subtitle?: string;
-  variant?: "large" | "medium";
+  variant?: 'large' | 'medium';
   sx?: SxProps<Theme>;
 }
 
@@ -21,22 +21,22 @@ const KpiCard: React.FC<KpiCardProps> = ({
   title,
   value,
   subtitle,
-  variant = "medium",
+  variant = 'medium',
   sx,
 }) => {
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isLarge = variant === "large";
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isLarge = variant === 'large';
   const padding = isLarge
     ? { py: isMobile ? 2 : 2.5 }
     : { py: isMobile ? 1.5 : 2 };
-  const valueVariant = isLarge ? "h2" : "h4";
+  const valueVariant = isLarge ? 'h2' : 'h4';
   const titleSize = isLarge ? (isMobile ? 14 : 16) : isMobile ? 12 : 14;
 
   const formattedValue =
     value !== undefined && value !== null
-      ? typeof value === "string" && value.startsWith("$")
+      ? typeof value === 'string' && value.startsWith('$')
         ? value // Already formatted with currency
-        : typeof value === "number" || typeof value === "string"
+        : typeof value === 'number' || typeof value === 'string'
           ? Number(value).toLocaleString()
           : value
       : undefined;
@@ -45,18 +45,18 @@ const KpiCard: React.FC<KpiCardProps> = ({
     <Card
       sx={{
         borderRadius: 3,
-        border: "1px solid rgba(255, 255, 255, 0.1)",
-        backgroundColor: "transparent",
-        height: "100%",
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'transparent',
+        height: '100%',
         ...sx,
       }}
       elevation={0}
     >
       <CardContent
         sx={{
-          textAlign: "center",
+          textAlign: 'center',
           ...padding,
-          "&:last-child": { pb: padding.py },
+          '&:last-child': { pb: padding.py },
         }}
       >
         <Typography
@@ -75,10 +75,10 @@ const KpiCard: React.FC<KpiCardProps> = ({
           sx={{
             fontFamily: '"JetBrains Mono", monospace',
             my: isLarge ? (isMobile ? 0.5 : 1) : 0.5,
-            fontSize: isMobile ? (isLarge ? "2rem" : "1.5rem") : undefined,
+            fontSize: isMobile ? (isLarge ? '2rem' : '1.5rem') : undefined,
           }}
         >
-          {formattedValue ?? "-"}
+          {formattedValue ?? '-'}
         </Typography>
         {subtitle && (
           <Typography

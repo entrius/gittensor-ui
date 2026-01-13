@@ -1,29 +1,21 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Grid,
-  Paper,
   Typography,
   Chip,
-  LinearProgress,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Button,
   Divider,
   Card,
-  CardContent,
   CircularProgress,
-} from "@mui/material";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
-import FactCheckIcon from "@mui/icons-material/FactCheck"; // For Health Score
-import SpeedIcon from "@mui/icons-material/Speed"; // For Activity
-import LaunchIcon from "@mui/icons-material/Launch"; // Added import
-import PeopleIcon from "@mui/icons-material/People"; // For Community
-import BugReportIcon from "@mui/icons-material/BugReport";
-import axios from "axios";
+} from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+// For Health Score
+import SpeedIcon from '@mui/icons-material/Speed'; // For Activity
+import LaunchIcon from '@mui/icons-material/Launch'; // Added import
+import PeopleIcon from '@mui/icons-material/People'; // For Community
+import BugReportIcon from '@mui/icons-material/BugReport';
+import axios from 'axios';
 
 interface RepositoryCheckTabProps {
   repositoryFullName: string;
@@ -67,12 +59,12 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
           );
           setCommunityProfile(communityRes.data);
         } catch (e) {
-          console.warn("Community profile not available", e);
+          console.warn('Community profile not available', e);
         }
 
         // Fetch file tree for file existence checks (shallow, just top level + .github)
         // We can use the tree API or contents API. Tree is better.
-        const branch = repoRes.data.default_branch || "main";
+        const branch = repoRes.data.default_branch || 'main';
         const treeRes = await axios.get(
           `https://api.github.com/repos/${repositoryFullName}/git/trees/${branch}?recursive=1`,
         );
@@ -97,15 +89,15 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
           setGoodFirstIssueCount(gfiRes.data.total_count);
           setHelpWantedCount(hwRes.data.total_count);
         } catch (e) {
-          console.warn("Failed to fetch issue counts", e);
+          console.warn('Failed to fetch issue counts', e);
           // Fallback to repoData count if search fails, though it includes PRs
           if (repoData && repoData.open_issues_count !== undefined) {
             setOpenIssuesCount(repoData.open_issues_count);
           }
         }
       } catch (err: any) {
-        console.error("Failed to fetch repo check data", err);
-        setError("Failed to load repository health data.");
+        console.error('Failed to fetch repo check data', err);
+        setError('Failed to load repository health data.');
       } finally {
         setLoading(false);
       }
@@ -114,6 +106,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
     if (repositoryFullName) {
       fetchData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [repositoryFullName]);
 
   const checks: HealthCheck[] = useMemo(() => {
@@ -124,47 +117,47 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
 
     return [
       {
-        name: "License",
+        name: 'License',
         passed: !!repoData.license,
-        description: "Repository has a license file.",
+        description: 'Repository has a license file.',
       },
       {
-        name: "README",
+        name: 'README',
         passed: hasFile(/^README\.(md|txt|rst)$/i),
-        description: "Repository has a README file.",
+        description: 'Repository has a README file.',
       },
       {
-        name: "Contributing Guidelines",
+        name: 'Contributing Guidelines',
         passed:
           hasFile(/^(docs\/)?CONTRIBUTING\.(md|txt|rst)$/i) ||
           (communityProfile?.files?.contributing !== null &&
             communityProfile?.files?.contributing !== undefined),
-        description: "Guidelines for new contributors.",
+        description: 'Guidelines for new contributors.',
       },
       {
-        name: "Code of Conduct",
+        name: 'Code of Conduct',
         passed:
           hasFile(/^(docs\/)?CODE_OF_CONDUCT\.(md|txt|rst)$/i) ||
           (communityProfile?.files?.code_of_conduct !== null &&
             communityProfile?.files?.code_of_conduct !== undefined),
-        description: "Standards for community behavior.",
+        description: 'Standards for community behavior.',
       },
       {
-        name: "Pull Request Template",
+        name: 'Pull Request Template',
         passed:
           hasFile(/^(\.github\/)?PULL_REQUEST_TEMPLATE\.(md|txt)$/i) ||
           hasFile(/^(\.github\/)?PULL_REQUEST_TEMPLATE\//i),
-        description: "Template for new pull requests.",
+        description: 'Template for new pull requests.',
       },
       {
-        name: "Issue Templates",
+        name: 'Issue Templates',
         passed: hasFile(/^(\.github\/)?ISSUE_TEMPLATE\//i),
-        description: "Templates for reporting issues.",
+        description: 'Templates for reporting issues.',
       },
       {
-        name: "Security Policy",
+        name: 'Security Policy',
         passed: hasFile(/^SECURITY\.(md|txt)$/i),
-        description: "Security policy for vulnerability reporting.",
+        description: 'Security policy for vulnerability reporting.',
       },
     ];
   }, [repoData, communityProfile, fileTree]);
@@ -177,7 +170,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
 
   if (loading) {
     return (
-      <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}>
+      <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
         <CircularProgress />
       </Box>
     );
@@ -185,7 +178,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
 
   if (error) {
     return (
-      <Box sx={{ p: 4, color: "error.main", textAlign: "center" }}>{error}</Box>
+      <Box sx={{ p: 4, color: 'error.main', textAlign: 'center' }}>{error}</Box>
     );
   }
 
@@ -194,11 +187,11 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
       <Box sx={{ mb: 3 }}>
         <Typography
           variant="h6"
-          sx={{ color: "#fff", mb: 0.5, fontWeight: 600 }}
+          sx={{ color: '#fff', mb: 0.5, fontWeight: 600 }}
         >
           Repository Health Check & Feasibility
         </Typography>
-        <Typography variant="body2" sx={{ color: "#8b949e" }}>
+        <Typography variant="body2" sx={{ color: '#8b949e' }}>
           An in-depth analysis of the repository's openness to contributions,
           code health, and community standards.
         </Typography>
@@ -209,30 +202,30 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
         <Grid item xs={12} md={4}>
           <Box
             sx={{
-              display: "flex",
-              flexDirection: "column",
+              display: 'flex',
+              flexDirection: 'column',
               gap: 2,
-              height: "100%",
+              height: '100%',
             }}
           >
             {/* Health Score Card */}
             <Card
               sx={{
                 p: 3,
-                backgroundColor: "#000000",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
+                backgroundColor: '#000000',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: 2,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                minHeight: "280px", // Fixed height for consistency
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '280px', // Fixed height for consistency
               }}
             >
               <Box
                 sx={{
-                  position: "relative",
-                  display: "inline-flex",
+                  position: 'relative',
+                  display: 'inline-flex',
                   mb: 2,
                 }}
               >
@@ -244,10 +237,10 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                   sx={{
                     color:
                       score > 80
-                        ? "#238636"
+                        ? '#238636'
                         : score > 50
-                          ? "#e3b341"
-                          : "#da3633",
+                          ? '#e3b341'
+                          : '#da3633',
                   }}
                 />
                 <Box
@@ -256,18 +249,18 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     left: 0,
                     bottom: 0,
                     right: 0,
-                    position: "absolute",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
+                    position: 'absolute',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
                   <Typography
                     component="div"
                     sx={{
-                      color: "#fff",
+                      color: '#fff',
                       fontWeight: 700,
-                      fontSize: "32px",
+                      fontSize: '32px',
                       fontFamily: '"JetBrains Mono", monospace',
                     }}
                   >
@@ -277,13 +270,13 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
               </Box>
               <Typography
                 variant="h6"
-                sx={{ color: "#fff", mb: 0.5, fontSize: "16px" }}
+                sx={{ color: '#fff', mb: 0.5, fontSize: '16px' }}
               >
                 Health Score
               </Typography>
               <Typography
                 variant="body2"
-                sx={{ color: "#8b949e", textAlign: "center", fontSize: "12px" }}
+                sx={{ color: '#8b949e', textAlign: 'center', fontSize: '12px' }}
               >
                 Based on community standards and best practices.
               </Typography>
@@ -293,8 +286,8 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
             <Card
               sx={{
                 p: 3,
-                backgroundColor: "#000000",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
+                backgroundColor: '#000000',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: 2,
                 flex: 1, // Fill remaining space
               }}
@@ -302,79 +295,79 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
               <Typography
                 variant="h6"
                 sx={{
-                  color: "#fff",
+                  color: '#fff',
                   mb: 2,
-                  fontSize: "14px",
+                  fontSize: '14px',
                   fontWeight: 600,
-                  display: "flex",
-                  alignItems: "center",
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: 1,
                 }}
               >
                 <SpeedIcon sx={{ fontSize: 18 }} /> Activity & Feasibility
               </Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography
                     variant="body2"
-                    sx={{ color: "#8b949e", fontSize: "13px" }}
+                    sx={{ color: '#8b949e', fontSize: '13px' }}
                   >
                     Last Push
                   </Typography>
                   <Typography
                     variant="body2"
                     sx={{
-                      color: "#c9d1d9",
-                      fontSize: "13px",
+                      color: '#c9d1d9',
+                      fontSize: '13px',
                       fontFamily: '"JetBrains Mono", monospace',
                     }}
                   >
                     {new Date(repoData.pushed_at).toLocaleDateString()}
                   </Typography>
                 </Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography
                     variant="body2"
-                    sx={{ color: "#8b949e", fontSize: "13px" }}
+                    sx={{ color: '#8b949e', fontSize: '13px' }}
                   >
                     Created
                   </Typography>
                   <Typography
                     variant="body2"
                     sx={{
-                      color: "#c9d1d9",
-                      fontSize: "13px",
+                      color: '#c9d1d9',
+                      fontSize: '13px',
                       fontFamily: '"JetBrains Mono", monospace',
                     }}
                   >
                     {new Date(repoData.created_at).toLocaleDateString()}
                   </Typography>
                 </Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography
                     variant="body2"
-                    sx={{ color: "#8b949e", fontSize: "13px" }}
+                    sx={{ color: '#8b949e', fontSize: '13px' }}
                   >
                     Status
                   </Typography>
                   <Chip
-                    label={repoData.archived ? "ARCHIVED" : "ACTIVE"}
+                    label={repoData.archived ? 'ARCHIVED' : 'ACTIVE'}
                     size="small"
                     sx={{
                       height: 20,
-                      fontSize: "10px",
+                      fontSize: '10px',
                       bgcolor: repoData.archived
-                        ? "error.dark"
-                        : "success.dark",
-                      color: "#fff",
+                        ? 'error.dark'
+                        : 'success.dark',
+                      color: '#fff',
                     }}
                   />
                 </Box>
               </Box>
-              <Divider sx={{ my: 2, borderColor: "rgba(255,255,255,0.1)" }} />
+              <Divider sx={{ my: 2, borderColor: 'rgba(255,255,255,0.1)' }} />
               <Typography
                 variant="body2"
-                sx={{ color: "#8b949e", fontSize: "13px", lineHeight: 1.6 }}
+                sx={{ color: '#8b949e', fontSize: '13px', lineHeight: 1.6 }}
               >
                 To start contributing, fork the repository, clone it locally,
                 and check the <b>CONTRIBUTING.md</b> file for setup
@@ -388,18 +381,18 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
         <Grid item xs={12} md={8}>
           <Box
             sx={{
-              display: "flex",
-              flexDirection: "column",
+              display: 'flex',
+              flexDirection: 'column',
               gap: 2,
-              height: "100%",
+              height: '100%',
             }}
           >
             {/* Issue Analysis Card */}
             <Card
               sx={{
                 p: 3,
-                backgroundColor: "#000000",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
+                backgroundColor: '#000000',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: 2,
               }}
             >
@@ -407,11 +400,11 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 <Typography
                   variant="h6"
                   sx={{
-                    color: "#fff",
-                    fontSize: "14px",
+                    color: '#fff',
+                    fontSize: '14px',
                     fontWeight: 600,
-                    display: "flex",
-                    alignItems: "center",
+                    display: 'flex',
+                    alignItems: 'center',
                     gap: 1,
                   }}
                 >
@@ -426,30 +419,30 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     sx={{
                       p: 2,
                       borderRadius: 1,
-                      bgcolor: "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(255,255,255,0.05)",
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "center",
+                      bgcolor: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
                     }}
                   >
                     <Typography
                       variant="h4"
                       sx={{
-                        color: "#fff",
+                        color: '#fff',
                         fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "24px",
+                        fontSize: '24px',
                         mb: 0.5,
                       }}
                     >
                       {openIssuesCount !== null
                         ? openIssuesCount
-                        : repoData.open_issues_count || "-"}
+                        : repoData.open_issues_count || '-'}
                     </Typography>
                     <Typography
                       variant="caption"
-                      sx={{ color: "#8b949e", fontSize: "12px" }}
+                      sx={{ color: '#8b949e', fontSize: '12px' }}
                     >
                       Open Issues
                     </Typography>
@@ -462,20 +455,20 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     sx={{
                       p: 2,
                       borderRadius: 1,
-                      bgcolor: "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(255,255,255,0.05)",
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "center",
+                      bgcolor: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
                     }}
                   >
                     <Typography
                       variant="h4"
                       sx={{
-                        color: "#fff",
+                        color: '#fff',
                         fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "24px",
+                        fontSize: '24px',
                         mb: 0.5,
                       }}
                     >
@@ -483,7 +476,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     </Typography>
                     <Typography
                       variant="caption"
-                      sx={{ color: "#8b949e", fontSize: "12px" }}
+                      sx={{ color: '#8b949e', fontSize: '12px' }}
                     >
                       Forks
                     </Typography>
@@ -499,27 +492,27 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     sx={{
                       p: 2,
                       borderRadius: 1,
-                      bgcolor: "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(255,255,255,0.05)",
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                      textDecoration: "none",
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                      "&:hover": {
-                        bgcolor: "rgba(255,255,255,0.08)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        transform: "translateY(-2px)",
+                      bgcolor: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      textDecoration: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        bgcolor: 'rgba(255,255,255,0.08)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        transform: 'translateY(-2px)',
                       },
                     }}
                   >
                     <Box
                       sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
                         mb: 1,
                       }}
                     >
@@ -527,34 +520,34 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                         <Typography
                           variant="h4"
                           sx={{
-                            color: "#fff",
+                            color: '#fff',
                             fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "24px",
+                            fontSize: '24px',
                             mb: 0.5,
                           }}
                         >
                           {goodFirstIssueCount !== null
                             ? goodFirstIssueCount
-                            : "-"}
+                            : '-'}
                         </Typography>
                         <Typography
                           sx={{
-                            color: "#8b949e",
-                            fontSize: "12px",
+                            color: '#8b949e',
+                            fontSize: '12px',
                             fontWeight: 600,
-                            whiteSpace: "nowrap",
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           Good First Issues
                         </Typography>
                       </Box>
                       <LaunchIcon
-                        sx={{ fontSize: 16, color: "#8b949e", mt: 1 }}
+                        sx={{ fontSize: 16, color: '#8b949e', mt: 1 }}
                       />
                     </Box>
                     <Typography
                       variant="caption"
-                      sx={{ color: "#6e7681", fontSize: "11px" }}
+                      sx={{ color: '#6e7681', fontSize: '11px' }}
                     >
                       Perfect for beginners
                     </Typography>
@@ -570,27 +563,27 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     sx={{
                       p: 2,
                       borderRadius: 1,
-                      bgcolor: "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(255,255,255,0.05)",
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                      textDecoration: "none",
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                      "&:hover": {
-                        bgcolor: "rgba(255,255,255,0.08)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        transform: "translateY(-2px)",
+                      bgcolor: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      textDecoration: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        bgcolor: 'rgba(255,255,255,0.08)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        transform: 'translateY(-2px)',
                       },
                     }}
                   >
                     <Box
                       sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
                         mb: 1,
                       }}
                     >
@@ -598,32 +591,32 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                         <Typography
                           variant="h4"
                           sx={{
-                            color: "#fff",
+                            color: '#fff',
                             fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "24px",
+                            fontSize: '24px',
                             mb: 0.5,
                           }}
                         >
-                          {helpWantedCount !== null ? helpWantedCount : "-"}
+                          {helpWantedCount !== null ? helpWantedCount : '-'}
                         </Typography>
                         <Typography
                           sx={{
-                            color: "#8b949e",
-                            fontSize: "12px",
+                            color: '#8b949e',
+                            fontSize: '12px',
                             fontWeight: 600,
-                            whiteSpace: "nowrap",
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           Help Wanted
                         </Typography>
                       </Box>
                       <LaunchIcon
-                        sx={{ fontSize: 16, color: "#8b949e", mt: 1 }}
+                        sx={{ fontSize: 16, color: '#8b949e', mt: 1 }}
                       />
                     </Box>
                     <Typography
                       variant="caption"
-                      sx={{ color: "#6e7681", fontSize: "11px" }}
+                      sx={{ color: '#6e7681', fontSize: '11px' }}
                     >
                       General contributions
                     </Typography>
@@ -636,28 +629,28 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
             <Card
               sx={{
                 p: 0,
-                backgroundColor: "#000000",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
+                backgroundColor: '#000000',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: 2,
                 flex: 1,
-                overflow: "hidden",
+                overflow: 'hidden',
               }}
             >
               <Box
                 sx={{
                   p: 2,
-                  borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                  backgroundColor: "rgba(255,255,255,0.03)",
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  backgroundColor: 'rgba(255,255,255,0.03)',
                 }}
               >
                 <Typography
                   variant="subtitle1"
                   sx={{
-                    color: "#fff",
+                    color: '#fff',
                     fontWeight: 600,
-                    fontSize: "14px",
-                    display: "flex",
-                    alignItems: "center",
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
                     gap: 1,
                   }}
                 >
@@ -673,35 +666,35 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                         sx={{
                           p: 2,
                           borderRadius: 1,
-                          bgcolor: "rgba(255,255,255,0.02)",
-                          border: "1px solid rgba(255,255,255,0.05)",
-                          display: "flex",
-                          alignItems: "flex-start",
+                          bgcolor: 'rgba(255,255,255,0.02)',
+                          border: '1px solid rgba(255,255,255,0.05)',
+                          display: 'flex',
+                          alignItems: 'flex-start',
                           gap: 2,
-                          height: "100%",
-                          transition: "background-color 0.2s",
-                          "&:hover": {
-                            bgcolor: "rgba(255,255,255,0.04)",
+                          height: '100%',
+                          transition: 'background-color 0.2s',
+                          '&:hover': {
+                            bgcolor: 'rgba(255,255,255,0.04)',
                           },
                         }}
                       >
                         <Box sx={{ mt: 0.5 }}>
                           {check.passed ? (
                             <CheckCircleIcon
-                              sx={{ color: "#238636", fontSize: 22 }}
+                              sx={{ color: '#238636', fontSize: 22 }}
                             />
                           ) : (
                             <CancelIcon
-                              sx={{ color: "#da3633", fontSize: 22 }}
+                              sx={{ color: '#da3633', fontSize: 22 }}
                             />
                           )}
                         </Box>
                         <Box>
                           <Typography
                             sx={{
-                              color: "#c9d1d9",
+                              color: '#c9d1d9',
                               fontWeight: 600,
-                              fontSize: "14px",
+                              fontSize: '14px',
                               mb: 0.5,
                             }}
                           >
@@ -709,8 +702,8 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                           </Typography>
                           <Typography
                             sx={{
-                              color: "#8b949e",
-                              fontSize: "12px",
+                              color: '#8b949e',
+                              fontSize: '12px',
                               lineHeight: 1.5,
                             }}
                           >

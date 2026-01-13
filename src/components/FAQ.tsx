@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { Box, Collapse, Stack, Typography } from "@mui/material";
-import { ExpandMore } from "@mui/icons-material";
+import React, { useState } from 'react';
+import { Box, Collapse, Stack, Typography } from '@mui/material';
+import { ExpandMore } from '@mui/icons-material';
 
 export interface FAQProps {
   question: string;
@@ -15,12 +15,12 @@ export const FAQ: React.FC<FAQProps> = ({ question, answer }) => {
       sx={{
         p: 3,
         borderRadius: 3,
-        backgroundColor: "transparent",
-        border: "1px solid rgba(255, 255, 255, 0.1)",
-        cursor: "pointer",
-        transition: "all 0.2s ease-in-out",
-        "&:hover": {
-          borderColor: "rgba(255, 255, 255, 0.3)",
+        backgroundColor: 'transparent',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease-in-out',
+        '&:hover': {
+          borderColor: 'rgba(255, 255, 255, 0.3)',
         },
       }}
       onClick={() => setExpanded(!expanded)}
@@ -36,9 +36,9 @@ export const FAQ: React.FC<FAQProps> = ({ question, answer }) => {
         </Typography>
         <ExpandMore
           sx={{
-            transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
-            transition: "transform 0.3s ease-in-out",
-            color: "text.secondary",
+            transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.3s ease-in-out',
+            color: 'text.secondary',
           }}
         />
       </Stack>

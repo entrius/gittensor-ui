@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import axios, { AxiosError } from "axios";
+import { useQuery } from '@tanstack/react-query';
+import axios, { type AxiosError } from 'axios';
 
 export const useApiQuery = <TResponse = void, TSelect = TResponse>(
   queryName: string,
@@ -19,6 +19,6 @@ export const useApiQuery = <TResponse = void, TSelect = TResponse>(
     },
     retry: false,
     enabled: enabled ?? true,
-    refetchInterval: refetchInterval,
+    refetchInterval,
   });
 };

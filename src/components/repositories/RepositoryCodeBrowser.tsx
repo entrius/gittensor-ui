@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Paper,
@@ -12,14 +12,14 @@ import {
   Link,
   Breadcrumbs,
   Avatar,
-} from "@mui/material";
-import axios from "axios";
-import { formatDistanceToNow } from "date-fns";
-import FolderIcon from "@mui/icons-material/Folder";
-import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+} from '@mui/material';
+import axios from 'axios';
+import { formatDistanceToNow } from 'date-fns';
+import FolderIcon from '@mui/icons-material/Folder';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 // import TextSnippetIcon from "@mui/icons-material/TextSnippet"; // Unused
-import CodeViewer from "./CodeViewer";
-import { buildFileTree, FileNode } from "./FileExplorer";
+import CodeViewer from './CodeViewer';
+import { buildFileTree, type FileNode } from './FileExplorer';
 
 interface RepositoryCodeBrowserProps {
   repositoryFullName: string;
@@ -39,7 +39,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
   const [tree, setTree] = useState<FileNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [defaultBranch, setDefaultBranch] = useState<string>("main");
+  const [defaultBranch, setDefaultBranch] = useState<string>('main');
   const [currentPath, setCurrentPath] = useState<string | null>(null);
 
   // Cache commit info to avoid spamming
@@ -55,7 +55,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
         const repoResponse = await axios.get(
           `https://api.github.com/repos/${repositoryFullName}`,
         );
-        const branch = repoResponse.data.default_branch || "main";
+        const branch = repoResponse.data.default_branch || 'main';
         setDefaultBranch(branch);
 
         const treeResponse = await axios.get(
@@ -67,11 +67,11 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
           setTree(nodes);
         }
       } catch (err: any) {
-        console.error("Failed to load repository data", err);
+        console.error('Failed to load repository data', err);
         if (err.response?.status === 403) {
-          setError("GitHub API rate limit exceeded. Please try again later.");
+          setError('GitHub API rate limit exceeded. Please try again later.');
         } else {
-          setError("Failed to load repository structure.");
+          setError('Failed to load repository structure.');
         }
       } finally {
         setLoading(false);
@@ -86,16 +86,16 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
   // Fetch commit info for current path
   useEffect(() => {
     const fetchCommit = async () => {
-      const pathKey = currentPath || "root";
+      const pathKey = currentPath || 'root';
       if (pathCommits[pathKey]) return; // Already cached
 
       setLoadingCommit(true);
       try {
         const params = new URLSearchParams();
-        params.append("sha", defaultBranch);
-        params.append("per_page", "1");
+        params.append('sha', defaultBranch);
+        params.append('per_page', '1');
         if (currentPath) {
-          params.append("path", currentPath);
+          params.append('path', currentPath);
         }
 
         const response = await axios.get(
@@ -109,14 +109,14 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
             [pathKey]: {
               message: c.commit.message,
               author: c.commit.author.name,
-              avatarUrl: c.author?.avatar_url || "",
+              avatarUrl: c.author?.avatar_url || '',
               date: c.commit.author.date,
               sha: c.sha.substring(0, 7),
             },
           }));
         }
       } catch (err) {
-        console.error("Failed to fetch commit", err);
+        console.error('Failed to fetch commit', err);
       } finally {
         setLoadingCommit(false);
       }
@@ -130,16 +130,16 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
 
   const currentNode = useMemo(() => {
     if (!currentPath)
-      return { children: tree, type: "tree", path: "", name: "" };
+      return { children: tree, type: 'tree', path: '', name: '' };
 
-    const parts = currentPath.split("/");
+    const parts = currentPath.split('/');
     let currentNodes = tree;
     let foundNode: FileNode | undefined;
 
     for (let i = 0; i < parts.length; i++) {
       foundNode = currentNodes.find((n) => n.name === parts[i]);
       if (!foundNode) return null;
-      if (foundNode.type === "tree" && foundNode.children) {
+      if (foundNode.type === 'tree' && foundNode.children) {
         currentNodes = foundNode.children;
       } else if (i < parts.length - 1) {
         // path segment matches a file but there are more segments? Should not happen in valid tree
@@ -155,7 +155,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
 
   if (loading) {
     return (
-      <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}>
+      <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
         <CircularProgress />
       </Box>
     );
@@ -163,21 +163,21 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
 
   if (error) {
     return (
-      <Box sx={{ p: 4, color: "error.main", textAlign: "center" }}>{error}</Box>
+      <Box sx={{ p: 4, color: 'error.main', textAlign: 'center' }}>{error}</Box>
     );
   }
 
-  const breadcrumbs = currentPath ? currentPath.split("/") : [];
-  const currentCommit = pathCommits[currentPath || "root"];
+  const breadcrumbs = currentPath ? currentPath.split('/') : [];
+  const currentCommit = pathCommits[currentPath || 'root'];
 
-  const isFile = currentNode && currentNode.type === "blob";
+  const isFile = currentNode && currentNode.type === 'blob';
   const directoryChildren =
     !isFile && currentNode ? currentNode.children || [] : [];
 
   // Sort children: Folders first, then files
   const sortedChildren = [...directoryChildren].sort((a, b) => {
     if (a.type === b.type) return a.name.localeCompare(b.name);
-    return a.type === "tree" ? -1 : 1;
+    return a.type === 'tree' ? -1 : 1;
   });
 
   return (
@@ -186,46 +186,46 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
       <Box
         sx={{
           mb: 2,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
         }}
       >
         <Breadcrumbs
           aria-label="breadcrumb"
           sx={{
-            "& .MuiBreadcrumbs-separator": { color: "#8b949e" },
+            '& .MuiBreadcrumbs-separator': { color: '#8b949e' },
           }}
         >
           <Link
             component="button"
             underline="hover"
-            color={!currentPath ? "text.primary" : "inherit"}
+            color={!currentPath ? 'text.primary' : 'inherit'}
             onClick={() => handleNavigate(null)}
             sx={{
               fontWeight: !currentPath ? 600 : 400,
-              color: !currentPath ? "#c9d1d9" : "#58a6ff",
-              cursor: !currentPath ? "default" : "pointer",
-              fontSize: "14px",
+              color: !currentPath ? '#c9d1d9' : '#58a6ff',
+              cursor: !currentPath ? 'default' : 'pointer',
+              fontSize: '14px',
             }}
           >
             {repositoryFullName}
           </Link>
           {breadcrumbs.map((part, index) => {
-            const path = breadcrumbs.slice(0, index + 1).join("/");
+            const path = breadcrumbs.slice(0, index + 1).join('/');
             const isLast = index === breadcrumbs.length - 1;
             return (
               <Link
                 key={path}
                 component="button"
-                underline={isLast ? "none" : "hover"}
-                color={isLast ? "text.primary" : "inherit"}
+                underline={isLast ? 'none' : 'hover'}
+                color={isLast ? 'text.primary' : 'inherit'}
                 onClick={() => !isLast && handleNavigate(path)}
                 sx={{
                   fontWeight: isLast ? 600 : 400,
-                  color: isLast ? "#c9d1d9" : "#58a6ff",
-                  cursor: isLast ? "default" : "pointer",
-                  fontSize: "14px",
+                  color: isLast ? '#c9d1d9' : '#58a6ff',
+                  cursor: isLast ? 'default' : 'pointer',
+                  fontSize: '14px',
                 }}
               >
                 {part}
@@ -240,21 +240,21 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
         <Paper
           elevation={0}
           sx={{
-            border: "1px solid #30363d",
-            borderBottom: "none",
-            borderRadius: "6px 6px 0 0",
-            backgroundColor: "#161b22",
+            border: '1px solid #30363d',
+            borderBottom: 'none',
+            borderRadius: '6px 6px 0 0',
+            backgroundColor: '#161b22',
             p: 2,
-            display: "flex",
-            alignItems: "center",
+            display: 'flex',
+            alignItems: 'center',
             gap: 2,
-            justifyContent: "space-between",
+            justifyContent: 'space-between',
           }}
         >
           {loadingCommit ? (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CircularProgress size={16} />
-              <Typography sx={{ fontSize: "13px", color: "#8b949e" }}>
+              <Typography sx={{ fontSize: '13px', color: '#8b949e' }}>
                 Loading commit info...
               </Typography>
             </Box>
@@ -262,10 +262,10 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
             <>
               <Box
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: 1.5,
-                  overflow: "hidden",
+                  overflow: 'hidden',
                 }}
               >
                 <Avatar
@@ -274,22 +274,22 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                 />
                 <Typography
                   sx={{
-                    fontSize: "13px",
+                    fontSize: '13px',
                     fontWeight: 600,
-                    color: "#c9d1d9",
-                    whiteSpace: "nowrap",
+                    color: '#c9d1d9',
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   {currentCommit.author}
                 </Typography>
                 <Typography
                   sx={{
-                    fontSize: "13px",
-                    color: "#8b949e",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    maxWidth: "600px",
+                    fontSize: '13px',
+                    color: '#8b949e',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '600px',
                   }}
                 >
                   {currentCommit.message}
@@ -297,22 +297,22 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
               </Box>
               <Box
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: 2,
                   flexShrink: 0,
                 }}
               >
                 <Typography
                   sx={{
-                    fontSize: "13px",
-                    color: "#8b949e",
+                    fontSize: '13px',
+                    color: '#8b949e',
                     fontFamily: '"JetBrains Mono", monospace',
                   }}
                 >
                   {currentCommit.sha}
                 </Typography>
-                <Typography sx={{ fontSize: "13px", color: "#8b949e" }}>
+                <Typography sx={{ fontSize: '13px', color: '#8b949e' }}>
                   {formatDistanceToNow(new Date(currentCommit.date), {
                     addSuffix: true,
                   })}
@@ -320,7 +320,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
               </Box>
             </>
           ) : (
-            <Typography sx={{ fontSize: "13px", color: "#8b949e" }}>
+            <Typography sx={{ fontSize: '13px', color: '#8b949e' }}>
               Latest commit info unavailable
             </Typography>
           )}
@@ -338,9 +338,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
           component={Paper}
           elevation={0}
           sx={{
-            border: "1px solid #30363d",
-            borderRadius: isFile ? "6px" : "0 0 6px 6px", // Connect to header
-            backgroundColor: "#0d1117",
+            border: '1px solid #30363d',
+            borderRadius: isFile ? '6px' : '0 0 6px 6px', // Connect to header
+            backgroundColor: '#0d1117',
           }}
         >
           <Table size="small">
@@ -350,24 +350,24 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                 <TableRow
                   hover
                   sx={{
-                    "&:hover": { backgroundColor: "#161b22" },
-                    cursor: "pointer",
+                    '&:hover': { backgroundColor: '#161b22' },
+                    cursor: 'pointer',
                   }}
                 >
                   <TableCell
                     colSpan={3}
                     onClick={() => {
                       const parent = currentPath
-                        .split("/")
+                        .split('/')
                         .slice(0, -1)
-                        .join("/");
+                        .join('/');
                       handleNavigate(parent || null);
                     }}
                     sx={{
-                      color: "#58a6ff",
-                      borderBottom: "1px solid #21262d",
+                      color: '#58a6ff',
+                      borderBottom: '1px solid #21262d',
                       py: 1,
-                      fontSize: "13px",
+                      fontSize: '13px',
                       fontWeight: 600,
                     }}
                   >
@@ -381,45 +381,45 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   hover
                   onClick={() => handleNavigate(node.path)}
                   sx={{
-                    "&:hover": { backgroundColor: "#161b22" },
-                    cursor: "pointer",
-                    transition: "background-color 0.1s",
+                    '&:hover': { backgroundColor: '#161b22' },
+                    cursor: 'pointer',
+                    transition: 'background-color 0.1s',
                   }}
                 >
                   <TableCell
                     sx={{
-                      borderBottom: "1px solid #21262d",
+                      borderBottom: '1px solid #21262d',
                       py: 1,
-                      width: "32px",
+                      width: '32px',
                       pl: 2,
                     }}
                   >
-                    {node.type === "tree" ? (
-                      <FolderIcon sx={{ color: "#54aeff", fontSize: 16 }} />
+                    {node.type === 'tree' ? (
+                      <FolderIcon sx={{ color: '#54aeff', fontSize: 16 }} />
                     ) : (
                       <InsertDriveFileIcon
-                        sx={{ color: "#8b949e", fontSize: 16 }}
+                        sx={{ color: '#8b949e', fontSize: 16 }}
                       />
                     )}
                   </TableCell>
                   <TableCell
                     sx={{
-                      borderBottom: "1px solid #21262d",
+                      borderBottom: '1px solid #21262d',
                       py: 1,
-                      color: "#c9d1d9",
-                      fontSize: "14px",
-                      fontWeight: node.type === "tree" ? 600 : 400,
+                      color: '#c9d1d9',
+                      fontSize: '14px',
+                      fontWeight: node.type === 'tree' ? 600 : 400,
                     }}
                   >
                     {node.name}
                   </TableCell>
                   <TableCell
                     sx={{
-                      borderBottom: "1px solid #21262d",
+                      borderBottom: '1px solid #21262d',
                       py: 1,
-                      color: "#8b949e",
-                      fontSize: "13px",
-                      textAlign: "right",
+                      color: '#8b949e',
+                      fontSize: '13px',
+                      textAlign: 'right',
                     }}
                   >
                     {/* Commit message col (optional placeholder) */}

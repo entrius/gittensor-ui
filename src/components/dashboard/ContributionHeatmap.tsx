@@ -1,6 +1,6 @@
-import React from "react";
-import { Box, Card, Typography, Tooltip } from "@mui/material";
-import { ActivityCalendar } from "react-activity-calendar";
+import React from 'react';
+import { Box, Card, Typography, Tooltip } from '@mui/material';
+import { ActivityCalendar } from 'react-activity-calendar';
 
 interface ContributionData {
   date: string;
@@ -20,18 +20,18 @@ interface ContributionHeatmapProps {
 }
 
 const HEATMAP_THEME = {
-  light: ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"],
-  dark: ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"],
+  light: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
+  dark: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
 };
 
 const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
   data,
   contributionsLast30Days,
   totalDaysShown,
-  subtitle = "network contributions in the last 30 days",
+  subtitle = 'network contributions in the last 30 days',
   footerText,
-  emptyTitle = "No contributions yet",
-  emptySubtitle = "Activity will appear here once PRs are merged",
+  emptyTitle = 'No contributions yet',
+  emptySubtitle = 'Activity will appear here once PRs are merged',
   bare = false,
 }) => {
   const isEmpty = data.length === 0;
@@ -41,10 +41,10 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
       <Box sx={{ mb: 2.5 }}>
         <Typography
           sx={{
-            color: "#fff",
+            color: '#fff',
             fontFamily: '"JetBrains Mono", monospace',
             fontWeight: 700,
-            fontSize: "2.5rem",
+            fontSize: '2.5rem',
             lineHeight: 1,
           }}
         >
@@ -53,9 +53,9 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
         <Typography
           variant="body2"
           sx={{
-            color: "rgba(255, 255, 255, 0.4)",
+            color: 'rgba(255, 255, 255, 0.4)',
             fontFamily: '"JetBrains Mono", monospace',
-            fontSize: "0.85rem",
+            fontSize: '0.85rem',
             mt: 0.5,
           }}
         >
@@ -63,24 +63,24 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
         </Typography>
       </Box>
 
-      <Box sx={{ width: "100%", overflowX: "auto", mb: 1 }}>
+      <Box sx={{ width: '100%', overflowX: 'auto', mb: 1 }}>
         {isEmpty ? (
           <Box
             sx={{
               py: 4,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
               minHeight: 100,
             }}
           >
             <Typography
               sx={{
-                color: "rgba(255, 255, 255, 0.5)",
+                color: 'rgba(255, 255, 255, 0.5)',
                 fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "0.85rem",
-                textAlign: "center",
+                fontSize: '0.85rem',
+                textAlign: 'center',
               }}
             >
               {emptyTitle}
@@ -88,10 +88,10 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
             {emptySubtitle && (
               <Typography
                 sx={{
-                  color: "rgba(255, 255, 255, 0.3)",
+                  color: 'rgba(255, 255, 255, 0.3)',
                   fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: "0.75rem",
-                  textAlign: "center",
+                  fontSize: '0.75rem',
+                  textAlign: 'center',
                   mt: 0.5,
                 }}
               >
@@ -104,32 +104,32 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
             data={data}
             theme={HEATMAP_THEME}
             labels={{
-              legend: { less: "Less", more: "More" },
+              legend: { less: 'Less', more: 'More' },
               months: [
-                "Jan",
-                "Feb",
-                "Mar",
-                "Apr",
-                "May",
-                "Jun",
-                "Jul",
-                "Aug",
-                "Sep",
-                "Oct",
-                "Nov",
-                "Dec",
+                'Jan',
+                'Feb',
+                'Mar',
+                'Apr',
+                'May',
+                'Jun',
+                'Jul',
+                'Aug',
+                'Sep',
+                'Oct',
+                'Nov',
+                'Dec',
               ],
               totalCount: `{{count}} contributions in the last ${totalDaysShown} days`,
-              weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+              weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
             }}
             blockSize={11}
             blockMargin={3}
             fontSize={11}
-            style={{ color: "#fff" }}
+            style={{ color: '#fff' }}
             showWeekdayLabels={false}
             renderBlock={(block, activity) => (
               <Tooltip
-                title={`${activity.count} contribution${activity.count !== 1 ? "s" : ""} on ${new Date(activity.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
+                title={`${activity.count} contribution${activity.count !== 1 ? 's' : ''} on ${new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
                 arrow
                 placement="top"
               >
@@ -144,10 +144,10 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
         <Typography
           variant="caption"
           sx={{
-            color: "rgba(255, 255, 255, 0.25)",
-            display: "block",
-            fontStyle: "italic",
-            fontSize: "0.7rem",
+            color: 'rgba(255, 255, 255, 0.25)',
+            display: 'block',
+            fontStyle: 'italic',
+            fontSize: '0.7rem',
           }}
         >
           {footerText}
@@ -160,7 +160,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
     return <Box>{content}</Box>;
   }
 
-  return <Card sx={{ height: "100%", p: 3 }}>{content}</Card>;
+  return <Card sx={{ height: '100%', p: 3 }}>{content}</Card>;
 };
 
 export default ContributionHeatmap;

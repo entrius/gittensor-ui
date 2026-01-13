@@ -1,12 +1,10 @@
-import React, { useMemo } from "react";
-import { useMediaQuery, Box } from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import { Page } from "../components/layout";
-import { TopMinersTable, SEO } from "../components";
-import { useAllMiners } from "../api";
-import theme from "../theme";
-
-import { LeaderboardSidebar } from "../components/leaderboard/LeaderboardSidebar";
+import React, { useMemo } from 'react';
+import { useMediaQuery, Box } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { Page } from '../components/layout';
+import { TopMinersTable, LeaderboardSidebar, SEO } from '../components';
+import { useAllMiners } from '../api';
+import theme from '../theme';
 
 const TopMinersPage: React.FC = () => {
   const navigate = useNavigate();
@@ -23,7 +21,7 @@ const TopMinersPage: React.FC = () => {
   const minerStats = useMemo(() => {
     if (!Array.isArray(allMinersStats)) return [];
     return allMinersStats.map((stat) => ({
-      githubId: stat.githubId || "",
+      githubId: stat.githubId || '',
       author: stat.githubUsername || undefined,
       totalScore: Number(stat.totalScore) || 0,
       baseTotalScore: Number(stat.baseTotalScore) || 0,
@@ -31,7 +29,7 @@ const TopMinersPage: React.FC = () => {
       linesChanged: Number(stat.totalLinesChanged) || 0,
       linesAdded: Number(stat.totalAdditions) || 0,
       linesDeleted: Number(stat.totalDeletions) || 0,
-      hotkey: stat.hotkey || "N/A",
+      hotkey: stat.hotkey || 'N/A',
       uniqueReposCount: Number(stat.uniqueReposCount) || 0,
       credibility: Number(stat.credibility) || 0,
       currentTier: stat.currentTier,
@@ -44,19 +42,20 @@ const TopMinersPage: React.FC = () => {
   }, [allMinersStats]);
 
   // Sort miners by total score
-  const sortedMinerStats = useMemo(() => {
-    return [...minerStats].sort((a, b) => b.totalScore - a.totalScore);
-  }, [minerStats]);
+  const sortedMinerStats = useMemo(
+    () => [...minerStats].sort((a, b) => b.totalScore - a.totalScore),
+    [minerStats],
+  );
 
   // Dashboard-like responsive logic
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
-  const isLargeScreen = useMediaQuery(theme.breakpoints.up("xl"));
-  const showSidebarRight = useMediaQuery(theme.breakpoints.up("xl"));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
+  const showSidebarRight = useMediaQuery(theme.breakpoints.up('xl'));
 
   // Dynamic sidebar width based on screen size (matching DashboardPage)
   const sidebarWidth =
-    isMobile || isTablet ? "100%" : isLargeScreen ? "340px" : "300px";
+    isMobile || isTablet ? '100%' : isLargeScreen ? '340px' : '300px';
 
   return (
     <Page title="Miner Leaderboard">
@@ -66,43 +65,43 @@ const TopMinersPage: React.FC = () => {
       />
       <Box
         sx={{
-          width: "100%",
-          height: showSidebarRight ? "calc(100vh - 64px)" : "auto",
-          display: "flex",
-          flexDirection: showSidebarRight ? "row" : "column",
+          width: '100%',
+          height: showSidebarRight ? 'calc(100vh - 64px)' : 'auto',
+          display: 'flex',
+          flexDirection: showSidebarRight ? 'row' : 'column',
           gap: { xs: 2, sm: 2, md: 2.5, lg: 3 },
           py: { xs: 2, sm: 2, md: 2.5, lg: 3 },
           px: { xs: 2, sm: 2, md: 2.5, lg: 3 },
-          overflow: "hidden",
+          overflow: 'hidden',
         }}
       >
         {/* Main Content Area */}
         <Box
           sx={{
             flex: 1,
-            display: "flex",
-            flexDirection: "column",
+            display: 'flex',
+            flexDirection: 'column',
             gap: { xs: 2, sm: 1.5 },
             minHeight: 0,
-            overflow: showSidebarRight ? "auto" : "visible",
+            overflow: showSidebarRight ? 'auto' : 'visible',
             minWidth: 0,
             pr: showSidebarRight ? 1 : 0,
-            "&::-webkit-scrollbar": {
-              width: "8px",
+            '&::-webkit-scrollbar': {
+              width: '8px',
             },
-            "&::-webkit-scrollbar-track": {
-              backgroundColor: "transparent",
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: 'transparent',
             },
-            "&::-webkit-scrollbar-thumb": {
-              backgroundColor: "rgba(255, 255, 255, 0.1)",
-              borderRadius: "4px",
-              "&:hover": {
-                backgroundColor: "rgba(255, 255, 255, 0.2)",
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '4px',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
               },
             },
           }}
         >
-          <Box sx={{ width: "100%" }}>
+          <Box sx={{ width: '100%' }}>
             <TopMinersTable
               miners={sortedMinerStats}
               isLoading={isLoadingMinerStats}
@@ -114,12 +113,12 @@ const TopMinersPage: React.FC = () => {
         {/* Right Sidebar - Spacer to match Dashboard Live Activity */}
         <Box
           sx={{
-            width: showSidebarRight ? sidebarWidth : "100%",
-            height: showSidebarRight ? "100%" : "auto",
-            maxHeight: showSidebarRight ? "100%" : "none", // Allow full height when stacked
+            width: showSidebarRight ? sidebarWidth : '100%',
+            height: showSidebarRight ? '100%' : 'auto',
+            maxHeight: showSidebarRight ? '100%' : 'none', // Allow full height when stacked
             flexShrink: 0,
-            display: "flex",
-            flexDirection: "column",
+            display: 'flex',
+            flexDirection: 'column',
             gap: 2, // Add gap for spacing when stacked
           }}
         >

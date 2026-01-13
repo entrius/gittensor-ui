@@ -1,16 +1,16 @@
-import React, { useMemo } from "react";
-import { Box, Card, Typography, Grid, CircularProgress } from "@mui/material";
-import { subDays, format } from "date-fns";
+import React, { useMemo } from 'react';
+import { Box, Card, Typography, Grid, CircularProgress } from '@mui/material';
+import { subDays, format } from 'date-fns';
 import {
   useMinerStats,
   useMinerPRs,
   useReposAndWeights,
   useAllMiners,
-} from "../../api";
-import { ContributionHeatmap } from "../dashboard";
-import TrustBadge from "./TrustBadge";
-import CredibilityChart from "./CredibilityChart";
-import PerformanceRadar from "./PerformanceRadar";
+} from '../../api';
+import { ContributionHeatmap } from '../dashboard';
+import TrustBadge from './TrustBadge';
+import CredibilityChart from './CredibilityChart';
+import PerformanceRadar from './PerformanceRadar';
 
 interface MinerActivityProps {
   githubId: string;
@@ -49,7 +49,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({ githubId }) => {
 
       const dataMap = new Map<string, number>();
       for (let i = daysToShow; i >= 0; i--) {
-        dataMap.set(format(subDays(today, i), "yyyy-MM-dd"), 0);
+        dataMap.set(format(subDays(today, i), 'yyyy-MM-dd'), 0);
       }
 
       let last30Count = 0;
@@ -60,7 +60,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({ githubId }) => {
         const date = new Date(pr.mergedAt);
         if (isNaN(date.getTime())) return;
 
-        const dateStr = format(date, "yyyy-MM-dd");
+        const dateStr = format(date, 'yyyy-MM-dd');
         if (dataMap.has(dateStr)) {
           dataMap.set(dateStr, (dataMap.get(dateStr) || 0) + 1);
         }
@@ -124,7 +124,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({ githubId }) => {
       const repoWeights = new Map<string, number>();
       repos.forEach((repo) => {
         if (repo?.fullName) {
-          repoWeights.set(repo.fullName, parseFloat(repo.weight || "0"));
+          repoWeights.set(repo.fullName, parseFloat(repo.weight || '0'));
         }
       });
       const totalWeight = prs.reduce(
@@ -147,16 +147,16 @@ const MinerActivity: React.FC<MinerActivityProps> = ({ githubId }) => {
   if (!minerStats) return null;
 
   return (
-    <Card sx={{ p: 0, overflow: "hidden", mb: 3 }}>
+    <Card sx={{ p: 0, overflow: 'hidden', mb: 3 }}>
       {/* Header with Trust Badge */}
       <Box
         sx={{
           p: 2.5,
-          borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-          backgroundColor: "rgba(255, 255, 255, 0.02)",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          backgroundColor: 'rgba(255, 255, 255, 0.02)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
         }}
       >
         <Typography variant="sectionTitle">Developer Activity</Typography>
@@ -167,7 +167,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({ githubId }) => {
       </Box>
 
       {isLoadingPRs ? (
-        <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}>
+        <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
           <CircularProgress size={30} />
         </Box>
       ) : (
@@ -179,10 +179,10 @@ const MinerActivity: React.FC<MinerActivityProps> = ({ githubId }) => {
             md={6}
             sx={{
               p: 3,
-              borderRight: { md: "1px solid rgba(255, 255, 255, 0.1)" },
+              borderRight: { md: '1px solid rgba(255, 255, 255, 0.1)' },
               borderBottom: {
-                xs: "1px solid rgba(255, 255, 255, 0.1)",
-                md: "none",
+                xs: '1px solid rgba(255, 255, 255, 0.1)',
+                md: 'none',
               },
             }}
           >
@@ -203,14 +203,14 @@ const MinerActivity: React.FC<MinerActivityProps> = ({ githubId }) => {
             md={3}
             sx={{
               p: 3,
-              borderRight: { md: "1px solid rgba(255, 255, 255, 0.1)" },
+              borderRight: { md: '1px solid rgba(255, 255, 255, 0.1)' },
               borderBottom: {
-                xs: "1px solid rgba(255, 255, 255, 0.1)",
-                md: "none",
+                xs: '1px solid rgba(255, 255, 255, 0.1)',
+                md: 'none',
               },
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
             }}
           >
             <CredibilityChart
@@ -228,9 +228,9 @@ const MinerActivity: React.FC<MinerActivityProps> = ({ githubId }) => {
             md={3}
             sx={{
               p: 3,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
             }}
           >
             <PerformanceRadar {...radarValues} />

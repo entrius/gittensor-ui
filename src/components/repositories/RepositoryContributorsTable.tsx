@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from "react";
-import { Box, Typography, CircularProgress, Avatar } from "@mui/material";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import { useAllPrs, useAllMiners } from "../../api";
-import { useNavigate } from "react-router-dom";
+import React, { useMemo, useState } from 'react';
+import { Box, Typography, CircularProgress, Avatar } from '@mui/material';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import { useAllPrs, useAllMiners } from '../../api';
+import { useNavigate } from 'react-router-dom';
 
 interface RepositoryContributorsTableProps {
   repositoryFullName: string;
@@ -44,7 +44,7 @@ const RepositoryContributorsTable: React.FC<
       (pr) =>
         pr.repository.toLowerCase() === repositoryFullName.toLowerCase() &&
         pr.githubId &&
-        pr.prState === "MERGED",
+        pr.prState === 'MERGED',
     );
 
     const contributorsMap = new Map<
@@ -61,7 +61,7 @@ const RepositoryContributorsTable: React.FC<
         score: 0,
       };
       existing.prs += 1;
-      existing.score += parseFloat(pr.score || "0");
+      existing.score += parseFloat(pr.score || '0');
       contributorsMap.set(pr.githubId, existing);
     });
 
@@ -87,7 +87,7 @@ const RepositoryContributorsTable: React.FC<
 
   if (isLoading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
         <CircularProgress size={20} />
       </Box>
     );
@@ -98,26 +98,26 @@ const RepositoryContributorsTable: React.FC<
   }
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", width: "100%" }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
       <Box
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           mb: 2,
         }}
       >
         <Typography
           variant="subtitle2"
           sx={{
-            color: "text.secondary",
+            color: 'text.secondary',
             fontFamily: '"JetBrains Mono", monospace',
           }}
         >
-          Top Miner Contributors{" "}
+          Top Miner Contributors{' '}
           <Typography
             component="span"
-            sx={{ color: "#8b949e", fontSize: "0.8em" }}
+            sx={{ color: '#8b949e', fontSize: '0.8em' }}
           >
             ({contributors.length})
           </Typography>
@@ -127,34 +127,34 @@ const RepositoryContributorsTable: React.FC<
       {/* Header Row */}
       <Box
         sx={{
-          display: "grid",
-          gridTemplateColumns: "32px 1fr 48px 75px",
+          display: 'grid',
+          gridTemplateColumns: '32px 1fr 48px 75px',
           gap: 1,
           px: 1.5,
           py: 1,
-          borderBottom: "1px solid rgba(255,255,255,0.1)",
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
         }}
       >
-        <Typography sx={{ fontSize: "11px", color: "text.secondary" }}>
+        <Typography sx={{ fontSize: '11px', color: 'text.secondary' }}>
           #
         </Typography>
-        <Typography sx={{ fontSize: "11px", color: "text.secondary" }}>
+        <Typography sx={{ fontSize: '11px', color: 'text.secondary' }}>
           MINER
         </Typography>
         <Typography
           sx={{
-            fontSize: "11px",
-            color: "text.secondary",
-            textAlign: "right",
+            fontSize: '11px',
+            color: 'text.secondary',
+            textAlign: 'right',
           }}
         >
           PRS
         </Typography>
         <Typography
           sx={{
-            fontSize: "11px",
-            color: "text.secondary",
-            textAlign: "right",
+            fontSize: '11px',
+            color: 'text.secondary',
+            textAlign: 'right',
           }}
         >
           SCORE
@@ -162,7 +162,7 @@ const RepositoryContributorsTable: React.FC<
       </Box>
 
       {/* Rows */}
-      <Box sx={{ display: "flex", flexDirection: "column" }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column' }}>
         {displayedContributors.map((contributor, index) => {
           const minerData = minerDataMap.get(contributor.githubId);
           const minerRank = minerData?.rank;
@@ -172,27 +172,27 @@ const RepositoryContributorsTable: React.FC<
             <Box
               key={contributor.githubId}
               sx={{
-                display: "grid",
-                gridTemplateColumns: "32px 1fr 48px 75px",
+                display: 'grid',
+                gridTemplateColumns: '32px 1fr 48px 75px',
                 gap: 1,
                 px: 1.5,
                 py: 1,
-                borderBottom: "1px solid rgba(255,255,255,0.05)",
-                alignItems: "center",
+                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                alignItems: 'center',
                 opacity: isInactive ? 0.5 : 1,
-                "&:hover": {
-                  backgroundColor: "rgba(255,255,255,0.04)",
+                '&:hover': {
+                  backgroundColor: 'rgba(255,255,255,0.04)',
                   opacity: 1,
                 },
-                transition: "all 0.1s",
+                transition: 'all 0.1s',
               }}
             >
               {/* Rank */}
               <Box
                 sx={{
                   fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: "12px",
-                  color: index < 3 ? "#fff" : "#8b949e",
+                  fontSize: '12px',
+                  color: index < 3 ? '#fff' : '#8b949e',
                   fontWeight: index < 3 ? 600 : 400,
                 }}
               >
@@ -205,14 +205,14 @@ const RepositoryContributorsTable: React.FC<
                   navigate(`/miners/details?githubId=${contributor.githubId}`)
                 }
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: 1.5,
-                  overflow: "hidden",
-                  cursor: "pointer",
-                  "&:hover .contributor-name": {
-                    color: "#58a6ff",
-                    textDecoration: "underline",
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  '&:hover .contributor-name': {
+                    color: '#58a6ff',
+                    textDecoration: 'underline',
                   },
                 }}
               >
@@ -221,28 +221,28 @@ const RepositoryContributorsTable: React.FC<
                   sx={{
                     width: 20,
                     height: 20,
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    border: '1px solid rgba(255,255,255,0.1)',
                   }}
                 />
                 <Box
                   sx={{
-                    display: "flex",
-                    flexDirection: "column",
+                    display: 'flex',
+                    flexDirection: 'column',
                     minWidth: 0,
                   }}
                 >
                   <Typography
                     className="contributor-name"
                     sx={{
-                      fontSize: "13px",
+                      fontSize: '13px',
                       fontWeight: 500,
-                      color: "#c9d1d9",
+                      color: '#c9d1d9',
                       fontFamily:
                         '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      transition: "color 0.1s",
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      transition: 'color 0.1s',
                     }}
                   >
                     {contributor.author}
@@ -251,11 +251,11 @@ const RepositoryContributorsTable: React.FC<
                   {minerRank && (
                     <Typography
                       sx={{
-                        fontSize: "10px",
-                        color: "#8b949e",
-                        whiteSpace: "nowrap", // Force single line
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
+                        fontSize: '10px',
+                        color: '#8b949e',
+                        whiteSpace: 'nowrap', // Force single line
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
                       }}
                     >
                       Global Rank #{minerRank}
@@ -267,9 +267,9 @@ const RepositoryContributorsTable: React.FC<
               {/* PRs */}
               <Box
                 sx={{
-                  textAlign: "right",
-                  fontSize: "12px",
-                  color: "#c9d1d9",
+                  textAlign: 'right',
+                  fontSize: '12px',
+                  color: '#c9d1d9',
                   fontFamily: '"JetBrains Mono", monospace',
                 }}
               >
@@ -279,9 +279,9 @@ const RepositoryContributorsTable: React.FC<
               {/* Score */}
               <Box
                 sx={{
-                  textAlign: "right",
-                  fontSize: "12px",
-                  color: "#c9d1d9",
+                  textAlign: 'right',
+                  fontSize: '12px',
+                  color: '#c9d1d9',
                   fontFamily: '"JetBrains Mono", monospace',
                 }}
               >
@@ -296,24 +296,24 @@ const RepositoryContributorsTable: React.FC<
           <Box
             onClick={hasMore ? handleShowMore : handleShowLess}
             sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-start", // Left align to match flow
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start', // Left align to match flow
               px: 1.5,
               py: 1.5,
-              cursor: "pointer",
-              color: "#8b949e",
-              fontSize: "12px",
-              "&:hover": {
-                color: "#fff",
-                backgroundColor: "rgba(255,255,255,0.02)",
+              cursor: 'pointer',
+              color: '#8b949e',
+              fontSize: '12px',
+              '&:hover': {
+                color: '#fff',
+                backgroundColor: 'rgba(255,255,255,0.02)',
               },
-              transition: "all 0.1s",
+              transition: 'all 0.1s',
             }}
           >
             {hasMore ? (
               <>
-                Show more{" "}
+                Show more{' '}
                 <KeyboardArrowDownIcon sx={{ fontSize: 16, ml: 0.5 }} />
               </>
             ) : (

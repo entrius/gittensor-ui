@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState } from 'react';
 import {
   Card,
   Typography,
@@ -12,9 +12,9 @@ import {
   CircularProgress,
   Avatar,
   TableSortLabel,
-} from "@mui/material";
-import { useMinerPRs, useReposAndWeights } from "../../api";
-import { useNavigate } from "react-router-dom";
+} from '@mui/material';
+import { useMinerPRs, useReposAndWeights } from '../../api';
+import { useNavigate } from 'react-router-dom';
 
 interface MinerRepositoriesTableProps {
   githubId: string;
@@ -28,19 +28,19 @@ interface RepoStats {
   tier: string;
 }
 
-type SortField = "rank" | "repository" | "prs" | "score" | "weight";
-type SortOrder = "asc" | "desc";
+type SortField = 'rank' | 'repository' | 'prs' | 'score' | 'weight';
+type SortOrder = 'asc' | 'desc';
 
 const getTierColor = (tier: string): string => {
   switch (tier?.toLowerCase()) {
-    case "gold":
-      return "#FFD700";
-    case "silver":
-      return "#C0C0C0";
-    case "bronze":
-      return "#CD7F32";
+    case 'gold':
+      return '#FFD700';
+    case 'silver':
+      return '#C0C0C0';
+    case 'bronze':
+      return '#CD7F32';
     default:
-      return "transparent";
+      return 'transparent';
   }
 };
 
@@ -50,8 +50,8 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   const navigate = useNavigate();
   const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
-  const [sortField, setSortField] = useState<SortField>("score");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [sortField, setSortField] = useState<SortField>('score');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
   // Build repository weights and tiers maps
   const repoWeights = useMemo(() => {
@@ -59,7 +59,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     if (Array.isArray(repos)) {
       repos.forEach((repo) => {
         if (repo && repo.fullName) {
-          map.set(repo.fullName, parseFloat(repo.weight || "0"));
+          map.set(repo.fullName, parseFloat(repo.weight || '0'));
         }
       });
     }
@@ -71,7 +71,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     if (Array.isArray(repos)) {
       repos.forEach((repo) => {
         if (repo && repo.fullName) {
-          map.set(repo.fullName, repo.tier || "");
+          map.set(repo.fullName, repo.tier || '');
         }
       });
     }
@@ -90,10 +90,10 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
         prs: 0,
         score: 0,
         weight: repoWeights.get(pr.repository) || 0,
-        tier: repoTiers.get(pr.repository) || "",
+        tier: repoTiers.get(pr.repository) || '',
       };
       existing.prs += 1;
-      existing.score += parseFloat(pr.score || "0");
+      existing.score += parseFloat(pr.score || '0');
       statsMap.set(pr.repository, existing);
     });
 
@@ -107,35 +107,35 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       let compareValue = 0;
 
       switch (sortField) {
-        case "repository":
+        case 'repository':
           compareValue = a.repository.localeCompare(b.repository);
           break;
-        case "prs":
+        case 'prs':
           compareValue = a.prs - b.prs;
           break;
-        case "score":
+        case 'score':
           compareValue = a.score - b.score;
           break;
-        case "weight":
+        case 'weight':
           compareValue = a.weight - b.weight;
           break;
-        case "rank":
+        case 'rank':
           // Rank is based on score by default
           compareValue = a.score - b.score;
           break;
       }
 
-      return sortOrder === "asc" ? compareValue : -compareValue;
+      return sortOrder === 'asc' ? compareValue : -compareValue;
     });
     return sorted;
   }, [repoStats, sortField, sortOrder]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
-      setSortOrder("desc");
+      setSortOrder('desc');
     }
   };
 
@@ -146,14 +146,14 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       <Card
         sx={{
           borderRadius: 3,
-          border: "1px solid rgba(255, 255, 255, 0.1)",
-          backgroundColor: "transparent",
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          backgroundColor: 'transparent',
           p: 4,
-          textAlign: "center",
+          textAlign: 'center',
         }}
         elevation={0}
       >
-        <CircularProgress size={40} sx={{ color: "primary.main" }} />
+        <CircularProgress size={40} sx={{ color: 'primary.main' }} />
       </Card>
     );
   }
@@ -163,18 +163,18 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       <Card
         sx={{
           borderRadius: 3,
-          border: "1px solid rgba(255, 255, 255, 0.1)",
-          backgroundColor: "transparent",
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          backgroundColor: 'transparent',
           p: 4,
         }}
         elevation={0}
       >
         <Typography
           sx={{
-            color: "rgba(255, 255, 255, 0.5)",
+            color: 'rgba(255, 255, 255, 0.5)',
             fontFamily: '"JetBrains Mono", monospace',
-            fontSize: "0.9rem",
-            textAlign: "center",
+            fontSize: '0.9rem',
+            textAlign: 'center',
           }}
         >
           No repository contributions found
@@ -187,27 +187,27 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     <Card
       sx={{
         borderRadius: 3,
-        border: "1px solid rgba(255, 255, 255, 0.1)",
-        backgroundColor: "transparent",
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'transparent',
         p: 0,
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
       }}
       elevation={0}
     >
       <Box
         sx={{
           p: 3,
-          borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         }}
       >
         <Typography
           variant="h6"
           sx={{
-            color: "#ffffff",
+            color: '#ffffff',
             fontFamily: '"JetBrains Mono", monospace',
-            fontSize: "1.1rem",
+            fontSize: '1.1rem',
             fontWeight: 500,
           }}
         >
@@ -215,22 +215,22 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
         </Typography>
       </Box>
 
-      <TableContainer sx={{ maxHeight: "400px", overflow: "auto" }}>
+      <TableContainer sx={{ maxHeight: '400px', overflow: 'auto' }}>
         <Table stickyHeader>
           <TableHead>
             <TableRow>
               <TableCell sx={headerCellStyle}>
                 <TableSortLabel
-                  active={sortField === "rank"}
-                  direction={sortField === "rank" ? sortOrder : "desc"}
-                  onClick={() => handleSort("rank")}
+                  active={sortField === 'rank'}
+                  direction={sortField === 'rank' ? sortOrder : 'desc'}
+                  onClick={() => handleSort('rank')}
                   sx={{
-                    color: "inherit",
-                    "&:hover": { color: "rgba(255, 255, 255, 0.9)" },
-                    "&.Mui-active": {
-                      color: "rgba(255, 255, 255, 0.9)",
-                      "& .MuiTableSortLabel-icon": {
-                        color: "rgba(255, 255, 255, 0.9) !important",
+                    color: 'inherit',
+                    '&:hover': { color: 'rgba(255, 255, 255, 0.9)' },
+                    '&.Mui-active': {
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      '& .MuiTableSortLabel-icon': {
+                        color: 'rgba(255, 255, 255, 0.9) !important',
                       },
                     },
                   }}
@@ -240,16 +240,16 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
               </TableCell>
               <TableCell sx={headerCellStyle}>
                 <TableSortLabel
-                  active={sortField === "repository"}
-                  direction={sortField === "repository" ? sortOrder : "asc"}
-                  onClick={() => handleSort("repository")}
+                  active={sortField === 'repository'}
+                  direction={sortField === 'repository' ? sortOrder : 'asc'}
+                  onClick={() => handleSort('repository')}
                   sx={{
-                    color: "inherit",
-                    "&:hover": { color: "rgba(255, 255, 255, 0.9)" },
-                    "&.Mui-active": {
-                      color: "rgba(255, 255, 255, 0.9)",
-                      "& .MuiTableSortLabel-icon": {
-                        color: "rgba(255, 255, 255, 0.9) !important",
+                    color: 'inherit',
+                    '&:hover': { color: 'rgba(255, 255, 255, 0.9)' },
+                    '&.Mui-active': {
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      '& .MuiTableSortLabel-icon': {
+                        color: 'rgba(255, 255, 255, 0.9) !important',
                       },
                     },
                   }}
@@ -259,16 +259,16 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
               </TableCell>
               <TableCell align="right" sx={headerCellStyle}>
                 <TableSortLabel
-                  active={sortField === "prs"}
-                  direction={sortField === "prs" ? sortOrder : "desc"}
-                  onClick={() => handleSort("prs")}
+                  active={sortField === 'prs'}
+                  direction={sortField === 'prs' ? sortOrder : 'desc'}
+                  onClick={() => handleSort('prs')}
                   sx={{
-                    color: "inherit",
-                    "&:hover": { color: "rgba(255, 255, 255, 0.9)" },
-                    "&.Mui-active": {
-                      color: "rgba(255, 255, 255, 0.9)",
-                      "& .MuiTableSortLabel-icon": {
-                        color: "rgba(255, 255, 255, 0.9) !important",
+                    color: 'inherit',
+                    '&:hover': { color: 'rgba(255, 255, 255, 0.9)' },
+                    '&.Mui-active': {
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      '& .MuiTableSortLabel-icon': {
+                        color: 'rgba(255, 255, 255, 0.9) !important',
                       },
                     },
                   }}
@@ -278,16 +278,16 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
               </TableCell>
               <TableCell align="right" sx={headerCellStyle}>
                 <TableSortLabel
-                  active={sortField === "score"}
-                  direction={sortField === "score" ? sortOrder : "desc"}
-                  onClick={() => handleSort("score")}
+                  active={sortField === 'score'}
+                  direction={sortField === 'score' ? sortOrder : 'desc'}
+                  onClick={() => handleSort('score')}
                   sx={{
-                    color: "inherit",
-                    "&:hover": { color: "rgba(255, 255, 255, 0.9)" },
-                    "&.Mui-active": {
-                      color: "rgba(255, 255, 255, 0.9)",
-                      "& .MuiTableSortLabel-icon": {
-                        color: "rgba(255, 255, 255, 0.9) !important",
+                    color: 'inherit',
+                    '&:hover': { color: 'rgba(255, 255, 255, 0.9)' },
+                    '&.Mui-active': {
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      '& .MuiTableSortLabel-icon': {
+                        color: 'rgba(255, 255, 255, 0.9) !important',
                       },
                     },
                   }}
@@ -297,16 +297,16 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
               </TableCell>
               <TableCell align="right" sx={headerCellStyle}>
                 <TableSortLabel
-                  active={sortField === "weight"}
-                  direction={sortField === "weight" ? sortOrder : "desc"}
-                  onClick={() => handleSort("weight")}
+                  active={sortField === 'weight'}
+                  direction={sortField === 'weight' ? sortOrder : 'desc'}
+                  onClick={() => handleSort('weight')}
                   sx={{
-                    color: "inherit",
-                    "&:hover": { color: "rgba(255, 255, 255, 0.9)" },
-                    "&.Mui-active": {
-                      color: "rgba(255, 255, 255, 0.9)",
-                      "& .MuiTableSortLabel-icon": {
-                        color: "rgba(255, 255, 255, 0.9) !important",
+                    color: 'inherit',
+                    '&:hover': { color: 'rgba(255, 255, 255, 0.9)' },
+                    '&.Mui-active': {
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      '& .MuiTableSortLabel-icon': {
+                        color: 'rgba(255, 255, 255, 0.9) !important',
                       },
                     },
                   }}
@@ -321,40 +321,40 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
               <TableRow
                 key={repo.repository}
                 sx={{
-                  "&:hover": {
-                    backgroundColor: "rgba(255, 255, 255, 0.05)",
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
                   },
-                  transition: "background-color 0.2s",
+                  transition: 'background-color 0.2s',
                 }}
               >
                 <TableCell sx={bodyCellStyle}>
                   <Box
                     sx={{
-                      backgroundColor: "#000000",
-                      borderRadius: "2px",
-                      width: "28px",
-                      height: "28px",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
+                      backgroundColor: '#000000',
+                      borderRadius: '2px',
+                      width: '28px',
+                      height: '28px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       flexShrink: 0,
-                      border: "1px solid",
+                      border: '1px solid',
                       borderColor:
                         index === 0
-                          ? "rgba(255, 215, 0, 0.4)"
+                          ? 'rgba(255, 215, 0, 0.4)'
                           : index === 1
-                            ? "rgba(192, 192, 192, 0.4)"
+                            ? 'rgba(192, 192, 192, 0.4)'
                             : index === 2
-                              ? "rgba(205, 127, 50, 0.4)"
-                              : "rgba(255, 255, 255, 0.15)",
+                              ? 'rgba(205, 127, 50, 0.4)'
+                              : 'rgba(255, 255, 255, 0.15)',
                       boxShadow:
                         index === 0
-                          ? "0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)"
+                          ? '0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)'
                           : index === 1
-                            ? "0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)"
+                            ? '0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)'
                             : index === 2
-                              ? "0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)"
-                              : "none",
+                              ? '0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)'
+                              : 'none',
                     }}
                   >
                     <Typography
@@ -362,19 +362,19 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                       sx={{
                         color:
                           index === 0
-                            ? "#FFD700"
+                            ? '#FFD700'
                             : index === 1
-                              ? "#C0C0C0"
+                              ? '#C0C0C0'
                               : index === 2
-                                ? "#CD7F32"
-                                : "rgba(255, 255, 255, 0.6)",
+                                ? '#CD7F32'
+                                : 'rgba(255, 255, 255, 0.6)',
                         fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.7rem",
+                        fontSize: '0.7rem',
                         fontWeight: 600,
                         lineHeight: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
                     >
                       {index + 1}
@@ -389,32 +389,32 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                       )
                     }
                     sx={{
-                      display: "flex",
-                      alignItems: "center",
+                      display: 'flex',
+                      alignItems: 'center',
                       gap: 1.5,
-                      cursor: "pointer",
-                      "&:hover": {
-                        color: "primary.main",
-                        "& .MuiTypography-root": {
-                          textDecoration: "underline",
+                      cursor: 'pointer',
+                      '&:hover': {
+                        color: 'primary.main',
+                        '& .MuiTypography-root': {
+                          textDecoration: 'underline',
                         },
                       },
-                      transition: "color 0.2s",
+                      transition: 'color 0.2s',
                     }}
                   >
                     <Avatar
-                      src={`https://avatars.githubusercontent.com/${repo.repository.split("/")[0]}`}
-                      alt={repo.repository.split("/")[0]}
+                      src={`https://avatars.githubusercontent.com/${repo.repository.split('/')[0]}`}
+                      alt={repo.repository.split('/')[0]}
                       sx={{
                         width: 24,
                         height: 24,
-                        border: "1px solid rgba(255, 255, 255, 0.2)",
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
                         backgroundColor:
-                          repo.repository.split("/")[0] === "opentensor"
-                            ? "#ffffff"
-                            : repo.repository.split("/")[0] === "bitcoin"
-                              ? "#F7931A"
-                              : "transparent",
+                          repo.repository.split('/')[0] === 'opentensor'
+                            ? '#ffffff'
+                            : repo.repository.split('/')[0] === 'bitcoin'
+                              ? '#F7931A'
+                              : 'transparent',
                       }}
                     />
                     {repo.tier && (
@@ -422,7 +422,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                         sx={{
                           width: 6,
                           height: 6,
-                          borderRadius: "50%",
+                          borderRadius: '50%',
                           backgroundColor: getTierColor(repo.tier),
                           flexShrink: 0,
                         }}
@@ -433,8 +433,8 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                       component="span"
                       sx={{
                         fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.85rem",
-                        transition: "color 0.2s",
+                        fontSize: '0.85rem',
+                        transition: 'color 0.2s',
                       }}
                     >
                       {repo.repository}
@@ -460,22 +460,22 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
 };
 
 const headerCellStyle = {
-  backgroundColor: "rgba(18, 18, 20, 0.95)",
-  backdropFilter: "blur(8px)",
-  color: "rgba(255, 255, 255, 0.7)",
+  backgroundColor: 'rgba(18, 18, 20, 0.95)',
+  backdropFilter: 'blur(8px)',
+  color: 'rgba(255, 255, 255, 0.7)',
   fontFamily: '"JetBrains Mono", monospace',
   fontWeight: 500,
-  fontSize: "0.75rem",
-  borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.5px",
+  fontSize: '0.75rem',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.5px',
 };
 
 const bodyCellStyle = {
-  color: "#ffffff",
+  color: '#ffffff',
   fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  fontSize: "0.85rem",
+  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  fontSize: '0.85rem',
 };
 
 export default MinerRepositoriesTable;

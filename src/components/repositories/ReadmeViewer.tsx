@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { Box, CircularProgress, Alert, Paper } from "@mui/material";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
-import axios from "axios";
+import React, { useState, useEffect } from 'react';
+import { Box, CircularProgress, Alert, Paper } from '@mui/material';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import axios from 'axios';
 
 interface ReadmeViewerProps {
   repositoryFullName: string; // e.g., "opentensor/bittensor"
@@ -11,7 +11,7 @@ interface ReadmeViewerProps {
 
 const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
   const [content, setContent] = useState<string | null>(null);
-  const [defaultBranch, setDefaultBranch] = useState<string>("main");
+  const [defaultBranch, setDefaultBranch] = useState<string>('main');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,18 +26,18 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
             `https://cdn.jsdelivr.net/gh/${repositoryFullName}@main/README.md`,
           );
           setContent(response.data);
-          setDefaultBranch("main");
-        } catch (err) {
+          setDefaultBranch('main');
+        } catch {
           // Fallback to 'master' branch
           const response = await axios.get(
             `https://cdn.jsdelivr.net/gh/${repositoryFullName}@master/README.md`,
           );
           setContent(response.data);
-          setDefaultBranch("master");
+          setDefaultBranch('master');
         }
       } catch (err) {
-        console.error("Failed to fetch README", err);
-        setError("Could not load README.md");
+        console.error('Failed to fetch README', err);
+        setError('Could not load README.md');
       } finally {
         setLoading(false);
       }
@@ -50,7 +50,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
         <CircularProgress />
       </Box>
     );
@@ -60,7 +60,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
     return (
       <Alert
         severity="warning"
-        sx={{ backgroundColor: "rgba(255, 152, 0, 0.1)", color: "#ff9800" }}
+        sx={{ backgroundColor: 'rgba(255, 152, 0, 0.1)', color: '#ff9800' }}
       >
         {error}
       </Alert>
@@ -72,12 +72,12 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
     const { src, alt, ...rest } = props;
     let finalSrc = src;
 
-    if (src && !src.startsWith("http") && !src.startsWith("//")) {
+    if (src && !src.startsWith('http') && !src.startsWith('//')) {
       // Convert relative path to absolute GitHub user content path
       // e.g. ./assets/img.png -> https://raw.githubusercontent.com/user/repo/branch/assets/img.png
-      const cleanPath = src.startsWith("./")
+      const cleanPath = src.startsWith('./')
         ? src.slice(2)
-        : src.startsWith("/")
+        : src.startsWith('/')
           ? src.slice(1)
           : src;
       finalSrc = `https://cdn.jsdelivr.net/gh/${repositoryFullName}@${defaultBranch}/${cleanPath}`;
@@ -88,10 +88,10 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
         src={finalSrc}
         alt={alt}
         style={{
-          maxWidth: "100%",
-          height: "auto",
-          borderRadius: "6px",
-          margin: "16px 0",
+          maxWidth: '100%',
+          height: 'auto',
+          borderRadius: '6px',
+          margin: '16px 0',
         }}
         {...rest}
       />
@@ -104,103 +104,103 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
       sx={{
         p: { xs: 2, md: 5 },
         pt: { xs: 2, md: 0 }, // Reduce top padding
-        maxWidth: "900px",
-        mx: "auto",
-        backgroundColor: "transparent", // Seamless look
-        color: "#c9d1d9", // GitHub Dark Text
+        maxWidth: '900px',
+        mx: 'auto',
+        backgroundColor: 'transparent', // Seamless look
+        color: '#c9d1d9', // GitHub Dark Text
         fontFamily:
           '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
         lineHeight: 1.6,
-        "& h1": {
-          fontSize: "2em",
-          borderBottom: "1px solid #30363d",
+        '& h1': {
+          fontSize: '2em',
+          borderBottom: '1px solid #30363d',
           pb: 0.3,
           mb: 3,
           mt: 1, // Reduced from 4
           fontWeight: 600,
-          color: "#ffffff",
+          color: '#ffffff',
         },
-        "& h2": {
-          fontSize: "1.5em",
-          borderBottom: "1px solid #30363d",
+        '& h2': {
+          fontSize: '1.5em',
+          borderBottom: '1px solid #30363d',
           pb: 0.3,
           mb: 3,
           mt: 2, // Reduced from 4
           fontWeight: 600,
-          color: "#ffffff",
+          color: '#ffffff',
         },
-        "& h3": {
-          fontSize: "1.25em",
+        '& h3': {
+          fontSize: '1.25em',
           mb: 2,
           mt: 3,
           fontWeight: 600,
-          color: "#ffffff",
+          color: '#ffffff',
         },
-        "& p": {
-          marginBottom: "16px",
-          fontSize: "16px",
+        '& p': {
+          marginBottom: '16px',
+          fontSize: '16px',
         },
-        "& a": {
-          color: "#58a6ff",
-          textDecoration: "none",
-          "&:hover": { textDecoration: "underline" },
+        '& a': {
+          color: '#58a6ff',
+          textDecoration: 'none',
+          '&:hover': { textDecoration: 'underline' },
         },
-        "& ul, & ol": {
-          marginBottom: "16px",
-          paddingLeft: "2em",
+        '& ul, & ol': {
+          marginBottom: '16px',
+          paddingLeft: '2em',
         },
-        "& li": {
-          marginBottom: "4px",
+        '& li': {
+          marginBottom: '4px',
         },
-        "& blockquote": {
-          borderLeft: "4px solid #30363d",
-          padding: "0 1em",
-          color: "#8b949e",
+        '& blockquote': {
+          borderLeft: '4px solid #30363d',
+          padding: '0 1em',
+          color: '#8b949e',
           marginLeft: 0,
-          marginBottom: "16px",
+          marginBottom: '16px',
         },
-        "& code": {
-          backgroundColor: "rgba(110, 118, 129, 0.4)",
-          padding: "0.2em 0.4em",
-          borderRadius: "6px",
-          fontSize: "85%",
+        '& code': {
+          backgroundColor: 'rgba(110, 118, 129, 0.4)',
+          padding: '0.2em 0.4em',
+          borderRadius: '6px',
+          fontSize: '85%',
           fontFamily: '"JetBrains Mono", monospace',
         },
-        "& pre": {
-          backgroundColor: "#161b22",
-          padding: "16px",
-          overflow: "auto",
-          borderRadius: "6px",
-          marginBottom: "16px",
-          "& code": {
-            backgroundColor: "transparent",
+        '& pre': {
+          backgroundColor: '#161b22',
+          padding: '16px',
+          overflow: 'auto',
+          borderRadius: '6px',
+          marginBottom: '16px',
+          '& code': {
+            backgroundColor: 'transparent',
             padding: 0,
-            fontSize: "100%",
-            color: "#c9d1d9",
+            fontSize: '100%',
+            color: '#c9d1d9',
           },
         },
-        "& table": {
-          borderCollapse: "collapse",
-          width: "100%",
-          marginBottom: "16px",
-          display: "block",
-          overflowX: "auto",
+        '& table': {
+          borderCollapse: 'collapse',
+          width: '100%',
+          marginBottom: '16px',
+          display: 'block',
+          overflowX: 'auto',
         },
-        "& th": {
+        '& th': {
           fontWeight: 600,
-          border: "1px solid #30363d",
-          padding: "6px 13px",
-          textAlign: "left",
+          border: '1px solid #30363d',
+          padding: '6px 13px',
+          textAlign: 'left',
         },
-        "& td": {
-          border: "1px solid #30363d",
-          padding: "6px 13px",
+        '& td': {
+          border: '1px solid #30363d',
+          padding: '6px 13px',
         },
-        "& tr:nth-of-type(2n)": {
-          backgroundColor: "#161b22",
+        '& tr:nth-of-type(2n)': {
+          backgroundColor: '#161b22',
         },
-        "& img": {
-          backgroundColor: "transparent",
+        '& img': {
+          backgroundColor: 'transparent',
         },
       }}
     >
@@ -211,7 +211,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
           img: ImageRenderer,
         }}
       >
-        {content || ""}
+        {content || ''}
       </ReactMarkdown>
     </Paper>
   );

@@ -1,7 +1,11 @@
-import React from "react";
-import { Box, Typography, Grid, Card, CircularProgress } from "@mui/material";
-import { useMinerStats, useTierConfigurations, TierConfig } from "../../api";
-import { TierCard } from "./TierComponents";
+import React from 'react';
+import { Box, Typography, Grid, Card, CircularProgress } from '@mui/material';
+import {
+  useMinerStats,
+  useTierConfigurations,
+  type TierConfig,
+} from '../../api';
+import { TierCard } from './TierComponents';
 
 const TIER_LEVELS: Record<string, number> = {
   bronze: 1,
@@ -17,15 +21,12 @@ const getTierLevel = (tier: string | undefined | null): number => {
 const getTierConfig = (
   tierName: string,
   tierConfigs: TierConfig[] | undefined,
-): TierConfig | undefined => {
-  return tierConfigs?.find(
-    (t) => t.name.toLowerCase() === tierName.toLowerCase(),
-  );
-};
+): TierConfig | undefined =>
+  tierConfigs?.find((t) => t.name.toLowerCase() === tierName.toLowerCase());
 
 const getPreviousTierName = (level: number): string => {
-  const tierNames = ["", "Bronze", "Silver", "Gold"];
-  return tierNames[level - 1] || "";
+  const tierNames = ['', 'Bronze', 'Silver', 'Gold'];
+  return tierNames[level - 1] || '';
 };
 
 const getTooltipMessage = (
@@ -66,8 +67,8 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
 
   if (isLoading) {
     return (
-      <Box sx={{ p: 4, textAlign: "center" }}>
-        <CircularProgress size={30} sx={{ color: "primary.main" }} />
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <CircularProgress size={30} sx={{ color: 'primary.main' }} />
       </Box>
     );
   }
@@ -81,11 +82,11 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
 
   const tiers = [
     {
-      name: "Bronze",
+      name: 'Bronze',
       level: 1,
-      color: "#CD7F32",
-      bgColor: "rgba(205, 127, 50, 0.05)",
-      borderColor: "rgba(205, 127, 50, 0.2)",
+      color: '#CD7F32',
+      bgColor: 'rgba(205, 127, 50, 0.05)',
+      borderColor: 'rgba(205, 127, 50, 0.2)',
       stats: {
         score: minerStats.bronzeScore,
         credibility: minerStats.bronzeCredibility,
@@ -97,11 +98,11 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
       },
     },
     {
-      name: "Silver",
+      name: 'Silver',
       level: 2,
-      color: "#C0C0C0",
-      bgColor: "rgba(192, 192, 192, 0.05)",
-      borderColor: "rgba(192, 192, 192, 0.2)",
+      color: '#C0C0C0',
+      bgColor: 'rgba(192, 192, 192, 0.05)',
+      borderColor: 'rgba(192, 192, 192, 0.2)',
       stats: {
         score: minerStats.silverScore,
         credibility: minerStats.silverCredibility,
@@ -113,11 +114,11 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
       },
     },
     {
-      name: "Gold",
+      name: 'Gold',
       level: 3,
-      color: "#FFD700",
-      bgColor: "rgba(255, 215, 0, 0.05)",
-      borderColor: "rgba(255, 215, 0, 0.2)",
+      color: '#FFD700',
+      bgColor: 'rgba(255, 215, 0, 0.05)',
+      borderColor: 'rgba(255, 215, 0, 0.2)',
       stats: {
         score: minerStats.goldScore,
         credibility: minerStats.goldCredibility,
@@ -134,8 +135,8 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
     <Card
       sx={{
         borderRadius: 3,
-        border: "1px solid rgba(255, 255, 255, 0.1)",
-        backgroundColor: "transparent",
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'transparent',
         p: 3,
         mb: 3,
       }}
@@ -144,20 +145,20 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
       <Typography
         variant="h6"
         sx={{
-          color: "#ffffff",
+          color: '#ffffff',
           fontFamily: '"JetBrains Mono", monospace',
           mb: 2.5,
           fontWeight: 600,
-          fontSize: "1.1rem",
-          display: "flex",
-          alignItems: "center",
+          fontSize: '1.1rem',
+          display: 'flex',
+          alignItems: 'center',
           gap: 1.5,
-          "&::before": {
+          '&::before': {
             content: '""',
-            width: "4px",
-            height: "20px",
-            backgroundColor: "primary.main",
-            borderRadius: "2px",
+            width: '4px',
+            height: '20px',
+            backgroundColor: 'primary.main',
+            borderRadius: '2px',
           },
         }}
       >

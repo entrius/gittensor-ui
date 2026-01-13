@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState } from 'react';
 import {
   Card,
   Typography,
@@ -14,23 +14,22 @@ import {
   Chip,
   Stack,
   Button,
-} from "@mui/material";
-import { useAllPrs, useAllMiners } from "../../api";
-import { useNavigate } from "react-router-dom";
-import FilterListIcon from "@mui/icons-material/FilterList";
-import theme from "../../theme";
+} from '@mui/material';
+import { useAllPrs, useAllMiners } from '../../api';
+import { useNavigate } from 'react-router-dom';
+import theme from '../../theme';
 
 interface RepositoryPRsTableProps {
   repositoryFullName: string;
-  state?: "open" | "closed" | "merged" | "all";
+  state?: 'open' | 'closed' | 'merged' | 'all';
 }
 
 const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   repositoryFullName,
-  state = "all",
+  state = 'all',
 }) => {
   const navigate = useNavigate();
-  const [filter, setFilter] = useState<"all" | "open" | "closed" | "merged">(
+  const [filter, setFilter] = useState<'all' | 'open' | 'closed' | 'merged'>(
     state,
   );
 
@@ -64,34 +63,36 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     return {
       all: allPRs.length,
       open: allPRs.filter(
-        (pr) => pr.prState === "OPEN" || (!pr.prState && !pr.mergedAt),
+        (pr) => pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
       ).length,
-      merged: allPRs.filter((pr) => pr.prState === "MERGED" || !!pr.mergedAt)
+      merged: allPRs.filter((pr) => pr.prState === 'MERGED' || !!pr.mergedAt)
         .length,
-      closed: allPRs.filter((pr) => pr.prState === "CLOSED" && !pr.mergedAt)
+      closed: allPRs.filter((pr) => pr.prState === 'CLOSED' && !pr.mergedAt)
         .length,
     };
   }, [allPRs]);
 
   const filteredPRs = useMemo(() => {
     if (!allPRs) return [];
-    if (filter === "all") return allPRs;
-    if (filter === "merged")
-      return allPRs.filter((pr) => pr.prState === "MERGED" || !!pr.mergedAt);
-    if (filter === "open")
+    if (filter === 'all') return allPRs;
+    if (filter === 'merged')
+      return allPRs.filter((pr) => pr.prState === 'MERGED' || !!pr.mergedAt);
+    if (filter === 'open')
       return allPRs.filter(
-        (pr) => pr.prState === "OPEN" || (!pr.prState && !pr.mergedAt),
+        (pr) => pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
       );
-    if (filter === "closed")
-      return allPRs.filter((pr) => pr.prState === "CLOSED" && !pr.mergedAt);
+    if (filter === 'closed')
+      return allPRs.filter((pr) => pr.prState === 'CLOSED' && !pr.mergedAt);
     return allPRs;
   }, [allPRs, filter]);
 
-  const sortedPRs = useMemo(() => {
-    return [...filteredPRs].sort(
-      (a, b) => parseFloat(b.score || "0") - parseFloat(a.score || "0"),
-    );
-  }, [filteredPRs]);
+  const sortedPRs = useMemo(
+    () =>
+      [...filteredPRs].sort(
+        (a, b) => parseFloat(b.score || '0') - parseFloat(a.score || '0'),
+      ),
+    [filteredPRs],
+  );
 
   const FilterButton = ({
     label,
@@ -108,25 +109,25 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       size="small"
       onClick={() => setFilter(value)}
       sx={{
-        color: filter === value ? "#fff" : "rgba(255,255,255,0.5)",
+        color: filter === value ? '#fff' : 'rgba(255,255,255,0.5)',
         backgroundColor:
-          filter === value ? "rgba(255,255,255,0.1)" : "transparent",
-        borderRadius: "6px",
+          filter === value ? 'rgba(255,255,255,0.1)' : 'transparent',
+        borderRadius: '6px',
         px: 2,
-        minWidth: "auto",
-        textTransform: "none",
+        minWidth: 'auto',
+        textTransform: 'none',
         fontFamily: '"JetBrains Mono", monospace',
-        fontSize: "0.8rem",
+        fontSize: '0.8rem',
         border:
-          filter === value ? `1px solid ${color}` : "1px solid transparent",
-        "&:hover": {
-          backgroundColor: "rgba(255,255,255,0.15)",
+          filter === value ? `1px solid ${color}` : '1px solid transparent',
+        '&:hover': {
+          backgroundColor: 'rgba(255,255,255,0.15)',
         },
       }}
     >
-      {label}{" "}
+      {label}{' '}
       {count !== undefined && (
-        <span style={{ opacity: 0.6, marginLeft: "6px", fontSize: "0.75rem" }}>
+        <span style={{ opacity: 0.6, marginLeft: '6px', fontSize: '0.75rem' }}>
           {count}
         </span>
       )}
@@ -138,17 +139,17 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       <Card
         sx={{
           borderRadius: 3,
-          border: "1px solid rgba(255, 255, 255, 0.1)",
-          backgroundColor: "transparent",
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          backgroundColor: 'transparent',
           p: 4,
-          textAlign: "center",
+          textAlign: 'center',
         }}
         elevation={0}
       >
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
           <Typography
             variant="h6"
-            sx={{ color: "#fff", fontFamily: '"JetBrains Mono", monospace' }}
+            sx={{ color: '#fff', fontFamily: '"JetBrains Mono", monospace' }}
           >
             Pull Requests
           </Typography>
@@ -179,7 +180,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
             />
           </Stack>
         </Box>
-        <CircularProgress size={40} sx={{ color: "primary.main" }} />
+        <CircularProgress size={40} sx={{ color: 'primary.main' }} />
       </Card>
     );
   }
@@ -188,32 +189,32 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     <Card
       sx={{
         borderRadius: 3,
-        border: "1px solid rgba(255, 255, 255, 0.1)",
-        backgroundColor: "transparent",
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'transparent',
         p: 0,
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
       }}
       elevation={0}
     >
       <Box
         sx={{
           p: 3,
-          borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
           gap: 2,
         }}
       >
         <Typography
           variant="h6"
           sx={{
-            color: "#ffffff",
+            color: '#ffffff',
             fontFamily: '"JetBrains Mono", monospace',
-            fontSize: "1.1rem",
+            fontSize: '1.1rem',
             fontWeight: 500,
           }}
         >
@@ -249,12 +250,12 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       </Box>
 
       {sortedPRs.length === 0 ? (
-        <Box sx={{ p: 4, textAlign: "center" }}>
+        <Box sx={{ p: 4, textAlign: 'center' }}>
           <Typography
             sx={{
-              color: "rgba(255, 255, 255, 0.5)",
+              color: 'rgba(255, 255, 255, 0.5)',
               fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "0.9rem",
+              fontSize: '0.9rem',
             }}
           >
             No pull requests found
@@ -263,20 +264,20 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       ) : (
         <TableContainer
           sx={{
-            maxHeight: "500px",
-            overflow: "auto",
-            "&::-webkit-scrollbar": {
-              width: "8px",
-              height: "8px",
+            maxHeight: '500px',
+            overflow: 'auto',
+            '&::-webkit-scrollbar': {
+              width: '8px',
+              height: '8px',
             },
-            "&::-webkit-scrollbar-track": {
-              backgroundColor: "transparent",
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: 'transparent',
             },
-            "&::-webkit-scrollbar-thumb": {
-              backgroundColor: "rgba(255, 255, 255, 0.1)",
-              borderRadius: "4px",
-              "&:hover": {
-                backgroundColor: "rgba(255, 255, 255, 0.2)",
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '4px',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
               },
             },
           }}
@@ -312,11 +313,11 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                     );
                   }}
                   sx={{
-                    cursor: "pointer",
-                    "&:hover": {
-                      backgroundColor: "rgba(255, 255, 255, 0.05)",
+                    cursor: 'pointer',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
                     },
-                    transition: "background-color 0.2s",
+                    transition: 'background-color 0.2s',
                   }}
                 >
                   <TableCell sx={bodyCellStyle}>
@@ -325,8 +326,8 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
-                        color: "#ffffff",
-                        textDecoration: "none",
+                        color: '#ffffff',
+                        textDecoration: 'none',
                         fontWeight: 500,
                       }}
                       onClick={(e) => e.stopPropagation()}
@@ -337,10 +338,10 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                   <TableCell sx={bodyCellStyle}>
                     <Box
                       sx={{
-                        maxWidth: "300px",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
+                        maxWidth: '300px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {pr.pullRequestTitle}
@@ -350,8 +351,8 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                   <TableCell sx={bodyCellStyle}>
                     <Box
                       sx={{
-                        display: "flex",
-                        alignItems: "center",
+                        display: 'flex',
+                        alignItems: 'center',
                         gap: 1,
                         opacity:
                           pr.githubId && minerTierMap.has(pr.githubId)
@@ -388,26 +389,26 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                     <Typography
                       sx={{
                         fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.75rem",
+                        fontSize: '0.75rem',
                         fontWeight: 600,
                       }}
                     >
-                      {parseFloat(pr.score || "0").toFixed(4)}
+                      {parseFloat(pr.score || '0').toFixed(4)}
                     </Typography>
                   </TableCell>
                   <TableCell sx={bodyCellStyle}>
                     {(() => {
                       const state =
                         pr.prState?.toUpperCase() ||
-                        (pr.mergedAt ? "MERGED" : "OPEN");
+                        (pr.mergedAt ? 'MERGED' : 'OPEN');
                       let color = theme.palette.status.neutral;
-                      let label = state;
+                      const label = state;
 
-                      if (state === "MERGED") {
+                      if (state === 'MERGED') {
                         color = theme.palette.status.merged;
-                      } else if (state === "OPEN") {
+                      } else if (state === 'OPEN') {
                         color = theme.palette.status.open;
-                      } else if (state === "CLOSED") {
+                      } else if (state === 'CLOSED') {
                         color = theme.palette.status.closed;
                       }
 
@@ -416,7 +417,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                           variant="status"
                           label={label}
                           sx={{
-                            color: color,
+                            color,
                             borderColor: color,
                           }}
                         />
@@ -426,7 +427,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                   <TableCell align="right" sx={bodyCellStyle}>
                     {pr.mergedAt
                       ? new Date(pr.mergedAt).toLocaleDateString()
-                      : "-"}
+                      : '-'}
                   </TableCell>
                 </TableRow>
               ))}
@@ -439,22 +440,22 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
 };
 
 const headerCellStyle = {
-  backgroundColor: "rgba(18, 18, 20, 0.95)",
-  backdropFilter: "blur(8px)",
-  color: "rgba(255, 255, 255, 0.7)",
+  backgroundColor: 'rgba(18, 18, 20, 0.95)',
+  backdropFilter: 'blur(8px)',
+  color: 'rgba(255, 255, 255, 0.7)',
   fontFamily: '"JetBrains Mono", monospace',
   fontWeight: 500,
-  fontSize: "0.75rem",
-  borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.5px",
+  fontSize: '0.75rem',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.5px',
 };
 
 const bodyCellStyle = {
-  color: "#ffffff",
+  color: '#ffffff',
   fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-  fontSize: "0.85rem",
+  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  fontSize: '0.85rem',
 };
 
 export default RepositoryPRsTable;

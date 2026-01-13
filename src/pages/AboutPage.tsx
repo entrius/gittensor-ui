@@ -1,57 +1,14 @@
-import React from "react";
-import { Box, Typography, Grid } from "@mui/material";
-import { Page } from "../components/layout";
-import { SEO } from "../components";
-import { useStats } from "../api";
+import React from 'react';
+import { Box, Typography, Grid, Button, Stack } from '@mui/material';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import CodeIcon from '@mui/icons-material/Code';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import { Page } from '../components/layout';
+import { SEO } from '../components';
+import { useStats } from '../api';
 
-interface SectionProps {
-  title: string;
-  children: React.ReactNode;
-}
-
-const Section: React.FC<SectionProps> = ({ title, children }) => (
-  <Box
-    sx={{
-      p: { xs: 2, sm: 2.5, md: 3 },
-      borderRadius: 3,
-      backgroundColor: "transparent",
-      border: "1px solid rgba(255, 255, 255, 0.1)",
-      height: "100%",
-    }}
-  >
-    <Typography
-      variant="h6"
-      fontWeight="bold"
-      gutterBottom
-      sx={{ mb: 1.5, fontSize: { xs: "1rem", sm: "1.1rem" } }}
-    >
-      {title}
-    </Typography>
-    <Typography
-      variant="body2"
-      lineHeight={1.7}
-      color="#ffffff"
-      fontSize={{ xs: "0.875rem", sm: "0.9375rem" }}
-    >
-      {children}
-    </Typography>
-  </Box>
-);
-
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import CodeIcon from "@mui/icons-material/Code";
-import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
-import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
-import { Button, Stack } from "@mui/material";
-
-interface AboutContentProps {
-  onStartMining?: () => void;
-}
-
-export const AboutContent: React.FC<AboutContentProps> = ({
-  onStartMining,
-}) => {
+export const AboutContent: React.FC = () => {
   const { data: stats } = useStats();
 
   const monthlyRewards = React.useMemo(() => {
@@ -76,16 +33,16 @@ export const AboutContent: React.FC<AboutContentProps> = ({
   return (
     <Box
       sx={{
-        width: "100%",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
       }}
     >
       <Box
         sx={{
           maxWidth: 1000,
-          width: "100%",
+          width: '100%',
           px: { xs: 2, sm: 3, md: 4 },
         }}
       >
@@ -97,7 +54,7 @@ export const AboutContent: React.FC<AboutContentProps> = ({
             sx={{
               mb: 3,
               fontFamily: '"JetBrains Mono", monospace',
-              color: "#fff",
+              color: '#fff',
             }}
           >
             The Marketplace for Open Source
@@ -107,9 +64,9 @@ export const AboutContent: React.FC<AboutContentProps> = ({
               <Typography
                 variant="body1"
                 sx={{
-                  color: "rgba(255, 255, 255, 0.8)",
+                  color: 'rgba(255, 255, 255, 0.8)',
                   lineHeight: 1.8,
-                  fontSize: "1.05rem",
+                  fontSize: '1.05rem',
                   mb: 2,
                 }}
               >
@@ -121,15 +78,15 @@ export const AboutContent: React.FC<AboutContentProps> = ({
               <Typography
                 variant="body1"
                 sx={{
-                  color: "rgba(255, 255, 255, 0.8)",
+                  color: 'rgba(255, 255, 255, 0.8)',
                   lineHeight: 1.8,
-                  fontSize: "1.05rem",
+                  fontSize: '1.05rem',
                 }}
               >
                 We have built a permissionless network where anyone can submit
                 Pull Requests to recognized repositories. When your code is
-                merged, you earn direct emissions. It's that simple:{" "}
-                <strong style={{ color: "white" }}>Code, Merge, Earn.</strong>
+                merged, you earn direct emissions. It's that simple:{' '}
+                <strong style={{ color: 'white' }}>Code, Merge, Earn.</strong>
               </Typography>
             </Grid>
             <Grid item xs={12} md={6}>
@@ -138,39 +95,39 @@ export const AboutContent: React.FC<AboutContentProps> = ({
                   p: 3,
                   borderRadius: 4,
                   background:
-                    "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                    'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
                 }}
               >
                 <Typography
                   variant="h6"
                   fontWeight="bold"
-                  sx={{ mb: 2, color: "secondary.main" }}
+                  sx={{ mb: 2, color: 'secondary.main' }}
                 >
                   How It Works
                 </Typography>
                 <Stack spacing={2}>
                   {[
                     {
-                      role: "Miners (You)",
-                      desc: "Submit high-quality PRs to OSS repos.",
+                      role: 'Miners (You)',
+                      desc: 'Submit high-quality PRs to OSS repos.',
                     },
                     {
-                      role: "Validators",
-                      desc: "Verify merged PRs and distribute rewards.",
+                      role: 'Validators',
+                      desc: 'Verify merged PRs and distribute rewards.',
                     },
                     {
-                      role: "The Network",
-                      desc: "Incentivizes production-ready software.",
+                      role: 'The Network',
+                      desc: 'Incentivizes production-ready software.',
                     },
                   ].map((item, i) => (
-                    <Box key={i} sx={{ display: "flex", gap: 2 }}>
+                    <Box key={i} sx={{ display: 'flex', gap: 2 }}>
                       <Box
                         sx={{
                           width: 6,
                           height: 6,
-                          borderRadius: "50%",
-                          bgcolor: "secondary.main",
+                          borderRadius: '50%',
+                          bgcolor: 'secondary.main',
                           mt: 1,
                         }}
                       />
@@ -199,7 +156,7 @@ export const AboutContent: React.FC<AboutContentProps> = ({
           <Typography
             variant="h5"
             fontWeight="bold"
-            sx={{ mb: 4, textAlign: "center" }}
+            sx={{ mb: 4, textAlign: 'center' }}
           >
             Why Become a Miner?
           </Typography>
@@ -207,7 +164,7 @@ export const AboutContent: React.FC<AboutContentProps> = ({
             {[
               {
                 icon: <MonetizationOnIcon fontSize="large" />,
-                title: "Direct Incentives",
+                title: 'Direct Incentives',
                 desc: monthlyRewards
                   ? `Stop coding for free. Compete for a share of the $${monthlyRewards.toLocaleString(
                       undefined,
@@ -216,35 +173,35 @@ export const AboutContent: React.FC<AboutContentProps> = ({
                         maximumFractionDigits: 2,
                       },
                     )} monthly reward pool by making open source contributions.`
-                  : "Stop coding for free. Get paid in TAO for your open source contributions.",
+                  : 'Stop coding for free. Get paid in TAO for your open source contributions.',
               },
               {
                 icon: <VerifiedUserIcon fontSize="large" />,
-                title: "On-Chain Resume",
-                desc: "Build a verifiable reputation. Your contributions are permanently recorded on-chain, creating proof of your engineering skills.",
+                title: 'On-Chain Resume',
+                desc: 'Build a verifiable reputation. Your contributions are permanently recorded on-chain, creating proof of your engineering skills.',
               },
               {
                 icon: <CodeIcon fontSize="large" />,
-                title: "Freedom to Build",
-                desc: "Work on your terms. No managers, no set hours. Contribute code and get paid for the value you create.",
+                title: 'Freedom to Build',
+                desc: 'Work on your terms. No managers, no set hours. Contribute code and get paid for the value you create.',
               },
             ].map((card, i) => (
               <Grid item xs={12} md={4} key={i}>
                 <Box
                   sx={{
                     p: 4,
-                    height: "100%",
+                    height: '100%',
                     borderRadius: 4,
-                    background: "rgba(255, 255, 255, 0.02)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
                   }}
                 >
-                  <Box sx={{ color: "secondary.main", mb: 2 }}>{card.icon}</Box>
+                  <Box sx={{ color: 'secondary.main', mb: 2 }}>{card.icon}</Box>
                   <Typography
                     variant="h6"
                     fontWeight="bold"
                     gutterBottom
-                    sx={{ color: "#fff" }}
+                    sx={{ color: '#fff' }}
                   >
                     {card.title}
                   </Typography>
@@ -264,12 +221,12 @@ export const AboutContent: React.FC<AboutContentProps> = ({
         {/* 3. CTA: Check the Docs / Get Started */}
         <Box
           sx={{
-            textAlign: "center",
+            textAlign: 'center',
             p: 6,
             borderRadius: 4,
             background:
-              "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(255,255,255,0.03) 100%)",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
+              'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(255,255,255,0.03) 100%)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
             mb: 8,
           }}
         >
@@ -279,7 +236,7 @@ export const AboutContent: React.FC<AboutContentProps> = ({
           <Typography
             variant="body1"
             color="text.secondary"
-            sx={{ mb: 4, maxWidth: 600, mx: "auto" }}
+            sx={{ mb: 4, maxWidth: 600, mx: 'auto' }}
           >
             We have prepared a comprehensive guide to help you set up your
             miner, register on the network, and make your first submission.
@@ -295,11 +252,11 @@ export const AboutContent: React.FC<AboutContentProps> = ({
             sx={{
               px: 5,
               py: 2,
-              fontSize: "1.1rem",
-              fontWeight: "bold",
-              borderRadius: "50px",
-              boxShadow: "0 0 20px rgba(0, 0, 0, 0.3)",
-              textTransform: "none",
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              borderRadius: '50px',
+              boxShadow: '0 0 20px rgba(0, 0, 0, 0.3)',
+              textTransform: 'none',
             }}
           >
             View Documentation & Setup Guide
@@ -312,11 +269,11 @@ export const AboutContent: React.FC<AboutContentProps> = ({
             mt: { xs: 4, sm: 5, md: 6 },
             p: { xs: 3, sm: 4 },
             borderRadius: 3,
-            backgroundColor: "rgba(0, 0, 0, 0.3)",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
-            position: "relative",
-            overflow: "hidden",
-            width: "100%",
+            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            position: 'relative',
+            overflow: 'hidden',
+            width: '100%',
           }}
         >
           <Typography
@@ -325,10 +282,10 @@ export const AboutContent: React.FC<AboutContentProps> = ({
             gutterBottom
             sx={{
               mb: 2.5,
-              fontSize: { xs: "1.2rem", sm: "1.3rem" },
-              color: "#ffffff",
+              fontSize: { xs: '1.2rem', sm: '1.3rem' },
+              color: '#ffffff',
               fontFamily: '"JetBrains Mono", monospace',
-              letterSpacing: "0.02em",
+              letterSpacing: '0.02em',
             }}
           >
             Community
@@ -337,21 +294,21 @@ export const AboutContent: React.FC<AboutContentProps> = ({
             variant="body1"
             lineHeight={1.8}
             color="rgba(255, 255, 255, 0.9)"
-            fontSize={{ xs: "0.95rem", sm: "1rem" }}
+            fontSize={{ xs: '0.95rem', sm: '1rem' }}
             sx={{ mb: 2 }}
           >
-            Stay up to date with announcements and news in the{" "}
+            Stay up to date with announcements and news in the{' '}
             <Typography
               component="a"
               href="https://docs.learnbittensor.org/resources/community-links"
               target="_blank"
               rel="noopener noreferrer"
               sx={{
-                color: "secondary.main",
+                color: 'secondary.main',
                 fontWeight: 600,
-                textDecoration: "none",
-                "&:hover": {
-                  textDecoration: "underline",
+                textDecoration: 'none',
+                '&:hover': {
+                  textDecoration: 'underline',
                 },
               }}
             >
@@ -363,21 +320,21 @@ export const AboutContent: React.FC<AboutContentProps> = ({
             variant="body1"
             lineHeight={1.8}
             color="rgba(255, 255, 255, 0.9)"
-            fontSize={{ xs: "0.95rem", sm: "1rem" }}
+            fontSize={{ xs: '0.95rem', sm: '1rem' }}
           >
             Review our codebase and get started mining by checking out the
-            readme on our{" "}
+            readme on our{' '}
             <Typography
               component="a"
               href="https://github.com/entrius/gittensor"
               target="_blank"
               rel="noopener noreferrer"
               sx={{
-                color: "secondary.main",
+                color: 'secondary.main',
                 fontWeight: 600,
-                textDecoration: "none",
-                "&:hover": {
-                  textDecoration: "underline",
+                textDecoration: 'none',
+                '&:hover': {
+                  textDecoration: 'underline',
                 },
               }}
             >
@@ -391,24 +348,22 @@ export const AboutContent: React.FC<AboutContentProps> = ({
   );
 };
 
-const AboutPage: React.FC = () => {
-  return (
-    <Page title="About">
-      <SEO
-        title="About Gittensor"
-        description="Learn about Gittensor's mission to transform software into a global public resource. Understand how miners, validators, and the community work together."
-      />
-      <Box
-        sx={{
-          minHeight: { xs: "auto", md: "calc(100vh - 80px)" },
-          py: { xs: 4, sm: 5, md: 6 },
-          display: "flex",
-        }}
-      >
-        <AboutContent />
-      </Box>
-    </Page>
-  );
-};
+const AboutPage: React.FC = () => (
+  <Page title="About">
+    <SEO
+      title="About Gittensor"
+      description="Learn about Gittensor's mission to transform software into a global public resource. Understand how miners, validators, and the community work together."
+    />
+    <Box
+      sx={{
+        minHeight: { xs: 'auto', md: 'calc(100vh - 80px)' },
+        py: { xs: 4, sm: 5, md: 6 },
+        display: 'flex',
+      }}
+    >
+      <AboutContent />
+    </Box>
+  </Page>
+);
 
 export default AboutPage;

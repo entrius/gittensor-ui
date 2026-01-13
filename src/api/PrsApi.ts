@@ -1,6 +1,6 @@
 // Pull Request API hooks - uses /prs endpoints
-import { useApiQuery } from "./ApiUtils";
-import { CommitLog, PullRequestDetails } from "./models/Dashboard";
+import { useApiQuery } from './ApiUtils';
+import { type CommitLog, type PullRequestDetails } from './models/Dashboard';
 
 /**
  * Helper to create /prs endpoint queries
@@ -22,7 +22,7 @@ const usePrsQuery = <TResponse = void, TSelect = TResponse>(
  * Get all pull requests across the network
  * Returns all PRs regardless of miner registration status
  */
-export const useAllPrs = () => usePrsQuery<CommitLog[]>("useAllPrs", "");
+export const useAllPrs = () => usePrsQuery<CommitLog[]>('useAllPrs', '');
 
 /**
  * Get detailed information for a specific pull request
@@ -31,8 +31,8 @@ export const useAllPrs = () => usePrsQuery<CommitLog[]>("useAllPrs", "");
  */
 export const usePullRequestDetails = (repo: string, number: number) =>
   usePrsQuery<PullRequestDetails>(
-    "usePullRequestDetails",
-    "/details",
+    'usePullRequestDetails',
+    '/details',
     undefined,
     { repo, number },
   );
@@ -43,7 +43,7 @@ export const usePullRequestDetails = (repo: string, number: number) =>
  * @param number - Pull request number
  */
 export const usePullRequestComments = (repo: string, number: number) =>
-  usePrsQuery<any[]>("usePullRequestComments", "/comments", undefined, {
+  usePrsQuery<any[]>('usePullRequestComments', '/comments', undefined, {
     repo,
     number,
   });

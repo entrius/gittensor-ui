@@ -1,7 +1,7 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import { Box, Card, Typography, Tooltip } from "@mui/material";
-import { TIER_COLORS } from "../../theme";
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Box, Card, Typography, Tooltip } from '@mui/material';
+import { TIER_COLORS } from '../../theme';
 
 interface TierRepoCardProps {
   tier: string;
@@ -42,14 +42,14 @@ const TierRepoCard: React.FC<TierRepoCardProps> = ({ tier, repos }) => {
       sx={{
         flex: 1,
         p: 1.5,
-        display: "flex",
-        flexDirection: "column",
-        overflow: "visible",
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'visible',
       }}
     >
       <Typography
         variant="monoSmall"
-        sx={{ color: tierColor, mb: 1, textAlign: "center" }}
+        sx={{ color: tierColor, mb: 1, textAlign: 'center' }}
       >
         {tier} Tier Repositories
       </Typography>
@@ -57,15 +57,15 @@ const TierRepoCard: React.FC<TierRepoCardProps> = ({ tier, repos }) => {
       <Box
         ref={containerRef}
         sx={{
-          display: "flex",
-          flexWrap: "nowrap",
-          justifyContent: "center",
-          alignItems: "center",
+          display: 'flex',
+          flexWrap: 'nowrap',
+          justifyContent: 'center',
+          alignItems: 'center',
           flex: 1,
-          overflow: "visible",
-          position: "relative",
+          overflow: 'visible',
+          position: 'relative',
           zIndex: 2,
-          pl: "12px",
+          pl: '12px',
         }}
       >
         {displayedRepos.map((repo) => (
@@ -76,32 +76,32 @@ const TierRepoCard: React.FC<TierRepoCardProps> = ({ tier, repos }) => {
                   `/miners/repository?name=${encodeURIComponent(repo.fullName)}`,
                 )
               }
-              sx={{ textDecoration: "none", cursor: "pointer" }}
+              sx={{ textDecoration: 'none', cursor: 'pointer' }}
             >
               <Box
                 component="img"
                 src={`https://avatars.githubusercontent.com/${repo.owner}`}
                 alt={repo.fullName}
                 onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                  e.currentTarget.style.display = "none";
+                  e.currentTarget.style.display = 'none';
                 }}
                 sx={{
                   width: 42,
                   height: 42,
-                  borderRadius: "50%",
+                  borderRadius: '50%',
                   border: `2px solid ${tierColor}40`,
-                  marginLeft: "-12px",
+                  marginLeft: '-12px',
                   backgroundColor:
-                    repo.owner === "opentensor"
-                      ? "#ffffff"
-                      : repo.owner === "bitcoin"
-                        ? "#F7931A"
-                        : "#161b22",
-                  transition: "all 0.2s",
-                  position: "relative",
+                    repo.owner === 'opentensor'
+                      ? '#ffffff'
+                      : repo.owner === 'bitcoin'
+                        ? '#F7931A'
+                        : '#161b22',
+                  transition: 'all 0.2s',
+                  position: 'relative',
                   zIndex: 1,
-                  "&:hover": {
-                    transform: "scale(1.2)",
+                  '&:hover': {
+                    transform: 'scale(1.2)',
                     borderColor: tierColor,
                     boxShadow: `0 0 12px ${tierColor}60`,
                     zIndex: 100,
@@ -121,21 +121,21 @@ const TierRepoCard: React.FC<TierRepoCardProps> = ({ tier, repos }) => {
                 minWidth: 42,
                 minHeight: 42,
                 flexShrink: 0,
-                borderRadius: "50%",
-                backgroundColor: "rgba(255, 255, 255, 0.1)",
-                border: "2px solid #0d1117",
-                marginLeft: "-12px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                transition: "all 0.2s",
-                position: "relative",
+                borderRadius: '50%',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                border: '2px solid #0d1117',
+                marginLeft: '-12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                position: 'relative',
                 zIndex: 1,
-                "&:hover": {
-                  transform: "scale(1.2)",
-                  backgroundColor: "rgba(255, 255, 255, 0.15)",
-                  borderColor: "rgba(255, 255, 255, 0.3)",
+                '&:hover': {
+                  transform: 'scale(1.2)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  borderColor: 'rgba(255, 255, 255, 0.3)',
                   zIndex: 100,
                 },
               }}
@@ -143,8 +143,8 @@ const TierRepoCard: React.FC<TierRepoCardProps> = ({ tier, repos }) => {
               <Typography
                 variant="monoSmall"
                 sx={{
-                  color: "rgba(255, 255, 255, 0.7)",
-                  textTransform: "none",
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  textTransform: 'none',
                 }}
               >
                 +{remainingCount}

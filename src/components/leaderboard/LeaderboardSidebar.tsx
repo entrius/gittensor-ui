@@ -1,27 +1,10 @@
-import React, { useMemo, useState } from "react";
-import { Box, Stack, Typography, Avatar } from "@mui/material";
-import { SectionCard } from "./SectionCard";
+import React, { useMemo, useState } from 'react';
+import { Box, Stack, Typography, Avatar } from '@mui/material';
+import { SectionCard } from './SectionCard';
+import { type MinerStats, FONTS } from './types';
 
-// Define locally or import. For now, matching MinerStats from TopMinersTable
-export interface MinerStats {
-  githubId: string;
-  author?: string;
-  totalScore: number;
-  baseTotalScore: number;
-  totalPRs: number;
-  linesChanged: number;
-  linesAdded: number;
-  linesDeleted: number;
-  hotkey: string;
-  rank?: number;
-  uniqueReposCount?: number;
-  credibility?: number;
-  currentTier?: string;
-  usdPerDay?: number;
-  totalMergedPrs?: number;
-  totalOpenPrs?: number;
-  totalClosedPrs?: number;
-}
+// Re-export MinerStats for backward compatibility
+export type { MinerStats } from './types';
 
 interface LeaderboardSidebarProps {
   miners: MinerStats[];
@@ -33,8 +16,8 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
   onSelectMiner,
 }) => {
   // State for toggling lists
-  const [leaderboardType, setLeaderboardType] = useState<"earners" | "active">(
-    "earners",
+  const [leaderboardType, setLeaderboardType] = useState<'earners' | 'active'>(
+    'earners',
   );
 
   // Stats (Use original unfiltered list for stats)
@@ -66,7 +49,7 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
   );
 
   return (
-    <Stack spacing={2} sx={{ height: "100%", overflow: "auto", pr: 1 }}>
+    <Stack spacing={2} sx={{ height: '100%', overflow: 'auto', pr: 1 }}>
       {/* CARD 1: Network Stats */}
       <SectionCard title="Network Stats" sx={{ flexShrink: 0 }}>
         <Box
@@ -74,236 +57,46 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
             pt: 1,
             px: 2,
             pb: 2,
-            display: "flex",
-            flexDirection: "column",
+            display: 'flex',
+            flexDirection: 'column',
             gap: 2,
           }}
         >
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography sx={{ fontSize: "1rem", color: "#8b949e" }}>
-              Total Miners
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: '"JetBrains Mono", monospace',
-                fontWeight: 600,
-                fontSize: "1.2rem",
-                color: "#e6edf3",
-              }}
-            >
-              {networkStats.totalMiners}
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography sx={{ fontSize: "1rem", color: "#8b949e" }}>
-              Active Tier
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: '"JetBrains Mono", monospace',
-                fontWeight: 600,
-                fontSize: "1.2rem",
-                color: "#e6edf3",
-              }}
-            >
-              {networkStats.activeTier}
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography sx={{ fontSize: "1rem", color: "#8b949e" }}>
-              Total PRs
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: '"JetBrains Mono", monospace',
-                fontWeight: 600,
-                fontSize: "1.2rem",
-                color: "#e6edf3",
-              }}
-            >
-              {networkStats.totalPRs}
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography sx={{ fontSize: "1rem", color: "#8b949e" }}>
-              Daily Pool
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: '"JetBrains Mono", monospace',
-                fontWeight: 600,
-                fontSize: "1.2rem",
-                color: "#3fb950",
-              }}
-            >
-              ${networkStats.dailyPool.toLocaleString()}
-            </Typography>
-          </Box>
+          <StatRow label="Total Miners" value={networkStats.totalMiners} />
+          <StatRow label="Active Tier" value={networkStats.activeTier} />
+          <StatRow label="Total PRs" value={networkStats.totalPRs} />
+          <StatRow
+            label="Daily Pool"
+            value={`$${networkStats.dailyPool.toLocaleString()}`}
+            valueColor="#3fb950"
+          />
         </Box>
       </SectionCard>
 
       {/* CARD 2: Leaderboard Lists (Tabs) */}
       <SectionCard
-        title={leaderboardType === "earners" ? "Top Earners" : "Most Active"}
+        title={leaderboardType === 'earners' ? 'Top Earners' : 'Most Active'}
         action={
-          <Box
-            sx={{
-              display: "flex",
-              gap: 0.5,
-              backgroundColor: "rgba(255, 255, 255, 0.05)",
-              p: 0.5,
-              borderRadius: 2,
-            }}
-          >
-            {[
-              { label: "$", value: "earners" },
-              { label: "PRs", value: "active" },
-            ].map((option) => (
-              <Box
-                key={option.value}
-                onClick={() =>
-                  setLeaderboardType(option.value as "earners" | "active")
-                }
-                sx={{
-                  px: 1.5,
-                  height: 24,
-                  display: "flex",
-                  alignItems: "center",
-                  borderRadius: 1.5,
-                  cursor: "pointer",
-                  backgroundColor:
-                    leaderboardType === option.value
-                      ? "rgba(255, 255, 255, 0.15)"
-                      : "transparent",
-                  color: leaderboardType === option.value ? "#fff" : "#8b949e",
-                  transition: "all 0.2s",
-                  "&:hover": {
-                    backgroundColor: "rgba(255, 255, 255, 0.1)",
-                    color: "#e6edf3",
-                  },
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontFamily: '"JetBrains Mono", monospace',
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                  }}
-                >
-                  {option.label}
-                </Typography>
-              </Box>
-            ))}
-          </Box>
+          <LeaderboardTabs
+            activeTab={leaderboardType}
+            onTabChange={setLeaderboardType}
+          />
         }
         sx={{ flexShrink: 0 }}
       >
         <Box sx={{ px: 2, pb: 2 }}>
-          <Box
-            sx={{
-              display: "flex",
-              py: 1,
-              borderBottom: "1px solid rgba(48, 54, 61, 0.5)",
-              mb: 1,
-            }}
-          >
-            <Typography
-              sx={{ fontSize: "0.8rem", color: "#8b949e", width: 24 }}
-            >
-              #
-            </Typography>
-            <Typography sx={{ fontSize: "0.8rem", color: "#8b949e", flex: 1 }}>
-              MINER
-            </Typography>
-            <Typography sx={{ fontSize: "0.8rem", color: "#8b949e" }}>
-              {leaderboardType === "earners" ? "$/DAY" : "PRS"}
-            </Typography>
-          </Box>
-          {(leaderboardType === "earners" ? topEarners : mostActive).map(
+          <LeaderboardHeader type={leaderboardType} />
+          {(leaderboardType === 'earners' ? topEarners : mostActive).map(
             (miner, i) => (
-              <Box
+              <LeaderboardRow
                 key={miner.hotkey}
+                miner={miner}
+                rank={i + 1}
+                type={leaderboardType}
                 onClick={() =>
-                  onSelectMiner(miner.githubId || miner.author || "")
+                  onSelectMiner(miner.githubId || miner.author || '')
                 }
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  py: 1,
-                  cursor: "pointer",
-                  "&:hover": {
-                    backgroundColor: "rgba(255, 255, 255, 0.03)",
-                    borderRadius: 1,
-                  },
-                }}
-              >
-                <Typography
-                  sx={{ fontSize: "1rem", color: "#8b949e", width: 24 }}
-                >
-                  {i + 1}
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    flex: 1,
-                    minWidth: 0,
-                  }}
-                >
-                  <Avatar
-                    src={`https://avatars.githubusercontent.com/${miner.author || miner.githubId}`}
-                    sx={{ width: 20, height: 20 }}
-                  />
-                  <Typography
-                    sx={{
-                      fontSize: "1rem",
-                      color: "#c9d1d9",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {miner.author || miner.githubId}
-                  </Typography>
-                </Box>
-                <Typography
-                  sx={{
-                    fontSize: "1.1rem",
-                    color:
-                      leaderboardType === "earners" ? "#3fb950" : "#e6edf3",
-                    fontFamily: '"JetBrains Mono", monospace',
-                  }}
-                >
-                  {leaderboardType === "earners"
-                    ? `$${Math.round(miner.usdPerDay || 0).toLocaleString()}`
-                    : miner.totalPRs}
-                </Typography>
-              </Box>
+              />
             ),
           )}
         </Box>
@@ -311,3 +104,226 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
     </Stack>
   );
 };
+
+interface StatRowProps {
+  label: string;
+  value: number | string;
+  valueColor?: string;
+}
+
+const StatRow: React.FC<StatRowProps> = ({
+  label,
+  value,
+  valueColor = '#e6edf3',
+}) => (
+  <Box
+    sx={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    }}
+  >
+    <Typography
+      sx={{
+        fontFamily: FONTS.mono,
+        fontSize: '0.85rem',
+        color: '#8b949e',
+      }}
+    >
+      {label}
+    </Typography>
+    <Typography
+      sx={{
+        fontFamily: FONTS.mono,
+        fontWeight: 600,
+        fontSize: '1.1rem',
+        color: valueColor,
+      }}
+    >
+      {value}
+    </Typography>
+  </Box>
+);
+
+interface LeaderboardTabsProps {
+  activeTab: 'earners' | 'active';
+  onTabChange: (tab: 'earners' | 'active') => void;
+}
+
+const LeaderboardTabs: React.FC<LeaderboardTabsProps> = ({
+  activeTab,
+  onTabChange,
+}) => (
+  <Box
+    sx={{
+      display: 'flex',
+      gap: 0.5,
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      p: 0.5,
+      borderRadius: 2,
+    }}
+  >
+    {[
+      { label: '$', value: 'earners' as const },
+      { label: 'PRs', value: 'active' as const },
+    ].map((option) => (
+      <Box
+        key={option.value}
+        onClick={() => onTabChange(option.value)}
+        sx={{
+          px: 1.5,
+          height: 24,
+          display: 'flex',
+          alignItems: 'center',
+          borderRadius: 1.5,
+          cursor: 'pointer',
+          backgroundColor:
+            activeTab === option.value
+              ? 'rgba(255, 255, 255, 0.15)'
+              : 'transparent',
+          color: activeTab === option.value ? '#fff' : '#8b949e',
+          transition: 'all 0.2s',
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            color: '#e6edf3',
+          },
+        }}
+      >
+        <Typography
+          sx={{
+            fontFamily: FONTS.mono,
+            fontSize: '0.75rem',
+            fontWeight: 600,
+          }}
+        >
+          {option.label}
+        </Typography>
+      </Box>
+    ))}
+  </Box>
+);
+
+interface LeaderboardHeaderProps {
+  type: 'earners' | 'active';
+}
+
+const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({ type }) => (
+  <Box
+    sx={{
+      display: 'flex',
+      py: 1,
+      borderBottom: '1px solid rgba(48, 54, 61, 0.5)',
+      mb: 1,
+    }}
+  >
+    <Typography
+      sx={{
+        fontFamily: FONTS.mono,
+        fontSize: '0.7rem',
+        color: '#8b949e',
+        width: 24,
+        textTransform: 'uppercase',
+      }}
+    >
+      #
+    </Typography>
+    <Typography
+      sx={{
+        fontFamily: FONTS.mono,
+        fontSize: '0.7rem',
+        color: '#8b949e',
+        flex: 1,
+        textTransform: 'uppercase',
+      }}
+    >
+      Miner
+    </Typography>
+    <Typography
+      sx={{
+        fontFamily: FONTS.mono,
+        fontSize: '0.7rem',
+        color: '#8b949e',
+        textTransform: 'uppercase',
+      }}
+    >
+      {type === 'earners' ? '$/Day' : 'PRs'}
+    </Typography>
+  </Box>
+);
+
+interface LeaderboardRowProps {
+  miner: MinerStats;
+  rank: number;
+  type: 'earners' | 'active';
+  onClick: () => void;
+}
+
+const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
+  miner,
+  rank,
+  type,
+  onClick,
+}) => (
+  <Box
+    onClick={onClick}
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      py: 1,
+      cursor: 'pointer',
+      '&:hover': {
+        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+        borderRadius: 1,
+      },
+    }}
+  >
+    <Typography
+      sx={{
+        fontFamily: FONTS.mono,
+        fontSize: '0.85rem',
+        color: '#8b949e',
+        width: 24,
+      }}
+    >
+      {rank}
+    </Typography>
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+        flex: 1,
+        minWidth: 0,
+      }}
+    >
+      <Avatar
+        src={`https://avatars.githubusercontent.com/${miner.author || miner.githubId}`}
+        sx={{ width: 20, height: 20 }}
+      />
+      <Typography
+        sx={{
+          fontFamily: FONTS.mono,
+          fontSize: '0.85rem',
+          color: '#c9d1d9',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {miner.author || miner.githubId}
+      </Typography>
+    </Box>
+    <Typography
+      sx={{
+        fontFamily: FONTS.mono,
+        fontSize: '0.95rem',
+        color: type === 'earners' ? '#3fb950' : '#e6edf3',
+        fontWeight: 600,
+      }}
+    >
+      {type === 'earners'
+        ? `$${Math.round(miner.usdPerDay || 0).toLocaleString()}`
+        : miner.totalPRs}
+    </Typography>
+  </Box>
+);

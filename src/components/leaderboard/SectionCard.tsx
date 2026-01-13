@@ -1,5 +1,5 @@
-import React from "react";
-import { Card, Box, Typography, CardContent, Grid } from "@mui/material";
+import React from 'react';
+import { Card, Box, Typography, CardContent, Grid } from '@mui/material';
 
 export const SectionCard: React.FC<{
   children: React.ReactNode;
@@ -15,10 +15,10 @@ export const SectionCard: React.FC<{
     <Card
       sx={{
         borderRadius: 3,
-        border: "1px solid rgba(255, 255, 255, 0.1)",
-        backgroundColor: "#000000",
-        display: "flex",
-        flexDirection: "column",
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: '#000000',
+        display: 'flex',
+        flexDirection: 'column',
         ...sx,
       }}
       elevation={0}
@@ -30,8 +30,8 @@ export const SectionCard: React.FC<{
           sx={{
             p: 2,
             pb: 1,
-            alignItems: "center",
-            position: "relative",
+            alignItems: 'center',
+            position: 'relative',
           }}
         >
           {/* Title Section */}
@@ -45,7 +45,7 @@ export const SectionCard: React.FC<{
                 variant="h6"
                 sx={{
                   fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: "1.25rem",
+                  fontSize: '1.25rem',
                   fontWeight: 600,
                 }}
               >
@@ -62,8 +62,8 @@ export const SectionCard: React.FC<{
               lg={6}
               order={{ xs: 3, lg: 2 }}
               sx={{
-                display: "flex",
-                justifyContent: "center",
+                display: 'flex',
+                justifyContent: 'center',
                 mt: { xs: 2, lg: 0 }, // Add margin on mobile when stacked
               }}
             >
@@ -79,8 +79,8 @@ export const SectionCard: React.FC<{
               lg={hasCenter ? 3 : 6}
               order={{ xs: 2, lg: 3 }}
               sx={{
-                display: "flex",
-                justifyContent: "flex-end",
+                display: 'flex',
+                justifyContent: 'flex-end',
               }}
             >
               <Box>{action}</Box>
@@ -92,10 +92,10 @@ export const SectionCard: React.FC<{
       <CardContent
         sx={{
           p: 0,
-          "&:last-child": { pb: 0 },
+          '&:last-child': { pb: 0 },
           flex: 1,
-          display: "flex",
-          flexDirection: "column",
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         {children}
