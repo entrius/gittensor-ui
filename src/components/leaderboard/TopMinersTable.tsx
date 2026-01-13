@@ -22,8 +22,9 @@ import SearchIcon from "@mui/icons-material/Search";
 import ReactECharts from "echarts-for-react";
 import { useMinerGithubData, useMinerPRs, useGeneralConfig } from "../../api";
 import { TIER_COLORS, CHART_COLORS } from "../../theme";
+import { SectionCard } from "./SectionCard";
 
-interface MinerStats {
+export interface MinerStats {
   githubId: string;
   author?: string;
   totalScore: number;
@@ -207,7 +208,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
     <Card
       onClick={onClick}
       sx={{
-        p: 1.5,
+        p: 1,
         backgroundColor: "#000000",
         backdropFilter: "blur(12px)",
         border: `1px solid ${borderColor}`,
@@ -217,7 +218,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        gap: 1.5,
+        gap: 1,
         position: "relative",
         boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
         "&:hover": {
@@ -527,87 +528,6 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
 };
 
 // ============================================================================
-// STYLED SECTION CARD (Dashboard Style)
-// ============================================================================
-// ============================================================================
-// STYLED SECTION CARD (Dashboard Style)
-// ============================================================================
-const SectionCard: React.FC<{
-  children: React.ReactNode;
-  sx?: any;
-  title?: string;
-  action?: React.ReactNode;
-  centerContent?: React.ReactNode;
-}> = ({ children, sx, title, action, centerContent }) => (
-  <Card
-    sx={{
-      borderRadius: 3,
-      border: "1px solid rgba(255, 255, 255, 0.1)",
-      backgroundColor: "#000000",
-      display: "flex",
-      flexDirection: "column",
-      ...sx,
-    }}
-    elevation={0}
-  >
-    {/* Optional Header */}
-    {(title || action || centerContent) && (
-      <Box
-        sx={{
-          p: 2,
-          pb: 1,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          position: "relative",
-        }}
-      >
-        {title && (
-          <Typography
-            variant="h6"
-            sx={{
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "1.25rem",
-              fontWeight: 600,
-            }}
-          >
-            {title}
-          </Typography>
-        )}
-
-        {/* Centered Content (Absolute Position) */}
-        {centerContent && (
-          <Box
-            sx={{
-              position: "absolute",
-              left: "50%",
-              transform: "translateX(-50%)",
-              display: "flex",
-            }}
-          >
-            {centerContent}
-          </Box>
-        )}
-
-        {action && <Box>{action}</Box>}
-      </Box>
-    )}
-
-    <CardContent
-      sx={{
-        p: 0,
-        "&:last-child": { pb: 0 },
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      {children}
-    </CardContent>
-  </Card>
-);
-
-// ============================================================================
 // MINER SECTION (Expandable Grid)
 // ============================================================================
 interface MinerSectionProps {
@@ -659,9 +579,9 @@ const MinerSection: React.FC<MinerSectionProps> = ({
       {title && (
         <Box
           sx={{
-            px: 3,
-            pt: 3, // Increased top padding for spacing
-            pb: 1,
+            px: 2,
+            pt: 1.5, // Reduced top padding
+            pb: 0.5,
             display: "flex",
             justifyContent: "center", // Center content
             alignItems: "center",
@@ -689,10 +609,10 @@ const MinerSection: React.FC<MinerSectionProps> = ({
         </Box>
       )}
 
-      <Box sx={{ p: 3, pt: 2, flex: 1 }}>
+      <Box sx={{ p: 1.5, pt: 1, flex: 1 }}>
         <Grid container spacing={2}>
           {visibleMiners.map((miner) => (
-            <Grid item xs={12} sm={12} md={6} xl={4} key={miner.hotkey}>
+            <Grid item xs={12} sm={12} md={6} lg={4} xl={4} key={miner.hotkey}>
               <MinerCard
                 miner={miner}
                 onClick={() =>
@@ -807,33 +727,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     };
   }, [miners, searchQuery, sortOption]);
 
-  // Stats (Use original unfiltered list for stats)
-  const topEarners = useMemo(
-    () =>
-      [...miners]
-        .sort((a, b) => (b.usdPerDay || 0) - (a.usdPerDay || 0))
-        .slice(0, 5),
-    [miners],
-  );
-
-  const mostActive = useMemo(
-    () =>
-      [...miners]
-        .sort((a, b) => (b.totalPRs || 0) - (a.totalPRs || 0))
-        .slice(0, 5),
-    [miners],
-  );
-
-  // Network Stats Data
-  const networkStats = useMemo(
-    () => ({
-      totalMiners: miners.length,
-      activeTier: miners.filter((m) => m.currentTier).length,
-      totalPRs: miners.reduce((acc, m) => acc + (m.totalPRs || 0), 0),
-      dailyPool: miners.reduce((acc, m) => acc + (m.usdPerDay || 0), 0),
-    }),
-    [miners],
-  );
+  // Stats logic removed (moved to LeaderboardSidebar)
 
   if (isLoading) {
     return (
@@ -845,7 +739,14 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 
   // Header Actions - Split into Sort (Center) and Search (Right)
   const sortButtons = (
-    <Box sx={{ display: "flex", gap: 0.5 }}>
+    <Box
+      sx={{
+        display: "flex",
+        gap: 0.5,
+        flexWrap: "wrap",
+        justifyContent: "center",
+      }}
+    >
       {[
         { label: "Score", value: "totalScore" },
         { label: "Earnings", value: "usdPerDay" },
@@ -926,359 +827,78 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   );
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Grid container spacing={3}>
-        {/* LEFT COLUMN: Main Miner Section (Unwrapped) */}
-        <Grid item xs={12} lg={9}>
-          {/* Header Card */}
-          <SectionCard
-            title={`Miners (${groupedMiners.totalFiltered})`}
-            centerContent={sortButtons}
-            action={searchAction}
-            sx={{
-              mb: 3,
-              position: "sticky",
-              top: 0,
-              zIndex: 100,
-              backgroundColor: "rgba(0, 0, 0, 0.65)", // X-style semi-transparent
-              backdropFilter: "blur(12px)", // Liquid glass effect
-              borderBottom: "1px solid rgba(255, 255, 255, 0.1)", // Subtle separator
-              boxShadow: "none", // Remove default shadow for cleaner blend
-            }}
-          >
-            {null}
-          </SectionCard>
+    <Box sx={{ p: 2 }}>
+      {/* Header Card */}
+      <SectionCard
+        title={`Miners (${groupedMiners.totalFiltered})`}
+        centerContent={sortButtons}
+        action={searchAction}
+        sx={{
+          mb: 2,
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+          backgroundColor: "rgba(0, 0, 0, 0.65)", // X-style semi-transparent
+          backdropFilter: "blur(12px)", // Liquid glass effect
+          borderBottom: "1px solid rgba(255, 255, 255, 0.1)", // Subtle separator
+          boxShadow: "none", // Remove default shadow for cleaner blend
+        }}
+      >
+        {null}
+      </SectionCard>
 
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {/* GOLD SECTION */}
-            {groupedMiners.gold.length > 0 && (
-              <MinerSection
-                title="GOLD TIER"
-                count={groupedMiners.gold.length}
-                miners={groupedMiners.gold}
-                color={getTierColors("Gold")}
-                onSelectMiner={onSelectMiner}
-              />
-            )}
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {/* GOLD SECTION */}
+        {groupedMiners.gold.length > 0 && (
+          <MinerSection
+            title="GOLD TIER"
+            count={groupedMiners.gold.length}
+            miners={groupedMiners.gold}
+            color={getTierColors("Gold")}
+            onSelectMiner={onSelectMiner}
+          />
+        )}
 
-            {/* SILVER SECTION */}
-            {groupedMiners.silver.length > 0 && (
-              <MinerSection
-                title="SILVER TIER"
-                count={groupedMiners.silver.length}
-                miners={groupedMiners.silver}
-                color={getTierColors("Silver")}
-                onSelectMiner={onSelectMiner}
-              />
-            )}
+        {/* SILVER SECTION */}
+        {groupedMiners.silver.length > 0 && (
+          <MinerSection
+            title="SILVER TIER"
+            count={groupedMiners.silver.length}
+            miners={groupedMiners.silver}
+            color={getTierColors("Silver")}
+            onSelectMiner={onSelectMiner}
+          />
+        )}
 
-            {/* BRONZE SECTION */}
-            {groupedMiners.bronze.length > 0 && (
-              <MinerSection
-                title="BRONZE TIER"
-                count={groupedMiners.bronze.length}
-                miners={groupedMiners.bronze}
-                color={getTierColors("Bronze")}
-                onSelectMiner={onSelectMiner}
-              />
-            )}
+        {/* BRONZE SECTION */}
+        {groupedMiners.bronze.length > 0 && (
+          <MinerSection
+            title="BRONZE TIER"
+            count={groupedMiners.bronze.length}
+            miners={groupedMiners.bronze}
+            color={getTierColors("Bronze")}
+            onSelectMiner={onSelectMiner}
+          />
+        )}
 
-            {/* INACTIVE / OTHER SECTION */}
-            {groupedMiners.others.length > 0 && (
-              <MinerSection
-                title="Unranked"
-                count={groupedMiners.others.length}
-                miners={groupedMiners.others}
-                color={{ border: "rgba(255,255,255,0.1)", text: "#8b949e" }}
-                onSelectMiner={onSelectMiner}
-                compact={true}
-              />
-            )}
+        {/* INACTIVE / OTHER SECTION */}
+        {groupedMiners.others.length > 0 && (
+          <MinerSection
+            title="Unranked"
+            count={groupedMiners.others.length}
+            miners={groupedMiners.others}
+            color={{ border: "rgba(255,255,255,0.1)", text: "#8b949e" }}
+            onSelectMiner={onSelectMiner}
+            compact={true}
+          />
+        )}
 
-            {groupedMiners.totalFiltered === 0 && (
-              <Box sx={{ py: 8, textAlign: "center", color: "text.secondary" }}>
-                <Typography>No miners found matching your filters.</Typography>
-              </Box>
-            )}
+        {groupedMiners.totalFiltered === 0 && (
+          <Box sx={{ py: 8, textAlign: "center", color: "text.secondary" }}>
+            <Typography>No miners found matching your filters.</Typography>
           </Box>
-        </Grid>
-
-        {/* RIGHT COLUMN: Sidebar Stats */}
-        <Grid item xs={12} lg={3}>
-          <Stack spacing={3} sx={{ position: "sticky", top: 24 }}>
-            {/* CARD 1: Network Stats */}
-            <SectionCard title="Network Stats">
-              <Box
-                sx={{
-                  pt: 1,
-                  px: 2,
-                  pb: 2,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 2,
-                }}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <Typography sx={{ fontSize: "1rem", color: "#8b949e" }}>
-                    Total Miners
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: '"JetBrains Mono", monospace',
-                      fontWeight: 600,
-                      fontSize: "1.2rem",
-                      color: "#e6edf3",
-                    }}
-                  >
-                    {networkStats.totalMiners}
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <Typography sx={{ fontSize: "1rem", color: "#8b949e" }}>
-                    Active Tier
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: '"JetBrains Mono", monospace',
-                      fontWeight: 600,
-                      fontSize: "1.2rem",
-                      color: "#e6edf3",
-                    }}
-                  >
-                    {networkStats.activeTier}
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <Typography sx={{ fontSize: "1rem", color: "#8b949e" }}>
-                    Total PRs
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: '"JetBrains Mono", monospace',
-                      fontWeight: 600,
-                      fontSize: "1.2rem",
-                      color: "#e6edf3",
-                    }}
-                  >
-                    {networkStats.totalPRs}
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <Typography sx={{ fontSize: "1rem", color: "#8b949e" }}>
-                    Daily Pool
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: '"JetBrains Mono", monospace',
-                      fontWeight: 600,
-                      fontSize: "1.2rem",
-                      color: "#3fb950",
-                    }}
-                  >
-                    ${networkStats.dailyPool.toLocaleString()}
-                  </Typography>
-                </Box>
-              </Box>
-            </SectionCard>
-
-            {/* CARD 2: Top Earners */}
-            <SectionCard title="Top Earners">
-              <Box sx={{ px: 2, pb: 2 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    py: 1,
-                    borderBottom: "1px solid rgba(48, 54, 61, 0.5)",
-                    mb: 1,
-                  }}
-                >
-                  <Typography
-                    sx={{ fontSize: "0.8rem", color: "#8b949e", width: 24 }}
-                  >
-                    #
-                  </Typography>
-                  <Typography
-                    sx={{ fontSize: "0.8rem", color: "#8b949e", flex: 1 }}
-                  >
-                    MINER
-                  </Typography>
-                  <Typography sx={{ fontSize: "0.8rem", color: "#8b949e" }}>
-                    $/DAY
-                  </Typography>
-                </Box>
-                {topEarners.map((miner, i) => (
-                  <Box
-                    key={miner.hotkey}
-                    onClick={() =>
-                      onSelectMiner(miner.githubId || miner.author || "")
-                    }
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      py: 1,
-                      cursor: "pointer",
-                      "&:hover": {
-                        backgroundColor: "rgba(255, 255, 255, 0.03)",
-                        borderRadius: 1,
-                      },
-                    }}
-                  >
-                    <Typography
-                      sx={{ fontSize: "1rem", color: "#8b949e", width: 24 }}
-                    >
-                      {i + 1}
-                    </Typography>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        flex: 1,
-                        minWidth: 0,
-                      }}
-                    >
-                      <Avatar
-                        src={`https://avatars.githubusercontent.com/${miner.author || miner.githubId}`}
-                        sx={{ width: 20, height: 20 }}
-                      />
-                      <Typography
-                        sx={{
-                          fontSize: "1rem",
-                          color: "#c9d1d9",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {miner.author || miner.githubId}
-                      </Typography>
-                    </Box>
-                    <Typography
-                      sx={{
-                        fontSize: "1.1rem",
-                        color: "#3fb950",
-                        fontFamily: '"JetBrains Mono", monospace',
-                      }}
-                    >
-                      ${Math.round(miner.usdPerDay || 0).toLocaleString()}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-            </SectionCard>
-
-            {/* CARD 3: Most Active */}
-            <SectionCard title="Most Active">
-              <Box sx={{ px: 2, pb: 2 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    py: 1,
-                    borderBottom: "1px solid rgba(48, 54, 61, 0.5)",
-                    mb: 1,
-                  }}
-                >
-                  <Typography
-                    sx={{ fontSize: "0.8rem", color: "#8b949e", width: 24 }}
-                  >
-                    #
-                  </Typography>
-                  <Typography
-                    sx={{ fontSize: "0.8rem", color: "#8b949e", flex: 1 }}
-                  >
-                    MINER
-                  </Typography>
-                  <Typography sx={{ fontSize: "0.8rem", color: "#8b949e" }}>
-                    PRS
-                  </Typography>
-                </Box>
-                {mostActive.map((miner, i) => (
-                  <Box
-                    key={miner.hotkey}
-                    onClick={() =>
-                      onSelectMiner(miner.githubId || miner.author || "")
-                    }
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      py: 1,
-                      cursor: "pointer",
-                      "&:hover": {
-                        backgroundColor: "rgba(255, 255, 255, 0.03)",
-                        borderRadius: 1,
-                      },
-                    }}
-                  >
-                    <Typography
-                      sx={{ fontSize: "1rem", color: "#8b949e", width: 24 }}
-                    >
-                      {i + 1}
-                    </Typography>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        flex: 1,
-                        minWidth: 0,
-                      }}
-                    >
-                      <Avatar
-                        src={`https://avatars.githubusercontent.com/${miner.author || miner.githubId}`}
-                        sx={{ width: 20, height: 20 }}
-                      />
-                      <Typography
-                        sx={{
-                          fontSize: "1rem",
-                          color: "#c9d1d9",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {miner.author || miner.githubId}
-                      </Typography>
-                    </Box>
-                    <Typography
-                      sx={{
-                        fontSize: "1.1rem",
-                        color: "#e6edf3",
-                        fontFamily: '"JetBrains Mono", monospace',
-                      }}
-                    >
-                      {miner.totalPRs}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-            </SectionCard>
-          </Stack>
-        </Grid>
-      </Grid>
+        )}
+      </Box>
     </Box>
   );
 };
