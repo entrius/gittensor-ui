@@ -139,7 +139,10 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
 
   // Fetch profile if author is missing or looks like an ID
   const shouldFetchProfile = isNumericId(miner.author);
-  const { data: githubData } = useMinerGithubData(miner.githubId, shouldFetchProfile);
+  const { data: githubData } = useMinerGithubData(
+    miner.githubId,
+    shouldFetchProfile,
+  );
 
   // Always fetch PRs to get repository data for the card
   const { data: prs } = useMinerPRs(miner.githubId, true);
@@ -169,7 +172,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
     const sorted = [...prs].reverse();
     return sorted.map((pr: any) => ({
       score: parseFloat(pr.score) || 0,
-      state: (pr.prState || 'open').toLowerCase(),
+      state: (pr.prState || "open").toLowerCase(),
     }));
   }, [prs]);
 
@@ -187,13 +190,14 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
     : "rgba(48, 54, 61, 0.4)";
 
   // Enhanced tier glow
-  const tierGlow = miner.currentTier === "Gold"
-    ? `0 0 20px rgba(255, 215, 0, 0.15), 0 0 40px rgba(255, 215, 0, 0.05)`
-    : miner.currentTier === "Silver"
-      ? `0 0 20px rgba(192, 192, 192, 0.12), 0 0 40px rgba(192, 192, 192, 0.04)`
-      : miner.currentTier === "Bronze"
-        ? `0 0 20px rgba(205, 127, 50, 0.12), 0 0 40px rgba(205, 127, 50, 0.04)`
-        : "none";
+  const tierGlow =
+    miner.currentTier === "Gold"
+      ? `0 0 20px rgba(255, 215, 0, 0.15), 0 0 40px rgba(255, 215, 0, 0.05)`
+      : miner.currentTier === "Silver"
+        ? `0 0 20px rgba(192, 192, 192, 0.12), 0 0 40px rgba(192, 192, 192, 0.04)`
+        : miner.currentTier === "Bronze"
+          ? `0 0 20px rgba(205, 127, 50, 0.12), 0 0 40px rgba(205, 127, 50, 0.04)`
+          : "none";
 
   // ==========================================================================
   // INACTIVE CARD
@@ -293,7 +297,6 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
       }}
       elevation={0}
     >
-
       {/* Header: Identity + Rank + Score */}
       <Box
         sx={{
@@ -380,18 +383,63 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
         <Tooltip
           title={
             <Box sx={{ p: 0.5 }}>
-              <Typography sx={{ fontWeight: 600, mb: 0.5, fontSize: "0.75rem" }}>PR Activity History</Typography>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.25 }}>
-                <Box sx={{ width: 8, height: 8, backgroundColor: "#3fb950", borderRadius: "2px" }} />
-                <Typography sx={{ fontSize: "0.7rem" }}>Merged (earned score)</Typography>
+              <Typography
+                sx={{ fontWeight: 600, mb: 0.5, fontSize: "0.75rem" }}
+              >
+                PR Activity History
+              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  mb: 0.25,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    backgroundColor: "#3fb950",
+                    borderRadius: "2px",
+                  }}
+                />
+                <Typography sx={{ fontSize: "0.7rem" }}>
+                  Merged (earned score)
+                </Typography>
               </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.25 }}>
-                <Box sx={{ width: 8, height: 8, backgroundColor: "#8b949e", borderRadius: "2px" }} />
-                <Typography sx={{ fontSize: "0.7rem" }}>Open (collateral at risk)</Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  mb: 0.25,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    backgroundColor: "#8b949e",
+                    borderRadius: "2px",
+                  }}
+                />
+                <Typography sx={{ fontSize: "0.7rem" }}>
+                  Open (collateral at risk)
+                </Typography>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <Box sx={{ width: 8, height: 2, backgroundColor: "#f85149", borderRadius: "1px" }} />
-                <Typography sx={{ fontSize: "0.7rem" }}>Closed (no score)</Typography>
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 2,
+                    backgroundColor: "#f85149",
+                    borderRadius: "1px",
+                  }}
+                />
+                <Typography sx={{ fontSize: "0.7rem" }}>
+                  Closed (no score)
+                </Typography>
               </Box>
             </Box>
           }
@@ -422,10 +470,10 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
             }}
           >
             {sparklineData.map((item, idx) => {
-              const maxVal = Math.max(...sparklineData.map(d => d.score), 1);
+              const maxVal = Math.max(...sparklineData.map((d) => d.score), 1);
               const normalizedHeight = (item.score / maxVal) * 12; // Max 12px in either direction
 
-              if (item.state === 'merged') {
+              if (item.state === "merged") {
                 // Merged: Green bar going UP
                 return (
                   <Box
@@ -441,7 +489,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
                     }}
                   />
                 );
-              } else if (item.state === 'open') {
+              } else if (item.state === "open") {
                 // Open: Gray bar going DOWN (collateral)
                 return (
                   <Box
@@ -526,7 +574,9 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
             </Typography>
           </Box>
           {/* Lines of Code */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 0.5 }}>
+          <Box
+            sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 0.5 }}
+          >
             <CodeIcon sx={{ fontSize: "0.8rem", color: "#6e7681" }} />
             <Typography
               sx={{
@@ -614,7 +664,12 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
             <Typography
               sx={{
                 fontSize: "0.7rem",
-                color: credibilityPercent >= 80 ? "#3fb950" : credibilityPercent >= 50 ? "#8b949e" : "#f85149",
+                color:
+                  credibilityPercent >= 80
+                    ? "#3fb950"
+                    : credibilityPercent >= 50
+                      ? "#8b949e"
+                      : "#f85149",
                 fontWeight: 800,
                 fontFamily: '"JetBrains Mono", monospace',
               }}
@@ -625,31 +680,115 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
         </Box>
 
         {/* M.O.C with Labels - Grid for Vertical Alignment */}
-        <Box sx={{ display: "grid", gridTemplateColumns: "auto auto", rowGap: 0, columnGap: 1.5, minWidth: 50, alignItems: "center" }}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "auto auto",
+            rowGap: 0,
+            columnGap: 1.5,
+            minWidth: 50,
+            alignItems: "center",
+          }}
+        >
           {/* Merged */}
-          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.7rem", color: "rgba(255,255,255,0.4)", textAlign: "right" }}>
-            <Box component="span" sx={{ display: { xs: "inline", md: "none", lg: "inline" } }}>Merged</Box>
-            <Box component="span" sx={{ display: { xs: "none", md: "inline", lg: "none" } }}>M</Box>
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "0.7rem",
+              color: "rgba(255,255,255,0.4)",
+              textAlign: "right",
+            }}
+          >
+            <Box
+              component="span"
+              sx={{ display: { xs: "inline", md: "none", lg: "inline" } }}
+            >
+              Merged
+            </Box>
+            <Box
+              component="span"
+              sx={{ display: { xs: "none", md: "inline", lg: "none" } }}
+            >
+              M
+            </Box>
           </Typography>
-          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.85rem", fontWeight: 700, color: "rgba(63, 185, 80, 0.65)", lineHeight: 1.2 }}>
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "0.85rem",
+              fontWeight: 700,
+              color: "rgba(63, 185, 80, 0.65)",
+              lineHeight: 1.2,
+            }}
+          >
             {miner.totalMergedPrs || 0}
           </Typography>
 
           {/* Open */}
-          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.7rem", color: "rgba(255,255,255,0.4)", textAlign: "right" }}>
-            <Box component="span" sx={{ display: { xs: "inline", md: "none", lg: "inline" } }}>Open</Box>
-            <Box component="span" sx={{ display: { xs: "none", md: "inline", lg: "none" } }}>O</Box>
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "0.7rem",
+              color: "rgba(255,255,255,0.4)",
+              textAlign: "right",
+            }}
+          >
+            <Box
+              component="span"
+              sx={{ display: { xs: "inline", md: "none", lg: "inline" } }}
+            >
+              Open
+            </Box>
+            <Box
+              component="span"
+              sx={{ display: { xs: "none", md: "inline", lg: "none" } }}
+            >
+              O
+            </Box>
           </Typography>
-          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.85rem", fontWeight: 700, color: "#8b949e", lineHeight: 1.2 }}>
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "0.85rem",
+              fontWeight: 700,
+              color: "#8b949e",
+              lineHeight: 1.2,
+            }}
+          >
             {miner.totalOpenPrs || 0}
           </Typography>
 
           {/* Closed */}
-          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.7rem", color: "rgba(255,255,255,0.4)", textAlign: "right" }}>
-            <Box component="span" sx={{ display: { xs: "inline", md: "none", lg: "inline" } }}>Closed</Box>
-            <Box component="span" sx={{ display: { xs: "none", md: "inline", lg: "none" } }}>C</Box>
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "0.7rem",
+              color: "rgba(255,255,255,0.4)",
+              textAlign: "right",
+            }}
+          >
+            <Box
+              component="span"
+              sx={{ display: { xs: "inline", md: "none", lg: "inline" } }}
+            >
+              Closed
+            </Box>
+            <Box
+              component="span"
+              sx={{ display: { xs: "none", md: "inline", lg: "none" } }}
+            >
+              C
+            </Box>
           </Typography>
-          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.85rem", fontWeight: 700, color: "rgba(248, 81, 73, 0.65)", lineHeight: 1.2 }}>
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "0.85rem",
+              fontWeight: 700,
+              color: "rgba(248, 81, 73, 0.65)",
+              lineHeight: 1.2,
+            }}
+          >
             {miner.totalClosedPrs || 0}
           </Typography>
         </Box>
@@ -665,10 +804,13 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
       >
         {(() => {
           const uniqueRepos = prs
-            ? [...new Map(prs.map((pr: any) => [pr.repository, pr.repository])).values()]
-              .map((repo: string) => ({
+            ? [
+                ...new Map(
+                  prs.map((pr: any) => [pr.repository, pr.repository]),
+                ).values(),
+              ].map((repo: string) => ({
                 fullName: repo,
-                owner: repo.split('/')[0]
+                owner: repo.split("/")[0],
               }))
             : [];
 
