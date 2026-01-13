@@ -116,10 +116,11 @@ const TopMinersPage: React.FC = () => {
           sx={{
             width: showSidebarRight ? sidebarWidth : "100%",
             height: showSidebarRight ? "100%" : "auto",
-            maxHeight: showSidebarRight ? "100%" : "700px",
+            maxHeight: showSidebarRight ? "100%" : "none", // Allow full height when stacked
             flexShrink: 0,
-            display: showSidebarRight ? "flex" : "none", // Hide on mobile if empty, or keep structure
+            display: "flex",
             flexDirection: "column",
+            gap: 2, // Add gap for spacing when stacked
           }}
         >
           {/* Render extracted Sidebar Content here */}

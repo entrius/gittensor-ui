@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Box, Stack, Typography, Avatar } from "@mui/material";
 import { SectionCard } from "./SectionCard";
 
@@ -32,6 +32,9 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
     miners,
     onSelectMiner,
 }) => {
+    // State for toggling lists
+    const [leaderboardType, setLeaderboardType] = useState<'earners' | 'active'>('earners');
+
     // Stats (Use original unfiltered list for stats)
     const topEarners = useMemo(
         () =>
@@ -63,7 +66,7 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
     return (
         <Stack spacing={2} sx={{ height: '100%', overflow: 'auto', pr: 1 }}>
             {/* CARD 1: Network Stats */}
-            <SectionCard title="Network Stats">
+            <SectionCard title="Network Stats" sx={{ flexShrink: 0 }}>
                 <Box
                     sx={{
                         pt: 1,
@@ -161,8 +164,52 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
                 </Box>
             </SectionCard>
 
-            {/* CARD 2: Top Earners */}
-            <SectionCard title="Top Earners">
+            {/* CARD 2: Leaderboard Lists (Tabs) */}
+            <SectionCard
+                title={leaderboardType === 'earners' ? "Top Earners" : "Most Active"}
+                action={
+                    <Box sx={{ display: "flex", gap: 0.5, backgroundColor: "rgba(255, 255, 255, 0.05)", p: 0.5, borderRadius: 2 }}>
+                        {[
+                            { label: "$", value: "earners" },
+                            { label: "PRs", value: "active" },
+                        ].map((option) => (
+                            <Box
+                                key={option.value}
+                                onClick={() => setLeaderboardType(option.value as 'earners' | 'active')}
+                                sx={{
+                                    px: 1.5,
+                                    height: 24,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    borderRadius: 1.5,
+                                    cursor: "pointer",
+                                    backgroundColor:
+                                        leaderboardType === option.value
+                                            ? "rgba(255, 255, 255, 0.15)"
+                                            : "transparent",
+                                    color: leaderboardType === option.value ? "#fff" : "#8b949e",
+                                    transition: "all 0.2s",
+                                    "&:hover": {
+                                        backgroundColor: "rgba(255, 255, 255, 0.1)",
+                                        color: "#e6edf3",
+                                    },
+                                }}
+                            >
+                                <Typography
+                                    sx={{
+                                        fontFamily: '"JetBrains Mono", monospace',
+                                        fontSize: "0.75rem",
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    {option.label}
+                                </Typography>
+                            </Box>
+                        ))}
+                    </Box>
+                }
+                sx={{ flexShrink: 0 }}
+            >
                 <Box sx={{ px: 2, pb: 2 }}>
                     <Box
                         sx={{
@@ -183,10 +230,10 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
                             MINER
                         </Typography>
                         <Typography sx={{ fontSize: "0.8rem", color: "#8b949e" }}>
-                            $/DAY
+                            {leaderboardType === 'earners' ? "$/DAY" : "PRS"}
                         </Typography>
                     </Box>
-                    {topEarners.map((miner, i) => (
+                    {(leaderboardType === 'earners' ? topEarners : mostActive).map((miner, i) => (
                         <Box
                             key={miner.hotkey}
                             onClick={() =>
@@ -236,97 +283,13 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
                             <Typography
                                 sx={{
                                     fontSize: "1.1rem",
-                                    color: "#3fb950",
+                                    color: leaderboardType === 'earners' ? "#3fb950" : "#e6edf3",
                                     fontFamily: '"JetBrains Mono", monospace',
                                 }}
                             >
-                                ${Math.round(miner.usdPerDay || 0).toLocaleString()}
-                            </Typography>
-                        </Box>
-                    ))}
-                </Box>
-            </SectionCard>
-
-            {/* CARD 3: Most Active */}
-            <SectionCard title="Most Active">
-                <Box sx={{ px: 2, pb: 2 }}>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            py: 1,
-                            borderBottom: "1px solid rgba(48, 54, 61, 0.5)",
-                            mb: 1,
-                        }}
-                    >
-                        <Typography
-                            sx={{ fontSize: "0.8rem", color: "#8b949e", width: 24 }}
-                        >
-                            #
-                        </Typography>
-                        <Typography
-                            sx={{ fontSize: "0.8rem", color: "#8b949e", flex: 1 }}
-                        >
-                            MINER
-                        </Typography>
-                        <Typography sx={{ fontSize: "0.8rem", color: "#8b949e" }}>
-                            PRS
-                        </Typography>
-                    </Box>
-                    {mostActive.map((miner, i) => (
-                        <Box
-                            key={miner.hotkey}
-                            onClick={() =>
-                                onSelectMiner(miner.githubId || miner.author || "")
-                            }
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                py: 1,
-                                cursor: "pointer",
-                                "&:hover": {
-                                    backgroundColor: "rgba(255, 255, 255, 0.03)",
-                                    borderRadius: 1,
-                                },
-                            }}
-                        >
-                            <Typography
-                                sx={{ fontSize: "1rem", color: "#8b949e", width: 24 }}
-                            >
-                                {i + 1}
-                            </Typography>
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 1,
-                                    flex: 1,
-                                    minWidth: 0,
-                                }}
-                            >
-                                <Avatar
-                                    src={`https://avatars.githubusercontent.com/${miner.author || miner.githubId}`}
-                                    sx={{ width: 20, height: 20 }}
-                                />
-                                <Typography
-                                    sx={{
-                                        fontSize: "1rem",
-                                        color: "#c9d1d9",
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                    }}
-                                >
-                                    {miner.author || miner.githubId}
-                                </Typography>
-                            </Box>
-                            <Typography
-                                sx={{
-                                    fontSize: "1.1rem",
-                                    color: "#e6edf3",
-                                    fontFamily: '"JetBrains Mono", monospace',
-                                }}
-                            >
-                                {miner.totalPRs}
+                                {leaderboardType === 'earners'
+                                    ? `$${Math.round(miner.usdPerDay || 0).toLocaleString()}`
+                                    : miner.totalPRs}
                             </Typography>
                         </Box>
                     ))}
