@@ -271,7 +271,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
     <Card
       onClick={onClick}
       sx={{
-        p: 2,
+        p: 1.5,
         backgroundColor: "#000000",
         backdropFilter: "blur(12px)",
         border: "1px solid rgba(48, 54, 61, 0.5)", // Neutral border
@@ -281,7 +281,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        gap: 2,
+        gap: 1.5,
         position: "relative",
         boxShadow: "none", // No glow by default
         overflow: "hidden",
@@ -378,16 +378,43 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
       {/* Activity Sparkline - +/- chart: Merged up, Open down (collateral), Closed = 0 */}
       {sparklineData.length > 0 && (
         <Tooltip
-          title="PR History — ↑ Green: Merged, ↓ Gray: Open (collateral), — Red: Closed"
+          title={
+            <Box sx={{ p: 0.5 }}>
+              <Typography sx={{ fontWeight: 600, mb: 0.5, fontSize: "0.75rem" }}>PR Activity History</Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.25 }}>
+                <Box sx={{ width: 8, height: 8, backgroundColor: "#3fb950", borderRadius: "2px" }} />
+                <Typography sx={{ fontSize: "0.7rem" }}>Merged (earned score)</Typography>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.25 }}>
+                <Box sx={{ width: 8, height: 8, backgroundColor: "#8b949e", borderRadius: "2px" }} />
+                <Typography sx={{ fontSize: "0.7rem" }}>Open (collateral at risk)</Typography>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <Box sx={{ width: 8, height: 2, backgroundColor: "#f85149", borderRadius: "1px" }} />
+                <Typography sx={{ fontSize: "0.7rem" }}>Closed (no score)</Typography>
+              </Box>
+            </Box>
+          }
           placement="top"
           arrow
+          slotProps={{
+            tooltip: {
+              sx: {
+                backgroundColor: "rgba(22, 27, 34, 0.95)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: "8px",
+                backdropFilter: "blur(8px)",
+              },
+            },
+            arrow: { sx: { color: "rgba(22, 27, 34, 0.95)" } },
+          }}
         >
           <Box
             sx={{
               display: "flex",
               alignItems: "center", // Center baseline
               gap: "2px", // Smaller gap for more bars
-              height: 28, // Taller to accommodate +/-
+              height: 22, // Compact height
               px: 0,
               position: "relative",
               zIndex: 1,
@@ -409,7 +436,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
                       borderRadius: "2px 2px 0 0",
                       backgroundColor: CHART_COLORS.merged,
                       alignSelf: "flex-end",
-                      marginBottom: "14px", // Push up from center
+                      marginBottom: "11px", // Push up from center
                       transition: "height 0.3s ease",
                     }}
                   />
@@ -425,7 +452,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
                       borderRadius: "0 0 2px 2px",
                       backgroundColor: "#8b949e", // Gray for open
                       alignSelf: "flex-start",
-                      marginTop: "14px", // Push down from center
+                      marginTop: "11px", // Push down from center
                       transition: "height 0.3s ease",
                     }}
                   />
@@ -478,7 +505,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
             <Typography
               sx={{
                 fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "1.5rem",
+                fontSize: "1.75rem",
                 fontWeight: 800,
                 color: "#3fb950",
                 lineHeight: 1,
@@ -502,7 +529,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
             <Typography
               sx={{
                 fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "0.7rem",
+                fontSize: "0.85rem",
                 color: "#3fb950",
               }}
             >
@@ -511,7 +538,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
             <Typography
               sx={{
                 fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "0.7rem",
+                fontSize: "0.85rem",
                 color: "#f85149",
               }}
             >
@@ -526,8 +553,8 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
           <Box
             sx={{
               position: "relative",
-              width: 56,
-              height: 56,
+              width: 48,
+              height: 48,
               flexShrink: 0,
             }}
           >
