@@ -104,15 +104,7 @@ const OnboardPage: React.FC = () => {
         </Box>
 
         <Box sx={{ width: '100%' }}>
-          {activeTab === 0 && (
-            <AboutContent
-              onStartMining={() => {
-                const newParams = new URLSearchParams(searchParams);
-                newParams.set('tab', 'getting-started');
-                setSearchParams(newParams);
-              }}
-            />
-          )}
+          {activeTab === 0 && <AboutContent />}
           {activeTab === 1 && <GettingStarted />}
           {activeTab === 2 && <Scoring />}
           {activeTab === 3 && (
