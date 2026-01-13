@@ -434,7 +434,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
                       flex: 1,
                       height: Math.max(3, normalizedHeight),
                       borderRadius: "2px 2px 0 0",
-                      backgroundColor: CHART_COLORS.merged,
+                      backgroundColor: "rgba(63, 185, 80, 0.5)", // Muted green
                       alignSelf: "flex-end",
                       marginBottom: "11px", // Push up from center
                       transition: "height 0.3s ease",
@@ -450,7 +450,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
                       flex: 1,
                       height: Math.max(3, normalizedHeight),
                       borderRadius: "0 0 2px 2px",
-                      backgroundColor: "#8b949e", // Gray for open
+                      backgroundColor: "rgba(139, 148, 158, 0.5)", // Muted gray
                       alignSelf: "flex-start",
                       marginTop: "11px", // Push down from center
                       transition: "height 0.3s ease",
@@ -466,7 +466,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
                       flex: 1,
                       height: 2,
                       borderRadius: 1,
-                      backgroundColor: CHART_COLORS.closed,
+                      backgroundColor: "rgba(248, 81, 73, 0.5)", // Muted red
                       alignSelf: "center",
                     }}
                   />
@@ -530,7 +530,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
               sx={{
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: "0.85rem",
-                color: "#3fb950",
+                color: "rgba(63, 185, 80, 0.65)", // Muted green
               }}
             >
               +{formatCompact(additions)}
@@ -539,7 +539,7 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
               sx={{
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: "0.85rem",
-                color: "#f85149",
+                color: "rgba(248, 81, 73, 0.65)", // Muted red
               }}
             >
               -{formatCompact(deletions)}
@@ -626,13 +626,13 @@ const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
 
           {/* M.O.C Stacked Vertically - No bullets, bigger text */}
           <Box sx={{ display: "flex", flexDirection: "column", gap: 0 }}>
-            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.85rem", fontWeight: 700, color: "#3fb950", lineHeight: 1.2 }}>
+            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.85rem", fontWeight: 700, color: "rgba(63, 185, 80, 0.65)", lineHeight: 1.2 }}>
               {miner.totalMergedPrs || 0}
             </Typography>
             <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.85rem", fontWeight: 700, color: "#8b949e", lineHeight: 1.2 }}>
               {miner.totalOpenPrs || 0}
             </Typography>
-            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.85rem", fontWeight: 700, color: "#f85149", lineHeight: 1.2 }}>
+            <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: "0.85rem", fontWeight: 700, color: "rgba(248, 81, 73, 0.65)", lineHeight: 1.2 }}>
               {miner.totalClosedPrs || 0}
             </Typography>
           </Box>
