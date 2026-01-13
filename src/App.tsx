@@ -1,10 +1,9 @@
-import React from "react";
-import { AppLayout } from "./components/layout";
-import { Route, Routes } from "react-router-dom";
-import routes from "./routes";
+import React from 'react';
+import { AppLayout } from './components/layout';
+import { Route, Routes } from 'react-router-dom';
+import routes from './routes';
 
-const App: React.FC = () => {
-  return (
+const App: React.FC = () => (
     <Routes>
       <Route element={<AppLayout />}>
         {Object.values(routes).map((x) => (
@@ -13,6 +12,5 @@ const App: React.FC = () => {
       </Route>
     </Routes>
   );
-};
 
 export default App;

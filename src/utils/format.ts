@@ -12,7 +12,7 @@ export const formatUsdEstimate = (
   options?: { includeApproxPrefix?: boolean; showZero?: boolean },
 ): string | null => {
   const { includeApproxPrefix = false, showZero = false } = options ?? {};
-  const prefix = includeApproxPrefix ? "~" : "";
+  const prefix = includeApproxPrefix ? '~' : '';
 
   if (value === undefined || value === null) {
     return showZero ? `${prefix}$0` : null;
@@ -23,7 +23,7 @@ export const formatUsdEstimate = (
   }
 
   if (value > 0) {
-    return "<$1";
+    return '<$1';
   }
 
   return showZero ? `${prefix}$0` : null;

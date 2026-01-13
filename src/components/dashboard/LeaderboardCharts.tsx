@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Card,
@@ -10,22 +10,22 @@ import {
   Stack,
   Button,
   CircularProgress,
-} from "@mui/material";
-import BarChartIcon from "@mui/icons-material/BarChart";
-import ReactECharts from "echarts-for-react";
-import { useAllPrs, useReposAndWeights } from "../../api";
+} from '@mui/material';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import ReactECharts from 'echarts-for-react';
+import { useAllPrs, useReposAndWeights } from '../../api';
 
 const truncateText = (text: string, maxLength: number): string => {
-  if (!text) return "";
-  return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+  if (!text) return '';
+  return text.length > maxLength ? `${text.substring(0, maxLength)  }...` : text;
 };
 
 const LeaderboardCharts: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [useLogScale, setUseLogScale] = useState(true);
   const [tierFilter, setTierFilter] = useState<
-    "all" | "Gold" | "Silver" | "Bronze"
-  >("all");
+    'all' | 'Gold' | 'Silver' | 'Bronze'
+  >('all');
 
   const { data: allPRs, isLoading: isLoadingPRs } = useAllPrs();
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
@@ -37,7 +37,7 @@ const LeaderboardCharts: React.FC = () => {
   const topPRs = useMemo(() => {
     if (!allPRs) return [];
     return [...allPRs]
-      .sort((a, b) => parseFloat(b.score || "0") - parseFloat(a.score || "0"))
+      .sort((a, b) => parseFloat(b.score || '0') - parseFloat(a.score || '0'))
       .slice(0, 50)
       .map((pr, index) => ({ ...pr, rank: index + 1 }));
   }, [allPRs]);
@@ -55,9 +55,9 @@ const LeaderboardCharts: React.FC = () => {
         totalPRs: 0,
         uniqueMiners: new Set(),
         weight: 0,
-        tier: "",
+        tier: '',
       };
-      current.totalScore += parseFloat(pr.score || "0");
+      current.totalScore += parseFloat(pr.score || '0');
       current.totalPRs += 1;
       if (pr.author) current.uniqueMiners.add(pr.author);
       statsMap.set(pr.repository, current);
@@ -69,7 +69,7 @@ const LeaderboardCharts: React.FC = () => {
         stats.weight = repoData.weight
           ? parseFloat(String(repoData.weight))
           : 0;
-        stats.tier = repoData.tier || "";
+        stats.tier = repoData.tier || '';
       }
     });
 
@@ -81,14 +81,14 @@ const LeaderboardCharts: React.FC = () => {
 
   const getTierColor = (tier: string) => {
     switch (tier) {
-      case "Gold":
-        return "#FFD700";
-      case "Silver":
-        return "#C0C0C0";
-      case "Bronze":
-        return "#CD7F32";
+      case 'Gold':
+        return '#FFD700';
+      case 'Silver':
+        return '#C0C0C0';
+      case 'Bronze':
+        return '#CD7F32';
       default:
-        return "rgba(139, 148, 158, 0.9)";
+        return 'rgba(139, 148, 158, 0.9)';
     }
   };
 
@@ -105,18 +105,18 @@ const LeaderboardCharts: React.FC = () => {
       size="small"
       onClick={() => setTierFilter(value)}
       sx={{
-        color: tierFilter === value ? "#fff" : "rgba(255,255,255,0.5)",
+        color: tierFilter === value ? '#fff' : 'rgba(255,255,255,0.5)',
         backgroundColor:
-          tierFilter === value ? "rgba(255,255,255,0.1)" : "transparent",
-        borderRadius: "6px",
+          tierFilter === value ? 'rgba(255,255,255,0.1)' : 'transparent',
+        borderRadius: '6px',
         px: 2,
-        minWidth: "auto",
-        textTransform: "none",
+        minWidth: 'auto',
+        textTransform: 'none',
         fontFamily: '"JetBrains Mono", monospace',
-        fontSize: "0.8rem",
+        fontSize: '0.8rem',
         border:
-          tierFilter === value ? `1px solid ${color}` : "1px solid transparent",
-        "&:hover": { backgroundColor: "rgba(255,255,255,0.15)" },
+          tierFilter === value ? `1px solid ${color}` : '1px solid transparent',
+        '&:hover': { backgroundColor: 'rgba(255,255,255,0.15)' },
       }}
     >
       {label}
@@ -125,68 +125,68 @@ const LeaderboardCharts: React.FC = () => {
 
   const getPRsChartOption = () => {
     const filteredData =
-      tierFilter === "all"
+      tierFilter === 'all'
         ? topPRs
         : topPRs.filter((pr) => pr.tier === tierFilter);
     const chartData = filteredData
-      .filter((item) => parseFloat(item?.score || "0") >= 1)
+      .filter((item) => parseFloat(item?.score || '0') >= 1)
       .slice(0, 50);
 
     const xAxisData = chartData.map(
-      (item) => `#${item?.pullRequestNumber || ""}`,
+      (item) => `#${item?.pullRequestNumber || ''}`,
     );
     const dotData = chartData.map((item) => ({
-      value: Number(parseFloat(item?.score || "0")),
-      tier: item?.tier || "N/A",
-      title: item?.pullRequestTitle || "",
-      author: item?.author || "",
-      repository: item?.repository || "",
+      value: Number(parseFloat(item?.score || '0')),
+      tier: item?.tier || 'N/A',
+      title: item?.pullRequestTitle || '',
+      author: item?.author || '',
+      repository: item?.repository || '',
       prNumber: item?.pullRequestNumber || 0,
       rank: item?.rank || 0,
       itemStyle: {
-        color: getTierColor(item?.tier || ""),
+        color: getTierColor(item?.tier || ''),
         shadowBlur: 10,
-        shadowColor: getTierColor(item?.tier || ""),
+        shadowColor: getTierColor(item?.tier || ''),
       },
     }));
 
     return {
-      backgroundColor: "transparent",
+      backgroundColor: 'transparent',
       title: {
-        text: "Pull Request Performance Ranking",
-        subtext: "Individual PR scores with tier classification",
-        left: "center",
+        text: 'Pull Request Performance Ranking',
+        subtext: 'Individual PR scores with tier classification',
+        left: 'center',
         top: 20,
         textStyle: {
-          color: "#ffffff",
-          fontFamily: "JetBrains Mono",
+          color: '#ffffff',
+          fontFamily: 'JetBrains Mono',
           fontSize: 18,
           fontWeight: 600,
         },
         subtextStyle: {
-          color: "rgba(255, 255, 255, 0.6)",
-          fontFamily: "JetBrains Mono",
+          color: 'rgba(255, 255, 255, 0.6)',
+          fontFamily: 'JetBrains Mono',
           fontSize: 11,
         },
       },
       tooltip: {
-        trigger: "axis",
+        trigger: 'axis',
         axisPointer: {
-          type: "shadow",
-          shadowStyle: { color: "rgba(255, 255, 255, 0.05)" },
+          type: 'shadow',
+          shadowStyle: { color: 'rgba(255, 255, 255, 0.05)' },
         },
-        backgroundColor: "rgba(10, 10, 12, 0.98)",
-        borderColor: "rgba(255, 255, 255, 0.2)",
+        backgroundColor: 'rgba(10, 10, 12, 0.98)',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
         borderWidth: 1,
         textStyle: {
-          color: "#fff",
-          fontFamily: "JetBrains Mono",
+          color: '#fff',
+          fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
         padding: [14, 18],
         formatter: (params: any) => {
           const data = params[0]?.data || params[1]?.data;
-          if (!data) return "";
+          if (!data) return '';
           const tierColor = getTierColor(data.tier);
           return `
             <div style="font-family: 'JetBrains Mono', monospace;">
@@ -223,49 +223,49 @@ const LeaderboardCharts: React.FC = () => {
         },
       },
       grid: {
-        left: "3%",
-        right: "3%",
-        bottom: "2%",
-        top: "18%",
+        left: '3%',
+        right: '3%',
+        bottom: '2%',
+        top: '18%',
         containLabel: true,
       },
       xAxis: {
-        type: "category",
+        type: 'category',
         data: xAxisData,
         axisLabel: {
-          color: "rgba(255, 255, 255, 0.85)",
-          fontFamily: "JetBrains Mono",
+          color: 'rgba(255, 255, 255, 0.85)',
+          fontFamily: 'JetBrains Mono',
           fontSize: 11,
           interval: 0,
           rotate: 45,
           margin: 12,
         },
         axisLine: {
-          lineStyle: { color: "rgba(255, 255, 255, 0.08)", width: 1 },
+          lineStyle: { color: 'rgba(255, 255, 255, 0.08)', width: 1 },
         },
         axisTick: { show: false },
       },
       yAxis: {
-        type: useLogScale ? "log" : "value",
+        type: useLogScale ? 'log' : 'value',
         min: useLogScale ? 1 : 0,
         logBase: 10,
-        name: "PR Score",
+        name: 'PR Score',
         nameTextStyle: {
-          color: "rgba(255, 255, 255, 0.85)",
-          fontFamily: "JetBrains Mono",
+          color: 'rgba(255, 255, 255, 0.85)',
+          fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
         axisLabel: {
-          color: "rgba(255, 255, 255, 0.85)",
-          fontFamily: "JetBrains Mono",
+          color: 'rgba(255, 255, 255, 0.85)',
+          fontFamily: 'JetBrains Mono',
           fontSize: 11,
           formatter: (value: number) =>
             value < 0.01 ? value.toExponential(1) : value.toFixed(2),
         },
         splitLine: {
           lineStyle: {
-            color: "rgba(255, 255, 255, 0.08)",
-            type: "dashed",
+            color: 'rgba(255, 255, 255, 0.08)',
+            type: 'dashed',
             opacity: 0.5,
           },
         },
@@ -274,8 +274,8 @@ const LeaderboardCharts: React.FC = () => {
       },
       series: [
         {
-          name: "Stems",
-          type: "bar",
+          name: 'Stems',
+          type: 'bar',
           data: dotData.map((item) => ({
             ...item,
             itemStyle: {
@@ -287,21 +287,21 @@ const LeaderboardCharts: React.FC = () => {
           barWidth: 2,
           z: 1,
           animationDuration: 1000,
-          animationEasing: "cubicOut",
+          animationEasing: 'cubicOut',
           animationDelay: (idx: number) => idx * 30,
         },
         {
-          name: "Dots",
-          type: "scatter",
+          name: 'Dots',
+          type: 'scatter',
           data: dotData,
           symbolSize: 14,
           z: 2,
           emphasis: {
             scale: 1.5,
-            itemStyle: { shadowBlur: 20, borderColor: "#fff", borderWidth: 2 },
+            itemStyle: { shadowBlur: 20, borderColor: '#fff', borderWidth: 2 },
           },
           animationDuration: 1000,
-          animationEasing: "cubicOut",
+          animationEasing: 'cubicOut',
           animationDelay: (idx: number) => idx * 30 + 100,
         },
       ],
@@ -310,7 +310,7 @@ const LeaderboardCharts: React.FC = () => {
 
   const getReposChartOption = () => {
     const filteredData =
-      tierFilter === "all"
+      tierFilter === 'all'
         ? repoStats
         : repoStats.filter((repo) => repo.tier === tierFilter);
     const chartData = filteredData
@@ -318,7 +318,7 @@ const LeaderboardCharts: React.FC = () => {
       .slice(0, 50);
 
     const xAxisData = chartData.map((item) =>
-      truncateText(item.repository.split("/")[1] || item.repository, 12),
+      truncateText(item.repository.split('/')[1] || item.repository, 12),
     );
     const dotData = chartData.map((item) => ({
       value: item.totalScore,
@@ -336,51 +336,51 @@ const LeaderboardCharts: React.FC = () => {
     }));
 
     return {
-      backgroundColor: "transparent",
+      backgroundColor: 'transparent',
       title: {
-        text: "Repository Performance Ranking",
-        subtext: "Total contribution scores by repository",
-        left: "center",
+        text: 'Repository Performance Ranking',
+        subtext: 'Total contribution scores by repository',
+        left: 'center',
         top: 20,
         textStyle: {
-          color: "#ffffff",
-          fontFamily: "JetBrains Mono",
+          color: '#ffffff',
+          fontFamily: 'JetBrains Mono',
           fontSize: 18,
           fontWeight: 600,
         },
         subtextStyle: {
-          color: "rgba(255, 255, 255, 0.6)",
-          fontFamily: "JetBrains Mono",
+          color: 'rgba(255, 255, 255, 0.6)',
+          fontFamily: 'JetBrains Mono',
           fontSize: 11,
         },
       },
       tooltip: {
-        trigger: "axis",
+        trigger: 'axis',
         axisPointer: {
-          type: "shadow",
-          shadowStyle: { color: "rgba(255, 255, 255, 0.05)" },
+          type: 'shadow',
+          shadowStyle: { color: 'rgba(255, 255, 255, 0.05)' },
         },
-        backgroundColor: "rgba(10, 10, 12, 0.98)",
-        borderColor: "rgba(255, 255, 255, 0.2)",
+        backgroundColor: 'rgba(10, 10, 12, 0.98)',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
         borderWidth: 1,
         textStyle: {
-          color: "#fff",
-          fontFamily: "JetBrains Mono",
+          color: '#fff',
+          fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
         padding: [14, 18],
         formatter: (params: any) => {
           const data = params[0]?.data || params[1]?.data;
-          if (!data) return "";
+          if (!data) return '';
           const tierColor = getTierColor(data.tier);
-          const repoOwner = data.repository.split("/")[0];
-          const repoName = data.repository.split("/")[1] || data.repository;
+          const repoOwner = data.repository.split('/')[0];
+          const repoName = data.repository.split('/')[1] || data.repository;
           const avatarBg =
-            repoOwner === "opentensor"
-              ? "#ffffff"
-              : repoOwner === "bitcoin"
-                ? "#F7931A"
-                : "transparent";
+            repoOwner === 'opentensor'
+              ? '#ffffff'
+              : repoOwner === 'bitcoin'
+                ? '#F7931A'
+                : 'transparent';
           return `
             <div style="font-family: 'JetBrains Mono', monospace;">
               <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.15);">
@@ -417,49 +417,49 @@ const LeaderboardCharts: React.FC = () => {
         },
       },
       grid: {
-        left: "3%",
-        right: "3%",
-        bottom: "3%",
-        top: "18%",
+        left: '3%',
+        right: '3%',
+        bottom: '3%',
+        top: '18%',
         containLabel: true,
       },
       xAxis: {
-        type: "category",
+        type: 'category',
         data: xAxisData,
         axisLabel: {
-          color: "rgba(255, 255, 255, 0.85)",
-          fontFamily: "JetBrains Mono",
+          color: 'rgba(255, 255, 255, 0.85)',
+          fontFamily: 'JetBrains Mono',
           fontSize: 11,
           interval: 0,
           rotate: 45,
           margin: 12,
         },
         axisLine: {
-          lineStyle: { color: "rgba(255, 255, 255, 0.08)", width: 1 },
+          lineStyle: { color: 'rgba(255, 255, 255, 0.08)', width: 1 },
         },
         axisTick: { show: false },
       },
       yAxis: {
-        type: useLogScale ? "log" : "value",
+        type: useLogScale ? 'log' : 'value',
         min: useLogScale ? 1 : 0,
         logBase: 10,
-        name: "Total Score",
+        name: 'Total Score',
         nameTextStyle: {
-          color: "rgba(255, 255, 255, 0.85)",
-          fontFamily: "JetBrains Mono",
+          color: 'rgba(255, 255, 255, 0.85)',
+          fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
         axisLabel: {
-          color: "rgba(255, 255, 255, 0.85)",
-          fontFamily: "JetBrains Mono",
+          color: 'rgba(255, 255, 255, 0.85)',
+          fontFamily: 'JetBrains Mono',
           fontSize: 11,
           formatter: (value: number) =>
             value < 0.01 ? value.toExponential(1) : value.toFixed(0),
         },
         splitLine: {
           lineStyle: {
-            color: "rgba(255, 255, 255, 0.08)",
-            type: "dashed",
+            color: 'rgba(255, 255, 255, 0.08)',
+            type: 'dashed',
             opacity: 0.5,
           },
         },
@@ -468,8 +468,8 @@ const LeaderboardCharts: React.FC = () => {
       },
       series: [
         {
-          name: "Stems",
-          type: "bar",
+          name: 'Stems',
+          type: 'bar',
           data: dotData.map((item) => ({
             ...item,
             itemStyle: {
@@ -481,21 +481,21 @@ const LeaderboardCharts: React.FC = () => {
           barWidth: 2,
           z: 1,
           animationDuration: 1000,
-          animationEasing: "cubicOut",
+          animationEasing: 'cubicOut',
           animationDelay: (idx: number) => idx * 30,
         },
         {
-          name: "Dots",
-          type: "scatter",
+          name: 'Dots',
+          type: 'scatter',
           data: dotData,
           symbolSize: 14,
           z: 2,
           emphasis: {
             scale: 1.5,
-            itemStyle: { shadowBlur: 20, borderColor: "#fff", borderWidth: 2 },
+            itemStyle: { shadowBlur: 20, borderColor: '#fff', borderWidth: 2 },
           },
           animationDuration: 1000,
-          animationEasing: "cubicOut",
+          animationEasing: 'cubicOut',
           animationDelay: (idx: number) => idx * 30 + 100,
         },
       ],
@@ -506,22 +506,22 @@ const LeaderboardCharts: React.FC = () => {
     <Card
       sx={{
         borderRadius: 3,
-        border: "1px solid rgba(255, 255, 255, 0.1)",
-        backgroundColor: "transparent",
-        overflow: "hidden",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'transparent',
+        overflow: 'hidden',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
       }}
       elevation={0}
     >
       <Box
         sx={{
-          borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-          display: "flex",
-          flexDirection: { xs: "column", lg: "row" },
-          justifyContent: "space-between",
-          alignItems: { xs: "flex-start", lg: "center" },
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          display: 'flex',
+          flexDirection: { xs: 'column', lg: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', lg: 'center' },
           gap: { xs: 2, lg: 0 },
           p: 2,
         }}
@@ -530,18 +530,18 @@ const LeaderboardCharts: React.FC = () => {
           value={activeTab}
           onChange={(_, newValue) => setActiveTab(newValue)}
           sx={{
-            minHeight: "auto",
-            "& .MuiTab-root": {
-              color: "rgba(255, 255, 255, 0.6)",
+            minHeight: 'auto',
+            '& .MuiTab-root': {
+              color: 'rgba(255, 255, 255, 0.6)',
               fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "0.85rem",
+              fontSize: '0.85rem',
               fontWeight: 500,
-              textTransform: "none",
-              minHeight: "auto",
+              textTransform: 'none',
+              minHeight: 'auto',
               py: 1,
-              "&.Mui-selected": { color: "#fff" },
+              '&.Mui-selected': { color: '#fff' },
             },
-            "& .MuiTabs-indicator": { backgroundColor: "primary.main" },
+            '& .MuiTabs-indicator': { backgroundColor: 'primary.main' },
           }}
         >
           <Tab label="Top Pull Requests" />
@@ -549,17 +549,17 @@ const LeaderboardCharts: React.FC = () => {
         </Tabs>
         <Box
           sx={{
-            display: "flex",
+            display: 'flex',
             gap: 2,
-            alignItems: "center",
-            flexWrap: "wrap",
-            width: { xs: "100%", lg: "auto" },
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            width: { xs: '100%', lg: 'auto' },
           }}
         >
           <Stack
             direction="row"
             spacing={1}
-            sx={{ flexWrap: "wrap", gap: 1 }}
+            sx={{ flexWrap: 'wrap', gap: 1 }}
             useFlexGap
           >
             <TierFilterButton label="All" value="all" color="#8b949e" />
@@ -574,11 +574,11 @@ const LeaderboardCharts: React.FC = () => {
                 onChange={(e) => setUseLogScale(e.target.checked)}
                 size="small"
                 sx={{
-                  "& .MuiSwitch-switchBase.Mui-checked": {
-                    color: "primary.main",
+                  '& .MuiSwitch-switchBase.Mui-checked': {
+                    color: 'primary.main',
                   },
-                  "& .MuiSwitch-track": {
-                    backgroundColor: "rgba(255, 255, 255, 0.3)",
+                  '& .MuiSwitch-track': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
                   },
                 }}
               />
@@ -587,27 +587,27 @@ const LeaderboardCharts: React.FC = () => {
               <Typography
                 variant="body2"
                 sx={{
-                  fontFamily: "JetBrains Mono",
-                  fontSize: "0.8rem",
-                  color: "rgba(255, 255, 255, 0.7)",
-                  whiteSpace: "nowrap",
+                  fontFamily: 'JetBrains Mono',
+                  fontSize: '0.8rem',
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 Log Scale
               </Typography>
             }
-            sx={{ ml: "auto" }}
+            sx={{ ml: 'auto' }}
           />
         </Box>
       </Box>
-      <Box sx={{ flex: 1, p: 2, backgroundColor: "rgba(0,0,0,0.2)" }}>
+      <Box sx={{ flex: 1, p: 2, backgroundColor: 'rgba(0,0,0,0.2)' }}>
         {isLoading ? (
           <Box
             sx={{
-              height: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
             <CircularProgress size={30} />
@@ -615,34 +615,34 @@ const LeaderboardCharts: React.FC = () => {
         ) : hasNoData ? (
           <Box
             sx={{
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
             <BarChartIcon
               sx={{
                 fontSize: 48,
-                color: "rgba(255, 255, 255, 0.2)",
+                color: 'rgba(255, 255, 255, 0.2)',
                 mb: 2,
               }}
             />
             <Typography
               sx={{
-                color: "rgba(255, 255, 255, 0.5)",
+                color: 'rgba(255, 255, 255, 0.5)',
                 fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "0.9rem",
+                fontSize: '0.9rem',
               }}
             >
               No leaderboard data available yet
             </Typography>
             <Typography
               sx={{
-                color: "rgba(255, 255, 255, 0.3)",
+                color: 'rgba(255, 255, 255, 0.3)',
                 fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "0.75rem",
+                fontSize: '0.75rem',
                 mt: 0.5,
               }}
             >
@@ -654,7 +654,7 @@ const LeaderboardCharts: React.FC = () => {
             option={
               activeTab === 0 ? getPRsChartOption() : getReposChartOption()
             }
-            style={{ height: "100%", width: "100%" }}
+            style={{ height: '100%', width: '100%' }}
           />
         )}
       </Box>

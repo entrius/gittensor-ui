@@ -1,18 +1,18 @@
-import React, { useMemo } from "react";
-import { Box, Card } from "@mui/material";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { Page } from "../components/layout";
-import { TopRepositoriesTable, SEO } from "../components";
-import { useAllPrs, useReposAndWeights } from "../api";
-import { CommitLog } from "../api/models/Dashboard";
+import React, { useMemo } from 'react';
+import { Box, Card } from '@mui/material';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Page } from '../components/layout';
+import { TopRepositoriesTable, SEO } from '../components';
+import { useAllPrs, useReposAndWeights } from '../api';
+import { type CommitLog } from '../api/models/Dashboard';
 
 const TopReposPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const initialTierFilter = searchParams.get("tier") as
-    | "Gold"
-    | "Silver"
-    | "Bronze"
+  const initialTierFilter = searchParams.get('tier') as
+    | 'Gold'
+    | 'Silver'
+    | 'Bronze'
     | null;
   const { data: allPRs, isLoading: isLoadingPRs } = useAllPrs();
   const { data: reposWithWeights, isLoading: isLoadingRepos } =
@@ -49,7 +49,7 @@ const TopReposPage: React.FC = () => {
           uniqueMiners: new Set<string>(),
         };
 
-        current.totalScore += parseFloat(pr.score || "0");
+        current.totalScore += parseFloat(pr.score || '0');
         current.totalPRs += 1;
         if (pr.author) {
           current.uniqueMiners.add(pr.author);
@@ -69,7 +69,7 @@ const TopReposPage: React.FC = () => {
           totalPRs: prStats?.totalPRs || 0,
           uniqueMiners: prStats?.uniqueMiners || new Set<string>(),
           weight: repo.weight ? parseFloat(String(repo.weight)) : 0,
-          tier: repo.tier || "",
+          tier: repo.tier || '',
         };
       })
       .sort((a, b) => b.totalScore - a.totalScore);
@@ -83,21 +83,21 @@ const TopReposPage: React.FC = () => {
       />
       <Box
         sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: { xs: "auto", md: "calc(100vh - 80px)" },
-          width: "100%",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: { xs: 'auto', md: 'calc(100vh - 80px)' },
+          width: '100%',
           py: { xs: 2, sm: 0 },
         }}
       >
-        <Box sx={{ maxWidth: 1200, width: "100%" }}>
+        <Box sx={{ maxWidth: 1200, width: '100%' }}>
           <Card
             sx={{
               borderRadius: 3,
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              backgroundColor: "transparent",
-              overflow: "hidden",
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              backgroundColor: 'transparent',
+              overflow: 'hidden',
             }}
             elevation={0}
           >

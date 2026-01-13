@@ -1,7 +1,7 @@
-import React from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { Box } from "@mui/material";
-import { Page } from "../components/layout";
+import React from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Box } from '@mui/material';
+import { Page } from '../components/layout';
 import {
   MinerScoreCard,
   MinerActivity,
@@ -10,16 +10,16 @@ import {
   MinerTierPerformance,
   BackButton,
   SEO,
-} from "../components";
+} from '../components';
 
 const MinerDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const githubId = searchParams.get("githubId");
+  const githubId = searchParams.get('githubId');
 
   // If no githubId is provided, redirect to miners page
   if (!githubId) {
-    navigate("/miners");
+    navigate('/miners');
     return null;
   }
 
@@ -32,21 +32,21 @@ const MinerDetailsPage: React.FC = () => {
       />
       <Box
         sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: { xs: "auto", md: "calc(100vh - 80px)" },
-          width: "100%",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: { xs: 'auto', md: 'calc(100vh - 80px)' },
+          width: '100%',
           py: { xs: 2, sm: 0 },
         }}
       >
         <Box
           sx={{
-            display: "flex",
-            flexDirection: "column",
+            display: 'flex',
+            flexDirection: 'column',
             gap: 3,
             maxWidth: 1200,
-            width: "100%",
+            width: '100%',
             px: { xs: 2, sm: 2, md: 0 },
           }}
         >

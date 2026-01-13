@@ -1,7 +1,7 @@
-import React from "react";
-import { Button } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { useNavigate } from "react-router-dom";
+import React from 'react';
+import { Button } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { useNavigate } from 'react-router-dom';
 
 interface BackButtonProps {
   /** Text to display on the button */
@@ -13,7 +13,7 @@ interface BackButtonProps {
 }
 
 const BackButton: React.FC<BackButtonProps> = ({
-  label = "Back to Leaderboard",
+  label = 'Back to Leaderboard',
   to,
   mb = 2,
 }) => {
@@ -22,9 +22,9 @@ const BackButton: React.FC<BackButtonProps> = ({
   return (
     <Button
       variant="back"
-      startIcon={<ArrowBackIcon sx={{ fontSize: "1rem !important" }} />}
+      startIcon={<ArrowBackIcon sx={{ fontSize: '1rem !important' }} />}
       onClick={() => navigate(to)}
-      sx={{ mb, alignSelf: "flex-start" }}
+      sx={{ mb, alignSelf: 'flex-start' }}
     >
       {label}
     </Button>

@@ -1,5 +1,5 @@
-import { useApiQuery } from "./ApiUtils";
-import { TierConfigResponse, GeneralConfigResponse } from "./models";
+import { useApiQuery } from './ApiUtils';
+import { type TierConfigResponse, type GeneralConfigResponse } from './models';
 
 /**
  * Get tier configuration data (requirements and scoring parameters)
@@ -7,8 +7,8 @@ import { TierConfigResponse, GeneralConfigResponse } from "./models";
  */
 export const useTierConfigurations = () =>
   useApiQuery<TierConfigResponse>(
-    "useTierConfigurations",
-    "/configurations/tiers",
+    'useTierConfigurations',
+    '/configurations/tiers',
   );
 
 /**
@@ -17,6 +17,6 @@ export const useTierConfigurations = () =>
  */
 export const useGeneralConfig = () =>
   useApiQuery<GeneralConfigResponse>(
-    "useGeneralConfig",
-    "/configurations/general",
+    'useGeneralConfig',
+    '/configurations/general',
   );

@@ -1,20 +1,19 @@
-import React from "react";
-import { Stack, Box } from "@mui/material";
-import { Page } from "../components/layout";
-import FAQ from "../components/FAQ";
-import { SEO } from "../components";
+import React from 'react';
+import { Stack, Box } from '@mui/material';
+import { Page } from '../components/layout';
+import FAQ from '../components/FAQ';
+import { SEO } from '../components';
 
-export const FAQContent: React.FC = () => {
-  return (
+export const FAQContent: React.FC = () => (
     <Box
       sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: "100%",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
       }}
     >
-      <Stack gap={{ xs: 2, sm: 3 }} sx={{ maxWidth: 900, width: "100%" }}>
+      <Stack gap={{ xs: 2, sm: 3 }} sx={{ maxWidth: 900, width: '100%' }}>
         <FAQ
           question="What is an incentive mechanism?"
           answer="A set of rules, guidelines, and restrictions on how to judge, score, and rank a group of contestants. The goal usually to elicit or influence a specific behavior or outcome. In the Bittensor ecosystem, this is the foundation of a subnet."
@@ -24,12 +23,12 @@ export const FAQContent: React.FC = () => {
           answer={
             <>
               The implementation of an incentive mechanism with the outcome of
-              some kind of digital asset, commodity, or service. Learn more at{" "}
+              some kind of digital asset, commodity, or service. Learn more at{' '}
               <a
                 href="https://docs.learnbittensor.org/subnets/understanding-subnets"
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: "inherit", textDecoration: "underline" }}
+                style={{ color: 'inherit', textDecoration: 'underline' }}
               >
                 Understanding Subnets
               </a>
@@ -45,12 +44,12 @@ export const FAQContent: React.FC = () => {
               blockchain. New tokens are minted/distributed daily. It has a
               fluctuating price based on a subnet's liquidity pool. They also
               may provide utility value to the incentive mechanism or other
-              aspects of a subnet. Check Gittensor's token page on{" "}
+              aspects of a subnet. Check Gittensor's token page on{' '}
               <a
                 href="https://taostats.io/subnets/74/chart"
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: "inherit", textDecoration: "underline" }}
+                style={{ color: 'inherit', textDecoration: 'underline' }}
               >
                 Taostats
               </a>
@@ -71,15 +70,15 @@ export const FAQContent: React.FC = () => {
               production branch, you'll be eligible for emissions based on
               factors like PR size, files affected, repository popularity, and
               more. Check out our GitHub repository for detailed setup
-              instructions. Feel free to join the{" "}
+              instructions. Feel free to join the{' '}
               <a
                 href="https://discord.com/invite/bittensor"
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: "inherit", textDecoration: "underline" }}
+                style={{ color: 'inherit', textDecoration: 'underline' }}
               >
                 Discord
-              </a>{" "}
+              </a>{' '}
               and ask questions.
             </>
           }
@@ -92,15 +91,15 @@ export const FAQContent: React.FC = () => {
               repository you contribute to, the complexity of your Pull Request,
               and the age of the issue you resolve. We also factor in your
               'credibility', which is the ratio of your merged PRs to your total
-              closed/rejected PRs. See the{" "}
+              closed/rejected PRs. See the{' '}
               <a
                 href="https://docs.gittensor.io/scoring.html"
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: "inherit", textDecoration: "underline" }}
+                style={{ color: 'inherit', textDecoration: 'underline' }}
               >
                 scoring documentation
-              </a>{" "}
+              </a>{' '}
               for a complete breakdown.
             </>
           }
@@ -111,15 +110,15 @@ export const FAQContent: React.FC = () => {
             <>
               No, miners do not need to stake TAO to participate. However,
               registering a miner UID on the subnet requires a registration fee
-              (burn) in TAO, which fluctuates based on network demand. See the{" "}
+              (burn) in TAO, which fluctuates based on network demand. See the{' '}
               <a
                 href="https://docs.bittensor.com/miners"
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: "inherit", textDecoration: "underline" }}
+                style={{ color: 'inherit', textDecoration: 'underline' }}
               >
                 official Bittensor documentation
-              </a>{" "}
+              </a>{' '}
               for more details.
             </>
           }
@@ -132,15 +131,15 @@ export const FAQContent: React.FC = () => {
               master list. Repositories are organized into three tiers (Bronze,
               Silver, Gold), and you must unlock each tier by meeting specific
               merged PR count and credibility requirements to earn rewards from
-              it. Check the{" "}
+              it. Check the{' '}
               <a
                 href="https://docs.gittensor.io/scoring.html"
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: "inherit", textDecoration: "underline" }}
+                style={{ color: 'inherit', textDecoration: 'underline' }}
               >
                 Scoring documentation
-              </a>{" "}
+              </a>{' '}
               for details on unlocking tiers.
             </>
           }
@@ -148,10 +147,8 @@ export const FAQContent: React.FC = () => {
       </Stack>
     </Box>
   );
-};
 
-const FAQPage: React.FC = () => {
-  return (
+const FAQPage: React.FC = () => (
     <Page title="FAQ">
       <SEO
         title="Frequently Asked Questions"
@@ -159,15 +156,14 @@ const FAQPage: React.FC = () => {
       />
       <Box
         sx={{
-          minHeight: { xs: "auto", md: "calc(100vh - 80px)" },
+          minHeight: { xs: 'auto', md: 'calc(100vh - 80px)' },
           py: { xs: 2, sm: 0 },
-          display: "flex",
+          display: 'flex',
         }}
       >
         <FAQContent />
       </Box>
     </Page>
   );
-};
 
 export default FAQPage;

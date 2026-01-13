@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -11,12 +11,12 @@ import {
   Avatar,
   Chip,
   Tooltip,
-} from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import theme from "../../theme";
-import { useInfiniteCommitLog, usePullRequestDetails } from "../../api";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
+} from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import theme from '../../theme';
+import { useInfiniteCommitLog, usePullRequestDetails } from '../../api';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(utc);
 
@@ -40,9 +40,9 @@ interface CommitLogEntry {
 const getScoreColor = (score: string) => {
   const scoreNum = parseFloat(score);
   if (isNaN(scoreNum)) return theme.palette.grey[500];
-  if (scoreNum >= 10) return "#ffffff";
-  if (scoreNum >= 5) return "#b0b0b0";
-  return "#7d7d7d";
+  if (scoreNum >= 10) return '#ffffff';
+  if (scoreNum >= 5) return '#b0b0b0';
+  return '#7d7d7d';
 };
 
 const CommitLogItem: React.FC<{
@@ -51,8 +51,8 @@ const CommitLogItem: React.FC<{
   innerRef?: React.Ref<HTMLDivElement>;
 }> = ({ entry, isNew, innerRef }) => {
   const navigate = useNavigate();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
   // Hydrate with detailed data
   const { data: details } = usePullRequestDetails(
@@ -63,14 +63,14 @@ const CommitLogItem: React.FC<{
   // Derive status and timestamp from details if available, otherwise fallback
   const isMerged = !!(details?.mergedAt || entry.mergedAt);
   const isClosed =
-    details?.prState?.toUpperCase() === "CLOSED" ||
-    entry.prState?.toLowerCase() === "closed";
+    details?.prState?.toUpperCase() === 'CLOSED' ||
+    entry.prState?.toLowerCase() === 'closed';
 
-  let status = { label: "OPEN", color: theme.palette.status.neutral };
+  let status = { label: 'OPEN', color: theme.palette.status.neutral };
   if (isMerged)
-    status = { label: "MERGED", color: theme.palette.status.merged };
+    status = { label: 'MERGED', color: theme.palette.status.merged };
   else if (isClosed)
-    status = { label: "CLOSED", color: theme.palette.status.closed };
+    status = { label: 'CLOSED', color: theme.palette.status.closed };
 
   const timestampRaw =
     details?.mergedAt ||
@@ -78,8 +78,8 @@ const CommitLogItem: React.FC<{
     entry.mergedAt ||
     entry.prCreatedAt;
   const timestamp = timestampRaw
-    ? dayjs(timestampRaw).utc().format("MMM D, HH:mm:ss UTC")
-    : "Loading...";
+    ? dayjs(timestampRaw).utc().format('MMM D, HH:mm:ss UTC')
+    : 'Loading...';
 
   // Use lowValuePr from hydrated details if available, fallback to entry data
   const isLowValue = details?.lowValuePr === true || entry.lowValuePr === true;
@@ -95,20 +95,20 @@ const CommitLogItem: React.FC<{
       sx={{
         p: isMobile ? 0.75 : isTablet ? 1.25 : 1,
         borderRadius: 3,
-        border: "1px solid",
+        border: '1px solid',
         borderColor: isNew
           ? theme.palette.secondary.main
-          : "rgba(255, 255, 255, 0.1)",
-        backgroundColor: "rgba(255,255,255,0.02)",
-        backdropFilter: "blur(8px)",
-        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-        animation: isNew ? "slideIn 0.5s ease-out" : undefined,
-        cursor: "pointer",
-        position: "relative",
-        overflow: "hidden",
-        "&::before": {
+          : 'rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'rgba(255,255,255,0.02)',
+        backdropFilter: 'blur(8px)',
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        animation: isNew ? 'slideIn 0.5s ease-out' : undefined,
+        cursor: 'pointer',
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
           content: '""',
-          position: "absolute",
+          position: 'absolute',
           top: 0,
           left: 0,
           right: 0,
@@ -116,21 +116,21 @@ const CommitLogItem: React.FC<{
           background: `linear-gradient(90deg, ${alpha(status.color, 0.1)} 0%, transparent 100%)`,
           opacity: 0.5,
         },
-        "&:hover": {
+        '&:hover': {
           borderColor: status.color,
-          transform: "translateX(4px)",
+          transform: 'translateX(4px)',
           boxShadow: `0 0 20px ${alpha(status.color, 0.1)}`,
-          "&::before": { opacity: 0.8 },
+          '&::before': { opacity: 0.8 },
         },
-        "@keyframes slideIn": {
-          from: { opacity: 0, transform: "translateX(-20px)" },
-          to: { opacity: 1, transform: "translateX(0)" },
+        '@keyframes slideIn': {
+          from: { opacity: 0, transform: 'translateX(-20px)' },
+          to: { opacity: 1, transform: 'translateX(0)' },
         },
       }}
     >
       <Stack
         spacing={isMobile ? 0.5 : isTablet ? 1 : 0.5}
-        sx={{ position: "relative", zIndex: 1 }}
+        sx={{ position: 'relative', zIndex: 1 }}
       >
         {/* Top Row: Repo & ID */}
         <Stack
@@ -140,23 +140,23 @@ const CommitLogItem: React.FC<{
         >
           <Stack direction="row" alignItems="center" spacing={1}>
             <Avatar
-              src={`https://avatars.githubusercontent.com/${entry.repository.split("/")[0]}`}
+              src={`https://avatars.githubusercontent.com/${entry.repository.split('/')[0]}`}
               sx={{
                 width: 16,
                 height: 16,
-                border: "1px solid rgba(255,255,255,0.2)",
+                border: '1px solid rgba(255,255,255,0.2)',
                 backgroundColor:
-                  entry.repository.split("/")[0] === "opentensor"
-                    ? "#ffffff"
-                    : entry.repository.split("/")[0] === "bitcoin"
-                      ? "#F7931A"
-                      : "transparent",
+                  entry.repository.split('/')[0] === 'opentensor'
+                    ? '#ffffff'
+                    : entry.repository.split('/')[0] === 'bitcoin'
+                      ? '#F7931A'
+                      : 'transparent',
               }}
             />
             <Typography
               variant="caption"
               sx={{
-                color: "text.secondary",
+                color: 'text.secondary',
                 fontFamily: '"JetBrains Mono", monospace',
               }}
             >
@@ -166,7 +166,7 @@ const CommitLogItem: React.FC<{
           <Typography
             variant="caption"
             sx={{
-              color: "text.secondary",
+              color: 'text.secondary',
               fontFamily: '"JetBrains Mono", monospace',
             }}
           >
@@ -200,19 +200,19 @@ const CommitLogItem: React.FC<{
                 slotProps={{
                   tooltip: {
                     sx: {
-                      backgroundColor: "rgba(30, 30, 30, 0.95)",
-                      color: "#ffffff",
-                      fontSize: "0.75rem",
+                      backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                      color: '#ffffff',
+                      fontSize: '0.75rem',
                       fontFamily: '"JetBrains Mono", monospace',
-                      padding: "12px 16px",
-                      borderRadius: "8px",
-                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
                       maxWidth: 300,
                     },
                   },
                   arrow: {
                     sx: {
-                      color: "rgba(30, 30, 30, 0.95)",
+                      color: 'rgba(30, 30, 30, 0.95)',
                     },
                   },
                 }}
@@ -222,28 +222,28 @@ const CommitLogItem: React.FC<{
                   label="Low Value"
                   size="small"
                   sx={{
-                    color: "rgba(156, 163, 175, 0.9)",
-                    borderColor: "rgba(156, 163, 175, 0.4)",
+                    color: 'rgba(156, 163, 175, 0.9)',
+                    borderColor: 'rgba(156, 163, 175, 0.4)',
                     background:
-                      "linear-gradient(135deg, rgba(156, 163, 175, 0.2) 0%, rgba(156, 163, 175, 0.1) 100%)",
+                      'linear-gradient(135deg, rgba(156, 163, 175, 0.2) 0%, rgba(156, 163, 175, 0.1) 100%)',
                   }}
                 />
               </Tooltip>
             )}
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {timestamp}
             </Typography>
           </Stack>
           <Typography
             sx={{
-              color: "#fff",
-              fontSize: "0.9rem",
+              color: '#fff',
+              fontSize: '0.9rem',
               fontWeight: 500,
               lineHeight: 1.4,
-              display: "-webkit-box",
+              display: '-webkit-box',
               WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
             }}
           >
             {entry.pullRequestTitle}
@@ -255,9 +255,9 @@ const CommitLogItem: React.FC<{
           direction="row"
           justifyContent="space-between"
           alignItems="center"
-          sx={{ pt: 1, borderTop: "1px solid rgba(255,255,255,0.05)" }}
+          sx={{ pt: 1, borderTop: '1px solid rgba(255,255,255,0.05)' }}
         >
-          <Typography variant="caption" sx={{ color: "text.secondary" }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             by {entry.author}
           </Typography>
           <Stack direction="row" spacing={2}>
@@ -268,7 +268,7 @@ const CommitLogItem: React.FC<{
               >
                 +{entry.additions}
               </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 /
               </Typography>
               <Typography
@@ -298,27 +298,30 @@ const CommitLogItem: React.FC<{
 };
 
 const LiveCommitLog: React.FC = () => {
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
   // Using infinite query for pagination
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteCommitLog({ refetchInterval: 10000 }); // Poll every 10 seconds
 
   const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
-  const [seenEntryIds, setSeenEntryIds] = useState<Set<string>>(new Set());
+  const [_seenEntryIds, setSeenEntryIds] = useState<Set<string>>(new Set());
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
   const logContainerRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // Flatten all pages into a single array from API
-  const apiCommits: CommitLogEntry[] = data?.pages.flat() ?? [];
+  // Flatten all pages into a single array from API (memoized to avoid infinite effect loops)
+  const apiCommits = useMemo<CommitLogEntry[]>(
+    () => data?.pages.flat() ?? [],
+    [data],
+  );
 
   useEffect(() => {
     if (apiCommits.length === 0) return;
 
     const getCommitId = (c: CommitLogEntry) =>
-      `${c.pullRequestNumber}-${c.mergedAt || c.prCreatedAt || c.prState || "OPEN"}`;
+      `${c.pullRequestNumber}-${c.mergedAt || c.prCreatedAt || c.prState || 'OPEN'}`;
 
     setSeenEntryIds((prevSeen) => {
       const newSeen = new Set(prevSeen);
@@ -359,7 +362,7 @@ const LiveCommitLog: React.FC = () => {
 
       return newSeen;
     });
-  }, [data]); // Only run when data changes (refetch or next page)
+  }, [apiCommits]);
 
   // Intersection observer for infinite scroll
   useEffect(() => {
@@ -383,11 +386,11 @@ const LiveCommitLog: React.FC = () => {
     <Card
       sx={{
         borderRadius: 3,
-        border: "1px solid rgba(255, 255, 255, 0.1)",
-        backgroundColor: "transparent",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'transparent',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
       }}
       elevation={0}
     >
@@ -395,10 +398,10 @@ const LiveCommitLog: React.FC = () => {
         sx={{
           flex: 1,
           p: isMobile ? 1.5 : isTablet ? 1.75 : 2,
-          "&:last-child": { pb: isMobile ? 1.5 : isTablet ? 1.75 : 2 },
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
+          '&:last-child': { pb: isMobile ? 1.5 : isTablet ? 1.75 : 2 },
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
           minHeight: 0,
         }}
       >
@@ -411,7 +414,7 @@ const LiveCommitLog: React.FC = () => {
             <Typography
               variant="h6"
               sx={{
-                fontSize: isMobile ? "0.9rem" : isTablet ? "0.95rem" : "1rem",
+                fontSize: isMobile ? '0.9rem' : isTablet ? '0.95rem' : '1rem',
                 fontFamily: '"JetBrains Mono", monospace',
                 fontWeight: 500,
               }}
@@ -422,12 +425,12 @@ const LiveCommitLog: React.FC = () => {
               sx={{
                 width: 8,
                 height: 8,
-                borderRadius: "50%",
+                borderRadius: '50%',
                 backgroundColor: theme.palette.success.main,
-                animation: "pulse 2s infinite",
-                "@keyframes pulse": {
-                  "0%, 100%": { opacity: 1 },
-                  "50%": { opacity: 0.5 },
+                animation: 'pulse 2s infinite',
+                '@keyframes pulse': {
+                  '0%, 100%': { opacity: 1 },
+                  '50%': { opacity: 0.5 },
                 },
               }}
             />
@@ -437,9 +440,9 @@ const LiveCommitLog: React.FC = () => {
         {isLoading && logEntries.length === 0 ? (
           <Box
             sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
               py: 8,
             }}
           >
@@ -448,11 +451,11 @@ const LiveCommitLog: React.FC = () => {
         ) : logEntries.length === 0 ? (
           <Box
             sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
               py: 8,
-              color: "text.secondary",
+              color: 'text.secondary',
             }}
           >
             <Typography variant="body2">Waiting for activity...</Typography>
@@ -462,15 +465,15 @@ const LiveCommitLog: React.FC = () => {
             ref={logContainerRef}
             sx={{
               flex: 1,
-              overflowY: "auto",
-              overflowX: "hidden",
+              overflowY: 'auto',
+              overflowX: 'hidden',
               pr: 1,
-              "&::-webkit-scrollbar": { width: "6px" },
-              "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
-              "&::-webkit-scrollbar-thumb": {
-                backgroundColor: "rgba(255, 255, 255, 0.1)",
-                borderRadius: "3px",
-                "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.2)" },
+              '&::-webkit-scrollbar': { width: '6px' },
+              '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '3px',
+                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
               },
             }}
           >
@@ -491,7 +494,7 @@ const LiveCommitLog: React.FC = () => {
                 })
                 .map((entry, index) => {
                   const entryId = `${entry.pullRequestNumber}-${
-                    entry.mergedAt || entry.prCreatedAt || "OPEN"
+                    entry.mergedAt || entry.prCreatedAt || 'OPEN'
                   }`;
                   const isLastItem = index === logEntries.length - 1;
                   const isNew = newEntryIds.has(entryId);
@@ -507,7 +510,7 @@ const LiveCommitLog: React.FC = () => {
                 })}
 
               {isFetchingNextPage && (
-                <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
                   <CircularProgress size={20} />
                 </Box>
               )}

@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { Box, Tabs, Tab, CircularProgress, Typography } from "@mui/material";
-import { Page } from "../components/layout";
+import React, { useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Box, Tabs, Tab, CircularProgress, Typography } from '@mui/material';
+import { Page } from '../components/layout';
 import {
   PRDetailsCard,
   PRHeader,
@@ -9,31 +9,32 @@ import {
   BackButton,
   SEO,
   PRComments,
-} from "../components";
-import { usePullRequestDetails } from "../api";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import CodeIcon from "@mui/icons-material/Code";
-import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
+} from '../components';
+import { usePullRequestDetails } from '../api';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import CodeIcon from '@mui/icons-material/Code';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 
 const PRDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const repository = searchParams.get("repo");
-  const pullRequestNumber = searchParams.get("number");
+  const repository = searchParams.get('repo');
+  const pullRequestNumber = searchParams.get('number');
   const [tabValue, setTabValue] = useState(0);
+
+  // Call hook unconditionally (React rules of hooks)
+  const { data: prDetails, isLoading } = usePullRequestDetails(
+    repository || '',
+    pullRequestNumber ? parseInt(pullRequestNumber) : 0,
+  );
 
   // If no repo or PR number is provided, redirect to miners page
   if (!repository || !pullRequestNumber) {
-    if (typeof window !== "undefined") {
-      navigate("/miners?tab=prs");
+    if (typeof window !== 'undefined') {
+      navigate('/miners?tab=prs');
     }
     return null;
   }
-
-  const { data: prDetails, isLoading } = usePullRequestDetails(
-    repository,
-    parseInt(pullRequestNumber),
-  );
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -50,10 +51,10 @@ const PRDetailsPage: React.FC = () => {
       {isLoading ? (
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            minHeight: "50vh",
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '50vh',
           }}
         >
           <CircularProgress />
@@ -61,11 +62,11 @@ const PRDetailsPage: React.FC = () => {
       ) : !prDetails ? (
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            minHeight: "50vh",
-            flexDirection: "column",
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '50vh',
+            flexDirection: 'column',
             gap: 2,
           }}
         >
@@ -77,21 +78,21 @@ const PRDetailsPage: React.FC = () => {
       ) : (
         <Box
           sx={{
-            display: "flex",
-            flexDirection: "column",
-            minHeight: { xs: "auto", md: "calc(100vh - 80px)" },
-            width: "100%",
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: { xs: 'auto', md: 'calc(100vh - 80px)' },
+            width: '100%',
             py: { xs: 2, sm: 0 },
           }}
         >
           <Box
             sx={{
-              display: "flex",
-              flexDirection: "column",
+              display: 'flex',
+              flexDirection: 'column',
               gap: 3,
               maxWidth: 1200,
-              width: "100%",
-              mx: "auto",
+              width: '100%',
+              mx: 'auto',
               px: { xs: 2, sm: 2, md: 0 },
             }}
           >
@@ -105,29 +106,29 @@ const PRDetailsPage: React.FC = () => {
             />
 
             {/* Tabs */}
-            <Box sx={{ borderBottom: 1, borderColor: "rgba(255,255,255,0.1)" }}>
+            <Box sx={{ borderBottom: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
               <Tabs
                 value={tabValue}
                 onChange={handleTabChange}
                 aria-label="pr details tabs"
                 sx={{
-                  "& .MuiTab-root": {
-                    color: "#8b949e",
+                  '& .MuiTab-root': {
+                    color: '#8b949e',
                     fontFamily:
                       '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
-                    textTransform: "none",
+                    textTransform: 'none',
                     fontWeight: 500,
-                    minHeight: "48px",
-                    fontSize: "14px",
-                    "&.Mui-selected": {
-                      color: "#fff",
+                    minHeight: '48px',
+                    fontSize: '14px',
+                    '&.Mui-selected': {
+                      color: '#fff',
                       fontWeight: 600,
                     },
                   },
-                  "& .MuiTabs-indicator": {
-                    backgroundColor: "#f78166",
-                    height: "3px",
-                    borderRadius: "3px 3px 0 0",
+                  '& .MuiTabs-indicator': {
+                    backgroundColor: '#f78166',
+                    height: '3px',
+                    borderRadius: '3px 3px 0 0',
                   },
                 }}
               >

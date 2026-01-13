@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Box,
   Table,
@@ -26,39 +26,39 @@ import {
   Button,
   IconButton,
   Collapse,
-} from "@mui/material";
-import { Search } from "@mui/icons-material";
-import BarChartIcon from "@mui/icons-material/BarChart";
-import TableChartIcon from "@mui/icons-material/TableChart";
-import ReactECharts from "echarts-for-react";
-import { useReposAndWeights } from "../../api";
-import dayjs from "dayjs";
+} from '@mui/material';
+import { Search } from '@mui/icons-material';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import ReactECharts from 'echarts-for-react';
+import { useReposAndWeights } from '../../api';
+import dayjs from 'dayjs';
 
-type SortField = "owner" | "name" | "weight" | "tier";
-type SortOrder = "asc" | "desc";
+type SortField = 'owner' | 'name' | 'weight' | 'tier';
+type SortOrder = 'asc' | 'desc';
 
-const baseGithubUrl = "https://github.com/";
+const baseGithubUrl = 'https://github.com/';
 
 const getTierColor = (tier: string): string => {
   switch (tier?.toLowerCase()) {
-    case "gold":
-      return "#FFD700";
-    case "silver":
-      return "#C0C0C0";
-    case "bronze":
-      return "#CD7F32";
+    case 'gold':
+      return '#FFD700';
+    case 'silver':
+      return '#C0C0C0';
+    case 'bronze':
+      return '#CD7F32';
     default:
-      return "rgba(255, 255, 255, 0.4)";
+      return 'rgba(255, 255, 255, 0.4)';
   }
 };
 
 const getTierOrder = (tier: string): number => {
   switch (tier?.toLowerCase()) {
-    case "gold":
+    case 'gold':
       return 3;
-    case "silver":
+    case 'silver':
       return 2;
-    case "bronze":
+    case 'bronze':
       return 1;
     default:
       return 0;
@@ -86,60 +86,54 @@ const AnimatedWeightBar = ({
   return (
     <Box
       sx={{
-        width: "100%",
-        height: "4px",
-        backgroundColor: "rgba(255, 255, 255, 0.1)",
-        borderRadius: "2px",
-        overflow: "hidden",
+        width: '100%',
+        height: '4px',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: '2px',
+        overflow: 'hidden',
       }}
     >
       <Box
         sx={{
           width: `${width}%`,
-          height: "100%",
+          height: '100%',
           background:
-            tier?.toLowerCase() === "gold"
-              ? "linear-gradient(90deg, rgba(255, 215, 0, 0.9), rgba(255, 200, 0, 0.5))"
-              : tier?.toLowerCase() === "silver"
-                ? "linear-gradient(90deg, rgba(192, 192, 192, 0.9), rgba(170, 170, 170, 0.5))"
-                : tier?.toLowerCase() === "bronze"
-                  ? "linear-gradient(90deg, rgba(205, 127, 50, 0.9), rgba(184, 115, 51, 0.5))"
-                  : "linear-gradient(90deg, rgba(139, 148, 158, 0.8), rgba(100, 108, 118, 0.4))",
-          borderRadius: "2px",
-          transition: "width 1s cubic-bezier(0.4, 0, 0.2, 1)",
+            tier?.toLowerCase() === 'gold'
+              ? 'linear-gradient(90deg, rgba(255, 215, 0, 0.9), rgba(255, 200, 0, 0.5))'
+              : tier?.toLowerCase() === 'silver'
+                ? 'linear-gradient(90deg, rgba(192, 192, 192, 0.9), rgba(170, 170, 170, 0.5))'
+                : tier?.toLowerCase() === 'bronze'
+                  ? 'linear-gradient(90deg, rgba(205, 127, 50, 0.9), rgba(184, 115, 51, 0.5))'
+                  : 'linear-gradient(90deg, rgba(139, 148, 158, 0.8), rgba(100, 108, 118, 0.4))',
+          borderRadius: '2px',
+          transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       />
     </Box>
   );
 };
 
-interface RepositoryWeightsTableProps {
-  onSelectRepository?: (repositoryFullName: string) => void;
-}
-
-const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
-  onSelectRepository,
-}) => {
+const RepositoryWeightsTable: React.FC = () => {
   const { data, isLoading } = useReposAndWeights();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortField, setSortField] = useState<SortField>("weight");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortField, setSortField] = useState<SortField>('weight');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [tierFilter, setTierFilter] = useState<
-    "all" | "gold" | "silver" | "bronze"
-  >("all");
+    'all' | 'gold' | 'silver' | 'bronze'
+  >('all');
   const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
-      setSortOrder(field === "weight" ? "desc" : "asc");
+      setSortOrder(field === 'weight' ? 'desc' : 'asc');
     }
     setPage(0);
   };
@@ -164,18 +158,18 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
     if (!data) return [];
 
     const reposWithParts = data.map((repo) => {
-      const [owner, name] = repo.fullName.split("/");
+      const [owner, name] = repo.fullName.split('/');
       return { ...repo, owner, name };
     });
 
-    let filtered = reposWithParts.filter((repo) => {
+    const filtered = reposWithParts.filter((repo) => {
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch =
         repo.owner.toLowerCase().includes(searchLower) ||
         repo.name.toLowerCase().includes(searchLower);
 
       const matchesTier =
-        tierFilter === "all" || repo.tier?.toLowerCase() === tierFilter;
+        tierFilter === 'all' || repo.tier?.toLowerCase() === tierFilter;
 
       return matchesSearch && matchesTier;
     });
@@ -184,31 +178,31 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
       let aValue: string | number;
       let bValue: string | number;
 
-      if (sortField === "owner") {
+      if (sortField === 'owner') {
         aValue = a.owner;
         bValue = b.owner;
-      } else if (sortField === "name") {
+      } else if (sortField === 'name') {
         aValue = a.name;
         bValue = b.name;
-      } else if (sortField === "tier") {
+      } else if (sortField === 'tier') {
         const aOrder = getTierOrder(a.tier);
         const bOrder = getTierOrder(b.tier);
-        return sortOrder === "asc" ? aOrder - bOrder : bOrder - aOrder;
+        return sortOrder === 'asc' ? aOrder - bOrder : bOrder - aOrder;
       } else {
         aValue = a.weight;
         bValue = b.weight;
       }
 
       // For weight field, always parse as numbers
-      if (sortField === "weight") {
+      if (sortField === 'weight') {
         const aNum = parseFloat(aValue as string);
         const bNum = parseFloat(bValue as string);
-        return sortOrder === "asc" ? aNum - bNum : bNum - aNum;
+        return sortOrder === 'asc' ? aNum - bNum : bNum - aNum;
       }
 
       // For string fields (owner, name), use localeCompare
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        return sortOrder === "asc"
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortOrder === 'asc'
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
       }
@@ -231,9 +225,9 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
     if (!data) return { all: 0, gold: 0, silver: 0, bronze: 0 };
     return {
       all: data.length,
-      gold: data.filter((r) => r.tier?.toLowerCase() === "gold").length,
-      silver: data.filter((r) => r.tier?.toLowerCase() === "silver").length,
-      bronze: data.filter((r) => r.tier?.toLowerCase() === "bronze").length,
+      gold: data.filter((r) => r.tier?.toLowerCase() === 'gold').length,
+      silver: data.filter((r) => r.tier?.toLowerCase() === 'silver').length,
+      bronze: data.filter((r) => r.tier?.toLowerCase() === 'bronze').length,
     };
   }, [data]);
 
@@ -255,24 +249,24 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
         setPage(0);
       }}
       sx={{
-        color: tierFilter === value ? "#fff" : "rgba(255,255,255,0.5)",
+        color: tierFilter === value ? '#fff' : 'rgba(255,255,255,0.5)',
         backgroundColor:
-          tierFilter === value ? "rgba(255,255,255,0.1)" : "transparent",
-        borderRadius: "6px",
+          tierFilter === value ? 'rgba(255,255,255,0.1)' : 'transparent',
+        borderRadius: '6px',
         px: 2,
-        minWidth: "auto",
-        textTransform: "none",
+        minWidth: 'auto',
+        textTransform: 'none',
         fontFamily: '"JetBrains Mono", monospace',
-        fontSize: "0.8rem",
+        fontSize: '0.8rem',
         border:
-          tierFilter === value ? `1px solid ${color}` : "1px solid transparent",
-        "&:hover": {
-          backgroundColor: "rgba(255,255,255,0.15)",
+          tierFilter === value ? `1px solid ${color}` : '1px solid transparent',
+        '&:hover': {
+          backgroundColor: 'rgba(255,255,255,0.15)',
         },
       }}
     >
-      {label}{" "}
-      <span style={{ opacity: 0.6, marginLeft: "6px", fontSize: "0.75rem" }}>
+      {label}{' '}
+      <span style={{ opacity: 0.6, marginLeft: '6px', fontSize: '0.75rem' }}>
         {count}
       </span>
     </Button>
@@ -289,57 +283,57 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
 
     const minWeight = weights.length > 0 ? Math.min(...weights) : 0;
 
-    const textColor = "rgba(255, 255, 255, 0.85)";
-    const gridColor = "rgba(255, 255, 255, 0.08)";
+    const textColor = 'rgba(255, 255, 255, 0.85)';
+    const gridColor = 'rgba(255, 255, 255, 0.08)';
 
     const getTierColorGradient = (tier: string) => {
       switch (tier?.toLowerCase()) {
-        case "gold":
+        case 'gold':
           return {
-            type: "linear",
+            type: 'linear',
             x: 0,
             y: 0,
             x2: 0,
             y2: 1,
             colorStops: [
-              { offset: 0, color: "rgba(255, 215, 0, 0.9)" },
-              { offset: 1, color: "rgba(255, 200, 0, 0.5)" },
+              { offset: 0, color: 'rgba(255, 215, 0, 0.9)' },
+              { offset: 1, color: 'rgba(255, 200, 0, 0.5)' },
             ],
           };
-        case "silver":
+        case 'silver':
           return {
-            type: "linear",
+            type: 'linear',
             x: 0,
             y: 0,
             x2: 0,
             y2: 1,
             colorStops: [
-              { offset: 0, color: "rgba(192, 192, 192, 0.9)" },
-              { offset: 1, color: "rgba(170, 170, 170, 0.5)" },
+              { offset: 0, color: 'rgba(192, 192, 192, 0.9)' },
+              { offset: 1, color: 'rgba(170, 170, 170, 0.5)' },
             ],
           };
-        case "bronze":
+        case 'bronze':
           return {
-            type: "linear",
+            type: 'linear',
             x: 0,
             y: 0,
             x2: 0,
             y2: 1,
             colorStops: [
-              { offset: 0, color: "rgba(205, 127, 50, 0.9)" },
-              { offset: 1, color: "rgba(184, 115, 51, 0.5)" },
+              { offset: 0, color: 'rgba(205, 127, 50, 0.9)' },
+              { offset: 1, color: 'rgba(184, 115, 51, 0.5)' },
             ],
           };
         default:
           return {
-            type: "linear",
+            type: 'linear',
             x: 0,
             y: 0,
             x2: 0,
             y2: 1,
             colorStops: [
-              { offset: 0, color: "rgba(139, 148, 158, 0.8)" },
-              { offset: 1, color: "rgba(100, 108, 118, 0.4)" },
+              { offset: 0, color: 'rgba(139, 148, 158, 0.8)' },
+              { offset: 1, color: 'rgba(100, 108, 118, 0.4)' },
             ],
           };
       }
@@ -360,87 +354,87 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
     }));
 
     return {
-      backgroundColor: "transparent",
+      backgroundColor: 'transparent',
       title: {
-        text: "Repository Weights Distribution",
-        subtext: "Weight distribution across repositories",
-        left: "center",
+        text: 'Repository Weights Distribution',
+        subtext: 'Weight distribution across repositories',
+        left: 'center',
         top: 20,
         textStyle: {
-          color: "#ffffff",
-          fontFamily: "JetBrains Mono",
+          color: '#ffffff',
+          fontFamily: 'JetBrains Mono',
           fontSize: 18,
           fontWeight: 600,
         },
         subtextStyle: {
-          color: "rgba(255, 255, 255, 0.5)",
-          fontFamily: "JetBrains Mono",
+          color: 'rgba(255, 255, 255, 0.5)',
+          fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
       },
       tooltip: {
-        trigger: "axis",
-        axisPointer: { type: "shadow" },
-        backgroundColor: "rgba(15, 15, 18, 0.95)",
-        borderColor: "rgba(255, 255, 255, 0.15)",
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        backgroundColor: 'rgba(15, 15, 18, 0.95)',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
         borderWidth: 1,
-        textStyle: { color: "#fff", fontFamily: "JetBrains Mono" },
+        textStyle: { color: '#fff', fontFamily: 'JetBrains Mono' },
         formatter: (params: any) => {
           const data = params[0]?.data;
-          if (!data) return "";
+          if (!data) return '';
           return `
             <div style="font-family: 'JetBrains Mono', monospace;">
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                 <img 
                   src="https://avatars.githubusercontent.com/${data.owner}" 
-                  style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); background-color: ${data.owner === "opentensor" ? "#ffffff" : data.owner === "bitcoin" ? "#F7931A" : "transparent"};"
+                  style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); background-color: ${data.owner === 'opentensor' ? '#ffffff' : data.owner === 'bitcoin' ? '#F7931A' : 'transparent'};"
                 />
                 <div style="font-weight: 600;">${data.fullName}</div>
               </div>
               <div style="margin-top: 4px;">Weight: <span style="font-weight: 600;">${data.value}</span></div>
-              <div style="font-size: 0.8em; opacity: 0.8;">Tier: ${data.tier || "N/A"}</div>
+              <div style="font-size: 0.8em; opacity: 0.8;">Tier: ${data.tier || 'N/A'}</div>
             </div>
           `;
         },
       },
       grid: {
-        left: "3%",
-        right: "3%",
-        bottom: "10%",
-        top: "20%",
+        left: '3%',
+        right: '3%',
+        bottom: '10%',
+        top: '20%',
         containLabel: true,
       },
       xAxis: {
-        type: "category",
+        type: 'category',
         data: xAxisData,
         axisLabel: {
           show: chartData.length < 50,
           color: textColor,
-          fontFamily: "JetBrains Mono",
+          fontFamily: 'JetBrains Mono',
           rotate: 45,
           interval: 0,
           formatter: (val: string) =>
-            val.length > 15 ? val.slice(0, 12) + "..." : val,
+            val.length > 15 ? `${val.slice(0, 12)  }...` : val,
         },
         axisLine: { lineStyle: { color: gridColor } },
       },
       yAxis: {
-        type: "value",
+        type: 'value',
         min: minWeight,
         max: maxWeight,
-        name: "Weight",
-        nameTextStyle: { color: textColor, fontFamily: "JetBrains Mono" },
-        axisLabel: { color: textColor, fontFamily: "JetBrains Mono" },
-        splitLine: { lineStyle: { color: gridColor, type: "dashed" } },
+        name: 'Weight',
+        nameTextStyle: { color: textColor, fontFamily: 'JetBrains Mono' },
+        axisLabel: { color: textColor, fontFamily: 'JetBrains Mono' },
+        splitLine: { lineStyle: { color: gridColor, type: 'dashed' } },
       },
       series: [
         {
           data: seriesData,
-          type: "bar",
-          barWidth: chartData.length > 50 ? "80%" : "60%",
-          emphasis: { focus: "series" },
+          type: 'bar',
+          barWidth: chartData.length > 50 ? '80%' : '60%',
+          emphasis: { focus: 'series' },
           animationDuration: chartData.length > 100 ? 1000 : 1500,
-          animationEasing: "cubicOut",
+          animationEasing: 'cubicOut',
           animationDelay: (idx: number) =>
             idx * (chartData.length > 100 ? 1 : 10),
         },
@@ -458,8 +452,8 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
+        behavior: 'smooth',
+        block: 'start',
       });
     }
   }, [rowsPerPage]);
@@ -468,7 +462,7 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
     <Box ref={containerRef}>
       <Box
         sx={{
-          borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         }}
       >
         <Box sx={{ p: 2, pb: 1 }}>
@@ -481,11 +475,11 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
           sx={{
             px: 2,
             pb: 2,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             gap: 2,
-            flexWrap: "wrap",
+            flexWrap: 'wrap',
           }}
         >
           <Stack direction="row" spacing={1}>
@@ -515,19 +509,19 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
             />
           </Stack>
 
-          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-            <Tooltip title={showChart ? "Hide Chart" : "Show Chart"}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
               <IconButton
                 onClick={() => setShowChart(!showChart)}
                 size="small"
                 sx={{
-                  color: showChart ? "#ffffff" : "rgba(255, 255, 255, 0.5)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  color: showChart ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: 2,
-                  padding: "6px",
-                  "&:hover": {
-                    backgroundColor: "rgba(255, 255, 255, 0.05)",
-                    borderColor: "rgba(255, 255, 255, 0.2)",
+                  padding: '6px',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
                   },
                 }}
               >
@@ -540,13 +534,13 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
             </Tooltip>
 
             <FormControl size="small">
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Typography
                   variant="body2"
                   sx={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: 'rgba(255, 255, 255, 0.7)',
                     fontFamily: '"JetBrains Mono", monospace',
-                    fontSize: "0.8rem",
+                    fontSize: '0.8rem',
                   }}
                 >
                   Rows:
@@ -558,19 +552,19 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
                     setPage(0);
                   }}
                   sx={{
-                    color: "#ffffff",
+                    color: '#ffffff',
                     fontFamily: '"JetBrains Mono", monospace',
-                    backgroundColor: "rgba(0, 0, 0, 0.4)",
-                    fontSize: "0.8rem",
-                    height: "36px",
+                    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                    fontSize: '0.8rem',
+                    height: '36px',
                     borderRadius: 2,
-                    minWidth: "80px",
-                    "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
-                    "&:hover fieldset": {
-                      borderColor: "rgba(255, 255, 255, 0.2)",
+                    minWidth: '80px',
+                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                    '&:hover fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.2)',
                     },
-                    "&.Mui-focused fieldset": { borderColor: "primary.main" },
-                    "& .MuiSelect-select": {
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                    '& .MuiSelect-select': {
                       py: 0.75,
                     },
                   }}
@@ -592,27 +586,27 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
                   <InputAdornment position="start">
                     <Search
                       sx={{
-                        color: "rgba(255, 255, 255, 0.5)",
-                        fontSize: "1rem",
+                        color: 'rgba(255, 255, 255, 0.5)',
+                        fontSize: '1rem',
                       }}
                     />
                   </InputAdornment>
                 ),
               }}
               sx={{
-                width: "200px",
-                "& .MuiOutlinedInput-root": {
-                  color: "#ffffff",
+                width: '200px',
+                '& .MuiOutlinedInput-root': {
+                  color: '#ffffff',
                   fontFamily: '"JetBrains Mono", monospace',
-                  backgroundColor: "rgba(0, 0, 0, 0.4)",
-                  fontSize: "0.8rem",
-                  height: "36px",
+                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  fontSize: '0.8rem',
+                  height: '36px',
                   borderRadius: 2,
-                  "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
-                  "&:hover fieldset": {
-                    borderColor: "rgba(255, 255, 255, 0.2)",
+                  '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                  '&:hover fieldset': {
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
                   },
-                  "&.Mui-focused fieldset": { borderColor: "primary.main" },
+                  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
                 },
               }}
             />
@@ -624,16 +618,16 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
         <Box
           sx={{
             p: 2,
-            borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-            height: "500px",
-            backgroundColor: "rgba(0,0,0,0.2)",
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            height: '500px',
+            backgroundColor: 'rgba(0,0,0,0.2)',
           }}
         >
           {showChart && filteredAndSortedRepos.length > 0 && (
             <ReactECharts
               key={tierFilter}
               option={getChartOption()}
-              style={{ height: "100%", width: "100%" }}
+              style={{ height: '100%', width: '100%' }}
               notMerge={true}
             />
           )}
@@ -641,7 +635,7 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
       </Collapse>
 
       {isLoading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
           <CircularProgress />
         </Box>
       ) : (
@@ -649,20 +643,20 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
           component={Paper}
           elevation={0}
           sx={{
-            backgroundColor: "transparent",
-            maxHeight: "800px",
-            overflowY: "auto",
-            "&::-webkit-scrollbar": {
-              width: "8px",
+            backgroundColor: 'transparent',
+            maxHeight: '800px',
+            overflowY: 'auto',
+            '&::-webkit-scrollbar': {
+              width: '8px',
             },
-            "&::-webkit-scrollbar-track": {
-              backgroundColor: "transparent",
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: 'transparent',
             },
-            "&::-webkit-scrollbar-thumb": {
-              backgroundColor: "rgba(255, 255, 255, 0.1)",
-              borderRadius: "4px",
-              "&:hover": {
-                backgroundColor: "rgba(255, 255, 255, 0.2)",
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '4px',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
               },
             },
           }}
@@ -673,25 +667,25 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
                 {!isMobile && (
                   <TableCell
                     sx={{
-                      backgroundColor: "rgba(18, 18, 20, 0.95)",
-                      backdropFilter: "blur(8px)",
-                      borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                      height: "56px",
+                      backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                      backdropFilter: 'blur(8px)',
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                      height: '56px',
                       py: 1.5,
-                      boxSizing: "border-box",
-                      width: "20%",
+                      boxSizing: 'border-box',
+                      width: '20%',
                     }}
                   >
                     <TableSortLabel
-                      active={sortField === "owner"}
-                      direction={sortField === "owner" ? sortOrder : "asc"}
-                      onClick={() => handleSort("owner")}
+                      active={sortField === 'owner'}
+                      direction={sortField === 'owner' ? sortOrder : 'asc'}
+                      onClick={() => handleSort('owner')}
                       sx={{
-                        "&:hover": {
-                          color: "secondary.main",
+                        '&:hover': {
+                          color: 'secondary.main',
                         },
-                        "&.Mui-active": {
-                          color: "secondary.main",
+                        '&.Mui-active': {
+                          color: 'secondary.main',
                         },
                       }}
                     >
@@ -701,25 +695,25 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
                 )}
                 <TableCell
                   sx={{
-                    backgroundColor: "rgba(18, 18, 20, 0.95)",
-                    backdropFilter: "blur(8px)",
-                    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                    height: "56px",
+                    backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                    backdropFilter: 'blur(8px)',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                    height: '56px',
                     py: 1.5,
-                    boxSizing: "border-box",
-                    width: "40%",
+                    boxSizing: 'border-box',
+                    width: '40%',
                   }}
                 >
                   <TableSortLabel
-                    active={sortField === "name"}
-                    direction={sortField === "name" ? sortOrder : "asc"}
-                    onClick={() => handleSort("name")}
+                    active={sortField === 'name'}
+                    direction={sortField === 'name' ? sortOrder : 'asc'}
+                    onClick={() => handleSort('name')}
                     sx={{
-                      "&:hover": {
-                        color: "secondary.main",
+                      '&:hover': {
+                        color: 'secondary.main',
                       },
-                      "&.Mui-active": {
-                        color: "secondary.main",
+                      '&.Mui-active': {
+                        color: 'secondary.main',
                       },
                     }}
                   >
@@ -729,25 +723,25 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
                 <TableCell
                   align="center"
                   sx={{
-                    backgroundColor: "rgba(18, 18, 20, 0.95)",
-                    backdropFilter: "blur(8px)",
-                    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                    height: "56px",
+                    backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                    backdropFilter: 'blur(8px)',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                    height: '56px',
                     py: 1.5,
-                    boxSizing: "border-box",
-                    width: "25%",
+                    boxSizing: 'border-box',
+                    width: '25%',
                   }}
                 >
                   <TableSortLabel
-                    active={sortField === "tier"}
-                    direction={sortField === "tier" ? sortOrder : "desc"}
-                    onClick={() => handleSort("tier")}
+                    active={sortField === 'tier'}
+                    direction={sortField === 'tier' ? sortOrder : 'desc'}
+                    onClick={() => handleSort('tier')}
                     sx={{
-                      "&:hover": {
-                        color: "secondary.main",
+                      '&:hover': {
+                        color: 'secondary.main',
                       },
-                      "&.Mui-active": {
-                        color: "secondary.main",
+                      '&.Mui-active': {
+                        color: 'secondary.main',
                       },
                     }}
                   >
@@ -757,25 +751,25 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
                 <TableCell
                   align="right"
                   sx={{
-                    backgroundColor: "rgba(18, 18, 20, 0.95)",
-                    backdropFilter: "blur(8px)",
-                    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-                    height: "56px",
+                    backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                    backdropFilter: 'blur(8px)',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                    height: '56px',
                     py: 1.5,
-                    boxSizing: "border-box",
-                    width: "15%",
+                    boxSizing: 'border-box',
+                    width: '15%',
                   }}
                 >
                   <TableSortLabel
-                    active={sortField === "weight"}
-                    direction={sortField === "weight" ? sortOrder : "desc"}
-                    onClick={() => handleSort("weight")}
+                    active={sortField === 'weight'}
+                    direction={sortField === 'weight' ? sortOrder : 'desc'}
+                    onClick={() => handleSort('weight')}
                     sx={{
-                      "&:hover": {
-                        color: "secondary.main",
+                      '&:hover': {
+                        color: 'secondary.main',
                       },
-                      "&.Mui-active": {
-                        color: "secondary.main",
+                      '&.Mui-active': {
+                        color: 'secondary.main',
                       },
                     }}
                   >
@@ -789,13 +783,13 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
                 const isInactive =
                   repo.inactiveAt !== null && repo.inactiveAt !== undefined;
                 const inactiveDate = isInactive
-                  ? dayjs(repo.inactiveAt).format("DD/MM/YY hh:mm a")
+                  ? dayjs(repo.inactiveAt).format('DD/MM/YY hh:mm a')
                   : null;
 
                 return (
                   <Tooltip
                     key={repo.fullName}
-                    title={isInactive ? `Inactivated at: ${inactiveDate}` : ""}
+                    title={isInactive ? `Inactivated at: ${inactiveDate}` : ''}
                     arrow
                     placement="top"
                   >
@@ -803,11 +797,11 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
                       hover
                       sx={{
                         backgroundColor: isInactive
-                          ? "rgba(211, 47, 47, 0.08)"
-                          : "inherit",
-                        "&:hover": {
+                          ? 'rgba(211, 47, 47, 0.08)'
+                          : 'inherit',
+                        '&:hover': {
                           backgroundColor: isInactive
-                            ? "rgba(211, 47, 47, 0.12)"
+                            ? 'rgba(211, 47, 47, 0.12)'
                             : undefined,
                         },
                       }}
@@ -815,24 +809,24 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
                       {!isMobile && (
                         <TableCell
                           sx={{
-                            height: "60px",
+                            height: '60px',
                             py: 1,
-                            boxSizing: "border-box",
+                            boxSizing: 'border-box',
                           }}
                         >
                           <Box
                             sx={{
-                              display: "flex",
-                              alignItems: "center",
+                              display: 'flex',
+                              alignItems: 'center',
                               gap: 1.5,
                             }}
                           >
                             <Tooltip
                               title={
-                                repo.owner === "opentensor"
-                                  ? "Official Opentensor Repository"
-                                  : repo.owner === "bitcoin"
-                                    ? "Official Bitcoin Repository"
+                                repo.owner === 'opentensor'
+                                  ? 'Official Opentensor Repository'
+                                  : repo.owner === 'bitcoin'
+                                    ? 'Official Bitcoin Repository'
                                     : repo.owner
                               }
                             >
@@ -842,19 +836,19 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
                                 sx={{
                                   width: 24,
                                   height: 24,
-                                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                                  border: '1px solid rgba(255, 255, 255, 0.2)',
                                   backgroundColor:
-                                    repo.owner === "opentensor"
-                                      ? "#ffffff"
-                                      : repo.owner === "bitcoin"
-                                        ? "#F7931A"
-                                        : "transparent",
-                                  transition: "transform 0.2s",
-                                  "&:hover": {
-                                    transform: "scale(1.2)",
+                                    repo.owner === 'opentensor'
+                                      ? '#ffffff'
+                                      : repo.owner === 'bitcoin'
+                                        ? '#F7931A'
+                                        : 'transparent',
+                                  transition: 'transform 0.2s',
+                                  '&:hover': {
+                                    transform: 'scale(1.2)',
                                     zIndex: 1,
                                   },
-                                  cursor: "pointer",
+                                  cursor: 'pointer',
                                 }}
                               />
                             </Tooltip>
@@ -863,8 +857,8 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
                               fontWeight="medium"
                               sx={{
                                 color: isInactive
-                                  ? "error.dark"
-                                  : "text.primary",
+                                  ? 'error.dark'
+                                  : 'text.primary',
                               }}
                             >
                               {repo.owner}
@@ -874,25 +868,25 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
                       )}
                       <TableCell
                         sx={{
-                          height: "60px",
+                          height: '60px',
                           py: 1,
-                          boxSizing: "border-box",
+                          boxSizing: 'border-box',
                         }}
                       >
                         <Box
                           sx={{
-                            display: "flex",
-                            alignItems: "center",
+                            display: 'flex',
+                            alignItems: 'center',
                             gap: 1.5,
                           }}
                         >
                           {isMobile && (
                             <Tooltip
                               title={
-                                repo.owner === "opentensor"
-                                  ? "Official Opentensor Repository"
-                                  : repo.owner === "bitcoin"
-                                    ? "Official Bitcoin Repository"
+                                repo.owner === 'opentensor'
+                                  ? 'Official Opentensor Repository'
+                                  : repo.owner === 'bitcoin'
+                                    ? 'Official Bitcoin Repository'
                                     : repo.owner
                               }
                             >
@@ -902,26 +896,26 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
                                 sx={{
                                   width: 24,
                                   height: 24,
-                                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                                  border: '1px solid rgba(255, 255, 255, 0.2)',
                                   backgroundColor:
-                                    repo.owner === "opentensor"
-                                      ? "#ffffff"
-                                      : repo.owner === "bitcoin"
-                                        ? "#F7931A"
-                                        : "transparent",
-                                  transition: "transform 0.2s",
-                                  "&:hover": {
-                                    transform: "scale(1.2)",
+                                    repo.owner === 'opentensor'
+                                      ? '#ffffff'
+                                      : repo.owner === 'bitcoin'
+                                        ? '#F7931A'
+                                        : 'transparent',
+                                  transition: 'transform 0.2s',
+                                  '&:hover': {
+                                    transform: 'scale(1.2)',
                                     zIndex: 1,
                                   },
-                                  cursor: "pointer",
+                                  cursor: 'pointer',
                                 }}
                               />
                             </Tooltip>
                           )}
                           <Stack>
                             <Typography
-                              component={isMobile ? "a" : "span"}
+                              component={isMobile ? 'a' : 'span'}
                               variant="body1"
                               fontWeight="medium"
                               href={
@@ -929,18 +923,18 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
                                   ? `${baseGithubUrl}${repo.fullName}`
                                   : undefined
                               }
-                              target={isMobile ? "_blank" : undefined}
-                              rel={isMobile ? "noopener noreferrer" : undefined}
+                              target={isMobile ? '_blank' : undefined}
+                              rel={isMobile ? 'noopener noreferrer' : undefined}
                               sx={{
-                                textDecoration: "none",
-                                "&:hover": {
+                                textDecoration: 'none',
+                                '&:hover': {
                                   textDecoration: isMobile
-                                    ? "underline"
+                                    ? 'underline'
                                     : undefined,
                                 },
                                 color: isInactive
-                                  ? "error.dark"
-                                  : "text.primary",
+                                  ? 'error.dark'
+                                  : 'text.primary',
                               }}
                             >
                               {isMobile ? repo.fullName : repo.name}
@@ -954,10 +948,10 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
                                 variant="body2"
                                 sx={{
                                   color: isInactive
-                                    ? "rgba(211, 47, 47, 0.7)"
-                                    : "text.secondary",
-                                  textDecoration: "none",
-                                  "&:hover": { textDecoration: "underline" },
+                                    ? 'rgba(211, 47, 47, 0.7)'
+                                    : 'text.secondary',
+                                  textDecoration: 'none',
+                                  '&:hover': { textDecoration: 'underline' },
                                 }}
                               >
                                 {baseGithubUrl}
@@ -970,23 +964,23 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
                       <TableCell
                         align="center"
                         sx={{
-                          height: "60px",
+                          height: '60px',
                           py: 1,
-                          boxSizing: "border-box",
+                          boxSizing: 'border-box',
                         }}
                       >
                         <Box
                           sx={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
                             gap: 1,
-                            width: "100%",
+                            width: '100%',
                           }}
                         >
                           <Chip
                             variant="tier"
-                            label={repo.tier || "—"}
+                            label={repo.tier || '—'}
                             sx={{
                               color: getTierColor(repo.tier),
                               borderColor: getTierColor(repo.tier),
@@ -1004,15 +998,15 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
                       <TableCell
                         align="right"
                         sx={{
-                          height: "60px",
+                          height: '60px',
                           py: 1,
-                          boxSizing: "border-box",
+                          boxSizing: 'border-box',
                         }}
                       >
                         <Typography
                           variant="dataValue"
                           sx={{
-                            color: isInactive ? "error.dark" : "text.primary",
+                            color: isInactive ? 'error.dark' : 'text.primary',
                           }}
                         >
                           {repo.weight}
@@ -1038,14 +1032,14 @@ const RepositoryWeightsTable: React.FC<RepositoryWeightsTableProps> = ({
         showFirstButton
         showLastButton
         sx={{
-          ".MuiTablePagination-displayedRows": {
+          '.MuiTablePagination-displayedRows': {
             fontFamily: '"JetBrains Mono", monospace',
           },
         }}
       />
 
       {filteredAndSortedRepos.length === 0 && !isLoading && (
-        <Box sx={{ textAlign: "center", py: 4 }}>
+        <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography>No repositories found!</Typography>
         </Box>
       )}

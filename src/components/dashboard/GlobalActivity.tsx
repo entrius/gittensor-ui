@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo } from 'react';
 import {
   Box,
   Card,
@@ -6,16 +6,16 @@ import {
   Grid,
   CircularProgress,
   Chip,
-} from "@mui/material";
-import PublicIcon from "@mui/icons-material/Public";
-import CodeOffIcon from "@mui/icons-material/CodeOff";
-import { subDays, format } from "date-fns";
-import { useAllMiners, useAllPrs, useReposAndWeights } from "../../api";
-import { STATUS_COLORS } from "../../theme";
-import TierRepoCard from "./TierRepoCard";
-import ContributionHeatmap from "./ContributionHeatmap";
-import PRStatusChart from "./PRStatusChart";
-import TierPerformanceTable from "./TierPerformanceTable";
+} from '@mui/material';
+import PublicIcon from '@mui/icons-material/Public';
+import CodeOffIcon from '@mui/icons-material/CodeOff';
+import { subDays, format } from 'date-fns';
+import { useAllMiners, useAllPrs, useReposAndWeights } from '../../api';
+import { STATUS_COLORS } from '../../theme';
+import TierRepoCard from './TierRepoCard';
+import ContributionHeatmap from './ContributionHeatmap';
+import PRStatusChart from './PRStatusChart';
+import TierPerformanceTable from './TierPerformanceTable';
 
 const GlobalActivity: React.FC = () => {
   const { data: allMinerStats, isLoading: isLoadingStats } = useAllMiners();
@@ -49,7 +49,7 @@ const GlobalActivity: React.FC = () => {
 
       const dataMap = new Map<string, number>();
       for (let i = daysToShow; i >= 0; i--) {
-        dataMap.set(format(subDays(today, i), "yyyy-MM-dd"), 0);
+        dataMap.set(format(subDays(today, i), 'yyyy-MM-dd'), 0);
       }
 
       let last30Count = 0;
@@ -60,7 +60,7 @@ const GlobalActivity: React.FC = () => {
         const date = new Date(pr.mergedAt);
         if (isNaN(date.getTime())) return;
 
-        const dateStr = format(date, "yyyy-MM-dd");
+        const dateStr = format(date, 'yyyy-MM-dd');
         if (dataMap.has(dateStr)) {
           dataMap.set(dateStr, (dataMap.get(dateStr) || 0) + 1);
         }
@@ -128,7 +128,7 @@ const GlobalActivity: React.FC = () => {
 
     allMinerStats.forEach((m) => {
       const isActive =
-        m.currentTier && ["Bronze", "Silver", "Gold"].includes(m.currentTier);
+        m.currentTier && ['Bronze', 'Silver', 'Gold'].includes(m.currentTier);
       const target = isActive ? active : inactive;
 
       target.merged += m.totalMergedPrs || 0;
@@ -156,7 +156,7 @@ const GlobalActivity: React.FC = () => {
       return totalResolved > 0 ? stats.merged / totalResolved : 0;
     };
 
-    ["Gold", "Silver", "Bronze"].forEach((tier) => {
+    ['Gold', 'Silver', 'Bronze'].forEach((tier) => {
       const t = tiers[tier];
       t.credibility = calculateCredibility(t);
       t.totalPRs = t.merged + t.open + t.closed;
@@ -174,7 +174,7 @@ const GlobalActivity: React.FC = () => {
         .filter(
           (m) =>
             !m.currentTier ||
-            !["Bronze", "Silver", "Gold"].includes(m.currentTier),
+            !['Bronze', 'Silver', 'Gold'].includes(m.currentTier),
         )
         .reduce((sum, m) => sum + (Number(m.totalScore) || 0), 0),
       uniqueRepos: 0,
@@ -207,7 +207,7 @@ const GlobalActivity: React.FC = () => {
 
   // Calculate max values for opacity scaling
   const { maxValues, getOpacity } = useMemo(() => {
-    const tierNames = ["Gold", "Silver", "Bronze"];
+    const tierNames = ['Gold', 'Silver', 'Bronze'];
     const maxVals = tierNames.reduce(
       (acc, tier) => {
         const s = (tierStats[tier as keyof typeof tierStats] as any) || {};
@@ -268,7 +268,7 @@ const GlobalActivity: React.FC = () => {
 
   if (isLoadingPRs || isLoadingStats) {
     return (
-      <Card sx={{ p: 4, display: "flex", justifyContent: "center" }}>
+      <Card sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
         <CircularProgress size={30} />
       </Card>
     );
@@ -277,14 +277,14 @@ const GlobalActivity: React.FC = () => {
   const hasNoData = !allPrs || allPrs.length === 0;
 
   return (
-    <Box sx={{ width: "100%" }}>
+    <Box sx={{ width: '100%' }}>
       {/* Header */}
       <Box
         sx={{
           mb: 2,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
         }}
       >
         <Typography variant="sectionTitle">
@@ -297,7 +297,7 @@ const GlobalActivity: React.FC = () => {
           sx={{
             color: STATUS_COLORS.success,
             borderColor: `${STATUS_COLORS.success}4d`,
-            "& .MuiChip-icon": { color: STATUS_COLORS.success },
+            '& .MuiChip-icon': { color: STATUS_COLORS.success },
           }}
         />
       </Box>
@@ -306,21 +306,21 @@ const GlobalActivity: React.FC = () => {
         <Card
           sx={{
             p: 6,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <CodeOffIcon
-            sx={{ fontSize: 48, color: "rgba(255, 255, 255, 0.2)", mb: 2 }}
+            sx={{ fontSize: 48, color: 'rgba(255, 255, 255, 0.2)', mb: 2 }}
           />
           <Typography
             sx={{
-              color: "rgba(255, 255, 255, 0.5)",
+              color: 'rgba(255, 255, 255, 0.5)',
               fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "0.9rem",
-              textAlign: "center",
+              fontSize: '0.9rem',
+              textAlign: 'center',
             }}
           >
             No activity data available yet
@@ -341,18 +341,18 @@ const GlobalActivity: React.FC = () => {
           <Grid item xs={12} lg={5}>
             <Card
               sx={(theme) => ({
-                height: "100%",
+                height: '100%',
                 p: { xs: 1.5, sm: 3 },
-                display: "flex",
-                flexDirection: "column",
-                [theme.breakpoints.between("lg", "xl")]: { padding: "16px" },
-                overflow: "visible",
+                display: 'flex',
+                flexDirection: 'column',
+                [theme.breakpoints.between('lg', 'xl')]: { padding: '16px' },
+                overflow: 'visible',
               })}
             >
               <Box
                 sx={{
-                  display: "flex",
-                  flexDirection: "row",
+                  display: 'flex',
+                  flexDirection: 'row',
                   gap: { xs: 1, sm: 3, lg: 1.5, xl: 3 },
                   flex: 1,
                 }}
@@ -377,14 +377,14 @@ const GlobalActivity: React.FC = () => {
           <Grid item xs={12} lg={4}>
             <Box
               sx={(theme) => ({
-                display: "flex",
-                flexDirection: "column",
+                display: 'flex',
+                flexDirection: 'column',
                 gap: 1,
-                height: "100%",
-                [theme.breakpoints.between("lg", "xl")]: { gap: 0.5 },
+                height: '100%',
+                [theme.breakpoints.between('lg', 'xl')]: { gap: 0.5 },
               })}
             >
-              {["Gold", "Silver", "Bronze"].map((tier) => (
+              {['Gold', 'Silver', 'Bronze'].map((tier) => (
                 <TierRepoCard
                   key={tier}
                   tier={tier}

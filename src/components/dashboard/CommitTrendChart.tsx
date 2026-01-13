@@ -1,28 +1,28 @@
-import React from "react";
-import ReactECharts from "echarts-for-react";
+import React from 'react';
+import ReactECharts from 'echarts-for-react';
 import {
   Card,
   CardContent,
   Typography,
   useTheme,
   useMediaQuery,
-} from "@mui/material";
-import { useHistoricalTrend } from "../../api";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
+} from '@mui/material';
+import { useHistoricalTrend } from '../../api';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(utc);
 
 const CommitTrendChart: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const { data } = useHistoricalTrend();
 
   // Filter data to only include the last 10 days (using UTC)
   const filteredData = Array.isArray(data)
     ? data.filter((item) =>
-        dayjs.utc(item.date).isAfter(dayjs.utc().subtract(10, "day")),
+        dayjs.utc(item.date).isAfter(dayjs.utc().subtract(10, 'day')),
       )
     : [];
 
@@ -31,17 +31,17 @@ const CommitTrendChart: React.FC = () => {
       show: false,
     },
     tooltip: {
-      trigger: "axis",
+      trigger: 'axis',
       formatter: (params: any) => {
         const data = params[0];
         return `${dayjs
           .utc(data.axisValue)
           .format(
-            "YYYY-MM-DD",
+            'YYYY-MM-DD',
           )} UTC<br/>Lines Committed: ${data.value.toLocaleString()}`;
       },
-      backgroundColor: "rgba(18, 18, 20, 0.95)",
-      borderColor: "rgba(255, 255, 255, 0.1)",
+      backgroundColor: 'rgba(18, 18, 20, 0.95)',
+      borderColor: 'rgba(255, 255, 255, 0.1)',
       borderWidth: 1,
       textStyle: {
         color: theme.palette.text.primary,
@@ -51,14 +51,14 @@ const CommitTrendChart: React.FC = () => {
       padding: [8, 12],
     },
     grid: {
-      top: isMobile ? "8%" : "6%",
-      left: isMobile ? "2%" : "3%",
-      right: isMobile ? "2%" : "3%",
-      bottom: isMobile ? "8%" : "6%",
+      top: isMobile ? '8%' : '6%',
+      left: isMobile ? '2%' : '3%',
+      right: isMobile ? '2%' : '3%',
+      bottom: isMobile ? '8%' : '6%',
       containLabel: true,
     },
     xAxis: {
-      type: "category",
+      type: 'category',
       boundaryGap: false,
       data: filteredData?.map((item) => item.date),
       axisLabel: {
@@ -78,7 +78,7 @@ const CommitTrendChart: React.FC = () => {
       },
     },
     yAxis: {
-      type: "log",
+      type: 'log',
       logBase: 10,
       axisLabel: {
         color: theme.palette.text.secondary,
@@ -105,10 +105,10 @@ const CommitTrendChart: React.FC = () => {
     },
     series: [
       {
-        name: "Lines Committed",
-        type: "line",
+        name: 'Lines Committed',
+        type: 'line',
         data: filteredData?.map((item) =>
-          typeof item.linesCommitted === "string"
+          typeof item.linesCommitted === 'string'
             ? parseInt(item.linesCommitted)
             : item.linesCommitted,
         ),
@@ -122,7 +122,7 @@ const CommitTrendChart: React.FC = () => {
         },
         areaStyle: {
           color: {
-            type: "linear",
+            type: 'linear',
             x: 0,
             y: 0,
             x2: 0,
@@ -130,17 +130,17 @@ const CommitTrendChart: React.FC = () => {
             colorStops: [
               {
                 offset: 0,
-                color: theme.palette.primary.main + "40",
+                color: `${theme.palette.primary.main  }40`,
               },
               {
                 offset: 1,
-                color: theme.palette.primary.main + "10",
+                color: `${theme.palette.primary.main  }10`,
               },
             ],
           },
         },
         emphasis: {
-          focus: "series",
+          focus: 'series',
         },
       },
     ],
@@ -150,21 +150,21 @@ const CommitTrendChart: React.FC = () => {
     <Card
       sx={{
         borderRadius: 3,
-        border: "1px solid rgba(255, 255, 255, 0.1)",
-        backgroundColor: "transparent",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'transparent',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
       }}
       elevation={0}
     >
       <CardContent
         sx={{
           flex: 1,
-          display: "flex",
-          flexDirection: "column",
+          display: 'flex',
+          flexDirection: 'column',
           p: isMobile ? 1.5 : 2,
-          "&:last-child": { pb: isMobile ? 1.5 : 2 },
+          '&:last-child': { pb: isMobile ? 1.5 : 2 },
           minHeight: 0,
         }}
       >
@@ -173,7 +173,7 @@ const CommitTrendChart: React.FC = () => {
           gutterBottom
           sx={{
             mb: isMobile ? 0.5 : 1,
-            fontSize: isMobile ? "0.9rem" : "1rem",
+            fontSize: isMobile ? '0.9rem' : '1rem',
             fontFamily: '"JetBrains Mono", monospace',
             fontWeight: 500,
             flexShrink: 0,
@@ -183,8 +183,8 @@ const CommitTrendChart: React.FC = () => {
         </Typography>
         <ReactECharts
           option={option}
-          style={{ height: "100%", width: "100%", flex: "1 1 0", minHeight: 0 }}
-          opts={{ renderer: "canvas" }}
+          style={{ height: '100%', width: '100%', flex: '1 1 0', minHeight: 0 }}
+          opts={{ renderer: 'canvas' }}
         />
       </CardContent>
     </Card>

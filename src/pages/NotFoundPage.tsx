@@ -1,16 +1,15 @@
-import React from "react";
-import { FaceFrownIcon } from "@heroicons/react/24/outline";
-import { Stack, Typography } from "@mui/material";
+import React from 'react';
+import { FaceFrownIcon } from '@heroicons/react/24/outline';
+import { Stack, Typography } from '@mui/material';
 
-const NotFoundPage: React.FC = () => {
-  return (
+const NotFoundPage: React.FC = () => (
     <Stack
       sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        width: "100%",
-        height: "100%",
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: '100%',
+        height: '100%',
       }}
       direction="row"
       gap={2}
@@ -20,11 +19,10 @@ const NotFoundPage: React.FC = () => {
         style={{
           height: 32,
           width: 32,
-          backgroundColor: "primary.main",
+          backgroundColor: 'primary.main',
         }}
       />
     </Stack>
   );
-};
 
 export default NotFoundPage;

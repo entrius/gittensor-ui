@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Box,
   Typography,
@@ -7,10 +7,10 @@ import {
   Link,
   CircularProgress,
   Chip,
-} from "@mui/material";
-import { usePullRequestComments } from "../../api";
-import { PullRequestDetails } from "../../api/models/Dashboard";
-import "github-markdown-css/github-markdown-dark.css"; // Import standard GitHub Dark styles
+} from '@mui/material';
+import { usePullRequestComments } from '../../api';
+import { type PullRequestDetails } from '../../api/models/Dashboard';
+import 'github-markdown-css/github-markdown-dark.css'; // Import standard GitHub Dark styles
 
 interface PRCommentsProps {
   repository: string;
@@ -31,15 +31,15 @@ const PRComments: React.FC<PRCommentsProps> = ({
 
   if (isLoading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-        <CircularProgress size={30} sx={{ color: "primary.main" }} />
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+        <CircularProgress size={30} sx={{ color: 'primary.main' }} />
       </Box>
     );
   }
 
   if (error || !comments) {
     return (
-      <Box sx={{ p: 4, textAlign: "center" }}>
+      <Box sx={{ p: 4, textAlign: 'center' }}>
         <Typography color="error">
           Failed to load comments. Please try again later.
         </Typography>
@@ -49,15 +49,15 @@ const PRComments: React.FC<PRCommentsProps> = ({
 
   const allItems = [
     {
-      id: "pr-description",
+      id: 'pr-description',
       user: {
         login: prDetails.authorLogin,
         avatarUrl: `https://avatars.githubusercontent.com/${prDetails.authorLogin}`,
         htmlUrl: `https://github.com/${prDetails.authorLogin}`,
       },
-      body: prDetails.description || "*No description provided.*",
+      body: prDetails.description || '*No description provided.*',
       createdAt: prDetails.createdAt,
-      authorAssociation: "OWNER",
+      authorAssociation: 'OWNER',
       isDescription: true,
     },
     ...comments,
@@ -66,60 +66,60 @@ const PRComments: React.FC<PRCommentsProps> = ({
   // Premium Dark Theme Colors
   const colors = {
     canvas: {
-      default: "#0d1117",
-      subtle: "#161b22",
-      box: "#0d1117",
+      default: '#0d1117',
+      subtle: '#161b22',
+      box: '#0d1117',
     },
     border: {
-      default: "#30363d",
-      muted: "#21262d",
+      default: '#30363d',
+      muted: '#21262d',
     },
     fg: {
-      default: "#c9d1d9",
-      muted: "#8b949e",
+      default: '#c9d1d9',
+      muted: '#8b949e',
     },
     accent: {
-      fg: "#58a6ff",
+      fg: '#58a6ff',
     },
     timeline: {
-      line: "#30363d",
+      line: '#30363d',
     },
   };
 
   return (
     <Box
       sx={{
-        display: "flex",
-        flexDirection: "column",
+        display: 'flex',
+        flexDirection: 'column',
         gap: 3,
         pt: 2,
-        maxWidth: "960px", // Widen slightly for better code block readability
-        mx: "auto",
-        position: "relative",
+        maxWidth: '960px', // Widen slightly for better code block readability
+        mx: 'auto',
+        position: 'relative',
       }}
     >
       {allItems.map((item: any, index: number) => (
         <Box
           key={item.id}
           sx={{
-            display: "flex",
+            display: 'flex',
             gap: 2,
-            position: "relative",
+            position: 'relative',
             zIndex: 1,
-            "&::before": {
-              content: index !== allItems.length - 1 ? '""' : "none",
-              position: "absolute",
-              top: "40px",
-              bottom: "-24px",
-              left: "20px",
-              width: "2px",
+            '&::before': {
+              content: index !== allItems.length - 1 ? '""' : 'none',
+              position: 'absolute',
+              top: '40px',
+              bottom: '-24px',
+              left: '20px',
+              width: '2px',
               backgroundColor: colors.timeline.line,
               zIndex: 0,
             },
           }}
         >
           {/* Avatar Area */}
-          <Box sx={{ position: "relative", zIndex: 1 }}>
+          <Box sx={{ position: 'relative', zIndex: 1 }}>
             <Link
               href={item.user.htmlUrl}
               target="_blank"
@@ -131,8 +131,8 @@ const PRComments: React.FC<PRCommentsProps> = ({
                 sx={{
                   width: 40,
                   height: 40,
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  backgroundColor: "#0d1117", // Avoid transparency issues over the line
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  backgroundColor: '#0d1117', // Avoid transparency issues over the line
                 }}
               />
             </Link>
@@ -146,20 +146,20 @@ const PRComments: React.FC<PRCommentsProps> = ({
               minWidth: 0,
               backgroundColor: colors.canvas.box,
               border: `1px solid ${colors.border.default}`,
-              borderRadius: "6px",
-              position: "relative",
-              "&::after": {
+              borderRadius: '6px',
+              position: 'relative',
+              '&::after': {
                 content: '""',
-                position: "absolute",
-                top: "11px",
-                right: "100%",
-                left: "-8px",
-                width: "16px",
-                height: "16px",
+                position: 'absolute',
+                top: '11px',
+                right: '100%',
+                left: '-8px',
+                width: '16px',
+                height: '16px',
                 backgroundColor: colors.canvas.subtle, // Match the header background
                 borderBottom: `1px solid ${colors.border.default}`, // Only bottom and left create the visible arrow borders
                 borderLeft: `1px solid ${colors.border.default}`,
-                transform: "rotate(45deg)",
+                transform: 'rotate(45deg)',
               },
             }}
           >
@@ -170,23 +170,23 @@ const PRComments: React.FC<PRCommentsProps> = ({
                 py: 1.5, // Slightly more vertical padding
                 backgroundColor: colors.canvas.subtle,
                 borderBottom: `1px solid ${colors.border.default}`,
-                borderTopLeftRadius: "6px",
-                borderTopRightRadius: "6px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
+                borderTopLeftRadius: '6px',
+                borderTopRightRadius: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
                 color: colors.fg.muted,
-                fontSize: "14px",
-                position: "relative",
+                fontSize: '14px',
+                position: 'relative',
                 zIndex: 1, // Ensure above the arrow pseudo-element's main body
               }}
             >
               <Box
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: 1,
-                  flexWrap: "wrap",
+                  flexWrap: 'wrap',
                 }}
               >
                 <Link
@@ -196,9 +196,9 @@ const PRComments: React.FC<PRCommentsProps> = ({
                   sx={{
                     color: colors.fg.default,
                     fontWeight: 600,
-                    textDecoration: "none",
-                    "&:hover": {
-                      textDecoration: "underline",
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline',
                       color: colors.accent.fg,
                     },
                   }}
@@ -207,35 +207,35 @@ const PRComments: React.FC<PRCommentsProps> = ({
                 </Link>
                 <Typography
                   component="span"
-                  sx={{ fontSize: "inherit", color: "inherit" }}
+                  sx={{ fontSize: 'inherit', color: 'inherit' }}
                 >
                   commented
                 </Typography>
                 <Typography
                   component="span"
-                  sx={{ fontSize: "inherit", color: "inherit" }}
+                  sx={{ fontSize: 'inherit', color: 'inherit' }}
                 >
-                  {new Date(item.createdAt).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
+                  {new Date(item.createdAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
                   })}
                 </Typography>
               </Box>
 
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 {/* Author Association Badge */}
                 {item.authorAssociation &&
-                  item.authorAssociation !== "NONE" && (
+                  item.authorAssociation !== 'NONE' && (
                     <Chip
                       variant="status"
                       label={item.authorAssociation
                         .toLowerCase()
-                        .replace("_", " ")}
+                        .replace('_', ' ')}
                       sx={{
                         color: colors.fg.muted,
                         borderColor: colors.border.default,
-                        textTransform: "capitalize",
+                        textTransform: 'capitalize',
                       }}
                     />
                   )}
@@ -245,8 +245,8 @@ const PRComments: React.FC<PRCommentsProps> = ({
                     variant="status"
                     label="Description"
                     sx={{
-                      color: "#58a6ff",
-                      borderColor: "rgba(56, 139, 253, 0.4)",
+                      color: '#58a6ff',
+                      borderColor: 'rgba(56, 139, 253, 0.4)',
                     }}
                   />
                 )}
@@ -258,15 +258,15 @@ const PRComments: React.FC<PRCommentsProps> = ({
               sx={{
                 p: { xs: 2, md: 3 }, // More padding on larger screens
                 color: colors.fg.default,
-                fontSize: "14px",
+                fontSize: '14px',
                 lineHeight: 1.6,
                 fontFamily:
                   '-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji"', // GitHub's exact font stack
-                overflowX: "auto",
+                overflowX: 'auto',
                 // Typography refinements
-                "& > *:first-of-type": { mt: 0 },
-                "& > *:last-child": { mb: 0 },
-                "& h1, & h2, & h3, & h4, & h5, & h6": {
+                '& > *:first-of-type': { mt: 0 },
+                '& > *:last-child': { mb: 0 },
+                '& h1, & h2, & h3, & h4, & h5, & h6': {
                   mt: 3,
                   mb: 2,
                   fontWeight: 600,
@@ -275,49 +275,49 @@ const PRComments: React.FC<PRCommentsProps> = ({
                   borderBottom: `1px solid ${colors.border.muted}`,
                   pb: 0.3,
                 },
-                "& h1": { fontSize: "2em" },
-                "& h2": { fontSize: "1.5em" },
-                "& a": { color: colors.accent.fg, textDecoration: "none" },
-                "& a:hover": { textDecoration: "underline" },
-                "& blockquote": {
-                  padding: "0 1em",
+                '& h1': { fontSize: '2em' },
+                '& h2': { fontSize: '1.5em' },
+                '& a': { color: colors.accent.fg, textDecoration: 'none' },
+                '& a:hover': { textDecoration: 'underline' },
+                '& blockquote': {
+                  padding: '0 1em',
                   color: colors.fg.muted,
                   borderLeft: `0.25em solid ${colors.border.default}`,
                   my: 2,
                 },
                 // Updated Code Block Styling
-                "& code": {
-                  padding: "0.2em 0.4em",
+                '& code': {
+                  padding: '0.2em 0.4em',
                   margin: 0,
-                  fontSize: "85%",
-                  backgroundColor: "rgba(110, 118, 129, 0.4)",
-                  borderRadius: "6px",
+                  fontSize: '85%',
+                  backgroundColor: 'rgba(110, 118, 129, 0.4)',
+                  borderRadius: '6px',
                   fontFamily: '"JetBrains Mono", monospace',
                 },
-                "& pre": {
+                '& pre': {
                   mt: 2,
                   mb: 2,
-                  borderRadius: "6px",
-                  overflow: "hidden", // Let SyntaxHighlighter handle scroll
+                  borderRadius: '6px',
+                  overflow: 'hidden', // Let SyntaxHighlighter handle scroll
                 },
-                "& img": {
-                  maxWidth: "100%",
-                  borderRadius: "6px",
-                  backgroundColor: "transparent",
+                '& img': {
+                  maxWidth: '100%',
+                  borderRadius: '6px',
+                  backgroundColor: 'transparent',
                 },
-                "& .markdown-body": {
-                  backgroundColor: "transparent",
+                '& .markdown-body': {
+                  backgroundColor: 'transparent',
                   color: colors.fg.default,
-                  fontFamily: "inherit",
-                  fontSize: "14px",
+                  fontFamily: 'inherit',
+                  fontSize: '14px',
                   lineHeight: 1.6,
                 },
-                "& .markdown-body pre": {
-                  backgroundColor: "#161b22", // Distinct code block background
+                '& .markdown-body pre': {
+                  backgroundColor: '#161b22', // Distinct code block background
                   border: `1px solid ${colors.border.default}`,
-                  borderRadius: "6px",
+                  borderRadius: '6px',
                 },
-                "& .markdown-body code": {
+                '& .markdown-body code': {
                   fontFamily: '"JetBrains Mono", monospace',
                 },
               }}
@@ -325,7 +325,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
               <div
                 className="markdown-body"
                 dangerouslySetInnerHTML={{ __html: item.body }}
-                style={{ fontSize: "14px" }}
+                style={{ fontSize: '14px' }}
               />
             </Box>
           </Paper>

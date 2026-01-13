@@ -1,10 +1,10 @@
 // Miner API hooks - uses /miners endpoints
-import { useApiQuery } from "./ApiUtils";
+import { useApiQuery } from './ApiUtils';
 import {
-  GithubMinerData,
-  MinerEvaluation,
-  CommitLog,
-} from "./models/Dashboard";
+  type GithubMinerData,
+  type MinerEvaluation,
+  type CommitLog,
+} from './models/Dashboard';
 
 /**
  * Helper to create /miners endpoint queries
@@ -30,14 +30,14 @@ const useMinersQuery = <TResponse = void, TSelect = TResponse>(
  * Ideal for leaderboards
  */
 export const useAllMiners = () =>
-  useMinersQuery<MinerEvaluation[]>("useAllMiners", "");
+  useMinersQuery<MinerEvaluation[]>('useAllMiners', '');
 
 /**
  * Get pre-computed stats for a specific miner
  * @param githubId - Numeric GitHub ID (e.g., "583231"), NOT username
  */
 export const useMinerStats = (githubId: string) =>
-  useMinersQuery<MinerEvaluation>("useMinerStats", `/${githubId}`);
+  useMinersQuery<MinerEvaluation>('useMinerStats', `/${githubId}`);
 
 /**
  * Get all pull requests for a specific miner
@@ -46,7 +46,7 @@ export const useMinerStats = (githubId: string) =>
  */
 export const useMinerPRs = (githubId: string, enabled?: boolean) =>
   useMinersQuery<CommitLog[]>(
-    "useMinerPRs",
+    'useMinerPRs',
     `/${githubId}/prs`,
     undefined,
     undefined,
@@ -60,7 +60,7 @@ export const useMinerPRs = (githubId: string, enabled?: boolean) =>
  */
 export const useMinerGithubData = (githubId: string, enabled?: boolean) =>
   useMinersQuery<GithubMinerData>(
-    "useMinerGithubData",
+    'useMinerGithubData',
     `/${githubId}/github`,
     undefined,
     undefined,
