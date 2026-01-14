@@ -219,7 +219,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
       subItems: [
         {
           label: 'Lines',
-          value: Number(minerStats.linesChanged || 0).toLocaleString(),
+          value: Number(
+            (minerStats?.totalAdditions ?? 0) +
+              (minerStats?.totalDeletions ?? 0),
+          ).toLocaleString(),
         },
       ],
     },
