@@ -49,7 +49,9 @@ const getTooltipMessage = (
   const reqTokenScore = config.requiredMinTokenScore;
 
   if (isNextTier) {
-    const tokenScoreReq = reqTokenScore ? ` with ${reqTokenScore}+ total token score and` : '';
+    const tokenScoreReq = reqTokenScore
+      ? ` with ${reqTokenScore}+ total token score and`
+      : '';
     return `${tierName} tier unlock in progress. Requires${tokenScoreReq} ${reqQualifiedRepos} qualified repos (each with ${reqTokenScorePerRepo}+ token score) and ${reqCred}%+ credibility.`;
   }
 
@@ -184,7 +186,8 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
           const qualifiedReposCount = tier.stats.qualifiedUniqueRepos || 0;
           const credibility = tier.stats.credibility || 0;
           const requiredTokenScore = config?.requiredMinTokenScore ?? null;
-          const requiredQualifiedRepos = config?.requiredQualifiedUniqueRepos || 3;
+          const requiredQualifiedRepos =
+            config?.requiredQualifiedUniqueRepos || 3;
           const requiredCredibility = config?.requiredCredibility || 0.7;
 
           const tokenScoreProgress = requiredTokenScore
