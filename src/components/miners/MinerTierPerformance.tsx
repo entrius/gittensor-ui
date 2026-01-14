@@ -43,12 +43,14 @@ const getTooltipMessage = (
     return `${tierName} tier isn't unlocked yet, so contributions earn 0 points. It will only be eligible to unlock after ${prevTier} is unlocked.`;
   }
 
-  const reqMerges = config.requiredMerges;
-  const reqUniqueRepos = config.requiredUniqueReposMergedTo;
+  const reqQualifiedRepos = config.requiredQualifiedUniqueRepos;
+  const reqTokenScorePerRepo = config.requiredMinTokenScorePerRepo;
   const reqCred = (config.requiredCredibility * 100).toFixed(0);
+  const reqTokenScore = config.requiredMinTokenScore;
 
   if (isNextTier) {
-    return `${tierName} tier unlock in progress. Requires ${reqMerges} successful merges to ${reqUniqueRepos} unique ${tierName.toLowerCase()} tier repositories with ${reqCred}%+ credibility.`;
+    const tokenScoreReq = reqTokenScore ? ` with ${reqTokenScore}+ total token score and` : '';
+    return `${tierName} tier unlock in progress. Requires${tokenScoreReq} ${reqQualifiedRepos} qualified repos (each with ${reqTokenScorePerRepo}+ token score) and ${reqCred}%+ credibility.`;
   }
 
   const prevTier = getPreviousTierName(tierLevel);
@@ -95,6 +97,8 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
         total: minerStats.bronzeTotalPrs,
         collateral: minerStats.bronzeCollateralScore,
         uniqueRepos: minerStats.bronzeUniqueRepos,
+        qualifiedUniqueRepos: minerStats.bronzeQualifiedUniqueRepos,
+        tokenScore: minerStats.bronzeTokenScore,
       },
     },
     {
@@ -111,6 +115,8 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
         total: minerStats.silverTotalPrs,
         collateral: minerStats.silverCollateralScore,
         uniqueRepos: minerStats.silverUniqueRepos,
+        qualifiedUniqueRepos: minerStats.silverQualifiedUniqueRepos,
+        tokenScore: minerStats.silverTokenScore,
       },
     },
     {
@@ -127,6 +133,8 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
         total: minerStats.goldTotalPrs,
         collateral: minerStats.goldCollateralScore,
         uniqueRepos: minerStats.goldUniqueRepos,
+        qualifiedUniqueRepos: minerStats.goldQualifiedUniqueRepos,
+        tokenScore: minerStats.goldTokenScore,
       },
     },
   ];
@@ -172,19 +180,18 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
           const config = getTierConfig(tier.name, tierConfigs);
 
           // Calculate progress towards unlocking this tier
-          const mergedCount = tier.stats.merged || 0;
-          const uniqueReposCount = tier.stats.uniqueRepos || 0;
+          const tokenScore = tier.stats.tokenScore || 0;
+          const qualifiedReposCount = tier.stats.qualifiedUniqueRepos || 0;
           const credibility = tier.stats.credibility || 0;
-          const requiredMerges = config?.requiredMerges || 3;
-          const requiredUniqueRepos = config?.requiredUniqueReposMergedTo || 3;
+          const requiredTokenScore = config?.requiredMinTokenScore ?? null;
+          const requiredQualifiedRepos = config?.requiredQualifiedUniqueRepos || 3;
           const requiredCredibility = config?.requiredCredibility || 0.7;
 
-          const mergeProgress = Math.min(
-            (mergedCount / requiredMerges) * 100,
-            100,
-          );
-          const uniqueReposProgress = Math.min(
-            (uniqueReposCount / requiredUniqueRepos) * 100,
+          const tokenScoreProgress = requiredTokenScore
+            ? Math.min((tokenScore / requiredTokenScore) * 100, 100)
+            : 100;
+          const qualifiedReposProgress = Math.min(
+            (qualifiedReposCount / requiredQualifiedRepos) * 100,
             100,
           );
           const credibilityProgress = Math.min(
@@ -195,12 +202,12 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
           const unlockProgress =
             (isNextTier || !isLocked) && config
               ? {
-                  mergedCount,
-                  requiredMerges,
-                  mergeProgress,
-                  uniqueReposCount,
-                  requiredUniqueRepos,
-                  uniqueReposProgress,
+                  tokenScore,
+                  requiredTokenScore,
+                  tokenScoreProgress,
+                  qualifiedReposCount,
+                  requiredQualifiedRepos,
+                  qualifiedReposProgress,
                   credibility,
                   requiredCredibility,
                   credibilityProgress,

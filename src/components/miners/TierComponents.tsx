@@ -255,12 +255,12 @@ export const TierPRActivity: React.FC<TierPRActivityProps> = ({
 
 // TierUnlockProgress component
 interface TierUnlockProgressProps {
-  mergedCount: number;
-  requiredMerges: number;
-  mergeProgress: number;
-  uniqueReposCount: number;
-  requiredUniqueRepos: number;
-  uniqueReposProgress: number;
+  tokenScore: number;
+  requiredTokenScore: number | null;
+  tokenScoreProgress: number;
+  qualifiedReposCount: number;
+  requiredQualifiedRepos: number;
+  qualifiedReposProgress: number;
   credibility: number;
   requiredCredibility: number;
   credibilityProgress: number;
@@ -270,12 +270,12 @@ interface TierUnlockProgressProps {
 }
 
 export const TierUnlockProgress: React.FC<TierUnlockProgressProps> = ({
-  mergedCount,
-  requiredMerges,
-  mergeProgress,
-  uniqueReposCount,
-  requiredUniqueRepos,
-  uniqueReposProgress,
+  tokenScore,
+  requiredTokenScore,
+  tokenScoreProgress,
+  qualifiedReposCount,
+  requiredQualifiedRepos,
+  qualifiedReposProgress,
   credibility,
   requiredCredibility,
   credibilityProgress,
@@ -302,19 +302,21 @@ export const TierUnlockProgress: React.FC<TierUnlockProgressProps> = ({
       {title}
     </Typography>
 
-    <TierProgressBar
-      label="Merges"
-      current={mergedCount}
-      required={requiredMerges}
-      progress={mergeProgress}
-      tierColor={tierColor}
-    />
+    {requiredTokenScore !== null && (
+      <TierProgressBar
+        label="Token Score"
+        current={Math.round(tokenScore)}
+        required={requiredTokenScore}
+        progress={tokenScoreProgress}
+        tierColor={tierColor}
+      />
+    )}
 
     <TierProgressBar
-      label="Unique Repos"
-      current={uniqueReposCount}
-      required={requiredUniqueRepos}
-      progress={uniqueReposProgress}
+      label="Qualified Repos"
+      current={qualifiedReposCount}
+      required={requiredQualifiedRepos}
+      progress={qualifiedReposProgress}
       tierColor={tierColor}
     />
 
@@ -337,6 +339,8 @@ interface TierStats {
   total?: number;
   collateral?: number;
   uniqueRepos?: number;
+  qualifiedUniqueRepos?: number;
+  tokenScore?: number;
 }
 
 interface TierCardProps {
@@ -349,12 +353,12 @@ interface TierCardProps {
   isNextTier: boolean;
   tooltipMessage?: string;
   unlockProgress?: {
-    mergedCount: number;
-    requiredMerges: number;
-    mergeProgress: number;
-    uniqueReposCount: number;
-    requiredUniqueRepos: number;
-    uniqueReposProgress: number;
+    tokenScore: number;
+    requiredTokenScore: number | null;
+    tokenScoreProgress: number;
+    qualifiedReposCount: number;
+    requiredQualifiedRepos: number;
+    qualifiedReposProgress: number;
     credibility: number;
     requiredCredibility: number;
     credibilityProgress: number;
@@ -485,12 +489,12 @@ export const TierCard: React.FC<TierCardProps> = ({
 
         {unlockProgress && (
           <TierUnlockProgress
-            mergedCount={unlockProgress.mergedCount}
-            requiredMerges={unlockProgress.requiredMerges}
-            mergeProgress={unlockProgress.mergeProgress}
-            uniqueReposCount={unlockProgress.uniqueReposCount}
-            requiredUniqueRepos={unlockProgress.requiredUniqueRepos}
-            uniqueReposProgress={unlockProgress.uniqueReposProgress}
+            tokenScore={unlockProgress.tokenScore}
+            requiredTokenScore={unlockProgress.requiredTokenScore}
+            tokenScoreProgress={unlockProgress.tokenScoreProgress}
+            qualifiedReposCount={unlockProgress.qualifiedReposCount}
+            requiredQualifiedRepos={unlockProgress.requiredQualifiedRepos}
+            qualifiedReposProgress={unlockProgress.qualifiedReposProgress}
             credibility={unlockProgress.credibility}
             requiredCredibility={unlockProgress.requiredCredibility}
             credibilityProgress={unlockProgress.credibilityProgress}

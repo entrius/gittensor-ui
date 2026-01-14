@@ -1,9 +1,10 @@
 export interface TierConfig {
   name: string;
   level: number;
-  requiredMerges: number;
-  requiredUniqueReposMergedTo: number;
   requiredCredibility: number;
+  requiredMinTokenScore: number | null;
+  requiredMinTokenScorePerRepo: number;
+  requiredQualifiedUniqueRepos: number;
   credibilityScalar: number;
   mergedPrBaseScore: number;
   contributionScoreForFullBonus: number;

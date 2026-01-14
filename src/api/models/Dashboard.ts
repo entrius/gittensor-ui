@@ -94,6 +94,16 @@ export type CommitLog = {
   baseScore?: string; // Backend returns as string
   tier: string | null; // Bronze, Silver, Gold - from joined repositories table (null if repo not registered)
 
+  // Token scoring fields
+  totalNodesScored?: number;
+  rawCredibility?: number;
+  credibilityScalar?: number;
+  tokenScore?: number;
+  structuralCount?: number;
+  structuralScore?: number;
+  leafCount?: number;
+  leafScore?: number;
+
   // TODO: these values do not come in the /dash/commits endpoint, refactor to perhaps make a new model to include these attributes
   // Payout predictions (from /miners/all/prs endpoint)
   // Note: dollar values are null for open PRs, only calculated for merged PRs
@@ -115,33 +125,55 @@ export type MinerEvaluation = {
   failedReason: string;
   baseTotalScore: number;
   totalScore: number;
-  totalLinesChanged: number;
+  totalNodesScored: number;
   totalOpenPrs: number;
   totalPrs: number;
   uniqueReposCount: number;
+  qualifiedUniqueReposCount?: number;
   // Tier system properties
   currentTier?: string;
   totalCollateralScore?: number;
   totalClosedPrs?: number;
   totalMergedPrs?: number;
+  // Total token scoring fields
+  totalTokenScore?: number;
+  totalStructuralCount?: number;
+  totalStructuralScore?: number;
+  totalLeafCount?: number;
+  totalLeafScore?: number;
   // Bronze tier
   bronzeMergedPrs?: number;
   bronzeClosedPrs?: number;
   bronzeTotalPrs?: number;
   bronzeCollateralScore?: number;
   bronzeScore?: number;
+  bronzeTokenScore?: number;
+  bronzeStructuralCount?: number;
+  bronzeStructuralScore?: number;
+  bronzeLeafCount?: number;
+  bronzeLeafScore?: number;
   // Silver tier
   silverMergedPrs?: number;
   silverClosedPrs?: number;
   silverTotalPrs?: number;
   silverCollateralScore?: number;
   silverScore?: number;
+  silverTokenScore?: number;
+  silverStructuralCount?: number;
+  silverStructuralScore?: number;
+  silverLeafCount?: number;
+  silverLeafScore?: number;
   // Gold tier
   goldMergedPrs?: number;
   goldClosedPrs?: number;
   goldTotalPrs?: number;
   goldCollateralScore?: number;
   goldScore?: number;
+  goldTokenScore?: number;
+  goldStructuralCount?: number;
+  goldStructuralScore?: number;
+  goldLeafCount?: number;
+  goldLeafScore?: number;
   // Credibility metrics (PR success rates as decimals 0-1)
   credibility?: number;
   bronzeCredibility?: number;
@@ -149,8 +181,11 @@ export type MinerEvaluation = {
   goldCredibility?: number;
   // Unique repo contribution counts per tier
   bronzeUniqueRepos?: number;
+  bronzeQualifiedUniqueRepos?: number;
   silverUniqueRepos?: number;
+  silverQualifiedUniqueRepos?: number;
   goldUniqueRepos?: number;
+  goldQualifiedUniqueRepos?: number;
   // Timestamps
   evaluatedAt: string;
   createdAt: string;
@@ -220,7 +255,15 @@ export type PullRequestDetails = {
   additions: number;
   deletions: number;
   commits: number;
-  totalLinesScored: number;
+  // Token scoring fields
+  totalNodesScored: number;
+  rawCredibility: number;
+  credibilityScalar: number;
+  tokenScore: number;
+  structuralCount: number;
+  structuralScore: number;
+  leafCount: number;
+  leafScore: number;
   gittensorTagged: boolean;
   mergedByLogin: string | null;
   description: string | null;

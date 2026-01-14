@@ -96,7 +96,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     },
     {
       label: 'Lines Scored',
-      value: prDetails.totalLinesScored.toLocaleString(),
+      value: prDetails.totalNodesScored.toLocaleString(),
       rank: null,
     },
     {

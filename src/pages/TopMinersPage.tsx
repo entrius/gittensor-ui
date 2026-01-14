@@ -26,7 +26,7 @@ const TopMinersPage: React.FC = () => {
       totalScore: Number(stat.totalScore) || 0,
       baseTotalScore: Number(stat.baseTotalScore) || 0,
       totalPRs: Number(stat.totalPrs) || 0,
-      linesChanged: Number(stat.totalLinesChanged) || 0,
+      linesChanged: Number(stat.totalNodesScored) || 0,
       linesAdded: Number(stat.totalAdditions) || 0,
       linesDeleted: Number(stat.totalDeletions) || 0,
       hotkey: stat.hotkey || 'N/A',
