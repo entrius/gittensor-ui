@@ -76,9 +76,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
     const linesRanking =
       allMinersStats
         .slice()
-        .sort(
-          (a, b) => Number(b.totalLinesChanged) - Number(a.totalLinesChanged),
-        )
+        .sort((a, b) => Number(b.totalNodesScored) - Number(a.totalNodesScored))
         .findIndex((m) => m.githubId === githubId) + 1;
 
     const reposRanking =
@@ -202,20 +200,28 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
       ],
     },
     {
+      label: 'Token Score',
+      value: Number(minerStats.totalTokenScore || 0).toFixed(2),
+      rank: null,
+      subItems: [
+        {
+          label: 'Tokens Changed',
+          value: Number(minerStats.totalNodesScored || 0).toLocaleString(),
+        },
+      ],
+      tooltip:
+        'Total token score from all merged PRs. Tokens are the individual code elements (functions, classes, etc.) that were scored.',
+    },
+    {
       label: 'PR Activity',
       value: `${Number(minerStats.totalPrs || 0)} PRs`,
       rank: rankings?.totalPrs,
       subItems: [
         {
           label: 'Lines',
-          value: Number(minerStats.totalLinesChanged || 0).toLocaleString(),
+          value: Number(minerStats.linesChanged || 0).toLocaleString(),
         },
       ],
-    },
-    {
-      label: 'Unique Repos',
-      value: Number(minerStats.uniqueReposCount || 0),
-      rank: rankings?.uniqueRepos,
     },
     {
       label: 'Open Risk',

@@ -95,8 +95,13 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
       color: 'rgba(255, 255, 255, 0.7)',
     },
     {
-      label: 'Lines Scored',
-      value: prDetails.totalLinesScored.toLocaleString(),
+      label: 'Tokens Scored',
+      value: prDetails.totalNodesScored.toLocaleString(),
+      rank: null,
+    },
+    {
+      label: 'Token Score',
+      value: parseFloat(prDetails.tokenScore).toFixed(2),
       rank: null,
     },
     {
