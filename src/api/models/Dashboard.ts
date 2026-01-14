@@ -22,6 +22,7 @@ export type Repository = {
 export type LanguageWeight = {
   extension: string;
   weight: string; // bc float
+  language: string | null; // Canonical language name (e.g., "python" for .py, .pyi)
 };
 
 export type CommitsTrend = {
@@ -259,7 +260,7 @@ export type PullRequestDetails = {
   totalNodesScored: number;
   rawCredibility: number;
   credibilityScalar: number;
-  tokenScore: number;
+  tokenScore: string;
   structuralCount: number;
   structuralScore: number;
   leafCount: number;

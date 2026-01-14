@@ -21,13 +21,14 @@ import {
   Collapse,
   Tooltip,
 } from '@mui/material';
-import { Search } from '@mui/icons-material';
+import { Search, Check, Close } from '@mui/icons-material';
 import ReactECharts from 'echarts-for-react';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
+import theme from '../../theme';
 import { useLanguagesAndWeights } from '../../api';
 
-type SortField = 'extension' | 'weight';
+type SortField = 'extension' | 'weight' | 'language';
 type SortOrder = 'asc' | 'desc';
 
 const LanguageWeightsTable: React.FC = () => {
@@ -71,30 +72,36 @@ const LanguageWeightsTable: React.FC = () => {
 
     const filtered = languages.filter((lang) => {
       const searchLower = searchQuery.toLowerCase();
-      return lang.extension.toLowerCase().includes(searchLower);
+      return (
+        lang.extension.toLowerCase().includes(searchLower) ||
+        (lang.language && lang.language.toLowerCase().includes(searchLower))
+      );
     });
 
     filtered.sort((a, b) => {
-      let aValue: string | number;
-      let bValue: string | number;
+      let aValue: string | number | null;
+      let bValue: string | number | null;
 
       if (sortField === 'extension') {
         aValue = a.extension;
         bValue = b.extension;
+      } else if (sortField === 'language') {
+        aValue = a.language || '';
+        bValue = b.language || '';
       } else {
         aValue = a.weight;
         bValue = b.weight;
       }
 
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
+      if (sortField === 'weight') {
         return sortOrder === 'asc'
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
+          ? parseFloat(aValue as string) - parseFloat(bValue as string)
+          : parseFloat(bValue as string) - parseFloat(aValue as string);
       }
 
       return sortOrder === 'asc'
-        ? parseFloat(aValue as string) - parseFloat(bValue as string)
-        : parseFloat(bValue as string) - parseFloat(aValue as string);
+        ? (aValue as string).localeCompare(bValue as string)
+        : (bValue as string).localeCompare(aValue as string);
     });
 
     return filtered;
@@ -389,6 +396,43 @@ const LanguageWeightsTable: React.FC = () => {
                   </TableSortLabel>
                 </TableCell>
                 <TableCell
+                  sx={{
+                    backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                    backdropFilter: 'blur(8px)',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  }}
+                >
+                  <TableSortLabel
+                    active={sortField === 'language'}
+                    direction={sortField === 'language' ? sortOrder : 'asc'}
+                    onClick={() => handleSort('language')}
+                    sx={{
+                      '&:hover': {
+                        color: 'secondary.main',
+                      },
+                      '&.Mui-active': {
+                        color: 'secondary.main',
+                      },
+                    }}
+                  >
+                    <Typography variant="dataLabel">Language</Typography>
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell
+                  align="center"
+                  sx={{
+                    backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                    backdropFilter: 'blur(8px)',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  }}
+                >
+                  <Tooltip title="Indicates if this extension supports token-based scoring. Token scoring uses AST parsing for more accurate contribution measurement.">
+                    <Typography variant="dataLabel" sx={{ cursor: 'pointer' }}>
+                      Token Scoring
+                    </Typography>
+                  </Tooltip>
+                </TableCell>
+                <TableCell
                   align="right"
                   sx={{
                     backgroundColor: 'rgba(18, 18, 20, 0.95)',
@@ -421,6 +465,33 @@ const LanguageWeightsTable: React.FC = () => {
                     <Typography variant="body1" fontWeight="medium">
                       {lang.extension}
                     </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: lang.language ? 'text.primary' : 'text.disabled',
+                      }}
+                    >
+                      {lang.language || '-'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="center">
+                    {lang.language ? (
+                      <Check
+                        sx={{
+                          color: theme.palette.status.success,
+                          fontSize: '1.2rem',
+                        }}
+                      />
+                    ) : (
+                      <Close
+                        sx={{
+                          color: theme.palette.status.error,
+                          fontSize: '1.2rem',
+                        }}
+                      />
+                    )}
                   </TableCell>
                   <TableCell align="right">
                     <Typography variant="dataValue">{lang.weight}</Typography>
