@@ -90,18 +90,18 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   const statItems = [
     {
       label: 'Base Score',
-      value: parseFloat(prDetails.baseScore || 0).toFixed(2),
+      value: parseFloat(prDetails.baseScore ?? '0').toFixed(2),
       rank: null,
       color: 'rgba(255, 255, 255, 0.7)',
     },
     {
       label: 'Tokens Scored',
-      value: parseFloat(prDetails.totalNodesScored || 0).toLocaleString(),
+      value: (prDetails.totalNodesScored ?? 0).toLocaleString(),
       rank: null,
     },
     {
       label: 'Token Score',
-      value: parseFloat(prDetails.tokenScore || 0).toFixed(2),
+      value: parseFloat(prDetails.tokenScore ?? '0').toFixed(2),
       rank: null,
     },
     {
@@ -127,15 +127,15 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     ? [
         {
           label: 'Repo Weight',
-          value: `${parseFloat(prDetails.repoWeightMultiplier || 0).toFixed(2)}x`,
+          value: `${parseFloat(prDetails.repoWeightMultiplier ?? '0').toFixed(2)}x`,
         },
         {
           label: 'Issue Bonus',
-          value: `${parseFloat(prDetails.issueMultiplier || 0).toFixed(2)}x`,
+          value: `${parseFloat(prDetails.issueMultiplier ?? '0').toFixed(2)}x`,
         },
         {
           label: 'Tag Bonus',
-          value: `${parseFloat(prDetails.gittensorTagMultiplier || 0).toFixed(2)}x`,
+          value: `${parseFloat(prDetails.gittensorTagMultiplier ?? '0').toFixed(2)}x`,
         },
         {
           label: 'Collateral %',
@@ -145,27 +145,27 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     : [
         {
           label: 'Repo Weight',
-          value: `${parseFloat(prDetails.repoWeightMultiplier || 0).toFixed(2)}x`,
+          value: `${parseFloat(prDetails.repoWeightMultiplier ?? '0').toFixed(2)}x`,
         },
         {
           label: 'Issue Bonus',
-          value: `${parseFloat(prDetails.issueMultiplier || 0).toFixed(2)}x`,
+          value: `${parseFloat(prDetails.issueMultiplier ?? '0').toFixed(2)}x`,
         },
         {
           label: 'Credibility*',
-          value: `${parseFloat(prDetails.credibilityMultiplier || 0).toFixed(2)}x`,
+          value: `${parseFloat(prDetails.credibilityMultiplier ?? '0').toFixed(2)}x`,
         },
         {
           label: 'Repo Unique',
-          value: `${parseFloat(prDetails.repositoryUniquenessMultiplier || 0).toFixed(2)}x`,
+          value: `${parseFloat(prDetails.repositoryUniquenessMultiplier ?? '0').toFixed(2)}x`,
         },
         {
           label: 'Time Decay',
-          value: `${parseFloat(prDetails.timeDecayMultiplier || 0).toFixed(2)}x`,
+          value: `${parseFloat(prDetails.timeDecayMultiplier ?? '0').toFixed(2)}x`,
         },
         {
           label: 'Tag Bonus',
-          value: `${parseFloat(prDetails.gittensorTagMultiplier || 0).toFixed(2)}x`,
+          value: `${parseFloat(prDetails.gittensorTagMultiplier ?? '0').toFixed(2)}x`,
         },
       ];
 
