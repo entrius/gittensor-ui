@@ -249,7 +249,6 @@ export type PullRequestDetails = {
   openPrSpamMultiplier: string; // float returned as string
   repositoryUniquenessMultiplier: string; // float returned as string
   timeDecayMultiplier: string; // float returned as string
-  gittensorTagMultiplier: string; // float returned as string
   credibilityMultiplier: string; // float returned as string
   earnedScore: string; // float returned as string
   collateralScore: string; // float returned as string
@@ -265,7 +264,6 @@ export type PullRequestDetails = {
   structuralScore: number;
   leafCount: number;
   leafScore: number;
-  gittensorTagged: boolean;
   mergedByLogin: string | null;
   description: string | null;
   lastEditedAt: string | null;

@@ -48,7 +48,7 @@ export const GettingStarted: React.FC = () => (
           {
             step: 5,
             title: 'Earn',
-            subtitle: 'Tag Code & Get Paid',
+            subtitle: 'Contribute & Get Paid',
             active: true,
           },
         ].map((item, index) => (

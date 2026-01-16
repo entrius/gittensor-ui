@@ -17,11 +17,6 @@ export interface TierConfigResponse {
   tierOrder: string[];
 }
 
-export interface GittensorBranding {
-  prTaglinePrefix: string;
-  minerDetailsUrl: string;
-}
-
 export interface LanguageFileScoring {
   defaultProgrammingLanguageWeight: number;
   testFileContributionWeight: number;
@@ -45,7 +40,6 @@ export interface RepositoryPrScoring {
 }
 
 export interface GeneralConfigResponse {
-  branding: GittensorBranding;
   languageFileScoring: LanguageFileScoring;
   repositoryPrScoring: RepositoryPrScoring;
 }
