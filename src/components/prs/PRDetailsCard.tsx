@@ -118,7 +118,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     },
   ];
 
-  // For OPEN PRs: collateral = base_score × repo_weight × issue_multiplier × gittensor_tag × 20%
+  // For OPEN PRs: collateral = base_score × repo_weight × issue_multiplier × 20%
   // Only show applicable multipliers
   const multipliers: Array<{
     label: string;
@@ -132,10 +132,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
         {
           label: 'Issue Bonus',
           value: `${parseFloat(prDetails.issueMultiplier ?? '0').toFixed(2)}x`,
-        },
-        {
-          label: 'Tag Bonus',
-          value: `${parseFloat(prDetails.gittensorTagMultiplier ?? '0').toFixed(2)}x`,
         },
         {
           label: 'Collateral %',
@@ -162,10 +158,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
         {
           label: 'Time Decay',
           value: `${parseFloat(prDetails.timeDecayMultiplier ?? '0').toFixed(2)}x`,
-        },
-        {
-          label: 'Tag Bonus',
-          value: `${parseFloat(prDetails.gittensorTagMultiplier ?? '0').toFixed(2)}x`,
         },
       ];
 
