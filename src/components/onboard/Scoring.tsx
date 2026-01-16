@@ -28,8 +28,8 @@ export const Scoring: React.FC = () => (
           desc: "Link your PR to the issue it resolves (e.g. 'Closes #123'). Resolving older issues applies a higher bonus multiplier.",
         },
         {
-          title: 'Tag Code',
-          desc: 'Include the mandatory Gittensor tagline in your PR description. Without this tag, your work will not be rewarded.',
+          title: 'Code Quality',
+          desc: 'Write meaningful code contributions. Token-based scoring rewards structural code changes over simple text or config edits.',
         },
         {
           title: 'Credibility',
