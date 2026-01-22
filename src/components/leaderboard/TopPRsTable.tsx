@@ -847,9 +847,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           <TableBody>
             {filteredPRs
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((pr) => {
-                const isLowValue = pr.lowValuePr === true;
-                const rowContent = (
+              .map((pr) => (
                   <TableRow
                     key={`${pr.repository}-${pr.pullRequestNumber}`}
                     hover
@@ -857,6 +855,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                       onSelectPR(pr.repository || '', pr.pullRequestNumber)
                     }
                     sx={{
+<<<<<<< Updated upstream
                       cursor: 'pointer',
                       ...(isLowValue && {
                         opacity: 0.5,
@@ -869,6 +868,11 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                         ...(isLowValue && {
                           opacity: 0.7,
                         }),
+=======
+                      cursor: "pointer",
+                      "&:hover": {
+                        backgroundColor: "rgba(255, 255, 255, 0.05)",
+>>>>>>> Stashed changes
                       },
                       transition: 'all 0.2s',
                     }}
@@ -1112,6 +1116,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                       </Box>
                     </TableCell>
                   </TableRow>
+<<<<<<< Updated upstream
                 );
                 return isLowValue ? (
                   <Tooltip
@@ -1146,6 +1151,9 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                   rowContent
                 );
               })}
+=======
+              ))}
+>>>>>>> Stashed changes
           </TableBody>
         </Table>
       </TableContainer>

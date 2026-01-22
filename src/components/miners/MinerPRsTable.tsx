@@ -288,9 +288,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredPRs.map((pr, index) => {
-                const isLowValue = pr.lowValuePr === true;
-                const rowContent = (
+              {filteredPRs.map((pr, index) => (
                   <TableRow
                     key={`${pr.repository}-${pr.pullRequestNumber}-${index}`}
                     onClick={() => {
@@ -299,6 +297,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                       );
                     }}
                     sx={{
+<<<<<<< Updated upstream
                       cursor: 'pointer',
                       ...(isLowValue && {
                         opacity: 0.5,
@@ -311,6 +310,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                         ...(isLowValue && {
                           opacity: 0.7,
                         }),
+=======
+                      cursor: "pointer",
+                      "&:hover": {
+                        backgroundColor: "rgba(255, 255, 255, 0.05)",
+>>>>>>> Stashed changes
                       },
                       transition: 'all 0.2s',
                     }}
@@ -491,6 +495,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           : 'Open'}
                     </TableCell>
                   </TableRow>
+<<<<<<< Updated upstream
                 );
                 return isLowValue ? (
                   <Tooltip
@@ -525,6 +530,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   rowContent
                 );
               })}
+=======
+              ))}
+>>>>>>> Stashed changes
             </TableBody>
           </Table>
         </TableContainer>

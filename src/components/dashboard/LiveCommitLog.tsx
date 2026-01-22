@@ -34,7 +34,6 @@ interface CommitLogEntry {
   author: string;
   score: string;
   isNew?: boolean;
-  lowValuePr?: boolean;
 }
 
 const getScoreColor = (score: string) => {
@@ -80,9 +79,6 @@ const CommitLogItem: React.FC<{
   const timestamp = timestampRaw
     ? dayjs(timestampRaw).utc().format('MMM D, HH:mm:ss UTC')
     : 'Loading...';
-
-  // Use lowValuePr from hydrated details if available, fallback to entry data
-  const isLowValue = details?.lowValuePr === true || entry.lowValuePr === true;
 
   const content = (
     <Box
@@ -192,6 +188,7 @@ const CommitLogItem: React.FC<{
                 backgroundColor: alpha(status.color, 0.1),
               }}
             />
+<<<<<<< Updated upstream
             {isLowValue && (
               <Tooltip
                 title="This PR is marked as low value due to minimal code changes, documentation-only updates, or other factors that reduce its scoring weight. Low value PRs do not count towards score or tier unlock requirements."
@@ -231,6 +228,9 @@ const CommitLogItem: React.FC<{
               </Tooltip>
             )}
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+=======
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+>>>>>>> Stashed changes
               {timestamp}
             </Typography>
           </Stack>

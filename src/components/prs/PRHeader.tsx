@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import React from 'react';
 import { Box, Typography, Avatar, Chip, Tooltip, alpha } from '@mui/material';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -5,6 +6,14 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useNavigate } from 'react-router-dom';
 import { formatUsdEstimate } from '../../utils';
 import theme from '../../theme';
+=======
+import React from "react";
+import { Box, Typography, Avatar, Chip, Tooltip, alpha } from "@mui/material";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import { useNavigate } from "react-router-dom";
+import { formatUsdEstimate } from "../../utils";
+import theme from "../../theme";
+>>>>>>> Stashed changes
 
 interface PRHeaderProps {
   repository: string;
@@ -38,9 +47,6 @@ const PRHeader: React.FC<PRHeaderProps> = ({
   const collateralScore = parseFloat(prDetails.collateralScore || '0');
   const earnedScore = parseFloat(prDetails.earnedScore || '0');
   const predictedUsdPerDay = prDetails.predictedUsdPerDay;
-
-  // Low value PR - use the field from API directly
-  const isLowValuePR = prDetails.lowValuePr === true;
 
   return (
     <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-start', gap: 2 }}>
@@ -374,6 +380,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               )}
           </Box>
         )}
+<<<<<<< Updated upstream
 
         {/* Low Value Badge - shown for any PR state if lowValuePr is true */}
         {isLowValuePR && (
@@ -414,6 +421,8 @@ const PRHeader: React.FC<PRHeaderProps> = ({
             />
           </Tooltip>
         )}
+=======
+>>>>>>> Stashed changes
       </Box>
     </Box>
   );
