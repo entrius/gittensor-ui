@@ -21,6 +21,7 @@ import {
   GitHub as GitHubIcon,
   People as FollowersIcon,
   AttachMoney as EarningsIcon,
+  Update as UpdateIcon,
 } from '@mui/icons-material';
 import {
   useMinerStats,
@@ -30,6 +31,24 @@ import {
   useGeneralConfig,
 } from '../../api';
 import { TIER_COLORS } from '../../theme';
+
+// Custom time formatting - shows minutes precision for < 24h
+const formatTimeAgo = (date: Date): string => {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) {
+    const mins = diffMins % 60;
+    return mins > 0 ? `${diffHours}h ${mins}m ago` : `${diffHours}h ago`;
+  }
+  if (diffDays === 1) return '1 day ago';
+  return `${diffDays} days ago`;
+};
 
 interface MinerScoreCardProps {
   githubId: string;
@@ -279,9 +298,32 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
         backgroundColor: 'transparent',
         p: 3,
         mb: 3,
+        position: 'relative',
       }}
       elevation={0}
     >
+      {/* Last Updated Chip */}
+      {minerStats.updatedAt && (
+        <Chip
+          icon={<UpdateIcon sx={{ fontSize: '0.9rem' }} />}
+          label={`Updated ${formatTimeAgo(new Date(minerStats.updatedAt))}`}
+          variant="outlined"
+          size="small"
+          sx={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.7rem',
+            color: 'rgba(255, 255, 255, 0.5)',
+            borderColor: 'rgba(255, 255, 255, 0.15)',
+            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            '& .MuiChip-icon': {
+              color: 'rgba(255, 255, 255, 0.4)',
+            },
+          }}
+        />
+      )}
       <Box
         sx={{
           mb: 4,
