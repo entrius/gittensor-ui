@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 import React from 'react';
 import { Box, Typography, Avatar, Chip, Tooltip, alpha } from '@mui/material';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -6,15 +5,6 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useNavigate } from 'react-router-dom';
 import { formatUsdEstimate } from '../../utils';
 import theme from '../../theme';
-=======
-import React from "react";
-import { Box, Typography, Avatar, Chip, Tooltip, alpha } from "@mui/material";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import { useNavigate } from "react-router-dom";
-import { formatUsdEstimate } from "../../utils";
-import theme from "../../theme";
->>>>>>> Stashed changes
-
 interface PRHeaderProps {
   repository: string;
   pullRequestNumber: number;
@@ -380,49 +370,6 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               )}
           </Box>
         )}
-<<<<<<< Updated upstream
-
-        {/* Low Value Badge - shown for any PR state if lowValuePr is true */}
-        {isLowValuePR && (
-          <Tooltip
-            title="This PR received no score as it was deemed a low value contribution. Low value PRs have a low percentage of substantive changes (e.g., primarily typo fixes, documentation, test files, comments, or markdown changes relative to actual code changes)."
-            arrow
-            placement="left"
-            slotProps={{
-              tooltip: {
-                sx: {
-                  backgroundColor: 'rgba(30, 30, 30, 0.95)',
-                  color: '#ffffff',
-                  fontSize: '0.75rem',
-                  fontFamily: '"JetBrains Mono", monospace',
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  maxWidth: 300,
-                },
-              },
-              arrow: {
-                sx: {
-                  color: 'rgba(30, 30, 30, 0.95)',
-                },
-              },
-            }}
-          >
-            <Chip
-              variant="status"
-              icon={<WarningAmberIcon />}
-              label="Low Value"
-              sx={{
-                color: 'rgba(250, 204, 21, 0.9)',
-                borderColor: 'rgba(250, 204, 21, 0.3)',
-                cursor: 'pointer',
-                '& .MuiChip-icon': { color: 'rgba(250, 204, 21, 0.9)' },
-              }}
-            />
-          </Tooltip>
-        )}
-=======
->>>>>>> Stashed changes
       </Box>
     </Box>
   );
