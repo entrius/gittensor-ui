@@ -1,6 +1,5 @@
 import React from 'react';
 import { Box, Typography, Avatar, Chip, Tooltip, alpha } from '@mui/material';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useNavigate } from 'react-router-dom';
 import { formatUsdEstimate } from '../../utils';

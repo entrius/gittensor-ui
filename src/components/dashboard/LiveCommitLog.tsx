@@ -10,7 +10,6 @@ import {
   alpha,
   Avatar,
   Chip,
-  Tooltip,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import theme from '../../theme';

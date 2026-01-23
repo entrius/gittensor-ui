@@ -13,7 +13,6 @@ import {
   Avatar,
   Chip,
   Button,
-  Tooltip,
 } from '@mui/material';
 import { useMinerPRs } from '../../api';
 import { useNavigate } from 'react-router-dom';
