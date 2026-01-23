@@ -10,7 +10,6 @@ import {
   alpha,
   Avatar,
   Chip,
-  Tooltip,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import theme from '../../theme';
@@ -34,7 +33,6 @@ interface CommitLogEntry {
   author: string;
   score: string;
   isNew?: boolean;
-  lowValuePr?: boolean;
 }
 
 const getScoreColor = (score: string) => {
@@ -80,9 +78,6 @@ const CommitLogItem: React.FC<{
   const timestamp = timestampRaw
     ? dayjs(timestampRaw).utc().format('MMM D, HH:mm:ss UTC')
     : 'Loading...';
-
-  // Use lowValuePr from hydrated details if available, fallback to entry data
-  const isLowValue = details?.lowValuePr === true || entry.lowValuePr === true;
 
   const content = (
     <Box
@@ -192,44 +187,6 @@ const CommitLogItem: React.FC<{
                 backgroundColor: alpha(status.color, 0.1),
               }}
             />
-            {isLowValue && (
-              <Tooltip
-                title="This PR is marked as low value due to minimal code changes, documentation-only updates, or other factors that reduce its scoring weight. Low value PRs do not count towards score or tier unlock requirements."
-                arrow
-                placement="top"
-                slotProps={{
-                  tooltip: {
-                    sx: {
-                      backgroundColor: 'rgba(30, 30, 30, 0.95)',
-                      color: '#ffffff',
-                      fontSize: '0.75rem',
-                      fontFamily: '"JetBrains Mono", monospace',
-                      padding: '12px 16px',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      maxWidth: 300,
-                    },
-                  },
-                  arrow: {
-                    sx: {
-                      color: 'rgba(30, 30, 30, 0.95)',
-                    },
-                  },
-                }}
-              >
-                <Chip
-                  variant="status"
-                  label="Low Value"
-                  size="small"
-                  sx={{
-                    color: 'rgba(156, 163, 175, 0.9)',
-                    borderColor: 'rgba(156, 163, 175, 0.4)',
-                    background:
-                      'linear-gradient(135deg, rgba(156, 163, 175, 0.2) 0%, rgba(156, 163, 175, 0.1) 100%)',
-                  }}
-                />
-              </Tooltip>
-            )}
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {timestamp}
             </Typography>
