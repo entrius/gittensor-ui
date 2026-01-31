@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
-import { Box, Card } from '@mui/material';
+import { Box } from '@mui/material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
-import { TopRepositoriesTable, SEO } from '../components';
+import RepoGrid from '../components/repositories/RepoGrid';
+import { SEO } from '../components';
 import { useAllPrs, useReposAndWeights } from '../api';
 import { type CommitLog } from '../api/models/Dashboard';
 
@@ -24,7 +25,7 @@ const TopReposPage: React.FC = () => {
     );
   };
 
-  // Process repo stats for TopRepositoriesTable - show ALL repos
+  // Process repo stats for RepoGrid - show ALL repos
   const repoStats = useMemo(() => {
     if (!reposWithWeights) return [];
 
@@ -35,6 +36,7 @@ const TopReposPage: React.FC = () => {
         totalScore: number;
         totalPRs: number;
         uniqueMiners: Set<string>;
+        contributorCounts: Map<string, number>;
       }
     >();
 
@@ -47,12 +49,17 @@ const TopReposPage: React.FC = () => {
           totalScore: 0,
           totalPRs: 0,
           uniqueMiners: new Set<string>(),
+          contributorCounts: new Map<string, number>(),
         };
 
         current.totalScore += parseFloat(pr.score || '0');
         current.totalPRs += 1;
         if (pr.author) {
           current.uniqueMiners.add(pr.author);
+          current.contributorCounts.set(
+            pr.author,
+            (current.contributorCounts.get(pr.author) || 0) + 1,
+          );
         }
 
         prStatsMap.set(pr.repository, current);
@@ -63,6 +70,16 @@ const TopReposPage: React.FC = () => {
     return reposWithWeights
       .map((repo) => {
         const prStats = prStatsMap.get(repo.fullName);
+
+        // Calculate top contributors
+        let topContributors: string[] = [];
+        if (prStats?.contributorCounts) {
+          topContributors = Array.from(prStats.contributorCounts.entries())
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5) // Top 5
+            .map(entry => entry[0]);
+        }
+
         return {
           repository: repo.fullName,
           totalScore: prStats?.totalScore || 0,
@@ -70,6 +87,8 @@ const TopReposPage: React.FC = () => {
           uniqueMiners: prStats?.uniqueMiners || new Set<string>(),
           weight: repo.weight ? parseFloat(String(repo.weight)) : 0,
           tier: repo.tier || '',
+          topContributors,
+          contributorCount: prStats?.contributorCounts.size || 0,
         };
       })
       .sort((a, b) => b.totalScore - a.totalScore);
@@ -83,31 +102,19 @@ const TopReposPage: React.FC = () => {
       />
       <Box
         sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: { xs: 'auto', md: 'calc(100vh - 80px)' },
+          minHeight: 'calc(100vh - 80px)',
           width: '100%',
-          py: { xs: 2, sm: 0 },
+          py: 4,
+          px: { xs: 2, md: 4 },
         }}
       >
-        <Box sx={{ maxWidth: 1200, width: '100%' }}>
-          <Card
-            sx={{
-              borderRadius: 3,
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              backgroundColor: 'transparent',
-              overflow: 'hidden',
-            }}
-            elevation={0}
-          >
-            <TopRepositoriesTable
-              repositories={repoStats}
-              isLoading={isLoadingPRs || isLoadingRepos}
-              onSelectRepository={handleSelectRepository}
-              initialTierFilter={initialTierFilter || undefined}
-            />
-          </Card>
+        <Box sx={{ maxWidth: 1600, mx: 'auto', width: '100%' }}>
+          <RepoGrid
+            repositories={repoStats}
+            isLoading={isLoadingPRs || isLoadingRepos}
+            onSelectRepository={handleSelectRepository}
+            initialTierFilter={initialTierFilter || undefined}
+          />
         </Box>
       </Box>
     </Page>
