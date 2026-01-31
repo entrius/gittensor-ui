@@ -1,4 +1,25 @@
 /**
+ * Format a token amount for display with specified decimal places.
+ * Raw values are already in Alpha units - just round to specified decimals.
+ *
+ * @param value - The token amount to format
+ * @param decimals - Number of decimal places (default: 2)
+ * @returns Formatted string like "100.50"
+ */
+export const formatTokenAmount = (
+  value: string | number | null | undefined,
+  decimals: number = 2,
+): string => {
+  if (value === null || value === undefined) return '0';
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return '0';
+  return num.toLocaleString(undefined, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+};
+
+/**
  * Format a USD estimate value for display.
  *
  * @param value - The USD value to format
