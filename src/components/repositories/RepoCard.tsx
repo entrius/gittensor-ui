@@ -1,6 +1,5 @@
 import React from 'react';
 import { Box, Card, Typography, Chip, Tooltip, Avatar, AvatarGroup } from '@mui/material';
-import GitHubIcon from '@mui/icons-material/GitHub';
 import StarIcon from '@mui/icons-material/Star';
 import ScaleIcon from '@mui/icons-material/Scale';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -88,60 +87,72 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo, onClick }) => {
             />
 
             {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2, position: 'relative', zIndex: 1 }}>
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <Box
-                        sx={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: '8px',
-                            backgroundColor: 'rgba(255,255,255,0.05)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            color: repo.rank && repo.rank <= 3 ? tierColor : 'rgba(255,255,255,0.7)',
-                            fontWeight: 700,
-                            fontFamily: 'JetBrains Mono',
-                            fontSize: '0.85rem'
-                        }}
-                    >
-                        #{repo.rank}
-                    </Box>
-                    {repo.tier && (
-                        <Chip
-                            label={repo.tier}
-                            size="small"
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, position: 'relative', zIndex: 1 }}>
+                <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                    <Box sx={{ position: 'relative' }}>
+                        <Box
+                            component="img"
+                            src={`https://avatars.githubusercontent.com/${ownerName}`}
+                            alt={repo.repository}
                             sx={{
-                                backgroundColor: `${tierColor}10`,
-                                color: tierColor,
-                                border: `1px solid ${tierColor}25`,
-                                fontFamily: '"JetBrains Mono", monospace',
-                                fontWeight: 600,
-                                height: 24,
-                                fontSize: '0.7rem'
+                                width: 42,
+                                height: 42,
+                                borderRadius: '50%', // Circular
+                                border: `2px solid ${tierColor}`,
+                                backgroundColor:
+                                    ownerName === 'opentensor'
+                                        ? '#ffffff'
+                                        : ownerName === 'bitcoin'
+                                            ? '#F7931A'
+                                            : '#161b22',
+                                boxShadow: `0 0 10px ${tierColor}20`
                             }}
                         />
-                    )}
-                </Box>
-                <GitHubIcon sx={{ color: 'rgba(255, 255, 255, 0.2)', fontSize: 20 }} />
-            </Box>
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                bottom: -4,
+                                right: -4,
+                                backgroundColor: '#0d1117',
+                                border: `1px solid ${tierColor}`,
+                                borderRadius: '4px',
+                                px: 0.5,
+                                py: 0,
+                                zIndex: 2,
+                                minWidth: '18px',
+                                textAlign: 'center'
+                            }}
+                        >
+                            <Typography
+                                sx={{
+                                    fontFamily: 'JetBrains Mono',
+                                    fontSize: '0.6rem',
+                                    fontWeight: 700,
+                                    color: tierColor,
+                                    lineHeight: 1.2
+                                }}
+                            >
+                                #{repo.rank}
+                            </Typography>
+                        </Box>
+                    </Box>
 
-            {/* Repo Info */}
-            <Box sx={{ mb: 3, flex: 1, position: 'relative', zIndex: 1 }}>
-                <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.4)', fontFamily: '"JetBrains Mono", monospace', display: 'block', mb: 0.5 }}>
-                    {ownerName} /
-                </Typography>
-                <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1.2, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>
-                    {repoName}
-                </Typography>
+                    <Box>
+                        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)', fontFamily: '"JetBrains Mono", monospace', display: 'block', lineHeight: 1 }}>
+                            {ownerName}
+                        </Typography>
+                        <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1.2, fontSize: '1rem', letterSpacing: '-0.02em', mt: 0.5 }}>
+                            {repoName}
+                        </Typography>
+                    </Box>
+                </Box>
             </Box>
 
             {/* Key Metrics */}
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 3, position: 'relative', zIndex: 1 }}>
                 <Box sx={{ p: 1.5, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.03)' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                        <StarIcon sx={{ fontSize: 12, color: tierColor }} />
+                        <StarIcon sx={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }} />
                         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                             Score
                         </Typography>
@@ -218,7 +229,7 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo, onClick }) => {
                                                 fontFamily: 'JetBrains Mono',
                                                 cursor: 'default',
                                                 position: 'relative',
-                                                zIndex: 0,
+                                                zIndex: 2,
                                                 transition: 'all 0.2s',
                                                 '&:hover': {
                                                     transform: 'scale(1.1)',
