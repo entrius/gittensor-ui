@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, memo } from 'react';
 import {
     Box,
     Typography,
@@ -10,12 +10,15 @@ import {
     FormControl,
     Select,
     Grid,
-    Button
+    Button,
+    useTheme,
+    useMediaQuery
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import SortIcon from '@mui/icons-material/Sort';
 import RepoCard from './RepoCard';
 import Pagination from '@mui/material/Pagination';
+import { useResizeObserver } from '../../hooks/useResizeObserver';
 
 interface RepoStats {
     repository: string;
@@ -51,9 +54,40 @@ const RepoGrid: React.FC<RepoGridProps> = ({
     onSelectRepository,
     initialTierFilter,
 }) => {
+    const theme = useTheme();
+    const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+
+    // Dynamic grid sizing using callback ref
+    const [gridContainerRef, { width: containerWidth, height: containerHeight }] = useResizeObserver();
+
+    const { columns, rows, itemsPerPage } = useMemo(() => {
+        if (!isDesktop || !containerWidth || !containerHeight) {
+            return { columns: 4, rows: 2, itemsPerPage: 8 };
+        }
+
+        const GAP = 24;
+        const MIN_CARD_WIDTH = 280;
+        const MIN_CARD_HEIGHT = 240; // Ensures Top Contributors section fits
+
+        const availableWidth = containerWidth + GAP;
+        const itemWidthWithGap = MIN_CARD_WIDTH + GAP;
+        const calculatedCols = Math.floor(availableWidth / itemWidthWithGap);
+        const finalCols = Math.max(1, calculatedCols);
+
+        const availableHeight = containerHeight + GAP;
+        const itemHeightWithGap = MIN_CARD_HEIGHT + GAP;
+        const calculatedRows = Math.floor(availableHeight / itemHeightWithGap);
+        const finalRows = Math.max(1, calculatedRows);
+
+        return {
+            columns: finalCols,
+            rows: finalRows,
+            itemsPerPage: finalCols * finalRows
+        };
+    }, [containerWidth, containerHeight, isDesktop]);
+
     const [searchQuery, setSearchQuery] = useState('');
     const [page, setPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(12);
     const [sortColumn, setSortColumn] = useState<SortColumn>('totalScore');
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
     const [tierFilter, setTierFilter] = useState<
@@ -86,6 +120,11 @@ const RepoGrid: React.FC<RepoGridProps> = ({
                     comparison = b.totalScore - a.totalScore;
             }
 
+            // Secondary sort by contributor count when tied
+            if (comparison === 0 && sortColumn !== 'contributors') {
+                comparison = a.uniqueMiners.size - b.uniqueMiners.size;
+            }
+
             return sortDirection === 'asc' ? comparison : -comparison;
         });
 
@@ -113,11 +152,11 @@ const RepoGrid: React.FC<RepoGridProps> = ({
     }, [rankedRepositories, searchQuery, tierFilter]);
 
     // Pagination
-    const pageCount = Math.ceil(filteredRepositories.length / rowsPerPage);
+    const pageCount = Math.ceil(filteredRepositories.length / itemsPerPage);
     const paginatedRepositories = useMemo(() => {
-        const startIndex = (page - 1) * rowsPerPage;
-        return filteredRepositories.slice(startIndex, startIndex + rowsPerPage);
-    }, [filteredRepositories, page, rowsPerPage]);
+        const startIndex = (page - 1) * itemsPerPage;
+        return filteredRepositories.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredRepositories, page, itemsPerPage]);
 
     const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
         setPage(value);
@@ -180,7 +219,7 @@ const RepoGrid: React.FC<RepoGridProps> = ({
     // Reset page when filters change
     useEffect(() => {
         setPage(1);
-    }, [searchQuery, tierFilter, rowsPerPage]);
+    }, [searchQuery, tierFilter, itemsPerPage]);
 
     if (isLoading) {
         return (
@@ -191,7 +230,7 @@ const RepoGrid: React.FC<RepoGridProps> = ({
     }
 
     return (
-        <Box ref={topRef}>
+        <Box ref={topRef} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             {/* Header Controls */}
             <Box
                 sx={{
@@ -304,20 +343,41 @@ const RepoGrid: React.FC<RepoGridProps> = ({
 
             </Box>
 
-            {/* Grid Content */}
-            <Grid container spacing={3}>
-                {paginatedRepositories.map((repo) => (
-                    <Grid item xs={12} sm={6} md={4} lg={3} xl={2.4} key={repo.repository}>
-                        <RepoCard repo={repo} onClick={onSelectRepository} />
-                    </Grid>
-                ))}
-            </Grid>
-
-            {paginatedRepositories.length === 0 && (
-                <Box sx={{ textAlign: 'center', py: 8, opacity: 0.6 }}>
-                    <Typography variant="h6" sx={{ fontFamily: 'Outfit' }}>No repositories found matching your criteria.</Typography>
-                </Box>
-            )}
+            {/* Grid Content - Dynamically sized */}
+            <Box
+                ref={gridContainerRef}
+                sx={{
+                    flex: 1,
+                    overflow: 'hidden',
+                    display: isDesktop ? 'grid' : 'block',
+                    gridTemplateColumns: `repeat(${columns}, 1fr)`,
+                    gridTemplateRows: `repeat(${rows}, minmax(200px, auto))`,
+                    alignContent: 'start',
+                    gap: 3
+                }}
+            >
+                {paginatedRepositories.length > 0 ? (
+                    isDesktop ? (
+                        paginatedRepositories.map((repo) => (
+                            <Box key={repo.repository} sx={{ minHeight: 0 }}>
+                                <RepoCard repo={repo} onClick={onSelectRepository} />
+                            </Box>
+                        ))
+                    ) : (
+                        <Grid container spacing={3}>
+                            {paginatedRepositories.map((repo) => (
+                                <Grid item xs={12} sm={6} key={repo.repository}>
+                                    <RepoCard repo={repo} onClick={onSelectRepository} />
+                                </Grid>
+                            ))}
+                        </Grid>
+                    )
+                ) : (
+                    <Box sx={{ textAlign: 'center', py: 8, opacity: 0.6, gridColumn: '1 / -1' }}>
+                        <Typography variant="h6" sx={{ fontFamily: 'Outfit' }}>No repositories found matching your criteria.</Typography>
+                    </Box>
+                )}
+            </Box>
 
             {/* Pagination */}
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6, mb: 4 }}>

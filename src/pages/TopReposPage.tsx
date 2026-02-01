@@ -102,13 +102,17 @@ const TopReposPage: React.FC = () => {
       />
       <Box
         sx={{
-          minHeight: 'calc(100vh - 80px)',
+          height: { xs: 'auto', md: 'calc(100vh - 80px)' }, // Fixed height on desktop
+          minHeight: { xs: 'calc(100vh - 80px)', md: 0 },
           width: '100%',
-          py: 4,
+          py: { xs: 4, md: 2 },
           px: { xs: 2, md: 4 },
+          overflow: { xs: 'auto', md: 'hidden' }, // Prevent scroll on desktop
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
-        <Box sx={{ maxWidth: 1600, mx: 'auto', width: '100%' }}>
+        <Box sx={{ maxWidth: 1600, mx: 'auto', width: '100%', height: '100%' }}>
           <RepoGrid
             repositories={repoStats}
             isLoading={isLoadingPRs || isLoadingRepos}
