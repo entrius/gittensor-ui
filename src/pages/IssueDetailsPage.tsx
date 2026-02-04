@@ -505,10 +505,7 @@ const IssueDetailsPage: React.FC = () => {
                           Status
                         </TableCell>
                         <TableCell sx={{ ...headerCellSx, textAlign: "right" }}>
-                          Changes
-                        </TableCell>
-                        <TableCell sx={{ ...headerCellSx, textAlign: "right" }}>
-                          Score
+                          Tokens
                         </TableCell>
                         <TableCell sx={{ ...headerCellSx, textAlign: "center" }}>
                           Date
@@ -556,15 +553,38 @@ const IssueDetailsPage: React.FC = () => {
                             {submission.title}
                           </TableCell>
                           <TableCell sx={bodyCellSx}>
-                            <Typography
-                              sx={{
-                                fontFamily: '"JetBrains Mono", monospace',
-                                fontSize: "0.85rem",
-                                color: "#58a6ff",
-                              }}
-                            >
-                              {submission.authorLogin}
-                            </Typography>
+                            {submission.authorGithubId ? (
+                              <Typography
+                                component="span"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(
+                                    `/miners/details?githubId=${submission.authorGithubId}`
+                                  );
+                                }}
+                                sx={{
+                                  fontFamily: '"JetBrains Mono", monospace',
+                                  fontSize: "0.85rem",
+                                  color: "#58a6ff",
+                                  cursor: "pointer",
+                                  "&:hover": {
+                                    textDecoration: "underline",
+                                  },
+                                }}
+                              >
+                                {submission.authorLogin}
+                              </Typography>
+                            ) : (
+                              <Typography
+                                sx={{
+                                  fontFamily: '"JetBrains Mono", monospace',
+                                  fontSize: "0.85rem",
+                                  color: "#58a6ff",
+                                }}
+                              >
+                                {submission.authorLogin}
+                              </Typography>
+                            )}
                           </TableCell>
                           <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
                             <Chip
@@ -602,52 +622,14 @@ const IssueDetailsPage: React.FC = () => {
                           </TableCell>
                           <TableCell sx={{ ...bodyCellSx, textAlign: "right" }}>
                             <Typography
-                              component="span"
-                              sx={{
-                                fontFamily: '"JetBrains Mono", monospace',
-                                fontSize: "0.8rem",
-                                color: "#3fb950",
-                              }}
-                            >
-                              +{submission.additions}
-                            </Typography>
-                            <Typography
-                              component="span"
-                              sx={{
-                                fontFamily: '"JetBrains Mono", monospace',
-                                fontSize: "0.8rem",
-                                color: "rgba(255, 255, 255, 0.3)",
-                                mx: 0.5,
-                              }}
-                            >
-                              /
-                            </Typography>
-                            <Typography
-                              component="span"
-                              sx={{
-                                fontFamily: '"JetBrains Mono", monospace',
-                                fontSize: "0.8rem",
-                                color: "#ef4444",
-                              }}
-                            >
-                              -{submission.deletions}
-                            </Typography>
-                          </TableCell>
-                          <TableCell sx={{ ...bodyCellSx, textAlign: "right" }}>
-                            <Typography
                               sx={{
                                 fontFamily: '"JetBrains Mono", monospace',
                                 fontSize: "0.85rem",
                                 fontWeight: 600,
-                                color:
-                                  submission.earnedScore !== null
-                                    ? "#3fb950"
-                                    : "rgba(255, 255, 255, 0.4)",
+                                color: "#ffffff",
                               }}
                             >
-                              {submission.earnedScore !== null
-                                ? Number(submission.earnedScore).toFixed(2)
-                                : "-"}
+                              {Number(submission.tokenScore).toLocaleString()}
                             </Typography>
                           </TableCell>
                           <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>

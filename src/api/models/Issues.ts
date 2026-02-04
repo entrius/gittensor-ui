@@ -42,13 +42,12 @@ export interface IssueSubmission {
   repositoryFullName: string;
   title: string;
   authorLogin: string;
+  authorGithubId: string | null;
   prState: string;
   prCreatedAt: string;
   mergedAt: string | null;
-  additions: number;
-  deletions: number;
+  tokenScore: number;
   commits: number;
-  earnedScore: number | null;
   hotkey: string | null;
   isWinner: boolean;
 }
