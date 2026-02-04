@@ -7,6 +7,7 @@
  * - History: Completed or cancelled issues
  */
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Box, Tabs, Tab, Stack } from "@mui/material";
 import { Page } from "../components/layout";
 import { SEO } from "../components";
@@ -14,6 +15,7 @@ import { IssueStats, IssuesList } from "../components/issues";
 import { useIssuesStats, useIssues } from "../api";
 
 const IssuesPage: React.FC = () => {
+  const navigate = useNavigate();
   const [tab, setTab] = React.useState(0);
 
   const statsQuery = useIssuesStats();
@@ -88,6 +90,7 @@ const IssuesPage: React.FC = () => {
                 issues={activeIssuesQuery.data || []}
                 isLoading={activeIssuesQuery.isLoading}
                 listType="available"
+                onSelectIssue={(id) => navigate(`/issues/details?id=${id}`)}
               />
             )}
             {tab === 1 && (
@@ -95,6 +98,7 @@ const IssuesPage: React.FC = () => {
                 issues={registeredIssuesQuery.data || []}
                 isLoading={registeredIssuesQuery.isLoading}
                 listType="pending"
+                onSelectIssue={(id) => navigate(`/issues/details?id=${id}`)}
               />
             )}
             {tab === 2 && (
@@ -102,6 +106,7 @@ const IssuesPage: React.FC = () => {
                 issues={historyIssuesQuery.data || []}
                 isLoading={historyIssuesQuery.isLoading}
                 listType="history"
+                onSelectIssue={(id) => navigate(`/issues/details?id=${id}`)}
               />
             )}
           </Box>

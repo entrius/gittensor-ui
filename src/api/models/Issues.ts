@@ -13,7 +13,8 @@ export interface IssueBounty {
   targetBounty: string;
   status: "registered" | "active" | "completed" | "cancelled";
   solverHotkey: string | null;
-  winningPrUrl: string | null;
+  payoutAmount: string | null;
+  winningPrNumber: number | null;
   registeredAtBlock: number;
   createdAt: string;
   updatedAt: string;
@@ -26,4 +27,28 @@ export interface IssuesStats {
   completedIssues: number;
   totalBountyPool: string;
   totalPayouts: string;
+}
+
+export interface IssueDetails extends IssueBounty {
+  title: string | null;
+  body: string | null;
+  state: string | null;
+  authorLogin: string | null;
+  labels: string[];
+}
+
+export interface IssueSubmission {
+  number: number;
+  repositoryFullName: string;
+  title: string;
+  authorLogin: string;
+  prState: string;
+  prCreatedAt: string;
+  mergedAt: string | null;
+  additions: number;
+  deletions: number;
+  commits: number;
+  earnedScore: number | null;
+  hotkey: string | null;
+  isWinner: boolean;
 }

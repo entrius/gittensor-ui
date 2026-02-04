@@ -51,14 +51,14 @@ const IssueStats: React.FC<IssueStatsProps> = ({ stats, isLoading = false }) => 
       <Grid item xs={6} sm={3}>
         <KpiCard
           title="Bounty Pool"
-          value={`${formatTokenAmount(stats?.totalBountyPool)} α`}
+          value={`${formatTokenAmount(stats?.totalBountyPool)} ل`}
           subtitle="Total available"
         />
       </Grid>
       <Grid item xs={6} sm={3}>
         <KpiCard
           title="Total Payouts"
-          value={`${formatTokenAmount(stats?.totalPayouts)} α`}
+          value={`${formatTokenAmount(stats?.totalPayouts)} ل`}
           subtitle="Paid to solvers"
         />
       </Grid>

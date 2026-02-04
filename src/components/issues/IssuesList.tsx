@@ -307,7 +307,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                             color: "#3fb950",
                           }}
                         >
-                          {formatTokenAmount(issue.bountyAmount)} α
+                          {formatTokenAmount(issue.targetBounty)} ل
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
@@ -339,7 +339,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                             color: "#f59e0b",
                           }}
                         >
-                          {formatTokenAmount(issue.targetBounty)} α
+                          {formatTokenAmount(issue.targetBounty)} ل
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
@@ -381,8 +381,8 @@ const IssuesList: React.FC<IssuesListProps> = ({
                           }}
                         >
                           {issue.status === "completed"
-                            ? `${formatTokenAmount(issue.bountyAmount)} α`
-                            : "-"}
+                            ? `${formatTokenAmount(issue.payoutAmount || issue.targetBounty)} ل`
+                            : `${formatTokenAmount(issue.targetBounty)} ل`}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>

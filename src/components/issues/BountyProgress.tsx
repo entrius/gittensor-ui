@@ -40,7 +40,7 @@ const BountyProgress: React.FC<BountyProgressProps> = ({
           textAlign: "center",
         }}
       >
-        {formatTokenAmount(bountyAmount)} / {formatTokenAmount(targetBounty)} α
+        {formatTokenAmount(bountyAmount)} / {formatTokenAmount(targetBounty)} ل
       </Typography>
     </Box>
   );
