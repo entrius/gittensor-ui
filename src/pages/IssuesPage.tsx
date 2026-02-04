@@ -1,8 +1,10 @@
 /**
  * Issues Page for v0 - no competitions.
  *
- * Simplified page with 3 tabs: All Issues, Available Issues, History.
- * Competition and ELO tabs have been removed.
+ * 3 tabs:
+ * - Available Issues: Active issues ready for solving
+ * - Pending Issues: Registered issues awaiting funding
+ * - History: Completed or cancelled issues
  */
 import React from "react";
 import { Box, Tabs, Tab, Stack } from "@mui/material";
@@ -15,9 +17,9 @@ const IssuesPage: React.FC = () => {
   const [tab, setTab] = React.useState(0);
 
   const statsQuery = useIssuesStats();
-  const allIssuesQuery = useIssues();
   const activeIssuesQuery = useIssues("active");
-  const completedIssuesQuery = useIssues("completed");
+  const registeredIssuesQuery = useIssues("registered");
+  const historyIssuesQuery = useIssues("completed,cancelled");
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTab(newValue);
@@ -73,8 +75,8 @@ const IssuesPage: React.FC = () => {
                 },
               }}
             >
-              <Tab label="All Issues" />
               <Tab label="Available Issues" />
+              <Tab label="Pending Issues" />
               <Tab label="History" />
             </Tabs>
           </Box>
@@ -83,22 +85,23 @@ const IssuesPage: React.FC = () => {
           <Box sx={{ minHeight: 400 }}>
             {tab === 0 && (
               <IssuesList
-                issues={allIssuesQuery.data || []}
-                isLoading={allIssuesQuery.isLoading}
-                showAllStatuses
+                issues={activeIssuesQuery.data || []}
+                isLoading={activeIssuesQuery.isLoading}
+                listType="available"
               />
             )}
             {tab === 1 && (
               <IssuesList
-                issues={activeIssuesQuery.data || []}
-                isLoading={activeIssuesQuery.isLoading}
+                issues={registeredIssuesQuery.data || []}
+                isLoading={registeredIssuesQuery.isLoading}
+                listType="pending"
               />
             )}
             {tab === 2 && (
               <IssuesList
-                issues={completedIssuesQuery.data || []}
-                isLoading={completedIssuesQuery.isLoading}
-                showCompleted
+                issues={historyIssuesQuery.data || []}
+                isLoading={historyIssuesQuery.isLoading}
+                listType="history"
               />
             )}
           </Box>

@@ -12,22 +12,24 @@ import {
   Chip,
   Skeleton,
   Link,
+  Tooltip,
 } from "@mui/material";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { IssueBounty } from "../../api/models/Issues";
 import { formatTokenAmount } from "../../utils/format";
 import BountyProgress from "./BountyProgress";
 
+type ListType = "available" | "pending" | "history";
+
 interface IssuesListProps {
   issues: IssueBounty[];
   isLoading?: boolean;
-  showCompleted?: boolean;
-  showAllStatuses?: boolean;
+  listType: ListType;
   onSelectIssue?: (id: number) => void;
 }
 
 /**
- * Get status badge color and text (v0 - no in_competition status)
+ * Get status badge color and text
  */
 const getStatusBadge = (
   status: IssueBounty["status"],
@@ -35,9 +37,9 @@ const getStatusBadge = (
   switch (status) {
     case "registered":
       return {
-        color: "#8b949e",
-        bgColor: "rgba(139, 148, 158, 0.15)",
-        text: "Registered",
+        color: "#f59e0b",
+        bgColor: "rgba(245, 158, 11, 0.15)",
+        text: "Pending",
       };
     case "active":
       return {
@@ -66,11 +68,32 @@ const getStatusBadge = (
   }
 };
 
+/**
+ * Format date for display
+ */
+const formatDate = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return "-";
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+/**
+ * Truncate wallet address for display
+ */
+const truncateAddress = (address: string | null): string => {
+  if (!address) return "-";
+  if (address.length <= 12) return address;
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+};
+
 const IssuesList: React.FC<IssuesListProps> = ({
   issues,
   isLoading = false,
-  showCompleted = false,
-  showAllStatuses = false,
+  listType,
   onSelectIssue,
 }) => {
   const headerCellSx = {
@@ -116,6 +139,12 @@ const IssuesList: React.FC<IssuesListProps> = ({
     );
   }
 
+  const emptyMessages: Record<ListType, string> = {
+    available: "No active issues available for solving",
+    pending: "No pending issues awaiting funding",
+    history: "No completed or cancelled issues yet",
+  };
+
   if (issues.length === 0) {
     return (
       <Card
@@ -129,11 +158,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         elevation={0}
       >
         <Typography sx={{ color: "rgba(255, 255, 255, 0.5)" }}>
-          {showAllStatuses
-            ? "No issues registered yet"
-            : showCompleted
-              ? "No completed issues yet"
-              : "No active issues available"}
+          {emptyMessages[listType]}
         </Typography>
       </Card>
     );
@@ -155,22 +180,55 @@ const IssuesList: React.FC<IssuesListProps> = ({
             <TableRow>
               <TableCell sx={{ ...headerCellSx, width: "60px" }}>ID</TableCell>
               <TableCell sx={headerCellSx}>Repository</TableCell>
-              <TableCell sx={{ ...headerCellSx, width: "100px" }}>
+              <TableCell sx={{ ...headerCellSx, width: "80px" }}>
                 Issue
               </TableCell>
-              <TableCell sx={{ ...headerCellSx, textAlign: "right" }}>
-                Bounty
-              </TableCell>
-              <TableCell sx={{ ...headerCellSx, textAlign: "center", width: "120px" }}>
-                Funding
-              </TableCell>
-              <TableCell sx={{ ...headerCellSx, textAlign: "center" }}>
-                Status
-              </TableCell>
-              {showCompleted && (
-                <TableCell sx={{ ...headerCellSx, textAlign: "center" }}>
-                  Winner PR
-                </TableCell>
+
+              {/* Available Issues columns */}
+              {listType === "available" && (
+                <>
+                  <TableCell sx={{ ...headerCellSx, textAlign: "right" }}>
+                    Bounty
+                  </TableCell>
+                  <TableCell sx={{ ...headerCellSx, textAlign: "center" }}>
+                    Status
+                  </TableCell>
+                </>
+              )}
+
+              {/* Pending Issues columns */}
+              {listType === "pending" && (
+                <>
+                  <TableCell sx={{ ...headerCellSx, textAlign: "right" }}>
+                    Target Bounty
+                  </TableCell>
+                  <TableCell
+                    sx={{ ...headerCellSx, textAlign: "center", width: "140px" }}
+                  >
+                    Funding
+                  </TableCell>
+                  <TableCell sx={{ ...headerCellSx, textAlign: "center" }}>
+                    Status
+                  </TableCell>
+                </>
+              )}
+
+              {/* History columns */}
+              {listType === "history" && (
+                <>
+                  <TableCell sx={{ ...headerCellSx, textAlign: "right" }}>
+                    Payout
+                  </TableCell>
+                  <TableCell sx={{ ...headerCellSx, textAlign: "center" }}>
+                    Solver
+                  </TableCell>
+                  <TableCell sx={{ ...headerCellSx, textAlign: "center" }}>
+                    Status
+                  </TableCell>
+                  <TableCell sx={{ ...headerCellSx, textAlign: "center" }}>
+                    Date
+                  </TableCell>
+                </>
               )}
             </TableRow>
           </TableHead>
@@ -190,6 +248,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                     },
                   }}
                 >
+                  {/* Common columns */}
                   <TableCell sx={bodyCellSx}>
                     <Typography
                       sx={{
@@ -235,73 +294,148 @@ const IssuesList: React.FC<IssuesListProps> = ({
                       <OpenInNewIcon sx={{ fontSize: 14, opacity: 0.5 }} />
                     </Link>
                   </TableCell>
-                  <TableCell sx={{ ...bodyCellSx, textAlign: "right" }}>
-                    <Typography
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.85rem",
-                        fontWeight: 600,
-                        color: "#3fb950",
-                      }}
-                    >
-                      {formatTokenAmount(issue.bountyAmount)} α
-                    </Typography>
-                  </TableCell>
-                  <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
-                    <BountyProgress
-                      bountyAmount={issue.bountyAmount}
-                      targetBounty={issue.targetBounty}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
-                    <Chip
-                      label={statusBadge.text}
-                      size="small"
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.7rem",
-                        fontWeight: 600,
-                        backgroundColor: statusBadge.bgColor,
-                        color: statusBadge.color,
-                        border: `1px solid ${statusBadge.color}40`,
-                      }}
-                    />
-                  </TableCell>
-                  {showCompleted && (
-                    <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
-                      {issue.winningPrUrl ? (
-                        <Link
-                          href={issue.winningPrUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          sx={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 0.5,
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "0.8rem",
-                            color: "#3fb950",
-                            textDecoration: "none",
-                            "&:hover": {
-                              textDecoration: "underline",
-                            },
-                          }}
-                        >
-                          View PR
-                          <OpenInNewIcon sx={{ fontSize: 14, opacity: 0.5 }} />
-                        </Link>
-                      ) : (
+
+                  {/* Available Issues columns */}
+                  {listType === "available" && (
+                    <>
+                      <TableCell sx={{ ...bodyCellSx, textAlign: "right" }}>
                         <Typography
                           sx={{
-                            fontSize: "0.8rem",
-                            color: "rgba(255, 255, 255, 0.3)",
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.85rem",
+                            fontWeight: 600,
+                            color: "#3fb950",
                           }}
                         >
-                          -
+                          {formatTokenAmount(issue.bountyAmount)} α
                         </Typography>
-                      )}
-                    </TableCell>
+                      </TableCell>
+                      <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
+                        <Chip
+                          label={statusBadge.text}
+                          size="small"
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.7rem",
+                            fontWeight: 600,
+                            backgroundColor: statusBadge.bgColor,
+                            color: statusBadge.color,
+                            border: `1px solid ${statusBadge.color}40`,
+                          }}
+                        />
+                      </TableCell>
+                    </>
+                  )}
+
+                  {/* Pending Issues columns */}
+                  {listType === "pending" && (
+                    <>
+                      <TableCell sx={{ ...bodyCellSx, textAlign: "right" }}>
+                        <Typography
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.85rem",
+                            fontWeight: 600,
+                            color: "#f59e0b",
+                          }}
+                        >
+                          {formatTokenAmount(issue.targetBounty)} α
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
+                        <BountyProgress
+                          bountyAmount={issue.bountyAmount}
+                          targetBounty={issue.targetBounty}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
+                        <Chip
+                          label={statusBadge.text}
+                          size="small"
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.7rem",
+                            fontWeight: 600,
+                            backgroundColor: statusBadge.bgColor,
+                            color: statusBadge.color,
+                            border: `1px solid ${statusBadge.color}40`,
+                          }}
+                        />
+                      </TableCell>
+                    </>
+                  )}
+
+                  {/* History columns */}
+                  {listType === "history" && (
+                    <>
+                      <TableCell sx={{ ...bodyCellSx, textAlign: "right" }}>
+                        <Typography
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.85rem",
+                            fontWeight: 600,
+                            color:
+                              issue.status === "completed"
+                                ? "#3fb950"
+                                : "rgba(255, 255, 255, 0.4)",
+                          }}
+                        >
+                          {issue.status === "completed"
+                            ? `${formatTokenAmount(issue.bountyAmount)} α`
+                            : "-"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
+                        {issue.solverHotkey ? (
+                          <Tooltip title={issue.solverHotkey} arrow>
+                            <Typography
+                              sx={{
+                                fontFamily: '"JetBrains Mono", monospace',
+                                fontSize: "0.8rem",
+                                color: "#58a6ff",
+                                cursor: "pointer",
+                              }}
+                            >
+                              {truncateAddress(issue.solverHotkey)}
+                            </Typography>
+                          </Tooltip>
+                        ) : (
+                          <Typography
+                            sx={{
+                              fontSize: "0.8rem",
+                              color: "rgba(255, 255, 255, 0.3)",
+                            }}
+                          >
+                            -
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
+                        <Chip
+                          label={statusBadge.text}
+                          size="small"
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.7rem",
+                            fontWeight: 600,
+                            backgroundColor: statusBadge.bgColor,
+                            color: statusBadge.color,
+                            border: `1px solid ${statusBadge.color}40`,
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
+                        <Typography
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: "0.8rem",
+                            color: "rgba(255, 255, 255, 0.6)",
+                          }}
+                        >
+                          {formatDate(issue.completedAt || issue.updatedAt)}
+                        </Typography>
+                      </TableCell>
+                    </>
                   )}
                 </TableRow>
               );

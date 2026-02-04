@@ -16,6 +16,7 @@ export interface IssueBounty {
   winningPrUrl: string | null;
   registeredAtBlock: number;
   createdAt: string;
+  updatedAt: string;
   completedAt: string | null;
 }
 
