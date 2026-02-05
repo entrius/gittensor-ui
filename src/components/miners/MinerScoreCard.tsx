@@ -29,8 +29,43 @@ import {
   useAllMiners,
   useMinerGithubData,
   useGeneralConfig,
+  type MinerEvaluation,
+  type RepositoryPrScoring,
 } from '../../api';
 import { TIER_COLORS } from '../../theme';
+
+const TIER_LEVELS: Record<string, number> = {
+  bronze: 1,
+  silver: 2,
+  gold: 3,
+};
+
+/**
+ * Calculate the dynamic open PR threshold for a miner.
+ * Sums token scores from unlocked tiers only, then adds floor(sum / 500) bonus.
+ */
+const calculateDynamicThreshold = (
+  minerStats: MinerEvaluation,
+  prScoring: RepositoryPrScoring | undefined,
+): number => {
+  const baseThreshold = prScoring?.excessivePrPenaltyThreshold ?? 10;
+  const tokenScorePer = prScoring?.openPrThresholdTokenScore ?? 500;
+  const maxThreshold = prScoring?.maxOpenPrThreshold ?? 30;
+
+  const currentTierLevel =
+    TIER_LEVELS[(minerStats.currentTier || '').toLowerCase()] || 0;
+
+  let unlockedTokenScore = 0;
+  if (currentTierLevel >= 1)
+    unlockedTokenScore += Number(minerStats.bronzeTokenScore || 0);
+  if (currentTierLevel >= 2)
+    unlockedTokenScore += Number(minerStats.silverTokenScore || 0);
+  if (currentTierLevel >= 3)
+    unlockedTokenScore += Number(minerStats.goldTokenScore || 0);
+
+  const bonus = Math.floor(unlockedTokenScore / tokenScorePer);
+  return Math.min(baseThreshold + bonus, maxThreshold);
+};
 
 // Custom time formatting - shows minutes precision for < 24h
 const formatTimeAgo = (date: Date): string => {
@@ -66,9 +101,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
 
   const username = githubData?.login || prs?.[0]?.author || githubId;
 
-  // Get threshold from config or fallback to 10
-  const openPrThreshold =
-    generalConfig?.repositoryPrScoring?.excessivePrPenaltyThreshold ?? 10;
+  // Calculate per-miner dynamic threshold based on unlocked tier token scores
+  const openPrThreshold = minerStats
+    ? calculateDynamicThreshold(minerStats, generalConfig?.repositoryPrScoring)
+    : (generalConfig?.repositoryPrScoring?.excessivePrPenaltyThreshold ?? 10);
 
   // Get color for open PRs based on proximity to threshold
   const getOpenPrColor = (openPrs: number, threshold: number) => {
@@ -255,6 +291,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
       ),
       subItems: [
         {
+          label: 'Threshold',
+          value: openPrThreshold,
+        },
+        {
           label: 'Collateral',
           value:
             Number(minerStats.totalCollateralScore || 0) > 0
@@ -266,7 +306,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
               : undefined,
         },
       ],
-      tooltip: `Open PRs have collateral deducted from your score. Exceeding ${openPrThreshold} open PRs incurs drastic penalties.`,
+      tooltip: `Open PRs have collateral deducted from your score. Exceeding ${openPrThreshold} open PRs incurs a full penalty. Threshold scales with token score from unlocked tiers (+1 per 500).`,
     },
     {
       label: 'Est. Earnings',
