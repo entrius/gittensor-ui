@@ -103,10 +103,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
 
   // Calculate per-miner dynamic threshold based on unlocked tier token scores
   const openPrThreshold = minerStats
-    ? calculateDynamicThreshold(
-        minerStats,
-        generalConfig?.repositoryPrScoring,
-      )
+    ? calculateDynamicThreshold(minerStats, generalConfig?.repositoryPrScoring)
     : (generalConfig?.repositoryPrScoring?.excessivePrPenaltyThreshold ?? 10);
 
   // Get color for open PRs based on proximity to threshold
