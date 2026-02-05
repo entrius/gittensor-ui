@@ -37,6 +37,9 @@ export interface RepositoryPrScoring {
   excessivePrPenaltyThreshold: number;
   excessivePrPenaltySlope: number;
   excessivePrMinMultiplier: number;
+  // Dynamic open PR threshold params
+  openPrThresholdTokenScore: number;
+  maxOpenPrThreshold: number;
 }
 
 export interface GeneralConfigResponse {
