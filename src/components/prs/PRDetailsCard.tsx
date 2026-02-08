@@ -129,7 +129,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     rawCredibility?: number;
     credibilityScalar?: number;
   }> = isOpenPR
-      ? [
+    ? [
         {
           label: 'Repo Weight',
           value: `${parseFloat(prDetails.repoWeightMultiplier ?? '0').toFixed(2)}x`,
@@ -143,7 +143,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
           value: '20%',
         },
       ]
-      : [
+    : [
         {
           label: 'Repo Weight',
           value: `${parseFloat(prDetails.repoWeightMultiplier ?? '0').toFixed(2)}x`,
@@ -469,8 +469,14 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
         <Grid container spacing={2}>
           {multipliers.map((item, index) => {
             const isCredibilityItem = item.isCredibility === true;
-            const rawCred: number | undefined = typeof item.rawCredibility === 'number' ? item.rawCredibility : undefined;
-            const scalar: number | undefined = typeof item.credibilityScalar === 'number' ? item.credibilityScalar : undefined;
+            const rawCred: number | undefined =
+              typeof item.rawCredibility === 'number'
+                ? item.rawCredibility
+                : undefined;
+            const scalar: number | undefined =
+              typeof item.credibilityScalar === 'number'
+                ? item.credibilityScalar
+                : undefined;
 
             const content = (
               <Box
@@ -532,33 +538,59 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                   <Tooltip
                     title={
                       <Box sx={{ p: 0.5 }}>
-                        <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, mb: 1 }}>
+                        <Typography
+                          sx={{ fontSize: '0.75rem', fontWeight: 600, mb: 1 }}
+                        >
                           Credibility Multiplier
                         </Typography>
                         {rawCred !== undefined && scalar !== undefined ? (
                           <>
-                            <Typography sx={{ fontSize: '0.7rem', mb: 1, color: 'rgba(255, 255, 255, 0.9)' }}>
-                              Your raw credibility ({(rawCred * 100).toFixed(1)}%) is your PR success rate:
-                              merged PRs ÷ (merged + closed)
+                            <Typography
+                              sx={{
+                                fontSize: '0.7rem',
+                                mb: 1,
+                                color: 'rgba(255, 255, 255, 0.9)',
+                              }}
+                            >
+                              Your raw credibility ({(rawCred * 100).toFixed(1)}
+                              %) is your PR success rate: merged PRs ÷ (merged +
+                              closed)
                             </Typography>
-                            <Typography sx={{ fontSize: '0.7rem', mb: 1, color: 'rgba(255, 255, 255, 0.9)' }}>
-                              It's then scaled using the tier's scalar ({scalar}x) to reward consistency:
+                            <Typography
+                              sx={{
+                                fontSize: '0.7rem',
+                                mb: 1,
+                                color: 'rgba(255, 255, 255, 0.9)',
+                              }}
+                            >
+                              It's then scaled using the tier's scalar ({scalar}
+                              x) to reward consistency:
                             </Typography>
-                            <Box sx={{
-                              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                              p: 1,
-                              borderRadius: 1,
-                              fontFamily: '"JetBrains Mono", monospace',
-                              fontSize: '0.7rem',
-                              textAlign: 'center',
-                            }}>
-                              {(rawCred * 100).toFixed(1)}%<sup>{scalar}</sup> = {(Math.pow(rawCred, scalar) * 100).toFixed(0)}% → {item.value}
+                            <Box
+                              sx={{
+                                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                p: 1,
+                                borderRadius: 1,
+                                fontFamily: '"JetBrains Mono", monospace',
+                                fontSize: '0.7rem',
+                                textAlign: 'center',
+                              }}
+                            >
+                              {(rawCred * 100).toFixed(1)}%<sup>{scalar}</sup> ={' '}
+                              {(Math.pow(rawCred, scalar) * 100).toFixed(0)}% →{' '}
+                              {item.value}
                             </Box>
                           </>
                         ) : (
-                          <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.9)' }}>
-                            This multiplier is based on your PR success rate (raw credibility),
-                            exponentially scaled by the tier's scalar to reward consistency.
+                          <Typography
+                            sx={{
+                              fontSize: '0.7rem',
+                              color: 'rgba(255, 255, 255, 0.9)',
+                            }}
+                          >
+                            This multiplier is based on your PR success rate
+                            (raw credibility), exponentially scaled by the
+                            tier's scalar to reward consistency.
                           </Typography>
                         )}
                       </Box>
@@ -690,10 +722,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             >
               {prDetails.mergedAt
                 ? new Date(prDetails.mergedAt).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })
                 : 'Not Merged'}
             </Typography>
           </Box>
