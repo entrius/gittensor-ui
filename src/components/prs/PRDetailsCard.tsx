@@ -8,7 +8,9 @@ import {
   Grid,
   Chip,
   alpha,
+  Tooltip,
 } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { usePullRequestDetails } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import theme from '../../theme';
@@ -123,8 +125,11 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   const multipliers: Array<{
     label: string;
     value: string;
+    isCredibility?: boolean;
+    rawCredibility?: number;
+    credibilityScalar?: number;
   }> = isOpenPR
-    ? [
+      ? [
         {
           label: 'Repo Weight',
           value: `${parseFloat(prDetails.repoWeightMultiplier ?? '0').toFixed(2)}x`,
@@ -138,7 +143,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
           value: '20%',
         },
       ]
-    : [
+      : [
         {
           label: 'Repo Weight',
           value: `${parseFloat(prDetails.repoWeightMultiplier ?? '0').toFixed(2)}x`,
@@ -148,8 +153,11 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
           value: `${parseFloat(prDetails.issueMultiplier ?? '0').toFixed(2)}x`,
         },
         {
-          label: 'Credibility*',
+          label: 'Credibility',
           value: `${parseFloat(prDetails.credibilityMultiplier ?? '0').toFixed(2)}x`,
+          isCredibility: true,
+          rawCredibility: prDetails.rawCredibility,
+          credibilityScalar: prDetails.credibilityScalar,
         },
         {
           label: 'Repo Unique',
@@ -459,8 +467,12 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
           {isOpenPR ? 'Collateral Multipliers' : 'Score Multipliers'}
         </Typography>
         <Grid container spacing={2}>
-          {multipliers.map((item, index) => (
-            <Grid item xs={6} sm={4} md={2} key={index}>
+          {multipliers.map((item, index) => {
+            const isCredibilityItem = item.isCredibility === true;
+            const rawCred: number | undefined = typeof item.rawCredibility === 'number' ? item.rawCredibility : undefined;
+            const scalar: number | undefined = typeof item.credibilityScalar === 'number' ? item.credibilityScalar : undefined;
+
+            const content = (
               <Box
                 sx={{
                   backgroundColor: 'rgba(255, 255, 255, 0.03)',
@@ -472,6 +484,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                   alignItems: 'center',
                   justifyContent: 'center',
                   textAlign: 'center',
+                  cursor: isCredibilityItem ? 'help' : 'default',
                 }}
               >
                 <Typography
@@ -479,9 +492,15 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                     color: 'rgba(255, 255, 255, 0.5)',
                     fontSize: '0.7rem',
                     mb: 0.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
                   }}
                 >
                   {item.label}
+                  {isCredibilityItem && (
+                    <InfoOutlinedIcon sx={{ fontSize: '0.7rem' }} />
+                  )}
                 </Typography>
                 <Typography
                   sx={{
@@ -493,23 +512,84 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                 >
                   {item.value}
                 </Typography>
+                {isCredibilityItem && rawCred !== undefined && (
+                  <Typography
+                    sx={{
+                      color: 'rgba(255, 255, 255, 0.4)',
+                      fontSize: '0.65rem',
+                      mt: 0.5,
+                    }}
+                  >
+                    from {(rawCred * 100).toFixed(1)}%
+                  </Typography>
+                )}
               </Box>
-            </Grid>
-          ))}
+            );
+
+            return (
+              <Grid item xs={6} sm={4} md={2} key={index}>
+                {isCredibilityItem ? (
+                  <Tooltip
+                    title={
+                      <Box sx={{ p: 0.5 }}>
+                        <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, mb: 1 }}>
+                          Credibility Multiplier
+                        </Typography>
+                        {rawCred !== undefined && scalar !== undefined ? (
+                          <>
+                            <Typography sx={{ fontSize: '0.7rem', mb: 1, color: 'rgba(255, 255, 255, 0.9)' }}>
+                              Your raw credibility ({(rawCred * 100).toFixed(1)}%) is your PR success rate:
+                              merged PRs ÷ (merged + closed)
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.7rem', mb: 1, color: 'rgba(255, 255, 255, 0.9)' }}>
+                              It's then scaled using the tier's scalar ({scalar}x) to reward consistency:
+                            </Typography>
+                            <Box sx={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                              p: 1,
+                              borderRadius: 1,
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: '0.7rem',
+                              textAlign: 'center',
+                            }}>
+                              {(rawCred * 100).toFixed(1)}%<sup>{scalar}</sup> = {(Math.pow(rawCred, scalar) * 100).toFixed(0)}% → {item.value}
+                            </Box>
+                          </>
+                        ) : (
+                          <Typography sx={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                            This multiplier is based on your PR success rate (raw credibility),
+                            exponentially scaled by the tier's scalar to reward consistency.
+                          </Typography>
+                        )}
+                      </Box>
+                    }
+                    arrow
+                    placement="top"
+                    slotProps={{
+                      tooltip: {
+                        sx: {
+                          backgroundColor: 'rgba(20, 20, 20, 0.98)',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          borderRadius: '8px',
+                          maxWidth: 280,
+                        },
+                      },
+                      arrow: {
+                        sx: {
+                          color: 'rgba(20, 20, 20, 0.98)',
+                        },
+                      },
+                    }}
+                  >
+                    {content}
+                  </Tooltip>
+                ) : (
+                  content
+                )}
+              </Grid>
+            );
+          })}
         </Grid>
-        {!isOpenPR && (
-          <Typography
-            sx={{
-              color: 'rgba(255, 255, 255, 0.35)',
-              fontSize: '0.65rem',
-              fontStyle: 'italic',
-              mt: 1.5,
-              textAlign: 'center',
-            }}
-          >
-            *Credibility has been exponentially scaled by the tier scalar
-          </Typography>
-        )}
       </Box>
 
       {/* Additional Info */}
@@ -610,10 +690,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             >
               {prDetails.mergedAt
                 ? new Date(prDetails.mergedAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })
                 : 'Not Merged'}
             </Typography>
           </Box>
