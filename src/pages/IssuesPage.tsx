@@ -1,5 +1,5 @@
 /**
- * Issues Page for v0 - no competitions.
+ * Issues Page
  *
  * 3 tabs:
  * - Available Issues: Active issues ready for solving

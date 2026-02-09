@@ -1,7 +1,5 @@
 /**
- * Issues API hooks for v0 - no competitions.
- *
- * Simplified API without competition and ELO queries.
+ * Issues API - For issue bounties.
  */
 import { useApiQuery } from "./ApiUtils";
 import {

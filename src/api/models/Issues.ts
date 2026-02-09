@@ -1,7 +1,5 @@
 /**
- * Issue bounty models for v0 - no competitions.
- *
- * Simplified interfaces without Competition, EloScore, EloHistory, EloStats.
+ * Issue bounty models
  */
 
 export interface IssueBounty {
