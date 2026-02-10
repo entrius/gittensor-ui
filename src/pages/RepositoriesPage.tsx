@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { formatDistanceToNow } from 'date-fns';
 import {
   Avatar,
   Box,
@@ -15,22 +16,73 @@ import { type CommitLog } from '../api/models/Dashboard';
 
 const FONTS = { mono: '"JetBrains Mono", monospace' } as const;
 
-const getTierColor = (tier: string) => {
-  switch (tier) {
-    case 'Gold':
-      return '#FFD700';
-    case 'Silver':
-      return '#C0C0C0';
-    case 'Bronze':
-      return '#CD7F32';
-    default:
-      return '#8b949e';
-  }
+// ── Shared row style ────────────────────────────────────────────────────────
+const ROW_HEIGHT = 40; // px – keeps every row exactly the same across cards
+
+const HighlightRow: React.FC<{
+  onClick: () => void;
+  avatar: string;
+  label: React.ReactNode;
+  right: React.ReactNode;
+}> = ({ onClick, avatar, label, right }) => (
+  <Box
+    onClick={onClick}
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      height: ROW_HEIGHT,
+      py: 0,
+      px: 1,
+      borderRadius: 1,
+      cursor: 'pointer',
+      transition: 'background 0.15s',
+      mx: -1,
+      '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
+    }}
+  >
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden', mr: 2, flex: 1 }}>
+      <Avatar
+        src={avatar}
+        sx={{ width: 24, height: 24, flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }}
+      />
+      {label}
+    </Box>
+    {right}
+  </Box>
+);
+
+const SectionHeader: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Typography
+    sx={{
+      fontFamily: FONTS.mono,
+      fontSize: '0.75rem',
+      fontWeight: 600,
+      color: 'rgba(255,255,255,0.5)',
+      textTransform: 'uppercase',
+      letterSpacing: '0.05em',
+      mb: 1.5,
+      pb: 1,
+      borderBottom: '1px solid rgba(255,255,255,0.05)',
+    }}
+  >
+    {children}
+  </Typography>
+);
+
+const cardSx = {
+  p: 2,
+  borderRadius: 2,
+  border: '1px solid rgba(255, 255, 255, 0.08)',
+  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+  display: 'flex',
+  flexDirection: 'column' as const,
+  transition: 'all 0.2s',
+  '&:hover': {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
 };
-
-// ── Highlight Card ──────────────────────────────────────────────────────────
-
-
 
 // ── Page ────────────────────────────────────────────────────────────────────
 const RepositoriesPage: React.FC = () => {
@@ -95,13 +147,13 @@ const RepositoriesPage: React.FC = () => {
   }, [allPRs, reposWithWeights]);
 
   // ── Trending: repos with biggest % score increase in the last 7 days ──
+  // Excludes brand-new repos (no prior score) so only genuine growth shows
   const trendingRepos = useMemo(() => {
     if (!allPRs || !reposWithWeights) return [];
 
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 7);
 
-    // Bucket each repo's score into "recent" (last 7d) and "prior" (older)
     const repoScores = new Map<
       string,
       { recentScore: number; priorScore: number; recentPRs: number }
@@ -130,32 +182,25 @@ const RepositoriesPage: React.FC = () => {
     const repoMap = new Map(reposWithWeights.map((r) => [r.fullName, r]));
 
     return Array.from(repoScores.entries())
-      .filter(([name, s]) => repoMap.has(name) && s.recentScore > 0)
-      .map(([name, s]) => {
-        const pctIncrease =
-          s.priorScore > 0
-            ? (s.recentScore / s.priorScore) * 100
-            : Infinity; // brand new score = infinite % increase
-        return {
-          name,
-          tier: repoMap.get(name)?.tier || '',
-          recentScore: s.recentScore,
-          priorScore: s.priorScore,
-          pctIncrease,
-          prs: s.recentPRs,
-        };
-      })
+      .filter(([name, s]) => repoMap.has(name) && s.recentScore > 0 && s.priorScore > 0)
+      .map(([name, s]) => ({
+        name,
+        tier: repoMap.get(name)?.tier || '',
+        recentScore: s.recentScore,
+        priorScore: s.priorScore,
+        pctIncrease: (s.recentScore / s.priorScore) * 100,
+        prs: s.recentPRs,
+      }))
       .sort((a, b) => b.pctIncrease - a.pctIncrease)
       .slice(0, 5);
   }, [allPRs, reposWithWeights]);
 
-  // ── First Contributions: repos sorted by most recent first PR ─────────
-  const firstContributionRepos = useMemo(() => {
+  // ── Recently Added: repos that appeared most recently on the network ───
+  const recentlyAddedRepos = useMemo(() => {
     if (!allPRs || !reposWithWeights) return [];
 
-    // Find the earliest PR date + total PRs per repo
+    // Find the earliest PR date per repo (= when the repo first appeared)
     const earliestPR = new Map<string, Date>();
-    const repoPRCount = new Map<string, number>();
 
     allPRs.forEach((pr: CommitLog) => {
       const prDate = pr.prCreatedAt || pr.mergedAt;
@@ -166,8 +211,6 @@ const RepositoriesPage: React.FC = () => {
       if (!existing || created < existing) {
         earliestPR.set(pr.repository, created);
       }
-
-      repoPRCount.set(pr.repository, (repoPRCount.get(pr.repository) || 0) + 1);
     });
 
     const repoMap = new Map(reposWithWeights.map((r) => [r.fullName, r]));
@@ -177,39 +220,37 @@ const RepositoriesPage: React.FC = () => {
       .map(([name, firstDate]) => ({
         name,
         tier: repoMap.get(name)?.tier || '',
-        firstPR: firstDate,
-        prs: repoPRCount.get(name) || 0,
+        addedAt: firstDate,
       }))
-      .sort((a, b) => b.firstPR.getTime() - a.firstPR.getTime())
+      .sort((a, b) => b.addedAt.getTime() - a.addedAt.getTime())
       .slice(0, 5);
   }, [allPRs, reposWithWeights]);
 
-  // ── Highest Paying: repos with best avg score per PR ──────────────────
-  const highestPayingRepos = useMemo(() => {
+  // ── Recent PRs: most recently created PRs ──────────────────────────────
+  const recentPrs = useMemo(() => {
     if (!allPRs || !reposWithWeights) return [];
-
-    const repoStats = new Map<string, { totalScore: number; prCount: number }>();
-
-    allPRs.forEach((pr: CommitLog) => {
-      if (!pr?.repository) return;
-      const score = parseFloat(pr.score || '0');
-      const cur = repoStats.get(pr.repository) || { totalScore: 0, prCount: 0 };
-      cur.totalScore += score;
-      cur.prCount += 1;
-      repoStats.set(pr.repository, cur);
-    });
 
     const repoMap = new Map(reposWithWeights.map((r) => [r.fullName, r]));
 
-    return Array.from(repoStats.entries())
-      .filter(([name, s]) => repoMap.has(name) && s.prCount >= 2) // need at least 2 PRs for meaningful avg
-      .map(([name, s]) => ({
-        name,
-        tier: repoMap.get(name)?.tier || '',
-        avgScore: s.totalScore / s.prCount,
-      }))
-      .sort((a, b) => b.avgScore - a.avgScore)
-      .slice(0, 5);
+    return allPRs
+      .filter(
+        (pr) =>
+          pr.repository &&
+          (pr.prCreatedAt || pr.mergedAt) &&
+          repoMap.has(pr.repository)
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.prCreatedAt || b.mergedAt || 0).getTime() - new Date(a.prCreatedAt || a.mergedAt || 0).getTime()
+      )
+      .slice(0, 5)
+      .map((pr) => ({
+        name: pr.repository,
+        tier: repoMap.get(pr.repository)?.tier || '',
+        title: pr.pullRequestTitle,
+        createdAt: new Date(pr.prCreatedAt || pr.mergedAt || new Date()),
+        number: pr.pullRequestNumber,
+      }));
   }, [allPRs, reposWithWeights]);
 
   // ── Render ────────────────────────────────────────────────────────────
@@ -228,74 +269,31 @@ const RepositoriesPage: React.FC = () => {
           px: { xs: 2, sm: 3 },
         }}
       >
-        {/* ── Highlight Sections (side by side) ────────────────────── */}
+        {/* ── Highlight Sections ─────────────────────────────────────── */}
         <Box
           sx={{
             display: 'grid',
             gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr 1fr' },
             gap: 2,
             mb: 3,
+            alignItems: 'stretch',
           }}
         >
           {/* Trending This Week */}
-          <Card
-            sx={{
-              p: 2,
-              borderRadius: 2,
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              backgroundColor: 'rgba(255, 255, 255, 0.02)',
-              display: 'flex',
-              flexDirection: 'column',
-              transition: 'all 0.2s',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                borderColor: 'rgba(255, 255, 255, 0.15)',
-              },
-            }}
-          >
+          <Card sx={cardSx}>
             {(isLoading || trendingRepos.length > 0) ? (
               <>
-                <Typography
-                  sx={{
-                    fontFamily: FONTS.mono,
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    color: 'rgba(255,255,255,0.5)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    mb: 2,
-                    pb: 1,
-                    borderBottom: '1px solid rgba(255,255,255,0.05)',
-                  }}
-                >
-                  Trending This Week
-                </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <SectionHeader>Trending This Week</SectionHeader>
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                   {trendingRepos.length === 0 && !isLoading ? (
                     <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', fontStyle: 'italic', p: 1 }}>No data available</Typography>
                   ) : (
                     trendingRepos.map((repo) => (
-                      <Box
+                      <HighlightRow
                         key={repo.name}
                         onClick={() => handleSelectRepository(repo.name)}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          py: 0.75,
-                          px: 1,
-                          borderRadius: 1,
-                          cursor: 'pointer',
-                          transition: 'background 0.15s',
-                          mx: -1,
-                          '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden', mr: 2 }}>
-                          <Avatar
-                            src={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
-                            sx={{ width: 24, height: 24, flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }}
-                          />
+                        avatar={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
+                        label={
                           <Tooltip title={repo.name} arrow placement="top">
                             <Typography
                               sx={{
@@ -310,25 +308,25 @@ const RepositoriesPage: React.FC = () => {
                               {repo.name}
                             </Typography>
                           </Tooltip>
-                        </Box>
-                        <Typography
-                          sx={{
-                            fontFamily: FONTS.mono,
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            color: '#51cf66',
-                            flexShrink: 0,
-                            backgroundColor: 'rgba(81, 207, 102, 0.1)',
-                            px: 0.75,
-                            py: 0.25,
-                            borderRadius: '4px',
-                          }}
-                        >
-                          {repo.pctIncrease === Infinity
-                            ? 'New'
-                            : `+${repo.pctIncrease.toFixed(0)}%`}
-                        </Typography>
-                      </Box>
+                        }
+                        right={
+                          <Typography
+                            sx={{
+                              fontFamily: FONTS.mono,
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              color: '#51cf66',
+                              flexShrink: 0,
+                              backgroundColor: 'rgba(81, 207, 102, 0.1)',
+                              px: 0.75,
+                              py: 0.25,
+                              borderRadius: '4px',
+                            }}
+                          >
+                            +{repo.pctIncrease.toFixed(0)}%
+                          </Typography>
+                        }
+                      />
                     ))
                   )}
                 </Box>
@@ -336,65 +334,21 @@ const RepositoriesPage: React.FC = () => {
             ) : null}
           </Card>
 
-          {/* First Contributions */}
-          <Card
-            sx={{
-              p: 2,
-              borderRadius: 2,
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              backgroundColor: 'rgba(255, 255, 255, 0.02)',
-              display: 'flex',
-              flexDirection: 'column',
-              transition: 'all 0.2s',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                borderColor: 'rgba(255, 255, 255, 0.15)',
-              },
-            }}
-          >
-            {(isLoading || firstContributionRepos.length > 0) ? (
+          {/* Recently Added */}
+          <Card sx={cardSx}>
+            {(isLoading || recentlyAddedRepos.length > 0) ? (
               <>
-                <Typography
-                  sx={{
-                    fontFamily: FONTS.mono,
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    color: 'rgba(255,255,255,0.5)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    mb: 2,
-                    pb: 1,
-                    borderBottom: '1px solid rgba(255,255,255,0.05)',
-                  }}
-                >
-                  First Contributions
-                </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                  {firstContributionRepos.length === 0 && !isLoading ? (
+                <SectionHeader>Recently Added</SectionHeader>
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                  {recentlyAddedRepos.length === 0 && !isLoading ? (
                     <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', fontStyle: 'italic', p: 1 }}>No data available</Typography>
                   ) : (
-                    firstContributionRepos.map((repo) => (
-                      <Box
+                    recentlyAddedRepos.map((repo) => (
+                      <HighlightRow
                         key={repo.name}
                         onClick={() => handleSelectRepository(repo.name)}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          py: 0.75,
-                          px: 1,
-                          borderRadius: 1,
-                          cursor: 'pointer',
-                          transition: 'background 0.15s',
-                          mx: -1,
-                          '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden', mr: 2 }}>
-                          <Avatar
-                            src={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
-                            sx={{ width: 24, height: 24, flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }}
-                          />
+                        avatar={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
+                        label={
                           <Tooltip title={repo.name} arrow placement="top">
                             <Typography
                               sx={{
@@ -409,21 +363,22 @@ const RepositoriesPage: React.FC = () => {
                               {repo.name}
                             </Typography>
                           </Tooltip>
-                        </Box>
-                        <Typography
-                          sx={{
-                            fontFamily: FONTS.mono,
-                            fontSize: '0.75rem',
-                            color: 'rgba(255,255,255,0.45)',
-                            flexShrink: 0,
-                          }}
-                        >
-                          {repo.firstPR.toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </Typography>
-                      </Box>
+                        }
+                        right={
+                          <Typography
+                            sx={{
+                              fontFamily: FONTS.mono,
+                              fontSize: '0.72rem',
+                              color: 'rgba(255,255,255,0.4)',
+                              flexShrink: 0,
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {formatDistanceToNow(repo.addedAt, { addSuffix: true })
+                              .replace('about ', '')}
+                          </Typography>
+                        }
+                      />
                     ))
                   )}
                 </Box>
@@ -431,91 +386,71 @@ const RepositoriesPage: React.FC = () => {
             ) : null}
           </Card>
 
-          {/* Highest Paying */}
-          <Card
-            sx={{
-              p: 2,
-              borderRadius: 2,
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              backgroundColor: 'rgba(255, 255, 255, 0.02)',
-              display: 'flex',
-              flexDirection: 'column',
-              transition: 'all 0.2s',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                borderColor: 'rgba(255, 255, 255, 0.15)',
-              },
-            }}
-          >
-            {(isLoading || highestPayingRepos.length > 0) ? (
+          {/* Recent PRs */}
+          <Card sx={cardSx}>
+            {(isLoading || recentPrs.length > 0) ? (
               <>
-                <Typography
-                  sx={{
-                    fontFamily: FONTS.mono,
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    color: 'rgba(255,255,255,0.5)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    mb: 2,
-                    pb: 1,
-                    borderBottom: '1px solid rgba(255,255,255,0.05)',
-                  }}
-                >
-                  Highest Paying
-                </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                  {highestPayingRepos.length === 0 && !isLoading ? (
+                <SectionHeader>Recent PRs</SectionHeader>
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                  {recentPrs.length === 0 && !isLoading ? (
                     <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', fontStyle: 'italic', p: 1 }}>No data available</Typography>
                   ) : (
-                    highestPayingRepos.map((repo) => (
-                      <Box
-                        key={repo.name}
-                        onClick={() => handleSelectRepository(repo.name)}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          py: 0.75,
-                          px: 1,
-                          borderRadius: 1,
-                          cursor: 'pointer',
-                          transition: 'background 0.15s',
-                          mx: -1,
-                          '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden', mr: 2 }}>
-                          <Avatar
-                            src={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
-                            sx={{ width: 24, height: 24, flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }}
-                          />
-                          <Tooltip title={repo.name} arrow placement="top">
-                            <Typography
-                              sx={{
-                                fontFamily: FONTS.mono,
-                                fontSize: '0.82rem',
-                                color: 'rgba(255,255,255,0.9)',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {repo.name}
-                            </Typography>
-                          </Tooltip>
-                        </Box>
-                        <Typography
-                          sx={{
-                            fontFamily: FONTS.mono,
-                            fontSize: '0.75rem',
-                            color: 'rgba(255,255,255,0.45)',
-                            flexShrink: 0,
-                          }}
-                        >
-                          {repo.avgScore.toFixed(1)} avg
-                        </Typography>
-                      </Box>
+                    recentPrs.map((pr) => (
+                      <HighlightRow
+                        key={`${pr.name}-${pr.number}`}
+                        onClick={() => navigate(`/miners/pr?repo=${encodeURIComponent(pr.name)}&number=${pr.number}`)}
+                        avatar={`https://avatars.githubusercontent.com/${pr.name.split('/')[0]}`}
+                        label={
+                          <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                            <Tooltip title={pr.name} arrow placement="top">
+                              <Typography
+                                sx={{
+                                  fontFamily: FONTS.mono,
+                                  fontSize: '0.68rem',
+                                  color: 'rgba(255,255,255,0.45)',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  lineHeight: 1.2,
+                                }}
+                              >
+                                {pr.name}
+                              </Typography>
+                            </Tooltip>
+                            <Tooltip title={pr.title} arrow placement="top">
+                              <Typography
+                                sx={{
+                                  fontFamily: FONTS.mono,
+                                  fontSize: '0.78rem',
+                                  color: 'rgba(255,255,255,0.9)',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  lineHeight: 1.3,
+                                }}
+                              >
+                                {pr.title}
+                              </Typography>
+                            </Tooltip>
+                          </Box>
+                        }
+                        right={
+                          <Typography
+                            sx={{
+                              fontFamily: FONTS.mono,
+                              fontSize: '0.68rem',
+                              color: 'rgba(255,255,255,0.35)',
+                              flexShrink: 0,
+                              whiteSpace: 'nowrap',
+                              ml: 1,
+                            }}
+                          >
+                            {formatDistanceToNow(pr.createdAt, { addSuffix: true })
+                              .replace('about ', '')
+                              .replace('less than a minute ago', 'just now')}
+                          </Typography>
+                        }
+                      />
                     ))
                   )}
                 </Box>
