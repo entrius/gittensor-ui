@@ -461,7 +461,7 @@ export const TierCard: React.FC<TierCardProps> = ({
                 ? `${(Number(stats.credibility) * 100).toFixed(1)}%`
                 : 'N/A'
             }
-            tooltip="Credibility is the ratio of merged PRs to total PR attempts (merged + closed). It represents your success rate."
+            tooltip="Your raw credibility (merged ÷ total attempts) for this tier. When applied to PRs, this is exponentially scaled by the tier's scalar to calculate your final credibility multiplier."
             valueColor={
               stats.credibility && stats.credibility >= 0.7
                 ? '#4ade80'
