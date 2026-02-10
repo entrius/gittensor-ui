@@ -6,7 +6,7 @@ import { TopRepositoriesTable, SEO } from '../components';
 import { useAllPrs, useReposAndWeights } from '../api';
 import { type CommitLog } from '../api/models/Dashboard';
 
-const TopReposPage: React.FC = () => {
+const RepositoriesPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialTierFilter = searchParams.get('tier') as
@@ -70,16 +70,17 @@ const TopReposPage: React.FC = () => {
           uniqueMiners: prStats?.uniqueMiners || new Set<string>(),
           weight: repo.weight ? parseFloat(String(repo.weight)) : 0,
           tier: repo.tier || '',
+          inactiveAt: repo.inactiveAt,
         };
       })
       .sort((a, b) => b.totalScore - a.totalScore);
   }, [allPRs, reposWithWeights]);
 
   return (
-    <Page title="Top Repositories">
+    <Page title="Repositories">
       <SEO
-        title="Top Repositories"
-        description="Top Repositories by contribution score on Gittensor."
+        title="Repositories"
+        description="Browse supported repositories on Gittensor."
       />
       <Box
         sx={{
@@ -114,4 +115,4 @@ const TopReposPage: React.FC = () => {
   );
 };
 
-export default TopReposPage;
+export default RepositoriesPage;

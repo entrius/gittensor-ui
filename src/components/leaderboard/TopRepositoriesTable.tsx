@@ -39,6 +39,7 @@ interface RepoStats {
   weight: number;
   tier: string;
   rank?: number;
+  inactiveAt?: string | null;
 }
 
 type SortColumn =
@@ -73,7 +74,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [sortColumn, setSortColumn] = useState<SortColumn>('totalScore');
+  const [sortColumn, setSortColumn] = useState<SortColumn>('weight');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [tierFilter, setTierFilter] = useState<
     'all' | 'Gold' | 'Silver' | 'Bronze'
@@ -833,7 +834,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                         backgroundColor: 'rgba(255, 255, 255, 0.05)',
                       },
                       transition: 'background-color 0.2s',
-                      opacity: hasScore ? 1 : 0.4,
+                      opacity: repo.inactiveAt ? 0.5 : 1,
                     }}
                   >
                     <TableCell sx={{ ...bodyCellStyle, width: '60px', pr: 0 }}>
@@ -863,10 +864,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                             border: '1px solid rgba(255, 255, 255, 0.2)',
                             backgroundColor:
                               (repo.repository || '').split('/')[0] ===
-                              'opentensor'
+                                'opentensor'
                                 ? '#ffffff'
                                 : (repo.repository || '').split('/')[0] ===
-                                    'bitcoin'
+                                  'bitcoin'
                                   ? '#F7931A'
                                   : 'transparent',
                           }}

@@ -19,6 +19,7 @@ import ArticleIcon from '@mui/icons-material/Article';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import { Page } from '../components/layout';
+import { useReposAndWeights } from '../api';
 import {
   RepositoryContributorsTable,
   RepositoryPRsTable,
@@ -60,6 +61,7 @@ const RepositoryDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const repo = searchParams.get('name');
   const [tabValue, setTabValue] = useState(0);
+  const { data: repos } = useReposAndWeights();
 
   const owner = repo ? repo.split('/')[0] : '';
 
@@ -89,7 +91,7 @@ const RepositoryDetailsPage: React.FC = () => {
       >
         <Container maxWidth="xl">
           <Box sx={{ pt: 3, pb: 0 }}>
-            <BackButton to="/top-repos" label="Back to Repositories" />
+            <BackButton to="/repositories" label="Back to Repositories" />
 
             <Grid
               container
@@ -125,6 +127,28 @@ const RepositoryDetailsPage: React.FC = () => {
                     {repo}
                   </Typography>
                   <Chip variant="info" label="Public" />
+                  {(() => {
+                    const currentRepo = repos?.find(
+                      (r) => r.fullName === repo,
+                    );
+
+                    if (currentRepo?.inactiveAt) {
+                      return (
+                        <Chip
+                          label={`Inactive since ${new Date(currentRepo.inactiveAt).toLocaleDateString()}`}
+                          sx={{
+                            backgroundColor: 'rgba(211, 47, 47, 0.1)',
+                            color: '#ff5252',
+                            border: '1px solid rgba(255, 82, 82, 0.3)',
+                            fontSize: '0.75rem',
+                            height: '24px',
+                            fontWeight: 600,
+                          }}
+                        />
+                      );
+                    }
+                    return null;
+                  })()}
                 </Box>
               </Grid>
               <Grid

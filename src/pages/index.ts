@@ -22,8 +22,5 @@ export * from './OnboardPage';
 export { default as TopMinersPage } from './TopMinersPage';
 export * from './TopMinersPage';
 
-export { default as TopPRsPage } from './TopPRsPage';
-export * from './TopPRsPage';
-
-export { default as TopReposPage } from './TopReposPage';
-export * from './TopReposPage';
+export { default as RepositoriesPage } from './RepositoriesPage';
+export * from './RepositoriesPage';

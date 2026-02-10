@@ -14,8 +14,7 @@ const DashboardPage = React.lazy(() => import('./pages/DashboardPage'));
 const IssuesPage = React.lazy(() => import('./pages/IssuesPage'));
 const IssueDetailsPage = React.lazy(() => import('./pages/IssueDetailsPage'));
 const TopMinersPage = React.lazy(() => import('./pages/TopMinersPage'));
-const TopPRsPage = React.lazy(() => import('./pages/TopPRsPage'));
-const TopReposPage = React.lazy(() => import('./pages/TopReposPage'));
+const RepositoriesPage = React.lazy(() => import('./pages/RepositoriesPage'));
 const MinerDetailsPage = React.lazy(() => import('./pages/MinerDetailsPage'));
 const RepositoryDetailsPage = React.lazy(
   () => import('./pages/RepositoryDetailsPage'),
@@ -32,8 +31,7 @@ const routesArray: AppRoute[] = [
   { name: 'issues', path: '/issues', element: <IssuesPage /> },
   { name: 'issue-details', path: '/issues/details', element: <IssueDetailsPage /> },
   { name: 'top-miners', path: '/top-miners', element: <TopMinersPage /> },
-  { name: 'top-prs', path: '/top-prs', element: <TopPRsPage /> },
-  { name: 'top-repos', path: '/top-repos', element: <TopReposPage /> },
+  { name: 'repositories', path: '/repositories', element: <RepositoriesPage /> },
   {
     name: 'miner-details',
     path: '/miners/details',
