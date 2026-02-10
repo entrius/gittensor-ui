@@ -556,18 +556,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         }}
       >
-        {/* Row 1: Description */}
-        <Box sx={{ p: 2, pb: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            Repositories generating the most score from contributor activity.
-          </Typography>
-        </Box>
-
         {/* Row 2: All Controls */}
         <Box
           sx={{
-            px: 2,
-            pb: 2,
+            p: 2,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
