@@ -431,8 +431,7 @@ const RepositoriesPage: React.FC = () => {
                       sx={{
                         fontFamily: FONTS.mono,
                         fontSize: '0.82rem',
-                        fontWeight: 600,
-                        color: '#ffd43b',
+                        color: 'rgba(255,255,255,0.45)',
                         flexShrink: 0,
                       }}
                     >
