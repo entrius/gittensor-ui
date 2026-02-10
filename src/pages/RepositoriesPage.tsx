@@ -230,218 +230,294 @@ const RepositoriesPage: React.FC = () => {
         {/* ── Highlight Sections (side by side) ────────────────────── */}
         <Box
           sx={{
-            display: 'flex',
-            gap: 3,
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' },
+            gap: 2,
             mb: 3,
-            flexDirection: { xs: 'column', md: 'row' },
           }}
         >
           {/* Trending This Week */}
-          {(isLoading || trendingRepos.length > 0) && (
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
-                sx={{
-                  fontFamily: FONTS.mono,
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  color: 'rgba(255,255,255,0.5)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  mb: 1,
-                }}
-              >
-                Trending This Week
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                {trendingRepos.map((repo) => (
-                  <Box
-                    key={repo.name}
-                    onClick={() => handleSelectRepository(repo.name)}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      py: 0.75,
-                      px: 1.5,
-                      borderRadius: 1.5,
-                      cursor: 'pointer',
-                      transition: 'background 0.15s',
-                      '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden', mr: 2 }}>
-                      <Avatar
-                        src={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
-                        sx={{ width: 20, height: 20, flexShrink: 0 }}
-                      />
-                      <Typography
+          <Card
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: 'rgba(255, 255, 255, 0.02)',
+              minHeight: '200px',
+              display: 'flex',
+              flexDirection: 'column',
+              transition: 'all 0.2s',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                borderColor: 'rgba(255, 255, 255, 0.15)',
+              },
+            }}
+          >
+            {(isLoading || trendingRepos.length > 0) ? (
+              <>
+                <Typography
+                  sx={{
+                    fontFamily: FONTS.mono,
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: 'rgba(255,255,255,0.5)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    mb: 2,
+                    pb: 1,
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  }}
+                >
+                  Trending This Week
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  {trendingRepos.length === 0 && !isLoading ? (
+                    <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', fontStyle: 'italic', p: 1 }}>No data available</Typography>
+                  ) : (
+                    trendingRepos.map((repo) => (
+                      <Box
+                        key={repo.name}
+                        onClick={() => handleSelectRepository(repo.name)}
                         sx={{
-                          fontFamily: FONTS.mono,
-                          fontSize: '0.82rem',
-                          color: 'rgba(255,255,255,0.85)',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          py: 0.75,
+                          px: 1,
+                          borderRadius: 1,
+                          cursor: 'pointer',
+                          transition: 'background 0.15s',
+                          mx: -1,
+                          '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
                         }}
                       >
-                        {repo.name}
-                      </Typography>
-                    </Box>
-                    <Typography
-                      sx={{
-                        fontFamily: FONTS.mono,
-                        fontSize: '0.82rem',
-                        fontWeight: 600,
-                        color: '#51cf66',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {repo.pctIncrease === Infinity
-                        ? 'New'
-                        : `+${repo.pctIncrease.toFixed(0)}%`}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-            </Box>
-          )}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden', mr: 2 }}>
+                          <Avatar
+                            src={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
+                            sx={{ width: 24, height: 24, flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }}
+                          />
+                          <Typography
+                            sx={{
+                              fontFamily: FONTS.mono,
+                              fontSize: '0.82rem',
+                              color: 'rgba(255,255,255,0.9)',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {repo.name}
+                          </Typography>
+                        </Box>
+                        <Typography
+                          sx={{
+                            fontFamily: FONTS.mono,
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: '#51cf66',
+                            flexShrink: 0,
+                            backgroundColor: 'rgba(81, 207, 102, 0.1)',
+                            px: 0.75,
+                            py: 0.25,
+                            borderRadius: '4px',
+                          }}
+                        >
+                          {repo.pctIncrease === Infinity
+                            ? 'New'
+                            : `+${repo.pctIncrease.toFixed(0)}%`}
+                        </Typography>
+                      </Box>
+                    ))
+                  )}
+                </Box>
+              </>
+            ) : null}
+          </Card>
 
           {/* First Contributions */}
-          {(isLoading || firstContributionRepos.length > 0) && (
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
-                sx={{
-                  fontFamily: FONTS.mono,
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  color: 'rgba(255,255,255,0.5)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  mb: 1,
-                }}
-              >
-                First Contributions
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                {firstContributionRepos.map((repo) => (
-                  <Box
-                    key={repo.name}
-                    onClick={() => handleSelectRepository(repo.name)}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      py: 0.75,
-                      px: 1.5,
-                      borderRadius: 1.5,
-                      cursor: 'pointer',
-                      transition: 'background 0.15s',
-                      '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden', mr: 2 }}>
-                      <Avatar
-                        src={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
-                        sx={{ width: 20, height: 20, flexShrink: 0 }}
-                      />
-                      <Typography
+          <Card
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: 'rgba(255, 255, 255, 0.02)',
+              minHeight: '200px',
+              display: 'flex',
+              flexDirection: 'column',
+              transition: 'all 0.2s',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                borderColor: 'rgba(255, 255, 255, 0.15)',
+              },
+            }}
+          >
+            {(isLoading || firstContributionRepos.length > 0) ? (
+              <>
+                <Typography
+                  sx={{
+                    fontFamily: FONTS.mono,
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: 'rgba(255,255,255,0.5)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    mb: 2,
+                    pb: 1,
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  }}
+                >
+                  First Contributions
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  {firstContributionRepos.length === 0 && !isLoading ? (
+                    <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', fontStyle: 'italic', p: 1 }}>No data available</Typography>
+                  ) : (
+                    firstContributionRepos.map((repo) => (
+                      <Box
+                        key={repo.name}
+                        onClick={() => handleSelectRepository(repo.name)}
                         sx={{
-                          fontFamily: FONTS.mono,
-                          fontSize: '0.82rem',
-                          color: 'rgba(255,255,255,0.85)',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          py: 0.75,
+                          px: 1,
+                          borderRadius: 1,
+                          cursor: 'pointer',
+                          transition: 'background 0.15s',
+                          mx: -1,
+                          '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
                         }}
                       >
-                        {repo.name}
-                      </Typography>
-                    </Box>
-                    <Typography
-                      sx={{
-                        fontFamily: FONTS.mono,
-                        fontSize: '0.82rem',
-                        color: 'rgba(255,255,255,0.45)',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {repo.firstPR.toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-            </Box>
-          )}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden', mr: 2 }}>
+                          <Avatar
+                            src={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
+                            sx={{ width: 24, height: 24, flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }}
+                          />
+                          <Typography
+                            sx={{
+                              fontFamily: FONTS.mono,
+                              fontSize: '0.82rem',
+                              color: 'rgba(255,255,255,0.9)',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {repo.name}
+                          </Typography>
+                        </Box>
+                        <Typography
+                          sx={{
+                            fontFamily: FONTS.mono,
+                            fontSize: '0.75rem',
+                            color: 'rgba(255,255,255,0.45)',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {repo.firstPR.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </Typography>
+                      </Box>
+                    ))
+                  )}
+                </Box>
+              </>
+            ) : null}
+          </Card>
 
           {/* Highest Paying */}
-          {(isLoading || highestPayingRepos.length > 0) && (
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
-                sx={{
-                  fontFamily: FONTS.mono,
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  color: 'rgba(255,255,255,0.5)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  mb: 1,
-                }}
-              >
-                Highest Paying
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                {highestPayingRepos.map((repo) => (
-                  <Box
-                    key={repo.name}
-                    onClick={() => handleSelectRepository(repo.name)}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      py: 0.75,
-                      px: 1.5,
-                      borderRadius: 1.5,
-                      cursor: 'pointer',
-                      transition: 'background 0.15s',
-                      '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden', mr: 2 }}>
-                      <Avatar
-                        src={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
-                        sx={{ width: 20, height: 20, flexShrink: 0 }}
-                      />
-                      <Typography
+          <Card
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: 'rgba(255, 255, 255, 0.02)',
+              minHeight: '200px',
+              display: 'flex',
+              flexDirection: 'column',
+              transition: 'all 0.2s',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                borderColor: 'rgba(255, 255, 255, 0.15)',
+              },
+            }}
+          >
+            {(isLoading || highestPayingRepos.length > 0) ? (
+              <>
+                <Typography
+                  sx={{
+                    fontFamily: FONTS.mono,
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: 'rgba(255,255,255,0.5)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    mb: 2,
+                    pb: 1,
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  }}
+                >
+                  Highest Paying
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  {highestPayingRepos.length === 0 && !isLoading ? (
+                    <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', fontStyle: 'italic', p: 1 }}>No data available</Typography>
+                  ) : (
+                    highestPayingRepos.map((repo) => (
+                      <Box
+                        key={repo.name}
+                        onClick={() => handleSelectRepository(repo.name)}
                         sx={{
-                          fontFamily: FONTS.mono,
-                          fontSize: '0.82rem',
-                          color: 'rgba(255,255,255,0.85)',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          py: 0.75,
+                          px: 1,
+                          borderRadius: 1,
+                          cursor: 'pointer',
+                          transition: 'background 0.15s',
+                          mx: -1,
+                          '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
                         }}
                       >
-                        {repo.name}
-                      </Typography>
-                    </Box>
-                    <Typography
-                      sx={{
-                        fontFamily: FONTS.mono,
-                        fontSize: '0.82rem',
-                        color: 'rgba(255,255,255,0.45)',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {repo.avgScore.toFixed(1)} avg
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-            </Box>
-          )}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden', mr: 2 }}>
+                          <Avatar
+                            src={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
+                            sx={{ width: 24, height: 24, flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }}
+                          />
+                          <Typography
+                            sx={{
+                              fontFamily: FONTS.mono,
+                              fontSize: '0.82rem',
+                              color: 'rgba(255,255,255,0.9)',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {repo.name}
+                          </Typography>
+                        </Box>
+                        <Typography
+                          sx={{
+                            fontFamily: FONTS.mono,
+                            fontSize: '0.75rem',
+                            color: 'rgba(255,255,255,0.45)',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {repo.avgScore.toFixed(1)} avg
+                        </Typography>
+                      </Box>
+                    ))
+                  )}
+                </Box>
+              </>
+            ) : null}
+          </Card>
         </Box>
 
         {/* ── Main Table ────────────────────────────────────────────── */}
