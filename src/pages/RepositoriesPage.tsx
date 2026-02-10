@@ -3,6 +3,7 @@ import {
   Avatar,
   Box,
   Card,
+  Tooltip,
   Typography,
 } from '@mui/material';
 
@@ -231,7 +232,7 @@ const RepositoriesPage: React.FC = () => {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' },
+            gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr 1fr' },
             gap: 2,
             mb: 3,
           }}
@@ -243,7 +244,6 @@ const RepositoriesPage: React.FC = () => {
               borderRadius: 2,
               border: '1px solid rgba(255, 255, 255, 0.08)',
               backgroundColor: 'rgba(255, 255, 255, 0.02)',
-              minHeight: '200px',
               display: 'flex',
               flexDirection: 'column',
               transition: 'all 0.2s',
@@ -296,18 +296,20 @@ const RepositoriesPage: React.FC = () => {
                             src={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
                             sx={{ width: 24, height: 24, flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }}
                           />
-                          <Typography
-                            sx={{
-                              fontFamily: FONTS.mono,
-                              fontSize: '0.82rem',
-                              color: 'rgba(255,255,255,0.9)',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {repo.name}
-                          </Typography>
+                          <Tooltip title={repo.name} arrow placement="top">
+                            <Typography
+                              sx={{
+                                fontFamily: FONTS.mono,
+                                fontSize: '0.82rem',
+                                color: 'rgba(255,255,255,0.9)',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {repo.name}
+                            </Typography>
+                          </Tooltip>
                         </Box>
                         <Typography
                           sx={{
@@ -341,7 +343,6 @@ const RepositoriesPage: React.FC = () => {
               borderRadius: 2,
               border: '1px solid rgba(255, 255, 255, 0.08)',
               backgroundColor: 'rgba(255, 255, 255, 0.02)',
-              minHeight: '200px',
               display: 'flex',
               flexDirection: 'column',
               transition: 'all 0.2s',
@@ -394,18 +395,20 @@ const RepositoriesPage: React.FC = () => {
                             src={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
                             sx={{ width: 24, height: 24, flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }}
                           />
-                          <Typography
-                            sx={{
-                              fontFamily: FONTS.mono,
-                              fontSize: '0.82rem',
-                              color: 'rgba(255,255,255,0.9)',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {repo.name}
-                          </Typography>
+                          <Tooltip title={repo.name} arrow placement="top">
+                            <Typography
+                              sx={{
+                                fontFamily: FONTS.mono,
+                                fontSize: '0.82rem',
+                                color: 'rgba(255,255,255,0.9)',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {repo.name}
+                            </Typography>
+                          </Tooltip>
                         </Box>
                         <Typography
                           sx={{
@@ -435,7 +438,6 @@ const RepositoriesPage: React.FC = () => {
               borderRadius: 2,
               border: '1px solid rgba(255, 255, 255, 0.08)',
               backgroundColor: 'rgba(255, 255, 255, 0.02)',
-              minHeight: '200px',
               display: 'flex',
               flexDirection: 'column',
               transition: 'all 0.2s',
@@ -488,18 +490,20 @@ const RepositoriesPage: React.FC = () => {
                             src={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
                             sx={{ width: 24, height: 24, flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }}
                           />
-                          <Typography
-                            sx={{
-                              fontFamily: FONTS.mono,
-                              fontSize: '0.82rem',
-                              color: 'rgba(255,255,255,0.9)',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {repo.name}
-                          </Typography>
+                          <Tooltip title={repo.name} arrow placement="top">
+                            <Typography
+                              sx={{
+                                fontFamily: FONTS.mono,
+                                fontSize: '0.82rem',
+                                color: 'rgba(255,255,255,0.9)',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {repo.name}
+                            </Typography>
+                          </Tooltip>
                         </Box>
                         <Typography
                           sx={{

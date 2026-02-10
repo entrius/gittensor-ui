@@ -80,7 +80,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     'all' | 'Gold' | 'Silver' | 'Bronze'
   >(initialTierFilter || 'all');
   const [useLogScale, setUseLogScale] = useState(true);
-  const cardRef = useRef<HTMLDivElement>(null);
 
   const rankedRepositories = useMemo(() => {
     // First, sort by the current sort column
@@ -524,11 +523,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     setPage(0);
   }, [searchQuery]);
 
-  useEffect(() => {
-    if (cardRef.current) {
-      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, [rowsPerPage]);
+
 
   if (isLoading) {
     return (
@@ -540,7 +535,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
 
   return (
     <Card
-      ref={cardRef}
       sx={{
         borderRadius: 3,
         border: '1px solid rgba(255, 255, 255, 0.1)',
