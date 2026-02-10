@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { formatDistanceToNow } from 'date-fns';
+
 import {
   Avatar,
   Box,
@@ -88,6 +88,33 @@ const cardSx = {
 const RepositoriesPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const getTierColor = (tier: string) => {
+    switch (tier) {
+      case 'Gold':
+        return '#FFD700';
+      case 'Silver':
+        return '#C0C0C0';
+      case 'Bronze':
+        return '#CD7F32';
+      default:
+        return '#8b949e';
+    }
+  };
+
+  const formatRelativeTime = (date: Date) => {
+    const now = new Date();
+    if (date > now) return 'just now';
+    const diffMs = now.getTime() - date.getTime();
+    const mins = Math.floor(diffMs / 60000);
+    const hrs = Math.floor(mins / 60);
+    const days = Math.floor(hrs / 24);
+
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    if (hrs < 24) return `${hrs}h ${mins % 60}m ago`;
+    if (days < 30) return `${days}d ${hrs % 24}h ago`;
+    return `${days}d ago`;
+  };
   const initialTierFilter = searchParams.get('tier') as
     | 'Gold'
     | 'Silver'
@@ -374,8 +401,7 @@ const RepositoriesPage: React.FC = () => {
                               whiteSpace: 'nowrap',
                             }}
                           >
-                            {formatDistanceToNow(repo.addedAt, { addSuffix: true })
-                              .replace('about ', '')}
+                            {formatRelativeTime(repo.addedAt)}
                           </Typography>
                         }
                       />
@@ -390,7 +416,7 @@ const RepositoriesPage: React.FC = () => {
           <Card sx={cardSx}>
             {(isLoading || recentPrs.length > 0) ? (
               <>
-                <SectionHeader>Recent PRs</SectionHeader>
+                <SectionHeader>Recent Pull Requests</SectionHeader>
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                   {recentPrs.length === 0 && !isLoading ? (
                     <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', fontStyle: 'italic', p: 1 }}>No data available</Typography>
@@ -445,9 +471,7 @@ const RepositoriesPage: React.FC = () => {
                               ml: 1,
                             }}
                           >
-                            {formatDistanceToNow(pr.createdAt, { addSuffix: true })
-                              .replace('about ', '')
-                              .replace('less than a minute ago', 'just now')}
+                            {formatRelativeTime(pr.createdAt)}
                           </Typography>
                         }
                       />
