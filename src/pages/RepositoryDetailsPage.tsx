@@ -10,6 +10,7 @@ import {
   Grid,
   Chip,
   Avatar,
+  Badge,
 } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import CodeIcon from '@mui/icons-material/Code';
@@ -19,7 +20,7 @@ import ArticleIcon from '@mui/icons-material/Article';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import { Page } from '../components/layout';
-import { useReposAndWeights } from '../api';
+import { useReposAndWeights, useRepoBountySummary } from '../api';
 import {
   RepositoryContributorsTable,
   RepositoryPRsTable,
@@ -62,6 +63,7 @@ const RepositoryDetailsPage: React.FC = () => {
   const repo = searchParams.get('name');
   const [tabValue, setTabValue] = useState(0);
   const { data: repos } = useReposAndWeights();
+  const { data: bountySummary } = useRepoBountySummary(repo || '');
 
   const owner = repo ? repo.split('/')[0] : '';
 
@@ -216,7 +218,33 @@ const RepositoryDetailsPage: React.FC = () => {
               <Tab
                 icon={<BugReportIcon sx={{ fontSize: 16, mb: 0, mr: 1 }} />}
                 iconPosition="start"
-                label="Issues"
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    Issues
+                    {bountySummary && (bountySummary.totalBounties - bountySummary.completedBounties) > 0 && (() => {
+                      const openBounties = bountySummary.totalBounties - bountySummary.completedBounties;
+                      return (
+                        <Box
+                          component="span"
+                          sx={{
+                            backgroundColor: 'rgba(255, 215, 0, 0.15)',
+                            color: '#FFD700',
+                            border: '1px solid rgba(255, 215, 0, 0.3)',
+                            fontSize: '0.65rem',
+                            fontWeight: 700,
+                            px: 0.8,
+                            py: 0.1,
+                            borderRadius: '10px',
+                            fontFamily: '"JetBrains Mono", monospace',
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          {openBounties} {openBounties === 1 ? 'bounty' : 'bounties'}
+                        </Box>
+                      );
+                    })()}
+                  </Box>
+                }
                 disableRipple
               />
               <Tab

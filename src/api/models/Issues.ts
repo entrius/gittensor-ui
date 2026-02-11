@@ -27,6 +27,14 @@ export interface IssuesStats {
   totalPayouts: string;
 }
 
+export interface RepoBountySummary {
+  totalBounties: number;
+  activeBounties: number;
+  completedBounties: number;
+  totalAvailable: string;
+  totalPaidOut: string;
+}
+
 export interface IssueDetails extends IssueBounty {
   title: string | null;
   body: string | null;

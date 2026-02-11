@@ -120,6 +120,7 @@ const IssueDetailsPage: React.FC = () => {
       <SEO
         title={issue?.title || `Issue #${id}`}
         description={`View issue bounty details for ${issue?.repositoryFullName || "issue"} #${issue?.issueNumber || id} on Gittensor.`}
+        image={`${import.meta.env.VITE_REACT_APP_BASE_URL || ''}/og-image?type=bounty&id=${id}`}
       />
 
       {isLoading ? (
@@ -610,13 +611,12 @@ const IssueDetailsPage: React.FC = () => {
                                   : submission.prState === "open"
                                     ? "#3fb950"
                                     : "#ef4444",
-                                border: `1px solid ${
-                                  submission.mergedAt
-                                    ? "#a371f740"
-                                    : submission.prState === "open"
-                                      ? "#3fb95040"
-                                      : "#ef444440"
-                                }`,
+                                border: `1px solid ${submission.mergedAt
+                                  ? "#a371f740"
+                                  : submission.prState === "open"
+                                    ? "#3fb95040"
+                                    : "#ef444440"
+                                  }`,
                               }}
                             />
                           </TableCell>

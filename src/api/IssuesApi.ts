@@ -7,17 +7,34 @@ import {
   IssueDetails,
   IssueSubmission,
   IssuesStats,
+  RepoBountySummary,
 } from "./models/Issues";
 
 /**
- * Fetch all issues with optional status filter.
+ * Fetch all issues with optional status and repository filter.
  */
-export const useIssues = (status?: string) =>
-  useApiQuery<IssueBounty[]>(
+export const useIssues = (status?: string, repository?: string) => {
+  const params: Record<string, string> = {};
+  if (status) params.status = status;
+  if (repository) params.repository = repository;
+  return useApiQuery<IssueBounty[]>(
     "useIssues",
     "/issues",
     undefined,
-    status ? { status } : undefined,
+    Object.keys(params).length > 0 ? params : undefined,
+  );
+};
+
+/**
+ * Fetch all bounties for a specific repository.
+ */
+export const useRepoIssues = (repoFullName: string) =>
+  useApiQuery<IssueBounty[]>(
+    "useRepoIssues",
+    "/issues",
+    undefined,
+    { repository: repoFullName },
+    !!repoFullName,
   );
 
 /**
@@ -60,4 +77,16 @@ export const useIssueSubmissions = (id: number) =>
     undefined,
     undefined,
     !!id,
+  );
+
+/**
+ * Fetch bounty summary for a specific repository.
+ */
+export const useRepoBountySummary = (repoFullName: string) =>
+  useApiQuery<RepoBountySummary>(
+    "useRepoBountySummary",
+    `/issues/repo/${encodeURIComponent(repoFullName)}/summary`,
+    undefined,
+    undefined,
+    !!repoFullName,
   );
