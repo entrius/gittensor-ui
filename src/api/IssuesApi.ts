@@ -1,21 +1,21 @@
 /**
  * Issues API - For issue bounties.
  */
-import { useApiQuery } from "./ApiUtils";
+import { useApiQuery } from './ApiUtils';
 import {
   IssueBounty,
   IssueDetails,
   IssueSubmission,
   IssuesStats,
-} from "./models/Issues";
+} from './models/Issues';
 
 /**
  * Fetch all issues with optional status filter.
  */
 export const useIssues = (status?: string) =>
   useApiQuery<IssueBounty[]>(
-    "useIssues",
-    "/issues",
+    'useIssues',
+    '/issues',
     undefined,
     status ? { status } : undefined,
   );
@@ -24,14 +24,14 @@ export const useIssues = (status?: string) =>
  * Fetch issue statistics.
  */
 export const useIssuesStats = () =>
-  useApiQuery<IssuesStats>("useIssuesStats", "/issues/stats");
+  useApiQuery<IssuesStats>('useIssuesStats', '/issues/stats');
 
 /**
  * Fetch a single issue by ID.
  */
 export const useIssue = (id: number) =>
   useApiQuery<IssueBounty>(
-    "useIssue",
+    'useIssue',
     `/issues/${id}`,
     undefined,
     undefined,
@@ -43,7 +43,7 @@ export const useIssue = (id: number) =>
  */
 export const useIssueDetails = (id: number) =>
   useApiQuery<IssueDetails>(
-    "useIssueDetails",
+    'useIssueDetails',
     `/issues/${id}/details`,
     undefined,
     undefined,
@@ -55,7 +55,7 @@ export const useIssueDetails = (id: number) =>
  */
 export const useIssueSubmissions = (id: number) =>
   useApiQuery<IssueSubmission[]>(
-    "useIssueSubmissions",
+    'useIssueSubmissions',
     `/issues/${id}/submissions`,
     undefined,
     undefined,

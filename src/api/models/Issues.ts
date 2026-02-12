@@ -9,7 +9,7 @@ export interface IssueBounty {
   issueNumber: number;
   bountyAmount: string;
   targetBounty: string;
-  status: "registered" | "active" | "completed" | "cancelled";
+  status: 'registered' | 'active' | 'completed' | 'cancelled';
   solverHotkey: string | null;
   payoutAmount: string | null;
   winningPrNumber: number | null;

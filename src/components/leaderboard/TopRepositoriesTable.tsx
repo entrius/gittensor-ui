@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -523,8 +523,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     setPage(0);
   }, [searchQuery]);
 
-
-
   if (isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -850,10 +848,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                             border: '1px solid rgba(255, 255, 255, 0.2)',
                             backgroundColor:
                               (repo.repository || '').split('/')[0] ===
-                                'opentensor'
+                              'opentensor'
                                 ? '#ffffff'
                                 : (repo.repository || '').split('/')[0] ===
-                                  'bitcoin'
+                                    'bitcoin'
                                   ? '#F7931A'
                                   : 'transparent',
                           }}
@@ -910,21 +908,31 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.75rem',
                           fontWeight: 600,
-                          color: (repo.totalScore || 0) > 0 ? '#fff' : 'rgba(255,255,255,0.3)',
+                          color:
+                            (repo.totalScore || 0) > 0
+                              ? '#fff'
+                              : 'rgba(255,255,255,0.3)',
                         }}
                       >
-                        {(repo.totalScore || 0) > 0 ? Number(repo.totalScore || 0).toFixed(2) : '-'}
+                        {(repo.totalScore || 0) > 0
+                          ? Number(repo.totalScore || 0).toFixed(2)
+                          : '-'}
                       </Typography>
                     </TableCell>
                     <TableCell
                       align="right"
                       sx={{ ...bodyCellStyle, width: '15%' }}
                     >
-                      <Typography sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: '0.75rem',
-                        color: (repo.totalPRs || 0) > 0 ? '#fff' : 'rgba(255,255,255,0.3)'
-                      }}>
+                      <Typography
+                        sx={{
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: '0.75rem',
+                          color:
+                            (repo.totalPRs || 0) > 0
+                              ? '#fff'
+                              : 'rgba(255,255,255,0.3)',
+                        }}
+                      >
                         {(repo.totalPRs || 0) > 0 ? repo.totalPRs : '-'}
                       </Typography>
                     </TableCell>
@@ -932,12 +940,19 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                       align="right"
                       sx={{ ...bodyCellStyle, width: '15%' }}
                     >
-                      <Typography sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: '0.75rem',
-                        color: (repo.uniqueMiners?.size || 0) > 0 ? '#fff' : 'rgba(255,255,255,0.3)'
-                      }}>
-                        {(repo.uniqueMiners?.size || 0) > 0 ? repo.uniqueMiners?.size : '-'}
+                      <Typography
+                        sx={{
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: '0.75rem',
+                          color:
+                            (repo.uniqueMiners?.size || 0) > 0
+                              ? '#fff'
+                              : 'rgba(255,255,255,0.3)',
+                        }}
+                      >
+                        {(repo.uniqueMiners?.size || 0) > 0
+                          ? repo.uniqueMiners?.size
+                          : '-'}
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -964,7 +979,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           },
         }}
       />
-    </Card >
+    </Card>
   );
 };
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Box,
   Card,
@@ -13,13 +13,13 @@ import {
   Skeleton,
   Link,
   Tooltip,
-} from "@mui/material";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import { IssueBounty } from "../../api/models/Issues";
-import { formatTokenAmount } from "../../utils/format";
-import BountyProgress from "./BountyProgress";
+} from '@mui/material';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { IssueBounty } from '../../api/models/Issues';
+import { formatTokenAmount } from '../../utils/format';
+import BountyProgress from './BountyProgress';
 
-type ListType = "available" | "pending" | "history";
+type ListType = 'available' | 'pending' | 'history';
 
 interface IssuesListProps {
   issues: IssueBounty[];
@@ -32,37 +32,37 @@ interface IssuesListProps {
  * Get status badge color and text
  */
 const getStatusBadge = (
-  status: IssueBounty["status"],
+  status: IssueBounty['status'],
 ): { color: string; bgColor: string; text: string } => {
   switch (status) {
-    case "registered":
+    case 'registered':
       return {
-        color: "#f59e0b",
-        bgColor: "rgba(245, 158, 11, 0.15)",
-        text: "Pending",
+        color: '#f59e0b',
+        bgColor: 'rgba(245, 158, 11, 0.15)',
+        text: 'Pending',
       };
-    case "active":
+    case 'active':
       return {
-        color: "#58a6ff",
-        bgColor: "rgba(88, 166, 255, 0.15)",
-        text: "Available",
+        color: '#58a6ff',
+        bgColor: 'rgba(88, 166, 255, 0.15)',
+        text: 'Available',
       };
-    case "completed":
+    case 'completed':
       return {
-        color: "#3fb950",
-        bgColor: "rgba(63, 185, 80, 0.15)",
-        text: "Completed",
+        color: '#3fb950',
+        bgColor: 'rgba(63, 185, 80, 0.15)',
+        text: 'Completed',
       };
-    case "cancelled":
+    case 'cancelled':
       return {
-        color: "#ef4444",
-        bgColor: "rgba(239, 68, 68, 0.15)",
-        text: "Cancelled",
+        color: '#ef4444',
+        bgColor: 'rgba(239, 68, 68, 0.15)',
+        text: 'Cancelled',
       };
     default:
       return {
-        color: "#8b949e",
-        bgColor: "rgba(139, 148, 158, 0.15)",
+        color: '#8b949e',
+        bgColor: 'rgba(139, 148, 158, 0.15)',
         text: status,
       };
   }
@@ -72,12 +72,12 @@ const getStatusBadge = (
  * Format date for display
  */
 const formatDate = (dateStr: string | null | undefined): string => {
-  if (!dateStr) return "-";
+  if (!dateStr) return '-';
   const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
   });
 };
 
@@ -85,7 +85,7 @@ const formatDate = (dateStr: string | null | undefined): string => {
  * Truncate wallet address for display
  */
 const truncateAddress = (address: string | null): string => {
-  if (!address) return "-";
+  if (!address) return '-';
   if (address.length <= 12) return address;
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 };
@@ -98,20 +98,20 @@ const IssuesList: React.FC<IssuesListProps> = ({
 }) => {
   const headerCellSx = {
     fontFamily: '"JetBrains Mono", monospace',
-    fontSize: "0.7rem",
+    fontSize: '0.7rem',
     fontWeight: 600,
-    letterSpacing: "0.5px",
-    textTransform: "uppercase" as const,
-    color: "rgba(255, 255, 255, 0.3)",
-    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+    letterSpacing: '0.5px',
+    textTransform: 'uppercase' as const,
+    color: 'rgba(255, 255, 255, 0.3)',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
     py: 1.5,
   };
 
   const bodyCellSx = {
     fontFamily: '"JetBrains Mono", monospace',
-    fontSize: "0.85rem",
-    color: "#ffffff",
-    borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+    fontSize: '0.85rem',
+    color: '#ffffff',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
     py: 1.5,
   };
 
@@ -119,8 +119,8 @@ const IssuesList: React.FC<IssuesListProps> = ({
     return (
       <Card
         sx={{
-          backgroundColor: "#000000",
-          border: "1px solid rgba(255, 255, 255, 0.1)",
+          backgroundColor: '#000000',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: 3,
         }}
         elevation={0}
@@ -140,24 +140,24 @@ const IssuesList: React.FC<IssuesListProps> = ({
   }
 
   const emptyMessages: Record<ListType, string> = {
-    available: "No active issues available for solving",
-    pending: "No pending issues awaiting funding",
-    history: "No completed or cancelled issues yet",
+    available: 'No active issues available for solving',
+    pending: 'No pending issues awaiting funding',
+    history: 'No completed or cancelled issues yet',
   };
 
   if (issues.length === 0) {
     return (
       <Card
         sx={{
-          backgroundColor: "#000000",
-          border: "1px solid rgba(255, 255, 255, 0.1)",
+          backgroundColor: '#000000',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: 3,
           p: 4,
-          textAlign: "center",
+          textAlign: 'center',
         }}
         elevation={0}
       >
-        <Typography sx={{ color: "rgba(255, 255, 255, 0.5)" }}>
+        <Typography sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
           {emptyMessages[listType]}
         </Typography>
       </Card>
@@ -167,10 +167,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
   return (
     <Card
       sx={{
-        backgroundColor: "#000000",
-        border: "1px solid rgba(255, 255, 255, 0.1)",
+        backgroundColor: '#000000',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
         borderRadius: 3,
-        overflow: "hidden",
+        overflow: 'hidden',
       }}
       elevation={0}
     >
@@ -178,54 +178,58 @@ const IssuesList: React.FC<IssuesListProps> = ({
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell sx={{ ...headerCellSx, width: "60px" }}>ID</TableCell>
+              <TableCell sx={{ ...headerCellSx, width: '60px' }}>ID</TableCell>
               <TableCell sx={headerCellSx}>Repository</TableCell>
-              <TableCell sx={{ ...headerCellSx, width: "80px" }}>
+              <TableCell sx={{ ...headerCellSx, width: '80px' }}>
                 Issue
               </TableCell>
 
               {/* Available Issues columns */}
-              {listType === "available" && (
+              {listType === 'available' && (
                 <>
-                  <TableCell sx={{ ...headerCellSx, textAlign: "right" }}>
+                  <TableCell sx={{ ...headerCellSx, textAlign: 'right' }}>
                     Bounty
                   </TableCell>
-                  <TableCell sx={{ ...headerCellSx, textAlign: "center" }}>
+                  <TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>
                     Status
                   </TableCell>
                 </>
               )}
 
               {/* Pending Issues columns */}
-              {listType === "pending" && (
+              {listType === 'pending' && (
                 <>
-                  <TableCell sx={{ ...headerCellSx, textAlign: "right" }}>
+                  <TableCell sx={{ ...headerCellSx, textAlign: 'right' }}>
                     Target Bounty
                   </TableCell>
                   <TableCell
-                    sx={{ ...headerCellSx, textAlign: "center", width: "140px" }}
+                    sx={{
+                      ...headerCellSx,
+                      textAlign: 'center',
+                      width: '140px',
+                    }}
                   >
                     Funding
                   </TableCell>
-                  <TableCell sx={{ ...headerCellSx, textAlign: "center" }}>
+                  <TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>
                     Status
                   </TableCell>
                 </>
               )}
 
               {/* History columns */}
-              {listType === "history" && (
+              {listType === 'history' && (
                 <>
-                  <TableCell sx={{ ...headerCellSx, textAlign: "right" }}>
+                  <TableCell sx={{ ...headerCellSx, textAlign: 'right' }}>
                     Payout
                   </TableCell>
-                  <TableCell sx={{ ...headerCellSx, textAlign: "center" }}>
+                  <TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>
                     Solver
                   </TableCell>
-                  <TableCell sx={{ ...headerCellSx, textAlign: "center" }}>
+                  <TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>
                     Status
                   </TableCell>
-                  <TableCell sx={{ ...headerCellSx, textAlign: "center" }}>
+                  <TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>
                     Date
                   </TableCell>
                 </>
@@ -241,10 +245,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
                   key={issue.id}
                   onClick={() => onSelectIssue?.(issue.id)}
                   sx={{
-                    cursor: onSelectIssue ? "pointer" : "default",
-                    transition: "background-color 0.2s",
-                    "&:hover": {
-                      backgroundColor: "rgba(255, 255, 255, 0.03)",
+                    cursor: onSelectIssue ? 'pointer' : 'default',
+                    transition: 'background-color 0.2s',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
                     },
                   }}
                 >
@@ -253,8 +257,8 @@ const IssuesList: React.FC<IssuesListProps> = ({
                     <Typography
                       sx={{
                         fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.8rem",
-                        color: "rgba(255, 255, 255, 0.6)",
+                        fontSize: '0.8rem',
+                        color: 'rgba(255, 255, 255, 0.6)',
                       }}
                     >
                       #{issue.id}
@@ -264,8 +268,8 @@ const IssuesList: React.FC<IssuesListProps> = ({
                     <Typography
                       sx={{
                         fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.85rem",
-                        color: "#58a6ff",
+                        fontSize: '0.85rem',
+                        color: '#58a6ff',
                       }}
                     >
                       {issue.repositoryFullName}
@@ -278,15 +282,15 @@ const IssuesList: React.FC<IssuesListProps> = ({
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
                       sx={{
-                        display: "flex",
-                        alignItems: "center",
+                        display: 'flex',
+                        alignItems: 'center',
                         gap: 0.5,
                         fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: "0.85rem",
-                        color: "#ffffff",
-                        textDecoration: "none",
-                        "&:hover": {
-                          textDecoration: "underline",
+                        fontSize: '0.85rem',
+                        color: '#ffffff',
+                        textDecoration: 'none',
+                        '&:hover': {
+                          textDecoration: 'underline',
                         },
                       }}
                     >
@@ -296,27 +300,27 @@ const IssuesList: React.FC<IssuesListProps> = ({
                   </TableCell>
 
                   {/* Available Issues columns */}
-                  {listType === "available" && (
+                  {listType === 'available' && (
                     <>
-                      <TableCell sx={{ ...bodyCellSx, textAlign: "right" }}>
+                      <TableCell sx={{ ...bodyCellSx, textAlign: 'right' }}>
                         <Typography
                           sx={{
                             fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "0.85rem",
+                            fontSize: '0.85rem',
                             fontWeight: 600,
-                            color: "#3fb950",
+                            color: '#3fb950',
                           }}
                         >
                           {formatTokenAmount(issue.targetBounty)} ل
                         </Typography>
                       </TableCell>
-                      <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
+                      <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
                         <Chip
                           label={statusBadge.text}
                           size="small"
                           sx={{
                             fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "0.7rem",
+                            fontSize: '0.7rem',
                             fontWeight: 600,
                             backgroundColor: statusBadge.bgColor,
                             color: statusBadge.color,
@@ -328,33 +332,33 @@ const IssuesList: React.FC<IssuesListProps> = ({
                   )}
 
                   {/* Pending Issues columns */}
-                  {listType === "pending" && (
+                  {listType === 'pending' && (
                     <>
-                      <TableCell sx={{ ...bodyCellSx, textAlign: "right" }}>
+                      <TableCell sx={{ ...bodyCellSx, textAlign: 'right' }}>
                         <Typography
                           sx={{
                             fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "0.85rem",
+                            fontSize: '0.85rem',
                             fontWeight: 600,
-                            color: "#f59e0b",
+                            color: '#f59e0b',
                           }}
                         >
                           {formatTokenAmount(issue.targetBounty)} ل
                         </Typography>
                       </TableCell>
-                      <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
+                      <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
                         <BountyProgress
                           bountyAmount={issue.bountyAmount}
                           targetBounty={issue.targetBounty}
                         />
                       </TableCell>
-                      <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
+                      <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
                         <Chip
                           label={statusBadge.text}
                           size="small"
                           sx={{
                             fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "0.7rem",
+                            fontSize: '0.7rem',
                             fontWeight: 600,
                             backgroundColor: statusBadge.bgColor,
                             color: statusBadge.color,
@@ -366,34 +370,34 @@ const IssuesList: React.FC<IssuesListProps> = ({
                   )}
 
                   {/* History columns */}
-                  {listType === "history" && (
+                  {listType === 'history' && (
                     <>
-                      <TableCell sx={{ ...bodyCellSx, textAlign: "right" }}>
+                      <TableCell sx={{ ...bodyCellSx, textAlign: 'right' }}>
                         <Typography
                           sx={{
                             fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "0.85rem",
+                            fontSize: '0.85rem',
                             fontWeight: 600,
                             color:
-                              issue.status === "completed"
-                                ? "#3fb950"
-                                : "rgba(255, 255, 255, 0.4)",
+                              issue.status === 'completed'
+                                ? '#3fb950'
+                                : 'rgba(255, 255, 255, 0.4)',
                           }}
                         >
-                          {issue.status === "completed"
+                          {issue.status === 'completed'
                             ? `${formatTokenAmount(issue.payoutAmount || issue.targetBounty)} ل`
                             : `${formatTokenAmount(issue.targetBounty)} ل`}
                         </Typography>
                       </TableCell>
-                      <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
+                      <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
                         {issue.solverHotkey ? (
                           <Tooltip title={issue.solverHotkey} arrow>
                             <Typography
                               sx={{
                                 fontFamily: '"JetBrains Mono", monospace',
-                                fontSize: "0.8rem",
-                                color: "#58a6ff",
-                                cursor: "pointer",
+                                fontSize: '0.8rem',
+                                color: '#58a6ff',
+                                cursor: 'pointer',
                               }}
                             >
                               {truncateAddress(issue.solverHotkey)}
@@ -402,21 +406,21 @@ const IssuesList: React.FC<IssuesListProps> = ({
                         ) : (
                           <Typography
                             sx={{
-                              fontSize: "0.8rem",
-                              color: "rgba(255, 255, 255, 0.3)",
+                              fontSize: '0.8rem',
+                              color: 'rgba(255, 255, 255, 0.3)',
                             }}
                           >
                             -
                           </Typography>
                         )}
                       </TableCell>
-                      <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
+                      <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
                         <Chip
                           label={statusBadge.text}
                           size="small"
                           sx={{
                             fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "0.7rem",
+                            fontSize: '0.7rem',
                             fontWeight: 600,
                             backgroundColor: statusBadge.bgColor,
                             color: statusBadge.color,
@@ -424,12 +428,12 @@ const IssuesList: React.FC<IssuesListProps> = ({
                           }}
                         />
                       </TableCell>
-                      <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
+                      <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
                         <Typography
                           sx={{
                             fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: "0.8rem",
-                            color: "rgba(255, 255, 255, 0.6)",
+                            fontSize: '0.8rem',
+                            color: 'rgba(255, 255, 255, 0.6)',
                           }}
                         >
                           {formatDate(issue.completedAt || issue.updatedAt)}
