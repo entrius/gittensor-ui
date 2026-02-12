@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -39,6 +39,7 @@ interface RepoStats {
   weight: number;
   tier: string;
   rank?: number;
+  inactiveAt?: string | null;
 }
 
 type SortColumn =
@@ -73,13 +74,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [sortColumn, setSortColumn] = useState<SortColumn>('totalScore');
+  const [sortColumn, setSortColumn] = useState<SortColumn>('weight');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [tierFilter, setTierFilter] = useState<
     'all' | 'Gold' | 'Silver' | 'Bronze'
   >(initialTierFilter || 'all');
   const [useLogScale, setUseLogScale] = useState(true);
-  const cardRef = useRef<HTMLDivElement>(null);
 
   const rankedRepositories = useMemo(() => {
     // First, sort by the current sort column
@@ -523,12 +523,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     setPage(0);
   }, [searchQuery]);
 
-  useEffect(() => {
-    if (cardRef.current) {
-      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, [rowsPerPage]);
-
   if (isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -539,7 +533,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
 
   return (
     <Card
-      ref={cardRef}
       sx={{
         borderRadius: 3,
         border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -555,18 +548,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         }}
       >
-        {/* Row 1: Description */}
-        <Box sx={{ p: 2, pb: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            Repositories generating the most score from contributor activity.
-          </Typography>
-        </Box>
-
         {/* Row 2: All Controls */}
         <Box
           sx={{
-            px: 2,
-            pb: 2,
+            p: 2,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -795,7 +780,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 column="totalScore"
                 align="right"
                 sx={{
-                  color: 'secondary.main',
                   width: '18%',
                 }}
               >
@@ -830,10 +814,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     sx={{
                       cursor: 'pointer',
                       '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.08)',
                       },
-                      transition: 'background-color 0.2s',
-                      opacity: hasScore ? 1 : 0.4,
+                      transition: 'all 0.2s',
+                      opacity: repo.inactiveAt ? 0.5 : 1,
+                      borderBottom: '1px solid rgba(255,255,255,0.05)',
                     }}
                   >
                     <TableCell sx={{ ...bodyCellStyle, width: '60px', pr: 0 }}>
@@ -907,6 +892,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                         sx={{
                           fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.75rem',
+                          fontWeight: 600,
+                          color: '#ffffff',
                         }}
                       >
                         {repo.weight.toFixed(2)}
@@ -921,22 +908,52 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.75rem',
                           fontWeight: 600,
+                          color:
+                            (repo.totalScore || 0) > 0
+                              ? '#fff'
+                              : 'rgba(255,255,255,0.3)',
                         }}
                       >
-                        {Number(repo.totalScore || 0).toFixed(2)}
+                        {(repo.totalScore || 0) > 0
+                          ? Number(repo.totalScore || 0).toFixed(2)
+                          : '-'}
                       </Typography>
                     </TableCell>
                     <TableCell
                       align="right"
                       sx={{ ...bodyCellStyle, width: '15%' }}
                     >
-                      {repo.totalPRs || 0}
+                      <Typography
+                        sx={{
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: '0.75rem',
+                          color:
+                            (repo.totalPRs || 0) > 0
+                              ? '#fff'
+                              : 'rgba(255,255,255,0.3)',
+                        }}
+                      >
+                        {(repo.totalPRs || 0) > 0 ? repo.totalPRs : '-'}
+                      </Typography>
                     </TableCell>
                     <TableCell
                       align="right"
                       sx={{ ...bodyCellStyle, width: '15%' }}
                     >
-                      {repo.uniqueMiners?.size || 0}
+                      <Typography
+                        sx={{
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: '0.75rem',
+                          color:
+                            (repo.uniqueMiners?.size || 0) > 0
+                              ? '#fff'
+                              : 'rgba(255,255,255,0.3)',
+                        }}
+                      >
+                        {(repo.uniqueMiners?.size || 0) > 0
+                          ? repo.uniqueMiners?.size
+                          : '-'}
+                      </Typography>
                     </TableCell>
                   </TableRow>
                 );
