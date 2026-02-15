@@ -119,7 +119,7 @@ const IssueDetailsPage: React.FC = () => {
     <Page title="Issue Details">
       <SEO
         title={issue?.title || `Issue #${id}`}
-        description={`View issue bounty details for ${issue?.repositoryFullName || "issue"} #${issue?.issueNumber || id} on Gittensor.`}
+        description={`View issue bounty details for ${issue?.repositoryFullName || 'issue'} #${issue?.issueNumber || id} on Gittensor.`}
         image={`${import.meta.env.VITE_REACT_APP_BASE_URL || ''}/og-image?type=bounty&id=${id}`}
       />
 
@@ -629,16 +629,17 @@ const IssueDetailsPage: React.FC = () => {
                                     ? 'rgba(63, 185, 80, 0.15)'
                                     : 'rgba(239, 68, 68, 0.15)',
                                 color: submission.mergedAt
-                                  ? "#a371f7"
-                                  : submission.prState === "open"
-                                    ? "#3fb950"
-                                    : "#ef4444",
-                                border: `1px solid ${submission.mergedAt
-                                  ? "#a371f740"
-                                  : submission.prState === "open"
-                                    ? "#3fb95040"
-                                    : "#ef444440"
-                                  }`,
+                                  ? '#a371f7'
+                                  : submission.prState === 'open'
+                                    ? '#3fb950'
+                                    : '#ef4444',
+                                border: `1px solid ${
+                                  submission.mergedAt
+                                    ? '#a371f740'
+                                    : submission.prState === 'open'
+                                      ? '#3fb95040'
+                                      : '#ef444440'
+                                }`,
                               }}
                             />
                           </TableCell>

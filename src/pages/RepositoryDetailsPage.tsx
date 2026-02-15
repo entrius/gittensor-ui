@@ -10,7 +10,6 @@ import {
   Grid,
   Chip,
   Avatar,
-  Badge,
 } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import CodeIcon from '@mui/icons-material/Code';
@@ -219,28 +218,35 @@ const RepositoryDetailsPage: React.FC = () => {
                 label={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     Issues
-                    {bountySummary && (bountySummary.totalBounties - bountySummary.completedBounties) > 0 && (() => {
-                      const openBounties = bountySummary.totalBounties - bountySummary.completedBounties;
-                      return (
-                        <Box
-                          component="span"
-                          sx={{
-                            backgroundColor: 'rgba(255, 215, 0, 0.15)',
-                            color: '#FFD700',
-                            border: '1px solid rgba(255, 215, 0, 0.3)',
-                            fontSize: '0.65rem',
-                            fontWeight: 700,
-                            px: 0.8,
-                            py: 0.1,
-                            borderRadius: '10px',
-                            fontFamily: '"JetBrains Mono", monospace',
-                            lineHeight: 1.4,
-                          }}
-                        >
-                          {openBounties} {openBounties === 1 ? 'bounty' : 'bounties'}
-                        </Box>
-                      );
-                    })()}
+                    {bountySummary &&
+                      bountySummary.totalBounties -
+                        bountySummary.completedBounties >
+                        0 &&
+                      (() => {
+                        const openBounties =
+                          bountySummary.totalBounties -
+                          bountySummary.completedBounties;
+                        return (
+                          <Box
+                            component="span"
+                            sx={{
+                              backgroundColor: 'rgba(255, 215, 0, 0.15)',
+                              color: '#FFD700',
+                              border: '1px solid rgba(255, 215, 0, 0.3)',
+                              fontSize: '0.65rem',
+                              fontWeight: 700,
+                              px: 0.8,
+                              py: 0.1,
+                              borderRadius: '10px',
+                              fontFamily: '"JetBrains Mono", monospace',
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            {openBounties}{' '}
+                            {openBounties === 1 ? 'bounty' : 'bounties'}
+                          </Box>
+                        );
+                      })()}
                   </Box>
                 }
                 disableRipple

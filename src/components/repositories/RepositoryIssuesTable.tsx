@@ -130,150 +130,210 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Bounties Section */}
-      {bounties && bounties.length > 0 && (() => {
-        const getStatusColor = (status: string) => {
-          switch (status) {
-            case 'active': return { bg: 'rgba(88, 166, 255, 0.15)', border: 'rgba(88, 166, 255, 0.4)', text: '#58a6ff' };
-            case 'completed': return { bg: 'rgba(63, 185, 80, 0.15)', border: 'rgba(63, 185, 80, 0.4)', text: '#3fb950' };
-            case 'registered': return { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.4)', text: '#f59e0b' };
-            case 'cancelled': return { bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.4)', text: '#ef4444' };
-            default: return { bg: 'rgba(139, 148, 158, 0.15)', border: 'rgba(139, 148, 158, 0.4)', text: '#8b949e' };
-          }
-        };
-        const getStatusLabel = (status: string) => {
-          switch (status) {
-            case 'active': return 'Available';
-            case 'completed': return 'Completed';
-            case 'registered': return 'Pending';
-            case 'cancelled': return 'Cancelled';
-            default: return status;
-          }
-        };
-        const getBountyAmountColor = (status: string) => {
-          switch (status) {
-            case 'active': return '#3fb950';
-            case 'registered': return '#f59e0b';
-            case 'completed': return '#3fb950';
-            case 'cancelled': return 'rgba(255, 255, 255, 0.4)';
-            default: return 'rgba(255, 255, 255, 0.6)';
-          }
-        };
-        return (
-          <Card
-            sx={{
-              borderRadius: 3,
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              backgroundColor: 'transparent',
-              p: 0,
-              overflow: 'hidden',
-            }}
-            elevation={0}
-          >
-            <Box
+      {bounties &&
+        bounties.length > 0 &&
+        (() => {
+          const getStatusColor = (status: string) => {
+            switch (status) {
+              case 'active':
+                return {
+                  bg: 'rgba(88, 166, 255, 0.15)',
+                  border: 'rgba(88, 166, 255, 0.4)',
+                  text: '#58a6ff',
+                };
+              case 'completed':
+                return {
+                  bg: 'rgba(63, 185, 80, 0.15)',
+                  border: 'rgba(63, 185, 80, 0.4)',
+                  text: '#3fb950',
+                };
+              case 'registered':
+                return {
+                  bg: 'rgba(245, 158, 11, 0.15)',
+                  border: 'rgba(245, 158, 11, 0.4)',
+                  text: '#f59e0b',
+                };
+              case 'cancelled':
+                return {
+                  bg: 'rgba(239, 68, 68, 0.15)',
+                  border: 'rgba(239, 68, 68, 0.4)',
+                  text: '#ef4444',
+                };
+              default:
+                return {
+                  bg: 'rgba(139, 148, 158, 0.15)',
+                  border: 'rgba(139, 148, 158, 0.4)',
+                  text: '#8b949e',
+                };
+            }
+          };
+          const getStatusLabel = (status: string) => {
+            switch (status) {
+              case 'active':
+                return 'Available';
+              case 'completed':
+                return 'Completed';
+              case 'registered':
+                return 'Pending';
+              case 'cancelled':
+                return 'Cancelled';
+              default:
+                return status;
+            }
+          };
+          const getBountyAmountColor = (status: string) => {
+            switch (status) {
+              case 'active':
+                return '#3fb950';
+              case 'registered':
+                return '#f59e0b';
+              case 'completed':
+                return '#3fb950';
+              case 'cancelled':
+                return 'rgba(255, 255, 255, 0.4)';
+              default:
+                return 'rgba(255, 255, 255, 0.6)';
+            }
+          };
+          return (
+            <Card
               sx={{
-                p: 3,
-                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
+                borderRadius: 3,
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backgroundColor: 'transparent',
+                p: 0,
+                overflow: 'hidden',
               }}
+              elevation={0}
             >
-              <Typography
-                variant="h6"
+              <Box
                 sx={{
-                  color: '#ffffff',
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '1.1rem',
-                  fontWeight: 500,
+                  p: 3,
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
                 }}
               >
-                Bounties ({bounties.length})
-              </Typography>
-            </Box>
-            <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {bounties.map((bounty) => {
-                const statusColors = getStatusColor(bounty.status);
-                return (
-                  <Box
-                    key={bounty.id}
-                    onClick={() => navigate(`/issues/details?id=${bounty.id}`)}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      p: 2,
-                      borderRadius: 2,
-                      border: '1px solid rgba(255, 255, 255, 0.06)',
-                      backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                        borderColor: 'rgba(255, 255, 255, 0.15)',
-                        transform: 'translateX(2px)',
-                      },
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
-                      <Chip
-                        label={getStatusLabel(bounty.status)}
-                        size="small"
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: '#ffffff',
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: '1.1rem',
+                    fontWeight: 500,
+                  }}
+                >
+                  Bounties ({bounties.length})
+                </Typography>
+              </Box>
+              <Box
+                sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}
+              >
+                {bounties.map((bounty) => {
+                  const statusColors = getStatusColor(bounty.status);
+                  return (
+                    <Box
+                      key={bounty.id}
+                      onClick={() =>
+                        navigate(`/issues/details?id=${bounty.id}`)
+                      }
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        p: 2,
+                        borderRadius: 2,
+                        border: '1px solid rgba(255, 255, 255, 0.06)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          borderColor: 'rgba(255, 255, 255, 0.15)',
+                          transform: 'translateX(2px)',
+                        },
+                      }}
+                    >
+                      <Box
                         sx={{
-                          backgroundColor: statusColors.bg,
-                          color: statusColors.text,
-                          border: `1px solid ${statusColors.border}`,
-                          fontSize: '0.65rem',
-                          fontWeight: 700,
-                          fontFamily: '"JetBrains Mono", monospace',
-                          height: '22px',
-                          '& .MuiChip-label': { px: 1 },
-                        }}
-                      />
-                      <Typography
-                        sx={{
-                          color: '#8b949e',
-                          fontFamily: '"JetBrains Mono", monospace',
-                          fontSize: '0.8rem',
-                          whiteSpace: 'nowrap',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1.5,
+                          minWidth: 0,
                         }}
                       >
-                        #{bounty.issueNumber}
-                      </Typography>
-                      <Typography
+                        <Chip
+                          label={getStatusLabel(bounty.status)}
+                          size="small"
+                          sx={{
+                            backgroundColor: statusColors.bg,
+                            color: statusColors.text,
+                            border: `1px solid ${statusColors.border}`,
+                            fontSize: '0.65rem',
+                            fontWeight: 700,
+                            fontFamily: '"JetBrains Mono", monospace',
+                            height: '22px',
+                            '& .MuiChip-label': { px: 1 },
+                          }}
+                        />
+                        <Typography
+                          sx={{
+                            color: '#8b949e',
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: '0.8rem',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          #{bounty.issueNumber}
+                        </Typography>
+                        <Typography
+                          sx={{
+                            color: 'rgba(255, 255, 255, 0.85)',
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: '0.85rem',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {repositoryFullName}#{bounty.issueNumber}
+                        </Typography>
+                      </Box>
+                      <Box
                         sx={{
-                          color: 'rgba(255, 255, 255, 0.85)',
-                          fontFamily: '"JetBrains Mono", monospace',
-                          fontSize: '0.85rem',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 2,
+                          flexShrink: 0,
                         }}
                       >
-                        {repositoryFullName}#{bounty.issueNumber}
-                      </Typography>
+                        <Typography
+                          sx={{
+                            color: getBountyAmountColor(bounty.status),
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {bounty.status === 'completed' && bounty.payoutAmount
+                            ? `${formatTokenAmount(bounty.payoutAmount)} ل`
+                            : `${formatTokenAmount(bounty.targetBounty)} ل`}
+                        </Typography>
+                        <ArrowForwardIcon
+                          sx={{
+                            color: 'rgba(255, 255, 255, 0.2)',
+                            fontSize: 16,
+                          }}
+                        />
+                      </Box>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-                      <Typography
-                        sx={{
-                          color: getBountyAmountColor(bounty.status),
-                          fontFamily: '"JetBrains Mono", monospace',
-                          fontSize: '0.85rem',
-                          fontWeight: 600,
-                        }}
-                      >
-                        {bounty.status === 'completed' && bounty.payoutAmount
-                          ? `${formatTokenAmount(bounty.payoutAmount)} ل`
-                          : `${formatTokenAmount(bounty.targetBounty)} ل`}
-                      </Typography>
-                      <ArrowForwardIcon sx={{ color: 'rgba(255, 255, 255, 0.2)', fontSize: 16 }} />
-                    </Box>
-                  </Box>
-                );
-              })}
-            </Box>
-          </Card>
-        );
-      })()}
+                  );
+                })}
+              </Box>
+            </Card>
+          );
+        })()}
 
       {/* GitHub Issues Table */}
       <Card

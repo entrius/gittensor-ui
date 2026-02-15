@@ -8,7 +8,7 @@ import {
   IssueSubmission,
   IssuesStats,
   RepoBountySummary,
-} from "./models/Issues";
+} from './models/Issues';
 
 /**
  * Fetch all issues with optional status and repository filter.
@@ -18,8 +18,8 @@ export const useIssues = (status?: string, repository?: string) => {
   if (status) params.status = status;
   if (repository) params.repository = repository;
   return useApiQuery<IssueBounty[]>(
-    "useIssues",
-    "/issues",
+    'useIssues',
+    '/issues',
     undefined,
     Object.keys(params).length > 0 ? params : undefined,
   );
@@ -30,8 +30,8 @@ export const useIssues = (status?: string, repository?: string) => {
  */
 export const useRepoIssues = (repoFullName: string) =>
   useApiQuery<IssueBounty[]>(
-    "useRepoIssues",
-    "/issues",
+    'useRepoIssues',
+    '/issues',
     undefined,
     { repository: repoFullName },
     !!repoFullName,
@@ -84,7 +84,7 @@ export const useIssueSubmissions = (id: number) =>
  */
 export const useRepoBountySummary = (repoFullName: string) =>
   useApiQuery<RepoBountySummary>(
-    "useRepoBountySummary",
+    'useRepoBountySummary',
     `/issues/repo/${encodeURIComponent(repoFullName)}/summary`,
     undefined,
     undefined,

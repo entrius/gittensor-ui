@@ -1,6 +1,11 @@
 import React, { useMemo } from 'react';
 import { Box, Typography, Skeleton, Divider } from '@mui/material';
-import { useReposAndWeights, useAllPrs, useRepositoryIssues, useRepoBountySummary } from '../../api';
+import {
+  useReposAndWeights,
+  useAllPrs,
+  useRepositoryIssues,
+  useRepoBountySummary,
+} from '../../api';
 
 interface RepositoryStatsProps {
   repositoryFullName: string;
@@ -286,9 +291,13 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
                     fontSize: '13px',
                   }}
                 >
-                  {parseFloat(bountySummary.totalAvailable).toLocaleString(undefined, {
-                    maximumFractionDigits: 2,
-                  })} α
+                  {parseFloat(bountySummary.totalAvailable).toLocaleString(
+                    undefined,
+                    {
+                      maximumFractionDigits: 2,
+                    },
+                  )}{' '}
+                  α
                 </Typography>
               </Box>
             )}
@@ -317,9 +326,13 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
                     fontWeight: 500,
                   }}
                 >
-                  {parseFloat(bountySummary.totalPaidOut).toLocaleString(undefined, {
-                    maximumFractionDigits: 2,
-                  })} α
+                  {parseFloat(bountySummary.totalPaidOut).toLocaleString(
+                    undefined,
+                    {
+                      maximumFractionDigits: 2,
+                    },
+                  )}{' '}
+                  α
                 </Typography>
               </Box>
             )}
