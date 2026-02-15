@@ -108,6 +108,16 @@ async function injectMetaTags(html, url) {
     }
   }
 
+  // Issue bounty details page
+  if (pathname === "/issues/details") {
+    const id = searchParams.get("id");
+    if (id) {
+      title = `Issue Bounty #${id} | Gittensor`;
+      description = `View issue bounty details, submissions, and rewards on Gittensor.`;
+      image = `https://api.gittensor.io/og-image?type=bounty&id=${encodeURIComponent(id)}&v=${cacheBuster}`;
+    }
+  }
+
   // Note: Home page and all other paths use the default home OG image set above
 
   // Replace meta tags - use [\s\S]*? to match across newlines
