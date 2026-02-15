@@ -7,16 +7,23 @@
  * - History: Completed or cancelled issues
  */
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Box, Tabs, Tab, Stack } from '@mui/material';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { IssueStats, IssuesList } from '../components/issues';
 import { useIssuesStats, useIssues } from '../api';
 
+const TAB_SLUGS = ['available', 'pending', 'history'] as const;
+
 const IssuesPage: React.FC = () => {
   const navigate = useNavigate();
-  const [tab, setTab] = React.useState(0);
+  const { tab: tabParam } = useParams<{ tab?: string }>();
+
+  const tabIndex = Math.max(
+    0,
+    TAB_SLUGS.indexOf(tabParam as (typeof TAB_SLUGS)[number]),
+  );
 
   const statsQuery = useIssuesStats();
   const activeIssuesQuery = useIssues('active');
@@ -24,7 +31,7 @@ const IssuesPage: React.FC = () => {
   const historyIssuesQuery = useIssues('completed,cancelled');
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTab(newValue);
+    navigate(`/issues/${TAB_SLUGS[newValue]}`, { replace: true });
   };
 
   return (
@@ -57,7 +64,7 @@ const IssuesPage: React.FC = () => {
             }}
           >
             <Tabs
-              value={tab}
+              value={tabIndex}
               onChange={handleTabChange}
               sx={{
                 '& .MuiTab-root': {
@@ -85,7 +92,7 @@ const IssuesPage: React.FC = () => {
 
           {/* Tab Content */}
           <Box sx={{ minHeight: 400 }}>
-            {tab === 0 && (
+            {tabIndex === 0 && (
               <IssuesList
                 issues={activeIssuesQuery.data || []}
                 isLoading={activeIssuesQuery.isLoading}
@@ -93,7 +100,7 @@ const IssuesPage: React.FC = () => {
                 onSelectIssue={(id) => navigate(`/issues/details?id=${id}`)}
               />
             )}
-            {tab === 1 && (
+            {tabIndex === 1 && (
               <IssuesList
                 issues={registeredIssuesQuery.data || []}
                 isLoading={registeredIssuesQuery.isLoading}
@@ -101,7 +108,7 @@ const IssuesPage: React.FC = () => {
                 onSelectIssue={(id) => navigate(`/issues/details?id=${id}`)}
               />
             )}
-            {tab === 2 && (
+            {tabIndex === 2 && (
               <IssuesList
                 issues={historyIssuesQuery.data || []}
                 isLoading={historyIssuesQuery.isLoading}
