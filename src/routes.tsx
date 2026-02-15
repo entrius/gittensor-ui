@@ -29,9 +29,17 @@ const routesArray: AppRoute[] = [
   { name: 'home', path: '/', element: <HomePage /> },
   { name: 'dashboard', path: '/dashboard', element: <DashboardPage /> },
   { name: 'issues', path: '/issues', element: <IssuesPage /> },
-  { name: 'issue-details', path: '/issues/details', element: <IssueDetailsPage /> },
+  {
+    name: 'issue-details',
+    path: '/issues/details',
+    element: <IssueDetailsPage />,
+  },
   { name: 'top-miners', path: '/top-miners', element: <TopMinersPage /> },
-  { name: 'repositories', path: '/repositories', element: <RepositoriesPage /> },
+  {
+    name: 'repositories',
+    path: '/repositories',
+    element: <RepositoriesPage />,
+  },
   {
     name: 'miner-details',
     path: '/miners/details',

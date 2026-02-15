@@ -130,9 +130,7 @@ const RepositoryDetailsPage: React.FC = () => {
                   </Typography>
                   <Chip variant="info" label="Public" />
                   {(() => {
-                    const currentRepo = repos?.find(
-                      (r) => r.fullName === repo,
-                    );
+                    const currentRepo = repos?.find((r) => r.fullName === repo);
 
                     if (currentRepo?.inactiveAt) {
                       return (

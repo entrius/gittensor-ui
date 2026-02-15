@@ -1,12 +1,6 @@
 import React, { useMemo } from 'react';
 
-import {
-  Avatar,
-  Box,
-  Card,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
 
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
@@ -41,10 +35,24 @@ const HighlightRow: React.FC<{
       '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
     }}
   >
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden', mr: 2, flex: 1 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.5,
+        overflow: 'hidden',
+        mr: 2,
+        flex: 1,
+      }}
+    >
       <Avatar
         src={avatar}
-        sx={{ width: 24, height: 24, flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }}
+        sx={{
+          width: 24,
+          height: 24,
+          flexShrink: 0,
+          border: '1px solid rgba(255,255,255,0.1)',
+        }}
       />
       {label}
     </Box>
@@ -52,7 +60,9 @@ const HighlightRow: React.FC<{
   </Box>
 );
 
-const SectionHeader: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+const SectionHeader: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => (
   <Typography
     sx={{
       fontFamily: FONTS.mono,
@@ -209,7 +219,10 @@ const RepositoriesPage: React.FC = () => {
     const repoMap = new Map(reposWithWeights.map((r) => [r.fullName, r]));
 
     return Array.from(repoScores.entries())
-      .filter(([name, s]) => repoMap.has(name) && s.recentScore > 0 && s.priorScore > 0)
+      .filter(
+        ([name, s]) =>
+          repoMap.has(name) && s.recentScore > 0 && s.priorScore > 0,
+      )
       .map(([name, s]) => ({
         name,
         tier: repoMap.get(name)?.tier || '',
@@ -264,11 +277,12 @@ const RepositoriesPage: React.FC = () => {
         (pr) =>
           pr.repository &&
           (pr.prCreatedAt || pr.mergedAt) &&
-          repoMap.has(pr.repository)
+          repoMap.has(pr.repository),
       )
       .sort(
         (a, b) =>
-          new Date(b.prCreatedAt || b.mergedAt || 0).getTime() - new Date(a.prCreatedAt || a.mergedAt || 0).getTime()
+          new Date(b.prCreatedAt || b.mergedAt || 0).getTime() -
+          new Date(a.prCreatedAt || a.mergedAt || 0).getTime(),
       )
       .slice(0, 5)
       .map((pr) => ({
@@ -308,12 +322,21 @@ const RepositoriesPage: React.FC = () => {
         >
           {/* Trending This Week */}
           <Card sx={cardSx}>
-            {(isLoading || trendingRepos.length > 0) ? (
+            {isLoading || trendingRepos.length > 0 ? (
               <>
                 <SectionHeader>Trending This Week</SectionHeader>
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                   {trendingRepos.length === 0 && !isLoading ? (
-                    <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', fontStyle: 'italic', p: 1 }}>No data available</Typography>
+                    <Typography
+                      sx={{
+                        color: 'rgba(255,255,255,0.3)',
+                        fontSize: '0.8rem',
+                        fontStyle: 'italic',
+                        p: 1,
+                      }}
+                    >
+                      No data available
+                    </Typography>
                   ) : (
                     trendingRepos.map((repo) => (
                       <HighlightRow
@@ -363,12 +386,21 @@ const RepositoriesPage: React.FC = () => {
 
           {/* Recently Added */}
           <Card sx={cardSx}>
-            {(isLoading || recentlyAddedRepos.length > 0) ? (
+            {isLoading || recentlyAddedRepos.length > 0 ? (
               <>
                 <SectionHeader>Recently Added</SectionHeader>
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                   {recentlyAddedRepos.length === 0 && !isLoading ? (
-                    <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', fontStyle: 'italic', p: 1 }}>No data available</Typography>
+                    <Typography
+                      sx={{
+                        color: 'rgba(255,255,255,0.3)',
+                        fontSize: '0.8rem',
+                        fontStyle: 'italic',
+                        p: 1,
+                      }}
+                    >
+                      No data available
+                    </Typography>
                   ) : (
                     recentlyAddedRepos.map((repo) => (
                       <HighlightRow
@@ -414,20 +446,40 @@ const RepositoriesPage: React.FC = () => {
 
           {/* Recent PRs */}
           <Card sx={cardSx}>
-            {(isLoading || recentPrs.length > 0) ? (
+            {isLoading || recentPrs.length > 0 ? (
               <>
                 <SectionHeader>Recent Pull Requests</SectionHeader>
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                   {recentPrs.length === 0 && !isLoading ? (
-                    <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', fontStyle: 'italic', p: 1 }}>No data available</Typography>
+                    <Typography
+                      sx={{
+                        color: 'rgba(255,255,255,0.3)',
+                        fontSize: '0.8rem',
+                        fontStyle: 'italic',
+                        p: 1,
+                      }}
+                    >
+                      No data available
+                    </Typography>
                   ) : (
                     recentPrs.map((pr) => (
                       <HighlightRow
                         key={`${pr.name}-${pr.number}`}
-                        onClick={() => navigate(`/miners/pr?repo=${encodeURIComponent(pr.name)}&number=${pr.number}`)}
+                        onClick={() =>
+                          navigate(
+                            `/miners/pr?repo=${encodeURIComponent(pr.name)}&number=${pr.number}`,
+                          )
+                        }
                         avatar={`https://avatars.githubusercontent.com/${pr.name.split('/')[0]}`}
                         label={
-                          <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                          <Box
+                            sx={{
+                              minWidth: 0,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              justifyContent: 'center',
+                            }}
+                          >
                             <Tooltip title={pr.name} arrow placement="top">
                               <Typography
                                 sx={{

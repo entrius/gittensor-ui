@@ -1,7 +1,7 @@
 /**
  * Issues API - For issue bounties.
  */
-import { useApiQuery } from "./ApiUtils";
+import { useApiQuery } from './ApiUtils';
 import {
   IssueBounty,
   IssueDetails,
@@ -41,14 +41,14 @@ export const useRepoIssues = (repoFullName: string) =>
  * Fetch issue statistics.
  */
 export const useIssuesStats = () =>
-  useApiQuery<IssuesStats>("useIssuesStats", "/issues/stats");
+  useApiQuery<IssuesStats>('useIssuesStats', '/issues/stats');
 
 /**
  * Fetch a single issue by ID.
  */
 export const useIssue = (id: number) =>
   useApiQuery<IssueBounty>(
-    "useIssue",
+    'useIssue',
     `/issues/${id}`,
     undefined,
     undefined,
@@ -60,7 +60,7 @@ export const useIssue = (id: number) =>
  */
 export const useIssueDetails = (id: number) =>
   useApiQuery<IssueDetails>(
-    "useIssueDetails",
+    'useIssueDetails',
     `/issues/${id}/details`,
     undefined,
     undefined,
@@ -72,7 +72,7 @@ export const useIssueDetails = (id: number) =>
  */
 export const useIssueSubmissions = (id: number) =>
   useApiQuery<IssueSubmission[]>(
-    "useIssueSubmissions",
+    'useIssueSubmissions',
     `/issues/${id}/submissions`,
     undefined,
     undefined,

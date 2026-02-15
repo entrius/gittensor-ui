@@ -6,22 +6,22 @@
  * - Pending Issues: Registered issues awaiting funding
  * - History: Completed or cancelled issues
  */
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import { Box, Tabs, Tab, Stack } from "@mui/material";
-import { Page } from "../components/layout";
-import { SEO } from "../components";
-import { IssueStats, IssuesList } from "../components/issues";
-import { useIssuesStats, useIssues } from "../api";
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Box, Tabs, Tab, Stack } from '@mui/material';
+import { Page } from '../components/layout';
+import { SEO } from '../components';
+import { IssueStats, IssuesList } from '../components/issues';
+import { useIssuesStats, useIssues } from '../api';
 
 const IssuesPage: React.FC = () => {
   const navigate = useNavigate();
   const [tab, setTab] = React.useState(0);
 
   const statsQuery = useIssuesStats();
-  const activeIssuesQuery = useIssues("active");
-  const registeredIssuesQuery = useIssues("registered");
-  const historyIssuesQuery = useIssues("completed,cancelled");
+  const activeIssuesQuery = useIssues('active');
+  const registeredIssuesQuery = useIssues('registered');
+  const historyIssuesQuery = useIssues('completed,cancelled');
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTab(newValue);
@@ -35,11 +35,11 @@ const IssuesPage: React.FC = () => {
       />
       <Box
         sx={{
-          display: "flex",
-          flexDirection: "column",
-          width: "100%",
+          display: 'flex',
+          flexDirection: 'column',
+          width: '100%',
           maxWidth: 1400,
-          mx: "auto",
+          mx: 'auto',
           px: { xs: 2, md: 3 },
         }}
       >
@@ -53,26 +53,26 @@ const IssuesPage: React.FC = () => {
           {/* Tabs Navigation */}
           <Box
             sx={{
-              borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
             }}
           >
             <Tabs
               value={tab}
               onChange={handleTabChange}
               sx={{
-                "& .MuiTab-root": {
+                '& .MuiTab-root': {
                   fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: "0.85rem",
+                  fontSize: '0.85rem',
                   fontWeight: 600,
-                  textTransform: "none",
-                  color: "rgba(255, 255, 255, 0.5)",
+                  textTransform: 'none',
+                  color: 'rgba(255, 255, 255, 0.5)',
                   minHeight: 48,
-                  "&.Mui-selected": {
-                    color: "#ffffff",
+                  '&.Mui-selected': {
+                    color: '#ffffff',
                   },
                 },
-                "& .MuiTabs-indicator": {
-                  backgroundColor: "#ffffff",
+                '& .MuiTabs-indicator': {
+                  backgroundColor: '#ffffff',
                   height: 2,
                 },
               }}
