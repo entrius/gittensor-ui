@@ -384,9 +384,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                                 : 'rgba(255, 255, 255, 0.4)',
                           }}
                         >
-                          {issue.status === 'completed'
-                            ? `${formatTokenAmount(issue.payoutAmount || issue.targetBounty)} ل`
-                            : `${formatTokenAmount(issue.targetBounty)} ل`}
+                          {`${formatTokenAmount(issue.targetBounty)} ل`}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>

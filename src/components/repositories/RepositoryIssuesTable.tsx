@@ -316,9 +316,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                             fontWeight: 600,
                           }}
                         >
-                          {bounty.status === 'completed' && bounty.payoutAmount
-                            ? `${formatTokenAmount(bounty.payoutAmount)} ل`
-                            : `${formatTokenAmount(bounty.targetBounty)} ل`}
+                          {`${formatTokenAmount(bounty.targetBounty)} ل`}
                         </Typography>
                         <ArrowForwardIcon
                           sx={{

@@ -11,7 +11,6 @@ export interface IssueBounty {
   targetBounty: string;
   status: 'registered' | 'active' | 'completed' | 'cancelled';
   solverHotkey: string | null;
-  payoutAmount: string | null;
   winningPrNumber: number | null;
   registeredAtBlock: number;
   createdAt: string;

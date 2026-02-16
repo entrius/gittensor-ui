@@ -186,7 +186,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                   color: '#3fb950',
                 }}
               >
-                {formatTokenAmount(issue.payoutAmount || issue.targetBounty)} ل
+                {formatTokenAmount(issue.targetBounty)} ل
               </Typography>
             ) : (
               <Typography
