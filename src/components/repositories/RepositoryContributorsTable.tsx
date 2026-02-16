@@ -202,10 +202,9 @@ const RepositoryContributorsTable: React.FC<
               {/* Contributor */}
               <Box
                 onClick={() =>
-                  navigate(
-                    `/miners/details?githubId=${contributor.githubId}`,
-                    { state: { backLabel: `Back to ${repositoryFullName}` } },
-                  )
+                  navigate(`/miners/details?githubId=${contributor.githubId}`, {
+                    state: { backLabel: `Back to ${repositoryFullName}` },
+                  })
                 }
                 sx={{
                   display: 'flex',
