@@ -186,6 +186,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             onClick={() =>
               navigate(
                 `/miners/repository?name=${encodeURIComponent(repository)}`,
+                { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
               )
             }
             sx={{
@@ -275,6 +276,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                 onClick={() =>
                   navigate(
                     `/miners/repository?name=${encodeURIComponent(repository)}`,
+                    { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
                   )
                 }
                 sx={{
@@ -652,7 +654,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             </Typography>
             <Box
               onClick={() =>
-                navigate(`/miners/details?githubId=${prDetails.githubId}`)
+                navigate(
+                  `/miners/details?githubId=${prDetails.githubId}`,
+                  { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
+                )
               }
               sx={{
                 display: 'flex',

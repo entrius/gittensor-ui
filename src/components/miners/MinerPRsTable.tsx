@@ -293,6 +293,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   onClick={() => {
                     navigate(
                       `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
+                      { state: { backLabel: `Back to ${githubId}` } },
                     );
                   }}
                   sx={{

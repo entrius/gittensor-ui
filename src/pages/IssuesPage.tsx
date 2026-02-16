@@ -97,7 +97,11 @@ const IssuesPage: React.FC = () => {
                 issues={activeIssuesQuery.data || []}
                 isLoading={activeIssuesQuery.isLoading}
                 listType="available"
-                onSelectIssue={(id) => navigate(`/issues/details?id=${id}`)}
+                onSelectIssue={(id) =>
+                  navigate(`/issues/details?id=${id}`, {
+                    state: { backLabel: 'Back to Bounties' },
+                  })
+                }
               />
             )}
             {tabIndex === 1 && (
@@ -105,7 +109,11 @@ const IssuesPage: React.FC = () => {
                 issues={registeredIssuesQuery.data || []}
                 isLoading={registeredIssuesQuery.isLoading}
                 listType="pending"
-                onSelectIssue={(id) => navigate(`/issues/details?id=${id}`)}
+                onSelectIssue={(id) =>
+                  navigate(`/issues/details?id=${id}`, {
+                    state: { backLabel: 'Back to Bounties' },
+                  })
+                }
               />
             )}
             {tabIndex === 2 && (
@@ -113,7 +121,11 @@ const IssuesPage: React.FC = () => {
                 issues={historyIssuesQuery.data || []}
                 isLoading={historyIssuesQuery.isLoading}
                 listType="history"
-                onSelectIssue={(id) => navigate(`/issues/details?id=${id}`)}
+                onSelectIssue={(id) =>
+                  navigate(`/issues/details?id=${id}`, {
+                    state: { backLabel: 'Back to Bounties' },
+                  })
+                }
               />
             )}
           </Box>

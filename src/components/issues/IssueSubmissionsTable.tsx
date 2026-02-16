@@ -48,11 +48,13 @@ const bodyCellSx = {
 interface IssueSubmissionsTableProps {
   submissions: IssueSubmission[] | undefined;
   isLoading: boolean;
+  backLabel?: string;
 }
 
 const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
   submissions,
   isLoading,
+  backLabel,
 }) => {
   const navigate = useNavigate();
 
@@ -122,6 +124,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                   onClick={() =>
                     navigate(
                       `/miners/pr?repo=${encodeURIComponent(submission.repositoryFullName)}&number=${submission.number}`,
+                      backLabel ? { state: { backLabel } } : undefined,
                     )
                   }
                   sx={{
@@ -167,6 +170,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                           e.stopPropagation();
                           navigate(
                             `/miners/details?githubId=${submission.authorGithubId}`,
+                            backLabel ? { state: { backLabel } } : undefined,
                           );
                         }}
                         sx={{

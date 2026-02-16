@@ -140,6 +140,7 @@ const RepositoriesPage: React.FC = () => {
   const handleSelectRepository = (repositoryFullName: string) => {
     navigate(
       `/miners/repository?name=${encodeURIComponent(repositoryFullName)}`,
+      { state: { backLabel: 'Back to Repositories' } },
     );
   };
 
@@ -468,6 +469,7 @@ const RepositoriesPage: React.FC = () => {
                         onClick={() =>
                           navigate(
                             `/miners/pr?repo=${encodeURIComponent(pr.name)}&number=${pr.number}`,
+                            { state: { backLabel: 'Back to Repositories' } },
                           )
                         }
                         avatar={`https://avatars.githubusercontent.com/${pr.name.split('/')[0]}`}

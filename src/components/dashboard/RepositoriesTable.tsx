@@ -569,6 +569,7 @@ const RepositoriesTable: React.FC = () => {
                               onClick={() =>
                                 navigate(
                                   `/miners/repository?name=${repo.repositoryFullName}`,
+                                  { state: { backLabel: 'Back to Dashboard' } },
                                 )
                               }
                               sx={{
