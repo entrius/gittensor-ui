@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Card,
@@ -117,6 +117,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       : initialTierFilter || 'all',
   );
   const [useLogScale, setUseLogScale] = useState(true);
+  const isInitialMount = useRef(true);
 
   // Sync filter state to URL params (replace, don't push)
   const syncToUrl = useCallback(
@@ -594,6 +595,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   );
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     setPage(0);
     syncToUrl({ search: searchQuery, page: '0' });
   }, [searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
