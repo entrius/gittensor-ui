@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -30,6 +30,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
+import { useSearchParams } from 'react-router-dom';
 
 interface RepoStats {
   repository: string;
@@ -64,22 +65,89 @@ const truncateText = (text: string, maxLength: number): string => {
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 };
 
+const VALID_TIERS = ['all', 'Gold', 'Silver', 'Bronze'] as const;
+const VALID_SORT_COLUMNS: SortColumn[] = [
+  'rank',
+  'repository',
+  'weight',
+  'totalScore',
+  'totalPRs',
+  'contributors',
+];
+const VALID_ROWS = [10, 25, 50];
+
 const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   repositories,
   isLoading,
   onSelectRepository,
   initialTierFilter,
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Read initial state from URL params, falling back to defaults
+  const urlTier = searchParams.get('tier') as
+    | 'all'
+    | 'Gold'
+    | 'Silver'
+    | 'Bronze'
+    | null;
+  const urlRows = parseInt(searchParams.get('rows') || '', 10);
+  const urlPage = parseInt(searchParams.get('page') || '', 10);
+  const urlSort = searchParams.get('sort') as SortColumn;
+  const urlDir = searchParams.get('dir') as SortDirection;
+  const urlSearch = searchParams.get('search') || '';
+
+  const [searchQuery, setSearchQuery] = useState(urlSearch);
   const [showChart, setShowChart] = useState(false);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [sortColumn, setSortColumn] = useState<SortColumn>('weight');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [page, setPage] = useState(urlPage >= 0 ? urlPage : 0);
+  const [rowsPerPage, setRowsPerPage] = useState(
+    VALID_ROWS.includes(urlRows) ? urlRows : 10,
+  );
+  const [sortColumn, setSortColumn] = useState<SortColumn>(
+    urlSort && VALID_SORT_COLUMNS.includes(urlSort) ? urlSort : 'weight',
+  );
+  const [sortDirection, setSortDirection] = useState<SortDirection>(
+    urlDir === 'asc' || urlDir === 'desc' ? urlDir : 'desc',
+  );
   const [tierFilter, setTierFilter] = useState<
     'all' | 'Gold' | 'Silver' | 'Bronze'
-  >(initialTierFilter || 'all');
+  >(
+    urlTier && VALID_TIERS.includes(urlTier)
+      ? urlTier
+      : initialTierFilter || 'all',
+  );
   const [useLogScale, setUseLogScale] = useState(true);
+
+  // Sync filter state to URL params (replace, don't push)
+  const syncToUrl = useCallback(
+    (overrides?: Record<string, string | undefined>) => {
+      const params: Record<string, string> = {};
+      const tier = overrides?.tier ?? tierFilter;
+      const rows = overrides?.rows ?? String(rowsPerPage);
+      const pg = overrides?.page ?? String(page);
+      const sort = overrides?.sort ?? sortColumn;
+      const dir = overrides?.dir ?? sortDirection;
+      const search = overrides?.search ?? searchQuery;
+
+      if (tier !== 'all') params.tier = tier;
+      if (rows !== '10') params.rows = rows;
+      if (pg !== '0') params.page = pg;
+      if (sort !== 'weight') params.sort = sort;
+      if (dir !== 'desc') params.dir = dir;
+      if (search) params.search = search;
+
+      setSearchParams(params, { replace: true });
+    },
+    [
+      tierFilter,
+      rowsPerPage,
+      page,
+      sortColumn,
+      sortDirection,
+      searchQuery,
+      setSearchParams,
+    ],
+  );
 
   const rankedRepositories = useMemo(() => {
     // First, sort by the current sort column
@@ -389,25 +457,30 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
+    syncToUrl({ page: String(newPage) });
   };
 
   const handleChangeRowsPerPage = (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+    const newRows = parseInt(event.target.value, 10);
+    setRowsPerPage(newRows);
     setPage(0);
+    syncToUrl({ rows: String(newRows), page: '0' });
   };
 
   const handleSort = (column: SortColumn) => {
+    let newDir: SortDirection;
     if (sortColumn === column) {
-      // Toggle direction if clicking the same column
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      newDir = sortDirection === 'asc' ? 'desc' : 'asc';
+      setSortDirection(newDir);
     } else {
-      // New column - set to desc by default (except for repository name)
+      newDir = column === 'repository' ? 'asc' : 'desc';
       setSortColumn(column);
-      setSortDirection(column === 'repository' ? 'asc' : 'desc');
+      setSortDirection(newDir);
     }
-    setPage(0); // Reset to first page when sorting
+    setPage(0);
+    syncToUrl({ sort: column, dir: newDir, page: '0' });
   };
 
   const SortableHeader = ({
@@ -494,6 +567,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       onClick={() => {
         setTierFilter(value);
         setPage(0);
+        syncToUrl({ tier: value, page: '0' });
       }}
       sx={{
         color: tierFilter === value ? '#fff' : 'rgba(255,255,255,0.5)',
@@ -521,7 +595,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
 
   useEffect(() => {
     setPage(0);
-  }, [searchQuery]);
+    syncToUrl({ search: searchQuery, page: '0' });
+  }, [searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) {
     return (
@@ -657,8 +732,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 <Select
                   value={rowsPerPage}
                   onChange={(e) => {
-                    setRowsPerPage(e.target.value as number);
+                    const newRows = e.target.value as number;
+                    setRowsPerPage(newRows);
                     setPage(0);
+                    syncToUrl({ rows: String(newRows), page: '0' });
                   }}
                   sx={{
                     color: '#ffffff',

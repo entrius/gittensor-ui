@@ -386,7 +386,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                     onClick={() =>
                       navigate(
                         `/miners/repository?name=${encodeURIComponent(repo.repository)}`,
-                        { state: { backLabel: `Back to ${githubId}` } },
+                        { state: { backLabel: `Back to ${prs?.[0]?.author || githubId}` } },
                       )
                     }
                     sx={{
