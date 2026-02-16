@@ -326,7 +326,13 @@ const IssuesList: React.FC<IssuesListProps> = ({
                           {formatTokenAmount(issue.targetBounty)} ل
                         </Typography>
                         {toUsd(issue.targetBounty) && (
-                          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.35)' }}>
+                          <Typography
+                            sx={{
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: '0.7rem',
+                              color: 'rgba(255, 255, 255, 0.35)',
+                            }}
+                          >
                             {toUsd(issue.targetBounty)}
                           </Typography>
                         )}
@@ -363,7 +369,13 @@ const IssuesList: React.FC<IssuesListProps> = ({
                           {formatTokenAmount(issue.targetBounty)} ل
                         </Typography>
                         {toUsd(issue.targetBounty) && (
-                          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.35)' }}>
+                          <Typography
+                            sx={{
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: '0.7rem',
+                              color: 'rgba(255, 255, 255, 0.35)',
+                            }}
+                          >
                             {toUsd(issue.targetBounty)}
                           </Typography>
                         )}
@@ -409,7 +421,13 @@ const IssuesList: React.FC<IssuesListProps> = ({
                           {`${formatTokenAmount(issue.targetBounty)} ل`}
                         </Typography>
                         {toUsd(issue.targetBounty) && (
-                          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.35)' }}>
+                          <Typography
+                            sx={{
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: '0.7rem',
+                              color: 'rgba(255, 255, 255, 0.35)',
+                            }}
+                          >
                             {toUsd(issue.targetBounty)}
                           </Typography>
                         )}

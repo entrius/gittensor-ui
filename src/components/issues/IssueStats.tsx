@@ -5,7 +5,11 @@ import { useStats } from '../../api';
 import KpiCard from '../dashboard/KpiCard';
 import { formatTokenAmount } from '../../utils/format';
 
-const formatUsd = (alphaAmount: string | undefined, taoPrice: number, alphaPrice: number): string | undefined => {
+const formatUsd = (
+  alphaAmount: string | undefined,
+  taoPrice: number,
+  alphaPrice: number,
+): string | undefined => {
   if (!alphaAmount) return undefined;
   const amount = parseFloat(alphaAmount);
   if (isNaN(amount) || amount === 0) return undefined;
@@ -69,14 +73,24 @@ const IssueStats: React.FC<IssueStatsProps> = ({
         <KpiCard
           title="Bounty Pool"
           value={`${formatTokenAmount(stats?.totalBountyPool)} ل`}
-          subtitle={hasPrices ? formatUsd(stats?.totalBountyPool, taoPrice, alphaPrice) ?? 'Total available' : 'Total available'}
+          subtitle={
+            hasPrices
+              ? (formatUsd(stats?.totalBountyPool, taoPrice, alphaPrice) ??
+                'Total available')
+              : 'Total available'
+          }
         />
       </Grid>
       <Grid item xs={6} sm={3}>
         <KpiCard
           title="Total Payouts"
           value={`${formatTokenAmount(stats?.totalPayouts)} ل`}
-          subtitle={hasPrices ? formatUsd(stats?.totalPayouts, taoPrice, alphaPrice) ?? 'Paid to solvers' : 'Paid to solvers'}
+          subtitle={
+            hasPrices
+              ? (formatUsd(stats?.totalPayouts, taoPrice, alphaPrice) ??
+                'Paid to solvers')
+              : 'Paid to solvers'
+          }
           sx={{
             '& .MuiTypography-h4': {
               color: '#3fb950',
