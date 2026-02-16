@@ -28,12 +28,12 @@ const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 const routesArray: AppRoute[] = [
   { name: 'home', path: '/', element: <HomePage /> },
   { name: 'dashboard', path: '/dashboard', element: <DashboardPage /> },
-  { name: 'issues', path: '/issues', element: <IssuesPage /> },
   {
     name: 'issue-details',
     path: '/issues/details',
     element: <IssueDetailsPage />,
   },
+  { name: 'issues', path: '/issues/:tab?', element: <IssuesPage /> },
   { name: 'top-miners', path: '/top-miners', element: <TopMinersPage /> },
   {
     name: 'repositories',

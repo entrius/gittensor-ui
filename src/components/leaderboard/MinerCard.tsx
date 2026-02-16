@@ -396,7 +396,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({ miner }) => (
           fontWeight: 700,
         }}
       >
-        {Number(miner.totalScore).toFixed(1)}
+        {Number(miner.totalScore).toFixed(2)}
       </Typography>
     </Box>
   </Box>

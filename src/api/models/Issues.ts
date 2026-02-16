@@ -11,7 +11,6 @@ export interface IssueBounty {
   targetBounty: string;
   status: 'registered' | 'active' | 'completed' | 'cancelled';
   solverHotkey: string | null;
-  payoutAmount: string | null;
   winningPrNumber: number | null;
   registeredAtBlock: number;
   createdAt: string;
@@ -25,6 +24,14 @@ export interface IssuesStats {
   completedIssues: number;
   totalBountyPool: string;
   totalPayouts: string;
+}
+
+export interface RepoBountySummary {
+  totalBounties: number;
+  activeBounties: number;
+  completedBounties: number;
+  totalAvailable: string;
+  totalPaidOut: string;
 }
 
 export interface IssueDetails extends IssueBounty {

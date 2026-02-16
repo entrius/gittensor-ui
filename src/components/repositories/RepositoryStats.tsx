@@ -1,6 +1,11 @@
 import React, { useMemo } from 'react';
 import { Box, Typography, Skeleton, Divider } from '@mui/material';
-import { useReposAndWeights, useAllPrs, useRepositoryIssues } from '../../api';
+import {
+  useReposAndWeights,
+  useAllPrs,
+  useRepositoryIssues,
+  useRepoBountySummary,
+} from '../../api';
 
 interface RepositoryStatsProps {
   repositoryFullName: string;
@@ -13,6 +18,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
   const { data: allPRs, isLoading: isLoadingPRs } = useAllPrs();
   const { data: issues, isLoading: isLoadingIssues } =
     useRepositoryIssues(repositoryFullName);
+  const { data: bountySummary } = useRepoBountySummary(repositoryFullName);
 
   const repository = useMemo(
     () =>
@@ -229,6 +235,109 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
             {issueStats.closedIssues}
           </Typography>
         </Box>
+
+        {/* Bounties */}
+        {bountySummary && bountySummary.totalBounties > 0 && (
+          <>
+            <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', my: 0.5 }} />
+
+            {/* Total Bounties */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{ fontSize: '13px', color: '#FFD700' }}
+              >
+                Bounties
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#FFD700',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                }}
+              >
+                {bountySummary.totalBounties}
+              </Typography>
+            </Box>
+
+            {/* Available Rewards */}
+            {bountySummary.activeBounties > 0 && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{ fontSize: '13px', color: '#8b949e' }}
+                >
+                  Available Rewards
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#fff',
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: '13px',
+                  }}
+                >
+                  {parseFloat(bountySummary.totalAvailable).toLocaleString(
+                    undefined,
+                    {
+                      maximumFractionDigits: 2,
+                    },
+                  )}{' '}
+                  α
+                </Typography>
+              </Box>
+            )}
+
+            {/* Total Paid Out */}
+            {bountySummary.completedBounties > 0 && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{ fontSize: '13px', color: '#8b949e' }}
+                >
+                  Total Paid Out
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#3fb950',
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                  }}
+                >
+                  {parseFloat(bountySummary.totalPaidOut).toLocaleString(
+                    undefined,
+                    {
+                      maximumFractionDigits: 2,
+                    },
+                  )}{' '}
+                  α
+                </Typography>
+              </Box>
+            )}
+          </>
+        )}
       </Box>
     </Box>
   );
