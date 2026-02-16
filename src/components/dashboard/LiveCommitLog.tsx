@@ -85,6 +85,7 @@ const CommitLogItem: React.FC<{
       onClick={() =>
         navigate(
           `/miners/pr?repo=${entry.repository}&number=${entry.pullRequestNumber}`,
+          { state: { backLabel: 'Back to Dashboard' } },
         )
       }
       sx={{

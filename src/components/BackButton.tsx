@@ -1,10 +1,10 @@
 import React from 'react';
 import { Button } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface BackButtonProps {
-  /** Text to display on the button */
+  /** Text to display on the button (used as fallback if no state-based label) */
   label?: string;
   /** Path to navigate to when clicked (used as fallback if no history) */
   to: string;
@@ -18,6 +18,8 @@ const BackButton: React.FC<BackButtonProps> = ({
   mb = 2,
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const stateLabel = (location.state as { backLabel?: string })?.backLabel;
 
   const handleClick = () => {
     if (window.history.length > 1) {
@@ -34,7 +36,7 @@ const BackButton: React.FC<BackButtonProps> = ({
       onClick={handleClick}
       sx={{ mb, alignSelf: 'flex-start' }}
     >
-      {label}
+      {stateLabel || label}
     </Button>
   );
 };
