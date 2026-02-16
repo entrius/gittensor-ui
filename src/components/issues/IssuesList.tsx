@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueBounty } from '../../api/models/Issues';
+import { useStats } from '../../api';
 import { formatTokenAmount } from '../../utils/format';
 import BountyProgress from './BountyProgress';
 
@@ -96,6 +97,17 @@ const IssuesList: React.FC<IssuesListProps> = ({
   listType,
   onSelectIssue,
 }) => {
+  const { data: dashStats } = useStats();
+  const taoPrice = dashStats?.prices?.tao?.data?.price ?? 0;
+  const alphaPrice = dashStats?.prices?.alpha?.data?.price ?? 0;
+
+  const toUsd = (alphaAmount: string): string | null => {
+    if (taoPrice <= 0 || alphaPrice <= 0) return null;
+    const amount = parseFloat(alphaAmount);
+    if (isNaN(amount) || amount === 0) return null;
+    const usd = amount * alphaPrice * taoPrice;
+    return `~${usd.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`;
+  };
   const headerCellSx = {
     fontFamily: '"JetBrains Mono", monospace',
     fontSize: '0.7rem',
@@ -313,6 +325,11 @@ const IssuesList: React.FC<IssuesListProps> = ({
                         >
                           {formatTokenAmount(issue.targetBounty)} ل
                         </Typography>
+                        {toUsd(issue.targetBounty) && (
+                          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.35)' }}>
+                            {toUsd(issue.targetBounty)}
+                          </Typography>
+                        )}
                       </TableCell>
                       <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
                         <Chip
@@ -345,6 +362,11 @@ const IssuesList: React.FC<IssuesListProps> = ({
                         >
                           {formatTokenAmount(issue.targetBounty)} ل
                         </Typography>
+                        {toUsd(issue.targetBounty) && (
+                          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.35)' }}>
+                            {toUsd(issue.targetBounty)}
+                          </Typography>
+                        )}
                       </TableCell>
                       <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
                         <BountyProgress
@@ -386,6 +408,11 @@ const IssuesList: React.FC<IssuesListProps> = ({
                         >
                           {`${formatTokenAmount(issue.targetBounty)} ل`}
                         </Typography>
+                        {toUsd(issue.targetBounty) && (
+                          <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.35)' }}>
+                            {toUsd(issue.targetBounty)}
+                          </Typography>
+                        )}
                       </TableCell>
                       <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
                         {issue.solverHotkey ? (

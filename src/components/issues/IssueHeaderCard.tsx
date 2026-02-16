@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Card, Typography, Chip, Link, Stack } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueDetails } from '../../api/models/Issues';
+import { useStats } from '../../api';
 import { formatTokenAmount } from '../../utils/format';
 
 const getStatusBadge = (
@@ -57,6 +58,17 @@ interface IssueHeaderCardProps {
 
 const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
   const statusBadge = getStatusBadge(issue.status);
+  const { data: dashStats } = useStats();
+  const taoPrice = dashStats?.prices?.tao?.data?.price ?? 0;
+  const alphaPrice = dashStats?.prices?.alpha?.data?.price ?? 0;
+
+  const usdEstimate = React.useMemo(() => {
+    if (taoPrice <= 0 || alphaPrice <= 0) return null;
+    const amount = parseFloat(issue.targetBounty);
+    if (isNaN(amount) || amount === 0) return null;
+    const usd = amount * alphaPrice * taoPrice;
+    return `~${usd.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`;
+  }, [issue.targetBounty, taoPrice, alphaPrice]);
 
   return (
     <Card
@@ -201,6 +213,18 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                 }}
               >
                 {formatTokenAmount(issue.targetBounty)} ل
+              </Typography>
+            )}
+            {usdEstimate && (
+              <Typography
+                sx={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.8rem',
+                  color: 'rgba(255, 255, 255, 0.4)',
+                  mt: 0.25,
+                }}
+              >
+                {usdEstimate}
               </Typography>
             )}
           </Box>

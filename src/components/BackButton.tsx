@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 interface BackButtonProps {
   /** Text to display on the button */
   label?: string;
-  /** Path to navigate to when clicked */
+  /** Path to navigate to when clicked (used as fallback if no history) */
   to: string;
   /** Additional margin bottom (in theme spacing units) */
   mb?: number;
@@ -19,11 +19,19 @@ const BackButton: React.FC<BackButtonProps> = ({
 }) => {
   const navigate = useNavigate();
 
+  const handleClick = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate(to);
+    }
+  };
+
   return (
     <Button
       variant="back"
       startIcon={<ArrowBackIcon sx={{ fontSize: '1rem !important' }} />}
-      onClick={() => navigate(to)}
+      onClick={handleClick}
       sx={{ mb, alignSelf: 'flex-start' }}
     >
       {label}
