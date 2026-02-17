@@ -74,6 +74,7 @@ const TierRepoCard: React.FC<TierRepoCardProps> = ({ tier, repos }) => {
               onClick={() =>
                 navigate(
                   `/miners/repository?name=${encodeURIComponent(repo.fullName)}`,
+                  { state: { backLabel: 'Back to Dashboard' } },
                 )
               }
               sx={{ textDecoration: 'none', cursor: 'pointer' }}

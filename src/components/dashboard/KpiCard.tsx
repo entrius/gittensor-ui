@@ -34,8 +34,9 @@ const KpiCard: React.FC<KpiCardProps> = ({
 
   const formattedValue =
     value !== undefined && value !== null
-      ? typeof value === 'string' && value.startsWith('$')
-        ? value // Already formatted with currency
+      ? typeof value === 'string' &&
+        (value.startsWith('$') || value.includes('ل') || value.includes(','))
+        ? value // Already formatted with currency/token symbol or commas
         : typeof value === 'number' || typeof value === 'string'
           ? Number(value).toLocaleString()
           : value
@@ -75,7 +76,13 @@ const KpiCard: React.FC<KpiCardProps> = ({
           sx={{
             fontFamily: '"JetBrains Mono", monospace',
             my: isLarge ? (isMobile ? 0.5 : 1) : 0.5,
-            fontSize: isMobile ? (isLarge ? '2rem' : '1.5rem') : undefined,
+            fontSize: isLarge
+              ? isMobile
+                ? '2rem'
+                : undefined
+              : isMobile
+                ? '1.25rem'
+                : '1.5rem',
           }}
         >
           {formattedValue ?? '-'}

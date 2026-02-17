@@ -14,7 +14,9 @@ const TopMinersPage: React.FC = () => {
   const isLoadingMinerStats = allMinerStatsQuery?.isLoading;
 
   const handleSelectMiner = (githubId: string) => {
-    navigate(`/miners/details?githubId=${githubId}`);
+    navigate(`/miners/details?githubId=${githubId}`, {
+      state: { backLabel: 'Back to Leaderboard' },
+    });
   };
 
   // Process miner stats for TopMinersTable

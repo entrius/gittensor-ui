@@ -11,9 +11,10 @@ const HomePage = React.lazy(() => import('./pages/HomePage'));
 const AboutPage = React.lazy(() => import('./pages/AboutPage'));
 const FAQPage = React.lazy(() => import('./pages/FAQPage'));
 const DashboardPage = React.lazy(() => import('./pages/DashboardPage'));
+const IssuesPage = React.lazy(() => import('./pages/IssuesPage'));
+const IssueDetailsPage = React.lazy(() => import('./pages/IssueDetailsPage'));
 const TopMinersPage = React.lazy(() => import('./pages/TopMinersPage'));
-const TopPRsPage = React.lazy(() => import('./pages/TopPRsPage'));
-const TopReposPage = React.lazy(() => import('./pages/TopReposPage'));
+const RepositoriesPage = React.lazy(() => import('./pages/RepositoriesPage'));
 const MinerDetailsPage = React.lazy(() => import('./pages/MinerDetailsPage'));
 const RepositoryDetailsPage = React.lazy(
   () => import('./pages/RepositoryDetailsPage'),
@@ -27,9 +28,18 @@ const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 const routesArray: AppRoute[] = [
   { name: 'home', path: '/', element: <HomePage /> },
   { name: 'dashboard', path: '/dashboard', element: <DashboardPage /> },
+  {
+    name: 'issue-details',
+    path: '/issues/details',
+    element: <IssueDetailsPage />,
+  },
+  { name: 'issues', path: '/issues/:tab?', element: <IssuesPage /> },
   { name: 'top-miners', path: '/top-miners', element: <TopMinersPage /> },
-  { name: 'top-prs', path: '/top-prs', element: <TopPRsPage /> },
-  { name: 'top-repos', path: '/top-repos', element: <TopReposPage /> },
+  {
+    name: 'repositories',
+    path: '/repositories',
+    element: <RepositoriesPage />,
+  },
   {
     name: 'miner-details',
     path: '/miners/details',

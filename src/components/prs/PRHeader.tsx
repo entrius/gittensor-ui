@@ -41,7 +41,10 @@ const PRHeader: React.FC<PRHeaderProps> = ({
     <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-start', gap: 2 }}>
       <Box
         onClick={() =>
-          navigate(`/miners/repository?name=${encodeURIComponent(repository)}`)
+          navigate(
+            `/miners/repository?name=${encodeURIComponent(repository)}`,
+            { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
+          )
         }
         sx={{
           cursor: 'pointer',
@@ -128,6 +131,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
             onClick={() =>
               navigate(
                 `/miners/repository?name=${encodeURIComponent(repository)}`,
+                { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
               )
             }
             sx={{

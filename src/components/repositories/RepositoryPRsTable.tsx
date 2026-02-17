@@ -310,6 +310,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                   onClick={() => {
                     navigate(
                       `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
+                      { state: { backLabel: `Back to ${repositoryFullName}` } },
                     );
                   }}
                   sx={{
