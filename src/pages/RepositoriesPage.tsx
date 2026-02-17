@@ -244,7 +244,7 @@ const RepositoriesPage: React.FC = () => {
     const earliestPR = new Map<string, Date>();
 
     allPRs.forEach((pr: CommitLog) => {
-      const prDate = pr.prCreatedAt || pr.mergedAt;
+      const prDate = pr.mergedAt;
       if (!pr?.repository || !prDate) return;
       const created = new Date(prDate);
 
@@ -267,30 +267,42 @@ const RepositoriesPage: React.FC = () => {
       .slice(0, 5);
   }, [allPRs, reposWithWeights]);
 
-  // ── Recent PRs: most recently created PRs ──────────────────────────────
+  // ── Recent PRs: highest-scoring merged PRs of the day ───────────────────
   const recentPrs = useMemo(() => {
     if (!allPRs || !reposWithWeights) return [];
 
     const repoMap = new Map(reposWithWeights.map((r) => [r.fullName, r]));
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     return allPRs
       .filter(
         (pr) =>
           pr.repository &&
-          (pr.prCreatedAt || pr.mergedAt) &&
-          repoMap.has(pr.repository),
+          pr.mergedAt &&
+          repoMap.has(pr.repository) &&
+          new Date(pr.mergedAt) >= today,
       )
-      .sort(
-        (a, b) =>
-          new Date(b.prCreatedAt || b.mergedAt || 0).getTime() -
-          new Date(a.prCreatedAt || a.mergedAt || 0).getTime(),
-      )
+      .sort((a, b) => {
+        const scoreA = parseFloat(a.score || '0');
+        const scoreB = parseFloat(b.score || '0');
+        if (scoreB !== scoreA) return scoreB - scoreA;
+        // Tiebreak by repo weight
+        const weightA = parseFloat(
+          String(repoMap.get(a.repository)?.weight || '0'),
+        );
+        const weightB = parseFloat(
+          String(repoMap.get(b.repository)?.weight || '0'),
+        );
+        return weightB - weightA;
+      })
       .slice(0, 5)
       .map((pr) => ({
         name: pr.repository,
         tier: repoMap.get(pr.repository)?.tier || '',
         title: pr.pullRequestTitle,
-        createdAt: new Date(pr.prCreatedAt || pr.mergedAt || new Date()),
+        createdAt: new Date(pr.mergedAt || new Date()),
         number: pr.pullRequestNumber,
       }));
   }, [allPRs, reposWithWeights]);
