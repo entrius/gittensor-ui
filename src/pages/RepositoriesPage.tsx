@@ -198,7 +198,7 @@ const RepositoriesPage: React.FC = () => {
     >();
 
     allPRs.forEach((pr: CommitLog) => {
-      const prDate = pr.prCreatedAt || pr.mergedAt;
+      const prDate = pr.mergedAt;
       if (!pr?.repository || !prDate) return;
       const score = parseFloat(pr.score || '0');
 
