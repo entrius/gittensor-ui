@@ -5,6 +5,7 @@ import { Page } from '../components/layout';
 import { BackButton, SEO } from '../components';
 import { IssueHeaderCard, IssueSubmissionsTable } from '../components/issues';
 import { useIssueDetails, useIssueSubmissions } from '../api';
+import { STATUS_COLORS } from '../theme';
 
 /**
  * Inline description card (not reused elsewhere)
@@ -40,7 +41,7 @@ const IssueDescriptionCard: React.FC<{ body: string }> = ({ body }) => (
         lineHeight: 1.6,
         color: '#ffffff',
         '& a': {
-          color: '#58a6ff',
+          color: STATUS_COLORS.info,
         },
         '& code': {
           backgroundColor: 'rgba(255, 255, 255, 0.1)',

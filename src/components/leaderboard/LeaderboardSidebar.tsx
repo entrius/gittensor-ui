@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Box, Stack, Typography, Avatar } from '@mui/material';
 import { SectionCard } from './SectionCard';
+import { STATUS_COLORS } from '../../theme';
 import { type MinerStats, FONTS } from './types';
 
 // Re-export MinerStats for backward compatibility
@@ -68,7 +69,7 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
           <StatRow
             label="Daily Pool"
             value={`$${networkStats.dailyPool.toLocaleString()}`}
-            valueColor="#3fb950"
+            valueColor={STATUS_COLORS.merged}
           />
         </Box>
       </SectionCard>
@@ -127,7 +128,7 @@ const StatRow: React.FC<StatRowProps> = ({
       sx={{
         fontFamily: FONTS.mono,
         fontSize: '0.85rem',
-        color: '#8b949e',
+        color: STATUS_COLORS.open,
       }}
     >
       {label}
@@ -181,7 +182,7 @@ const LeaderboardTabs: React.FC<LeaderboardTabsProps> = ({
             activeTab === option.value
               ? 'rgba(255, 255, 255, 0.15)'
               : 'transparent',
-          color: activeTab === option.value ? '#fff' : '#8b949e',
+          color: activeTab === option.value ? '#fff' : STATUS_COLORS.open,
           transition: 'all 0.2s',
           '&:hover': {
             backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -220,7 +221,7 @@ const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({ type }) => (
       sx={{
         fontFamily: FONTS.mono,
         fontSize: '0.7rem',
-        color: '#8b949e',
+        color: STATUS_COLORS.open,
         width: 24,
         textTransform: 'uppercase',
       }}
@@ -231,7 +232,7 @@ const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({ type }) => (
       sx={{
         fontFamily: FONTS.mono,
         fontSize: '0.7rem',
-        color: '#8b949e',
+        color: STATUS_COLORS.open,
         flex: 1,
         textTransform: 'uppercase',
       }}
@@ -242,7 +243,7 @@ const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({ type }) => (
       sx={{
         fontFamily: FONTS.mono,
         fontSize: '0.7rem',
-        color: '#8b949e',
+        color: STATUS_COLORS.open,
         textTransform: 'uppercase',
       }}
     >
@@ -281,7 +282,7 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
       sx={{
         fontFamily: FONTS.mono,
         fontSize: '0.85rem',
-        color: '#8b949e',
+        color: STATUS_COLORS.open,
         width: 24,
       }}
     >
@@ -317,7 +318,7 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
       sx={{
         fontFamily: FONTS.mono,
         fontSize: '0.95rem',
-        color: type === 'earners' ? '#3fb950' : '#e6edf3',
+        color: type === 'earners' ? STATUS_COLORS.merged : '#e6edf3',
         fontWeight: 600,
       }}
     >

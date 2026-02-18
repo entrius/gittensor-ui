@@ -4,6 +4,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueDetails } from '../../api/models/Issues';
 import { useStats } from '../../api';
 import { formatTokenAmount } from '../../utils/format';
+import { STATUS_COLORS } from '../../theme';
 
 const getStatusBadge = (
   status: string,
@@ -11,31 +12,31 @@ const getStatusBadge = (
   switch (status) {
     case 'registered':
       return {
-        color: '#f59e0b',
+        color: STATUS_COLORS.warning,
         bgColor: 'rgba(245, 158, 11, 0.15)',
         text: 'Pending',
       };
     case 'active':
       return {
-        color: '#58a6ff',
+        color: STATUS_COLORS.info,
         bgColor: 'rgba(88, 166, 255, 0.15)',
         text: 'Available',
       };
     case 'completed':
       return {
-        color: '#3fb950',
+        color: STATUS_COLORS.merged,
         bgColor: 'rgba(63, 185, 80, 0.15)',
         text: 'Completed',
       };
     case 'cancelled':
       return {
-        color: '#ef4444',
+        color: STATUS_COLORS.error,
         bgColor: 'rgba(239, 68, 68, 0.15)',
         text: 'Cancelled',
       };
     default:
       return {
-        color: '#8b949e',
+        color: STATUS_COLORS.open,
         bgColor: 'rgba(139, 148, 158, 0.15)',
         text: status,
       };
@@ -100,7 +101,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
               gap: 0.5,
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '1rem',
-              color: '#58a6ff',
+              color: STATUS_COLORS.info,
               textDecoration: 'none',
               '&:hover': {
                 textDecoration: 'underline',
@@ -174,7 +175,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                     fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '1.25rem',
                     fontWeight: 600,
-                    color: '#f59e0b',
+                    color: STATUS_COLORS.warning,
                   }}
                 >
                   {formatTokenAmount(issue.bountyAmount)}
@@ -195,7 +196,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '1.25rem',
                   fontWeight: 600,
-                  color: '#3fb950',
+                  color: STATUS_COLORS.merged,
                 }}
               >
                 {formatTokenAmount(issue.targetBounty)} ل
@@ -208,7 +209,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                   fontWeight: 600,
                   color:
                     issue.status === 'active'
-                      ? '#3fb950'
+                      ? STATUS_COLORS.merged
                       : 'rgba(255, 255, 255, 0.6)',
                 }}
               >

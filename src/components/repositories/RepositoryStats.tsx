@@ -6,6 +6,7 @@ import {
   useRepositoryIssues,
   useRepoBountySummary,
 } from '../../api';
+import { TIER_COLORS, STATUS_COLORS } from '../../theme';
 
 interface RepositoryStatsProps {
   repositoryFullName: string;
@@ -81,13 +82,13 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
   const getTierColor = (tier: string) => {
     switch (tier) {
       case 'Gold':
-        return '#FFD700';
+        return TIER_COLORS.gold;
       case 'Silver':
-        return '#C0C0C0';
+        return TIER_COLORS.silver;
       case 'Bronze':
-        return '#CD7F32';
+        return TIER_COLORS.bronze;
       default:
-        return '#8b949e';
+        return STATUS_COLORS.open;
     }
   };
 
@@ -111,7 +112,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
         >
           <Typography
             variant="body2"
-            sx={{ fontSize: '13px', color: '#8b949e' }}
+            sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
           >
             Weight
           </Typography>
@@ -137,7 +138,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
         >
           <Typography
             variant="body2"
-            sx={{ fontSize: '13px', color: '#8b949e' }}
+            sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
           >
             Tier
           </Typography>
@@ -166,7 +167,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
         >
           <Typography
             variant="body2"
-            sx={{ fontSize: '13px', color: '#8b949e' }}
+            sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
           >
             Total Score
           </Typography>
@@ -194,7 +195,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
         >
           <Typography
             variant="body2"
-            sx={{ fontSize: '13px', color: '#8b949e' }}
+            sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
           >
             Merged PRs
           </Typography>
@@ -220,7 +221,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
         >
           <Typography
             variant="body2"
-            sx={{ fontSize: '13px', color: '#8b949e' }}
+            sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
           >
             Closed Issues
           </Typography>
@@ -251,14 +252,14 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
             >
               <Typography
                 variant="body2"
-                sx={{ fontSize: '13px', color: '#FFD700' }}
+                sx={{ fontSize: '13px', color: TIER_COLORS.gold }}
               >
                 Bounties
               </Typography>
               <Typography
                 variant="body2"
                 sx={{
-                  color: '#FFD700',
+                  color: TIER_COLORS.gold,
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '13px',
                   fontWeight: 600,
@@ -279,7 +280,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
               >
                 <Typography
                   variant="body2"
-                  sx={{ fontSize: '13px', color: '#8b949e' }}
+                  sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
                 >
                   Available Rewards
                 </Typography>
@@ -313,14 +314,14 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
               >
                 <Typography
                   variant="body2"
-                  sx={{ fontSize: '13px', color: '#8b949e' }}
+                  sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
                 >
                   Total Paid Out
                 </Typography>
                 <Typography
                   variant="body2"
                   sx={{
-                    color: '#3fb950',
+                    color: STATUS_COLORS.merged,
                     fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '13px',
                     fontWeight: 500,

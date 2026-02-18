@@ -6,8 +6,10 @@ import {
   Grid,
   CircularProgress,
   Avatar,
+  alpha,
 } from '@mui/material';
 import { useAllPrs } from '../../api';
+import { TIER_COLORS, STATUS_COLORS } from '../../theme';
 
 interface RepositoryScoreCardProps {
   repositoryFullName: string;
@@ -169,7 +171,7 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
       >
         <Typography
           sx={{
-            color: 'rgba(255, 107, 107, 0.9)',
+            color: alpha(STATUS_COLORS.error, 0.9),
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.9rem',
           }}
@@ -310,19 +312,19 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
                       border: '1px solid',
                       borderColor:
                         item.rank === 1
-                          ? 'rgba(255, 215, 0, 0.4)'
+                          ? alpha(TIER_COLORS.gold, 0.4)
                           : item.rank === 2
-                            ? 'rgba(192, 192, 192, 0.4)'
+                            ? alpha(TIER_COLORS.silver, 0.4)
                             : item.rank === 3
-                              ? 'rgba(205, 127, 50, 0.4)'
+                              ? alpha(TIER_COLORS.bronze, 0.4)
                               : 'rgba(255, 255, 255, 0.15)',
                       boxShadow:
                         item.rank === 1
-                          ? '0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)'
+                          ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
                           : item.rank === 2
-                            ? '0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)'
+                            ? `0 0 12px ${alpha(TIER_COLORS.silver, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.silver, 0.2)}`
                             : item.rank === 3
-                              ? '0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)'
+                              ? `0 0 12px ${alpha(TIER_COLORS.bronze, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.bronze, 0.2)}`
                               : 'none',
                     }}
                   >
@@ -331,11 +333,11 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
                       sx={{
                         color:
                           item.rank === 1
-                            ? '#FFD700'
+                            ? TIER_COLORS.gold
                             : item.rank === 2
-                              ? '#C0C0C0'
+                              ? TIER_COLORS.silver
                               : item.rank === 3
-                                ? '#CD7F32'
+                                ? TIER_COLORS.bronze
                                 : 'rgba(255, 255, 255, 0.6)',
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.6rem',

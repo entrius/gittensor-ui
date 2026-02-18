@@ -32,6 +32,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
 import { useReposAndWeights } from '../../api';
+import { TIER_COLORS, STATUS_COLORS } from '../../theme';
 import dayjs from 'dayjs';
 
 type SortField = 'owner' | 'name' | 'weight' | 'tier';
@@ -42,11 +43,11 @@ const baseGithubUrl = 'https://github.com/';
 const getTierColor = (tier: string): string => {
   switch (tier?.toLowerCase()) {
     case 'gold':
-      return '#FFD700';
+      return TIER_COLORS.gold;
     case 'silver':
-      return '#C0C0C0';
+      return TIER_COLORS.silver;
     case 'bronze':
-      return '#CD7F32';
+      return TIER_COLORS.bronze;
     default:
       return 'rgba(255, 255, 255, 0.4)';
   }
@@ -487,25 +488,25 @@ const RepositoryWeightsTable: React.FC = () => {
               label="All"
               value="all"
               count={tierCounts.all}
-              color="#8b949e"
+              color={STATUS_COLORS.open}
             />
             <TierFilterButton
               label="Gold"
               value="gold"
               count={tierCounts.gold}
-              color="#FFD700"
+              color={TIER_COLORS.gold}
             />
             <TierFilterButton
               label="Silver"
               value="silver"
               count={tierCounts.silver}
-              color="#C0C0C0"
+              color={TIER_COLORS.silver}
             />
             <TierFilterButton
               label="Bronze"
               value="bronze"
               count={tierCounts.bronze}
-              color="#CD7F32"
+              color={TIER_COLORS.bronze}
             />
           </Stack>
 

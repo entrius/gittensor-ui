@@ -25,6 +25,7 @@ import {
   Chip,
   Switch,
   FormControlLabel,
+  alpha,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
@@ -33,7 +34,7 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
 import { type CommitLog } from '../../api/models/Dashboard';
 import { formatUsdEstimate } from '../../utils';
-import theme from '../../theme';
+import theme, { TIER_COLORS, STATUS_COLORS } from '../../theme';
 
 interface TopPRsTableProps {
   prs: CommitLog[];
@@ -1077,12 +1078,12 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                                 fontFamily: '"JetBrains Mono", monospace',
                                 fontSize: '0.65rem',
                                 fontWeight: 500,
-                                color: 'rgba(74, 222, 128, 0.7)',
+                                color: alpha(STATUS_COLORS.success, 0.7),
                                 cursor: 'pointer',
                                 lineHeight: 1,
                                 transition: 'color 0.15s ease',
                                 '&:hover': {
-                                  color: 'rgba(74, 222, 128, 0.95)',
+                                  color: alpha(STATUS_COLORS.success, 0.95),
                                 },
                               }}
                             >
@@ -1159,19 +1160,19 @@ const getRankIcon = (rank: number) => (
       border: '1px solid',
       borderColor:
         rank === 1
-          ? 'rgba(255, 215, 0, 0.4)'
+          ? alpha(TIER_COLORS.gold, 0.4)
           : rank === 2
-            ? 'rgba(192, 192, 192, 0.4)'
+            ? alpha(TIER_COLORS.silver, 0.4)
             : rank === 3
-              ? 'rgba(205, 127, 50, 0.4)'
+              ? alpha(TIER_COLORS.bronze, 0.4)
               : 'rgba(255, 255, 255, 0.15)',
       boxShadow:
         rank === 1
-          ? '0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)'
+          ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
           : rank === 2
-            ? '0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)'
+            ? `0 0 12px ${alpha(TIER_COLORS.silver, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.silver, 0.2)}`
             : rank === 3
-              ? '0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)'
+              ? `0 0 12px ${alpha(TIER_COLORS.bronze, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.bronze, 0.2)}`
               : 'none',
     }}
   >
@@ -1180,11 +1181,11 @@ const getRankIcon = (rank: number) => (
       sx={{
         color:
           rank === 1
-            ? '#FFD700'
+            ? TIER_COLORS.gold
             : rank === 2
-              ? '#C0C0C0'
+              ? TIER_COLORS.silver
               : rank === 3
-                ? '#CD7F32'
+                ? TIER_COLORS.bronze
                 : 'rgba(255, 255, 255, 0.6)',
         fontFamily: '"JetBrains Mono", monospace',
         fontSize: '0.65rem',

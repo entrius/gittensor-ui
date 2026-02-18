@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import { STATUS_COLORS } from '../../theme';
 
 // Shared tooltip styling
 const tooltipSlotProps: TooltipProps['slotProps'] = {
@@ -168,7 +169,7 @@ export const TierProgressBar: React.FC<TierProgressBarProps> = ({
         </Typography>
         <Typography
           sx={{
-            color: isComplete ? '#4ade80' : '#ffffff',
+            color: isComplete ? STATUS_COLORS.success : '#ffffff',
             fontSize: '0.7rem',
             fontFamily: '"JetBrains Mono", monospace',
           }}
@@ -187,7 +188,7 @@ export const TierProgressBar: React.FC<TierProgressBarProps> = ({
           borderRadius: 2,
           backgroundColor: 'rgba(255, 255, 255, 0.1)',
           '& .MuiLinearProgress-bar': {
-            backgroundColor: isComplete ? '#4ade80' : tierColor,
+            backgroundColor: isComplete ? STATUS_COLORS.success : tierColor,
             borderRadius: 2,
           },
         }}
@@ -464,7 +465,7 @@ export const TierCard: React.FC<TierCardProps> = ({
             tooltip="Your raw credibility (merged ÷ total attempts) for this tier. When applied to PRs, this is exponentially scaled by the tier's scalar to calculate your final credibility multiplier."
             valueColor={
               stats.credibility && stats.credibility >= 0.7
-                ? '#4ade80'
+                ? STATUS_COLORS.success
                 : '#ffffff'
             }
           />

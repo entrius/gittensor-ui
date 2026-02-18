@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import { usePullRequestComments } from '../../api';
 import { type PullRequestDetails } from '../../api/models/Dashboard';
+import { STATUS_COLORS } from '../../theme';
 import 'github-markdown-css/github-markdown-dark.css'; // Import standard GitHub Dark styles
 
 interface PRCommentsProps {
@@ -76,10 +77,10 @@ const PRComments: React.FC<PRCommentsProps> = ({
     },
     fg: {
       default: '#c9d1d9',
-      muted: '#8b949e',
+      muted: STATUS_COLORS.open,
     },
     accent: {
-      fg: '#58a6ff',
+      fg: STATUS_COLORS.info,
     },
     timeline: {
       line: '#30363d',
@@ -245,7 +246,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
                     variant="status"
                     label="Description"
                     sx={{
-                      color: '#58a6ff',
+                      color: STATUS_COLORS.info,
                       borderColor: 'rgba(56, 139, 253, 0.4)',
                     }}
                   />

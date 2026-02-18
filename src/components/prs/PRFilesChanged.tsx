@@ -21,6 +21,7 @@ import {
   TableCell,
   TableContainer,
   TableRow,
+  alpha,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -39,6 +40,7 @@ import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
+import { STATUS_COLORS } from '../../theme';
 
 interface PRFile {
   sha: string;
@@ -166,7 +168,7 @@ const FileTreeItem: React.FC<{
 
   const getIcon = () => {
     if (hasChildren) {
-      const color = node.hasChanges ? '#d29922' : '#8b949e'; // Orange folder if changes inside
+      const color = node.hasChanges ? '#d29922' : STATUS_COLORS.open; // Orange folder if changes inside
       return open ? (
         <FolderOpenIcon sx={{ fontSize: 16, color }} />
       ) : (
@@ -175,7 +177,7 @@ const FileTreeItem: React.FC<{
     }
 
     // File icons
-    let color = '#8b949e';
+    let color: string = STATUS_COLORS.open;
     if (node.file) {
       if (node.file.status === 'added') color = '#2da44e';
       if (node.file.status === 'removed') color = '#cf222e';
@@ -275,7 +277,7 @@ const FileTreeItem: React.FC<{
                 ? '#fff'
                 : node.file || node.hasChanges
                   ? '#c9d1d9'
-                  : '#8b949e',
+                  : STATUS_COLORS.open,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -400,7 +402,7 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                     <TableCell
                       colSpan={4}
                       sx={{
-                        color: '#8b949e',
+                        color: STATUS_COLORS.open,
                         borderBottom: '1px solid #30363d',
                         py: 1,
                         px: 2,
@@ -578,7 +580,7 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                       borderBottom: '1px solid #30363d',
                       borderRight: '1px solid #30363d',
                       p: '4px 8px',
-                      color: '#8b949e',
+                      color: STATUS_COLORS.open,
                       fontFamily: 'inherit',
                       fontSize: '12px',
                       zIndex: 2,
@@ -588,7 +590,7 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                   </TableCell>
                   <TableCell
                     sx={{
-                      color: '#8b949e',
+                      color: STATUS_COLORS.open,
                       borderBottom: '1px solid #30363d',
                       p: '4px 8px',
                       fontFamily: 'inherit',
@@ -729,7 +731,7 @@ const UnifiedDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                   <TableCell
                     colSpan={3}
                     sx={{
-                      color: '#8b949e',
+                      color: STATUS_COLORS.open,
                       borderBottom: '1px solid #30363d',
                       py: 1,
                       px: 2,
@@ -1061,7 +1063,7 @@ const PRFileDiffViewer: React.FC<{
 
   if (!file.patch) {
     return (
-      <Box sx={{ p: 4, textAlign: 'center', color: '#8b949e' }}>
+      <Box sx={{ p: 4, textAlign: 'center', color: STATUS_COLORS.open }}>
         <Typography sx={{ fontSize: '0.9rem' }}>
           {file.status === 'renamed'
             ? 'File renamed without changes.'
@@ -1072,7 +1074,7 @@ const PRFileDiffViewer: React.FC<{
           href={file.blob_url}
           target="_blank"
           sx={{
-            color: '#58a6ff',
+            color: STATUS_COLORS.info,
             fontSize: '0.85rem',
             textDecoration: 'none',
             '&:hover': { textDecoration: 'underline' },
@@ -1112,7 +1114,7 @@ const PRFileDiffViewer: React.FC<{
         }}
       >
         <AccordionSummary
-          expandIcon={<ExpandMoreIcon sx={{ color: '#8b949e' }} />}
+          expandIcon={<ExpandMoreIcon sx={{ color: STATUS_COLORS.open }} />}
           sx={{
             borderBottom: '1px solid #30363d',
             minHeight: '48px',
@@ -1150,14 +1152,14 @@ const PRFileDiffViewer: React.FC<{
               <Chip
                 variant="info"
                 label={file.status}
-                sx={{ color: '#8b949e' }}
+                sx={{ color: STATUS_COLORS.open }}
               />
             )}
             <Tooltip title={copied ? 'Copied!' : 'Copy path'}>
               <IconButton
                 size="small"
                 onClick={handleCopyPath}
-                sx={{ color: '#8b949e', ml: 1, p: 0.5 }}
+                sx={{ color: STATUS_COLORS.open, ml: 1, p: 0.5 }}
               >
                 {copied ? (
                   <CheckIcon sx={{ fontSize: 14, color: '#2da44e' }} />
@@ -1318,10 +1320,10 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
       <Box
         sx={{
           p: 3,
-          border: '1px solid rgba(255,107,107,0.3)',
+          border: `1px solid ${alpha(STATUS_COLORS.error, 0.3)}`,
           borderRadius: 2,
-          backgroundColor: 'rgba(255,107,107,0.05)',
-          color: '#ff6b6b',
+          backgroundColor: alpha(STATUS_COLORS.error, 0.05),
+          color: STATUS_COLORS.error,
           textAlign: 'center',
         }}
       >
@@ -1384,7 +1386,7 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
                 <Typography
                   sx={{
                     fontSize: '0.75rem',
-                    color: '#8b949e',
+                    color: STATUS_COLORS.open,
                     fontFamily: '"JetBrains Mono", monospace',
                   }}
                 >
@@ -1405,7 +1407,7 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
                 width: '100%',
                 '& .MuiToggleButton-root': {
                   flex: 1,
-                  color: '#8b949e',
+                  color: STATUS_COLORS.open,
                   borderColor: '#30363d',
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.75rem',

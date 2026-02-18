@@ -16,6 +16,7 @@ import LaunchIcon from '@mui/icons-material/Launch'; // Added import
 import PeopleIcon from '@mui/icons-material/People'; // For Community
 import BugReportIcon from '@mui/icons-material/BugReport';
 import axios from 'axios';
+import { STATUS_COLORS } from '../../theme';
 
 interface RepositoryCheckTabProps {
   repositoryFullName: string;
@@ -191,7 +192,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
         >
           Repository Health Check & Feasibility
         </Typography>
-        <Typography variant="body2" sx={{ color: '#8b949e' }}>
+        <Typography variant="body2" sx={{ color: STATUS_COLORS.open }}>
           An in-depth analysis of the repository's openness to contributions,
           code health, and community standards.
         </Typography>
@@ -276,7 +277,11 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
               </Typography>
               <Typography
                 variant="body2"
-                sx={{ color: '#8b949e', textAlign: 'center', fontSize: '12px' }}
+                sx={{
+                  color: STATUS_COLORS.open,
+                  textAlign: 'center',
+                  fontSize: '12px',
+                }}
               >
                 Based on community standards and best practices.
               </Typography>
@@ -310,7 +315,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography
                     variant="body2"
-                    sx={{ color: '#8b949e', fontSize: '13px' }}
+                    sx={{ color: STATUS_COLORS.open, fontSize: '13px' }}
                   >
                     Last Push
                   </Typography>
@@ -328,7 +333,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography
                     variant="body2"
-                    sx={{ color: '#8b949e', fontSize: '13px' }}
+                    sx={{ color: STATUS_COLORS.open, fontSize: '13px' }}
                   >
                     Created
                   </Typography>
@@ -346,7 +351,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography
                     variant="body2"
-                    sx={{ color: '#8b949e', fontSize: '13px' }}
+                    sx={{ color: STATUS_COLORS.open, fontSize: '13px' }}
                   >
                     Status
                   </Typography>
@@ -367,7 +372,11 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
               <Divider sx={{ my: 2, borderColor: 'rgba(255,255,255,0.1)' }} />
               <Typography
                 variant="body2"
-                sx={{ color: '#8b949e', fontSize: '13px', lineHeight: 1.6 }}
+                sx={{
+                  color: STATUS_COLORS.open,
+                  fontSize: '13px',
+                  lineHeight: 1.6,
+                }}
               >
                 To start contributing, fork the repository, clone it locally,
                 and check the <b>CONTRIBUTING.md</b> file for setup
@@ -442,7 +451,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     </Typography>
                     <Typography
                       variant="caption"
-                      sx={{ color: '#8b949e', fontSize: '12px' }}
+                      sx={{ color: STATUS_COLORS.open, fontSize: '12px' }}
                     >
                       Open Issues
                     </Typography>
@@ -476,7 +485,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     </Typography>
                     <Typography
                       variant="caption"
-                      sx={{ color: '#8b949e', fontSize: '12px' }}
+                      sx={{ color: STATUS_COLORS.open, fontSize: '12px' }}
                     >
                       Forks
                     </Typography>
@@ -532,7 +541,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                         </Typography>
                         <Typography
                           sx={{
-                            color: '#8b949e',
+                            color: STATUS_COLORS.open,
                             fontSize: '12px',
                             fontWeight: 600,
                             whiteSpace: 'nowrap',
@@ -542,7 +551,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                         </Typography>
                       </Box>
                       <LaunchIcon
-                        sx={{ fontSize: 16, color: '#8b949e', mt: 1 }}
+                        sx={{ fontSize: 16, color: STATUS_COLORS.open, mt: 1 }}
                       />
                     </Box>
                     <Typography
@@ -601,7 +610,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                         </Typography>
                         <Typography
                           sx={{
-                            color: '#8b949e',
+                            color: STATUS_COLORS.open,
                             fontSize: '12px',
                             fontWeight: 600,
                             whiteSpace: 'nowrap',
@@ -611,7 +620,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                         </Typography>
                       </Box>
                       <LaunchIcon
-                        sx={{ fontSize: 16, color: '#8b949e', mt: 1 }}
+                        sx={{ fontSize: 16, color: STATUS_COLORS.open, mt: 1 }}
                       />
                     </Box>
                     <Typography
@@ -702,7 +711,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                           </Typography>
                           <Typography
                             sx={{
-                              color: '#8b949e',
+                              color: STATUS_COLORS.open,
                               fontSize: '12px',
                               lineHeight: 1.5,
                             }}
