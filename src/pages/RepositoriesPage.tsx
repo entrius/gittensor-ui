@@ -92,8 +92,8 @@ const SectionHeader: React.FC<{ children: React.ReactNode }> = ({
 const cardSx = {
   p: 2,
   borderRadius: 2,
-  border: '1px solid rgba(255, 255, 255, 0.08)',
-  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  backgroundColor: 'transparent',
   display: 'flex',
   flexDirection: 'column' as const,
   transition: 'all 0.2s',
