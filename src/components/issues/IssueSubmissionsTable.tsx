@@ -202,7 +202,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                       label={
                         submission.mergedAt
                           ? 'Merged'
-                          : submission.prState === 'open'
+                          : submission.prState === 'OPEN'
                             ? 'Open'
                             : 'Closed'
                       }
@@ -213,18 +213,18 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                         fontWeight: 600,
                         backgroundColor: submission.mergedAt
                           ? 'rgba(136, 87, 229, 0.15)'
-                          : submission.prState === 'open'
+                          : submission.prState === 'OPEN'
                             ? 'rgba(63, 185, 80, 0.15)'
                             : 'rgba(239, 68, 68, 0.15)',
                         color: submission.mergedAt
                           ? '#a371f7'
-                          : submission.prState === 'open'
+                          : submission.prState === 'OPEN'
                             ? '#3fb950'
                             : '#ef4444',
                         border: `1px solid ${
                           submission.mergedAt
                             ? '#a371f740'
-                            : submission.prState === 'open'
+                            : submission.prState === 'OPEN'
                               ? '#3fb95040'
                               : '#ef444440'
                         }`,
