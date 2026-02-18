@@ -16,9 +16,10 @@ const ROW_HEIGHT = 40; // px – keeps every row exactly the same across cards
 const HighlightRow: React.FC<{
   onClick: () => void;
   avatar: string;
+  avatarBg?: string;
   label: React.ReactNode;
   right: React.ReactNode;
-}> = ({ onClick, avatar, label, right }) => (
+}> = ({ onClick, avatar, avatarBg = 'transparent', label, right }) => (
   <Box
     onClick={onClick}
     sx={{
@@ -52,6 +53,7 @@ const HighlightRow: React.FC<{
           height: 24,
           flexShrink: 0,
           border: '1px solid rgba(255,255,255,0.1)',
+          backgroundColor: avatarBg,
         }}
       />
       {label}
@@ -59,6 +61,13 @@ const HighlightRow: React.FC<{
     {right}
   </Box>
 );
+
+const getAvatarBg = (name: string) => {
+  const owner = name.split('/')[0];
+  if (owner === 'opentensor') return '#ffffff';
+  if (owner === 'bitcoin') return '#F7931A';
+  return 'transparent';
+};
 
 const SectionHeader: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -236,34 +245,41 @@ const RepositoriesPage: React.FC = () => {
       .slice(0, 5);
   }, [allPRs, reposWithWeights]);
 
-  // ── Recently Added: repos that appeared most recently on the network ───
-  const recentlyAddedRepos = useMemo(() => {
+  // ── Most Collateral Staked: repos with highest total collateral on open PRs ──
+  const topCollateralRepos = useMemo(() => {
     if (!allPRs || !reposWithWeights) return [];
-
-    // Find the earliest PR date per repo (= when the repo first appeared)
-    const earliestPR = new Map<string, Date>();
-
-    allPRs.forEach((pr: CommitLog) => {
-      const prDate = pr.mergedAt;
-      if (!pr?.repository || !prDate) return;
-      const created = new Date(prDate);
-
-      const existing = earliestPR.get(pr.repository);
-      if (!existing || created < existing) {
-        earliestPR.set(pr.repository, created);
-      }
-    });
 
     const repoMap = new Map(reposWithWeights.map((r) => [r.fullName, r]));
 
-    return Array.from(earliestPR.entries())
-      .filter(([name]) => repoMap.has(name))
-      .map(([name, firstDate]) => ({
+    // Sum collateral from open PRs per repo
+    const repoCollateral = new Map<
+      string,
+      { totalCollateral: number; openPRs: number }
+    >();
+
+    allPRs.forEach((pr: CommitLog) => {
+      if (!pr?.repository || pr.prState !== 'OPEN') return;
+      if (!repoMap.has(pr.repository)) return;
+      const collateral = parseFloat(pr.collateralScore || '0');
+      if (collateral <= 0) return;
+
+      const cur = repoCollateral.get(pr.repository) || {
+        totalCollateral: 0,
+        openPRs: 0,
+      };
+      cur.totalCollateral += collateral;
+      cur.openPRs += 1;
+      repoCollateral.set(pr.repository, cur);
+    });
+
+    return Array.from(repoCollateral.entries())
+      .map(([name, data]) => ({
         name,
         tier: repoMap.get(name)?.tier || '',
-        addedAt: firstDate,
+        collateral: data.totalCollateral,
+        openPRs: data.openPRs,
       }))
-      .sort((a, b) => b.addedAt.getTime() - a.addedAt.getTime())
+      .sort((a, b) => b.collateral - a.collateral)
       .slice(0, 5);
   }, [allPRs, reposWithWeights]);
 
@@ -356,6 +372,7 @@ const RepositoriesPage: React.FC = () => {
                         key={repo.name}
                         onClick={() => handleSelectRepository(repo.name)}
                         avatar={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
+                        avatarBg={getAvatarBg(repo.name)}
                         label={
                           <Tooltip title={repo.name} arrow placement="top">
                             <Typography
@@ -397,13 +414,13 @@ const RepositoriesPage: React.FC = () => {
             ) : null}
           </Card>
 
-          {/* Recently Added */}
+          {/* Most Collateral Staked */}
           <Card sx={cardSx}>
-            {isLoading || recentlyAddedRepos.length > 0 ? (
+            {isLoading || topCollateralRepos.length > 0 ? (
               <>
-                <SectionHeader>Recently Added</SectionHeader>
+                <SectionHeader>Most Collateral Staked</SectionHeader>
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  {recentlyAddedRepos.length === 0 && !isLoading ? (
+                  {topCollateralRepos.length === 0 && !isLoading ? (
                     <Typography
                       sx={{
                         color: 'rgba(255,255,255,0.3)',
@@ -412,14 +429,15 @@ const RepositoriesPage: React.FC = () => {
                         p: 1,
                       }}
                     >
-                      No data available
+                      No collateral data available
                     </Typography>
                   ) : (
-                    recentlyAddedRepos.map((repo) => (
+                    topCollateralRepos.map((repo) => (
                       <HighlightRow
                         key={repo.name}
                         onClick={() => handleSelectRepository(repo.name)}
                         avatar={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
+                        avatarBg={getAvatarBg(repo.name)}
                         label={
                           <Tooltip title={repo.name} arrow placement="top">
                             <Typography
@@ -441,12 +459,13 @@ const RepositoriesPage: React.FC = () => {
                             sx={{
                               fontFamily: FONTS.mono,
                               fontSize: '0.72rem',
-                              color: 'rgba(255,255,255,0.4)',
+                              color: 'rgba(255,255,255,0.7)',
                               flexShrink: 0,
                               whiteSpace: 'nowrap',
                             }}
                           >
-                            {formatRelativeTime(repo.addedAt)}
+                            {repo.collateral.toFixed(1)} ({repo.openPRs} PR
+                            {repo.openPRs !== 1 ? 's' : ''})
                           </Typography>
                         }
                       />
@@ -485,6 +504,7 @@ const RepositoriesPage: React.FC = () => {
                           )
                         }
                         avatar={`https://avatars.githubusercontent.com/${pr.name.split('/')[0]}`}
+                        avatarBg={getAvatarBg(pr.name)}
                         label={
                           <Box
                             sx={{
