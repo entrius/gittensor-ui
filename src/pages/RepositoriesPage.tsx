@@ -165,7 +165,11 @@ const RepositoriesPage: React.FC = () => {
     if (allPRs) {
       allPRs.forEach((pr: CommitLog) => {
         if (!pr?.repository) return;
-        const cur = prStatsMap.get(pr.repository) || {
+        // Only count merged PRs for the main table stats
+        if (!pr.mergedAt) return;
+
+        const repoKey = pr.repository.toLowerCase();
+        const cur = prStatsMap.get(repoKey) || {
           totalScore: 0,
           totalPRs: 0,
           uniqueMiners: new Set<string>(),
@@ -173,13 +177,13 @@ const RepositoriesPage: React.FC = () => {
         cur.totalScore += parseFloat(pr.score || '0');
         cur.totalPRs += 1;
         if (pr.author) cur.uniqueMiners.add(pr.author);
-        prStatsMap.set(pr.repository, cur);
+        prStatsMap.set(repoKey, cur);
       });
     }
 
     return reposWithWeights
       .map((repo) => {
-        const s = prStatsMap.get(repo.fullName);
+        const s = prStatsMap.get(repo.fullName.toLowerCase());
         return {
           repository: repo.fullName,
           totalScore: s?.totalScore || 0,
