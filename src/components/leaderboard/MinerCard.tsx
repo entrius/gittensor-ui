@@ -332,7 +332,10 @@ const MinerCardStats: React.FC<MinerCardStatsProps> = ({
           sx={{
             fontFamily: FONTS.mono,
             fontSize: '0.75rem',
-            color: credibilityPercent >= 80 ? STATUS_COLORS.merged : STATUS_COLORS.open,
+            color:
+              credibilityPercent >= 80
+                ? STATUS_COLORS.merged
+                : STATUS_COLORS.open,
             fontWeight: 700,
           }}
         >

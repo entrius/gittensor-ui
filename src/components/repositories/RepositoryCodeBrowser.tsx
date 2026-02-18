@@ -313,7 +313,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                 >
                   {currentCommit.sha}
                 </Typography>
-                <Typography sx={{ fontSize: '13px', color: STATUS_COLORS.open }}>
+                <Typography
+                  sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
+                >
                   {formatDistanceToNow(new Date(currentCommit.date), {
                     addSuffix: true,
                   })}

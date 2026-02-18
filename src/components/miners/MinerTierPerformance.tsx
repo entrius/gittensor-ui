@@ -1,5 +1,12 @@
 import React from 'react';
-import { Box, Typography, Grid, Card, CircularProgress, alpha } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CircularProgress,
+  alpha,
+} from '@mui/material';
 import {
   useMinerStats,
   useTierConfigurations,

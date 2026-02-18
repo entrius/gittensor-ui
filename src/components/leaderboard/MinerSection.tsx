@@ -38,7 +38,9 @@ export const MinerSection: React.FC<MinerSectionProps> = ({
         border: `1px solid ${color.border}`,
         borderRadius: 3,
         boxShadow:
-          color.text !== STATUS_COLORS.open ? `0 0 20px -10px ${color.border}` : 'none',
+          color.text !== STATUS_COLORS.open
+            ? `0 0 20px -10px ${color.border}`
+            : 'none',
         display: 'flex',
         flexDirection: 'column',
       }}

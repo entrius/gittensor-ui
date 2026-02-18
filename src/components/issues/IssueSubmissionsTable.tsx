@@ -204,7 +204,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                     {(() => {
                       const state = submission.mergedAt
                         ? 'MERGED'
-                          : submission.prState === 'OPEN'
+                        : submission.prState === 'OPEN'
                           ? 'OPEN'
                           : 'CLOSED';
                       let color = theme.palette.status.neutral;

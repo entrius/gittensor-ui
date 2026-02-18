@@ -53,7 +53,9 @@ const FileItem: React.FC<{
         <FolderIcon sx={{ fontSize: 18, color: STATUS_COLORS.open }} />
       );
     }
-    return <InsertDriveFileIcon sx={{ fontSize: 18, color: STATUS_COLORS.open }} />;
+    return (
+      <InsertDriveFileIcon sx={{ fontSize: 18, color: STATUS_COLORS.open }} />
+    );
   };
 
   return (

@@ -28,7 +28,9 @@ const BountyProgress: React.FC<BountyProgressProps> = ({
           backgroundColor: 'rgba(255, 255, 255, 0.1)',
           '& .MuiLinearProgress-bar': {
             borderRadius: 3,
-            backgroundColor: isFunded ? STATUS_COLORS.merged : STATUS_COLORS.info,
+            backgroundColor: isFunded
+              ? STATUS_COLORS.merged
+              : STATUS_COLORS.info,
           },
         }}
       />

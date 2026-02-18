@@ -609,7 +609,9 @@ const RepositoriesTable: React.FC = () => {
                           <TableCell align="right">
                             <Typography
                               variant="dataValue"
-                              color={isInactive ? 'error.dark' : 'diff.additions'}
+                              color={
+                                isInactive ? 'error.dark' : 'diff.additions'
+                              }
                             >
                               +{repo.additions ?? '-'}
                             </Typography>
@@ -619,7 +621,9 @@ const RepositoriesTable: React.FC = () => {
                           <TableCell align="right">
                             <Typography
                               variant="dataValue"
-                              color={isInactive ? 'error.dark' : 'diff.deletions'}
+                              color={
+                                isInactive ? 'error.dark' : 'diff.deletions'
+                              }
                             >
                               -{repo.deletions ?? '-'}
                             </Typography>

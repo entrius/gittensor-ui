@@ -277,7 +277,11 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
               </Typography>
               <Typography
                 variant="body2"
-                sx={{ color: STATUS_COLORS.open, textAlign: 'center', fontSize: '12px' }}
+                sx={{
+                  color: STATUS_COLORS.open,
+                  textAlign: 'center',
+                  fontSize: '12px',
+                }}
               >
                 Based on community standards and best practices.
               </Typography>
@@ -368,7 +372,11 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
               <Divider sx={{ my: 2, borderColor: 'rgba(255,255,255,0.1)' }} />
               <Typography
                 variant="body2"
-                sx={{ color: STATUS_COLORS.open, fontSize: '13px', lineHeight: 1.6 }}
+                sx={{
+                  color: STATUS_COLORS.open,
+                  fontSize: '13px',
+                  lineHeight: 1.6,
+                }}
               >
                 To start contributing, fork the repository, clone it locally,
                 and check the <b>CONTRIBUTING.md</b> file for setup

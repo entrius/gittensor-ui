@@ -501,8 +501,12 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                           }
                           label={isOpen ? 'OPEN' : 'CLOSED'}
                           sx={{
-                            color: isOpen ? STATUS_COLORS.open : STATUS_COLORS.merged,
-                            borderColor: isOpen ? STATUS_COLORS.open : STATUS_COLORS.merged,
+                            color: isOpen
+                              ? STATUS_COLORS.open
+                              : STATUS_COLORS.merged,
+                            borderColor: isOpen
+                              ? STATUS_COLORS.open
+                              : STATUS_COLORS.merged,
                             '& .MuiChip-icon': { color: 'inherit' },
                           }}
                         />

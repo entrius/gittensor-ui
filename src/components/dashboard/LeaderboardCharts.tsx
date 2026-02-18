@@ -563,10 +563,26 @@ const LeaderboardCharts: React.FC = () => {
             sx={{ flexWrap: 'wrap', gap: 1 }}
             useFlexGap
           >
-            <TierFilterButton label="All" value="all" color={STATUS_COLORS.open} />
-            <TierFilterButton label="Gold" value="Gold" color={TIER_COLORS.gold} />
-            <TierFilterButton label="Silver" value="Silver" color={TIER_COLORS.silver} />
-            <TierFilterButton label="Bronze" value="Bronze" color={TIER_COLORS.bronze} />
+            <TierFilterButton
+              label="All"
+              value="all"
+              color={STATUS_COLORS.open}
+            />
+            <TierFilterButton
+              label="Gold"
+              value="Gold"
+              color={TIER_COLORS.gold}
+            />
+            <TierFilterButton
+              label="Silver"
+              value="Silver"
+              color={TIER_COLORS.silver}
+            />
+            <TierFilterButton
+              label="Bronze"
+              value="Bronze"
+              color={TIER_COLORS.bronze}
+            />
           </Stack>
           <FormControlLabel
             control={
