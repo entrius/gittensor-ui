@@ -3,7 +3,7 @@ import { Box, Typography, Avatar, Chip, Tooltip, alpha } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useNavigate } from 'react-router-dom';
 import { formatUsdEstimate } from '../../utils';
-import theme from '../../theme';
+import theme, { TIER_COLORS, STATUS_COLORS } from '../../theme';
 interface PRHeaderProps {
   repository: string;
   pullRequestNumber: number;
@@ -21,13 +21,13 @@ const PRHeader: React.FC<PRHeaderProps> = ({
   const getTierColor = (tier: string) => {
     switch (tier) {
       case 'Gold':
-        return '#FFD700';
+        return TIER_COLORS.gold;
       case 'Silver':
-        return '#C0C0C0';
+        return TIER_COLORS.silver;
       case 'Bronze':
-        return '#CD7F32';
+        return TIER_COLORS.bronze;
       default:
-        return '#8b949e';
+        return STATUS_COLORS.open;
     }
   };
 
@@ -361,7 +361,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                     sx={{
                       fontFamily: '"JetBrains Mono", monospace',
                       fontSize: '0.95rem',
-                      color: 'rgba(74, 222, 128, 0.8)',
+                      color: alpha(STATUS_COLORS.success, 0.8),
                       mt: 0.5,
                       cursor: 'pointer',
                     }}

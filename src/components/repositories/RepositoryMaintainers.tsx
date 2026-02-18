@@ -8,6 +8,7 @@ import {
   Skeleton,
 } from '@mui/material';
 import { useRepositoryMaintainers } from '../../api';
+import { STATUS_COLORS } from '../../theme';
 
 interface RepositoryMaintainersProps {
   repositoryFullName: string;
@@ -58,7 +59,7 @@ const RepositoryMaintainers: React.FC<RepositoryMaintainersProps> = ({
         Maintainers{' '}
         <Typography
           component="span"
-          sx={{ color: '#8b949e', fontSize: '0.8em' }}
+          sx={{ color: STATUS_COLORS.open, fontSize: '0.8em' }}
         >
           ({maintainers.length})
         </Typography>
@@ -83,7 +84,7 @@ const RepositoryMaintainers: React.FC<RepositoryMaintainersProps> = ({
                   transition: 'all 0.2s',
                   '&:hover': {
                     transform: 'scale(1.1)',
-                    borderColor: '#f78166',
+                    borderColor: 'primary.main',
                     boxShadow: '0 0 8px rgba(247, 129, 102, 0.4)',
                   },
                 }}

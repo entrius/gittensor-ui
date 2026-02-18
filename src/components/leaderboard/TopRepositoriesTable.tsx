@@ -36,7 +36,9 @@ import SearchIcon from '@mui/icons-material/Search';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
+import { alpha } from '@mui/material';
 import { useSearchParams } from 'react-router-dom';
+import { TIER_COLORS, STATUS_COLORS } from '../../theme';
 
 interface RepoStats {
   repository: string;
@@ -340,12 +342,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           const item = seriesData[data.dataIndex];
           const tierColor =
             item.tier === 'Gold'
-              ? '#FFD700'
+              ? TIER_COLORS.gold
               : item.tier === 'Silver'
-                ? '#C0C0C0'
+                ? TIER_COLORS.silver
                 : item.tier === 'Bronze'
-                  ? '#CD7F32'
-                  : '#8b949e';
+                  ? TIER_COLORS.bronze
+                  : STATUS_COLORS.open;
 
           return `
             <div style="font-family: 'JetBrains Mono', monospace;">
@@ -538,13 +540,13 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const getTierColor = (tier: string) => {
     switch (tier) {
       case 'Gold':
-        return '#FFD700';
+        return TIER_COLORS.gold;
       case 'Silver':
-        return '#C0C0C0';
+        return TIER_COLORS.silver;
       case 'Bronze':
-        return '#CD7F32';
+        return TIER_COLORS.bronze;
       default:
-        return '#8b949e';
+        return STATUS_COLORS.open;
     }
   };
 
@@ -650,25 +652,25 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               label="All"
               value="all"
               count={tierCounts.all}
-              color="#8b949e"
+              color={STATUS_COLORS.open}
             />
             <TierFilterButton
               label="Gold"
               value="Gold"
               count={tierCounts.gold}
-              color="#FFD700"
+              color={TIER_COLORS.gold}
             />
             <TierFilterButton
               label="Silver"
               value="Silver"
               count={tierCounts.silver}
-              color="#C0C0C0"
+              color={TIER_COLORS.silver}
             />
             <TierFilterButton
               label="Bronze"
               value="Bronze"
               count={tierCounts.bronze}
-              color="#CD7F32"
+              color={TIER_COLORS.bronze}
             />
           </Stack>
 
@@ -1108,19 +1110,19 @@ const getRankIcon = (rank: number) => (
       border: '1px solid',
       borderColor:
         rank === 1
-          ? 'rgba(255, 215, 0, 0.4)'
+          ? alpha(TIER_COLORS.gold, 0.4)
           : rank === 2
-            ? 'rgba(192, 192, 192, 0.4)'
+            ? alpha(TIER_COLORS.silver, 0.4)
             : rank === 3
-              ? 'rgba(205, 127, 50, 0.4)'
+              ? alpha(TIER_COLORS.bronze, 0.4)
               : 'rgba(255, 255, 255, 0.15)',
       boxShadow:
         rank === 1
-          ? '0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)'
+          ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
           : rank === 2
-            ? '0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)'
+            ? `0 0 12px ${alpha(TIER_COLORS.silver, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.silver, 0.2)}`
             : rank === 3
-              ? '0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)'
+              ? `0 0 12px ${alpha(TIER_COLORS.bronze, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.bronze, 0.2)}`
               : 'none',
     }}
   >
@@ -1129,11 +1131,11 @@ const getRankIcon = (rank: number) => (
       sx={{
         color:
           rank === 1
-            ? '#FFD700'
+            ? TIER_COLORS.gold
             : rank === 2
-              ? '#C0C0C0'
+              ? TIER_COLORS.silver
               : rank === 3
-                ? '#CD7F32'
+                ? TIER_COLORS.bronze
                 : 'rgba(255, 255, 255, 0.6)',
         fontFamily: '"JetBrains Mono", monospace',
         fontSize: '0.65rem',

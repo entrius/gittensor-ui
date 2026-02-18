@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Card, Typography, Grid } from '@mui/material';
 import { MinerCard } from './MinerCard';
+import { STATUS_COLORS } from '../../theme';
 import { type MinerStats, type TierColorSet, FONTS } from './types';
 
 interface MinerSectionProps {
@@ -37,7 +38,7 @@ export const MinerSection: React.FC<MinerSectionProps> = ({
         border: `1px solid ${color.border}`,
         borderRadius: 3,
         boxShadow:
-          color.text !== '#8b949e' ? `0 0 20px -10px ${color.border}` : 'none',
+          color.text !== STATUS_COLORS.open ? `0 0 20px -10px ${color.border}` : 'none',
         display: 'flex',
         flexDirection: 'column',
       }}

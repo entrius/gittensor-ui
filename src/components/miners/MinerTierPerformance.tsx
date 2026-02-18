@@ -1,11 +1,12 @@
 import React from 'react';
-import { Box, Typography, Grid, Card, CircularProgress } from '@mui/material';
+import { Box, Typography, Grid, Card, CircularProgress, alpha } from '@mui/material';
 import {
   useMinerStats,
   useTierConfigurations,
   type TierConfig,
 } from '../../api';
 import { TierCard } from './TierComponents';
+import { TIER_COLORS } from '../../theme';
 
 const TIER_LEVELS: Record<string, number> = {
   bronze: 1,
@@ -88,9 +89,9 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
     {
       name: 'Bronze',
       level: 1,
-      color: '#CD7F32',
-      bgColor: 'rgba(205, 127, 50, 0.05)',
-      borderColor: 'rgba(205, 127, 50, 0.2)',
+      color: TIER_COLORS.bronze,
+      bgColor: alpha(TIER_COLORS.bronze, 0.05),
+      borderColor: alpha(TIER_COLORS.bronze, 0.2),
       stats: {
         score: minerStats.bronzeScore,
         credibility: minerStats.bronzeCredibility,
@@ -106,9 +107,9 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
     {
       name: 'Silver',
       level: 2,
-      color: '#C0C0C0',
-      bgColor: 'rgba(192, 192, 192, 0.05)',
-      borderColor: 'rgba(192, 192, 192, 0.2)',
+      color: TIER_COLORS.silver,
+      bgColor: alpha(TIER_COLORS.silver, 0.05),
+      borderColor: alpha(TIER_COLORS.silver, 0.2),
       stats: {
         score: minerStats.silverScore,
         credibility: minerStats.silverCredibility,
@@ -124,9 +125,9 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
     {
       name: 'Gold',
       level: 3,
-      color: '#FFD700',
-      bgColor: 'rgba(255, 215, 0, 0.05)',
-      borderColor: 'rgba(255, 215, 0, 0.2)',
+      color: TIER_COLORS.gold,
+      bgColor: alpha(TIER_COLORS.gold, 0.05),
+      borderColor: alpha(TIER_COLORS.gold, 0.2),
       stats: {
         score: minerStats.goldScore,
         credibility: minerStats.goldCredibility,

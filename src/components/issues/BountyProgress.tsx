@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, LinearProgress, Typography } from '@mui/material';
 import { formatTokenAmount } from '../../utils/format';
+import { STATUS_COLORS } from '../../theme';
 
 interface BountyProgressProps {
   bountyAmount: string;
@@ -27,7 +28,7 @@ const BountyProgress: React.FC<BountyProgressProps> = ({
           backgroundColor: 'rgba(255, 255, 255, 0.1)',
           '& .MuiLinearProgress-bar': {
             borderRadius: 3,
-            backgroundColor: isFunded ? '#3fb950' : '#58a6ff',
+            backgroundColor: isFunded ? STATUS_COLORS.merged : STATUS_COLORS.info,
           },
         }}
       />

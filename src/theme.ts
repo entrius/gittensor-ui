@@ -13,9 +13,10 @@ export const STATUS_COLORS = {
   closed: '#ff7b72', // Red - closed PRs
   neutral: '#9ca3af', // Grey - default/neutral state
   success: '#4ade80', // Green - success states
-  warning: '#fbbf24', // Amber - warning states
-  error: '#ef4444', // Red - error states (same as closed)
-  info: '#60a5fa', // Blue - info states
+  warning: '#f59e0b', // Amber - warning/pending states
+  error: '#ef4444', // Red - error states
+  info: '#58a6ff', // Blue - info/link states
+  award: '#f59e0b', // Amber - winner/trophy highlights
 } as const;
 
 export const DIFF_COLORS = {
@@ -78,6 +79,7 @@ declare module '@mui/material/styles' {
       warning: string;
       error: string;
       info: string;
+      award: string;
     };
     diff: {
       additions: string;
@@ -110,6 +112,7 @@ declare module '@mui/material/styles' {
       warning: string;
       error: string;
       info: string;
+      award: string;
     };
     diff?: {
       additions: string;
@@ -196,6 +199,7 @@ const theme = createTheme({
       warning: STATUS_COLORS.warning,
       error: STATUS_COLORS.error,
       info: STATUS_COLORS.info,
+      award: STATUS_COLORS.award,
     },
     // Diff colors for additions/deletions
     diff: {

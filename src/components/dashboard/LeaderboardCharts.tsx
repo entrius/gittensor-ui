@@ -14,6 +14,7 @@ import {
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ReactECharts from 'echarts-for-react';
 import { useAllPrs, useReposAndWeights } from '../../api';
+import { TIER_COLORS, STATUS_COLORS } from '../../theme';
 
 const truncateText = (text: string, maxLength: number): string => {
   if (!text) return '';
@@ -82,11 +83,11 @@ const LeaderboardCharts: React.FC = () => {
   const getTierColor = (tier: string) => {
     switch (tier) {
       case 'Gold':
-        return '#FFD700';
+        return TIER_COLORS.gold;
       case 'Silver':
-        return '#C0C0C0';
+        return TIER_COLORS.silver;
       case 'Bronze':
-        return '#CD7F32';
+        return TIER_COLORS.bronze;
       default:
         return 'rgba(139, 148, 158, 0.9)';
     }
@@ -562,10 +563,10 @@ const LeaderboardCharts: React.FC = () => {
             sx={{ flexWrap: 'wrap', gap: 1 }}
             useFlexGap
           >
-            <TierFilterButton label="All" value="all" color="#8b949e" />
-            <TierFilterButton label="Gold" value="Gold" color="#FFD700" />
-            <TierFilterButton label="Silver" value="Silver" color="#C0C0C0" />
-            <TierFilterButton label="Bronze" value="Bronze" color="#CD7F32" />
+            <TierFilterButton label="All" value="all" color={STATUS_COLORS.open} />
+            <TierFilterButton label="Gold" value="Gold" color={TIER_COLORS.gold} />
+            <TierFilterButton label="Silver" value="Silver" color={TIER_COLORS.silver} />
+            <TierFilterButton label="Bronze" value="Bronze" color={TIER_COLORS.bronze} />
           </Stack>
           <FormControlLabel
             control={

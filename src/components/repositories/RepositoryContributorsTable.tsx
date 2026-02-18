@@ -4,6 +4,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useAllPrs, useAllMiners } from '../../api';
 import { useNavigate } from 'react-router-dom';
+import { STATUS_COLORS } from '../../theme';
 
 interface RepositoryContributorsTableProps {
   repositoryFullName: string;
@@ -117,7 +118,7 @@ const RepositoryContributorsTable: React.FC<
           Top Miner Contributors{' '}
           <Typography
             component="span"
-            sx={{ color: '#8b949e', fontSize: '0.8em' }}
+            sx={{ color: STATUS_COLORS.open, fontSize: '0.8em' }}
           >
             ({contributors.length})
           </Typography>
@@ -192,7 +193,7 @@ const RepositoryContributorsTable: React.FC<
                 sx={{
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '12px',
-                  color: index < 3 ? '#fff' : '#8b949e',
+                  color: index < 3 ? '#fff' : STATUS_COLORS.open,
                   fontWeight: index < 3 ? 600 : 400,
                 }}
               >
@@ -213,7 +214,7 @@ const RepositoryContributorsTable: React.FC<
                   overflow: 'hidden',
                   cursor: 'pointer',
                   '&:hover .contributor-name': {
-                    color: '#58a6ff',
+                    color: STATUS_COLORS.info,
                     textDecoration: 'underline',
                   },
                 }}
@@ -254,7 +255,7 @@ const RepositoryContributorsTable: React.FC<
                     <Typography
                       sx={{
                         fontSize: '10px',
-                        color: '#8b949e',
+                        color: STATUS_COLORS.open,
                         whiteSpace: 'nowrap', // Force single line
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -304,7 +305,7 @@ const RepositoryContributorsTable: React.FC<
               px: 1.5,
               py: 1.5,
               cursor: 'pointer',
-              color: '#8b949e',
+              color: STATUS_COLORS.open,
               fontSize: '12px',
               '&:hover': {
                 color: '#fff',

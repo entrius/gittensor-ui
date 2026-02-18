@@ -4,6 +4,7 @@ import { IssuesStats } from '../../api/models/Issues';
 import { useStats } from '../../api';
 import KpiCard from '../dashboard/KpiCard';
 import { formatTokenAmount } from '../../utils/format';
+import { STATUS_COLORS } from '../../theme';
 
 const formatUsd = (
   alphaAmount: string | undefined,
@@ -93,7 +94,7 @@ const IssueStats: React.FC<IssueStatsProps> = ({
           }
           sx={{
             '& .MuiTypography-h4': {
-              color: '#3fb950',
+              color: STATUS_COLORS.merged,
             },
           }}
         />

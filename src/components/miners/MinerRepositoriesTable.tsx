@@ -12,9 +12,11 @@ import {
   CircularProgress,
   Avatar,
   TableSortLabel,
+  alpha,
 } from '@mui/material';
 import { useMinerPRs, useReposAndWeights } from '../../api';
 import { useNavigate } from 'react-router-dom';
+import { TIER_COLORS } from '../../theme';
 
 interface MinerRepositoriesTableProps {
   githubId: string;
@@ -34,11 +36,11 @@ type SortOrder = 'asc' | 'desc';
 const getTierColor = (tier: string): string => {
   switch (tier?.toLowerCase()) {
     case 'gold':
-      return '#FFD700';
+      return TIER_COLORS.gold;
     case 'silver':
-      return '#C0C0C0';
+      return TIER_COLORS.silver;
     case 'bronze':
-      return '#CD7F32';
+      return TIER_COLORS.bronze;
     default:
       return 'transparent';
   }
@@ -341,19 +343,19 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                       border: '1px solid',
                       borderColor:
                         index === 0
-                          ? 'rgba(255, 215, 0, 0.4)'
+                          ? alpha(TIER_COLORS.gold, 0.4)
                           : index === 1
-                            ? 'rgba(192, 192, 192, 0.4)'
+                            ? alpha(TIER_COLORS.silver, 0.4)
                             : index === 2
-                              ? 'rgba(205, 127, 50, 0.4)'
+                              ? alpha(TIER_COLORS.bronze, 0.4)
                               : 'rgba(255, 255, 255, 0.15)',
                       boxShadow:
                         index === 0
-                          ? '0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)'
+                          ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
                           : index === 1
-                            ? '0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)'
+                            ? `0 0 12px ${alpha(TIER_COLORS.silver, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.silver, 0.2)}`
                             : index === 2
-                              ? '0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)'
+                              ? `0 0 12px ${alpha(TIER_COLORS.bronze, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.bronze, 0.2)}`
                               : 'none',
                     }}
                   >
@@ -362,11 +364,11 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                       sx={{
                         color:
                           index === 0
-                            ? '#FFD700'
+                            ? TIER_COLORS.gold
                             : index === 1
-                              ? '#C0C0C0'
+                              ? TIER_COLORS.silver
                               : index === 2
-                                ? '#CD7F32'
+                                ? TIER_COLORS.bronze
                                 : 'rgba(255, 255, 255, 0.6)',
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.7rem',

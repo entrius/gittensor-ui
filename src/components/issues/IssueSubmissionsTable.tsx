@@ -12,9 +12,11 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  useTheme,
 } from '@mui/material';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { IssueSubmission } from '../../api/models/Issues';
+import { STATUS_COLORS } from '../../theme';
 
 const formatDate = (dateStr: string | null | undefined): string => {
   if (!dateStr) return '-';
@@ -57,6 +59,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
   backLabel,
 }) => {
   const navigate = useNavigate();
+  const theme = useTheme();
 
   return (
     <Card
@@ -146,7 +149,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                       #{submission.number}
                       {submission.isWinner && (
                         <EmojiEventsIcon
-                          sx={{ fontSize: 16, color: '#f59e0b' }}
+                          sx={{ fontSize: 16, color: STATUS_COLORS.award }}
                         />
                       )}
                     </Box>
@@ -176,7 +179,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                         sx={{
                           fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.85rem',
-                          color: '#58a6ff',
+                          color: STATUS_COLORS.info,
                           cursor: 'pointer',
                           '&:hover': {
                             textDecoration: 'underline',
@@ -190,7 +193,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                         sx={{
                           fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.85rem',
-                          color: '#58a6ff',
+                          color: STATUS_COLORS.info,
                         }}
                       >
                         {submission.authorLogin}
@@ -198,38 +201,31 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                     )}
                   </TableCell>
                   <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
-                    <Chip
-                      label={
-                        submission.mergedAt
-                          ? 'Merged'
+                    {(() => {
+                      const state = submission.mergedAt
+                        ? 'MERGED'
                           : submission.prState === 'OPEN'
-                            ? 'Open'
-                            : 'Closed'
+                          ? 'OPEN'
+                          : 'CLOSED';
+                      let color = theme.palette.status.neutral;
+                      if (state === 'MERGED') {
+                        color = theme.palette.status.merged;
+                      } else if (state === 'OPEN') {
+                        color = theme.palette.status.open;
+                      } else if (state === 'CLOSED') {
+                        color = theme.palette.status.closed;
                       }
-                      size="small"
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        backgroundColor: submission.mergedAt
-                          ? 'rgba(136, 87, 229, 0.15)'
-                          : submission.prState === 'OPEN'
-                            ? 'rgba(63, 185, 80, 0.15)'
-                            : 'rgba(239, 68, 68, 0.15)',
-                        color: submission.mergedAt
-                          ? '#a371f7'
-                          : submission.prState === 'OPEN'
-                            ? '#3fb950'
-                            : '#ef4444',
-                        border: `1px solid ${
-                          submission.mergedAt
-                            ? '#a371f740'
-                            : submission.prState === 'OPEN'
-                              ? '#3fb95040'
-                              : '#ef444440'
-                        }`,
-                      }}
-                    />
+                      return (
+                        <Chip
+                          variant="status"
+                          label={state}
+                          sx={{
+                            color,
+                            borderColor: color,
+                          }}
+                        />
+                      );
+                    })()}
                   </TableCell>
                   <TableCell sx={{ ...bodyCellSx, textAlign: 'right' }}>
                     <Typography
