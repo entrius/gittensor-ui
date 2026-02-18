@@ -60,9 +60,7 @@ const CommitLogItem: React.FC<{
 
   // Derive status and timestamp from details if available, otherwise fallback
   const isMerged = !!(details?.mergedAt || entry.mergedAt);
-  const isClosed =
-    details?.prState?.toUpperCase() === 'CLOSED' ||
-    entry.prState?.toLowerCase() === 'closed';
+  const isClosed = details?.prState === 'CLOSED' || entry.prState === 'CLOSED';
 
   let status = { label: 'OPEN', color: theme.palette.status.neutral };
   if (isMerged)
