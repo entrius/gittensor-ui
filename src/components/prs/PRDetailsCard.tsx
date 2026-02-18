@@ -13,7 +13,7 @@ import {
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { usePullRequestDetails } from '../../api';
 import { useNavigate } from 'react-router-dom';
-import theme from '../../theme';
+import theme, { TIER_COLORS, STATUS_COLORS } from '../../theme';
 
 interface PRDetailsCardProps {
   repository: string;
@@ -60,7 +60,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
       >
         <Typography
           sx={{
-            color: 'rgba(255, 107, 107, 0.9)',
+            color: alpha(STATUS_COLORS.error, 0.9),
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.9rem',
           }}
@@ -76,13 +76,13 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   const getTierColor = (tier: string) => {
     switch (tier) {
       case 'Gold':
-        return '#FFD700';
+        return TIER_COLORS.gold;
       case 'Silver':
-        return '#C0C0C0';
+        return TIER_COLORS.silver;
       case 'Bronze':
-        return '#CD7F32';
+        return TIER_COLORS.bronze;
       default:
-        return '#8b949e';
+        return STATUS_COLORS.open;
     }
   };
 
@@ -360,19 +360,19 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                       border: '1px solid',
                       borderColor:
                         item.rank === 1
-                          ? 'rgba(255, 215, 0, 0.4)'
+                          ? alpha(TIER_COLORS.gold, 0.4)
                           : item.rank === 2
-                            ? 'rgba(192, 192, 192, 0.4)'
+                            ? alpha(TIER_COLORS.silver, 0.4)
                             : item.rank === 3
-                              ? 'rgba(205, 127, 50, 0.4)'
+                              ? alpha(TIER_COLORS.bronze, 0.4)
                               : 'rgba(255, 255, 255, 0.15)',
                       boxShadow:
                         item.rank === 1
-                          ? '0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)'
+                          ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
                           : item.rank === 2
-                            ? '0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)'
+                            ? `0 0 12px ${alpha(TIER_COLORS.silver, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.silver, 0.2)}`
                             : item.rank === 3
-                              ? '0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)'
+                              ? `0 0 12px ${alpha(TIER_COLORS.bronze, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.bronze, 0.2)}`
                               : 'none',
                     }}
                   >
@@ -381,11 +381,11 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                       sx={{
                         color:
                           item.rank === 1
-                            ? '#FFD700'
+                            ? TIER_COLORS.gold
                             : item.rank === 2
-                              ? '#C0C0C0'
+                              ? TIER_COLORS.silver
                               : item.rank === 3
-                                ? '#CD7F32'
+                                ? TIER_COLORS.bronze
                                 : 'rgba(255, 255, 255, 0.6)',
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.6rem',
@@ -801,7 +801,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                color: '#58a6ff',
+                color: STATUS_COLORS.info,
                 textDecoration: 'none',
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.85rem',

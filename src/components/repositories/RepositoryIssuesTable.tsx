@@ -21,6 +21,7 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { formatTokenAmount } from '../../utils/format';
+import { STATUS_COLORS } from '../../theme';
 
 interface RepositoryIssuesTableProps {
   repositoryFullName: string;
@@ -139,31 +140,31 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                 return {
                   bg: 'rgba(88, 166, 255, 0.15)',
                   border: 'rgba(88, 166, 255, 0.4)',
-                  text: '#58a6ff',
+                  text: STATUS_COLORS.info,
                 };
               case 'completed':
                 return {
                   bg: 'rgba(63, 185, 80, 0.15)',
                   border: 'rgba(63, 185, 80, 0.4)',
-                  text: '#3fb950',
+                  text: STATUS_COLORS.merged,
                 };
               case 'registered':
                 return {
                   bg: 'rgba(245, 158, 11, 0.15)',
                   border: 'rgba(245, 158, 11, 0.4)',
-                  text: '#f59e0b',
+                  text: STATUS_COLORS.warning,
                 };
               case 'cancelled':
                 return {
                   bg: 'rgba(239, 68, 68, 0.15)',
                   border: 'rgba(239, 68, 68, 0.4)',
-                  text: '#ef4444',
+                  text: STATUS_COLORS.error,
                 };
               default:
                 return {
                   bg: 'rgba(139, 148, 158, 0.15)',
                   border: 'rgba(139, 148, 158, 0.4)',
-                  text: '#8b949e',
+                  text: STATUS_COLORS.open,
                 };
             }
           };
@@ -184,11 +185,11 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
           const getBountyAmountColor = (status: string) => {
             switch (status) {
               case 'active':
-                return '#3fb950';
+                return STATUS_COLORS.merged;
               case 'registered':
-                return '#f59e0b';
+                return STATUS_COLORS.warning;
               case 'completed':
-                return '#3fb950';
+                return STATUS_COLORS.merged;
               case 'cancelled':
                 return 'rgba(255, 255, 255, 0.4)';
               default:
@@ -281,7 +282,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                         />
                         <Typography
                           sx={{
-                            color: '#8b949e',
+                            color: STATUS_COLORS.open,
                             fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.8rem',
                             whiteSpace: 'nowrap',
@@ -376,19 +377,19 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
               label="All"
               value="all"
               count={counts.total}
-              color="#8b949e"
+              color={STATUS_COLORS.open}
             />
             <FilterButton
               label="Open"
               value="open"
               count={counts.open}
-              color="#8b949e"
+              color={STATUS_COLORS.open}
             />
             <FilterButton
               label="Closed"
               value="closed"
               count={counts.closed}
-              color="#3fb950"
+              color={STATUS_COLORS.merged}
             />
           </Stack>
         </Box>
@@ -500,8 +501,12 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                           }
                           label={isOpen ? 'OPEN' : 'CLOSED'}
                           sx={{
-                            color: isOpen ? '#8b949e' : '#3fb950',
-                            borderColor: isOpen ? '#8b949e' : '#3fb950',
+                            color: isOpen
+                              ? STATUS_COLORS.open
+                              : STATUS_COLORS.merged,
+                            borderColor: isOpen
+                              ? STATUS_COLORS.open
+                              : STATUS_COLORS.merged,
                             '& .MuiChip-icon': { color: 'inherit' },
                           }}
                         />
@@ -513,7 +518,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
-                              color: '#58a6ff',
+                              color: STATUS_COLORS.info,
                               textDecoration: 'none',
                               fontWeight: 500,
                             }}

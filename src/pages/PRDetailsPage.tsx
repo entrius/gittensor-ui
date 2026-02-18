@@ -11,6 +11,7 @@ import {
   PRComments,
 } from '../components';
 import { usePullRequestDetails } from '../api';
+import { STATUS_COLORS } from '../theme';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CodeIcon from '@mui/icons-material/Code';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
@@ -113,7 +114,7 @@ const PRDetailsPage: React.FC = () => {
                 aria-label="pr details tabs"
                 sx={{
                   '& .MuiTab-root': {
-                    color: '#8b949e',
+                    color: STATUS_COLORS.open,
                     fontFamily:
                       '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
                     textTransform: 'none',
@@ -126,7 +127,7 @@ const PRDetailsPage: React.FC = () => {
                     },
                   },
                   '& .MuiTabs-indicator': {
-                    backgroundColor: '#f78166',
+                    backgroundColor: 'primary.main',
                     height: '3px',
                     borderRadius: '3px 3px 0 0',
                   },

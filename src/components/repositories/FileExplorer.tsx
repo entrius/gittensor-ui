@@ -12,6 +12,7 @@ import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import { STATUS_COLORS } from '../../theme';
 
 export interface FileNode {
   path: string;
@@ -47,12 +48,14 @@ const FileItem: React.FC<{
   const getIcon = () => {
     if (node.type === 'tree') {
       return open ? (
-        <FolderOpenIcon sx={{ fontSize: 18, color: '#8b949e' }} />
+        <FolderOpenIcon sx={{ fontSize: 18, color: STATUS_COLORS.open }} />
       ) : (
-        <FolderIcon sx={{ fontSize: 18, color: '#8b949e' }} />
+        <FolderIcon sx={{ fontSize: 18, color: STATUS_COLORS.open }} />
       );
     }
-    return <InsertDriveFileIcon sx={{ fontSize: 18, color: '#8b949e' }} />;
+    return (
+      <InsertDriveFileIcon sx={{ fontSize: 18, color: STATUS_COLORS.open }} />
+    );
   };
 
   return (
@@ -120,7 +123,7 @@ const FileItem: React.FC<{
               fontFamily:
                 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
               fontSize: '13px',
-              color: isSelected ? '#fff' : '#8b949e',
+              color: isSelected ? '#fff' : STATUS_COLORS.open,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',

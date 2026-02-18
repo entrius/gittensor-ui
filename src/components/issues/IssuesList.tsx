@@ -18,6 +18,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueBounty } from '../../api/models/Issues';
 import { useStats } from '../../api';
 import { formatTokenAmount } from '../../utils/format';
+import { STATUS_COLORS } from '../../theme';
 import BountyProgress from './BountyProgress';
 
 type ListType = 'available' | 'pending' | 'history';
@@ -38,31 +39,31 @@ const getStatusBadge = (
   switch (status) {
     case 'registered':
       return {
-        color: '#f59e0b',
+        color: STATUS_COLORS.warning,
         bgColor: 'rgba(245, 158, 11, 0.15)',
         text: 'Pending',
       };
     case 'active':
       return {
-        color: '#58a6ff',
+        color: STATUS_COLORS.info,
         bgColor: 'rgba(88, 166, 255, 0.15)',
         text: 'Available',
       };
     case 'completed':
       return {
-        color: '#3fb950',
+        color: STATUS_COLORS.merged,
         bgColor: 'rgba(63, 185, 80, 0.15)',
         text: 'Completed',
       };
     case 'cancelled':
       return {
-        color: '#ef4444',
+        color: STATUS_COLORS.error,
         bgColor: 'rgba(239, 68, 68, 0.15)',
         text: 'Cancelled',
       };
     default:
       return {
-        color: '#8b949e',
+        color: STATUS_COLORS.open,
         bgColor: 'rgba(139, 148, 158, 0.15)',
         text: status,
       };
@@ -281,7 +282,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                       sx={{
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.85rem',
-                        color: '#58a6ff',
+                        color: STATUS_COLORS.info,
                       }}
                     >
                       {issue.repositoryFullName}
@@ -320,7 +321,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                             fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.85rem',
                             fontWeight: 600,
-                            color: '#3fb950',
+                            color: STATUS_COLORS.merged,
                           }}
                         >
                           {formatTokenAmount(issue.targetBounty)} ل
@@ -363,7 +364,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                             fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.85rem',
                             fontWeight: 600,
-                            color: '#f59e0b',
+                            color: STATUS_COLORS.award,
                           }}
                         >
                           {formatTokenAmount(issue.targetBounty)} ل
@@ -414,7 +415,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                             fontWeight: 600,
                             color:
                               issue.status === 'completed'
-                                ? '#3fb950'
+                                ? STATUS_COLORS.merged
                                 : 'rgba(255, 255, 255, 0.4)',
                           }}
                         >
@@ -439,7 +440,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                               sx={{
                                 fontFamily: '"JetBrains Mono", monospace',
                                 fontSize: '0.8rem',
-                                color: '#58a6ff',
+                                color: STATUS_COLORS.info,
                                 cursor: 'pointer',
                               }}
                             >

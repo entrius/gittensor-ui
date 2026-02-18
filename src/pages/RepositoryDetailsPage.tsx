@@ -10,6 +10,7 @@ import {
   Grid,
   Chip,
   Avatar,
+  alpha,
 } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import CodeIcon from '@mui/icons-material/Code';
@@ -18,6 +19,7 @@ import MergeTypeIcon from '@mui/icons-material/MergeType';
 import ArticleIcon from '@mui/icons-material/Article';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
+import { TIER_COLORS, STATUS_COLORS } from '../theme';
 import { Page } from '../components/layout';
 import { useReposAndWeights, useRepoBountySummary } from '../api';
 import {
@@ -181,7 +183,7 @@ const RepositoryDetailsPage: React.FC = () => {
               aria-label="repository tabs"
               sx={{
                 '& .MuiTab-root': {
-                  color: '#8b949e',
+                  color: STATUS_COLORS.open,
                   fontFamily:
                     '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
                   textTransform: 'none',
@@ -194,7 +196,7 @@ const RepositoryDetailsPage: React.FC = () => {
                   },
                 },
                 '& .MuiTabs-indicator': {
-                  backgroundColor: '#f78166',
+                  backgroundColor: 'primary.main',
                   height: '3px',
                   borderRadius: '3px 3px 0 0',
                 },
@@ -230,9 +232,9 @@ const RepositoryDetailsPage: React.FC = () => {
                           <Box
                             component="span"
                             sx={{
-                              backgroundColor: 'rgba(255, 215, 0, 0.15)',
-                              color: '#FFD700',
-                              border: '1px solid rgba(255, 215, 0, 0.3)',
+                              backgroundColor: alpha(TIER_COLORS.gold, 0.15),
+                              color: TIER_COLORS.gold,
+                              border: `1px solid ${alpha(TIER_COLORS.gold, 0.3)}`,
                               fontSize: '0.65rem',
                               fontWeight: 700,
                               px: 0.8,

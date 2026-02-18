@@ -9,6 +9,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import { SectionCard } from './SectionCard';
 import { MinerSection } from './MinerSection';
+import { STATUS_COLORS } from '../../theme';
 import {
   type MinerStats,
   type SortOption,
@@ -153,7 +154,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             miners={groupedMiners.others}
             color={{
               border: 'rgba(255,255,255,0.1)',
-              text: '#8b949e',
+              text: STATUS_COLORS.open,
               bg: 'rgba(255, 255, 255, 0.02)',
             }}
             onSelectMiner={onSelectMiner}
@@ -209,7 +210,7 @@ const SortButtons: React.FC<SortButtonsProps> = ({
             sortOption === option.value
               ? 'rgba(255, 255, 255, 0.1)'
               : 'transparent',
-          color: sortOption === option.value ? '#fff' : '#8b949e',
+          color: sortOption === option.value ? '#fff' : STATUS_COLORS.open,
           border: '1px solid',
           borderColor:
             sortOption === option.value
