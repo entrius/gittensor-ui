@@ -193,21 +193,34 @@ const IssuesList: React.FC<IssuesListProps> = ({
           <TableHead>
             <TableRow>
               <TableCell sx={{ ...headerCellSx, width: '60px' }}>ID</TableCell>
-              <TableCell sx={headerCellSx}>Repository</TableCell>
-              <TableCell sx={{ ...headerCellSx, width: '80px' }}>
-                Issue
+              <TableCell sx={{ ...headerCellSx, width: '220px' }}>
+                Repository
               </TableCell>
+              <TableCell sx={headerCellSx}>Issue</TableCell>
 
               {/* Available Issues columns */}
               {listType === 'available' && (
                 <>
-                  <TableCell sx={{ ...headerCellSx, textAlign: 'right' }}>
+                  <TableCell
+                    sx={{
+                      ...headerCellSx,
+                      textAlign: 'right',
+                      width: '120px',
+                    }}
+                  >
                     Bounty
                   </TableCell>
-                  <TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>
+                  <TableCell
+                    sx={{
+                      ...headerCellSx,
+                      textAlign: 'center',
+                      width: '100px',
+                    }}
+                  >
                     Status
                   </TableCell>
                 </>
+
               )}
 
               {/* Pending Issues columns */}
@@ -307,7 +320,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
-                            maxWidth: '400px',
+                            maxWidth: '600px',
                           }}
                         >
                           {issue.title}
