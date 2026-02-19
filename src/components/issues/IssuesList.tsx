@@ -13,6 +13,7 @@ import {
   Skeleton,
   Link,
   Tooltip,
+  Avatar,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueBounty } from '../../api/models/Issues';
@@ -277,38 +278,63 @@ const IssuesList: React.FC<IssuesListProps> = ({
                     </Typography>
                   </TableCell>
                   <TableCell sx={bodyCellSx}>
-                    <Typography
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: '0.85rem',
-                        color: '#58a6ff',
-                      }}
-                    >
-                      {issue.repositoryFullName}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Avatar
+                        src={`https://avatars.githubusercontent.com/${issue.repositoryFullName.split('/')[0]}`}
+                        sx={{ width: 24, height: 24, borderRadius: 1 }}
+                      />
+                      <Typography
+                        sx={{
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: '0.85rem',
+                          color: '#58a6ff',
+                        }}
+                      >
+                        {issue.repositoryFullName}
+                      </Typography>
+                    </Box>
                   </TableCell>
                   <TableCell sx={bodyCellSx}>
-                    <Link
-                      href={issue.githubUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5,
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: '0.85rem',
-                        color: '#ffffff',
-                        textDecoration: 'none',
-                        '&:hover': {
-                          textDecoration: 'underline',
-                        },
-                      }}
-                    >
-                      #{issue.issueNumber}
-                      <OpenInNewIcon sx={{ fontSize: 14, opacity: 0.5 }} />
-                    </Link>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      {issue.title && (
+                        <Typography
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: '0.85rem',
+                            color: '#ffffff',
+                            fontWeight: 500,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: '400px',
+                          }}
+                        >
+                          {issue.title}
+                        </Typography>
+                      )}
+                      <Link
+                        href={issue.githubUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: '0.75rem',
+                          color: 'rgba(255, 255, 255, 0.5)',
+                          textDecoration: 'none',
+                          '&:hover': {
+                            color: '#58a6ff',
+                            textDecoration: 'underline',
+                          },
+                        }}
+                      >
+                        #{issue.issueNumber}
+                        <OpenInNewIcon sx={{ fontSize: 12, opacity: 0.5 }} />
+                      </Link>
+                    </Box>
                   </TableCell>
 
                   {/* Available Issues columns */}
