@@ -7,6 +7,7 @@ import { Page } from '../components/layout';
 import { TopRepositoriesTable, SEO } from '../components';
 import { useAllPrs, useReposAndWeights } from '../api';
 import { type CommitLog } from '../api/models/Dashboard';
+import { TIER_COLORS, STATUS_COLORS } from '../theme';
 
 const FONTS = { mono: '"JetBrains Mono", monospace' } as const;
 
@@ -110,13 +111,13 @@ const RepositoriesPage: React.FC = () => {
   const getTierColor = (tier: string) => {
     switch (tier) {
       case 'Gold':
-        return '#FFD700';
+        return TIER_COLORS.gold;
       case 'Silver':
-        return '#C0C0C0';
+        return TIER_COLORS.silver;
       case 'Bronze':
-        return '#CD7F32';
+        return TIER_COLORS.bronze;
       default:
-        return '#8b949e';
+        return STATUS_COLORS.open;
     }
   };
 

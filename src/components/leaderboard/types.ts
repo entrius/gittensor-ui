@@ -1,4 +1,5 @@
 import { TIER_COLORS } from '../../theme';
+import { alpha } from '@mui/material';
 
 export interface MinerStats {
   githubId: string;
@@ -42,21 +43,21 @@ export const getTierColors = (tier: string | undefined): TierColorSet => {
   switch (tier) {
     case 'Gold':
       return {
-        border: 'rgba(255, 215, 0, 0.5)',
+        border: alpha(TIER_COLORS.gold, 0.5),
         text: TIER_COLORS.gold,
-        bg: 'rgba(255, 215, 0, 0.1)',
+        bg: alpha(TIER_COLORS.gold, 0.1),
       };
     case 'Silver':
       return {
-        border: 'rgba(192, 192, 192, 0.5)',
+        border: alpha(TIER_COLORS.silver, 0.5),
         text: TIER_COLORS.silver,
-        bg: 'rgba(192, 192, 192, 0.1)',
+        bg: alpha(TIER_COLORS.silver, 0.1),
       };
     case 'Bronze':
       return {
-        border: 'rgba(205, 127, 50, 0.5)',
+        border: alpha(TIER_COLORS.bronze, 0.5),
         text: TIER_COLORS.bronze,
-        bg: 'rgba(205, 127, 50, 0.1)',
+        bg: alpha(TIER_COLORS.bronze, 0.1),
       };
     default:
       return {
@@ -68,8 +69,8 @@ export const getTierColors = (tier: string | undefined): TierColorSet => {
 };
 
 export const getRankColors = (rank: number) => {
-  if (rank === 1) return { color: '#FFD700', icon: '🥇' };
-  if (rank === 2) return { color: '#C0C0C0', icon: '🥈' };
-  if (rank === 3) return { color: '#CD7F32', icon: '🥉' };
+  if (rank === 1) return { color: TIER_COLORS.gold, icon: '🥇' };
+  if (rank === 2) return { color: TIER_COLORS.silver, icon: '🥈' };
+  if (rank === 3) return { color: TIER_COLORS.bronze, icon: '🥉' };
   return { color: 'rgba(255, 255, 255, 0.6)', icon: null };
 };

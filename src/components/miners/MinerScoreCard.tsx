@@ -10,6 +10,7 @@ import {
   Stack,
   Divider,
   Tooltip,
+  alpha,
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import {
@@ -32,7 +33,7 @@ import {
   type MinerEvaluation,
   type RepositoryPrScoring,
 } from '../../api';
-import { TIER_COLORS } from '../../theme';
+import { TIER_COLORS, STATUS_COLORS } from '../../theme';
 
 const TIER_LEVELS: Record<string, number> = {
   bronze: 1,
@@ -200,7 +201,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
       >
         <Typography
           sx={{
-            color: 'rgba(255, 107, 107, 0.9)',
+            color: alpha(STATUS_COLORS.error, 0.9),
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.9rem',
           }}
@@ -228,7 +229,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
       rank: null,
       color:
         (minerStats.credibility || 0) >= 0.9
-          ? '#4ade80' // High green
+          ? STATUS_COLORS.success // High green
           : (minerStats.credibility || 0) >= 0.7
             ? '#a3e635' // Light green
             : (minerStats.credibility || 0) >= 0.5
@@ -312,12 +313,14 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
       label: 'Est. Earnings',
       value: `$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}`,
       rank: null,
-      color: (minerStats.usdPerDay ?? 0) > 0 ? '#4ade80' : undefined,
+      color:
+        (minerStats.usdPerDay ?? 0) > 0 ? STATUS_COLORS.success : undefined,
       subItems: [
         {
           label: 'Monthly',
           value: `$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}`,
-          color: (minerStats.usdPerDay ?? 0) > 0 ? '#4ade80' : undefined,
+          color:
+            (minerStats.usdPerDay ?? 0) > 0 ? STATUS_COLORS.success : undefined,
         },
         {
           label: 'Lifetime',
@@ -399,11 +402,11 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                   border: '1px solid',
                   borderColor:
                     minerStats.currentTier === 'Gold'
-                      ? 'rgba(255, 215, 0, 0.5)'
+                      ? alpha(TIER_COLORS.gold, 0.5)
                       : minerStats.currentTier === 'Silver'
-                        ? 'rgba(192, 192, 192, 0.5)'
+                        ? alpha(TIER_COLORS.silver, 0.5)
                         : minerStats.currentTier === 'Bronze'
-                          ? 'rgba(205, 127, 50, 0.5)'
+                          ? alpha(TIER_COLORS.bronze, 0.5)
                           : 'rgba(255, 255, 255, 0.2)',
                   borderRadius: '6px',
                   overflow: 'hidden',
@@ -440,19 +443,19 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                     borderLeft: '1px solid',
                     borderColor:
                       minerStats.currentTier === 'Gold'
-                        ? 'rgba(255, 215, 0, 0.3)'
+                        ? alpha(TIER_COLORS.gold, 0.3)
                         : minerStats.currentTier === 'Silver'
-                          ? 'rgba(192, 192, 192, 0.3)'
+                          ? alpha(TIER_COLORS.silver, 0.3)
                           : minerStats.currentTier === 'Bronze'
-                            ? 'rgba(205, 127, 50, 0.3)'
+                            ? alpha(TIER_COLORS.bronze, 0.3)
                             : 'rgba(255, 255, 255, 0.1)',
                     backgroundColor:
                       minerStats.currentTier === 'Gold'
-                        ? 'rgba(255, 215, 0, 0.1)'
+                        ? alpha(TIER_COLORS.gold, 0.1)
                         : minerStats.currentTier === 'Silver'
-                          ? 'rgba(192, 192, 192, 0.1)'
+                          ? alpha(TIER_COLORS.silver, 0.1)
                           : minerStats.currentTier === 'Bronze'
-                            ? 'rgba(205, 127, 50, 0.1)'
+                            ? alpha(TIER_COLORS.bronze, 0.1)
                             : 'transparent',
                   }}
                 >
@@ -590,9 +593,9 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                   label="Website"
                   clickable
                   sx={{
-                    color: '#58a6ff',
-                    borderColor: 'rgba(88, 166, 255, 0.3)',
-                    '& .MuiChip-icon': { color: '#58a6ff' },
+                    color: STATUS_COLORS.info,
+                    borderColor: alpha(STATUS_COLORS.info, 0.3),
+                    '& .MuiChip-icon': { color: STATUS_COLORS.info },
                   }}
                 />
               )}
@@ -683,7 +686,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                         sx={{
                           color:
                             item.icon === 'earnings'
-                              ? '#4ade80'
+                              ? STATUS_COLORS.success
                               : 'rgba(255, 255, 255, 0.5)',
                           fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.9rem',
@@ -719,7 +722,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                     >
                       {item.icon === 'earnings' && (
                         <EarningsIcon
-                          sx={{ fontSize: '1rem', color: '#4ade80' }}
+                          sx={{
+                            fontSize: '1rem',
+                            color: STATUS_COLORS.success,
+                          }}
                         />
                       )}
                       {item.label}
@@ -739,19 +745,19 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                         border: '1px solid',
                         borderColor:
                           item.rank === 1
-                            ? 'rgba(255, 215, 0, 0.4)'
+                            ? alpha(TIER_COLORS.gold, 0.4)
                             : item.rank === 2
-                              ? 'rgba(192, 192, 192, 0.4)'
+                              ? alpha(TIER_COLORS.silver, 0.4)
                               : item.rank === 3
-                                ? 'rgba(205, 127, 50, 0.4)'
+                                ? alpha(TIER_COLORS.bronze, 0.4)
                                 : 'rgba(255, 255, 255, 0.15)',
                         boxShadow:
                           item.rank === 1
-                            ? '0 0 12px rgba(255, 215, 0, 0.4), 0 0 4px rgba(255, 215, 0, 0.2)'
+                            ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
                             : item.rank === 2
-                              ? '0 0 12px rgba(192, 192, 192, 0.4), 0 0 4px rgba(192, 192, 192, 0.2)'
+                              ? `0 0 12px ${alpha(TIER_COLORS.silver, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.silver, 0.2)}`
                               : item.rank === 3
-                                ? '0 0 12px rgba(205, 127, 50, 0.4), 0 0 4px rgba(205, 127, 50, 0.2)'
+                                ? `0 0 12px ${alpha(TIER_COLORS.bronze, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.bronze, 0.2)}`
                                 : 'none',
                       }}
                     >
@@ -760,11 +766,11 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                         sx={{
                           color:
                             item.rank === 1
-                              ? '#FFD700'
+                              ? TIER_COLORS.gold
                               : item.rank === 2
-                                ? '#C0C0C0'
+                                ? TIER_COLORS.silver
                                 : item.rank === 3
-                                  ? '#CD7F32'
+                                  ? TIER_COLORS.bronze
                                   : 'rgba(255, 255, 255, 0.6)',
                           fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.6rem',

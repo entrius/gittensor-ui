@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Card, Typography, Avatar } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
-import { CHART_COLORS } from '../../theme';
+import { CHART_COLORS, STATUS_COLORS } from '../../theme';
 import { type MinerStats, getTierColors, FONTS } from './types';
 
 interface MinerCardProps {
@@ -71,7 +71,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
             fontFamily: FONTS.mono,
             fontSize: '0.9rem',
             fontWeight: 500,
-            color: '#8b949e',
+            color: STATUS_COLORS.open,
             flex: 1,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -251,7 +251,7 @@ const MinerCardStats: React.FC<MinerCardStatsProps> = ({
             fontFamily: FONTS.mono,
             fontSize: '1.6rem',
             fontWeight: 800,
-            color: '#3fb950',
+            color: STATUS_COLORS.merged,
             lineHeight: 1,
           }}
         >
@@ -261,7 +261,7 @@ const MinerCardStats: React.FC<MinerCardStatsProps> = ({
           sx={{
             fontFamily: FONTS.mono,
             fontSize: '0.75rem',
-            color: '#8b949e',
+            color: STATUS_COLORS.open,
           }}
         >
           /day
@@ -271,7 +271,7 @@ const MinerCardStats: React.FC<MinerCardStatsProps> = ({
         sx={{
           fontFamily: FONTS.mono,
           fontSize: '0.7rem',
-          color: '#3fb950',
+          color: STATUS_COLORS.merged,
           opacity: 0.7,
           mt: 0.2,
         }}
@@ -332,7 +332,10 @@ const MinerCardStats: React.FC<MinerCardStatsProps> = ({
           sx={{
             fontFamily: FONTS.mono,
             fontSize: '0.75rem',
-            color: credibilityPercent >= 80 ? '#3fb950' : '#8b949e',
+            color:
+              credibilityPercent >= 80
+                ? STATUS_COLORS.merged
+                : STATUS_COLORS.open,
             fontWeight: 700,
           }}
         >
@@ -362,7 +365,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({ miner }) => (
     <StatItem
       label="Merged"
       value={miner.totalMergedPrs || 0}
-      color="#3fb950"
+      color={STATUS_COLORS.merged}
     />
     <StatItem label="Open" value={miner.totalOpenPrs || 0} color="#c9d1d9" />
     <StatItem
@@ -381,7 +384,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({ miner }) => (
         sx={{
           fontFamily: FONTS.mono,
           fontSize: '0.6rem',
-          color: '#8b949e',
+          color: STATUS_COLORS.open,
           textTransform: 'uppercase',
           mb: 0.2,
         }}
@@ -414,7 +417,7 @@ const StatItem: React.FC<StatItemProps> = ({ label, value, color }) => (
       sx={{
         fontFamily: FONTS.mono,
         fontSize: '0.6rem',
-        color: '#8b949e',
+        color: STATUS_COLORS.open,
         textTransform: 'uppercase',
         mb: 0.2,
       }}

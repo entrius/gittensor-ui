@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import axios from 'axios';
+import { STATUS_COLORS } from '../../theme';
 
 interface ContributingViewerProps {
   repositoryFullName: string; // e.g., "opentensor/bittensor"
@@ -149,7 +150,7 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
         },
         '& p': { marginBottom: '16px', fontSize: '16px' },
         '& a': {
-          color: '#58a6ff',
+          color: STATUS_COLORS.info,
           textDecoration: 'none',
           '&:hover': { textDecoration: 'underline' },
         },
@@ -158,7 +159,7 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
         '& blockquote': {
           borderLeft: '4px solid #30363d',
           padding: '0 1em',
-          color: '#8b949e',
+          color: STATUS_COLORS.open,
           marginLeft: 0,
           marginBottom: '16px',
         },
