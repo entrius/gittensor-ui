@@ -94,9 +94,7 @@ const IssueDetailsPage: React.FC = () => {
             <IssueHeaderCard issue={issue} />
 
             {/* Tabs */}
-            <Box
-              sx={{ borderBottom: 1, borderColor: 'rgba(255,255,255,0.1)' }}
-            >
+            <Box sx={{ borderBottom: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
               <Tabs
                 value={tabValue}
                 onChange={handleTabChange}

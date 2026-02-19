@@ -303,8 +303,10 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                           {issues?.find(
                             (i) =>
                               i.number === bounty.issueNumber &&
-                              i.repositoryFullName === bounty.repositoryFullName,
-                          )?.title || `${repositoryFullName}#${bounty.issueNumber}`}
+                              i.repositoryFullName ===
+                                bounty.repositoryFullName,
+                          )?.title ||
+                            `${repositoryFullName}#${bounty.issueNumber}`}
                         </Typography>
                       </Box>
                       <Box

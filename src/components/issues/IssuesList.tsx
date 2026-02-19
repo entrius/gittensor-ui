@@ -220,7 +220,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                     Status
                   </TableCell>
                 </>
-
               )}
 
               {/* Pending Issues columns */}
@@ -292,7 +291,9 @@ const IssuesList: React.FC<IssuesListProps> = ({
                     </Typography>
                   </TableCell>
                   <TableCell sx={bodyCellSx}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Box
+                      sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}
+                    >
                       <Avatar
                         src={`https://avatars.githubusercontent.com/${issue.repositoryFullName.split('/')[0]}`}
                         sx={{ width: 24, height: 24, borderRadius: 1 }}
@@ -309,7 +310,13 @@ const IssuesList: React.FC<IssuesListProps> = ({
                     </Box>
                   </TableCell>
                   <TableCell sx={bodyCellSx}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 0.5,
+                      }}
+                    >
                       {issue.title && (
                         <Typography
                           sx={{
