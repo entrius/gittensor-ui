@@ -299,7 +299,11 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          {repositoryFullName}#{bounty.issueNumber}
+                          {issues?.find(
+                            (i) =>
+                              i.number === bounty.issueNumber &&
+                              i.repositoryFullName === bounty.repositoryFullName,
+                          )?.title || `${repositoryFullName}#${bounty.issueNumber}`}
                         </Typography>
                       </Box>
                       <Box
@@ -446,7 +450,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                   const isOpen = !issue.closedAt;
                   return (
                     <TableRow
-                      key={`${issue.issueNumber}-${index}`}
+                      key={`${issue.number}-${index}`}
                       sx={{
                         cursor: 'pointer',
                         '&:hover': {
@@ -456,14 +460,14 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                       }}
                       onClick={() => {
                         window.open(
-                          `https://github.com/${issue.repositoryFullName}/issues/${issue.issueNumber}`,
+                          `https://github.com/${issue.repositoryFullName}/issues/${issue.number}`,
                           '_blank',
                         );
                       }}
                     >
                       <TableCell sx={bodyCellStyle}>
                         <a
-                          href={`https://github.com/${issue.repositoryFullName}/issues/${issue.issueNumber}`}
+                          href={`https://github.com/${issue.repositoryFullName}/issues/${issue.number}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
@@ -473,7 +477,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                           }}
                           onClick={(e) => e.stopPropagation()}
                         >
-                          #{issue.issueNumber}
+                          #{issue.number}
                         </a>
                       </TableCell>
                       <TableCell sx={bodyCellStyle}>
@@ -507,9 +511,9 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                         />
                       </TableCell>
                       <TableCell sx={bodyCellStyle}>
-                        {issue.linkedPrNumber ? (
+                        {issue.prNumber ? (
                           <a
-                            href={`https://github.com/${issue.repositoryFullName}/pull/${issue.linkedPrNumber}`}
+                            href={`https://github.com/${issue.repositoryFullName}/pull/${issue.prNumber}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
@@ -519,7 +523,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                             }}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            #{issue.linkedPrNumber}
+                            #{issue.prNumber}
                           </a>
                         ) : (
                           <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>
