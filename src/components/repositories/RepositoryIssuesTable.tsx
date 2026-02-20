@@ -78,7 +78,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       size="small"
       onClick={() => setFilter(value)}
       sx={{
-        color: filter === value ? '#fff' : 'rgba(255,255,255,0.5)',
+        color: filter === value ? 'text.primary' : 'rgba(255,255,255,0.5)',
         backgroundColor:
           filter === value ? 'rgba(255,255,255,0.1)' : 'transparent',
         borderRadius: '6px',
@@ -118,7 +118,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
           <Typography
             variant="h6"
-            sx={{ color: '#fff', fontFamily: '"JetBrains Mono", monospace' }}
+            sx={{ color: 'text.primary', fontFamily: '"JetBrains Mono", monospace' }}
           >
             Issues
           </Typography>
@@ -219,7 +219,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                 <Typography
                   variant="h6"
                   sx={{
-                    color: '#ffffff',
+                    color: 'text.primary',
                     fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '1.1rem',
                     fontWeight: 500,
@@ -369,7 +369,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
           <Typography
             variant="h6"
             sx={{
-              color: '#ffffff',
+              color: 'text.primary',
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '1.1rem',
               fontWeight: 500,
@@ -474,7 +474,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
-                            color: '#ffffff',
+                            color: 'inherit',
                             textDecoration: 'none',
                             fontWeight: 500,
                           }}
@@ -573,7 +573,7 @@ const headerCellStyle = {
 };
 
 const bodyCellStyle = {
-  color: '#ffffff',
+  color: 'text.primary',
   fontFamily: '"JetBrains Mono", monospace',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
   fontSize: '0.85rem',

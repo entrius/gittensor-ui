@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography, Avatar, Paper, Link, Chip } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { type IssueDetails } from '../../api/models/Issues';
 import { STATUS_COLORS } from '../../theme';
 import 'github-markdown-css/github-markdown-dark.css'; // Import standard GitHub Dark styles
@@ -9,6 +10,7 @@ interface IssueConversationProps {
 }
 
 const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
+  const theme = useTheme();
   const allItems = [
     {
       id: 'issue-description',
@@ -24,26 +26,25 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
     },
   ];
 
-  // Premium Dark Theme Colors
   const colors = {
     canvas: {
-      default: '#0d1117',
-      subtle: '#161b22',
-      box: '#0d1117',
+      default: theme.palette.background.paper,
+      subtle: theme.palette.surface.elevated,
+      box: theme.palette.background.paper,
     },
     border: {
-      default: '#30363d',
-      muted: '#21262d',
+      default: theme.palette.border.medium,
+      muted: theme.palette.border.light,
     },
     fg: {
-      default: '#c9d1d9',
+      default: theme.palette.text.primary,
       muted: STATUS_COLORS.open,
     },
     accent: {
       fg: STATUS_COLORS.info,
     },
     timeline: {
-      line: '#30363d',
+      line: theme.palette.border.medium,
     },
   };
 
@@ -93,7 +94,7 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                   width: 40,
                   height: 40,
                   border: '1px solid rgba(255,255,255,0.1)',
-                  backgroundColor: '#0d1117', // Avoid transparency issues over the line
+                  backgroundColor: theme.palette.background.paper, // Avoid transparency issues over the line
                 }}
               />
             </Link>
@@ -274,7 +275,7 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                   lineHeight: 1.6,
                 },
                 '& .markdown-body pre': {
-                  backgroundColor: '#161b22', // Distinct code block background
+                  backgroundColor: theme.palette.surface.elevated, // Distinct code block background
                   border: `1px solid ${colors.border.default}`,
                   borderRadius: '6px',
                 },

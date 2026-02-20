@@ -124,7 +124,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const bodyCellSx = {
     fontFamily: '"JetBrains Mono", monospace',
     fontSize: '0.85rem',
-    color: '#ffffff',
+    color: 'text.primary',
     borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
     py: 1.5,
   };
@@ -133,7 +133,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
     return (
       <Card
         sx={{
-          backgroundColor: '#000000',
+          backgroundColor: 'background.default',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: 3,
         }}
@@ -163,7 +163,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
     return (
       <Card
         sx={{
-          backgroundColor: '#000000',
+          backgroundColor: 'background.default',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: 3,
           p: 4,
@@ -181,7 +181,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
   return (
     <Card
       sx={{
-        backgroundColor: '#000000',
+        backgroundColor: 'background.default',
         border: '1px solid rgba(255, 255, 255, 0.1)',
         borderRadius: 3,
         overflow: 'hidden',
@@ -302,7 +302,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                         sx={{
                           fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.85rem',
-                          color: '#58a6ff',
+                          color: STATUS_COLORS.info,
                         }}
                       >
                         {issue.repositoryFullName}
@@ -322,7 +322,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                           sx={{
                             fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.85rem',
-                            color: '#ffffff',
+                            color: 'text.primary',
                             fontWeight: 500,
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -347,7 +347,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                           color: 'rgba(255, 255, 255, 0.5)',
                           textDecoration: 'none',
                           '&:hover': {
-                            color: '#58a6ff',
+                            color: STATUS_COLORS.info,
                             textDecoration: 'underline',
                           },
                         }}

@@ -109,7 +109,7 @@ const IssueDetailsPage: React.FC = () => {
                     minHeight: '48px',
                     fontSize: '14px',
                     '&.Mui-selected': {
-                      color: '#fff',
+                      color: 'text.primary',
                       fontWeight: 600,
                     },
                   },

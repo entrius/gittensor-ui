@@ -94,6 +94,7 @@ declare module '@mui/material/styles' {
       transparent: string;
       subtle: string;
       light: string;
+      elevated: string;
     };
   }
 
@@ -127,6 +128,7 @@ declare module '@mui/material/styles' {
       transparent: string;
       subtle: string;
       light: string;
+      elevated: string;
     };
   }
 }
@@ -217,6 +219,7 @@ const theme = createTheme({
       transparent: 'transparent',
       subtle: 'rgba(255, 255, 255, 0.02)',
       light: 'rgba(255, 255, 255, 0.05)',
+      elevated: '#161b22',
     },
   },
   typography: {
