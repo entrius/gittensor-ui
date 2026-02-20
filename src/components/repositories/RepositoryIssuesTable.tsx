@@ -118,7 +118,10 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
           <Typography
             variant="h6"
-            sx={{ color: 'text.primary', fontFamily: '"JetBrains Mono", monospace' }}
+            sx={{
+              color: 'text.primary',
+              fontFamily: '"JetBrains Mono", monospace',
+            }}
           >
             Issues
           </Typography>
