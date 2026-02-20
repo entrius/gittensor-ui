@@ -13,6 +13,7 @@ import {
   Skeleton,
   Link,
   Tooltip,
+  Avatar,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueBounty } from '../../api/models/Issues';
@@ -123,7 +124,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const bodyCellSx = {
     fontFamily: '"JetBrains Mono", monospace',
     fontSize: '0.85rem',
-    color: '#ffffff',
+    color: 'text.primary',
     borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
     py: 1.5,
   };
@@ -132,7 +133,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
     return (
       <Card
         sx={{
-          backgroundColor: '#000000',
+          backgroundColor: 'background.default',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: 3,
         }}
@@ -162,7 +163,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
     return (
       <Card
         sx={{
-          backgroundColor: '#000000',
+          backgroundColor: 'background.default',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: 3,
           p: 4,
@@ -180,7 +181,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
   return (
     <Card
       sx={{
-        backgroundColor: '#000000',
+        backgroundColor: 'background.default',
         border: '1px solid rgba(255, 255, 255, 0.1)',
         borderRadius: 3,
         overflow: 'hidden',
@@ -192,18 +193,30 @@ const IssuesList: React.FC<IssuesListProps> = ({
           <TableHead>
             <TableRow>
               <TableCell sx={{ ...headerCellSx, width: '60px' }}>ID</TableCell>
-              <TableCell sx={headerCellSx}>Repository</TableCell>
-              <TableCell sx={{ ...headerCellSx, width: '80px' }}>
-                Issue
+              <TableCell sx={{ ...headerCellSx, width: '220px' }}>
+                Repository
               </TableCell>
+              <TableCell sx={headerCellSx}>Issue</TableCell>
 
               {/* Available Issues columns */}
               {listType === 'available' && (
                 <>
-                  <TableCell sx={{ ...headerCellSx, textAlign: 'right' }}>
+                  <TableCell
+                    sx={{
+                      ...headerCellSx,
+                      textAlign: 'right',
+                      width: '120px',
+                    }}
+                  >
                     Bounty
                   </TableCell>
-                  <TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>
+                  <TableCell
+                    sx={{
+                      ...headerCellSx,
+                      textAlign: 'center',
+                      width: '100px',
+                    }}
+                  >
                     Status
                   </TableCell>
                 </>
@@ -278,38 +291,71 @@ const IssuesList: React.FC<IssuesListProps> = ({
                     </Typography>
                   </TableCell>
                   <TableCell sx={bodyCellSx}>
-                    <Typography
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: '0.85rem',
-                        color: STATUS_COLORS.info,
-                      }}
+                    <Box
+                      sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}
                     >
-                      {issue.repositoryFullName}
-                    </Typography>
+                      <Avatar
+                        src={`https://avatars.githubusercontent.com/${issue.repositoryFullName.split('/')[0]}`}
+                        sx={{ width: 24, height: 24, borderRadius: 1 }}
+                      />
+                      <Typography
+                        sx={{
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: '0.85rem',
+                          color: STATUS_COLORS.info,
+                        }}
+                      >
+                        {issue.repositoryFullName}
+                      </Typography>
+                    </Box>
                   </TableCell>
                   <TableCell sx={bodyCellSx}>
-                    <Link
-                      href={issue.githubUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
+                    <Box
                       sx={{
                         display: 'flex',
-                        alignItems: 'center',
+                        flexDirection: 'column',
                         gap: 0.5,
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: '0.85rem',
-                        color: '#ffffff',
-                        textDecoration: 'none',
-                        '&:hover': {
-                          textDecoration: 'underline',
-                        },
                       }}
                     >
-                      #{issue.issueNumber}
-                      <OpenInNewIcon sx={{ fontSize: 14, opacity: 0.5 }} />
-                    </Link>
+                      {issue.title && (
+                        <Typography
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: '0.85rem',
+                            color: 'text.primary',
+                            fontWeight: 500,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: '600px',
+                          }}
+                        >
+                          {issue.title}
+                        </Typography>
+                      )}
+                      <Link
+                        href={issue.githubUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: '0.75rem',
+                          color: 'rgba(255, 255, 255, 0.5)',
+                          textDecoration: 'none',
+                          '&:hover': {
+                            color: STATUS_COLORS.info,
+                            textDecoration: 'underline',
+                          },
+                        }}
+                      >
+                        #{issue.issueNumber}
+                        <OpenInNewIcon sx={{ fontSize: 12, opacity: 0.5 }} />
+                      </Link>
+                    </Box>
                   </TableCell>
 
                   {/* Available Issues columns */}
