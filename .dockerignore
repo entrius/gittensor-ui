@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+.github
+.cloudflare
+.wrangler
+*.md
+LICENSE
+.env.local
+.eslintrc.cjs
+.prettierrc

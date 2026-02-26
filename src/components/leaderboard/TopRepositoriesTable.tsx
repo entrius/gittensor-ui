@@ -6,6 +6,7 @@ import React, {
   useRef,
 } from 'react';
 import {
+  alpha,
   Box,
   Card,
   Table,
@@ -36,7 +37,6 @@ import SearchIcon from '@mui/icons-material/Search';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
-import { alpha } from '@mui/material';
 import { useSearchParams } from 'react-router-dom';
 import { TIER_COLORS, STATUS_COLORS } from '../../theme';
 
@@ -895,7 +895,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             {filteredRepositories
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((repo) => {
-                const hasScore = (repo.totalScore || 0) > 0;
                 return (
                   <TableRow
                     key={repo.repository}

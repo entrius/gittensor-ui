@@ -1,15 +1,15 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package.json yarn.lock ./
+COPY package.json package-lock.json ./
 
-RUN yarn install
+RUN npm ci
 
 COPY . .
 
 EXPOSE 8080
 
-RUN yarn build
+RUN npm run build
 
-CMD [ "yarn", "preview" ]
+CMD [ "npm", "run", "preview" ]

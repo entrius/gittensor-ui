@@ -34,6 +34,9 @@ module.exports = {
       },
     ],
 
+    // No console.log left in PRs (console.warn/error are fine)
+    'no-console': ['error', { allow: ['warn', 'error'] }],
+
     // No unnecessary template literals
     'no-useless-concat': 'error',
 
