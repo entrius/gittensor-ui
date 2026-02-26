@@ -21,16 +21,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "yarn"
+          cache: "npm"
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
 
       - name: Run Prettier
         run: npx prettier --write "src/**/*.{ts,tsx,js,jsx,json,css,scss,md}"
 
       - name: Run ESLint Fix
-        run: npx eslint --fix "src/**/*.{ts,tsx}" --max-warnings 0 || true
+        run: npx eslint --fix "src/**/*.{ts,tsx}"
 
       - name: Check for changes
         id: changes

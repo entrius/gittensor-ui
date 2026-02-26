@@ -7,7 +7,6 @@ import { Page } from '../components/layout';
 import { TopRepositoriesTable, SEO } from '../components';
 import { useAllPrs, useReposAndWeights } from '../api';
 import { type CommitLog } from '../api/models/Dashboard';
-import { TIER_COLORS, STATUS_COLORS } from '../theme';
 
 const FONTS = { mono: '"JetBrains Mono", monospace' } as const;
 
@@ -108,18 +107,6 @@ const cardSx = {
 const RepositoriesPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const getTierColor = (tier: string) => {
-    switch (tier) {
-      case 'Gold':
-        return TIER_COLORS.gold;
-      case 'Silver':
-        return TIER_COLORS.silver;
-      case 'Bronze':
-        return TIER_COLORS.bronze;
-      default:
-        return STATUS_COLORS.open;
-    }
-  };
 
   const formatRelativeTime = (date: Date) => {
     const now = new Date();
