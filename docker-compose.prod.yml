@@ -1,12 +1,26 @@
 services:
   gittensorui:
+    image: entrius/gt-ui:latest
+    mem_limit: '512mb'
     container_name: gt-ui
-    build: .
     restart: always
     ports:
-      - "127.0.0.1:8080:8080"
+      - '127.0.0.1:8080:8080'
     networks:
       - gittensor_network
+    labels:
+      - 'com.centurylinklabs.watchtower.enable=true'
+
+  watchtower:
+    image: nickfedor/watchtower
+    container_name: gt-ui-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_POLL_INTERVAL: 150
+      WATCHTOWER_LABEL_ENABLE: 'true'
+      WATCHTOWER_CLEANUP: 'true'
 
 networks:
   gittensor_network:
