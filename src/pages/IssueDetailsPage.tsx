@@ -1,85 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Box, Card, Typography, CircularProgress, Stack } from '@mui/material';
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Stack,
+  Tabs,
+  Tab,
+} from '@mui/material';
 import { Page } from '../components/layout';
 import { BackButton, SEO } from '../components';
-import { IssueHeaderCard, IssueSubmissionsTable } from '../components/issues';
+import {
+  IssueHeaderCard,
+  IssueSubmissionsTable,
+  IssueConversation,
+} from '../components/issues';
 import { useIssueDetails, useIssueSubmissions } from '../api';
 import { STATUS_COLORS } from '../theme';
-
-/**
- * Inline description card (not reused elsewhere)
- */
-const IssueDescriptionCard: React.FC<{ body: string }> = ({ body }) => (
-  <Card
-    sx={{
-      backgroundColor: '#000000',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
-      borderRadius: 3,
-      p: 3,
-    }}
-    elevation={0}
-  >
-    <Typography
-      sx={{
-        fontFamily: '"JetBrains Mono", monospace',
-        fontSize: '0.8rem',
-        fontWeight: 600,
-        color: 'rgba(255, 255, 255, 0.5)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.5px',
-        mb: 2,
-      }}
-    >
-      Description
-    </Typography>
-    <Box
-      sx={{
-        fontFamily:
-          '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
-        fontSize: '0.95rem',
-        lineHeight: 1.6,
-        color: '#ffffff',
-        '& a': {
-          color: STATUS_COLORS.info,
-        },
-        '& code': {
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          padding: '2px 6px',
-          borderRadius: '4px',
-          fontFamily: '"JetBrains Mono", monospace',
-          fontSize: '0.85rem',
-        },
-        '& pre': {
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          padding: '16px',
-          borderRadius: '8px',
-          overflow: 'auto',
-        },
-        '& img': {
-          maxWidth: '100%',
-          borderRadius: '8px',
-        },
-        '& ul, & ol': {
-          paddingLeft: '24px',
-        },
-        '& blockquote': {
-          borderLeft: '3px solid rgba(255, 255, 255, 0.2)',
-          paddingLeft: '16px',
-          margin: '16px 0',
-          color: 'rgba(255, 255, 255, 0.7)',
-        },
-      }}
-      dangerouslySetInnerHTML={{ __html: body }}
-    />
-  </Card>
-);
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import ListAltIcon from '@mui/icons-material/ListAlt';
 
 const IssueDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const idParam = searchParams.get('id');
   const id = idParam ? parseInt(idParam, 10) : 0;
+  const [tabValue, setTabValue] = useState(0);
 
   const { data: issue, isLoading: isLoadingDetails } = useIssueDetails(id);
   const { data: submissions, isLoading: isLoadingSubmissions } =
@@ -92,6 +38,10 @@ const IssueDetailsPage: React.FC = () => {
     }
     return null;
   }
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
 
   return (
     <Page title="Issue Details">
@@ -142,12 +92,62 @@ const IssueDetailsPage: React.FC = () => {
           <Stack spacing={3}>
             <BackButton to="/issues" label="Back to Issues" mb={0} />
             <IssueHeaderCard issue={issue} />
-            {issue.body && <IssueDescriptionCard body={issue.body} />}
-            <IssueSubmissionsTable
-              submissions={submissions}
-              isLoading={isLoadingSubmissions}
-              backLabel={`Back to Issue #${issue.issueNumber}`}
-            />
+
+            {/* Tabs */}
+            <Box sx={{ borderBottom: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+              <Tabs
+                value={tabValue}
+                onChange={handleTabChange}
+                aria-label="issue details tabs"
+                sx={{
+                  '& .MuiTab-root': {
+                    color: STATUS_COLORS.open,
+                    fontFamily:
+                      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    minHeight: '48px',
+                    fontSize: '14px',
+                    '&.Mui-selected': {
+                      color: 'text.primary',
+                      fontWeight: 600,
+                    },
+                  },
+                  '& .MuiTabs-indicator': {
+                    backgroundColor: 'primary.main',
+                    height: '3px',
+                    borderRadius: '3px 3px 0 0',
+                  },
+                }}
+              >
+                <Tab
+                  label="Issue"
+                  icon={
+                    <ChatBubbleOutlineIcon
+                      sx={{ fontSize: 16, mb: 0, mr: 1 }}
+                    />
+                  }
+                  iconPosition="start"
+                />
+                <Tab
+                  label="Submissions"
+                  icon={<ListAltIcon sx={{ fontSize: 16, mb: 0, mr: 1 }} />}
+                  iconPosition="start"
+                />
+              </Tabs>
+            </Box>
+
+            {/* Content */}
+            <Box sx={{ mt: 0 }}>
+              {tabValue === 0 && <IssueConversation issue={issue} />}
+              {tabValue === 1 && (
+                <IssueSubmissionsTable
+                  submissions={submissions}
+                  isLoading={isLoadingSubmissions}
+                  backLabel={`Back to Issue #${issue.issueNumber}`}
+                />
+              )}
+            </Box>
           </Stack>
         </Box>
       )}

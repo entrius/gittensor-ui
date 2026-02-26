@@ -78,7 +78,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       size="small"
       onClick={() => setFilter(value)}
       sx={{
-        color: filter === value ? '#fff' : 'rgba(255,255,255,0.5)',
+        color: filter === value ? 'text.primary' : 'rgba(255,255,255,0.5)',
         backgroundColor:
           filter === value ? 'rgba(255,255,255,0.1)' : 'transparent',
         borderRadius: '6px',
@@ -118,7 +118,10 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
           <Typography
             variant="h6"
-            sx={{ color: '#fff', fontFamily: '"JetBrains Mono", monospace' }}
+            sx={{
+              color: 'text.primary',
+              fontFamily: '"JetBrains Mono", monospace',
+            }}
           >
             Issues
           </Typography>
@@ -219,7 +222,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                 <Typography
                   variant="h6"
                   sx={{
-                    color: '#ffffff',
+                    color: 'text.primary',
                     fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '1.1rem',
                     fontWeight: 500,
@@ -300,7 +303,13 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          {repositoryFullName}#{bounty.issueNumber}
+                          {issues?.find(
+                            (i) =>
+                              i.number === bounty.issueNumber &&
+                              i.repositoryFullName ===
+                                bounty.repositoryFullName,
+                          )?.title ||
+                            `${repositoryFullName}#${bounty.issueNumber}`}
                         </Typography>
                       </Box>
                       <Box
@@ -363,7 +372,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
           <Typography
             variant="h6"
             sx={{
-              color: '#ffffff',
+              color: 'text.primary',
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '1.1rem',
               fontWeight: 500,
@@ -447,7 +456,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                   const isOpen = !issue.closedAt;
                   return (
                     <TableRow
-                      key={`${issue.issueNumber}-${index}`}
+                      key={`${issue.number}-${index}`}
                       sx={{
                         cursor: 'pointer',
                         '&:hover': {
@@ -457,24 +466,24 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                       }}
                       onClick={() => {
                         window.open(
-                          `https://github.com/${issue.repositoryFullName}/issues/${issue.issueNumber}`,
+                          `https://github.com/${issue.repositoryFullName}/issues/${issue.number}`,
                           '_blank',
                         );
                       }}
                     >
                       <TableCell sx={bodyCellStyle}>
                         <a
-                          href={`https://github.com/${issue.repositoryFullName}/issues/${issue.issueNumber}`}
+                          href={`https://github.com/${issue.repositoryFullName}/issues/${issue.number}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
-                            color: '#ffffff',
+                            color: 'inherit',
                             textDecoration: 'none',
                             fontWeight: 500,
                           }}
                           onClick={(e) => e.stopPropagation()}
                         >
-                          #{issue.issueNumber}
+                          #{issue.number}
                         </a>
                       </TableCell>
                       <TableCell sx={bodyCellStyle}>
@@ -512,9 +521,9 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                         />
                       </TableCell>
                       <TableCell sx={bodyCellStyle}>
-                        {issue.linkedPrNumber ? (
+                        {issue.prNumber ? (
                           <a
-                            href={`https://github.com/${issue.repositoryFullName}/pull/${issue.linkedPrNumber}`}
+                            href={`https://github.com/${issue.repositoryFullName}/pull/${issue.prNumber}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
@@ -524,7 +533,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                             }}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            #{issue.linkedPrNumber}
+                            #{issue.prNumber}
                           </a>
                         ) : (
                           <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>
@@ -567,7 +576,7 @@ const headerCellStyle = {
 };
 
 const bodyCellStyle = {
-  color: '#ffffff',
+  color: 'text.primary',
   fontFamily: '"JetBrains Mono", monospace',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
   fontSize: '0.85rem',

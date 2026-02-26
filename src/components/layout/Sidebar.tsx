@@ -131,6 +131,31 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               color="#ffffff"
               variant="caption"
               component="a"
+              href="https://docs.gittensor.io"
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{
+                fontSize: '0.65rem',
+                textDecoration: 'none',
+                '&:hover': { textDecoration: 'underline' },
+              }}
+            >
+              Docs
+            </Typography>
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{
+                borderColor: '#3d3d3d',
+                mx: 0.5,
+                height: '12px',
+                alignSelf: 'center',
+              }}
+            />
+            <Typography
+              color="#ffffff"
+              variant="caption"
+              component="a"
               href="https://docs.learnbittensor.org/resources/community-links"
               target="_blank"
               rel="noopener noreferrer"

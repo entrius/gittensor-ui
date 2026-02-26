@@ -1,7 +1,7 @@
 export interface RepositoryIssue {
-  issueNumber: number;
+  number: number;
   repositoryFullName: string;
-  linkedPrNumber: number | null;
+  prNumber: number | null;
   title: string;
   createdAt: string | null;
   closedAt: string | null;

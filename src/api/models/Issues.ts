@@ -16,6 +16,7 @@ export interface IssueBounty {
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
+  title?: string;
 }
 
 export interface IssuesStats {
@@ -35,7 +36,7 @@ export interface RepoBountySummary {
 }
 
 export interface IssueDetails extends IssueBounty {
-  title: string | null;
+  title?: string;
   body: string | null;
   state: string | null;
   authorLogin: string | null;
