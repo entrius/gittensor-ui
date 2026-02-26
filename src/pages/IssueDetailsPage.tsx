@@ -48,7 +48,6 @@ const IssueDetailsPage: React.FC = () => {
       <SEO
         title={issue?.title || `Issue #${id}`}
         description={`View issue bounty details for ${issue?.repositoryFullName || 'issue'} #${issue?.issueNumber || id} on Gittensor.`}
-        image={`${import.meta.env.VITE_REACT_APP_BASE_URL || ''}/og-image?type=bounty&id=${id}`}
       />
 
       {isLoadingDetails ? (
