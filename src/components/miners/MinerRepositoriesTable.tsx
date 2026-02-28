@@ -13,7 +13,10 @@ import {
   Avatar,
   TableSortLabel,
   alpha,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 import { useMinerPRs, useReposAndWeights } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import { TIER_COLORS } from '../../theme';
@@ -54,6 +57,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
   const [sortField, setSortField] = useState<SortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Build repository weights and tiers maps
   const repoWeights = useMemo(() => {
@@ -104,7 +108,12 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
 
   // Sort repository stats
   const sortedRepoStats = useMemo(() => {
-    const sorted = [...repoStats];
+    let filtered = repoStats;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(r => r.repository.toLowerCase().includes(q));
+    }
+    const sorted = [...filtered];
     sorted.sort((a, b) => {
       let compareValue = 0;
 
@@ -202,6 +211,11 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
         sx={{
           p: 3,
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 2,
         }}
       >
         <Typography
@@ -215,6 +229,31 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
         >
           Top Repositories
         </Typography>
+        <TextField
+          size="small"
+          placeholder="Search repositories..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '1.2rem' }} />
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            minWidth: 260,
+            '& .MuiOutlinedInput-root': {
+              color: 'white',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.85rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+              '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
+              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+            },
+          }}
+        />
       </Box>
 
       <TableContainer sx={{ maxHeight: '400px', overflow: 'auto' }}>

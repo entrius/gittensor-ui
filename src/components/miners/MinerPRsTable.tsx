@@ -13,7 +13,10 @@ import {
   Avatar,
   Chip,
   Button,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 import { useMinerPRs } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import theme from '../../theme';
@@ -30,11 +33,20 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'open' | 'merged' | 'closed'
   >('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Filter PRs by selected repository, author, and status
   const filteredPRs = useMemo(() => {
     if (!prs) return [];
     let filtered = prs;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter((pr) =>
+        (pr.pullRequestTitle && pr.pullRequestTitle.toLowerCase().includes(q)) ||
+        (pr.repository && pr.repository.toLowerCase().includes(q)) ||
+        (pr.pullRequestNumber && pr.pullRequestNumber.toString().includes(q))
+      );
+    }
     if (selectedRepo) {
       filtered = filtered.filter((pr) => pr.repository === selectedRepo);
     }
@@ -150,6 +162,32 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               alignItems: 'center',
             }}
           >
+            <TextField
+              size="small"
+              placeholder="Search PRs..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '1.2rem' }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                minWidth: 200,
+                mr: 2,
+                '& .MuiOutlinedInput-root': {
+                  color: 'white',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.85rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                  '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
+                  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                },
+              }}
+            />
             {selectedRepo && (
               <Chip
                 variant="filter"
