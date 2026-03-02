@@ -16,5 +16,12 @@ export default defineConfig({
     host: true, //set to true to make the server accessible on your network
     origin: 'http://127.0.0.1:8080',
     allowedHosts: ['test.gittensor.io', 'gittensor.io'],
+    proxy: {
+      '/api': {
+        target: 'https://test-api.gittensor.io',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
   },
 });

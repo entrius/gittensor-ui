@@ -167,9 +167,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           <Box
             sx={{
               display: 'flex',
-              gap: 1,
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: { xs: 1.5, sm: 1 },
               flexWrap: 'wrap',
-              alignItems: 'center',
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              width: { xs: '100%', sm: 'auto' },
             }}
           >
             {selectedRepo && (
@@ -188,7 +190,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             )}
 
             {/* Status Filter Buttons */}
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
               <ExplorerFilterButton
                 label="All"
                 count={statusCounts.all}
@@ -220,7 +222,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             </Box>
 
             {/* Tier Filter Buttons */}
-            <Box sx={{ display: 'flex', gap: 0.5, ml: { xs: 0, sm: 1 } }}>
+            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
               <ExplorerFilterButton
                 label="All Tiers"
                 count={tierCounts.all}
@@ -284,7 +286,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           sx={{
             maxHeight: { xs: '400px', sm: '500px' },
             overflowY: 'auto',
-            overflowX: { xs: 'hidden', sm: 'auto' },
+            overflowX: 'auto',
             '&::-webkit-scrollbar': {
               width: { xs: '6px', sm: '8px' },
               height: { xs: '6px', sm: '8px' },
@@ -303,26 +305,18 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         >
           <Table
             stickyHeader
-            sx={{ tableLayout: 'fixed', minWidth: { xs: '100%', sm: '800px' } }}
+            sx={{ tableLayout: 'fixed', minWidth: '700px' }}
           >
             <TableHead>
               <TableRow>
                 <TableCell sx={headerCellStyle}>PR #</TableCell>
                 <TableCell sx={headerCellStyle}>Title</TableCell>
-                <TableCell
-                  sx={{
-                    ...headerCellStyle,
-                    display: { xs: 'none', sm: 'table-cell' },
-                  }}
-                >
+                <TableCell sx={headerCellStyle}>
                   Repository
                 </TableCell>
                 <TableCell
                   align="right"
-                  sx={{
-                    ...headerCellStyle,
-                    display: { xs: 'none', md: 'table-cell' },
-                  }}
+                  sx={headerCellStyle}
                 >
                   +/-
                 </TableCell>
@@ -331,10 +325,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 </TableCell>
                 <TableCell
                   align="right"
-                  sx={{
-                    ...headerCellStyle,
-                    display: { xs: 'none', sm: 'table-cell' },
-                  }}
+                  sx={headerCellStyle}
                 >
                   Merged
                 </TableCell>
@@ -403,7 +394,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     sx={{
                       ...bodyCellStyle,
                       width: '20%',
-                      display: { xs: 'none', sm: 'table-cell' },
                     }}
                   >
                     <Box
@@ -445,7 +435,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     sx={{
                       ...bodyCellStyle,
                       width: '15%',
-                      display: { xs: 'none', md: 'table-cell' },
                     }}
                   >
                     <Box
@@ -526,7 +515,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     sx={{
                       ...bodyCellStyle,
                       width: '15%',
-                      display: { xs: 'none', sm: 'table-cell' },
                       fontSize: { xs: '0.75rem', sm: '0.85rem' },
                       color: 'rgba(255,255,255,0.7)',
                     }}

@@ -345,7 +345,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
       }}
       elevation={0}
     >
-      {/* Last Updated Chip */}
+      {/* Last Updated Chip - desktop only (absolute) */}
       {minerStats.updatedAt && (
         <Chip
           icon={<UpdateIcon sx={{ fontSize: '0.9rem' }} />}
@@ -353,6 +353,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
           variant="outlined"
           size="small"
           sx={{
+            display: { xs: 'none', sm: 'flex' },
             position: 'absolute',
             top: 16,
             right: 16,
@@ -386,13 +387,14 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
               border: '2px solid rgba(255, 255, 255, 0.1)',
             }}
           />
-          <Box>
+          <Box sx={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
             <Box
               sx={{
                 display: 'flex',
                 alignItems: 'baseline',
                 gap: 1.5,
                 mb: 0.5,
+                flexWrap: 'wrap',
               }}
             >
               <Box
@@ -502,15 +504,23 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             </Typography>
 
             <Box
-              sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                mt: 0.5,
+                maxWidth: '100%',
+                overflow: 'hidden',
+              }}
             >
               <Typography
                 sx={{
                   color: 'rgba(255, 255, 255, 0.4)',
                   fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '0.75rem',
+                  fontSize: { xs: '0.65rem', sm: '0.75rem' },
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
+                  flexShrink: 0,
                 }}
               >
                 Hotkey:
@@ -519,7 +529,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                 sx={{
                   color: 'rgba(255, 255, 255, 0.6)',
                   fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '0.75rem',
+                  fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {minerStats.hotkey || 'N/A'}
@@ -527,6 +540,29 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             </Box>
 
             {/* Current Tier Badge & Earnings */}
+
+            {/* Last Updated Chip - mobile only (inline) */}
+            {minerStats.updatedAt && (
+              <Chip
+                icon={<UpdateIcon sx={{ fontSize: '0.8rem' }} />}
+                label={`Updated ${formatTimeAgo(new Date(minerStats.updatedAt))}`}
+                variant="outlined"
+                size="small"
+                sx={{
+                  display: { xs: 'flex', sm: 'none' },
+                  mt: 1.5,
+                  alignSelf: 'flex-start',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.65rem',
+                  color: 'rgba(255, 255, 255, 0.5)',
+                  borderColor: 'rgba(255, 255, 255, 0.15)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                  '& .MuiChip-icon': {
+                    color: 'rgba(255, 255, 255, 0.4)',
+                  },
+                }}
+              />
+            )}
           </Box>
         </Box>
 
@@ -787,6 +823,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                   )}
                 </Box>
                 <Typography
+                  component="div"
                   sx={{
                     color: item.color || '#ffffff',
                     fontFamily: '"JetBrains Mono", monospace',

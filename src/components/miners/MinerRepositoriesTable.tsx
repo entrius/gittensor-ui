@@ -193,7 +193,8 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
         <Box
           sx={{
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'flex-start', sm: 'center' },
             justifyContent: 'space-between',
             flexWrap: 'wrap',
             gap: 2,
@@ -222,7 +223,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
               {tierFilter !== 'all' ? ` of ${repoStats.length}` : ''})
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
             <ExplorerFilterButton
               label="All"
               count={tierCounts.all}
