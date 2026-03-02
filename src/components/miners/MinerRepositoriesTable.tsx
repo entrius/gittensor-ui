@@ -16,7 +16,16 @@ import {
 } from '@mui/material';
 import { useMinerPRs, useReposAndWeights } from '../../api';
 import { useNavigate } from 'react-router-dom';
-import { TIER_COLORS } from '../../theme';
+import theme, { TIER_COLORS } from '../../theme';
+import ExplorerFilterButton from './ExplorerFilterButton';
+import {
+  type MinerTierFilter,
+  type RepoSortField,
+  type SortOrder,
+  filterMinerRepoStats,
+  sortMinerRepoStats,
+  tierColorFor,
+} from './explorerUtils';
 
 interface MinerRepositoriesTableProps {
   githubId: string;
@@ -30,30 +39,15 @@ interface RepoStats {
   tier: string;
 }
 
-type SortField = 'rank' | 'repository' | 'prs' | 'score' | 'weight';
-type SortOrder = 'asc' | 'desc';
-
-const getTierColor = (tier: string): string => {
-  switch (tier?.toLowerCase()) {
-    case 'gold':
-      return TIER_COLORS.gold;
-    case 'silver':
-      return TIER_COLORS.silver;
-    case 'bronze':
-      return TIER_COLORS.bronze;
-    default:
-      return 'transparent';
-  }
-};
-
 const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   githubId,
 }) => {
   const navigate = useNavigate();
   const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
-  const [sortField, setSortField] = useState<SortField>('score');
+  const [sortField, setSortField] = useState<RepoSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [tierFilter, setTierFilter] = useState<MinerTierFilter>('all');
 
   // Build repository weights and tiers maps
   const repoWeights = useMemo(() => {
@@ -102,37 +96,29 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     return Array.from(statsMap.values());
   }, [prs, repoWeights, repoTiers]);
 
-  // Sort repository stats
-  const sortedRepoStats = useMemo(() => {
-    const sorted = [...repoStats];
-    sorted.sort((a, b) => {
-      let compareValue = 0;
+  // Filter and sort repository stats
+  const filteredRepoStats = useMemo(
+    () => filterMinerRepoStats(repoStats, tierFilter),
+    [repoStats, tierFilter],
+  );
 
-      switch (sortField) {
-        case 'repository':
-          compareValue = a.repository.localeCompare(b.repository);
-          break;
-        case 'prs':
-          compareValue = a.prs - b.prs;
-          break;
-        case 'score':
-          compareValue = a.score - b.score;
-          break;
-        case 'weight':
-          compareValue = a.weight - b.weight;
-          break;
-        case 'rank':
-          // Rank is based on score by default
-          compareValue = a.score - b.score;
-          break;
-      }
+  const sortedRepoStats = useMemo(
+    () => sortMinerRepoStats(filteredRepoStats, sortField, sortOrder),
+    [filteredRepoStats, sortField, sortOrder],
+  );
 
-      return sortOrder === 'asc' ? compareValue : -compareValue;
-    });
-    return sorted;
-  }, [repoStats, sortField, sortOrder]);
+  const tierCounts = useMemo(() => {
+    const counts = { all: repoStats.length, gold: 0, silver: 0, bronze: 0 };
+    for (const repo of repoStats) {
+      const tier = repo.tier.toLowerCase();
+      if (tier === 'gold') counts.gold++;
+      else if (tier === 'silver') counts.silver++;
+      else if (tier === 'bronze') counts.bronze++;
+    }
+    return counts;
+  }, [repoStats]);
 
-  const handleSort = (field: SortField) => {
+  const handleSort = (field: RepoSortField) => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -204,17 +190,69 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         }}
       >
-        <Typography
-          variant="h6"
+        <Box
           sx={{
-            color: '#ffffff',
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: '1.1rem',
-            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 2,
           }}
         >
-          Top Repositories
-        </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                color: '#ffffff',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '1.1rem',
+                fontWeight: 500,
+              }}
+            >
+              Top Repositories
+            </Typography>
+            <Typography
+              sx={{
+                color: 'rgba(255, 255, 255, 0.5)',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.75rem',
+              }}
+            >
+              ({sortedRepoStats.length}
+              {tierFilter !== 'all' ? ` of ${repoStats.length}` : ''})
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <ExplorerFilterButton
+              label="All"
+              count={tierCounts.all}
+              color={theme.palette.status.neutral}
+              selected={tierFilter === 'all'}
+              onClick={() => setTierFilter('all')}
+            />
+            <ExplorerFilterButton
+              label="Gold"
+              count={tierCounts.gold}
+              color={TIER_COLORS.gold}
+              selected={tierFilter === 'gold'}
+              onClick={() => setTierFilter('gold')}
+            />
+            <ExplorerFilterButton
+              label="Silver"
+              count={tierCounts.silver}
+              color={TIER_COLORS.silver}
+              selected={tierFilter === 'silver'}
+              onClick={() => setTierFilter('silver')}
+            />
+            <ExplorerFilterButton
+              label="Bronze"
+              count={tierCounts.bronze}
+              color={TIER_COLORS.bronze}
+              selected={tierFilter === 'bronze'}
+              onClick={() => setTierFilter('bronze')}
+            />
+          </Box>
+        </Box>
       </Box>
 
       <TableContainer sx={{ maxHeight: '400px', overflow: 'auto' }}>
@@ -430,7 +468,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                           width: 6,
                           height: 6,
                           borderRadius: '50%',
-                          backgroundColor: getTierColor(repo.tier),
+                          backgroundColor: tierColorFor(repo.tier, TIER_COLORS),
                           flexShrink: 0,
                         }}
                         title={`${repo.tier} tier`}

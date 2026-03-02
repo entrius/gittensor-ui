@@ -12,11 +12,17 @@ import {
   CircularProgress,
   Avatar,
   Chip,
-  Button,
 } from '@mui/material';
-import { useMinerPRs } from '../../api';
+import { useMinerPRs, useReposAndWeights } from '../../api';
 import { useNavigate } from 'react-router-dom';
-import theme from '../../theme';
+import theme, { TIER_COLORS } from '../../theme';
+import ExplorerFilterButton from './ExplorerFilterButton';
+import {
+  type MinerTierFilter,
+  type MinerStatusFilter,
+  countPrTiers,
+  filterPrsByTier,
+} from './explorerUtils';
 
 interface MinerPRsTableProps {
   githubId: string;
@@ -25,13 +31,23 @@ interface MinerPRsTableProps {
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const navigate = useNavigate();
   const { data: prs, isLoading } = useMinerPRs(githubId);
+  const { data: repos } = useReposAndWeights();
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<
-    'all' | 'open' | 'merged' | 'closed'
-  >('all');
+  const [statusFilter, setStatusFilter] = useState<MinerStatusFilter>('all');
+  const [tierFilter, setTierFilter] = useState<MinerTierFilter>('all');
 
-  // Filter PRs by selected repository, author, and status
+  const repoTiers = useMemo(() => {
+    const map = new Map<string, string>();
+    if (Array.isArray(repos)) {
+      repos.forEach((repo) => {
+        if (repo?.fullName) map.set(repo.fullName, repo.tier || '');
+      });
+    }
+    return map;
+  }, [repos]);
+
+  // Filter PRs by selected repository, author, status, and tier
   const filteredPRs = useMemo(() => {
     if (!prs) return [];
     let filtered = prs;
@@ -54,8 +70,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         (pr) => pr.prState === 'CLOSED' && !pr.mergedAt,
       );
     }
+    filtered = filterPrsByTier(filtered, tierFilter, repoTiers);
     return filtered;
-  }, [prs, selectedRepo, selectedAuthor, statusFilter]);
+  }, [prs, selectedRepo, selectedAuthor, statusFilter, tierFilter, repoTiers]);
 
   const statusCounts = useMemo(() => {
     if (!prs) return { all: 0, open: 0, merged: 0, closed: 0 };
@@ -69,6 +86,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         .length,
     };
   }, [prs]);
+
+  const tierCounts = useMemo(() => {
+    if (!prs) return { all: 0, gold: 0, silver: 0, bronze: 0 };
+    return countPrTiers(prs, repoTiers);
+  }, [prs, repoTiers]);
 
   if (isLoading) {
     return (
@@ -136,7 +158,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               }}
             >
               ({filteredPRs.length}
-              {selectedRepo || selectedAuthor || statusFilter !== 'all'
+              {selectedRepo || selectedAuthor || statusFilter !== 'all' || tierFilter !== 'all'
                 ? ` of ${prs?.length || 0}`
                 : ''}
               )
@@ -167,33 +189,65 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
 
             {/* Status Filter Buttons */}
             <Box sx={{ display: 'flex', gap: 0.5 }}>
-              <FilterButton
+              <ExplorerFilterButton
                 label="All"
                 count={statusCounts.all}
                 color={theme.palette.status.neutral}
                 selected={statusFilter === 'all'}
                 onClick={() => setStatusFilter('all')}
               />
-              <FilterButton
+              <ExplorerFilterButton
                 label="Open"
                 count={statusCounts.open}
                 color={theme.palette.status.open}
                 selected={statusFilter === 'open'}
                 onClick={() => setStatusFilter('open')}
               />
-              <FilterButton
+              <ExplorerFilterButton
                 label="Merged"
                 count={statusCounts.merged}
                 color={theme.palette.status.merged}
                 selected={statusFilter === 'merged'}
                 onClick={() => setStatusFilter('merged')}
               />
-              <FilterButton
+              <ExplorerFilterButton
                 label="Closed"
                 count={statusCounts.closed}
                 color={theme.palette.status.closed}
                 selected={statusFilter === 'closed'}
                 onClick={() => setStatusFilter('closed')}
+              />
+            </Box>
+
+            {/* Tier Filter Buttons */}
+            <Box sx={{ display: 'flex', gap: 0.5, ml: { xs: 0, sm: 1 } }}>
+              <ExplorerFilterButton
+                label="All Tiers"
+                count={tierCounts.all}
+                color={theme.palette.status.neutral}
+                selected={tierFilter === 'all'}
+                onClick={() => setTierFilter('all')}
+              />
+              <ExplorerFilterButton
+                label="Gold"
+                count={tierCounts.gold}
+                color={TIER_COLORS.gold}
+                selected={tierFilter === 'gold'}
+                onClick={() => setTierFilter('gold')}
+              />
+              <ExplorerFilterButton
+                label="Silver"
+                count={tierCounts.silver}
+                color={TIER_COLORS.silver}
+                selected={tierFilter === 'silver'}
+                onClick={() => setTierFilter('silver')}
+              />
+              <ExplorerFilterButton
+                label="Bronze"
+                count={tierCounts.bronze}
+                color={TIER_COLORS.bronze}
+                selected={tierFilter === 'bronze'}
+                onClick={() => setTierFilter('bronze')}
               />
             </Box>
           </Box>
@@ -517,37 +571,5 @@ const bodyCellStyle = {
   px: { xs: 0.5, sm: 2 },
   height: { xs: '52px', sm: '60px' },
 };
-
-const FilterButton: React.FC<{
-  label: string;
-  count: number;
-  color: string;
-  selected: boolean;
-  onClick: () => void;
-}> = ({ label, count, color, selected, onClick }) => (
-  <Button
-    size="small"
-    onClick={onClick}
-    sx={{
-      color: selected ? '#fff' : 'rgba(255,255,255,0.5)',
-      backgroundColor: selected ? 'rgba(255,255,255,0.1)' : 'transparent',
-      borderRadius: '6px',
-      px: 1.5,
-      minWidth: 'auto',
-      textTransform: 'none',
-      fontFamily: '"JetBrains Mono", monospace',
-      fontSize: '0.75rem',
-      border: selected ? `1px solid ${color}` : '1px solid transparent',
-      '&:hover': {
-        backgroundColor: 'rgba(255,255,255,0.15)',
-      },
-    }}
-  >
-    {label}{' '}
-    <span style={{ opacity: 0.6, marginLeft: '6px', fontSize: '0.7rem' }}>
-      {count}
-    </span>
-  </Button>
-);
 
 export default MinerPRsTable;
