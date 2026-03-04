@@ -91,12 +91,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
       open: prsInTier.filter(
         (pr) => pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
       ).length,
-      merged: prsInTier.filter(
-        (pr) => pr.mergedAt || pr.prState === 'MERGED',
-      ).length,
-      closed: prsInTier.filter(
-        (pr) => pr.prState === 'CLOSED' && !pr.mergedAt,
-      ).length,
+      merged: prsInTier.filter((pr) => pr.mergedAt || pr.prState === 'MERGED')
+        .length,
+      closed: prsInTier.filter((pr) => pr.prState === 'CLOSED' && !pr.mergedAt)
+        .length,
     };
   }, [prsInTier]);
 
