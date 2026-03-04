@@ -13,10 +13,11 @@ import {
   Avatar,
   Chip,
   Button,
+  useTheme,
+  alpha,
 } from '@mui/material';
 import { useMinerPRs, useReposAndWeights } from '../../api';
 import { useNavigate } from 'react-router-dom';
-import theme from '../../theme';
 
 interface MinerPRsTableProps {
   githubId: string;
@@ -28,9 +29,41 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
   githubId,
   tierFilter,
 }) => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const { data: repos } = useReposAndWeights();
+
+  const headerCellStyle = useMemo(
+    () => ({
+      backgroundColor: theme.palette.surface?.elevated ?? theme.palette.background.paper,
+      backdropFilter: 'blur(8px)',
+      color: alpha(theme.palette.text.primary, 0.7),
+      fontFamily: '"JetBrains Mono", monospace',
+      fontWeight: 500,
+      fontSize: { xs: '0.65rem', sm: '0.75rem' },
+      borderBottom: `1px solid ${theme.palette.border?.light ?? theme.palette.divider}`,
+      height: { xs: '48px', sm: '56px' },
+      py: { xs: 1, sm: 1.5 },
+      px: { xs: 0.5, sm: 2 },
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.5px',
+    }),
+    [theme],
+  );
+
+  const bodyCellStyle = useMemo(
+    () => ({
+      color: theme.palette.text.primary,
+      fontFamily: '"JetBrains Mono", monospace',
+      borderBottom: `1px solid ${theme.palette.border?.light ?? theme.palette.divider}`,
+      fontSize: '0.85rem',
+      py: { xs: 0.75, sm: 1 },
+      px: { xs: 0.5, sm: 2 },
+      height: { xs: '52px', sm: '60px' },
+    }),
+    [theme],
+  );
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<
@@ -103,7 +136,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
       <Card
         sx={{
           borderRadius: 3,
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: '1px solid',
+          borderColor: 'border.light',
           backgroundColor: 'transparent',
           p: 4,
           textAlign: 'center',
@@ -119,20 +153,21 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: '1px solid',
+        borderColor: 'border.light',
         backgroundColor: 'transparent',
-        p: 0, // Remove padding to let table fill the card
+        p: 0,
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden', // Ensure rounded corners clip content
+        overflow: 'hidden',
       }}
       elevation={0}
     >
-      {/* Header */}
       <Box
         sx={{
           p: { xs: 2, sm: 3 },
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          borderBottom: '1px solid',
+          borderColor: 'border.light',
         }}
       >
         <Box
@@ -148,7 +183,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
             <Typography
               variant="h6"
               sx={{
-                color: '#ffffff',
+                color: 'text.primary',
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: { xs: '0.95rem', sm: '1.1rem' },
                 fontWeight: 500,
@@ -158,7 +193,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
             </Typography>
             <Typography
               sx={{
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: (t) => alpha(t.palette.text.primary, 0.5),
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.75rem',
               }}
@@ -346,7 +381,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                   sx={{
                     cursor: 'pointer',
                     '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      backgroundColor: 'surface.light',
                     },
                     transition: 'all 0.2s',
                   }}
@@ -358,18 +393,19 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                       fontSize: { xs: '0.75rem', sm: '0.85rem' },
                     }}
                   >
-                    <a
+                    <Box
+                      component="a"
                       href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{
-                        color: '#ffffff',
+                      sx={{
+                        color: 'text.primary',
                         textDecoration: 'none',
                         fontWeight: 500,
                       }}
                     >
                       #{pr.pullRequestNumber}
-                    </a>
+                    </Box>
                   </TableCell>
                   <TableCell
                     sx={{
@@ -417,12 +453,13 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                         sx={{
                           width: 20,
                           height: 20,
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          border: '1px solid',
+                          borderColor: 'border.medium',
                           backgroundColor:
                             pr.repository.split('/')[0] === 'opentensor'
-                              ? '#ffffff'
+                              ? 'text.primary'
                               : pr.repository.split('/')[0] === 'bitcoin'
-                                ? '#F7931A'
+                                ? 'status.warning'
                                 : 'transparent',
                         }}
                       />
@@ -468,7 +505,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                             fontFamily: '"JetBrains Mono", monospace',
                             fontSize: { xs: '0.7rem', sm: '0.75rem' },
                             fontWeight: 600,
-                            color: 'rgba(255, 255, 255, 0.3)',
+                            color: (t) => alpha(t.palette.text.primary, 0.3),
                           }}
                         >
                           -
@@ -479,7 +516,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                             fontFamily: '"JetBrains Mono", monospace',
                             fontSize: { xs: '0.7rem', sm: '0.75rem' },
                             fontWeight: 600,
-                            color: '#fb923c',
+                            color: 'status.warning',
                           }}
                         >
                           {parseFloat(pr.collateralScore).toFixed(4)}
@@ -502,7 +539,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                             sx={{
                               fontFamily: '"JetBrains Mono", monospace',
                               fontSize: '0.6rem',
-                              color: 'rgba(255,255,255,0.5)',
+                              color: (t) => alpha(t.palette.text.primary, 0.5),
                             }}
                           >
                             Collateral
@@ -517,7 +554,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                       width: '15%',
                       display: { xs: 'none', sm: 'table-cell' },
                       fontSize: { xs: '0.75rem', sm: '0.85rem' },
-                      color: 'rgba(255,255,255,0.7)',
+                      color: (t) => alpha(t.palette.text.primary, 0.7),
                     }}
                   >
                     {pr.mergedAt
@@ -536,61 +573,39 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
   );
 };
 
-const headerCellStyle = {
-  backgroundColor: 'rgba(18, 18, 20, 0.95)',
-  backdropFilter: 'blur(8px)',
-  color: 'rgba(255, 255, 255, 0.7)',
-  fontFamily: '"JetBrains Mono", monospace',
-  fontWeight: 500,
-  fontSize: { xs: '0.65rem', sm: '0.75rem' },
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  height: { xs: '48px', sm: '56px' },
-  py: { xs: 1, sm: 1.5 },
-  px: { xs: 0.5, sm: 2 },
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.5px',
-};
-
-const bodyCellStyle = {
-  color: '#ffffff',
-  fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  fontSize: '0.85rem',
-  py: { xs: 0.75, sm: 1 },
-  px: { xs: 0.5, sm: 2 },
-  height: { xs: '52px', sm: '60px' },
-};
-
 const FilterButton: React.FC<{
   label: string;
   count: number;
   color: string;
   selected: boolean;
   onClick: () => void;
-}> = ({ label, count, color, selected, onClick }) => (
-  <Button
-    size="small"
-    onClick={onClick}
-    sx={{
-      color: selected ? '#fff' : 'rgba(255,255,255,0.5)',
-      backgroundColor: selected ? 'rgba(255,255,255,0.1)' : 'transparent',
-      borderRadius: '6px',
-      px: 1.5,
-      minWidth: 'auto',
-      textTransform: 'none',
-      fontFamily: '"JetBrains Mono", monospace',
-      fontSize: '0.75rem',
-      border: selected ? `1px solid ${color}` : '1px solid transparent',
-      '&:hover': {
-        backgroundColor: 'rgba(255,255,255,0.15)',
-      },
-    }}
-  >
-    {label}{' '}
-    <span style={{ opacity: 0.6, marginLeft: '6px', fontSize: '0.7rem' }}>
-      {count}
-    </span>
-  </Button>
-);
+}> = ({ label, count, color, selected, onClick }) => {
+  const theme = useTheme();
+  return (
+    <Button
+      size="small"
+      onClick={onClick}
+      sx={{
+        color: selected ? 'text.primary' : (t) => alpha(t.palette.text.primary, 0.5),
+        backgroundColor: selected ? 'surface.light' : 'transparent',
+        borderRadius: '6px',
+        px: 1.5,
+        minWidth: 'auto',
+        textTransform: 'none',
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: '0.75rem',
+        border: selected ? `1px solid ${color}` : '1px solid transparent',
+        '&:hover': {
+          backgroundColor: (t) => alpha(t.palette.text.primary, 0.15),
+        },
+      }}
+    >
+      {label}{' '}
+      <span style={{ opacity: 0.6, marginLeft: '6px', fontSize: '0.7rem' }}>
+        {count}
+      </span>
+    </Button>
+  );
+};
 
 export default MinerPRsTable;
