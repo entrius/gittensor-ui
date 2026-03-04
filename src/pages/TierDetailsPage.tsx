@@ -73,12 +73,9 @@ const TierDetailsPage: React.FC = () => {
           />
 
           <Typography
-            variant="h6"
+            variant="sectionTitle"
             sx={{
-              color: '#ffffff',
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '1.1rem',
-              fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
               gap: 1.5,
@@ -96,12 +93,9 @@ const TierDetailsPage: React.FC = () => {
           <MinerRepositoriesTable githubId={githubId} tierFilter={tier} />
 
           <Typography
-            variant="h6"
+            variant="sectionTitle"
             sx={{
-              color: '#ffffff',
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '1.1rem',
-              fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
               gap: 1.5,
@@ -186,6 +180,8 @@ const TierSummaryCard: React.FC<TierSummaryCardProps> = ({
   return (
     <Card
       sx={{
+        display: 'flex',
+        flexDirection: 'column',
         borderRadius: 3,
         border: `1px solid ${borderColor}`,
         backgroundColor: bgColor,
@@ -195,12 +191,11 @@ const TierSummaryCard: React.FC<TierSummaryCardProps> = ({
       elevation={0}
     >
       <Typography
+        variant="sectionTitle"
         sx={{
           color,
-          fontFamily: '"JetBrains Mono", monospace',
           fontSize: '1rem',
           fontWeight: 700,
-          textTransform: 'uppercase',
           letterSpacing: '1px',
           mb: 2,
           pb: 1.5,
@@ -209,141 +204,52 @@ const TierSummaryCard: React.FC<TierSummaryCardProps> = ({
       >
         {tier} Tier Summary
       </Typography>
-      <Stack direction="row" flexWrap="wrap" gap={3} useFlexGap>
-        <Box>
-          <Typography
-            sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
-              fontSize: '0.7rem',
-              fontFamily: '"JetBrains Mono", monospace',
-              textTransform: 'uppercase',
-            }}
-          >
-            Score
-          </Typography>
-          <Typography
-            sx={{
-              color: '#ffffff',
-              fontSize: '1.1rem',
-              fontFamily: '"JetBrains Mono", monospace',
-              fontWeight: 600,
-            }}
-          >
+      <Stack
+        direction="row"
+        flexWrap="wrap"
+        gap={4}
+        useFlexGap
+        sx={{
+          '& > *': { minWidth: 0 },
+          '& .MuiTypography-root': {
+            border: 'none',
+            borderBottom: 'none',
+            textDecoration: 'none',
+            margin: 0,
+            padding: 0,
+          },
+        }}
+      >
+        <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
+          <Typography variant="statLabel" component="span">Score</Typography>
+          <Typography variant="statValue" component="span">
             {score != null ? Number(score).toFixed(4) : '0.0000'}
           </Typography>
-        </Box>
-        <Box>
-          <Typography
-            sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
-              fontSize: '0.7rem',
-              fontFamily: '"JetBrains Mono", monospace',
-              textTransform: 'uppercase',
-            }}
-          >
-            Credibility
-          </Typography>
-          <Typography
-            sx={{
-              color: '#ffffff',
-              fontSize: '1.1rem',
-              fontFamily: '"JetBrains Mono", monospace',
-              fontWeight: 600,
-            }}
-          >
+        </Stack>
+        <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
+          <Typography variant="statLabel" component="span">Credibility</Typography>
+          <Typography variant="statValue" component="span">
             {credibility != null
               ? `${(Number(credibility) * 100).toFixed(1)}%`
               : 'N/A'}
           </Typography>
-        </Box>
-        <Box>
-          <Typography
-            sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
-              fontSize: '0.7rem',
-              fontFamily: '"JetBrains Mono", monospace',
-              textTransform: 'uppercase',
-            }}
-          >
-            PRs Merged
-          </Typography>
-          <Typography
-            sx={{
-              color: '#ffffff',
-              fontSize: '1.1rem',
-              fontFamily: '"JetBrains Mono", monospace',
-              fontWeight: 600,
-            }}
-          >
-            {merged ?? 0}
-          </Typography>
-        </Box>
-        <Box>
-          <Typography
-            sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
-              fontSize: '0.7rem',
-              fontFamily: '"JetBrains Mono", monospace',
-              textTransform: 'uppercase',
-            }}
-          >
-            PRs Open
-          </Typography>
-          <Typography
-            sx={{
-              color: '#ffffff',
-              fontSize: '1.1rem',
-              fontFamily: '"JetBrains Mono", monospace',
-              fontWeight: 600,
-            }}
-          >
-            {opened}
-          </Typography>
-        </Box>
-        <Box>
-          <Typography
-            sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
-              fontSize: '0.7rem',
-              fontFamily: '"JetBrains Mono", monospace',
-              textTransform: 'uppercase',
-            }}
-          >
-            PRs Closed
-          </Typography>
-          <Typography
-            sx={{
-              color: '#ffffff',
-              fontSize: '1.1rem',
-              fontFamily: '"JetBrains Mono", monospace',
-              fontWeight: 600,
-            }}
-          >
-            {closed ?? 0}
-          </Typography>
-        </Box>
-        <Box>
-          <Typography
-            sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
-              fontSize: '0.7rem',
-              fontFamily: '"JetBrains Mono", monospace',
-              textTransform: 'uppercase',
-            }}
-          >
-            Unique Repos
-          </Typography>
-          <Typography
-            sx={{
-              color: '#ffffff',
-              fontSize: '1.1rem',
-              fontFamily: '"JetBrains Mono", monospace',
-              fontWeight: 600,
-            }}
-          >
-            {uniqueRepos ?? 0}
-          </Typography>
-        </Box>
+        </Stack>
+        <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
+          <Typography variant="statLabel" component="span">PRs Merged</Typography>
+          <Typography variant="statValue" component="span">{merged ?? 0}</Typography>
+        </Stack>
+        <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
+          <Typography variant="statLabel" component="span">PRs Open</Typography>
+          <Typography variant="statValue" component="span">{opened}</Typography>
+        </Stack>
+        <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
+          <Typography variant="statLabel" component="span">PRs Closed</Typography>
+          <Typography variant="statValue" component="span">{closed ?? 0}</Typography>
+        </Stack>
+        <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
+          <Typography variant="statLabel" component="span">Unique Repos</Typography>
+          <Typography variant="statValue" component="span">{uniqueRepos ?? 0}</Typography>
+        </Stack>
       </Stack>
     </Card>
   );
