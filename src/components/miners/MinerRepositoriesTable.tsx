@@ -20,6 +20,8 @@ import { TIER_COLORS } from '../../theme';
 
 interface MinerRepositoriesTableProps {
   githubId: string;
+  /** When set, only repositories in this tier are shown (e.g. "Bronze", "Silver", "Gold"). */
+  tierFilter?: string;
 }
 
 interface RepoStats {
@@ -48,6 +50,7 @@ const getTierColor = (tier: string): string => {
 
 const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   githubId,
+  tierFilter,
 }) => {
   const navigate = useNavigate();
   const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
@@ -102,9 +105,18 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     return Array.from(statsMap.values());
   }, [prs, repoWeights, repoTiers]);
 
+  // Filter by tier when tierFilter is set (case-insensitive)
+  const filteredRepoStats = useMemo(() => {
+    if (!tierFilter) return repoStats;
+    const tierLower = tierFilter.toLowerCase();
+    return repoStats.filter(
+      (r) => r.tier && r.tier.toLowerCase() === tierLower,
+    );
+  }, [repoStats, tierFilter]);
+
   // Sort repository stats
   const sortedRepoStats = useMemo(() => {
-    const sorted = [...repoStats];
+    const sorted = [...filteredRepoStats];
     sorted.sort((a, b) => {
       let compareValue = 0;
 
@@ -130,7 +142,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       return sortOrder === 'asc' ? compareValue : -compareValue;
     });
     return sorted;
-  }, [repoStats, sortField, sortOrder]);
+  }, [filteredRepoStats, sortField, sortOrder]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -160,7 +172,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     );
   }
 
-  if (!prs || prs.length === 0 || repoStats.length === 0) {
+  if (!prs || prs.length === 0) {
     return (
       <Card
         sx={{
@@ -180,6 +192,56 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
           }}
         >
           No repository contributions found
+        </Typography>
+      </Card>
+    );
+  }
+
+  if (!tierFilter && repoStats.length === 0) {
+    return (
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          backgroundColor: 'transparent',
+          p: 4,
+        }}
+        elevation={0}
+      >
+        <Typography
+          sx={{
+            color: 'rgba(255, 255, 255, 0.5)',
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.9rem',
+            textAlign: 'center',
+          }}
+        >
+          No repository contributions found
+        </Typography>
+      </Card>
+    );
+  }
+
+  if (tierFilter && filteredRepoStats.length === 0) {
+    return (
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          backgroundColor: 'transparent',
+          p: 4,
+        }}
+        elevation={0}
+      >
+        <Typography
+          sx={{
+            color: 'rgba(255, 255, 255, 0.5)',
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.9rem',
+            textAlign: 'center',
+          }}
+        >
+          No repositories in this tier
         </Typography>
       </Card>
     );

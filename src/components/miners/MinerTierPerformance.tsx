@@ -7,6 +7,7 @@ import {
   CircularProgress,
   alpha,
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import {
   useMinerStats,
   useTierConfigurations,
@@ -74,8 +75,16 @@ interface MinerTierPerformanceProps {
 const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
   githubId,
 }) => {
+  const navigate = useNavigate();
   const { data: minerStats, isLoading, error } = useMinerStats(githubId);
   const { data: tierConfigData } = useTierConfigurations();
+
+  const handleTierClick = (tierName: string) => {
+    navigate(
+      `/miners/tier-details?githubId=${encodeURIComponent(githubId)}&tier=${encodeURIComponent(tierName)}`,
+      { state: { backLabel: 'Back to Miner' } },
+    );
+  };
 
   if (isLoading) {
     return (
@@ -227,26 +236,35 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
 
           return (
             <Grid item xs={12} md={4} key={tier.name}>
-              <TierCard
-                name={tier.name}
-                color={tier.color}
-                bgColor={tier.bgColor}
-                borderColor={tier.borderColor}
-                stats={tier.stats}
-                isLocked={isLocked}
-                isNextTier={isNextTier}
-                tooltipMessage={
-                  isLocked
-                    ? getTooltipMessage(
-                        tier.name,
-                        tier.level,
-                        isNextTier,
-                        config,
-                      )
-                    : undefined
-                }
-                unlockProgress={unlockProgress}
-              />
+              <Box
+                onClick={() => handleTierClick(tier.name)}
+                sx={{
+                  cursor: 'pointer',
+                  height: '100%',
+                  '&:hover': { opacity: 0.95 },
+                }}
+              >
+                <TierCard
+                  name={tier.name}
+                  color={tier.color}
+                  bgColor={tier.bgColor}
+                  borderColor={tier.borderColor}
+                  stats={tier.stats}
+                  isLocked={isLocked}
+                  isNextTier={isNextTier}
+                  tooltipMessage={
+                    isLocked
+                      ? getTooltipMessage(
+                          tier.name,
+                          tier.level,
+                          isNextTier,
+                          config,
+                        )
+                      : undefined
+                  }
+                  unlockProgress={unlockProgress}
+                />
+              </Box>
             </Grid>
           );
         })}

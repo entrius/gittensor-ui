@@ -14,27 +14,54 @@ import {
   Chip,
   Button,
 } from '@mui/material';
-import { useMinerPRs } from '../../api';
+import { useMinerPRs, useReposAndWeights } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import theme from '../../theme';
 
 interface MinerPRsTableProps {
   githubId: string;
+  /** When set, only PRs in repositories of this tier are shown (e.g. "Bronze", "Silver", "Gold"). */
+  tierFilter?: string;
 }
 
-const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
+const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
+  githubId,
+  tierFilter,
+}) => {
   const navigate = useNavigate();
   const { data: prs, isLoading } = useMinerPRs(githubId);
+  const { data: repos } = useReposAndWeights();
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'open' | 'merged' | 'closed'
   >('all');
 
-  // Filter PRs by selected repository, author, and status
+  const repoTiers = useMemo(() => {
+    const map = new Map<string, string>();
+    if (Array.isArray(repos)) {
+      repos.forEach((repo) => {
+        if (repo?.fullName) map.set(repo.fullName, repo.tier || '');
+      });
+    }
+    return map;
+  }, [repos]);
+
+  const tierFilterLower = tierFilter?.toLowerCase();
+
+  const prsInTier = useMemo(() => {
+    if (!prs || !tierFilterLower) return prs;
+    return prs.filter((pr) => {
+      const prTier = pr.tier?.toLowerCase();
+      const repoTier = repoTiers.get(pr.repository)?.toLowerCase();
+      return prTier === tierFilterLower || repoTier === tierFilterLower;
+    });
+  }, [prs, tierFilterLower, repoTiers]);
+
+  // Filter PRs by selected repository, author, and status (and tier when tierFilter is set)
   const filteredPRs = useMemo(() => {
-    if (!prs) return [];
-    let filtered = prs;
+    if (!prsInTier) return [];
+    let filtered = prsInTier;
     if (selectedRepo) {
       filtered = filtered.filter((pr) => pr.repository === selectedRepo);
     }
@@ -55,20 +82,23 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       );
     }
     return filtered;
-  }, [prs, selectedRepo, selectedAuthor, statusFilter]);
+  }, [prsInTier, selectedRepo, selectedAuthor, statusFilter]);
 
   const statusCounts = useMemo(() => {
-    if (!prs) return { all: 0, open: 0, merged: 0, closed: 0 };
+    if (!prsInTier) return { all: 0, open: 0, merged: 0, closed: 0 };
     return {
-      all: prs.length,
-      open: prs.filter(
+      all: prsInTier.length,
+      open: prsInTier.filter(
         (pr) => pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
       ).length,
-      merged: prs.filter((pr) => pr.mergedAt || pr.prState === 'MERGED').length,
-      closed: prs.filter((pr) => pr.prState === 'CLOSED' && !pr.mergedAt)
-        .length,
+      merged: prsInTier.filter(
+        (pr) => pr.mergedAt || pr.prState === 'MERGED',
+      ).length,
+      closed: prsInTier.filter(
+        (pr) => pr.prState === 'CLOSED' && !pr.mergedAt,
+      ).length,
     };
-  }, [prs]);
+  }, [prsInTier]);
 
   if (isLoading) {
     return (
@@ -136,8 +166,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               }}
             >
               ({filteredPRs.length}
-              {selectedRepo || selectedAuthor || statusFilter !== 'all'
-                ? ` of ${prs?.length || 0}`
+              {selectedRepo ||
+              selectedAuthor ||
+              statusFilter !== 'all' ||
+              tierFilter
+                ? ` of ${(tierFilter ? (prsInTier ?? []) : prs)?.length || 0}`
                 : ''}
               )
             </Typography>
@@ -211,6 +244,18 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             }}
           >
             No PRs found
+          </Typography>
+        </Box>
+      ) : tierFilter && (prsInTier ?? []).length === 0 ? (
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <Typography
+            sx={{
+              color: 'rgba(255, 255, 255, 0.5)',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.9rem',
+            }}
+          >
+            No PRs in this tier
           </Typography>
         </Box>
       ) : filteredPRs.length === 0 ? (
