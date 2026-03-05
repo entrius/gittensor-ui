@@ -3,6 +3,7 @@ export { default as ExplorerFilterButton } from './ExplorerFilterButton';
 export { default as MinerActivity } from './MinerActivity';
 export { default as MinerEarningsDashboard } from './MinerEarningsDashboard';
 export { default as MinerFocusCard } from './MinerFocusCard';
+export { default as MinerGuidanceCard } from './MinerGuidanceCard';
 export { default as MinerInsightsCard } from './MinerInsightsCard';
 export { default as MinerPRsTable } from './MinerPRsTable';
 export { default as MinerRepositoriesTable } from './MinerRepositoriesTable';

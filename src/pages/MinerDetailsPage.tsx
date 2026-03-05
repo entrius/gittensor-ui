@@ -7,6 +7,7 @@ import {
   MinerActivity,
   MinerEarningsDashboard,
   MinerFocusCard,
+  MinerGuidanceCard,
   MinerInsightsCard,
   MinerPRsTable,
   MinerRepositoriesTable,
@@ -98,6 +99,7 @@ const MinerDetailsPage: React.FC = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {activeTab === 'overview' && (
               <>
+                <MinerGuidanceCard />
                 <MinerEarningsDashboard githubId={githubId} />
                 <MinerFocusCard githubId={githubId} />
                 <MinerInsightsCard githubId={githubId} />

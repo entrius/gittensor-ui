@@ -10,7 +10,6 @@ import {
   countPrTiers,
   filterPrsByTier,
   type RepoStats,
-  type MinerTierFilter,
 } from './explorerUtils';
 
 describe('parseNumber', () => {
