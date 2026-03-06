@@ -271,7 +271,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Typography
             sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
+              color: (t) => alpha(t.palette.text.primary, 0.5),
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
             }}
@@ -283,7 +283,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Typography
             sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
+              color: (t) => alpha(t.palette.text.primary, 0.5),
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
             }}
@@ -295,7 +295,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Typography
             sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
+              color: (t) => alpha(t.palette.text.primary, 0.5),
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
             }}
@@ -317,10 +317,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
               backgroundColor: 'transparent',
             },
             '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              backgroundColor: (t) => t.palette.border?.light ?? t.palette.divider,
               borderRadius: '4px',
               '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                backgroundColor: (t) => t.palette.border?.medium ?? t.palette.divider,
               },
             },
           }}
@@ -579,10 +579,8 @@ const FilterButton: React.FC<{
   color: string;
   selected: boolean;
   onClick: () => void;
-}> = ({ label, count, color, selected, onClick }) => {
-  const theme = useTheme();
-  return (
-    <Button
+}> = ({ label, count, color, selected, onClick }) => (
+  <Button
       size="small"
       onClick={onClick}
       sx={{
@@ -605,7 +603,6 @@ const FilterButton: React.FC<{
         {count}
       </span>
     </Button>
-  );
-};
+);
 
 export default MinerPRsTable;
