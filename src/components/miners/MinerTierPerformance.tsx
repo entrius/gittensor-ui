@@ -149,6 +149,70 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
     },
   ];
 
+  const nextTierName =
+    currentTierLevel < 3
+      ? currentTierLevel === 0
+        ? 'Bronze'
+        : currentTierLevel === 1
+          ? 'Silver'
+          : 'Gold'
+      : null;
+  const nextTierConfig =
+    nextTierName && getTierConfig(nextTierName, tierConfigs);
+  const nextTierStats =
+    nextTierName === 'Bronze'
+      ? null
+      : nextTierName === 'Silver'
+        ? {
+            tokenScore: minerStats.silverTokenScore || 0,
+            qualifiedRepos: minerStats.silverQualifiedUniqueRepos || 0,
+            credibility: minerStats.silverCredibility || 0,
+          }
+        : nextTierName === 'Gold'
+          ? {
+              tokenScore: minerStats.goldTokenScore || 0,
+              qualifiedRepos: minerStats.goldQualifiedUniqueRepos || 0,
+              credibility: minerStats.goldCredibility || 0,
+            }
+          : null;
+  const bronzeStats =
+    currentTierLevel >= 1
+      ? null
+      : {
+          tokenScore: minerStats.bronzeTokenScore || 0,
+          qualifiedRepos: minerStats.bronzeQualifiedUniqueRepos || 0,
+          credibility: minerStats.bronzeCredibility || 0,
+        };
+  const progressStats = nextTierStats || bronzeStats;
+  const reqToken =
+    nextTierConfig?.requiredMinTokenScore ?? null;
+  const reqRepos = nextTierConfig?.requiredQualifiedUniqueRepos ?? 3;
+  const reqCred = nextTierConfig?.requiredCredibility ?? 0.7;
+  const tokenProgress = reqToken
+    ? Math.min(
+        ((progressStats?.tokenScore ?? 0) / reqToken) * 100,
+        100,
+      )
+    : 100;
+  const reposProgress = Math.min(
+    ((progressStats?.qualifiedRepos ?? 0) / reqRepos) * 100,
+    100,
+  );
+  const credProgress = Math.min(
+    ((progressStats?.credibility ?? 0) / reqCred) * 100,
+    100,
+  );
+  const overallProgress =
+    nextTierConfig && progressStats
+      ? (tokenProgress + reposProgress + credProgress) / 3
+      : 0;
+  const nextTierColor =
+    nextTierName === 'Gold'
+      ? TIER_COLORS.gold
+      : nextTierName === 'Silver'
+        ? TIER_COLORS.silver
+        : TIER_COLORS.bronze;
+
   return (
     <Card
       sx={{
@@ -160,28 +224,86 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
       }}
       elevation={0}
     >
-      <Typography
-        variant="h6"
-        sx={{
-          color: '#ffffff',
-          fontFamily: '"JetBrains Mono", monospace',
-          mb: 2.5,
-          fontWeight: 600,
-          fontSize: '1.1rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1.5,
-          '&::before': {
-            content: '""',
-            width: '4px',
-            height: '20px',
-            backgroundColor: 'primary.main',
-            borderRadius: '2px',
-          },
-        }}
-      >
-        Tier Performance
-      </Typography>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2.5 }}>
+        <Typography
+          variant="h6"
+          sx={{
+            color: '#ffffff',
+            fontFamily: '"JetBrains Mono", monospace',
+            fontWeight: 600,
+            fontSize: '1.1rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            '&::before': {
+              content: '""',
+              width: '4px',
+              height: '20px',
+              backgroundColor: 'primary.main',
+              borderRadius: '2px',
+            },
+          }}
+        >
+          Tier Performance
+        </Typography>
+        {nextTierName && currentTierLevel < 3 && nextTierConfig && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 1.5,
+              py: 1.5,
+              px: 2,
+              borderRadius: 2,
+              border: `1px solid ${alpha(nextTierColor, 0.35)}`,
+              backgroundColor: alpha(nextTierColor, 0.06),
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                color: nextTierColor,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+              }}
+            >
+              Next: Unlock {nextTierName}
+            </Typography>
+            <Box
+              sx={{
+                flex: 1,
+                minWidth: 120,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: 'rgba(255,255,255,0.1)',
+                overflow: 'hidden',
+              }}
+            >
+              <Box
+                sx={{
+                  height: '100%',
+                  width: `${overallProgress}%`,
+                  borderRadius: 3,
+                  backgroundColor: nextTierColor,
+                  transition: 'width 0.3s ease',
+                }}
+              />
+            </Box>
+            <Typography
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.75rem',
+                color: 'rgba(255,255,255,0.6)',
+              }}
+            >
+              {Math.round(overallProgress)}% of requirements
+            </Typography>
+          </Box>
+        )}
+      </Box>
 
       <Grid container spacing={2}>
         {tiers.map((tier) => {

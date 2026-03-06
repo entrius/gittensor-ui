@@ -9,20 +9,36 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   CircularProgress,
   Avatar,
   Chip,
   Button,
+  TextField,
+  InputAdornment,
+  TableSortLabel,
+  Tooltip,
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 import { useMinerPRs } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import theme from '../../theme';
+import type { CommitLog } from '../../api';
 
 interface MinerPRsTableProps {
   githubId: string;
+  search?: string;
+  onSearchChange?: (value: string) => void;
 }
 
-const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
+type SortField = 'score' | 'merged' | 'changes' | 'title' | 'repo';
+type SortOrder = 'asc' | 'desc';
+
+const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
+  githubId,
+  search: externalSearch,
+  onSearchChange,
+}) => {
   const navigate = useNavigate();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
@@ -30,11 +46,35 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'open' | 'merged' | 'closed'
   >('all');
+  const [internalSearch, setInternalSearch] = useState('');
+  const [sortField, setSortField] = useState<SortField>('score');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(25);
 
-  // Filter PRs by selected repository, author, and status
+  const searchQuery = (externalSearch ?? internalSearch).trim().toLowerCase();
+
+  // Reset to first page when filters change
+  React.useEffect(() => {
+    setPage(0);
+  }, [searchQuery, selectedRepo, selectedAuthor, statusFilter]);
+
+  const matchesSearch = (pr: CommitLog) => {
+    if (!searchQuery) return true;
+    const title = (pr.pullRequestTitle || '').toLowerCase();
+    const repo = (pr.repository || '').toLowerCase();
+    const num = String(pr.pullRequestNumber);
+    return (
+      title.includes(searchQuery) ||
+      repo.includes(searchQuery) ||
+      num.includes(searchQuery)
+    );
+  };
+
+  // Filter PRs by selected repository, author, status, and search
   const filteredPRs = useMemo(() => {
     if (!prs) return [];
-    let filtered = prs;
+    let filtered = prs.filter(matchesSearch);
     if (selectedRepo) {
       filtered = filtered.filter((pr) => pr.repository === selectedRepo);
     }
@@ -54,8 +94,54 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         (pr) => pr.prState === 'CLOSED' && !pr.mergedAt,
       );
     }
+    const dir = sortOrder === 'asc' ? 1 : -1;
+    filtered = [...filtered].sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case 'score': {
+          const sa = parseFloat(a.score || '0');
+          const sb = parseFloat(b.score || '0');
+          cmp = sa - sb;
+          break;
+        }
+        case 'merged': {
+          const ta = a.mergedAt ? new Date(a.mergedAt).getTime() : 0;
+          const tb = b.mergedAt ? new Date(b.mergedAt).getTime() : 0;
+          cmp = ta - tb;
+          break;
+        }
+        case 'changes': {
+          const ca = (a.additions || 0) + (a.deletions || 0);
+          const cb = (b.additions || 0) + (b.deletions || 0);
+          cmp = ca - cb;
+          break;
+        }
+        case 'title':
+          cmp = (a.pullRequestTitle || '').localeCompare(b.pullRequestTitle || '');
+          break;
+        case 'repo':
+          cmp = (a.repository || '').localeCompare(b.repository || '');
+          break;
+        default:
+          break;
+      }
+      return cmp * dir;
+    });
     return filtered;
-  }, [prs, selectedRepo, selectedAuthor, statusFilter]);
+  }, [
+    prs,
+    selectedRepo,
+    selectedAuthor,
+    statusFilter,
+    searchQuery,
+    sortField,
+    sortOrder,
+  ]);
+
+  const paginatedPRs = useMemo(() => {
+    const start = page * rowsPerPage;
+    return filteredPRs.slice(start, start + rowsPerPage);
+  }, [filteredPRs, page, rowsPerPage]);
 
   const statusCounts = useMemo(() => {
     if (!prs) return { all: 0, open: 0, merged: 0, closed: 0 };
@@ -139,6 +225,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               {selectedRepo || selectedAuthor || statusFilter !== 'all'
                 ? ` of ${prs?.length || 0}`
                 : ''}
+              {filteredPRs.length > rowsPerPage
+                ? ` · page ${page + 1} of ${Math.ceil(filteredPRs.length / rowsPerPage)}`
+                : ''}
               )
             </Typography>
           </Box>
@@ -150,6 +239,34 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               alignItems: 'center',
             }}
           >
+            {!onSearchChange && (
+              <TextField
+                size="small"
+                placeholder="Search PRs by title, repo, or #..."
+                value={internalSearch}
+                onChange={(e) => setInternalSearch(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '1.1rem' }} />
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: '0.8rem',
+                    color: '#fff',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(255,255,255,0.2)',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(255,255,255,0.35)',
+                    },
+                    maxWidth: 260,
+                  },
+                }}
+                sx={{ minWidth: 200 }}
+              />
+            )}
             {selectedRepo && (
               <Chip
                 variant="filter"
@@ -230,7 +347,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           sx={{
             maxHeight: { xs: '400px', sm: '500px' },
             overflowY: 'auto',
-            overflowX: { xs: 'hidden', sm: 'auto' },
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
             '&::-webkit-scrollbar': {
               width: { xs: '6px', sm: '8px' },
               height: { xs: '6px', sm: '8px' },
@@ -249,45 +367,119 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         >
           <Table
             stickyHeader
-            sx={{ tableLayout: 'fixed', minWidth: { xs: '100%', sm: '800px' } }}
+            sx={{ tableLayout: 'fixed', minWidth: { xs: 600, sm: 800 } }}
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={headerCellStyle}>PR #</TableCell>
-                <TableCell sx={headerCellStyle}>Title</TableCell>
+                <TableCell sx={{ ...headerCellStyle, width: '10%' }}>PR #</TableCell>
+                <TableCell sx={{ ...headerCellStyle, width: '28%' }}>
+                  <TableSortLabel
+                    active={sortField === 'title'}
+                    direction={sortField === 'title' ? sortOrder : 'asc'}
+                    onClick={() => {
+                      setSortField('title');
+                      setSortOrder(
+                        sortField === 'title' && sortOrder === 'asc'
+                          ? 'desc'
+                          : 'asc',
+                      );
+                    }}
+                    sx={{ color: 'inherit', '&.Mui-active': { color: 'rgba(255,255,255,0.9)' } }}
+                  >
+                    Title
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell
                   sx={{
                     ...headerCellStyle,
+                    width: '22%',
                     display: { xs: 'none', sm: 'table-cell' },
                   }}
                 >
-                  Repository
+                  <TableSortLabel
+                    active={sortField === 'repo'}
+                    direction={sortField === 'repo' ? sortOrder : 'asc'}
+                    onClick={() => {
+                      setSortField('repo');
+                      setSortOrder(
+                        sortField === 'repo' && sortOrder === 'asc'
+                          ? 'desc'
+                          : 'asc',
+                      );
+                    }}
+                    sx={{ color: 'inherit', '&.Mui-active': { color: 'rgba(255,255,255,0.9)' } }}
+                  >
+                    Repository
+                  </TableSortLabel>
                 </TableCell>
                 <TableCell
                   align="right"
                   sx={{
                     ...headerCellStyle,
+                    width: '10%',
                     display: { xs: 'none', md: 'table-cell' },
                   }}
                 >
-                  +/-
+                  <TableSortLabel
+                    active={sortField === 'changes'}
+                    direction={sortField === 'changes' ? sortOrder : 'desc'}
+                    onClick={() => {
+                      setSortField('changes');
+                      setSortOrder(
+                        sortField === 'changes' && sortOrder === 'desc'
+                          ? 'asc'
+                          : 'desc',
+                      );
+                    }}
+                    sx={{ color: 'inherit', '&.Mui-active': { color: 'rgba(255,255,255,0.9)' } }}
+                  >
+                    +/-
+                  </TableSortLabel>
                 </TableCell>
-                <TableCell align="right" sx={headerCellStyle}>
-                  Score
+                <TableCell align="right" sx={{ ...headerCellStyle, width: '10%' }}>
+                  <TableSortLabel
+                    active={sortField === 'score'}
+                    direction={sortField === 'score' ? sortOrder : 'desc'}
+                    onClick={() => {
+                      setSortField('score');
+                      setSortOrder(
+                        sortField === 'score' && sortOrder === 'desc'
+                          ? 'asc'
+                          : 'desc',
+                      );
+                    }}
+                    sx={{ color: 'inherit', '&.Mui-active': { color: 'rgba(255,255,255,0.9)' } }}
+                  >
+                    Score
+                  </TableSortLabel>
                 </TableCell>
                 <TableCell
                   align="right"
                   sx={{
                     ...headerCellStyle,
-                    display: { xs: 'none', sm: 'table-cell' },
+                    width: '10%',
                   }}
                 >
-                  Merged
+                  <TableSortLabel
+                    active={sortField === 'merged'}
+                    direction={sortField === 'merged' ? sortOrder : 'desc'}
+                    onClick={() => {
+                      setSortField('merged');
+                      setSortOrder(
+                        sortField === 'merged' && sortOrder === 'desc'
+                          ? 'asc'
+                          : 'desc',
+                      );
+                    }}
+                    sx={{ color: 'inherit', '&.Mui-active': { color: 'rgba(255,255,255,0.9)' } }}
+                  >
+                    Merged
+                  </TableSortLabel>
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredPRs.map((pr, index) => (
+              {paginatedPRs.map((pr, index) => (
                 <TableRow
                   key={`${pr.repository}-${pr.pullRequestNumber}-${index}`}
                   onClick={() => {
@@ -331,60 +523,106 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   <TableCell
                     sx={{
                       ...bodyCellStyle,
-                      width: { xs: '55%', sm: '30%' },
+                      width: { xs: '45%', sm: '28%' },
                       fontSize: { xs: '0.75rem', sm: '0.85rem' },
                     }}
                   >
-                    <Box
-                      sx={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
+                    <Tooltip
+                      title={pr.pullRequestTitle}
+                      placement="top"
+                      enterDelay={300}
+                      slotProps={{
+                        tooltip: {
+                          sx: {
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: '0.8rem',
+                            maxWidth: 360,
+                          },
+                        },
                       }}
                     >
-                      {pr.pullRequestTitle}
-                    </Box>
+                      <Box
+                        component="span"
+                        sx={{
+                          display: 'block',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          minWidth: 0,
+                        }}
+                      >
+                        {pr.pullRequestTitle}
+                      </Box>
+                    </Tooltip>
                   </TableCell>
                   <TableCell
                     sx={{
                       ...bodyCellStyle,
-                      width: '20%',
+                      width: '22%',
                       display: { xs: 'none', sm: 'table-cell' },
                     }}
                   >
-                    <Box
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedRepo(pr.repository);
-                      }}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1.5,
-                        cursor: 'pointer',
-                        '&:hover': {
-                          color: 'primary.main',
+                    <Tooltip
+                      title={pr.repository}
+                      placement="top"
+                      enterDelay={300}
+                      slotProps={{
+                        tooltip: {
+                          sx: {
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: '0.8rem',
+                            maxWidth: 360,
+                          },
                         },
-                        transition: 'color 0.2s',
                       }}
                     >
-                      <Avatar
-                        src={`https://avatars.githubusercontent.com/${pr.repository.split('/')[0]}`}
-                        alt={pr.repository.split('/')[0]}
-                        sx={{
-                          width: 20,
-                          height: 20,
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                          backgroundColor:
-                            pr.repository.split('/')[0] === 'opentensor'
-                              ? '#ffffff'
-                              : pr.repository.split('/')[0] === 'bitcoin'
-                                ? '#F7931A'
-                                : 'transparent',
+                      <Box
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedRepo(pr.repository);
                         }}
-                      />
-                      {pr.repository}
-                    </Box>
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1.5,
+                          cursor: 'pointer',
+                          minWidth: 0,
+                          overflow: 'hidden',
+                          '&:hover': {
+                            color: 'primary.main',
+                          },
+                          transition: 'color 0.2s',
+                        }}
+                      >
+                        <Avatar
+                          src={`https://avatars.githubusercontent.com/${pr.repository.split('/')[0]}`}
+                          alt={pr.repository.split('/')[0]}
+                          sx={{
+                            width: 20,
+                            height: 20,
+                            flexShrink: 0,
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            backgroundColor:
+                              pr.repository.split('/')[0] === 'opentensor'
+                                ? '#ffffff'
+                                : pr.repository.split('/')[0] === 'bitcoin'
+                                  ? '#F7931A'
+                                  : 'transparent',
+                          }}
+                        />
+                        <Box
+                          component="span"
+                          sx={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            minWidth: 0,
+                          }}
+                        >
+                          {pr.repository}
+                        </Box>
+                      </Box>
+                    </Tooltip>
                   </TableCell>
                   <TableCell
                     align="right"
@@ -472,7 +710,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     sx={{
                       ...bodyCellStyle,
                       width: '15%',
-                      display: { xs: 'none', sm: 'table-cell' },
                       fontSize: { xs: '0.75rem', sm: '0.85rem' },
                       color: 'rgba(255,255,255,0.7)',
                     }}
@@ -482,11 +719,33 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                       : pr.prState === 'CLOSED'
                         ? 'Closed'
                         : 'Open'}
-                  </TableCell>
-                </TableRow>
+                </TableCell>
+              </TableRow>
               ))}
             </TableBody>
           </Table>
+          {filteredPRs.length > 10 && (
+            <TablePagination
+              component="div"
+              count={filteredPRs.length}
+              page={page}
+              onPageChange={(_, newPage) => setPage(newPage)}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={(e) => {
+                setRowsPerPage(parseInt(e.target.value, 10));
+                setPage(0);
+              }}
+              rowsPerPageOptions={[10, 25, 50, 100]}
+              sx={{
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+                color: 'rgba(255,255,255,0.7)',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.8rem',
+                '& .MuiTablePagination-selectIcon': { color: 'rgba(255,255,255,0.7)' },
+                '& .MuiTablePagination-actions button': { color: 'rgba(255,255,255,0.7)' },
+              }}
+            />
+          )}
         </TableContainer>
       )}
     </Card>
@@ -516,6 +775,7 @@ const bodyCellStyle = {
   py: { xs: 0.75, sm: 1 },
   px: { xs: 0.5, sm: 2 },
   height: { xs: '52px', sm: '60px' },
+  overflow: 'hidden' as const,
 };
 
 const FilterButton: React.FC<{

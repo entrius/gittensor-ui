@@ -13,13 +13,19 @@ import {
   Avatar,
   TableSortLabel,
   alpha,
+  TextField,
+  InputAdornment,
+  Tooltip,
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 import { useMinerPRs, useReposAndWeights } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import { TIER_COLORS } from '../../theme';
 
 interface MinerRepositoriesTableProps {
   githubId: string;
+  search?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 interface RepoStats {
@@ -48,12 +54,16 @@ const getTierColor = (tier: string): string => {
 
 const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   githubId,
+  search: externalSearch,
+  onSearchChange,
 }) => {
   const navigate = useNavigate();
   const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
   const [sortField, setSortField] = useState<SortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [internalSearch, setInternalSearch] = useState('');
+  const searchQuery = (externalSearch ?? internalSearch).trim().toLowerCase();
 
   // Build repository weights and tiers maps
   const repoWeights = useMemo(() => {
@@ -102,9 +112,16 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     return Array.from(statsMap.values());
   }, [prs, repoWeights, repoTiers]);
 
+  const filteredRepoStats = useMemo(() => {
+    if (!searchQuery) return repoStats;
+    return repoStats.filter((r) =>
+      r.repository.toLowerCase().includes(searchQuery),
+    );
+  }, [repoStats, searchQuery]);
+
   // Sort repository stats
   const sortedRepoStats = useMemo(() => {
-    const sorted = [...repoStats];
+    const sorted = [...filteredRepoStats];
     sorted.sort((a, b) => {
       let compareValue = 0;
 
@@ -130,7 +147,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       return sortOrder === 'asc' ? compareValue : -compareValue;
     });
     return sorted;
-  }, [repoStats, sortField, sortOrder]);
+  }, [filteredRepoStats, sortField, sortOrder]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -202,6 +219,10 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
         sx={{
           p: 3,
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: 2,
         }}
       >
         <Typography
@@ -215,13 +236,61 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
         >
           Top Repositories
         </Typography>
+        {!onSearchChange && (
+          <TextField
+            size="small"
+            placeholder="Search repositories..."
+            value={internalSearch}
+            onChange={(e) => setInternalSearch(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '1.1rem' }} />
+                </InputAdornment>
+              ),
+              sx: {
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.8rem',
+                color: '#fff',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(255,255,255,0.2)',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(255,255,255,0.35)',
+                },
+                maxWidth: 240,
+              },
+            }}
+            sx={{ minWidth: 180 }}
+          />
+        )}
       </Box>
 
-      <TableContainer sx={{ maxHeight: '400px', overflow: 'auto' }}>
-        <Table stickyHeader>
+      <TableContainer
+        sx={{
+          maxHeight: '400px',
+          overflow: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          '&::-webkit-scrollbar': {
+            width: '8px',
+            height: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'transparent',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '4px',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            },
+          },
+        }}
+      >
+        <Table stickyHeader sx={{ tableLayout: 'fixed', minWidth: 600 }}>
           <TableHead>
             <TableRow>
-              <TableCell sx={headerCellStyle}>
+              <TableCell sx={{ ...headerCellStyle, width: 56 }}>
                 <TableSortLabel
                   active={sortField === 'rank'}
                   direction={sortField === 'rank' ? sortOrder : 'desc'}
@@ -240,7 +309,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                   Rank
                 </TableSortLabel>
               </TableCell>
-              <TableCell sx={headerCellStyle}>
+              <TableCell sx={{ ...headerCellStyle, width: '40%', overflow: 'hidden' }}>
                 <TableSortLabel
                   active={sortField === 'repository'}
                   direction={sortField === 'repository' ? sortOrder : 'asc'}
@@ -278,7 +347,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                   PRs
                 </TableSortLabel>
               </TableCell>
-              <TableCell align="right" sx={headerCellStyle}>
+              <TableCell align="right" sx={{ ...headerCellStyle, width: 100 }}>
                 <TableSortLabel
                   active={sortField === 'score'}
                   direction={sortField === 'score' ? sortOrder : 'desc'}
@@ -319,7 +388,16 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {sortedRepoStats.map((repo, index) => (
+            {sortedRepoStats.length === 0 && searchQuery ? (
+              <TableRow>
+                <TableCell colSpan={5} sx={{ ...bodyCellStyle, textAlign: 'center', py: 4 }}>
+                  <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontFamily: '"JetBrains Mono", monospace', fontSize: '0.9rem' }}>
+                    No repositories match your search.
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              sortedRepoStats.map((repo, index) => (
               <TableRow
                 key={repo.repository}
                 sx={{
@@ -329,7 +407,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                   transition: 'background-color 0.2s',
                 }}
               >
-                <TableCell sx={bodyCellStyle}>
+                <TableCell sx={{ ...bodyCellStyle, width: 56 }}>
                   <Box
                     sx={{
                       backgroundColor: '#000000',
@@ -383,82 +461,105 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                     </Typography>
                   </Box>
                 </TableCell>
-                <TableCell sx={bodyCellStyle}>
-                  <Box
-                    onClick={() =>
-                      navigate(
-                        `/miners/repository?name=${encodeURIComponent(repo.repository)}`,
-                        {
-                          state: {
-                            backLabel: `Back to ${prs?.[0]?.author || githubId}`,
-                          },
-                        },
-                      )
-                    }
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1.5,
-                      cursor: 'pointer',
-                      '&:hover': {
-                        color: 'primary.main',
-                        '& .MuiTypography-root': {
-                          textDecoration: 'underline',
+                <TableCell sx={{ ...bodyCellStyle, width: '40%' }}>
+                  <Tooltip
+                    title={repo.repository}
+                    placement="top"
+                    enterDelay={300}
+                    slotProps={{
+                      tooltip: {
+                        sx: {
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: '0.8rem',
+                          maxWidth: 360,
                         },
                       },
-                      transition: 'color 0.2s',
                     }}
                   >
-                    <Avatar
-                      src={`https://avatars.githubusercontent.com/${repo.repository.split('/')[0]}`}
-                      alt={repo.repository.split('/')[0]}
+                    <Box
+                      onClick={() =>
+                        navigate(
+                          `/miners/repository?name=${encodeURIComponent(repo.repository)}`,
+                          {
+                            state: {
+                              backLabel: `Back to ${prs?.[0]?.author || githubId}`,
+                            },
+                          },
+                        )
+                      }
                       sx={{
-                        width: 24,
-                        height: 24,
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        backgroundColor:
-                          repo.repository.split('/')[0] === 'opentensor'
-                            ? '#ffffff'
-                            : repo.repository.split('/')[0] === 'bitcoin'
-                              ? '#F7931A'
-                              : 'transparent',
-                      }}
-                    />
-                    {repo.tier && (
-                      <Box
-                        sx={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: '50%',
-                          backgroundColor: getTierColor(repo.tier),
-                          flexShrink: 0,
-                        }}
-                        title={`${repo.tier} tier`}
-                      />
-                    )}
-                    <Typography
-                      component="span"
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: '0.85rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1.5,
+                        cursor: 'pointer',
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        '&:hover': {
+                          color: 'primary.main',
+                          '& .MuiTypography-root': {
+                            textDecoration: 'underline',
+                          },
+                        },
                         transition: 'color 0.2s',
                       }}
                     >
-                      {repo.repository}
-                    </Typography>
-                  </Box>
+                      <Avatar
+                        src={`https://avatars.githubusercontent.com/${repo.repository.split('/')[0]}`}
+                        alt={repo.repository.split('/')[0]}
+                        sx={{
+                          width: 24,
+                          height: 24,
+                          flexShrink: 0,
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          backgroundColor:
+                            repo.repository.split('/')[0] === 'opentensor'
+                              ? '#ffffff'
+                              : repo.repository.split('/')[0] === 'bitcoin'
+                                ? '#F7931A'
+                                : 'transparent',
+                        }}
+                      />
+                      {repo.tier && (
+                        <Box
+                          sx={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: '50%',
+                            backgroundColor: getTierColor(repo.tier),
+                            flexShrink: 0,
+                          }}
+                          title={`${repo.tier} tier`}
+                        />
+                      )}
+                      <Typography
+                        component="span"
+                        sx={{
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: '0.85rem',
+                          transition: 'color 0.2s',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          minWidth: 0,
+                        }}
+                      >
+                        {repo.repository}
+                      </Typography>
+                    </Box>
+                  </Tooltip>
                 </TableCell>
-                <TableCell align="right" sx={bodyCellStyle}>
+                <TableCell align="right" sx={{ ...bodyCellStyle, width: 80 }}>
                   {repo.prs}
                 </TableCell>
-                <TableCell align="right" sx={bodyCellStyle}>
+                <TableCell align="right" sx={{ ...bodyCellStyle, width: 100 }}>
                   {repo.score.toFixed(4)}
                 </TableCell>
-                <TableCell align="right" sx={bodyCellStyle}>
+                <TableCell align="right" sx={{ ...bodyCellStyle, width: 100 }}>
                   {repo.weight.toFixed(4)}
                 </TableCell>
               </TableRow>
-            ))}
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>
@@ -483,6 +584,7 @@ const bodyCellStyle = {
   fontFamily: '"JetBrains Mono", monospace',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
   fontSize: '0.85rem',
+  overflow: 'hidden' as const,
 };
 
 export default MinerRepositoriesTable;
