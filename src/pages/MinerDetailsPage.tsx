@@ -5,13 +5,10 @@ import { Page } from '../components/layout';
 import {
   BackButton,
   MinerActivity,
-  MinerEarningsDashboard,
   MinerFocusCard,
-  MinerGuidanceCard,
   MinerInsightsCard,
   MinerPRsTable,
   MinerRepositoriesTable,
-  MinerScoreCalculationCard,
   MinerScoreCard,
   MinerTierPerformance,
   SEO,
@@ -99,12 +96,9 @@ const MinerDetailsPage: React.FC = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {activeTab === 'overview' && (
               <>
-                <MinerGuidanceCard />
-                <MinerEarningsDashboard githubId={githubId} />
                 <MinerFocusCard githubId={githubId} />
                 <MinerInsightsCard githubId={githubId} />
                 <MinerTierPerformance githubId={githubId} />
-                <MinerScoreCalculationCard />
               </>
             )}
 

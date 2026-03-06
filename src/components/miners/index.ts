@@ -1,13 +1,10 @@
 export { default as CredibilityChart } from './CredibilityChart';
 export { default as ExplorerFilterButton } from './ExplorerFilterButton';
 export { default as MinerActivity } from './MinerActivity';
-export { default as MinerEarningsDashboard } from './MinerEarningsDashboard';
 export { default as MinerFocusCard } from './MinerFocusCard';
-export { default as MinerGuidanceCard } from './MinerGuidanceCard';
 export { default as MinerInsightsCard } from './MinerInsightsCard';
 export { default as MinerPRsTable } from './MinerPRsTable';
 export { default as MinerRepositoriesTable } from './MinerRepositoriesTable';
-export { default as MinerScoreCalculationCard } from './MinerScoreCalculationCard';
 export { default as MinerScoreCard } from './MinerScoreCard';
 export { default as MinerTierPerformance } from './MinerTierPerformance';
 export { default as PerformanceRadar } from './PerformanceRadar';
