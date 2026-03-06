@@ -245,7 +245,9 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '1.1rem' }} />
+                  <SearchIcon
+                    sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '1.1rem' }}
+                  />
                 </InputAdornment>
               ),
               sx: {
@@ -309,7 +311,9 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                   Rank
                 </TableSortLabel>
               </TableCell>
-              <TableCell sx={{ ...headerCellStyle, width: '40%', overflow: 'hidden' }}>
+              <TableCell
+                sx={{ ...headerCellStyle, width: '40%', overflow: 'hidden' }}
+              >
                 <TableSortLabel
                   active={sortField === 'repository'}
                   direction={sortField === 'repository' ? sortOrder : 'asc'}
@@ -390,174 +394,189 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
           <TableBody>
             {sortedRepoStats.length === 0 && searchQuery ? (
               <TableRow>
-                <TableCell colSpan={5} sx={{ ...bodyCellStyle, textAlign: 'center', py: 4 }}>
-                  <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontFamily: '"JetBrains Mono", monospace', fontSize: '0.9rem' }}>
+                <TableCell
+                  colSpan={5}
+                  sx={{ ...bodyCellStyle, textAlign: 'center', py: 4 }}
+                >
+                  <Typography
+                    sx={{
+                      color: 'rgba(255,255,255,0.5)',
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: '0.9rem',
+                    }}
+                  >
                     No repositories match your search.
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
               sortedRepoStats.map((repo, index) => (
-              <TableRow
-                key={repo.repository}
-                sx={{
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  },
-                  transition: 'background-color 0.2s',
-                }}
-              >
-                <TableCell sx={{ ...bodyCellStyle, width: 56 }}>
-                  <Box
-                    sx={{
-                      backgroundColor: '#000000',
-                      borderRadius: '2px',
-                      width: '28px',
-                      height: '28px',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      border: '1px solid',
-                      borderColor:
-                        index === 0
-                          ? alpha(TIER_COLORS.gold, 0.4)
-                          : index === 1
-                            ? alpha(TIER_COLORS.silver, 0.4)
-                            : index === 2
-                              ? alpha(TIER_COLORS.bronze, 0.4)
-                              : 'rgba(255, 255, 255, 0.15)',
-                      boxShadow:
-                        index === 0
-                          ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
-                          : index === 1
-                            ? `0 0 12px ${alpha(TIER_COLORS.silver, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.silver, 0.2)}`
-                            : index === 2
-                              ? `0 0 12px ${alpha(TIER_COLORS.bronze, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.bronze, 0.2)}`
-                              : 'none',
-                    }}
-                  >
-                    <Typography
-                      component="span"
+                <TableRow
+                  key={repo.repository}
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    },
+                    transition: 'background-color 0.2s',
+                  }}
+                >
+                  <TableCell sx={{ ...bodyCellStyle, width: 56 }}>
+                    <Box
                       sx={{
-                        color:
-                          index === 0
-                            ? TIER_COLORS.gold
-                            : index === 1
-                              ? TIER_COLORS.silver
-                              : index === 2
-                                ? TIER_COLORS.bronze
-                                : 'rgba(255, 255, 255, 0.6)',
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        lineHeight: 1,
-                        display: 'flex',
+                        backgroundColor: '#000000',
+                        borderRadius: '2px',
+                        width: '28px',
+                        height: '28px',
+                        display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
+                        flexShrink: 0,
+                        border: '1px solid',
+                        borderColor:
+                          index === 0
+                            ? alpha(TIER_COLORS.gold, 0.4)
+                            : index === 1
+                              ? alpha(TIER_COLORS.silver, 0.4)
+                              : index === 2
+                                ? alpha(TIER_COLORS.bronze, 0.4)
+                                : 'rgba(255, 255, 255, 0.15)',
+                        boxShadow:
+                          index === 0
+                            ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
+                            : index === 1
+                              ? `0 0 12px ${alpha(TIER_COLORS.silver, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.silver, 0.2)}`
+                              : index === 2
+                                ? `0 0 12px ${alpha(TIER_COLORS.bronze, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.bronze, 0.2)}`
+                                : 'none',
                       }}
                     >
-                      {index + 1}
-                    </Typography>
-                  </Box>
-                </TableCell>
-                <TableCell sx={{ ...bodyCellStyle, width: '40%' }}>
-                  <Tooltip
-                    title={repo.repository}
-                    placement="top"
-                    enterDelay={300}
-                    slotProps={{
-                      tooltip: {
-                        sx: {
-                          fontFamily: '"JetBrains Mono", monospace',
-                          fontSize: '0.8rem',
-                          maxWidth: 360,
-                        },
-                      },
-                    }}
-                  >
-                    <Box
-                      onClick={() =>
-                        navigate(
-                          `/miners/repository?name=${encodeURIComponent(repo.repository)}`,
-                          {
-                            state: {
-                              backLabel: `Back to ${prs?.[0]?.author || githubId}`,
-                            },
-                          },
-                        )
-                      }
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1.5,
-                        cursor: 'pointer',
-                        minWidth: 0,
-                        overflow: 'hidden',
-                        '&:hover': {
-                          color: 'primary.main',
-                          '& .MuiTypography-root': {
-                            textDecoration: 'underline',
-                          },
-                        },
-                        transition: 'color 0.2s',
-                      }}
-                    >
-                      <Avatar
-                        src={`https://avatars.githubusercontent.com/${repo.repository.split('/')[0]}`}
-                        alt={repo.repository.split('/')[0]}
-                        sx={{
-                          width: 24,
-                          height: 24,
-                          flexShrink: 0,
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                          backgroundColor:
-                            repo.repository.split('/')[0] === 'opentensor'
-                              ? '#ffffff'
-                              : repo.repository.split('/')[0] === 'bitcoin'
-                                ? '#F7931A'
-                                : 'transparent',
-                        }}
-                      />
-                      {repo.tier && (
-                        <Box
-                          sx={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: '50%',
-                            backgroundColor: getTierColor(repo.tier),
-                            flexShrink: 0,
-                          }}
-                          title={`${repo.tier} tier`}
-                        />
-                      )}
                       <Typography
                         component="span"
                         sx={{
+                          color:
+                            index === 0
+                              ? TIER_COLORS.gold
+                              : index === 1
+                                ? TIER_COLORS.silver
+                                : index === 2
+                                  ? TIER_COLORS.bronze
+                                  : 'rgba(255, 255, 255, 0.6)',
                           fontFamily: '"JetBrains Mono", monospace',
-                          fontSize: '0.85rem',
-                          transition: 'color 0.2s',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          minWidth: 0,
+                          fontSize: '0.7rem',
+                          fontWeight: 600,
+                          lineHeight: 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                         }}
                       >
-                        {repo.repository}
+                        {index + 1}
                       </Typography>
                     </Box>
-                  </Tooltip>
-                </TableCell>
-                <TableCell align="right" sx={{ ...bodyCellStyle, width: 80 }}>
-                  {repo.prs}
-                </TableCell>
-                <TableCell align="right" sx={{ ...bodyCellStyle, width: 100 }}>
-                  {repo.score.toFixed(4)}
-                </TableCell>
-                <TableCell align="right" sx={{ ...bodyCellStyle, width: 100 }}>
-                  {repo.weight.toFixed(4)}
-                </TableCell>
-              </TableRow>
+                  </TableCell>
+                  <TableCell sx={{ ...bodyCellStyle, width: '40%' }}>
+                    <Tooltip
+                      title={repo.repository}
+                      placement="top"
+                      enterDelay={300}
+                      slotProps={{
+                        tooltip: {
+                          sx: {
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: '0.8rem',
+                            maxWidth: 360,
+                          },
+                        },
+                      }}
+                    >
+                      <Box
+                        onClick={() =>
+                          navigate(
+                            `/miners/repository?name=${encodeURIComponent(repo.repository)}`,
+                            {
+                              state: {
+                                backLabel: `Back to ${prs?.[0]?.author || githubId}`,
+                              },
+                            },
+                          )
+                        }
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1.5,
+                          cursor: 'pointer',
+                          minWidth: 0,
+                          overflow: 'hidden',
+                          '&:hover': {
+                            color: 'primary.main',
+                            '& .MuiTypography-root': {
+                              textDecoration: 'underline',
+                            },
+                          },
+                          transition: 'color 0.2s',
+                        }}
+                      >
+                        <Avatar
+                          src={`https://avatars.githubusercontent.com/${repo.repository.split('/')[0]}`}
+                          alt={repo.repository.split('/')[0]}
+                          sx={{
+                            width: 24,
+                            height: 24,
+                            flexShrink: 0,
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            backgroundColor:
+                              repo.repository.split('/')[0] === 'opentensor'
+                                ? '#ffffff'
+                                : repo.repository.split('/')[0] === 'bitcoin'
+                                  ? '#F7931A'
+                                  : 'transparent',
+                          }}
+                        />
+                        {repo.tier && (
+                          <Box
+                            sx={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: '50%',
+                              backgroundColor: getTierColor(repo.tier),
+                              flexShrink: 0,
+                            }}
+                            title={`${repo.tier} tier`}
+                          />
+                        )}
+                        <Typography
+                          component="span"
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: '0.85rem',
+                            transition: 'color 0.2s',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            minWidth: 0,
+                          }}
+                        >
+                          {repo.repository}
+                        </Typography>
+                      </Box>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell align="right" sx={{ ...bodyCellStyle, width: 80 }}>
+                    {repo.prs}
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ ...bodyCellStyle, width: 100 }}
+                  >
+                    {repo.score.toFixed(4)}
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ ...bodyCellStyle, width: 100 }}
+                  >
+                    {repo.weight.toFixed(4)}
+                  </TableCell>
+                </TableRow>
               ))
             )}
           </TableBody>

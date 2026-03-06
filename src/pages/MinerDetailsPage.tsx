@@ -30,7 +30,9 @@ const MinerDetailsPage: React.FC = () => {
     <Page title="My Dashboard">
       <SEO
         title={`Miner Stats - ${githubId}`}
-        description={`View your Gittensor stats, tier progress, contributions, and earnings. Track scores and pull requests.`}
+        description={
+          'View your Gittensor stats, tier progress, contributions, and earnings. Track scores and pull requests.'
+        }
         type="website"
       />
       <Box
@@ -107,7 +109,10 @@ const MinerDetailsPage: React.FC = () => {
                 startAdornment: (
                   <InputAdornment position="start">
                     <SearchIcon
-                      sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '1.1rem' }}
+                      sx={{
+                        color: 'rgba(255,255,255,0.4)',
+                        fontSize: '1.1rem',
+                      }}
                     />
                   </InputAdornment>
                 ),

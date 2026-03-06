@@ -184,15 +184,11 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
           credibility: minerStats.bronzeCredibility || 0,
         };
   const progressStats = nextTierStats || bronzeStats;
-  const reqToken =
-    nextTierConfig?.requiredMinTokenScore ?? null;
+  const reqToken = nextTierConfig?.requiredMinTokenScore ?? null;
   const reqRepos = nextTierConfig?.requiredQualifiedUniqueRepos ?? 3;
   const reqCred = nextTierConfig?.requiredCredibility ?? 0.7;
   const tokenProgress = reqToken
-    ? Math.min(
-        ((progressStats?.tokenScore ?? 0) / reqToken) * 100,
-        100,
-      )
+    ? Math.min(((progressStats?.tokenScore ?? 0) / reqToken) * 100, 100)
     : 100;
   const reposProgress = Math.min(
     ((progressStats?.qualifiedRepos ?? 0) / reqRepos) * 100,

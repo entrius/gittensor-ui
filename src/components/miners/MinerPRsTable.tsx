@@ -23,7 +23,6 @@ import SearchIcon from '@mui/icons-material/Search';
 import { useMinerPRs } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import theme from '../../theme';
-import type { CommitLog } from '../../api';
 
 interface MinerPRsTableProps {
   githubId: string;
@@ -59,22 +58,22 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
     setPage(0);
   }, [searchQuery, selectedRepo, selectedAuthor, statusFilter]);
 
-  const matchesSearch = (pr: CommitLog) => {
-    if (!searchQuery) return true;
-    const title = (pr.pullRequestTitle || '').toLowerCase();
-    const repo = (pr.repository || '').toLowerCase();
-    const num = String(pr.pullRequestNumber);
-    return (
-      title.includes(searchQuery) ||
-      repo.includes(searchQuery) ||
-      num.includes(searchQuery)
-    );
-  };
-
   // Filter PRs by selected repository, author, status, and search
   const filteredPRs = useMemo(() => {
     if (!prs) return [];
-    let filtered = prs.filter(matchesSearch);
+    let filtered = prs;
+    if (searchQuery) {
+      filtered = filtered.filter((pr) => {
+        const title = (pr.pullRequestTitle || '').toLowerCase();
+        const repo = (pr.repository || '').toLowerCase();
+        const num = String(pr.pullRequestNumber);
+        return (
+          title.includes(searchQuery) ||
+          repo.includes(searchQuery) ||
+          num.includes(searchQuery)
+        );
+      });
+    }
     if (selectedRepo) {
       filtered = filtered.filter((pr) => pr.repository === selectedRepo);
     }
@@ -117,7 +116,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
           break;
         }
         case 'title':
-          cmp = (a.pullRequestTitle || '').localeCompare(b.pullRequestTitle || '');
+          cmp = (a.pullRequestTitle || '').localeCompare(
+            b.pullRequestTitle || '',
+          );
           break;
         case 'repo':
           cmp = (a.repository || '').localeCompare(b.repository || '');
@@ -248,7 +249,12 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '1.1rem' }} />
+                      <SearchIcon
+                        sx={{
+                          color: 'rgba(255,255,255,0.4)',
+                          fontSize: '1.1rem',
+                        }}
+                      />
                     </InputAdornment>
                   ),
                   sx: {
@@ -371,7 +377,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ ...headerCellStyle, width: '10%' }}>PR #</TableCell>
+                <TableCell sx={{ ...headerCellStyle, width: '10%' }}>
+                  PR #
+                </TableCell>
                 <TableCell sx={{ ...headerCellStyle, width: '28%' }}>
                   <TableSortLabel
                     active={sortField === 'title'}
@@ -384,7 +392,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                           : 'asc',
                       );
                     }}
-                    sx={{ color: 'inherit', '&.Mui-active': { color: 'rgba(255,255,255,0.9)' } }}
+                    sx={{
+                      color: 'inherit',
+                      '&.Mui-active': { color: 'rgba(255,255,255,0.9)' },
+                    }}
                   >
                     Title
                   </TableSortLabel>
@@ -407,7 +418,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                           : 'asc',
                       );
                     }}
-                    sx={{ color: 'inherit', '&.Mui-active': { color: 'rgba(255,255,255,0.9)' } }}
+                    sx={{
+                      color: 'inherit',
+                      '&.Mui-active': { color: 'rgba(255,255,255,0.9)' },
+                    }}
                   >
                     Repository
                   </TableSortLabel>
@@ -431,12 +445,18 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                           : 'desc',
                       );
                     }}
-                    sx={{ color: 'inherit', '&.Mui-active': { color: 'rgba(255,255,255,0.9)' } }}
+                    sx={{
+                      color: 'inherit',
+                      '&.Mui-active': { color: 'rgba(255,255,255,0.9)' },
+                    }}
                   >
                     +/-
                   </TableSortLabel>
                 </TableCell>
-                <TableCell align="right" sx={{ ...headerCellStyle, width: '10%' }}>
+                <TableCell
+                  align="right"
+                  sx={{ ...headerCellStyle, width: '10%' }}
+                >
                   <TableSortLabel
                     active={sortField === 'score'}
                     direction={sortField === 'score' ? sortOrder : 'desc'}
@@ -448,7 +468,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                           : 'desc',
                       );
                     }}
-                    sx={{ color: 'inherit', '&.Mui-active': { color: 'rgba(255,255,255,0.9)' } }}
+                    sx={{
+                      color: 'inherit',
+                      '&.Mui-active': { color: 'rgba(255,255,255,0.9)' },
+                    }}
                   >
                     Score
                   </TableSortLabel>
@@ -471,7 +494,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                           : 'desc',
                       );
                     }}
-                    sx={{ color: 'inherit', '&.Mui-active': { color: 'rgba(255,255,255,0.9)' } }}
+                    sx={{
+                      color: 'inherit',
+                      '&.Mui-active': { color: 'rgba(255,255,255,0.9)' },
+                    }}
                   >
                     Merged
                   </TableSortLabel>
@@ -719,8 +745,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                       : pr.prState === 'CLOSED'
                         ? 'Closed'
                         : 'Open'}
-                </TableCell>
-              </TableRow>
+                  </TableCell>
+                </TableRow>
               ))}
             </TableBody>
           </Table>
@@ -741,8 +767,12 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                 color: 'rgba(255,255,255,0.7)',
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.8rem',
-                '& .MuiTablePagination-selectIcon': { color: 'rgba(255,255,255,0.7)' },
-                '& .MuiTablePagination-actions button': { color: 'rgba(255,255,255,0.7)' },
+                '& .MuiTablePagination-selectIcon': {
+                  color: 'rgba(255,255,255,0.7)',
+                },
+                '& .MuiTablePagination-actions button': {
+                  color: 'rgba(255,255,255,0.7)',
+                },
               }}
             />
           )}

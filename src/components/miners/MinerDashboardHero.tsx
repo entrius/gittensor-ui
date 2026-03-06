@@ -71,13 +71,9 @@ const MinerDashboardHero: React.FC<MinerDashboardHeroProps> = ({
   const { data: githubData } = useMinerGithubData(githubId);
   const { data: generalConfig } = useGeneralConfig();
 
-  const username =
-    githubData?.login || prs?.[0]?.author || githubId;
+  const username = githubData?.login || prs?.[0]?.author || githubId;
   const openPrThreshold = minerStats
-    ? calculateDynamicThreshold(
-        minerStats,
-        generalConfig?.repositoryPrScoring,
-      )
+    ? calculateDynamicThreshold(minerStats, generalConfig?.repositoryPrScoring)
     : 10;
   const openPrs = Number(minerStats?.totalOpenPrs || 0);
   const openRiskColor =
@@ -323,7 +319,9 @@ const MinerDashboardHero: React.FC<MinerDashboardHeroProps> = ({
             label="Est. daily"
             value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}`}
             valueColor={
-              (minerStats.usdPerDay ?? 0) > 0 ? STATUS_COLORS.success : undefined
+              (minerStats.usdPerDay ?? 0) > 0
+                ? STATUS_COLORS.success
+                : undefined
             }
           />
         </Box>
