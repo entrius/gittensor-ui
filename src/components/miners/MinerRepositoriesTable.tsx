@@ -62,7 +62,8 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
 
   const headerCellStyle = useMemo(
     () => ({
-      backgroundColor: theme.palette.surface?.elevated ?? theme.palette.background.paper,
+      backgroundColor:
+        theme.palette.surface?.elevated ?? theme.palette.background.paper,
       backdropFilter: 'blur(8px)',
       color: alpha(theme.palette.text.primary, 0.7),
       fontFamily: '"JetBrains Mono", monospace',
@@ -321,13 +322,16 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                   active={sortField === 'rank'}
                   direction={sortField === 'rank' ? sortOrder : 'desc'}
                   onClick={() => handleSort('rank')}
-                    sx={{
+                  sx={{
                     color: 'inherit',
-                    '&:hover': { color: (t) => alpha(t.palette.text.primary, 0.9) },
+                    '&:hover': {
+                      color: (t) => alpha(t.palette.text.primary, 0.9),
+                    },
                     '&.Mui-active': {
                       color: (t) => alpha(t.palette.text.primary, 0.9),
                       '& .MuiTableSortLabel-icon': {
-                        color: (t) => `${alpha(t.palette.text.primary, 0.9)} !important`,
+                        color: (t) =>
+                          `${alpha(t.palette.text.primary, 0.9)} !important`,
                       },
                     },
                   }}
@@ -340,13 +344,16 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                   active={sortField === 'repository'}
                   direction={sortField === 'repository' ? sortOrder : 'asc'}
                   onClick={() => handleSort('repository')}
-                    sx={{
+                  sx={{
                     color: 'inherit',
-                    '&:hover': { color: (t) => alpha(t.palette.text.primary, 0.9) },
+                    '&:hover': {
+                      color: (t) => alpha(t.palette.text.primary, 0.9),
+                    },
                     '&.Mui-active': {
                       color: (t) => alpha(t.palette.text.primary, 0.9),
                       '& .MuiTableSortLabel-icon': {
-                        color: (t) => `${alpha(t.palette.text.primary, 0.9)} !important`,
+                        color: (t) =>
+                          `${alpha(t.palette.text.primary, 0.9)} !important`,
                       },
                     },
                   }}
@@ -359,13 +366,16 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                   active={sortField === 'prs'}
                   direction={sortField === 'prs' ? sortOrder : 'desc'}
                   onClick={() => handleSort('prs')}
-                    sx={{
+                  sx={{
                     color: 'inherit',
-                    '&:hover': { color: (t) => alpha(t.palette.text.primary, 0.9) },
+                    '&:hover': {
+                      color: (t) => alpha(t.palette.text.primary, 0.9),
+                    },
                     '&.Mui-active': {
                       color: (t) => alpha(t.palette.text.primary, 0.9),
                       '& .MuiTableSortLabel-icon': {
-                        color: (t) => `${alpha(t.palette.text.primary, 0.9)} !important`,
+                        color: (t) =>
+                          `${alpha(t.palette.text.primary, 0.9)} !important`,
                       },
                     },
                   }}
@@ -378,13 +388,16 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                   active={sortField === 'score'}
                   direction={sortField === 'score' ? sortOrder : 'desc'}
                   onClick={() => handleSort('score')}
-                    sx={{
+                  sx={{
                     color: 'inherit',
-                    '&:hover': { color: (t) => alpha(t.palette.text.primary, 0.9) },
+                    '&:hover': {
+                      color: (t) => alpha(t.palette.text.primary, 0.9),
+                    },
                     '&.Mui-active': {
                       color: (t) => alpha(t.palette.text.primary, 0.9),
                       '& .MuiTableSortLabel-icon': {
-                        color: (t) => `${alpha(t.palette.text.primary, 0.9)} !important`,
+                        color: (t) =>
+                          `${alpha(t.palette.text.primary, 0.9)} !important`,
                       },
                     },
                   }}
@@ -397,13 +410,16 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                   active={sortField === 'weight'}
                   direction={sortField === 'weight' ? sortOrder : 'desc'}
                   onClick={() => handleSort('weight')}
-                    sx={{
+                  sx={{
                     color: 'inherit',
-                    '&:hover': { color: (t) => alpha(t.palette.text.primary, 0.9) },
+                    '&:hover': {
+                      color: (t) => alpha(t.palette.text.primary, 0.9),
+                    },
                     '&.Mui-active': {
                       color: (t) => alpha(t.palette.text.primary, 0.9),
                       '& .MuiTableSortLabel-icon': {
-                        color: (t) => `${alpha(t.palette.text.primary, 0.9)} !important`,
+                        color: (t) =>
+                          `${alpha(t.palette.text.primary, 0.9)} !important`,
                       },
                     },
                   }}

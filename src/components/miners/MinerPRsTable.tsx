@@ -36,7 +36,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
 
   const headerCellStyle = useMemo(
     () => ({
-      backgroundColor: theme.palette.surface?.elevated ?? theme.palette.background.paper,
+      backgroundColor:
+        theme.palette.surface?.elevated ?? theme.palette.background.paper,
       backdropFilter: 'blur(8px)',
       color: alpha(theme.palette.text.primary, 0.7),
       fontFamily: '"JetBrains Mono", monospace',
@@ -317,10 +318,12 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
               backgroundColor: 'transparent',
             },
             '&::-webkit-scrollbar-thumb': {
-              backgroundColor: (t) => t.palette.border?.light ?? t.palette.divider,
+              backgroundColor: (t) =>
+                t.palette.border?.light ?? t.palette.divider,
               borderRadius: '4px',
               '&:hover': {
-                backgroundColor: (t) => t.palette.border?.medium ?? t.palette.divider,
+                backgroundColor: (t) =>
+                  t.palette.border?.medium ?? t.palette.divider,
               },
             },
           }}
@@ -581,28 +584,30 @@ const FilterButton: React.FC<{
   onClick: () => void;
 }> = ({ label, count, color, selected, onClick }) => (
   <Button
-      size="small"
-      onClick={onClick}
-      sx={{
-        color: selected ? 'text.primary' : (t) => alpha(t.palette.text.primary, 0.5),
-        backgroundColor: selected ? 'surface.light' : 'transparent',
-        borderRadius: '6px',
-        px: 1.5,
-        minWidth: 'auto',
-        textTransform: 'none',
-        fontFamily: '"JetBrains Mono", monospace',
-        fontSize: '0.75rem',
-        border: selected ? `1px solid ${color}` : '1px solid transparent',
-        '&:hover': {
-          backgroundColor: (t) => alpha(t.palette.text.primary, 0.15),
-        },
-      }}
-    >
-      {label}{' '}
-      <span style={{ opacity: 0.6, marginLeft: '6px', fontSize: '0.7rem' }}>
-        {count}
-      </span>
-    </Button>
+    size="small"
+    onClick={onClick}
+    sx={{
+      color: selected
+        ? 'text.primary'
+        : (t) => alpha(t.palette.text.primary, 0.5),
+      backgroundColor: selected ? 'surface.light' : 'transparent',
+      borderRadius: '6px',
+      px: 1.5,
+      minWidth: 'auto',
+      textTransform: 'none',
+      fontFamily: '"JetBrains Mono", monospace',
+      fontSize: '0.75rem',
+      border: selected ? `1px solid ${color}` : '1px solid transparent',
+      '&:hover': {
+        backgroundColor: (t) => alpha(t.palette.text.primary, 0.15),
+      },
+    }}
+  >
+    {label}{' '}
+    <span style={{ opacity: 0.6, marginLeft: '6px', fontSize: '0.7rem' }}>
+      {count}
+    </span>
+  </Button>
 );
 
 export default MinerPRsTable;

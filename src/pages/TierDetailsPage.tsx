@@ -221,13 +221,17 @@ const TierSummaryCard: React.FC<TierSummaryCardProps> = ({
         }}
       >
         <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
-          <Typography variant="statLabel" component="span">Score</Typography>
+          <Typography variant="statLabel" component="span">
+            Score
+          </Typography>
           <Typography variant="statValue" component="span">
             {score != null ? Number(score).toFixed(4) : '0.0000'}
           </Typography>
         </Stack>
         <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
-          <Typography variant="statLabel" component="span">Credibility</Typography>
+          <Typography variant="statLabel" component="span">
+            Credibility
+          </Typography>
           <Typography variant="statValue" component="span">
             {credibility != null
               ? `${(Number(credibility) * 100).toFixed(1)}%`
@@ -235,20 +239,36 @@ const TierSummaryCard: React.FC<TierSummaryCardProps> = ({
           </Typography>
         </Stack>
         <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
-          <Typography variant="statLabel" component="span">PRs Merged</Typography>
-          <Typography variant="statValue" component="span">{merged ?? 0}</Typography>
+          <Typography variant="statLabel" component="span">
+            PRs Merged
+          </Typography>
+          <Typography variant="statValue" component="span">
+            {merged ?? 0}
+          </Typography>
         </Stack>
         <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
-          <Typography variant="statLabel" component="span">PRs Open</Typography>
-          <Typography variant="statValue" component="span">{opened}</Typography>
+          <Typography variant="statLabel" component="span">
+            PRs Open
+          </Typography>
+          <Typography variant="statValue" component="span">
+            {opened}
+          </Typography>
         </Stack>
         <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
-          <Typography variant="statLabel" component="span">PRs Closed</Typography>
-          <Typography variant="statValue" component="span">{closed ?? 0}</Typography>
+          <Typography variant="statLabel" component="span">
+            PRs Closed
+          </Typography>
+          <Typography variant="statValue" component="span">
+            {closed ?? 0}
+          </Typography>
         </Stack>
         <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
-          <Typography variant="statLabel" component="span">Unique Repos</Typography>
-          <Typography variant="statValue" component="span">{uniqueRepos ?? 0}</Typography>
+          <Typography variant="statLabel" component="span">
+            Unique Repos
+          </Typography>
+          <Typography variant="statValue" component="span">
+            {uniqueRepos ?? 0}
+          </Typography>
         </Stack>
       </Stack>
     </Card>
