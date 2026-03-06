@@ -1,3 +1,15 @@
+// {
+//   "include": ["src", "src/**/*.ts", "src/**/*.tsx"],
+//   "references": [
+//     {
+//       "path": "./tsconfig.app.json"
+//     },
+//     {
+//       "path": "./tsconfig.node.json"
+//     }
+//   ]
+// }
+
 {
   "compilerOptions": {
     "target": "ES2021",
