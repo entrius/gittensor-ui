@@ -13,10 +13,22 @@ import {
   Avatar,
   Chip,
   Button,
+  TextField,
+  InputAdornment,
+  TableSortLabel,
+  Pagination,
 } from '@mui/material';
+import {
+  Search as SearchIcon,
+} from '@mui/icons-material';
 import { useMinerPRs } from '../../api';
 import { useNavigate } from 'react-router-dom';
-import theme from '../../theme';
+import theme, { TIER_COLORS } from '../../theme';
+
+type PRSortField = 'score' | 'date' | 'additions' | 'number';
+type PRSortOrder = 'asc' | 'desc';
+
+const ROWS_PER_PAGE = 15;
 
 interface MinerPRsTableProps {
   githubId: string;
@@ -30,8 +42,23 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'open' | 'merged' | 'closed'
   >('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [tierFilter, setTierFilter] = useState<string | null>(null);
+  const [sortField, setSortField] = useState<PRSortField>('date');
+  const [sortOrder, setSortOrder] = useState<PRSortOrder>('desc');
+  const [page, setPage] = useState(1);
 
-  // Filter PRs by selected repository, author, and status
+  const handleSort = (field: PRSortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
+    setPage(1);
+  };
+
+  // Filter PRs by selected repository, author, status, search, and tier
   const filteredPRs = useMemo(() => {
     if (!prs) return [];
     let filtered = prs;
@@ -54,8 +81,57 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         (pr) => pr.prState === 'CLOSED' && !pr.mergedAt,
       );
     }
+    // Search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (pr) =>
+          pr.pullRequestTitle?.toLowerCase().includes(q) ||
+          pr.repository?.toLowerCase().includes(q),
+      );
+    }
+    // Tier filter
+    if (tierFilter) {
+      filtered = filtered.filter(
+        (pr) => pr.tier?.toLowerCase() === tierFilter.toLowerCase(),
+      );
+    }
     return filtered;
-  }, [prs, selectedRepo, selectedAuthor, statusFilter]);
+  }, [prs, selectedRepo, selectedAuthor, statusFilter, searchQuery, tierFilter]);
+
+  // Sort filtered PRs
+  const sortedPRs = useMemo(() => {
+    const sorted = [...filteredPRs];
+    sorted.sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case 'score':
+          cmp = parseFloat(a.score || '0') - parseFloat(b.score || '0');
+          break;
+        case 'date': {
+          const dateA = a.mergedAt || a.prCreatedAt || '';
+          const dateB = b.mergedAt || b.prCreatedAt || '';
+          cmp = new Date(dateA).getTime() - new Date(dateB).getTime();
+          break;
+        }
+        case 'additions':
+          cmp = (a.additions || 0) - (b.additions || 0);
+          break;
+        case 'number':
+          cmp = a.pullRequestNumber - b.pullRequestNumber;
+          break;
+      }
+      return sortOrder === 'asc' ? cmp : -cmp;
+    });
+    return sorted;
+  }, [filteredPRs, sortField, sortOrder]);
+
+  // Paginate
+  const totalPages = Math.max(1, Math.ceil(sortedPRs.length / ROWS_PER_PAGE));
+  const paginatedPRs = sortedPRs.slice(
+    (page - 1) * ROWS_PER_PAGE,
+    page * ROWS_PER_PAGE,
+  );
 
   const statusCounts = useMemo(() => {
     if (!prs) return { all: 0, open: 0, merged: 0, closed: 0 };
@@ -114,6 +190,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             justifyContent: 'space-between',
             flexWrap: 'wrap',
             gap: 2,
+            mb: 2,
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
@@ -136,7 +213,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               }}
             >
               ({filteredPRs.length}
-              {selectedRepo || selectedAuthor || statusFilter !== 'all'
+              {selectedRepo || selectedAuthor || statusFilter !== 'all' || searchQuery || tierFilter
                 ? ` of ${prs?.length || 0}`
                 : ''}
               )
@@ -164,6 +241,18 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 onDelete={() => setSelectedAuthor(null)}
               />
             )}
+            {tierFilter && (
+              <Chip
+                variant="filter"
+                label={`Tier: ${tierFilter}`}
+                onDelete={() => { setTierFilter(null); setPage(1); }}
+                sx={{
+                  color: tierFilter === 'Gold' ? TIER_COLORS.gold
+                    : tierFilter === 'Silver' ? TIER_COLORS.silver
+                    : TIER_COLORS.bronze,
+                }}
+              />
+            )}
 
             {/* Status Filter Buttons */}
             <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -172,30 +261,106 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 count={statusCounts.all}
                 color={theme.palette.status.neutral}
                 selected={statusFilter === 'all'}
-                onClick={() => setStatusFilter('all')}
+                onClick={() => { setStatusFilter('all'); setPage(1); }}
               />
               <FilterButton
                 label="Open"
                 count={statusCounts.open}
                 color={theme.palette.status.open}
                 selected={statusFilter === 'open'}
-                onClick={() => setStatusFilter('open')}
+                onClick={() => { setStatusFilter('open'); setPage(1); }}
               />
               <FilterButton
                 label="Merged"
                 count={statusCounts.merged}
                 color={theme.palette.status.merged}
                 selected={statusFilter === 'merged'}
-                onClick={() => setStatusFilter('merged')}
+                onClick={() => { setStatusFilter('merged'); setPage(1); }}
               />
               <FilterButton
                 label="Closed"
                 count={statusCounts.closed}
                 color={theme.palette.status.closed}
                 selected={statusFilter === 'closed'}
-                onClick={() => setStatusFilter('closed')}
+                onClick={() => { setStatusFilter('closed'); setPage(1); }}
               />
             </Box>
+          </Box>
+        </Box>
+
+        {/* Search + Tier filter row */}
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1.5,
+            flexWrap: 'wrap',
+            alignItems: 'center',
+          }}
+        >
+          <TextField
+            size="small"
+            placeholder="Search by title or repo..."
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ fontSize: '1rem', color: 'rgba(255,255,255,0.3)' }} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              flex: 1,
+              minWidth: 200,
+              '& .MuiOutlinedInput-root': {
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.8rem',
+                color: '#ffffff',
+                backgroundColor: 'rgba(255,255,255,0.03)',
+                borderRadius: '8px',
+                '& fieldset': {
+                  borderColor: 'rgba(255,255,255,0.1)',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'rgba(255,255,255,0.2)',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: 'primary.main',
+                },
+              },
+            }}
+          />
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            {['Bronze', 'Silver', 'Gold'].map((tier) => (
+              <Button
+                key={tier}
+                size="small"
+                onClick={() => {
+                  setTierFilter(tierFilter === tier ? null : tier);
+                  setPage(1);
+                }}
+                sx={{
+                  color: tierFilter === tier
+                    ? (tier === 'Gold' ? TIER_COLORS.gold : tier === 'Silver' ? TIER_COLORS.silver : TIER_COLORS.bronze)
+                    : 'rgba(255,255,255,0.4)',
+                  backgroundColor: tierFilter === tier ? 'rgba(255,255,255,0.08)' : 'transparent',
+                  borderRadius: '6px',
+                  px: 1.5,
+                  minWidth: 'auto',
+                  textTransform: 'none',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.75rem',
+                  border: tierFilter === tier
+                    ? `1px solid ${tier === 'Gold' ? TIER_COLORS.gold : tier === 'Silver' ? TIER_COLORS.silver : TIER_COLORS.bronze}`
+                    : '1px solid transparent',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                  },
+                }}
+              >
+                {tier}
+              </Button>
+            ))}
           </Box>
         </Box>
       </Box>
@@ -253,7 +418,16 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={headerCellStyle}>PR #</TableCell>
+                <TableCell sx={headerCellStyle}>
+                  <TableSortLabel
+                    active={sortField === 'number'}
+                    direction={sortField === 'number' ? sortOrder : 'desc'}
+                    onClick={() => handleSort('number')}
+                    sx={sortLabelSx}
+                  >
+                    PR #
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell sx={headerCellStyle}>Title</TableCell>
                 <TableCell
                   sx={{
@@ -270,10 +444,24 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     display: { xs: 'none', md: 'table-cell' },
                   }}
                 >
-                  +/-
+                  <TableSortLabel
+                    active={sortField === 'additions'}
+                    direction={sortField === 'additions' ? sortOrder : 'desc'}
+                    onClick={() => handleSort('additions')}
+                    sx={sortLabelSx}
+                  >
+                    +/-
+                  </TableSortLabel>
                 </TableCell>
                 <TableCell align="right" sx={headerCellStyle}>
-                  Score
+                  <TableSortLabel
+                    active={sortField === 'score'}
+                    direction={sortField === 'score' ? sortOrder : 'desc'}
+                    onClick={() => handleSort('score')}
+                    sx={sortLabelSx}
+                  >
+                    Score
+                  </TableSortLabel>
                 </TableCell>
                 <TableCell
                   align="right"
@@ -282,12 +470,19 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     display: { xs: 'none', sm: 'table-cell' },
                   }}
                 >
-                  Merged
+                  <TableSortLabel
+                    active={sortField === 'date'}
+                    direction={sortField === 'date' ? sortOrder : 'desc'}
+                    onClick={() => handleSort('date')}
+                    sx={sortLabelSx}
+                  >
+                    Merged
+                  </TableSortLabel>
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredPRs.map((pr, index) => (
+              {paginatedPRs.map((pr, index) => (
                 <TableRow
                   key={`${pr.repository}-${pr.pullRequestNumber}-${index}`}
                   onClick={() => {
@@ -489,8 +684,53 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           </Table>
         </TableContainer>
       )}
+
+      {/* Pagination */}
+      {sortedPRs.length > ROWS_PER_PAGE && (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            p: 2,
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+          }}
+        >
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={(_e, newPage) => setPage(newPage)}
+            size="small"
+            sx={{
+              '& .MuiPaginationItem-root': {
+                color: 'rgba(255, 255, 255, 0.5)',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.75rem',
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(29, 55, 252, 0.2)',
+                  color: '#ffffff',
+                  border: '1px solid rgba(29, 55, 252, 0.4)',
+                },
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                },
+              },
+            }}
+          />
+        </Box>
+      )}
     </Card>
   );
+};
+
+const sortLabelSx = {
+  color: 'inherit',
+  '&:hover': { color: 'rgba(255, 255, 255, 0.9)' },
+  '&.Mui-active': {
+    color: 'rgba(255, 255, 255, 0.9)',
+    '& .MuiTableSortLabel-icon': {
+      color: 'rgba(255, 255, 255, 0.9) !important',
+    },
+  },
 };
 
 const headerCellStyle = {

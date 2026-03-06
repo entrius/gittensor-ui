@@ -1,13 +1,16 @@
 import React from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Box } from '@mui/material';
+import { Box, Grid } from '@mui/material';
 import { Page } from '../components/layout';
 import {
-  MinerScoreCard,
+  MinerDashboardHeader,
+  MinerInsights,
+  ScoreBreakdownPanel,
+  TierProgressTracker,
+  EarningsOverview,
   MinerActivity,
   MinerRepositoriesTable,
   MinerPRsTable,
-  MinerTierPerformance,
   BackButton,
   SEO,
 } from '../components';
@@ -52,19 +55,32 @@ const MinerDetailsPage: React.FC = () => {
         >
           <BackButton to="/top-miners" />
 
-          {/* Miner Score Card */}
-          <MinerScoreCard githubId={githubId} />
+          {/* Dashboard Header - replaces MinerScoreCard as the hero section */}
+          <MinerDashboardHeader githubId={githubId} />
+
+          {/* Smart Insights - actionable recommendations */}
+          <MinerInsights githubId={githubId} />
+
+          {/* Score Breakdown + Tier Progress side by side on desktop */}
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={7}>
+              <ScoreBreakdownPanel githubId={githubId} />
+            </Grid>
+            <Grid item xs={12} md={5}>
+              <TierProgressTracker githubId={githubId} />
+            </Grid>
+          </Grid>
+
+          {/* Earnings Overview */}
+          <EarningsOverview githubId={githubId} />
 
           {/* Activity Visualization */}
           <MinerActivity githubId={githubId} />
 
-          {/* Tier Performance */}
-          <MinerTierPerformance githubId={githubId} />
-
-          {/* Top Repositories */}
+          {/* Top Repositories - enhanced with search/filter */}
           <MinerRepositoriesTable githubId={githubId} />
 
-          {/* Miner PRs Table */}
+          {/* Miner PRs Table - enhanced with search, sort, tier filter, pagination */}
           <MinerPRsTable githubId={githubId} />
         </Box>
       </Box>

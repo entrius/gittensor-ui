@@ -12,8 +12,14 @@ import {
   CircularProgress,
   Avatar,
   TableSortLabel,
+  TextField,
+  InputAdornment,
+  Chip,
   alpha,
 } from '@mui/material';
+import {
+  Search as SearchIcon,
+} from '@mui/icons-material';
 import { useMinerPRs, useReposAndWeights } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import { TIER_COLORS } from '../../theme';
@@ -54,6 +60,8 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
   const [sortField, setSortField] = useState<SortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [repoSearch, setRepoSearch] = useState('');
+  const [tierFilterRepo, setTierFilterRepo] = useState<string | null>(null);
 
   // Build repository weights and tiers maps
   const repoWeights = useMemo(() => {
@@ -102,9 +110,19 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     return Array.from(statsMap.values());
   }, [prs, repoWeights, repoTiers]);
 
-  // Sort repository stats
+  // Filter and sort repository stats
   const sortedRepoStats = useMemo(() => {
-    const sorted = [...repoStats];
+    let filtered = [...repoStats];
+    if (repoSearch.trim()) {
+      const q = repoSearch.toLowerCase();
+      filtered = filtered.filter((r) => r.repository.toLowerCase().includes(q));
+    }
+    if (tierFilterRepo) {
+      filtered = filtered.filter(
+        (r) => r.tier.toLowerCase() === tierFilterRepo.toLowerCase(),
+      );
+    }
+    const sorted = filtered;
     sorted.sort((a, b) => {
       let compareValue = 0;
 
@@ -130,7 +148,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       return sortOrder === 'asc' ? compareValue : -compareValue;
     });
     return sorted;
-  }, [repoStats, sortField, sortOrder]);
+  }, [repoStats, sortField, sortOrder, repoSearch, tierFilterRepo]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -204,17 +222,79 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         }}
       >
-        <Typography
-          variant="h6"
+        <Box
           sx={{
-            color: '#ffffff',
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: '1.1rem',
-            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 2,
+            mb: 2,
           }}
         >
-          Top Repositories
-        </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                color: '#ffffff',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '1.1rem',
+                fontWeight: 500,
+              }}
+            >
+              Top Repositories
+            </Typography>
+            <Typography
+              sx={{
+                color: 'rgba(255, 255, 255, 0.5)',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.75rem',
+              }}
+            >
+              ({sortedRepoStats.length}
+              {repoSearch || tierFilterRepo ? ` of ${repoStats.length}` : ''})
+            </Typography>
+          </Box>
+          {tierFilterRepo && (
+            <Chip
+              variant="filter"
+              label={`Tier: ${tierFilterRepo}`}
+              onDelete={() => setTierFilterRepo(null)}
+              sx={{
+                color: tierFilterRepo === 'Gold' ? TIER_COLORS.gold
+                  : tierFilterRepo === 'Silver' ? TIER_COLORS.silver
+                  : TIER_COLORS.bronze,
+              }}
+            />
+          )}
+        </Box>
+        <TextField
+          size="small"
+          placeholder="Search repositories..."
+          value={repoSearch}
+          onChange={(e) => setRepoSearch(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ fontSize: '1rem', color: 'rgba(255,255,255,0.3)' }} />
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            width: '100%',
+            maxWidth: 400,
+            '& .MuiOutlinedInput-root': {
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.8rem',
+              color: '#ffffff',
+              backgroundColor: 'rgba(255,255,255,0.03)',
+              borderRadius: '8px',
+              '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+              '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+            },
+          }}
+        />
       </Box>
 
       <TableContainer sx={{ maxHeight: '400px', overflow: 'auto' }}>
@@ -426,14 +506,24 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                     />
                     {repo.tier && (
                       <Box
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTierFilterRepo(
+                            tierFilterRepo === repo.tier ? null : repo.tier,
+                          );
+                        }}
                         sx={{
-                          width: 6,
-                          height: 6,
+                          width: 8,
+                          height: 8,
                           borderRadius: '50%',
                           backgroundColor: getTierColor(repo.tier),
                           flexShrink: 0,
+                          cursor: 'pointer',
+                          '&:hover': {
+                            boxShadow: `0 0 6px ${getTierColor(repo.tier)}`,
+                          },
                         }}
-                        title={`${repo.tier} tier`}
+                        title={`Filter by ${repo.tier} tier`}
                       />
                     )}
                     <Typography
