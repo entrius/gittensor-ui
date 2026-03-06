@@ -145,7 +145,11 @@ export const getTierFilterValue = (
 ): MinerTierFilter => {
   if (!tier) return 'all';
   const normalized = tier.toLowerCase();
-  if (normalized === 'gold' || normalized === 'silver' || normalized === 'bronze') {
+  if (
+    normalized === 'gold' ||
+    normalized === 'silver' ||
+    normalized === 'bronze'
+  ) {
     return normalized;
   }
   return 'all';
@@ -209,7 +213,9 @@ export interface PrTierCounts {
   bronze: number;
 }
 
-export const countPrTiers = <T extends { tier?: string | null; repository: string }>(
+export const countPrTiers = <
+  T extends { tier?: string | null; repository: string },
+>(
   prs: T[],
   repoTiers: Map<string, string>,
 ): PrTierCounts => {
@@ -225,7 +231,9 @@ export const countPrTiers = <T extends { tier?: string | null; repository: strin
   return counts;
 };
 
-export const filterPrsByTier = <T extends { tier?: string | null; repository: string }>(
+export const filterPrsByTier = <
+  T extends { tier?: string | null; repository: string },
+>(
   prs: T[],
   tierFilter: MinerTierFilter,
   repoTiers: Map<string, string>,

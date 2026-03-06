@@ -158,7 +158,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               }}
             >
               ({filteredPRs.length}
-              {selectedRepo || selectedAuthor || statusFilter !== 'all' || tierFilter !== 'all'
+              {selectedRepo ||
+              selectedAuthor ||
+              statusFilter !== 'all' ||
+              tierFilter !== 'all'
                 ? ` of ${prs?.length || 0}`
                 : ''}
               )
@@ -303,30 +306,19 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             },
           }}
         >
-          <Table
-            stickyHeader
-            sx={{ tableLayout: 'fixed', minWidth: '700px' }}
-          >
+          <Table stickyHeader sx={{ tableLayout: 'fixed', minWidth: '700px' }}>
             <TableHead>
               <TableRow>
                 <TableCell sx={headerCellStyle}>PR #</TableCell>
                 <TableCell sx={headerCellStyle}>Title</TableCell>
-                <TableCell sx={headerCellStyle}>
-                  Repository
-                </TableCell>
-                <TableCell
-                  align="right"
-                  sx={headerCellStyle}
-                >
+                <TableCell sx={headerCellStyle}>Repository</TableCell>
+                <TableCell align="right" sx={headerCellStyle}>
                   +/-
                 </TableCell>
                 <TableCell align="right" sx={headerCellStyle}>
                   Score
                 </TableCell>
-                <TableCell
-                  align="right"
-                  sx={headerCellStyle}
-                >
+                <TableCell align="right" sx={headerCellStyle}>
                   Merged
                 </TableCell>
               </TableRow>

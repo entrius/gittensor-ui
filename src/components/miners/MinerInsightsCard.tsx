@@ -145,9 +145,15 @@ const getTierProgressInsight = (
     minerStats[fieldByTier(nextTierName, 'Credibility')],
   );
 
-  const requiredRepos = parseNumber(nextTierConfig?.requiredQualifiedUniqueRepos, 3);
+  const requiredRepos = parseNumber(
+    nextTierConfig?.requiredQualifiedUniqueRepos,
+    3,
+  );
   const requiredToken = parseNumber(nextTierConfig?.requiredMinTokenScore, 0);
-  const requiredCredibility = parseNumber(nextTierConfig?.requiredCredibility, 0.7);
+  const requiredCredibility = parseNumber(
+    nextTierConfig?.requiredCredibility,
+    0.7,
+  );
 
   const missingRepos = Math.max(requiredRepos - qualifiedRepos, 0);
   const missingToken = Math.max(requiredToken - tierTokenScore, 0);
@@ -162,7 +168,9 @@ const getTierProgressInsight = (
   };
 };
 
-const getCollateralInsight = (minerStats: MinerEvaluation): InsightItem | null => {
+const getCollateralInsight = (
+  minerStats: MinerEvaluation,
+): InsightItem | null => {
   const collateralScore = parseNumber(minerStats.totalCollateralScore);
   if (collateralScore <= 0) return null;
 
@@ -257,7 +265,9 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({ githubId }) => {
         >
           Insights & Next Actions
         </Typography>
-        <Typography sx={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.85rem' }}>
+        <Typography
+          sx={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.85rem' }}
+        >
           Prioritized recommendations based on your tier progress, credibility,
           collateral, and open-PR posture.
         </Typography>

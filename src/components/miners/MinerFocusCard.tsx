@@ -1,6 +1,9 @@
 import React, { useMemo } from 'react';
 import { Box, Card, Typography } from '@mui/material';
-import { TrendingUp as TrendingUpIcon, LockOpen as LockOpenIcon } from '@mui/icons-material';
+import {
+  TrendingUp as TrendingUpIcon,
+  LockOpen as LockOpenIcon,
+} from '@mui/icons-material';
 import { useMinerStats, useTierConfigurations } from '../../api';
 import { TIER_COLORS } from '../../theme';
 import { parseNumber, TIER_LEVELS } from './explorerUtils';
@@ -48,7 +51,8 @@ export const MinerFocusCard: React.FC<MinerFocusCardProps> = ({ githubId }) => {
       const reqToken = nextConfig.requiredMinTokenScore ?? 0;
       const reqRepos = nextConfig.requiredQualifiedUniqueRepos || 3;
       const reqCred = nextConfig.requiredCredibility || 0.7;
-      const tokenPct = reqToken > 0 ? Math.min((tokenScore / reqToken) * 100, 100) : 100;
+      const tokenPct =
+        reqToken > 0 ? Math.min((tokenScore / reqToken) * 100, 100) : 100;
       const reposPct = Math.min((qualifiedRepos / reqRepos) * 100, 100);
       const credPct = Math.min((credibility / reqCred) * 100, 100);
       const overallPct =
@@ -162,7 +166,9 @@ export const MinerFocusCard: React.FC<MinerFocusCardProps> = ({ githubId }) => {
       elevation={0}
     >
       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-        <TrendingUpIcon sx={{ color: 'primary.main', fontSize: 28, mt: 0.25 }} />
+        <TrendingUpIcon
+          sx={{ color: 'primary.main', fontSize: 28, mt: 0.25 }}
+        />
         <Box>
           <Typography
             sx={{

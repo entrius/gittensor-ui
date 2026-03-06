@@ -14,7 +14,11 @@ import {
   SEO,
 } from '../components';
 
-type MinerDetailsTab = 'overview' | 'activity' | 'pull-requests' | 'repositories';
+type MinerDetailsTab =
+  | 'overview'
+  | 'activity'
+  | 'pull-requests'
+  | 'repositories';
 
 const MinerDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
