@@ -10,6 +10,9 @@ import {
 } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import UpdateIcon from '@mui/icons-material/Update';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
+import PeopleIcon from '@mui/icons-material/People';
 import {
   useMinerStats,
   useMinerPRs,
@@ -258,6 +261,67 @@ const MinerDashboardHero: React.FC<MinerDashboardHeroProps> = ({
             Hotkey: {minerStats.hotkey}
           </Typography>
         )}
+
+        {githubData &&
+          (githubData.location ||
+            githubData.hireable ||
+            githubData.followers != null) && (
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 1,
+                alignItems: 'center',
+                width: '100%',
+              }}
+            >
+              {githubData.location && (
+                <Chip
+                  size="small"
+                  icon={<LocationOnIcon sx={{ fontSize: '0.9rem' }} />}
+                  label={githubData.location}
+                  variant="outlined"
+                  sx={{
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: '0.7rem',
+                    color: 'rgba(255,255,255,0.7)',
+                    borderColor: 'rgba(255,255,255,0.2)',
+                    '& .MuiChip-icon': { color: 'rgba(255,255,255,0.5)' },
+                  }}
+                />
+              )}
+              {githubData.hireable && (
+                <Chip
+                  size="small"
+                  icon={<WorkOutlineIcon sx={{ fontSize: '0.9rem' }} />}
+                  label="Open to Work"
+                  variant="outlined"
+                  sx={{
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: '0.7rem',
+                    color: STATUS_COLORS.success,
+                    borderColor: alpha(STATUS_COLORS.success, 0.4),
+                    '& .MuiChip-icon': { color: STATUS_COLORS.success },
+                  }}
+                />
+              )}
+              {githubData.followers != null && (
+                <Chip
+                  size="small"
+                  icon={<PeopleIcon sx={{ fontSize: '0.9rem' }} />}
+                  label={`${githubData.followers} followers`}
+                  variant="outlined"
+                  sx={{
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: '0.7rem',
+                    color: 'rgba(255,255,255,0.7)',
+                    borderColor: 'rgba(255,255,255,0.2)',
+                    '& .MuiChip-icon': { color: 'rgba(255,255,255,0.5)' },
+                  }}
+                />
+              )}
+            </Box>
+          )}
 
         <Box
           sx={{
