@@ -147,7 +147,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({ githubId }) => {
   if (!minerStats) return null;
 
   return (
-    <Card sx={{ p: 0, overflow: 'hidden', mb: 3 }}>
+    <Card sx={{ p: 0, overflow: 'hidden' }}>
       {/* Header with Trust Badge */}
       <Box
         sx={{

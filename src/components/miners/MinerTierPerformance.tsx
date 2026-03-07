@@ -156,7 +156,6 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
         border: '1px solid rgba(255, 255, 255, 0.1)',
         backgroundColor: 'transparent',
         p: 3,
-        mb: 3,
       }}
       elevation={0}
     >

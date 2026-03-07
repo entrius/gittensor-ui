@@ -330,6 +330,33 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({ githubId }) => {
           );
         })}
       </Box>
+
+      <Typography
+        sx={{
+          mt: 2,
+          textAlign: 'right',
+          fontSize: '0.72rem',
+          fontFamily: '"JetBrains Mono", monospace',
+          color: 'rgba(255,255,255,0.35)',
+        }}
+      >
+        Learn more about scoring in the{' '}
+        <Typography
+          component="a"
+          href="https://docs.gittensor.io/oss-contributions.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          sx={{
+            color: 'primary.main',
+            fontSize: 'inherit',
+            fontFamily: 'inherit',
+            textDecoration: 'none',
+            '&:hover': { textDecoration: 'underline' },
+          }}
+        >
+          docs
+        </Typography>
+      </Typography>
     </Card>
   );
 };

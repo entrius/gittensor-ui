@@ -12,8 +12,11 @@ import {
   CircularProgress,
   Avatar,
   TableSortLabel,
+  TextField,
+  InputAdornment,
   alpha,
 } from '@mui/material';
+import { Search as SearchIcon } from '@mui/icons-material';
 import { useMinerPRs, useReposAndWeights } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import theme, { TIER_COLORS } from '../../theme';
@@ -48,6 +51,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   const [sortField, setSortField] = useState<RepoSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [tierFilter, setTierFilter] = useState<MinerTierFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Build repository weights and tiers maps
   const repoWeights = useMemo(() => {
@@ -97,10 +101,14 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   }, [prs, repoWeights, repoTiers]);
 
   // Filter and sort repository stats
-  const filteredRepoStats = useMemo(
-    () => filterMinerRepoStats(repoStats, tierFilter),
-    [repoStats, tierFilter],
-  );
+  const filteredRepoStats = useMemo(() => {
+    let filtered = filterMinerRepoStats(repoStats, tierFilter);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter((r) => r.repository.toLowerCase().includes(q));
+    }
+    return filtered;
+  }, [repoStats, tierFilter, searchQuery]);
 
   const sortedRepoStats = useMemo(
     () => sortMinerRepoStats(filteredRepoStats, sortField, sortOrder),
@@ -254,6 +262,37 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
             />
           </Box>
         </Box>
+
+        {/* Search */}
+        <TextField
+          size="small"
+          placeholder="Search repositories..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon
+                  sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '1rem' }}
+                />
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            mt: 2,
+            maxWidth: 300,
+            '& .MuiOutlinedInput-root': {
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.8rem',
+              color: '#fff',
+              backgroundColor: 'rgba(255,255,255,0.03)',
+              borderRadius: 2,
+              '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+              '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+            },
+          }}
+        />
       </Box>
 
       <TableContainer sx={{ maxHeight: '400px', overflow: 'auto' }}>
@@ -335,6 +374,9 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                 >
                   Score
                 </TableSortLabel>
+              </TableCell>
+              <TableCell align="right" sx={headerCellStyle}>
+                Avg/PR
               </TableCell>
               <TableCell align="right" sx={headerCellStyle}>
                 <TableSortLabel
@@ -492,6 +534,12 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                 </TableCell>
                 <TableCell align="right" sx={bodyCellStyle}>
                   {repo.score.toFixed(4)}
+                </TableCell>
+                <TableCell
+                  align="right"
+                  sx={{ ...bodyCellStyle, color: 'rgba(255,255,255,0.5)' }}
+                >
+                  {repo.prs > 0 ? (repo.score / repo.prs).toFixed(4) : '—'}
                 </TableCell>
                 <TableCell align="right" sx={bodyCellStyle}>
                   {repo.weight.toFixed(4)}

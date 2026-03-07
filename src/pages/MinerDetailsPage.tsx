@@ -9,6 +9,7 @@ import {
   MinerInsightsCard,
   MinerPRsTable,
   MinerRepositoriesTable,
+  MinerScoreBreakdown,
   MinerScoreCard,
   MinerTierPerformance,
   SEO,
@@ -102,6 +103,7 @@ const MinerDetailsPage: React.FC = () => {
               <>
                 <MinerFocusCard githubId={githubId} />
                 <MinerInsightsCard githubId={githubId} />
+                <MinerScoreBreakdown githubId={githubId} />
                 <MinerTierPerformance githubId={githubId} />
               </>
             )}

@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest';
 import {
   parseNumber,
   getTierLevel,
+  calculateDynamicOpenPrThreshold,
+  normalizeMinerEvaluations,
+  normalizeCommitLogs,
   formatTierLabel,
   tierColorFor,
   getTierFilterValue,
@@ -274,5 +277,107 @@ describe('filterPrsByTier', () => {
     const result = filterPrsByTier(prs, 'bronze', repoTiers);
     expect(result).toHaveLength(1);
     expect(result[0].repository).toBe('repo3');
+  });
+});
+
+describe('calculateDynamicOpenPrThreshold', () => {
+  const baseMiner = {
+    githubId: 'test',
+    currentTier: 'bronze',
+    bronzeTokenScore: 600,
+    silverTokenScore: 0,
+    goldTokenScore: 0,
+  } as any;
+
+  it('returns default threshold with bonus when no scoring config', () => {
+    // defaults: base=10, tokenScorePer=500, max=30; 600/500=1 bonus → 11
+    expect(calculateDynamicOpenPrThreshold(baseMiner, undefined)).toBe(11);
+  });
+
+  it('calculates bonus from token score', () => {
+    const scoring = {
+      excessivePrPenaltyThreshold: 10,
+      openPrThresholdTokenScore: 500,
+      maxOpenPrThreshold: 30,
+    } as any;
+    // 600 / 500 = 1 bonus → 10 + 1 = 11
+    expect(calculateDynamicOpenPrThreshold(baseMiner, scoring)).toBe(11);
+  });
+
+  it('caps at max threshold', () => {
+    const highMiner = {
+      ...baseMiner,
+      currentTier: 'gold',
+      bronzeTokenScore: 5000,
+      silverTokenScore: 5000,
+      goldTokenScore: 5000,
+    } as any;
+    const scoring = {
+      excessivePrPenaltyThreshold: 10,
+      openPrThresholdTokenScore: 500,
+      maxOpenPrThreshold: 30,
+    } as any;
+    expect(calculateDynamicOpenPrThreshold(highMiner, scoring)).toBe(30);
+  });
+
+  it('returns base when tokenScorePer is 0', () => {
+    const scoring = {
+      excessivePrPenaltyThreshold: 8,
+      openPrThresholdTokenScore: 0,
+      maxOpenPrThreshold: 30,
+    } as any;
+    expect(calculateDynamicOpenPrThreshold(baseMiner, scoring)).toBe(8);
+  });
+});
+
+describe('normalizeMinerEvaluations', () => {
+  it('returns array directly if items have githubId', () => {
+    const arr = [{ githubId: 'a' }, { githubId: 'b' }];
+    expect(normalizeMinerEvaluations(arr)).toEqual(arr);
+  });
+
+  it('extracts from keyed object (items)', () => {
+    const payload = { items: [{ githubId: 'x' }] };
+    expect(normalizeMinerEvaluations(payload)).toEqual([{ githubId: 'x' }]);
+  });
+
+  it('returns empty array for null/undefined', () => {
+    expect(normalizeMinerEvaluations(null)).toEqual([]);
+    expect(normalizeMinerEvaluations(undefined)).toEqual([]);
+  });
+
+  it('returns empty array for non-matching structure', () => {
+    expect(normalizeMinerEvaluations({ foo: 'bar' })).toEqual([]);
+  });
+
+  it('handles object values as miners', () => {
+    const payload = { m1: { githubId: 'a' }, m2: { githubId: 'b' } };
+    const result = normalizeMinerEvaluations(payload);
+    expect(result).toHaveLength(2);
+  });
+});
+
+describe('normalizeCommitLogs', () => {
+  it('returns array directly if items have repository and pullRequestNumber', () => {
+    const arr = [{ repository: 'r', pullRequestNumber: 1 }];
+    expect(normalizeCommitLogs(arr)).toEqual(arr);
+  });
+
+  it('extracts from keyed object (prs)', () => {
+    const payload = { prs: [{ repository: 'r', pullRequestNumber: 2 }] };
+    expect(normalizeCommitLogs(payload)).toEqual([
+      { repository: 'r', pullRequestNumber: 2 },
+    ]);
+  });
+
+  it('returns empty array for non-matching input', () => {
+    expect(normalizeCommitLogs(null)).toEqual([]);
+    expect(normalizeCommitLogs('string')).toEqual([]);
+    expect(normalizeCommitLogs(42)).toEqual([]);
+  });
+
+  it('filters out non-commit-log items from array', () => {
+    const arr = [{ repository: 'r', pullRequestNumber: 1 }, { foo: 'bar' }];
+    expect(normalizeCommitLogs(arr)).toHaveLength(1);
   });
 });
