@@ -16,6 +16,8 @@ import {
   TextField,
   InputAdornment,
   Tooltip,
+  alpha,
+  useTheme,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -24,7 +26,7 @@ import {
 } from '@mui/icons-material';
 import { useMinerPRs, useReposAndWeights, type CommitLog } from '../../api';
 import { useNavigate } from 'react-router-dom';
-import theme, { TIER_COLORS } from '../../theme';
+import { TIER_COLORS } from '../../theme';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import {
   type MinerTierFilter,
@@ -69,13 +71,13 @@ const getScoreTooltip = (pr: CommitLog): string | null => {
 
 interface MinerPRsTableProps {
   githubId: string;
-  /** When set, only PRs in repositories of this tier are shown (e.g. "Bronze", "Silver", "Gold"). */
+  /** When set externally (e.g. from TierDetailsPage), overrides internal tier filter. */
   tierFilter?: string;
 }
 
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
   githubId,
-  tierFilter,
+  tierFilter: externalTierFilter,
 }) => {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -84,7 +86,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<MinerStatusFilter>('all');
-  const [tierFilter, setTierFilter] = useState<MinerTierFilter>('all');
+  const [internalTierFilter, setTierFilter] = useState<MinerTierFilter>('all');
+  const tierFilter: MinerTierFilter =
+    (externalTierFilter?.toLowerCase() as MinerTierFilter) ||
+    internalTierFilter;
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<PrSortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
@@ -114,8 +119,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
   );
 
   const filteredPRs = useMemo(() => {
-    if (!prsInTier) return [];
-    let filtered = prsInTier;
+    if (!prs) return [];
+    let filtered = prs;
     if (selectedRepo) {
       filtered = filtered.filter((pr) => pr.repository === selectedRepo);
     }
@@ -190,18 +195,21 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
   const totalPages = Math.ceil(sortedPRs.length / PAGE_SIZE);
 
   const statusCounts = useMemo(() => {
-    if (!prsInTier) return { all: 0, open: 0, merged: 0, closed: 0 };
+    if (!prs) return { all: 0, open: 0, merged: 0, closed: 0 };
     return {
-      all: prsInTier.length,
-      open: prsInTier.filter(
-        (pr) => pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
+      all: prs.length,
+      open: prs.filter(
+        (pr: CommitLog) =>
+          pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
       ).length,
-      merged: prsInTier.filter((pr) => pr.mergedAt || pr.prState === 'MERGED')
-        .length,
-      closed: prsInTier.filter((pr) => pr.prState === 'CLOSED' && !pr.mergedAt)
-        .length,
+      merged: prs.filter(
+        (pr: CommitLog) => pr.mergedAt || pr.prState === 'MERGED',
+      ).length,
+      closed: prs.filter(
+        (pr: CommitLog) => pr.prState === 'CLOSED' && !pr.mergedAt,
+      ).length,
     };
-  }, [prsInTier]);
+  }, [prs]);
 
   const tierCounts = useMemo(() => {
     if (!prs) return { all: 0, gold: 0, silver: 0, bronze: 0 };

@@ -20,7 +20,7 @@ import {
 import { Search as SearchIcon } from '@mui/icons-material';
 import { useMinerPRs, useReposAndWeights } from '../../api';
 import { useNavigate } from 'react-router-dom';
-import theme, { TIER_COLORS } from '../../theme';
+import { TIER_COLORS } from '../../theme';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import {
   type MinerTierFilter,
@@ -33,7 +33,7 @@ import {
 
 interface MinerRepositoriesTableProps {
   githubId: string;
-  /** When set, only repositories in this tier are shown (e.g. "Bronze", "Silver", "Gold"). */
+  /** When set externally (e.g. from TierDetailsPage), overrides internal tier filter. */
   tierFilter?: string;
 }
 
@@ -47,7 +47,7 @@ interface RepoStats {
 
 const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   githubId,
-  tierFilter,
+  tierFilter: externalTierFilter,
 }) => {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -55,7 +55,10 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
   const [sortField, setSortField] = useState<RepoSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [tierFilter, setTierFilter] = useState<MinerTierFilter>('all');
+  const [internalTierFilter, setTierFilter] = useState<MinerTierFilter>('all');
+  const tierFilter: MinerTierFilter =
+    (externalTierFilter?.toLowerCase() as MinerTierFilter) ||
+    internalTierFilter;
   const [searchQuery, setSearchQuery] = useState('');
 
   const headerCellStyle = {
