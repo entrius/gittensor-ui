@@ -93,7 +93,7 @@ export const FAQContent: React.FC = () => (
             'credibility', which is the ratio of your merged PRs to your total
             closed/rejected PRs. See the{' '}
             <a
-              href="https://docs.gittensor.io/scoring.html"
+              href="https://docs.gittensor.io/oss-contributions.html"
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: 'inherit', textDecoration: 'underline' }}
@@ -133,7 +133,7 @@ export const FAQContent: React.FC = () => (
             merged PR count and credibility requirements to earn rewards from
             it. Check the{' '}
             <a
-              href="https://docs.gittensor.io/scoring.html"
+              href="https://docs.gittensor.io/oss-contributions.html"
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: 'inherit', textDecoration: 'underline' }}
