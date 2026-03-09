@@ -34,37 +34,31 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const { data: repos } = useReposAndWeights();
 
-  const headerCellStyle = useMemo(
-    () => ({
-      backgroundColor:
-        theme.palette.surface?.elevated ?? theme.palette.background.paper,
-      backdropFilter: 'blur(8px)',
-      color: alpha(theme.palette.text.primary, 0.7),
-      fontFamily: '"JetBrains Mono", monospace',
-      fontWeight: 500,
-      fontSize: { xs: '0.65rem', sm: '0.75rem' },
-      borderBottom: `1px solid ${theme.palette.border?.light ?? theme.palette.divider}`,
-      height: { xs: '48px', sm: '56px' },
-      py: { xs: 1, sm: 1.5 },
-      px: { xs: 0.5, sm: 2 },
-      textTransform: 'uppercase' as const,
-      letterSpacing: '0.5px',
-    }),
-    [theme],
-  );
+  const headerCellStyle = {
+    backgroundColor: theme.palette.surface.elevated,
+    backdropFilter: 'blur(8px)',
+    color: alpha(theme.palette.text.primary, 0.7),
+    fontFamily: '"JetBrains Mono", monospace',
+    fontWeight: 500,
+    fontSize: { xs: '0.65rem', sm: '0.75rem' },
+    borderBottom: `1px solid ${theme.palette.border.light}`,
+    height: { xs: '48px', sm: '56px' },
+    py: { xs: 1, sm: 1.5 },
+    px: { xs: 0.5, sm: 2 },
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
+  };
 
-  const bodyCellStyle = useMemo(
-    () => ({
-      color: theme.palette.text.primary,
-      fontFamily: '"JetBrains Mono", monospace',
-      borderBottom: `1px solid ${theme.palette.border?.light ?? theme.palette.divider}`,
-      fontSize: '0.85rem',
-      py: { xs: 0.75, sm: 1 },
-      px: { xs: 0.5, sm: 2 },
-      height: { xs: '52px', sm: '60px' },
-    }),
-    [theme],
-  );
+  const bodyCellStyle = {
+    color: theme.palette.text.primary,
+    fontFamily: '"JetBrains Mono", monospace',
+    borderBottom: `1px solid ${theme.palette.border.light}`,
+    fontSize: '0.85rem',
+    py: { xs: 0.75, sm: 1 },
+    px: { xs: 0.5, sm: 2 },
+    height: { xs: '52px', sm: '60px' },
+  };
+
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<
@@ -318,12 +312,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
               backgroundColor: 'transparent',
             },
             '&::-webkit-scrollbar-thumb': {
-              backgroundColor: (t) =>
-                t.palette.border?.light ?? t.palette.divider,
+              backgroundColor: (t) => t.palette.border.light,
               borderRadius: '4px',
               '&:hover': {
-                backgroundColor: (t) =>
-                  t.palette.border?.medium ?? t.palette.divider,
+                backgroundColor: (t) => t.palette.border.medium,
               },
             },
           }}

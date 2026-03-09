@@ -13,6 +13,22 @@ import { TIER_COLORS } from '../theme';
 
 const VALID_TIERS = ['Bronze', 'Silver', 'Gold'];
 
+interface TierStatItemProps {
+  label: string;
+  value: React.ReactNode;
+}
+
+const TierStatItem: React.FC<TierStatItemProps> = ({ label, value }) => (
+  <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
+    <Typography variant="statLabel" component="span">
+      {label}
+    </Typography>
+    <Typography variant="statValue" component="span">
+      {value}
+    </Typography>
+  </Stack>
+);
+
 const TierDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -220,56 +236,22 @@ const TierSummaryCard: React.FC<TierSummaryCardProps> = ({
           },
         }}
       >
-        <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
-          <Typography variant="statLabel" component="span">
-            Score
-          </Typography>
-          <Typography variant="statValue" component="span">
-            {score != null ? Number(score).toFixed(4) : '0.0000'}
-          </Typography>
-        </Stack>
-        <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
-          <Typography variant="statLabel" component="span">
-            Credibility
-          </Typography>
-          <Typography variant="statValue" component="span">
-            {credibility != null
+        <TierStatItem
+          label="Score"
+          value={score != null ? Number(score).toFixed(4) : '0.0000'}
+        />
+        <TierStatItem
+          label="Credibility"
+          value={
+            credibility != null
               ? `${(Number(credibility) * 100).toFixed(1)}%`
-              : 'N/A'}
-          </Typography>
-        </Stack>
-        <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
-          <Typography variant="statLabel" component="span">
-            PRs Merged
-          </Typography>
-          <Typography variant="statValue" component="span">
-            {merged ?? 0}
-          </Typography>
-        </Stack>
-        <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
-          <Typography variant="statLabel" component="span">
-            PRs Open
-          </Typography>
-          <Typography variant="statValue" component="span">
-            {opened}
-          </Typography>
-        </Stack>
-        <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
-          <Typography variant="statLabel" component="span">
-            PRs Closed
-          </Typography>
-          <Typography variant="statValue" component="span">
-            {closed ?? 0}
-          </Typography>
-        </Stack>
-        <Stack direction="column" gap={0.5} sx={{ minWidth: '4.5rem' }}>
-          <Typography variant="statLabel" component="span">
-            Unique Repos
-          </Typography>
-          <Typography variant="statValue" component="span">
-            {uniqueRepos ?? 0}
-          </Typography>
-        </Stack>
+              : 'N/A'
+          }
+        />
+        <TierStatItem label="PRs Merged" value={merged ?? 0} />
+        <TierStatItem label="PRs Open" value={opened} />
+        <TierStatItem label="PRs Closed" value={closed ?? 0} />
+        <TierStatItem label="Unique Repos" value={uniqueRepos ?? 0} />
       </Stack>
     </Card>
   );

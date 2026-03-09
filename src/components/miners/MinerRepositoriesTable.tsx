@@ -60,31 +60,24 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   const [sortField, setSortField] = useState<SortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
-  const headerCellStyle = useMemo(
-    () => ({
-      backgroundColor:
-        theme.palette.surface?.elevated ?? theme.palette.background.paper,
-      backdropFilter: 'blur(8px)',
-      color: alpha(theme.palette.text.primary, 0.7),
-      fontFamily: '"JetBrains Mono", monospace',
-      fontWeight: 500,
-      fontSize: '0.75rem',
-      borderBottom: `1px solid ${theme.palette.border?.light ?? theme.palette.divider}`,
-      textTransform: 'uppercase' as const,
-      letterSpacing: '0.5px',
-    }),
-    [theme],
-  );
+  const headerCellStyle = {
+    backgroundColor: theme.palette.surface.elevated,
+    backdropFilter: 'blur(8px)',
+    color: alpha(theme.palette.text.primary, 0.7),
+    fontFamily: '"JetBrains Mono", monospace',
+    fontWeight: 500,
+    fontSize: '0.75rem',
+    borderBottom: `1px solid ${theme.palette.border.light}`,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
+  };
 
-  const bodyCellStyle = useMemo(
-    () => ({
-      color: theme.palette.text.primary,
-      fontFamily: '"JetBrains Mono", monospace',
-      borderBottom: `1px solid ${theme.palette.border?.light ?? theme.palette.divider}`,
-      fontSize: '0.85rem',
-    }),
-    [theme],
-  );
+  const bodyCellStyle = {
+    color: theme.palette.text.primary,
+    fontFamily: '"JetBrains Mono", monospace',
+    borderBottom: `1px solid ${theme.palette.border.light}`,
+    fontSize: '0.85rem',
+  };
 
   // Build repository weights and tiers maps
   const repoWeights = useMemo(() => {
