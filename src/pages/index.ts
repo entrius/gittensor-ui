@@ -13,6 +13,9 @@ export * from './NotFoundPage';
 export { default as MinerDetailsPage } from './MinerDetailsPage';
 export * from './MinerDetailsPage';
 
+export { default as TierDetailsPage } from './TierDetailsPage';
+export * from './TierDetailsPage';
+
 export { default as RepositoryDetailsPage } from './RepositoryDetailsPage';
 export * from './RepositoryDetailsPage';
 

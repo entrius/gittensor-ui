@@ -13,28 +13,83 @@ import {
   Avatar,
   Chip,
   Button,
+  useTheme,
+  alpha,
 } from '@mui/material';
-import { useMinerPRs } from '../../api';
+import { useMinerPRs, useReposAndWeights } from '../../api';
 import { useNavigate } from 'react-router-dom';
-import theme from '../../theme';
 
 interface MinerPRsTableProps {
   githubId: string;
+  /** When set, only PRs in repositories of this tier are shown (e.g. "Bronze", "Silver", "Gold"). */
+  tierFilter?: string;
 }
 
-const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
+const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
+  githubId,
+  tierFilter,
+}) => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { data: prs, isLoading } = useMinerPRs(githubId);
+  const { data: repos } = useReposAndWeights();
+
+  const headerCellStyle = {
+    backgroundColor: theme.palette.surface.elevated,
+    backdropFilter: 'blur(8px)',
+    color: alpha(theme.palette.text.primary, 0.7),
+    fontFamily: '"JetBrains Mono", monospace',
+    fontWeight: 500,
+    fontSize: { xs: '0.65rem', sm: '0.75rem' },
+    borderBottom: `1px solid ${theme.palette.border.light}`,
+    height: { xs: '48px', sm: '56px' },
+    py: { xs: 1, sm: 1.5 },
+    px: { xs: 0.5, sm: 2 },
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
+  };
+
+  const bodyCellStyle = {
+    color: theme.palette.text.primary,
+    fontFamily: '"JetBrains Mono", monospace',
+    borderBottom: `1px solid ${theme.palette.border.light}`,
+    fontSize: '0.85rem',
+    py: { xs: 0.75, sm: 1 },
+    px: { xs: 0.5, sm: 2 },
+    height: { xs: '52px', sm: '60px' },
+  };
+
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'open' | 'merged' | 'closed'
   >('all');
 
-  // Filter PRs by selected repository, author, and status
+  const repoTiers = useMemo(() => {
+    const map = new Map<string, string>();
+    if (Array.isArray(repos)) {
+      repos.forEach((repo) => {
+        if (repo?.fullName) map.set(repo.fullName, repo.tier || '');
+      });
+    }
+    return map;
+  }, [repos]);
+
+  const tierFilterLower = tierFilter?.toLowerCase();
+
+  const prsInTier = useMemo(() => {
+    if (!prs || !tierFilterLower) return prs;
+    return prs.filter((pr) => {
+      const prTier = pr.tier?.toLowerCase();
+      const repoTier = repoTiers.get(pr.repository)?.toLowerCase();
+      return prTier === tierFilterLower || repoTier === tierFilterLower;
+    });
+  }, [prs, tierFilterLower, repoTiers]);
+
+  // Filter PRs by selected repository, author, and status (and tier when tierFilter is set)
   const filteredPRs = useMemo(() => {
-    if (!prs) return [];
-    let filtered = prs;
+    if (!prsInTier) return [];
+    let filtered = prsInTier;
     if (selectedRepo) {
       filtered = filtered.filter((pr) => pr.repository === selectedRepo);
     }
@@ -55,27 +110,29 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       );
     }
     return filtered;
-  }, [prs, selectedRepo, selectedAuthor, statusFilter]);
+  }, [prsInTier, selectedRepo, selectedAuthor, statusFilter]);
 
   const statusCounts = useMemo(() => {
-    if (!prs) return { all: 0, open: 0, merged: 0, closed: 0 };
+    if (!prsInTier) return { all: 0, open: 0, merged: 0, closed: 0 };
     return {
-      all: prs.length,
-      open: prs.filter(
+      all: prsInTier.length,
+      open: prsInTier.filter(
         (pr) => pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
       ).length,
-      merged: prs.filter((pr) => pr.mergedAt || pr.prState === 'MERGED').length,
-      closed: prs.filter((pr) => pr.prState === 'CLOSED' && !pr.mergedAt)
+      merged: prsInTier.filter((pr) => pr.mergedAt || pr.prState === 'MERGED')
+        .length,
+      closed: prsInTier.filter((pr) => pr.prState === 'CLOSED' && !pr.mergedAt)
         .length,
     };
-  }, [prs]);
+  }, [prsInTier]);
 
   if (isLoading) {
     return (
       <Card
         sx={{
           borderRadius: 3,
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: '1px solid',
+          borderColor: 'border.light',
           backgroundColor: 'transparent',
           p: 4,
           textAlign: 'center',
@@ -91,20 +148,21 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: '1px solid',
+        borderColor: 'border.light',
         backgroundColor: 'transparent',
-        p: 0, // Remove padding to let table fill the card
+        p: 0,
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden', // Ensure rounded corners clip content
+        overflow: 'hidden',
       }}
       elevation={0}
     >
-      {/* Header */}
       <Box
         sx={{
           p: { xs: 2, sm: 3 },
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          borderBottom: '1px solid',
+          borderColor: 'border.light',
         }}
       >
         <Box
@@ -120,7 +178,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             <Typography
               variant="h6"
               sx={{
-                color: '#ffffff',
+                color: 'text.primary',
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: { xs: '0.95rem', sm: '1.1rem' },
                 fontWeight: 500,
@@ -130,14 +188,17 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             </Typography>
             <Typography
               sx={{
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: (t) => alpha(t.palette.text.primary, 0.5),
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.75rem',
               }}
             >
               ({filteredPRs.length}
-              {selectedRepo || selectedAuthor || statusFilter !== 'all'
-                ? ` of ${prs?.length || 0}`
+              {selectedRepo ||
+              selectedAuthor ||
+              statusFilter !== 'all' ||
+              tierFilter
+                ? ` of ${(tierFilter ? (prsInTier ?? []) : prs)?.length || 0}`
                 : ''}
               )
             </Typography>
@@ -205,7 +266,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Typography
             sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
+              color: (t) => alpha(t.palette.text.primary, 0.5),
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
             }}
@@ -213,11 +274,23 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             No PRs found
           </Typography>
         </Box>
+      ) : tierFilter && (prsInTier ?? []).length === 0 ? (
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <Typography
+            sx={{
+              color: (t) => alpha(t.palette.text.primary, 0.5),
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.9rem',
+            }}
+          >
+            No PRs in this tier
+          </Typography>
+        </Box>
       ) : filteredPRs.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Typography
             sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
+              color: (t) => alpha(t.palette.text.primary, 0.5),
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
             }}
@@ -239,10 +312,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               backgroundColor: 'transparent',
             },
             '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              backgroundColor: (t) => t.palette.border.light,
               borderRadius: '4px',
               '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                backgroundColor: (t) => t.palette.border.medium,
               },
             },
           }}
@@ -303,7 +376,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   sx={{
                     cursor: 'pointer',
                     '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      backgroundColor: 'surface.light',
                     },
                     transition: 'all 0.2s',
                   }}
@@ -315,18 +388,19 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                       fontSize: { xs: '0.75rem', sm: '0.85rem' },
                     }}
                   >
-                    <a
+                    <Box
+                      component="a"
                       href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{
-                        color: '#ffffff',
+                      sx={{
+                        color: 'text.primary',
                         textDecoration: 'none',
                         fontWeight: 500,
                       }}
                     >
                       #{pr.pullRequestNumber}
-                    </a>
+                    </Box>
                   </TableCell>
                   <TableCell
                     sx={{
@@ -374,12 +448,13 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                         sx={{
                           width: 20,
                           height: 20,
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          border: '1px solid',
+                          borderColor: 'border.medium',
                           backgroundColor:
                             pr.repository.split('/')[0] === 'opentensor'
-                              ? '#ffffff'
+                              ? 'text.primary'
                               : pr.repository.split('/')[0] === 'bitcoin'
-                                ? '#F7931A'
+                                ? 'status.warning'
                                 : 'transparent',
                         }}
                       />
@@ -425,7 +500,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                             fontFamily: '"JetBrains Mono", monospace',
                             fontSize: { xs: '0.7rem', sm: '0.75rem' },
                             fontWeight: 600,
-                            color: 'rgba(255, 255, 255, 0.3)',
+                            color: (t) => alpha(t.palette.text.primary, 0.3),
                           }}
                         >
                           -
@@ -436,7 +511,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                             fontFamily: '"JetBrains Mono", monospace',
                             fontSize: { xs: '0.7rem', sm: '0.75rem' },
                             fontWeight: 600,
-                            color: '#fb923c',
+                            color: 'status.warning',
                           }}
                         >
                           {parseFloat(pr.collateralScore).toFixed(4)}
@@ -459,7 +534,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                             sx={{
                               fontFamily: '"JetBrains Mono", monospace',
                               fontSize: '0.6rem',
-                              color: 'rgba(255,255,255,0.5)',
+                              color: (t) => alpha(t.palette.text.primary, 0.5),
                             }}
                           >
                             Collateral
@@ -474,7 +549,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                       width: '15%',
                       display: { xs: 'none', sm: 'table-cell' },
                       fontSize: { xs: '0.75rem', sm: '0.85rem' },
-                      color: 'rgba(255,255,255,0.7)',
+                      color: (t) => alpha(t.palette.text.primary, 0.7),
                     }}
                   >
                     {pr.mergedAt
@@ -493,31 +568,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   );
 };
 
-const headerCellStyle = {
-  backgroundColor: 'rgba(18, 18, 20, 0.95)',
-  backdropFilter: 'blur(8px)',
-  color: 'rgba(255, 255, 255, 0.7)',
-  fontFamily: '"JetBrains Mono", monospace',
-  fontWeight: 500,
-  fontSize: { xs: '0.65rem', sm: '0.75rem' },
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  height: { xs: '48px', sm: '56px' },
-  py: { xs: 1, sm: 1.5 },
-  px: { xs: 0.5, sm: 2 },
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.5px',
-};
-
-const bodyCellStyle = {
-  color: '#ffffff',
-  fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  fontSize: '0.85rem',
-  py: { xs: 0.75, sm: 1 },
-  px: { xs: 0.5, sm: 2 },
-  height: { xs: '52px', sm: '60px' },
-};
-
 const FilterButton: React.FC<{
   label: string;
   count: number;
@@ -529,8 +579,10 @@ const FilterButton: React.FC<{
     size="small"
     onClick={onClick}
     sx={{
-      color: selected ? '#fff' : 'rgba(255,255,255,0.5)',
-      backgroundColor: selected ? 'rgba(255,255,255,0.1)' : 'transparent',
+      color: selected
+        ? 'text.primary'
+        : (t) => alpha(t.palette.text.primary, 0.5),
+      backgroundColor: selected ? 'surface.light' : 'transparent',
       borderRadius: '6px',
       px: 1.5,
       minWidth: 'auto',
@@ -539,7 +591,7 @@ const FilterButton: React.FC<{
       fontSize: '0.75rem',
       border: selected ? `1px solid ${color}` : '1px solid transparent',
       '&:hover': {
-        backgroundColor: 'rgba(255,255,255,0.15)',
+        backgroundColor: (t) => alpha(t.palette.text.primary, 0.15),
       },
     }}
   >
