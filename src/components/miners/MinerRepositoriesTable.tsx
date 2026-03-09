@@ -15,6 +15,7 @@ import {
   TextField,
   InputAdornment,
   alpha,
+  useTheme,
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import { useMinerPRs, useReposAndWeights } from '../../api';
@@ -32,6 +33,8 @@ import {
 
 interface MinerRepositoriesTableProps {
   githubId: string;
+  /** When set, only repositories in this tier are shown (e.g. "Bronze", "Silver", "Gold"). */
+  tierFilter?: string;
 }
 
 interface RepoStats {
@@ -44,7 +47,9 @@ interface RepoStats {
 
 const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   githubId,
+  tierFilter,
 }) => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
@@ -52,6 +57,25 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [tierFilter, setTierFilter] = useState<MinerTierFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const headerCellStyle = {
+    backgroundColor: theme.palette.surface.elevated,
+    backdropFilter: 'blur(8px)',
+    color: alpha(theme.palette.text.primary, 0.7),
+    fontFamily: '"JetBrains Mono", monospace',
+    fontWeight: 500,
+    fontSize: '0.75rem',
+    borderBottom: `1px solid ${theme.palette.border.light}`,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
+  };
+
+  const bodyCellStyle = {
+    color: theme.palette.text.primary,
+    fontFamily: '"JetBrains Mono", monospace',
+    borderBottom: `1px solid ${theme.palette.border.light}`,
+    fontSize: '0.85rem',
+  };
 
   // Build repository weights and tiers maps
   const repoWeights = useMemo(() => {
@@ -142,7 +166,8 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       <Card
         sx={{
           borderRadius: 3,
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: '1px solid',
+          borderColor: 'border.light',
           backgroundColor: 'transparent',
           p: 4,
           textAlign: 'center',
@@ -154,12 +179,13 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     );
   }
 
-  if (!prs || prs.length === 0 || repoStats.length === 0) {
+  if (!prs || prs.length === 0) {
     return (
       <Card
         sx={{
           borderRadius: 3,
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: '1px solid',
+          borderColor: 'border.light',
           backgroundColor: 'transparent',
           p: 4,
         }}
@@ -167,7 +193,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       >
         <Typography
           sx={{
-            color: 'rgba(255, 255, 255, 0.5)',
+            color: (t) => alpha(t.palette.text.primary, 0.5),
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.9rem',
             textAlign: 'center',
@@ -179,11 +205,64 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     );
   }
 
+  if (!tierFilter && repoStats.length === 0) {
+    return (
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'border.light',
+          backgroundColor: 'transparent',
+          p: 4,
+        }}
+        elevation={0}
+      >
+        <Typography
+          sx={{
+            color: (t) => alpha(t.palette.text.primary, 0.5),
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.9rem',
+            textAlign: 'center',
+          }}
+        >
+          No repository contributions found
+        </Typography>
+      </Card>
+    );
+  }
+
+  if (tierFilter && filteredRepoStats.length === 0) {
+    return (
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'border.light',
+          backgroundColor: 'transparent',
+          p: 4,
+        }}
+        elevation={0}
+      >
+        <Typography
+          sx={{
+            color: (t) => alpha(t.palette.text.primary, 0.5),
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.9rem',
+            textAlign: 'center',
+          }}
+        >
+          No repositories in this tier
+        </Typography>
+      </Card>
+    );
+  }
+
   return (
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: '1px solid',
+        borderColor: 'border.light',
         backgroundColor: 'transparent',
         p: 0,
         display: 'flex',
@@ -195,7 +274,8 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       <Box
         sx={{
           p: 3,
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          borderBottom: '1px solid',
+          borderColor: 'border.light',
         }}
       >
         <Box
@@ -306,11 +386,14 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                   onClick={() => handleSort('rank')}
                   sx={{
                     color: 'inherit',
-                    '&:hover': { color: 'rgba(255, 255, 255, 0.9)' },
+                    '&:hover': {
+                      color: (t) => alpha(t.palette.text.primary, 0.9),
+                    },
                     '&.Mui-active': {
-                      color: 'rgba(255, 255, 255, 0.9)',
+                      color: (t) => alpha(t.palette.text.primary, 0.9),
                       '& .MuiTableSortLabel-icon': {
-                        color: 'rgba(255, 255, 255, 0.9) !important',
+                        color: (t) =>
+                          `${alpha(t.palette.text.primary, 0.9)} !important`,
                       },
                     },
                   }}
@@ -325,11 +408,14 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                   onClick={() => handleSort('repository')}
                   sx={{
                     color: 'inherit',
-                    '&:hover': { color: 'rgba(255, 255, 255, 0.9)' },
+                    '&:hover': {
+                      color: (t) => alpha(t.palette.text.primary, 0.9),
+                    },
                     '&.Mui-active': {
-                      color: 'rgba(255, 255, 255, 0.9)',
+                      color: (t) => alpha(t.palette.text.primary, 0.9),
                       '& .MuiTableSortLabel-icon': {
-                        color: 'rgba(255, 255, 255, 0.9) !important',
+                        color: (t) =>
+                          `${alpha(t.palette.text.primary, 0.9)} !important`,
                       },
                     },
                   }}
@@ -344,11 +430,14 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                   onClick={() => handleSort('prs')}
                   sx={{
                     color: 'inherit',
-                    '&:hover': { color: 'rgba(255, 255, 255, 0.9)' },
+                    '&:hover': {
+                      color: (t) => alpha(t.palette.text.primary, 0.9),
+                    },
                     '&.Mui-active': {
-                      color: 'rgba(255, 255, 255, 0.9)',
+                      color: (t) => alpha(t.palette.text.primary, 0.9),
                       '& .MuiTableSortLabel-icon': {
-                        color: 'rgba(255, 255, 255, 0.9) !important',
+                        color: (t) =>
+                          `${alpha(t.palette.text.primary, 0.9)} !important`,
                       },
                     },
                   }}
@@ -363,11 +452,14 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                   onClick={() => handleSort('score')}
                   sx={{
                     color: 'inherit',
-                    '&:hover': { color: 'rgba(255, 255, 255, 0.9)' },
+                    '&:hover': {
+                      color: (t) => alpha(t.palette.text.primary, 0.9),
+                    },
                     '&.Mui-active': {
-                      color: 'rgba(255, 255, 255, 0.9)',
+                      color: (t) => alpha(t.palette.text.primary, 0.9),
                       '& .MuiTableSortLabel-icon': {
-                        color: 'rgba(255, 255, 255, 0.9) !important',
+                        color: (t) =>
+                          `${alpha(t.palette.text.primary, 0.9)} !important`,
                       },
                     },
                   }}
@@ -385,11 +477,14 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                   onClick={() => handleSort('weight')}
                   sx={{
                     color: 'inherit',
-                    '&:hover': { color: 'rgba(255, 255, 255, 0.9)' },
+                    '&:hover': {
+                      color: (t) => alpha(t.palette.text.primary, 0.9),
+                    },
                     '&.Mui-active': {
-                      color: 'rgba(255, 255, 255, 0.9)',
+                      color: (t) => alpha(t.palette.text.primary, 0.9),
                       '& .MuiTableSortLabel-icon': {
-                        color: 'rgba(255, 255, 255, 0.9) !important',
+                        color: (t) =>
+                          `${alpha(t.palette.text.primary, 0.9)} !important`,
                       },
                     },
                   }}
@@ -405,7 +500,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                 key={repo.repository}
                 sx={{
                   '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    backgroundColor: 'surface.light',
                   },
                   transition: 'background-color 0.2s',
                 }}
@@ -413,7 +508,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                 <TableCell sx={bodyCellStyle}>
                   <Box
                     sx={{
-                      backgroundColor: '#000000',
+                      backgroundColor: 'background.default',
                       borderRadius: '2px',
                       width: '28px',
                       height: '28px',
@@ -422,14 +517,14 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                       justifyContent: 'center',
                       flexShrink: 0,
                       border: '1px solid',
-                      borderColor:
+                      borderColor: (t) =>
                         index === 0
                           ? alpha(TIER_COLORS.gold, 0.4)
                           : index === 1
                             ? alpha(TIER_COLORS.silver, 0.4)
                             : index === 2
                               ? alpha(TIER_COLORS.bronze, 0.4)
-                              : 'rgba(255, 255, 255, 0.15)',
+                              : alpha(t.palette.text.primary, 0.15),
                       boxShadow:
                         index === 0
                           ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
@@ -443,14 +538,14 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                     <Typography
                       component="span"
                       sx={{
-                        color:
+                        color: (t) =>
                           index === 0
                             ? TIER_COLORS.gold
                             : index === 1
                               ? TIER_COLORS.silver
                               : index === 2
                                 ? TIER_COLORS.bronze
-                                : 'rgba(255, 255, 255, 0.6)',
+                                : alpha(t.palette.text.primary, 0.6),
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.7rem',
                         fontWeight: 600,
@@ -496,12 +591,13 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                       sx={{
                         width: 24,
                         height: 24,
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        border: '1px solid',
+                        borderColor: 'border.medium',
                         backgroundColor:
                           repo.repository.split('/')[0] === 'opentensor'
-                            ? '#ffffff'
+                            ? 'text.primary'
                             : repo.repository.split('/')[0] === 'bitcoin'
-                              ? '#F7931A'
+                              ? 'status.warning'
                               : 'transparent',
                       }}
                     />
@@ -551,25 +647,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       </TableContainer>
     </Card>
   );
-};
-
-const headerCellStyle = {
-  backgroundColor: 'rgba(18, 18, 20, 0.95)',
-  backdropFilter: 'blur(8px)',
-  color: 'rgba(255, 255, 255, 0.7)',
-  fontFamily: '"JetBrains Mono", monospace',
-  fontWeight: 500,
-  fontSize: '0.75rem',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.5px',
-};
-
-const bodyCellStyle = {
-  color: '#ffffff',
-  fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  fontSize: '0.85rem',
 };
 
 export default MinerRepositoriesTable;

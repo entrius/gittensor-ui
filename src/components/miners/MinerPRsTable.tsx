@@ -69,9 +69,15 @@ const getScoreTooltip = (pr: CommitLog): string | null => {
 
 interface MinerPRsTableProps {
   githubId: string;
+  /** When set, only PRs in repositories of this tier are shown (e.g. "Bronze", "Silver", "Gold"). */
+  tierFilter?: string;
 }
 
-const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
+const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
+  githubId,
+  tierFilter,
+}) => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const { data: repos } = useReposAndWeights();
@@ -108,8 +114,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   );
 
   const filteredPRs = useMemo(() => {
-    if (!prs) return [];
-    let filtered = prs;
+    if (!prsInTier) return [];
+    let filtered = prsInTier;
     if (selectedRepo) {
       filtered = filtered.filter((pr) => pr.repository === selectedRepo);
     }
@@ -184,17 +190,18 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const totalPages = Math.ceil(sortedPRs.length / PAGE_SIZE);
 
   const statusCounts = useMemo(() => {
-    if (!prs) return { all: 0, open: 0, merged: 0, closed: 0 };
+    if (!prsInTier) return { all: 0, open: 0, merged: 0, closed: 0 };
     return {
-      all: prs.length,
-      open: prs.filter(
+      all: prsInTier.length,
+      open: prsInTier.filter(
         (pr) => pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
       ).length,
-      merged: prs.filter((pr) => pr.mergedAt || pr.prState === 'MERGED').length,
-      closed: prs.filter((pr) => pr.prState === 'CLOSED' && !pr.mergedAt)
+      merged: prsInTier.filter((pr) => pr.mergedAt || pr.prState === 'MERGED')
+        .length,
+      closed: prsInTier.filter((pr) => pr.prState === 'CLOSED' && !pr.mergedAt)
         .length,
     };
-  }, [prs]);
+  }, [prsInTier]);
 
   const tierCounts = useMemo(() => {
     if (!prs) return { all: 0, gold: 0, silver: 0, bronze: 0 };
@@ -219,11 +226,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       }}
       elevation={0}
     >
-      {/* Header */}
       <Box
         sx={{
           p: { xs: 2, sm: 3 },
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          borderBottom: '1px solid',
+          borderColor: 'border.light',
         }}
       >
         <Box
@@ -239,7 +246,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             <Typography
               variant="h6"
               sx={{
-                color: '#ffffff',
+                color: 'text.primary',
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: { xs: '0.95rem', sm: '1.1rem' },
                 fontWeight: 500,
@@ -249,7 +256,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             </Typography>
             <Typography
               sx={{
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: (t) => alpha(t.palette.text.primary, 0.5),
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.75rem',
               }}
@@ -421,7 +428,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Typography
             sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
+              color: (t) => alpha(t.palette.text.primary, 0.5),
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
             }}
@@ -433,7 +440,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Typography
             sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
+              color: (t) => alpha(t.palette.text.primary, 0.5),
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
             }}
