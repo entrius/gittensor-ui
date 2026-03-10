@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Box, Card, Typography } from '@mui/material';
+import { Box, Card, Typography, useTheme } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
   LockOpen as LockOpenIcon,
@@ -13,6 +13,7 @@ interface MinerFocusCardProps {
 }
 
 export const MinerFocusCard: React.FC<MinerFocusCardProps> = ({ githubId }) => {
+  const theme = useTheme();
   const { data: minerStats } = useMinerStats(githubId);
   const { data: tierData } = useTierConfigurations();
 
@@ -111,8 +112,8 @@ export const MinerFocusCard: React.FC<MinerFocusCardProps> = ({ githubId }) => {
           <Box>
             <Typography
               sx={{
-                color: '#ffffff',
-                fontFamily: '"JetBrains Mono", monospace',
+                color: theme.palette.text.primary,
+                fontFamily: theme.typography.mono.fontFamily,
                 fontSize: '1rem',
                 fontWeight: 600,
               }}
@@ -121,8 +122,8 @@ export const MinerFocusCard: React.FC<MinerFocusCardProps> = ({ githubId }) => {
             </Typography>
             <Typography
               sx={{
-                color: 'rgba(255,255,255,0.7)',
-                fontFamily: '"JetBrains Mono", monospace',
+                color: theme.palette.text.secondary,
+                fontFamily: theme.typography.mono.fontFamily,
                 fontSize: '0.8rem',
                 mt: 0.5,
               }}
@@ -137,8 +138,8 @@ export const MinerFocusCard: React.FC<MinerFocusCardProps> = ({ githubId }) => {
                 m: 0,
                 mt: 1,
                 pl: 2.5,
-                color: 'rgba(255,255,255,0.85)',
-                fontFamily: '"JetBrains Mono", monospace',
+                color: theme.palette.text.primary,
+                fontFamily: theme.typography.mono.fontFamily,
                 fontSize: '0.78rem',
                 lineHeight: 1.6,
               }}
@@ -159,8 +160,9 @@ export const MinerFocusCard: React.FC<MinerFocusCardProps> = ({ githubId }) => {
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255,255,255,0.15)',
-        backgroundColor: 'rgba(255,255,255,0.03)',
+        border: '1px solid',
+        borderColor: theme.palette.border.light,
+        backgroundColor: theme.palette.surface.subtle,
         p: { xs: 2, sm: 2.5 },
       }}
       elevation={0}
@@ -172,8 +174,8 @@ export const MinerFocusCard: React.FC<MinerFocusCardProps> = ({ githubId }) => {
         <Box>
           <Typography
             sx={{
-              color: '#ffffff',
-              fontFamily: '"JetBrains Mono", monospace',
+              color: 'text.primary',
+              fontFamily: theme.typography.mono.fontFamily,
               fontSize: '1rem',
               fontWeight: 600,
             }}
@@ -182,8 +184,8 @@ export const MinerFocusCard: React.FC<MinerFocusCardProps> = ({ githubId }) => {
           </Typography>
           <Typography
             sx={{
-              color: 'rgba(255,255,255,0.7)',
-              fontFamily: '"JetBrains Mono", monospace',
+              color: (t) => t.palette.text.secondary,
+              fontFamily: theme.typography.mono.fontFamily,
               fontSize: '0.8rem',
               mt: 0.5,
             }}

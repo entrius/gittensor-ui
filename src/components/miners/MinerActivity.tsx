@@ -152,8 +152,9 @@ const MinerActivity: React.FC<MinerActivityProps> = ({ githubId }) => {
       <Box
         sx={{
           p: 2.5,
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          backgroundColor: 'rgba(255, 255, 255, 0.02)',
+          borderBottom: '1px solid',
+          borderColor: 'border.light',
+          backgroundColor: 'surface.subtle',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -179,11 +180,10 @@ const MinerActivity: React.FC<MinerActivityProps> = ({ githubId }) => {
             md={6}
             sx={{
               p: 3,
-              borderRight: { md: '1px solid rgba(255, 255, 255, 0.1)' },
-              borderBottom: {
-                xs: '1px solid rgba(255, 255, 255, 0.1)',
-                md: 'none',
-              },
+              borderRight: { md: '1px solid' },
+              borderRightColor: { md: 'border.light' },
+              borderBottom: { xs: '1px solid', md: 'none' },
+              borderBottomColor: { xs: 'border.light', md: 'transparent' },
             }}
           >
             <ContributionHeatmap
@@ -203,11 +203,10 @@ const MinerActivity: React.FC<MinerActivityProps> = ({ githubId }) => {
             md={3}
             sx={{
               p: 3,
-              borderRight: { md: '1px solid rgba(255, 255, 255, 0.1)' },
-              borderBottom: {
-                xs: '1px solid rgba(255, 255, 255, 0.1)',
-                md: 'none',
-              },
+              borderRight: { md: '1px solid' },
+              borderRightColor: { md: 'border.light' },
+              borderBottom: { xs: '1px solid', md: 'none' },
+              borderBottomColor: { xs: 'border.light', md: 'transparent' },
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',

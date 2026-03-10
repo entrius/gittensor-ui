@@ -18,6 +18,7 @@ import {
   Tooltip,
   alpha,
   useTheme,
+  type Theme,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -43,17 +44,18 @@ const PAGE_SIZE = 20;
 const tooltipSlotProps = {
   tooltip: {
     sx: {
-      backgroundColor: 'rgba(30,30,30,0.95)',
-      color: '#fff',
+      backgroundColor: 'rgba(30, 30, 30, 0.95)',
+      color: 'text.primary',
       fontSize: '0.72rem',
       fontFamily: '"JetBrains Mono", monospace',
       padding: '8px 12px',
       borderRadius: '6px',
-      border: '1px solid rgba(255,255,255,0.1)',
+      border: '1px solid',
+      borderColor: 'border.light',
       maxWidth: 260,
     },
   },
-  arrow: { sx: { color: 'rgba(30,30,30,0.95)' } },
+  arrow: { sx: { color: 'rgba(30, 30, 30, 0.95)' } },
 };
 
 const getScoreTooltip = (pr: CommitLog): string | null => {
@@ -83,7 +85,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
   const navigate = useNavigate();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const { data: repos } = useReposAndWeights();
-  const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<MinerStatusFilter>('all');
   const [internalTierFilter, setTierFilter] = useState<MinerTierFilter>('all');
@@ -121,9 +122,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
   const filteredPRs = useMemo(() => {
     if (!prs) return [];
     let filtered = prs;
-    if (selectedRepo) {
-      filtered = filtered.filter((pr) => pr.repository === selectedRepo);
-    }
     if (selectedAuthor) {
       filtered = filtered.filter((pr) => pr.author === selectedAuthor);
     }
@@ -153,7 +151,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
     return filtered;
   }, [
     prs,
-    selectedRepo,
     selectedAuthor,
     statusFilter,
     tierFilter,
@@ -270,8 +267,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
               }}
             >
               ({filteredPRs.length}
-              {selectedRepo ||
-              selectedAuthor ||
+              {selectedAuthor ||
               statusFilter !== 'all' ||
               tierFilter !== 'all' ||
               searchQuery.trim()
@@ -290,13 +286,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
               width: { xs: '100%', sm: 'auto' },
             }}
           >
-            {selectedRepo && (
-              <Chip
-                variant="filter"
-                label={`Repo: ${selectedRepo}`}
-                onDelete={() => setSelectedRepo(null)}
-              />
-            )}
             {selectedAuthor && (
               <Chip
                 variant="filter"
@@ -408,7 +397,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
             startAdornment: (
               <InputAdornment position="start">
                 <SearchIcon
-                  sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '1rem' }}
+                  sx={{ color: (t) => alpha(t.palette.text.primary, 0.3), fontSize: '1rem' }}
                 />
               </InputAdornment>
             ),
@@ -420,11 +409,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
             '& .MuiOutlinedInput-root': {
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.8rem',
-              color: '#fff',
-              backgroundColor: 'rgba(255,255,255,0.03)',
+              color: 'text.primary',
+              backgroundColor: 'surface.subtle',
               borderRadius: 2,
-              '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
-              '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+              '& fieldset': { borderColor: 'border.light' },
+              '&:hover fieldset': { borderColor: 'border.medium' },
               '&.Mui-focused fieldset': { borderColor: 'primary.main' },
             },
           }}
@@ -468,9 +457,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
               },
               '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
               '&::-webkit-scrollbar-thumb': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                backgroundColor: 'border.light',
                 borderRadius: '4px',
-                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+                '&:hover': { backgroundColor: 'border.medium' },
               },
             }}
           >
@@ -556,7 +545,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                       sx={{
                         cursor: 'pointer',
                         '&:hover': {
-                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          backgroundColor: 'surface.subtle',
                         },
                         transition: 'all 0.2s',
                       }}
@@ -572,7 +561,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
-                            color: '#ffffff',
+                            color: 'inherit',
                             textDecoration: 'none',
                             fontWeight: 500,
                           }}
@@ -599,19 +588,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                       </TableCell>
                       <TableCell sx={bodyCellStyle}>
                         <Box
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedRepo(pr.repository);
-                            setPage(0);
-                          }}
                           sx={{
                             display: 'flex',
                             alignItems: 'center',
                             gap: 1.5,
-                            cursor: 'pointer',
                             overflow: 'hidden',
-                            '&:hover': { color: 'primary.main' },
-                            transition: 'color 0.2s',
                           }}
                         >
                           <Avatar
@@ -621,12 +602,13 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                               width: 20,
                               height: 20,
                               flexShrink: 0,
-                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              border: '1px solid',
+                              borderColor: 'border.medium',
                               backgroundColor:
                                 pr.repository.split('/')[0] === 'opentensor'
-                                  ? '#ffffff'
+                                  ? 'text.primary'
                                   : pr.repository.split('/')[0] === 'bitcoin'
-                                    ? '#F7931A'
+                                    ? 'status.warning'
                                     : 'transparent',
                             }}
                           />
@@ -670,7 +652,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                                 fontFamily: '"JetBrains Mono", monospace',
                                 fontSize: { xs: '0.7rem', sm: '0.75rem' },
                                 fontWeight: 600,
-                                color: 'rgba(255, 255, 255, 0.3)',
+                                color: (t) => alpha(t.palette.text.primary, 0.3),
                               }}
                             >
                               -
@@ -681,7 +663,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                                 fontFamily: '"JetBrains Mono", monospace',
                                 fontSize: { xs: '0.7rem', sm: '0.75rem' },
                                 fontWeight: 600,
-                                color: '#fb923c',
+                                color: theme.palette.status.warningOrange,
                               }}
                             >
                               {parseFloat(pr.collateralScore).toFixed(4)}
@@ -722,7 +704,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                                 sx={{
                                   fontFamily: '"JetBrains Mono", monospace',
                                   fontSize: '0.6rem',
-                                  color: 'rgba(255,255,255,0.5)',
+                                  color: (t) => alpha(t.palette.text.primary, 0.5),
                                 }}
                               >
                                 Collateral
@@ -735,7 +717,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                         sx={{
                           ...bodyCellStyle,
                           fontSize: { xs: '0.75rem', sm: '0.85rem' },
-                          color: 'rgba(255,255,255,0.7)',
+                          color: (t) => alpha(t.palette.text.primary, 0.7),
                         }}
                       >
                         {pr.mergedAt
@@ -760,7 +742,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                 justifyContent: 'center',
                 gap: 2,
                 py: 1.5,
-                borderTop: '1px solid rgba(255,255,255,0.08)',
+                borderTop: '1px solid',
+                borderColor: 'border.subtle',
               }}
             >
               <Box
@@ -770,8 +753,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                   opacity: page > 0 ? 1 : 0.3,
                   display: 'flex',
                   alignItems: 'center',
-                  color: 'rgba(255,255,255,0.6)',
-                  '&:hover': page > 0 ? { color: '#fff' } : {},
+                  color: (t) => alpha(t.palette.text.primary, 0.6),
+                  '&:hover': page > 0 ? { color: 'text.primary' } : {},
                 }}
               >
                 <PrevIcon sx={{ fontSize: '1.2rem' }} />
@@ -780,7 +763,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                 sx={{
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.75rem',
-                  color: 'rgba(255,255,255,0.5)',
+                  color: (t) => alpha(t.palette.text.primary, 0.5),
                 }}
               >
                 {page + 1} / {totalPages}
@@ -792,8 +775,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                   opacity: page < totalPages - 1 ? 1 : 0.3,
                   display: 'flex',
                   alignItems: 'center',
-                  color: 'rgba(255,255,255,0.6)',
-                  '&:hover': page < totalPages - 1 ? { color: '#fff' } : {},
+                  color: (t) => alpha(t.palette.text.primary, 0.6),
+                  '&:hover': page < totalPages - 1 ? { color: 'text.primary' } : {},
                 }}
               >
                 <NextIcon sx={{ fontSize: '1.2rem' }} />
@@ -807,20 +790,21 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
 };
 
 const sortLabelSx = {
-  '&.MuiTableSortLabel-root': { color: 'rgba(255,255,255,0.7)' },
-  '&.MuiTableSortLabel-root:hover': { color: '#fff' },
-  '&.Mui-active': { color: '#fff' },
-  '& .MuiTableSortLabel-icon': { color: 'rgba(255,255,255,0.4) !important' },
+  '&.MuiTableSortLabel-root': { color: (t: Theme) => alpha(t.palette.text.primary, 0.7) },
+  '&.MuiTableSortLabel-root:hover': { color: 'text.primary' },
+  '&.Mui-active': { color: 'text.primary' },
+  '& .MuiTableSortLabel-icon': { color: (t: Theme) => `${alpha(t.palette.text.primary, 0.4)} !important` },
 };
 
 const headerCellStyle = {
-  backgroundColor: 'rgba(18, 18, 20, 0.95)',
+  backgroundColor: 'surface.elevated',
   backdropFilter: 'blur(8px)',
-  color: 'rgba(255, 255, 255, 0.7)',
+  color: (t: Theme) => alpha(t.palette.text.primary, 0.7),
   fontFamily: '"JetBrains Mono", monospace',
   fontWeight: 500,
   fontSize: { xs: '0.65rem', sm: '0.75rem' },
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  borderBottom: '1px solid',
+  borderColor: 'border.light',
   height: { xs: '48px', sm: '56px' },
   py: { xs: 1, sm: 1.5 },
   px: { xs: 0.5, sm: 2 },
@@ -829,9 +813,10 @@ const headerCellStyle = {
 };
 
 const bodyCellStyle = {
-  color: '#ffffff',
+  color: 'text.primary',
   fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  borderBottom: '1px solid',
+  borderColor: 'border.light',
   fontSize: '0.85rem',
   py: { xs: 0.75, sm: 1 },
   px: { xs: 0.5, sm: 2 },

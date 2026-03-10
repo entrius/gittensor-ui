@@ -14,7 +14,7 @@ import {
   type RepositoryPrScoring,
   type TierConfig,
 } from '../../api';
-import { STATUS_COLORS, TIER_COLORS } from '../../theme';
+import { STATUS_COLORS, TIER_COLORS, CREDIBILITY_COLORS } from '../../theme';
 import {
   calculateDynamicOpenPrThreshold,
   getTierLevel,
@@ -187,9 +187,9 @@ const getInsightStyle = (type: InsightType) => {
   switch (type) {
     case 'warning':
       return {
-        color: '#fb923c',
-        border: alpha('#fb923c', 0.3),
-        background: alpha('#fb923c', 0.09),
+        color: STATUS_COLORS.warningOrange,
+        border: alpha(STATUS_COLORS.warningOrange, 0.3),
+        background: alpha(STATUS_COLORS.warningOrange, 0.09),
         icon: <WarningIcon sx={{ fontSize: '1rem' }} />,
       };
     case 'achievement':
@@ -247,7 +247,8 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({ githubId }) => {
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: '1px solid',
+        borderColor: 'border.light',
         backgroundColor: 'transparent',
         p: 3,
       }}
@@ -256,7 +257,7 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({ githubId }) => {
       <Box sx={{ mb: 2 }}>
         <Typography
           sx={{
-            color: '#fff',
+            color: 'text.primary',
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '1.1rem',
             fontWeight: 600,
@@ -266,7 +267,7 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({ githubId }) => {
           Insights & Next Actions
         </Typography>
         <Typography
-          sx={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.85rem' }}
+          sx={{ color: (t) => alpha(t.palette.text.primary, 0.55), fontSize: '0.85rem' }}
         >
           Prioritized recommendations based on your tier progress, credibility,
           collateral, and open-PR posture.
@@ -304,7 +305,7 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({ githubId }) => {
                 </Typography>
                 <Typography
                   sx={{
-                    color: 'rgba(255,255,255,0.68)',
+                    color: (t) => alpha(t.palette.text.primary, 0.68),
                     fontSize: '0.8rem',
                     mt: 0.4,
                     lineHeight: 1.45,
@@ -337,7 +338,7 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({ githubId }) => {
           textAlign: 'right',
           fontSize: '0.72rem',
           fontFamily: '"JetBrains Mono", monospace',
-          color: 'rgba(255,255,255,0.35)',
+          color: (t) => alpha(t.palette.text.primary, 0.35),
         }}
       >
         Learn more about scoring in the{' '}

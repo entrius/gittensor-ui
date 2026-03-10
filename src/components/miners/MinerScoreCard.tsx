@@ -27,7 +27,7 @@ import {
   useMinerGithubData,
   useGeneralConfig,
 } from '../../api';
-import { TIER_COLORS, STATUS_COLORS } from '../../theme';
+import { TIER_COLORS, STATUS_COLORS, CREDIBILITY_COLORS, RISK_COLORS } from '../../theme';
 import { calculateDynamicOpenPrThreshold, parseNumber } from './explorerUtils';
 
 const formatTimeAgo = (date: Date): string => {
@@ -55,39 +55,40 @@ const tierColor = (tier: string | undefined) => {
     case 'Bronze':
       return TIER_COLORS.bronze;
     default:
-      return 'rgba(255,255,255,0.4)';
+      return STATUS_COLORS.neutral;
   }
 };
 
 const credibilityColor = (cred: number) => {
-  if (cred >= 0.9) return STATUS_COLORS.success;
-  if (cred >= 0.7) return '#a3e635';
-  if (cred >= 0.5) return '#facc15';
-  if (cred >= 0.3) return '#fb923c';
-  return '#f87171';
+  if (cred >= 0.9) return CREDIBILITY_COLORS.excellent;
+  if (cred >= 0.7) return CREDIBILITY_COLORS.good;
+  if (cred >= 0.5) return CREDIBILITY_COLORS.moderate;
+  if (cred >= 0.3) return CREDIBILITY_COLORS.low;
+  return CREDIBILITY_COLORS.poor;
 };
 
 const openPrColor = (open: number, threshold: number) => {
-  if (open >= threshold) return 'rgba(248,113,113,0.9)';
-  if (open >= threshold - 1) return 'rgba(251,146,60,0.9)';
-  if (open >= threshold - 2) return 'rgba(250,204,21,0.9)';
+  if (open >= threshold) return RISK_COLORS.exceeded;
+  if (open >= threshold - 1) return RISK_COLORS.critical;
+  if (open >= threshold - 2) return RISK_COLORS.approaching;
   return undefined;
 };
 
 const tooltipSlotProps = {
   tooltip: {
     sx: {
-      backgroundColor: 'rgba(30,30,30,0.95)',
-      color: '#fff',
+      backgroundColor: 'rgba(30, 30, 30, 0.95)',
+      color: 'text.primary',
       fontSize: '0.75rem',
       fontFamily: '"JetBrains Mono", monospace',
       padding: '8px 12px',
       borderRadius: '6px',
-      border: '1px solid rgba(255,255,255,0.1)',
+      border: '1px solid',
+      borderColor: 'border.light',
       maxWidth: 260,
     },
   },
-  arrow: { sx: { color: 'rgba(30,30,30,0.95)' } },
+  arrow: { sx: { color: 'rgba(30, 30, 30, 0.95)' } },
 };
 
 interface StatTileProps {
@@ -109,9 +110,10 @@ const StatTile: React.FC<StatTileProps> = ({
 }) => (
   <Box
     sx={{
-      backgroundColor: 'rgba(255,255,255,0.03)',
+      backgroundColor: 'surface.subtle',
       borderRadius: 2,
-      border: '1px solid rgba(255,255,255,0.08)',
+      border: '1px solid',
+      borderColor: 'border.subtle',
       p: 2,
       height: '100%',
       display: 'flex',
@@ -146,7 +148,7 @@ const StatTile: React.FC<StatTileProps> = ({
       {rank != null && rank > 0 && (
         <Box
           sx={{
-            backgroundColor: '#000',
+            backgroundColor: 'background.default',
             borderRadius: '2px',
             width: 18,
             height: 18,
@@ -164,7 +166,7 @@ const StatTile: React.FC<StatTileProps> = ({
                         : TIER_COLORS.bronze,
                     0.4,
                   )
-                : 'rgba(255,255,255,0.15)',
+                : 'border.light',
           }}
         >
           <Typography
@@ -180,7 +182,7 @@ const StatTile: React.FC<StatTileProps> = ({
                     ? TIER_COLORS.silver
                     : rank === 3
                       ? TIER_COLORS.bronze
-                      : 'rgba(255,255,255,0.6)',
+                      : (t) => alpha(t.palette.text.primary, 0.6),
             }}
           >
             {rank}
@@ -193,7 +195,7 @@ const StatTile: React.FC<StatTileProps> = ({
         fontFamily: '"JetBrains Mono", monospace',
         fontSize: '1.5rem',
         fontWeight: 600,
-        color: color || '#fff',
+        color: color || 'text.primary',
         lineHeight: 1.2,
       }}
     >
@@ -204,7 +206,7 @@ const StatTile: React.FC<StatTileProps> = ({
         sx={{
           fontFamily: '"JetBrains Mono", monospace',
           fontSize: '0.75rem',
-          color: 'rgba(255,255,255,0.4)',
+          color: (t) => alpha(t.palette.text.primary, 0.4),
           mt: 0.25,
         }}
       >
@@ -300,10 +302,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             right: 16,
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.7rem',
-            color: 'rgba(255,255,255,0.5)',
-            borderColor: 'rgba(255,255,255,0.15)',
-            backgroundColor: 'rgba(0,0,0,0.3)',
-            '& .MuiChip-icon': { color: 'rgba(255,255,255,0.4)' },
+            color: (t) => alpha(t.palette.text.primary, 0.5),
+            borderColor: 'border.light',
+            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            '& .MuiChip-icon': { color: (t) => alpha(t.palette.text.primary, 0.4) },
           }}
         />
       )}
@@ -316,7 +318,8 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
           sx={{
             width: 64,
             height: 64,
-            border: '2px solid rgba(255,255,255,0.1)',
+            border: '2px solid',
+            borderColor: 'border.light',
           }}
         />
         <Box sx={{ minWidth: 0, flex: 1 }}>
@@ -334,7 +337,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: { xs: '1.15rem', sm: '1.35rem' },
                 fontWeight: 700,
-                color: '#fff',
+                color: 'text.primary',
               }}
             >
               {githubData?.name || username}
@@ -382,7 +385,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             </Typography>
             <Typography
               sx={{
-                color: 'rgba(255,255,255,0.45)',
+                color: (t) => alpha(t.palette.text.primary, 0.45),
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: { xs: '0.6rem', sm: '0.7rem' },
                 overflow: 'hidden',
@@ -451,10 +454,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                 mt: 1,
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.65rem',
-                color: 'rgba(255,255,255,0.5)',
-                borderColor: 'rgba(255,255,255,0.15)',
-                backgroundColor: 'rgba(0,0,0,0.3)',
-                '& .MuiChip-icon': { color: 'rgba(255,255,255,0.4)' },
+                color: (t) => alpha(t.palette.text.primary, 0.5),
+                borderColor: 'border.light',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                '& .MuiChip-icon': { color: (t) => alpha(t.palette.text.primary, 0.4) },
               }}
             />
           )}

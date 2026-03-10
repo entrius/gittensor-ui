@@ -295,7 +295,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
             <Typography
               variant="h6"
               sx={{
-                color: '#ffffff',
+                color: 'text.primary',
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '1.1rem',
                 fontWeight: 500,
@@ -305,7 +305,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
             </Typography>
             <Typography
               sx={{
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: (t) => alpha(t.palette.text.primary, 0.5),
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.75rem',
               }}
@@ -356,7 +356,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
             startAdornment: (
               <InputAdornment position="start">
                 <SearchIcon
-                  sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '1rem' }}
+                  sx={{ color: (t) => alpha(t.palette.text.primary, 0.3), fontSize: '1rem' }}
                 />
               </InputAdornment>
             ),
@@ -367,11 +367,11 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
             '& .MuiOutlinedInput-root': {
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.8rem',
-              color: '#fff',
-              backgroundColor: 'rgba(255,255,255,0.03)',
+              color: 'text.primary',
+              backgroundColor: 'surface.subtle',
               borderRadius: 2,
-              '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
-              '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+              '& fieldset': { borderColor: 'border.light' },
+              '&:hover fieldset': { borderColor: 'border.medium' },
               '&.Mui-focused fieldset': { borderColor: 'primary.main' },
             },
           }}
@@ -636,7 +636,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                 </TableCell>
                 <TableCell
                   align="right"
-                  sx={{ ...bodyCellStyle, color: 'rgba(255,255,255,0.5)' }}
+                  sx={{ ...bodyCellStyle, color: (t) => alpha(t.palette.text.primary, 0.5) }}
                 >
                   {repo.prs > 0 ? (repo.score / repo.prs).toFixed(4) : '—'}
                 </TableCell>

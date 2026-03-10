@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { Box, Tab, Tabs } from '@mui/material';
 import { Page } from '../components/layout';
 import {
   BackButton,
   MinerActivity,
-  MinerFocusCard,
   MinerInsightsCard,
   MinerPRsTable,
   MinerRepositoriesTable,
@@ -15,16 +14,24 @@ import {
   SEO,
 } from '../components';
 
-type MinerDetailsTab =
-  | 'overview'
-  | 'activity'
-  | 'pull-requests'
-  | 'repositories';
+const TAB_NAMES = ['overview', 'activity', 'pull-requests', 'repositories'] as const;
+type MinerDetailsTab = (typeof TAB_NAMES)[number];
 
 const MinerDetailsPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const githubId = searchParams.get('githubId');
-  const [activeTab, setActiveTab] = useState<MinerDetailsTab>('overview');
+
+  const tabParam = searchParams.get('tab');
+  const activeTab: MinerDetailsTab =
+    tabParam && TAB_NAMES.includes(tabParam as MinerDetailsTab)
+      ? (tabParam as MinerDetailsTab)
+      : 'overview';
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: MinerDetailsTab) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('tab', newValue);
+    setSearchParams(newParams);
+  };
 
   if (!githubId) {
     return <Navigate to="/top-miners" replace />;
@@ -61,33 +68,26 @@ const MinerDetailsPage: React.FC = () => {
 
           <Box
             sx={{
-              borderRadius: 2,
-              border: '1px solid rgba(255,255,255,0.1)',
-              backgroundColor: 'rgba(255,255,255,0.02)',
-              px: { xs: 1, sm: 2 },
+              borderBottom: '1px solid',
+              borderColor: 'border.light',
             }}
           >
             <Tabs
               value={activeTab}
-              onChange={(_event, nextTab: MinerDetailsTab) =>
-                setActiveTab(nextTab)
-              }
+              onChange={handleTabChange}
               variant="scrollable"
               scrollButtons="auto"
+              allowScrollButtonsMobile
               sx={{
                 '& .MuiTab-root': {
-                  color: 'rgba(255,255,255,0.58)',
+                  color: (t) => t.palette.text.secondary,
                   fontFamily: '"JetBrains Mono", monospace',
                   textTransform: 'none',
                   fontSize: '0.83rem',
-                  minHeight: 56,
+                  fontWeight: 500,
                   '&.Mui-selected': {
-                    color: '#fff',
+                    color: 'primary.main',
                   },
-                },
-                '& .MuiTabs-indicator': {
-                  backgroundColor: 'primary.main',
-                  height: 2.5,
                 },
               }}
             >
@@ -101,10 +101,9 @@ const MinerDetailsPage: React.FC = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {activeTab === 'overview' && (
               <>
-                <MinerFocusCard githubId={githubId} />
+                <MinerTierPerformance githubId={githubId} />
                 <MinerInsightsCard githubId={githubId} />
                 <MinerScoreBreakdown githubId={githubId} />
-                <MinerTierPerformance githubId={githubId} />
               </>
             )}
 

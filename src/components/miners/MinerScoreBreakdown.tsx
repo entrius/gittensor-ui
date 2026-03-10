@@ -13,7 +13,7 @@ import {
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import { useMinerPRs, useReposAndWeights, type CommitLog } from '../../api';
-import { TIER_COLORS, STATUS_COLORS } from '../../theme';
+import { TIER_COLORS, STATUS_COLORS, CREDIBILITY_COLORS } from '../../theme';
 
 interface MinerScoreBreakdownProps {
   githubId: string;
@@ -22,17 +22,18 @@ interface MinerScoreBreakdownProps {
 const tooltipSlotProps = {
   tooltip: {
     sx: {
-      backgroundColor: 'rgba(30,30,30,0.95)',
-      color: '#fff',
+      backgroundColor: 'rgba(30, 30, 30, 0.95)',
+      color: 'text.primary',
       fontSize: '0.72rem',
       fontFamily: '"JetBrains Mono", monospace',
       padding: '8px 12px',
       borderRadius: '6px',
-      border: '1px solid rgba(255,255,255,0.1)',
+      border: '1px solid',
+      borderColor: 'border.light',
       maxWidth: 280,
     },
   },
-  arrow: { sx: { color: 'rgba(30,30,30,0.95)' } },
+  arrow: { sx: { color: 'rgba(30, 30, 30, 0.95)' } },
 };
 
 const tierColor = (tier: string | null | undefined): string => {
@@ -44,7 +45,7 @@ const tierColor = (tier: string | null | undefined): string => {
     case 'Bronze':
       return TIER_COLORS.bronze;
     default:
-      return 'rgba(255,255,255,0.4)';
+      return STATUS_COLORS.neutral;
   }
 };
 
@@ -62,10 +63,10 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
   const isNeutral = value === 1;
   const isGood = value > 1;
   const color = isNeutral
-    ? 'rgba(255,255,255,0.5)'
+    ? STATUS_COLORS.neutral
     : isGood
       ? STATUS_COLORS.success
-      : '#fb923c';
+      : STATUS_COLORS.warningOrange;
 
   return (
     <Tooltip title={tooltip} arrow placement="top" slotProps={tooltipSlotProps}>
@@ -86,7 +87,7 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
           sx={{
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.62rem',
-            color: 'rgba(255,255,255,0.5)',
+            color: STATUS_COLORS.neutral,
             textTransform: 'uppercase',
           }}
         >
@@ -134,7 +135,8 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, repoTier }) => {
   return (
     <Box
       sx={{
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        borderBottom: '1px solid',
+        borderColor: 'border.subtle',
         '&:last-child': { borderBottom: 'none' },
       }}
     >
@@ -147,7 +149,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, repoTier }) => {
           py: 1.2,
           px: 1.5,
           cursor: 'pointer',
-          '&:hover': { backgroundColor: 'rgba(255,255,255,0.03)' },
+          '&:hover': { backgroundColor: 'surface.subtle' },
           transition: 'background-color 0.15s',
         }}
       >
@@ -159,7 +161,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, repoTier }) => {
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.78rem',
                 fontWeight: 600,
-                color: '#fff',
+                color: 'text.primary',
                 flexShrink: 0,
               }}
             >
@@ -169,7 +171,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, repoTier }) => {
               sx={{
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.72rem',
-                color: 'rgba(255,255,255,0.6)',
+                color: (t) => alpha(t.palette.text.primary, 0.6),
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -216,10 +218,10 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, repoTier }) => {
             fontSize: '0.9rem',
             fontWeight: 600,
             color: isClosed
-              ? 'rgba(255,255,255,0.3)'
+              ? (t) => alpha(t.palette.text.primary, 0.3)
               : isOpen
-                ? '#fb923c'
-                : '#fff',
+                ? STATUS_COLORS.warningOrange
+                : 'text.primary',
             flexShrink: 0,
           }}
         >
@@ -232,7 +234,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, repoTier }) => {
 
         <IconButton
           size="small"
-          sx={{ color: 'rgba(255,255,255,0.3)', p: 0.5 }}
+          sx={{ color: (t) => alpha(t.palette.text.primary, 0.3), p: 0.5 }}
         >
           {expanded ? (
             <ExpandLessIcon sx={{ fontSize: '1rem' }} />
@@ -268,7 +270,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, repoTier }) => {
                 sx={{
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.68rem',
-                  color: 'rgba(255,255,255,0.45)',
+                  color: (t) => alpha(t.palette.text.primary, 0.45),
                 }}
               >
                 base {baseScore.toFixed(2)}
@@ -295,8 +297,9 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, repoTier }) => {
                       px: 1,
                       py: 0.25,
                       borderRadius: 1,
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      backgroundColor: 'rgba(255,255,255,0.03)',
+                      border: '1px solid',
+                      borderColor: 'border.light',
+                      backgroundColor: 'surface.subtle',
                       cursor: 'pointer',
                     }}
                   >
@@ -304,7 +307,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, repoTier }) => {
                       sx={{
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.62rem',
-                        color: 'rgba(255,255,255,0.5)',
+                        color: STATUS_COLORS.neutral,
                         textTransform: 'uppercase',
                       }}
                     >
@@ -315,7 +318,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, repoTier }) => {
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.72rem',
                         fontWeight: 600,
-                        color: '#fff',
+                        color: 'text.primary',
                       }}
                     >
                       {Number(pr.tokenScore).toFixed(2)}
@@ -332,7 +335,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, repoTier }) => {
               sx={{
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.65rem',
-                color: 'rgba(255,255,255,0.4)',
+                color: (t) => alpha(t.palette.text.primary, 0.4),
               }}
             >
               +{pr.additions} / -{pr.deletions}
@@ -341,7 +344,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, repoTier }) => {
               sx={{
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.65rem',
-                color: 'rgba(255,255,255,0.4)',
+                color: (t) => alpha(t.palette.text.primary, 0.4),
               }}
             >
               {pr.commitCount} commit{pr.commitCount !== 1 ? 's' : ''}
@@ -351,7 +354,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, repoTier }) => {
                 sx={{
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.65rem',
-                  color: 'rgba(255,255,255,0.4)',
+                  color: (t) => alpha(t.palette.text.primary, 0.4),
                 }}
               >
                 {pr.totalNodesScored} nodes scored
@@ -362,7 +365,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, repoTier }) => {
                 sx={{
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.65rem',
-                  color: '#fb923c',
+                  color: STATUS_COLORS.warningOrange,
                 }}
               >
                 collateral: -{collateral.toFixed(4)}
@@ -432,7 +435,8 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
       <Box
         sx={{
           p: 2.5,
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          borderBottom: '1px solid',
+          borderColor: 'border.subtle',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -444,7 +448,7 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '1rem',
               fontWeight: 600,
-              color: '#fff',
+              color: 'text.primary',
             }}
           >
             Score Breakdown
@@ -453,7 +457,7 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
             sx={{
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.72rem',
-              color: 'rgba(255,255,255,0.45)',
+              color: (t) => alpha(t.palette.text.primary, 0.45),
               mt: 0.25,
             }}
           >
@@ -468,7 +472,8 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
           sx={{
             px: 2.5,
             py: 1.5,
-            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            borderBottom: '1px solid',
+            borderColor: 'border.subtle',
           }}
         >
           <Box sx={{ display: 'flex', gap: 2, mb: 0.75 }}>
@@ -512,7 +517,7 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
               height: 6,
               borderRadius: 3,
               overflow: 'hidden',
-              backgroundColor: 'rgba(255,255,255,0.06)',
+              backgroundColor: 'border.subtle',
             }}
           >
             {tierDistribution.gold > 0 && (
@@ -563,7 +568,8 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
             justifyContent: 'center',
             gap: 2,
             py: 1.2,
-            borderTop: '1px solid rgba(255,255,255,0.06)',
+            borderTop: '1px solid',
+            borderColor: 'border.subtle',
           }}
         >
           <Typography
@@ -571,7 +577,7 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
             sx={{
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.72rem',
-              color: page === 0 ? 'rgba(255,255,255,0.2)' : 'primary.main',
+              color: page === 0 ? (t) => alpha(t.palette.text.primary, 0.2) : 'primary.main',
               cursor: page === 0 ? 'default' : 'pointer',
               userSelect: 'none',
               '&:hover': page > 0 ? { textDecoration: 'underline' } : {},
@@ -583,7 +589,7 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
             sx={{
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.72rem',
-              color: 'rgba(255,255,255,0.5)',
+              color: (t) => alpha(t.palette.text.primary, 0.5),
             }}
           >
             {page + 1} / {totalPages}
@@ -595,7 +601,7 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
               fontSize: '0.72rem',
               color:
                 page >= totalPages - 1
-                  ? 'rgba(255,255,255,0.2)'
+                  ? (t) => alpha(t.palette.text.primary, 0.2)
                   : 'primary.main',
               cursor: page >= totalPages - 1 ? 'default' : 'pointer',
               userSelect: 'none',

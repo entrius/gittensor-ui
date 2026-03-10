@@ -16,12 +16,13 @@ const tooltipSlotProps: TooltipProps['slotProps'] = {
   tooltip: {
     sx: {
       backgroundColor: 'rgba(30, 30, 30, 0.95)',
-      color: '#ffffff',
+      color: 'text.primary',
       fontSize: '0.75rem',
       fontFamily: '"JetBrains Mono", monospace',
       padding: '8px 12px',
       borderRadius: '6px',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
+      border: '1px solid',
+      borderColor: 'border.light',
       maxWidth: 240,
     },
   },
@@ -36,12 +37,13 @@ const largeTooltipSlotProps: TooltipProps['slotProps'] = {
   tooltip: {
     sx: {
       backgroundColor: 'rgba(30, 30, 30, 0.95)',
-      color: '#ffffff',
+      color: 'text.primary',
       fontSize: '0.8rem',
       fontFamily: '"JetBrains Mono", monospace',
       padding: '10px 14px',
       borderRadius: '8px',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
+      border: '1px solid',
+      borderColor: 'border.light',
       maxWidth: 280,
     },
   },
@@ -89,13 +91,13 @@ export const TierStatItem: React.FC<TierStatItemProps> = ({
   label,
   value,
   tooltip,
-  valueColor = '#ffffff',
+  valueColor = 'text.primary',
   large = false,
 }) => {
   const labelContent = (
     <Typography
       sx={{
-        color: 'rgba(255, 255, 255, 0.5)',
+        color: (t) => t.palette.text.secondary,
         fontSize: '0.7rem',
         fontFamily: '"JetBrains Mono", monospace',
         textTransform: 'uppercase',
@@ -160,7 +162,7 @@ export const TierProgressBar: React.FC<TierProgressBarProps> = ({
       >
         <Typography
           sx={{
-            color: 'rgba(255, 255, 255, 0.7)',
+            color: 'text.secondary',
             fontSize: '0.7rem',
             fontFamily: '"JetBrains Mono", monospace',
           }}
@@ -169,13 +171,13 @@ export const TierProgressBar: React.FC<TierProgressBarProps> = ({
         </Typography>
         <Typography
           sx={{
-            color: isComplete ? STATUS_COLORS.success : '#ffffff',
+            color: isComplete ? STATUS_COLORS.success : 'text.primary',
             fontSize: '0.7rem',
             fontFamily: '"JetBrains Mono", monospace',
           }}
         >
           {current}{' '}
-          <Box component="span" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+          <Box component="span" sx={{ color: (t) => t.palette.text.secondary }}>
             (Req: {required})
           </Box>
         </Typography>
@@ -186,7 +188,7 @@ export const TierProgressBar: React.FC<TierProgressBarProps> = ({
         sx={{
           height: 4,
           borderRadius: 2,
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          backgroundColor: 'border.light',
           '& .MuiLinearProgress-bar': {
             backgroundColor: isComplete ? STATUS_COLORS.success : tierColor,
             borderRadius: 2,
@@ -214,7 +216,7 @@ export const TierPRActivity: React.FC<TierPRActivityProps> = ({
   <Box sx={{ pt: 1, borderTop: `1px solid ${borderColor}` }}>
     <Typography
       sx={{
-        color: 'rgba(255, 255, 255, 0.5)',
+        color: (t) => t.palette.text.secondary,
         fontSize: '0.7rem',
         fontFamily: '"JetBrains Mono", monospace',
         mb: 0.5,
@@ -225,7 +227,7 @@ export const TierPRActivity: React.FC<TierPRActivityProps> = ({
     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
       <Typography
         sx={{
-          color: '#ffffff',
+          color: 'text.primary',
           fontSize: '0.8rem',
           fontFamily: '"JetBrains Mono", monospace',
         }}
@@ -234,7 +236,7 @@ export const TierPRActivity: React.FC<TierPRActivityProps> = ({
       </Typography>
       <Typography
         sx={{
-          color: '#ffffff',
+          color: 'text.primary',
           fontSize: '0.8rem',
           fontFamily: '"JetBrains Mono", monospace',
         }}
@@ -243,7 +245,7 @@ export const TierPRActivity: React.FC<TierPRActivityProps> = ({
       </Typography>
       <Typography
         sx={{
-          color: '#ffffff',
+          color: 'text.primary',
           fontSize: '0.8rem',
           fontFamily: '"JetBrains Mono", monospace',
         }}
@@ -293,7 +295,7 @@ export const TierUnlockProgress: React.FC<TierUnlockProgressProps> = ({
   >
     <Typography
       sx={{
-        color: 'rgba(255, 255, 255, 0.5)',
+        color: (t) => t.palette.text.secondary,
         fontSize: '0.7rem',
         fontFamily: '"JetBrains Mono", monospace',
         mb: 1,
@@ -425,7 +427,7 @@ export const TierCard: React.FC<TierCardProps> = ({
             position: 'absolute',
             top: 8,
             right: 8,
-            color: 'rgba(255, 255, 255, 0.4)',
+            color: (t) => t.palette.text.secondary,
           }}
         >
           <LockOutlinedIcon sx={{ fontSize: '1rem' }} />
@@ -466,7 +468,7 @@ export const TierCard: React.FC<TierCardProps> = ({
             valueColor={
               stats.credibility && stats.credibility >= 0.7
                 ? STATUS_COLORS.success
-                : '#ffffff'
+                : undefined
             }
           />
           <Box sx={{ textAlign: 'right' }}>

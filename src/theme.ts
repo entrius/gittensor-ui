@@ -14,9 +14,24 @@ export const STATUS_COLORS = {
   neutral: '#9ca3af', // Grey - default/neutral state
   success: '#4ade80', // Green - success states
   warning: '#f59e0b', // Amber - warning/pending states
+  warningOrange: '#fb923c', // Orange - collateral/approaching limits
   error: '#ef4444', // Red - error states
   info: '#58a6ff', // Blue - info/link states
   award: '#f59e0b', // Amber - winner/trophy highlights
+} as const;
+
+export const CREDIBILITY_COLORS = {
+  excellent: '#4ade80', // Green - 90%+
+  good: '#a3e635', // Lime - 70-89%
+  moderate: '#facc15', // Yellow - 50-69%
+  low: '#fb923c', // Orange - 30-49%
+  poor: '#f87171', // Red - below 30%
+} as const;
+
+export const RISK_COLORS = {
+  exceeded: 'rgba(248, 113, 113, 0.9)', // Red - threshold exceeded
+  critical: 'rgba(251, 146, 60, 0.9)', // Orange - 1 away
+  approaching: 'rgba(250, 204, 21, 0.9)', // Yellow - 2 away
 } as const;
 
 export const DIFF_COLORS = {
@@ -77,9 +92,22 @@ declare module '@mui/material/styles' {
       neutral: string;
       success: string;
       warning: string;
+      warningOrange: string;
       error: string;
       info: string;
       award: string;
+    };
+    credibility: {
+      excellent: string;
+      good: string;
+      moderate: string;
+      low: string;
+      poor: string;
+    };
+    risk: {
+      exceeded: string;
+      critical: string;
+      approaching: string;
     };
     diff: {
       additions: string;
@@ -111,9 +139,22 @@ declare module '@mui/material/styles' {
       neutral: string;
       success: string;
       warning: string;
+      warningOrange: string;
       error: string;
       info: string;
       award: string;
+    };
+    credibility?: {
+      excellent: string;
+      good: string;
+      moderate: string;
+      low: string;
+      poor: string;
+    };
+    risk?: {
+      exceeded: string;
+      critical: string;
+      approaching: string;
     };
     diff?: {
       additions: string;
@@ -199,9 +240,24 @@ const theme = createTheme({
       neutral: STATUS_COLORS.neutral,
       success: STATUS_COLORS.success,
       warning: STATUS_COLORS.warning,
+      warningOrange: STATUS_COLORS.warningOrange,
       error: STATUS_COLORS.error,
       info: STATUS_COLORS.info,
       award: STATUS_COLORS.award,
+    },
+    // Credibility scale colors
+    credibility: {
+      excellent: CREDIBILITY_COLORS.excellent,
+      good: CREDIBILITY_COLORS.good,
+      moderate: CREDIBILITY_COLORS.moderate,
+      low: CREDIBILITY_COLORS.low,
+      poor: CREDIBILITY_COLORS.poor,
+    },
+    // Open PR risk colors
+    risk: {
+      exceeded: RISK_COLORS.exceeded,
+      critical: RISK_COLORS.critical,
+      approaching: RISK_COLORS.approaching,
     },
     // Diff colors for additions/deletions
     diff: {
