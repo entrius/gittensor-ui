@@ -102,7 +102,7 @@ export const Scoring: React.FC = () => (
         variant="contained"
         color="secondary"
         size="large"
-        href="https://docs.gittensor.io/scoring.html"
+        href="https://docs.gittensor.io/oss-contributions.html"
         target="_blank"
         rel="noopener noreferrer"
         endIcon={<OpenInNewIcon />}
