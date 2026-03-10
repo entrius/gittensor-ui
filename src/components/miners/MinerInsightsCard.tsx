@@ -14,7 +14,7 @@ import {
   type RepositoryPrScoring,
   type TierConfig,
 } from '../../api';
-import { STATUS_COLORS, TIER_COLORS, CREDIBILITY_COLORS } from '../../theme';
+import { STATUS_COLORS, TIER_COLORS } from '../../theme';
 import {
   calculateDynamicOpenPrThreshold,
   getTierLevel,

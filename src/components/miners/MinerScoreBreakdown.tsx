@@ -13,7 +13,7 @@ import {
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import { useMinerPRs, useReposAndWeights, type CommitLog } from '../../api';
-import { TIER_COLORS, STATUS_COLORS, CREDIBILITY_COLORS } from '../../theme';
+import { TIER_COLORS, STATUS_COLORS } from '../../theme';
 
 interface MinerScoreBreakdownProps {
   githubId: string;
