@@ -12,16 +12,28 @@ import {
   CircularProgress,
   Avatar,
   TableSortLabel,
+  TextField,
+  InputAdornment,
   alpha,
   useTheme,
 } from '@mui/material';
+import { Search as SearchIcon } from '@mui/icons-material';
 import { useMinerPRs, useReposAndWeights } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import { TIER_COLORS } from '../../theme';
+import ExplorerFilterButton from './ExplorerFilterButton';
+import {
+  type MinerTierFilter,
+  type RepoSortField,
+  type SortOrder,
+  filterMinerRepoStats,
+  sortMinerRepoStats,
+  tierColorFor,
+} from '../../utils/ExplorerUtils';
 
 interface MinerRepositoriesTableProps {
   githubId: string;
-  /** When set, only repositories in this tier are shown (e.g. "Bronze", "Silver", "Gold"). */
+  /** When set externally (e.g. from TierDetailsPage), overrides internal tier filter. */
   tierFilter?: string;
 }
 
@@ -33,32 +45,21 @@ interface RepoStats {
   tier: string;
 }
 
-type SortField = 'rank' | 'repository' | 'prs' | 'score' | 'weight';
-type SortOrder = 'asc' | 'desc';
-
-const getTierColor = (tier: string): string => {
-  switch (tier?.toLowerCase()) {
-    case 'gold':
-      return TIER_COLORS.gold;
-    case 'silver':
-      return TIER_COLORS.silver;
-    case 'bronze':
-      return TIER_COLORS.bronze;
-    default:
-      return 'transparent';
-  }
-};
-
 const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   githubId,
-  tierFilter,
+  tierFilter: externalTierFilter,
 }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
-  const [sortField, setSortField] = useState<SortField>('score');
+  const [sortField, setSortField] = useState<RepoSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [internalTierFilter, setTierFilter] = useState<MinerTierFilter>('all');
+  const tierFilter: MinerTierFilter =
+    (externalTierFilter?.toLowerCase() as MinerTierFilter) ||
+    internalTierFilter;
+  const [searchQuery, setSearchQuery] = useState('');
 
   const headerCellStyle = {
     backgroundColor: theme.palette.surface.elevated,
@@ -126,46 +127,33 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     return Array.from(statsMap.values());
   }, [prs, repoWeights, repoTiers]);
 
-  // Filter by tier when tierFilter is set (case-insensitive)
+  // Filter and sort repository stats
   const filteredRepoStats = useMemo(() => {
-    if (!tierFilter) return repoStats;
-    const tierLower = tierFilter.toLowerCase();
-    return repoStats.filter(
-      (r) => r.tier && r.tier.toLowerCase() === tierLower,
-    );
-  }, [repoStats, tierFilter]);
+    let filtered = filterMinerRepoStats(repoStats, tierFilter);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter((r) => r.repository.toLowerCase().includes(q));
+    }
+    return filtered;
+  }, [repoStats, tierFilter, searchQuery]);
 
-  // Sort repository stats
-  const sortedRepoStats = useMemo(() => {
-    const sorted = [...filteredRepoStats];
-    sorted.sort((a, b) => {
-      let compareValue = 0;
+  const sortedRepoStats = useMemo(
+    () => sortMinerRepoStats(filteredRepoStats, sortField, sortOrder),
+    [filteredRepoStats, sortField, sortOrder],
+  );
 
-      switch (sortField) {
-        case 'repository':
-          compareValue = a.repository.localeCompare(b.repository);
-          break;
-        case 'prs':
-          compareValue = a.prs - b.prs;
-          break;
-        case 'score':
-          compareValue = a.score - b.score;
-          break;
-        case 'weight':
-          compareValue = a.weight - b.weight;
-          break;
-        case 'rank':
-          // Rank is based on score by default
-          compareValue = a.score - b.score;
-          break;
-      }
+  const tierCounts = useMemo(() => {
+    const counts = { all: repoStats.length, gold: 0, silver: 0, bronze: 0 };
+    for (const repo of repoStats) {
+      const tier = repo.tier.toLowerCase();
+      if (tier === 'gold') counts.gold++;
+      else if (tier === 'silver') counts.silver++;
+      else if (tier === 'bronze') counts.bronze++;
+    }
+    return counts;
+  }, [repoStats]);
 
-      return sortOrder === 'asc' ? compareValue : -compareValue;
-    });
-    return sorted;
-  }, [filteredRepoStats, sortField, sortOrder]);
-
-  const handleSort = (field: SortField) => {
+  const handleSort = (field: RepoSortField) => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -293,17 +281,104 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
           borderColor: 'border.light',
         }}
       >
-        <Typography
-          variant="h6"
+        <Box
           sx={{
-            color: 'text.primary',
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: '1.1rem',
-            fontWeight: 500,
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 2,
           }}
         >
-          Top Repositories
-        </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                color: 'text.primary',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '1.1rem',
+                fontWeight: 500,
+              }}
+            >
+              Top Repositories
+            </Typography>
+            <Typography
+              sx={{
+                color: (t) => alpha(t.palette.text.primary, 0.5),
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.75rem',
+              }}
+            >
+              ({sortedRepoStats.length}
+              {tierFilter !== 'all' ? ` of ${repoStats.length}` : ''})
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+            <ExplorerFilterButton
+              label="All"
+              count={tierCounts.all}
+              color={theme.palette.status.neutral}
+              selected={tierFilter === 'all'}
+              onClick={() => setTierFilter('all')}
+            />
+            <ExplorerFilterButton
+              label="Gold"
+              count={tierCounts.gold}
+              color={TIER_COLORS.gold}
+              selected={tierFilter === 'gold'}
+              onClick={() => setTierFilter('gold')}
+            />
+            <ExplorerFilterButton
+              label="Silver"
+              count={tierCounts.silver}
+              color={TIER_COLORS.silver}
+              selected={tierFilter === 'silver'}
+              onClick={() => setTierFilter('silver')}
+            />
+            <ExplorerFilterButton
+              label="Bronze"
+              count={tierCounts.bronze}
+              color={TIER_COLORS.bronze}
+              selected={tierFilter === 'bronze'}
+              onClick={() => setTierFilter('bronze')}
+            />
+          </Box>
+        </Box>
+
+        {/* Search */}
+        <TextField
+          size="small"
+          placeholder="Search repositories..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon
+                  sx={{
+                    color: (t) => alpha(t.palette.text.primary, 0.3),
+                    fontSize: '1rem',
+                  }}
+                />
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            mt: 2,
+            maxWidth: 300,
+            '& .MuiOutlinedInput-root': {
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.8rem',
+              color: 'text.primary',
+              backgroundColor: 'surface.subtle',
+              borderRadius: 2,
+              '& fieldset': { borderColor: 'border.light' },
+              '&:hover fieldset': { borderColor: 'border.medium' },
+              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+            },
+          }}
+        />
       </Box>
 
       <TableContainer sx={{ maxHeight: '400px', overflow: 'auto' }}>
@@ -397,6 +472,9 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                 >
                   Score
                 </TableSortLabel>
+              </TableCell>
+              <TableCell align="right" sx={headerCellStyle}>
+                Avg/PR
               </TableCell>
               <TableCell align="right" sx={headerCellStyle}>
                 <TableSortLabel
@@ -535,7 +613,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                           width: 6,
                           height: 6,
                           borderRadius: '50%',
-                          backgroundColor: getTierColor(repo.tier),
+                          backgroundColor: tierColorFor(repo.tier, TIER_COLORS),
                           flexShrink: 0,
                         }}
                         title={`${repo.tier} tier`}
@@ -558,6 +636,15 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                 </TableCell>
                 <TableCell align="right" sx={bodyCellStyle}>
                   {repo.score.toFixed(4)}
+                </TableCell>
+                <TableCell
+                  align="right"
+                  sx={{
+                    ...bodyCellStyle,
+                    color: (t) => alpha(t.palette.text.primary, 0.5),
+                  }}
+                >
+                  {repo.prs > 0 ? (repo.score / repo.prs).toFixed(4) : '—'}
                 </TableCell>
                 <TableCell align="right" sx={bodyCellStyle}>
                   {repo.weight.toFixed(4)}

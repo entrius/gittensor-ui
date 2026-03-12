@@ -162,17 +162,17 @@ const MinerTierPerformance: React.FC<MinerTierPerformanceProps> = ({
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: '1px solid',
+        borderColor: 'border.light',
         backgroundColor: 'transparent',
         p: 3,
-        mb: 3,
       }}
       elevation={0}
     >
       <Typography
         variant="h6"
         sx={{
-          color: '#ffffff',
+          color: 'text.primary',
           fontFamily: '"JetBrains Mono", monospace',
           mb: 2.5,
           fontWeight: 600,

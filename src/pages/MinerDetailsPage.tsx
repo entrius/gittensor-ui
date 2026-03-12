@@ -1,43 +1,63 @@
 import React from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Box } from '@mui/material';
+import { Navigate, useSearchParams } from 'react-router-dom';
+import { Box, Tab, Tabs } from '@mui/material';
 import { Page } from '../components/layout';
 import {
-  MinerScoreCard,
-  MinerActivity,
-  MinerRepositoriesTable,
-  MinerPRsTable,
-  MinerTierPerformance,
   BackButton,
+  MinerActivity,
+  MinerInsightsCard,
+  MinerPRsTable,
+  MinerRepositoriesTable,
+  MinerScoreBreakdown,
+  MinerScoreCard,
+  MinerTierPerformance,
   SEO,
 } from '../components';
 
+const TAB_NAMES = [
+  'overview',
+  'activity',
+  'pull-requests',
+  'repositories',
+] as const;
+type MinerDetailsTab = (typeof TAB_NAMES)[number];
+
 const MinerDetailsPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const githubId = searchParams.get('githubId');
 
-  // If no githubId is provided, redirect to miners page
+  const tabParam = searchParams.get('tab');
+  const activeTab: MinerDetailsTab =
+    tabParam && TAB_NAMES.includes(tabParam as MinerDetailsTab)
+      ? (tabParam as MinerDetailsTab)
+      : 'overview';
+
+  const handleTabChange = (
+    _event: React.SyntheticEvent,
+    newValue: MinerDetailsTab,
+  ) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('tab', newValue);
+    setSearchParams(newParams);
+  };
+
   if (!githubId) {
-    navigate('/miners');
-    return null;
+    return <Navigate to="/top-miners" replace />;
   }
 
   return (
-    <Page title="Miner Details">
+    <Page title="Miner Dashboard">
       <SEO
-        title={`Miner Stats - ${githubId}`}
-        description={`View detailed statistics, contributions, and pull requests for ${githubId} on Gittensor. Track open source contributions and rewards.`}
+        title={`Miner Dashboard - ${githubId}`}
+        description={`Track earnings, tier progression, contribution quality, and pull request performance for miner ${githubId}.`}
         type="website"
       />
       <Box
         sx={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: { xs: 'auto', md: 'calc(100vh - 80px)' },
           width: '100%',
-          py: { xs: 2, sm: 0 },
+          justifyContent: 'center',
+          py: { xs: 2, sm: 3 },
         }}
       >
         <Box
@@ -45,27 +65,64 @@ const MinerDetailsPage: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             gap: 3,
-            maxWidth: 1200,
             width: '100%',
-            px: { xs: 2, sm: 2, md: 0 },
+            maxWidth: 1240,
+            px: { xs: 2, md: 0 },
           }}
         >
           <BackButton to="/top-miners" />
 
-          {/* Miner Score Card */}
           <MinerScoreCard githubId={githubId} />
 
-          {/* Activity Visualization */}
-          <MinerActivity githubId={githubId} />
+          <Box
+            sx={{
+              borderBottom: '1px solid',
+              borderColor: 'border.light',
+            }}
+          >
+            <Tabs
+              value={activeTab}
+              onChange={handleTabChange}
+              variant="scrollable"
+              scrollButtons="auto"
+              allowScrollButtonsMobile
+              sx={{
+                '& .MuiTab-root': {
+                  color: (t) => t.palette.text.secondary,
+                  fontFamily: '"JetBrains Mono", monospace',
+                  textTransform: 'none',
+                  fontSize: '0.83rem',
+                  fontWeight: 500,
+                  '&.Mui-selected': {
+                    color: 'primary.main',
+                  },
+                },
+              }}
+            >
+              <Tab value="overview" label="Overview" />
+              <Tab value="activity" label="Activity" />
+              <Tab value="pull-requests" label="Pull Requests" />
+              <Tab value="repositories" label="Repositories" />
+            </Tabs>
+          </Box>
 
-          {/* Tier Performance */}
-          <MinerTierPerformance githubId={githubId} />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {activeTab === 'overview' && (
+              <>
+                <MinerTierPerformance githubId={githubId} />
+                <MinerInsightsCard githubId={githubId} />
+                <MinerScoreBreakdown githubId={githubId} />
+              </>
+            )}
 
-          {/* Top Repositories */}
-          <MinerRepositoriesTable githubId={githubId} />
-
-          {/* Miner PRs Table */}
-          <MinerPRsTable githubId={githubId} />
+            {activeTab === 'activity' && <MinerActivity githubId={githubId} />}
+            {activeTab === 'pull-requests' && (
+              <MinerPRsTable githubId={githubId} />
+            )}
+            {activeTab === 'repositories' && (
+              <MinerRepositoriesTable githubId={githubId} />
+            )}
+          </Box>
         </Box>
       </Box>
     </Page>
