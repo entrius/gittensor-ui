@@ -123,6 +123,7 @@ declare module '@mui/material/styles' {
       subtle: string;
       light: string;
       elevated: string;
+      tooltip: string;
     };
   }
 
@@ -170,6 +171,7 @@ declare module '@mui/material/styles' {
       subtle: string;
       light: string;
       elevated: string;
+      tooltip: string;
     };
   }
 }
@@ -276,6 +278,7 @@ const theme = createTheme({
       subtle: 'rgba(255, 255, 255, 0.02)',
       light: 'rgba(255, 255, 255, 0.05)',
       elevated: '#161b22',
+      tooltip: 'rgba(30, 30, 30, 0.95)',
     },
   },
   typography: {
@@ -474,30 +477,30 @@ const theme = createTheme({
         // Info variant - for neutral information chips
         {
           props: { variant: 'info' },
-          style: {
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            color: 'rgba(255, 255, 255, 0.9)',
+          style: ({ theme: t }) => ({
+            backgroundColor: t.palette.surface.light,
+            border: `1px solid ${t.palette.border.light}`,
+            color: t.palette.text.primary,
             borderRadius: '6px',
             '& .MuiChip-icon': {
-              color: 'rgba(255, 255, 255, 0.7)',
+              color: t.palette.text.secondary,
             },
-          },
+          }),
         },
         // Filter variant - for deletable filter chips
         {
           props: { variant: 'filter' },
-          style: {
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            color: '#ffffff',
+          style: ({ theme: t }) => ({
+            backgroundColor: t.palette.border.light,
+            color: t.palette.text.primary,
             borderRadius: '6px',
             '& .MuiChip-deleteIcon': {
-              color: 'rgba(255, 255, 255, 0.7)',
+              color: t.palette.text.secondary,
               '&:hover': {
-                color: '#ffffff',
+                color: t.palette.text.primary,
               },
             },
-          },
+          }),
         },
       ],
     },

@@ -7,11 +7,15 @@ import {
   alpha,
   Collapse,
   IconButton,
+  Button,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  GitHub as GitHubIcon,
+  OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { useMinerPRs, useReposAndWeights, type CommitLog } from '../../api';
 import { TIER_COLORS, STATUS_COLORS } from '../../theme';
 
@@ -22,7 +26,7 @@ interface MinerScoreBreakdownProps {
 const tooltipSlotProps = {
   tooltip: {
     sx: {
-      backgroundColor: 'rgba(30, 30, 30, 0.95)',
+      backgroundColor: 'surface.tooltip',
       color: 'text.primary',
       fontSize: '0.72rem',
       fontFamily: '"JetBrains Mono", monospace',
@@ -33,7 +37,7 @@ const tooltipSlotProps = {
       maxWidth: 280,
     },
   },
-  arrow: { sx: { color: 'rgba(30, 30, 30, 0.95)' } },
+  arrow: { sx: { color: 'surface.tooltip' } },
 };
 
 const tierColor = (tier: string | null | undefined): string => {
@@ -111,9 +115,14 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
 interface PrScoreRowProps {
   pr: CommitLog;
   repoTier: string;
+  onNavigateToPr: (repo: string, prNumber: number) => void;
 }
 
-const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, repoTier }) => {
+const PrScoreRow: React.FC<PrScoreRowProps> = ({
+  pr,
+  repoTier,
+  onNavigateToPr,
+}) => {
   const [expanded, setExpanded] = useState(false);
 
   const score = parseFloat(pr.score || '0');
@@ -250,14 +259,14 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, repoTier }) => {
           sx={{
             px: 1.5,
             pb: 1.5,
-            pt: 1.5,
+            pt: 1,
             display: 'flex',
             flexDirection: 'column',
             gap: 1,
           }}
         >
-          {/* Formula line */}
-          {isMerged && baseScore > 0 && (
+          {/* Score multiplier chips */}
+          {isMerged && (
             <Box
               sx={{
                 display: 'flex',
@@ -266,111 +275,171 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, repoTier }) => {
                 alignItems: 'center',
               }}
             >
-              <Typography
-                sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '0.68rem',
-                  color: (t) => alpha(t.palette.text.primary, 0.45),
-                }}
-              >
-                base {baseScore.toFixed(2)}
-              </Typography>
-              {pr.rawCredibility != null && (
+              {pr.credibilityMultiplier != null && (
                 <MultiplierPill
                   label="cred"
-                  value={pr.credibilityScalar ?? 1}
-                  tooltip={`Raw credibility: ${(Number(pr.rawCredibility ?? 0) * 100).toFixed(1)}%. Scaled by tier scalar to ${Number(pr.credibilityScalar ?? 1).toFixed(2)}×.`}
+                  value={parseFloat(pr.credibilityMultiplier)}
+                  tooltip={`Credibility multiplier: ${Number(pr.credibilityMultiplier).toFixed(4)}×. Raw credibility: ${(Number(pr.rawCredibility ?? 0) * 100).toFixed(1)}%.`}
                 />
               )}
-              {pr.tokenScore != null && (
-                <Tooltip
-                  title={`${pr.structuralCount ?? 0} structural (${Number(pr.structuralScore ?? 0).toFixed(2)}) + ${pr.leafCount ?? 0} leaf (${Number(pr.leafScore ?? 0).toFixed(2)})`}
-                  arrow
-                  placement="top"
-                  slotProps={tooltipSlotProps}
-                >
-                  <Box
-                    sx={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      px: 1,
-                      py: 0.25,
-                      borderRadius: 1,
-                      border: '1px solid',
-                      borderColor: 'border.light',
-                      backgroundColor: 'surface.subtle',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: '0.62rem',
-                        color: STATUS_COLORS.neutral,
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      tokens
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: '0.72rem',
-                        fontWeight: 600,
-                        color: 'text.primary',
-                      }}
-                    >
-                      {Number(pr.tokenScore).toFixed(2)}
-                    </Typography>
-                  </Box>
-                </Tooltip>
+              {pr.repoWeightMultiplier != null && (
+                <MultiplierPill
+                  label="repo wt"
+                  value={parseFloat(pr.repoWeightMultiplier)}
+                  tooltip={`Repository weight multiplier: ${Number(pr.repoWeightMultiplier).toFixed(4)}×. Based on repository tier and activity.`}
+                />
+              )}
+              {pr.issueMultiplier != null && (
+                <MultiplierPill
+                  label="issue"
+                  value={parseFloat(pr.issueMultiplier)}
+                  tooltip={`Issue multiplier: ${Number(pr.issueMultiplier).toFixed(4)}×. Bonus for PRs linked to issues.`}
+                />
+              )}
+              {pr.repositoryUniquenessMultiplier != null && (
+                <MultiplierPill
+                  label="unique"
+                  value={parseFloat(pr.repositoryUniquenessMultiplier)}
+                  tooltip={`Repository uniqueness multiplier: ${Number(pr.repositoryUniquenessMultiplier).toFixed(4)}×. Rewards contributing to diverse repos.`}
+                />
+              )}
+              {pr.timeDecayMultiplier != null && (
+                <MultiplierPill
+                  label="decay"
+                  value={parseFloat(pr.timeDecayMultiplier)}
+                  tooltip={`Time decay multiplier: ${Number(pr.timeDecayMultiplier).toFixed(4)}×. Recent PRs score higher.`}
+                />
+              )}
+              {pr.openPrSpamMultiplier != null && (
+                <MultiplierPill
+                  label="spam"
+                  value={parseFloat(pr.openPrSpamMultiplier)}
+                  tooltip={`Open PR spam multiplier: ${Number(pr.openPrSpamMultiplier).toFixed(4)}×. Penalty for excessive open PRs.`}
+                />
               )}
             </Box>
           )}
 
-          {/* Stats row */}
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            <Typography
-              sx={{
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: '0.65rem',
-                color: (t) => alpha(t.palette.text.primary, 0.4),
-              }}
-            >
-              +{pr.additions} / -{pr.deletions}
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: '0.65rem',
-                color: (t) => alpha(t.palette.text.primary, 0.4),
-              }}
-            >
-              {pr.commitCount} commit{pr.commitCount !== 1 ? 's' : ''}
-            </Typography>
-            {pr.totalNodesScored != null && Number(pr.totalNodesScored) > 0 && (
-              <Typography
-                sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '0.65rem',
-                  color: (t) => alpha(t.palette.text.primary, 0.4),
-                }}
-              >
-                {pr.totalNodesScored} nodes scored
-              </Typography>
-            )}
+          {/* Stats row with delimiter */}
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: 0.5,
+            }}
+          >
+            {[
+              baseScore > 0 && `base ${baseScore.toFixed(2)}`,
+              `+${pr.additions} / -${pr.deletions}`,
+              `${pr.commitCount} commit${pr.commitCount !== 1 ? 's' : ''}`,
+              pr.tokenScore != null &&
+                `tokens ${Number(pr.tokenScore).toFixed(2)}`,
+              pr.totalNodesScored != null &&
+                Number(pr.totalNodesScored) > 0 &&
+                `${pr.totalNodesScored} nodes`,
+            ]
+              .filter(Boolean)
+              .map((stat, i, arr) => (
+                <React.Fragment key={i}>
+                  <Typography
+                    component="span"
+                    sx={{
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: '0.65rem',
+                      color: (t) => alpha(t.palette.text.primary, 0.4),
+                    }}
+                  >
+                    {stat}
+                  </Typography>
+                  {i < arr.length - 1 && (
+                    <Typography
+                      component="span"
+                      sx={{
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: '0.65rem',
+                        color: (t) => alpha(t.palette.text.primary, 0.2),
+                        mx: 0.25,
+                      }}
+                    >
+                      ·
+                    </Typography>
+                  )}
+                </React.Fragment>
+              ))}
             {isOpen && collateral > 0 && (
-              <Typography
-                sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '0.65rem',
-                  color: STATUS_COLORS.warningOrange,
-                }}
-              >
-                collateral: -{collateral.toFixed(4)}
-              </Typography>
+              <>
+                <Typography
+                  component="span"
+                  sx={{
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: '0.65rem',
+                    color: (t) => alpha(t.palette.text.primary, 0.2),
+                    mx: 0.25,
+                  }}
+                >
+                  ·
+                </Typography>
+                <Typography
+                  component="span"
+                  sx={{
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: '0.65rem',
+                    color: STATUS_COLORS.warningOrange,
+                  }}
+                >
+                  collateral: -{collateral.toFixed(4)}
+                </Typography>
+              </>
             )}
+          </Box>
+
+          {/* Action buttons */}
+          <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+            <Button
+              size="small"
+              startIcon={<OpenInNewIcon sx={{ fontSize: '0.85rem' }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigateToPr(pr.repository, pr.pullRequestNumber);
+              }}
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.65rem',
+                textTransform: 'none',
+                color: 'primary.main',
+                px: 1,
+                py: 0.25,
+                minWidth: 'auto',
+                '&:hover': { backgroundColor: 'surface.subtle' },
+              }}
+            >
+              PR Details
+            </Button>
+            <Button
+              size="small"
+              startIcon={<GitHubIcon sx={{ fontSize: '0.85rem' }} />}
+              component="a"
+              href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.65rem',
+                textTransform: 'none',
+                color: (t) => alpha(t.palette.text.primary, 0.5),
+                px: 1,
+                py: 0.25,
+                minWidth: 'auto',
+                '&:hover': {
+                  backgroundColor: 'surface.subtle',
+                  color: 'text.primary',
+                },
+              }}
+            >
+              GitHub
+            </Button>
           </Box>
         </Box>
       </Collapse>
@@ -381,10 +450,15 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, repoTier }) => {
 const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
   githubId,
 }) => {
+  const navigate = useNavigate();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const { data: repos } = useReposAndWeights();
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 10;
+
+  const handleNavigateToPr = (repo: string, prNumber: number) => {
+    navigate(`/miners/pr?repo=${encodeURIComponent(repo)}&number=${prNumber}`);
+  };
 
   const repoTierMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -555,6 +629,7 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
             key={`${pr.repository}-${pr.pullRequestNumber}-${i}`}
             pr={pr}
             repoTier={pr.tier || repoTierMap.get(pr.repository) || ''}
+            onNavigateToPr={handleNavigateToPr}
           />
         ))}
       </Box>

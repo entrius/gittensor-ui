@@ -29,7 +29,7 @@ import {
   filterMinerRepoStats,
   sortMinerRepoStats,
   tierColorFor,
-} from './explorerUtils';
+} from '../../utils/ExplorerUtils';
 
 interface MinerRepositoriesTableProps {
   githubId: string;

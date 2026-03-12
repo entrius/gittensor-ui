@@ -10,4 +10,3 @@ export { default as MinerScoreCard } from './MinerScoreCard';
 export { default as MinerTierPerformance } from './MinerTierPerformance';
 export { default as PerformanceRadar } from './PerformanceRadar';
 export { default as TrustBadge, getRiskAssessment } from './TrustBadge';
-export * from './explorerUtils';

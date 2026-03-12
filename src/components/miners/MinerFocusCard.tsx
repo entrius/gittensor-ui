@@ -6,7 +6,7 @@ import {
 } from '@mui/icons-material';
 import { useMinerStats, useTierConfigurations } from '../../api';
 import { TIER_COLORS } from '../../theme';
-import { parseNumber, TIER_LEVELS } from './explorerUtils';
+import { parseNumber, TIER_LEVELS } from '../../utils/ExplorerUtils';
 
 interface MinerFocusCardProps {
   githubId: string;

@@ -19,7 +19,7 @@ import {
   calculateDynamicOpenPrThreshold,
   getTierLevel,
   parseNumber,
-} from './explorerUtils';
+} from '../../utils/ExplorerUtils';
 
 interface MinerInsightsCardProps {
   githubId: string;

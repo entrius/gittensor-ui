@@ -33,7 +33,10 @@ import {
   CREDIBILITY_COLORS,
   RISK_COLORS,
 } from '../../theme';
-import { calculateDynamicOpenPrThreshold, parseNumber } from './explorerUtils';
+import {
+  calculateDynamicOpenPrThreshold,
+  parseNumber,
+} from '../../utils/ExplorerUtils';
 
 const formatTimeAgo = (date: Date): string => {
   const now = new Date();
@@ -82,7 +85,7 @@ const openPrColor = (open: number, threshold: number) => {
 const tooltipSlotProps = {
   tooltip: {
     sx: {
-      backgroundColor: 'rgba(30, 30, 30, 0.95)',
+      backgroundColor: 'surface.tooltip',
       color: 'text.primary',
       fontSize: '0.75rem',
       fontFamily: '"JetBrains Mono", monospace',
@@ -93,7 +96,7 @@ const tooltipSlotProps = {
       maxWidth: 260,
     },
   },
-  arrow: { sx: { color: 'rgba(30, 30, 30, 0.95)' } },
+  arrow: { sx: { color: 'surface.tooltip' } },
 };
 
 interface StatTileProps {
@@ -309,7 +312,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             fontSize: '0.7rem',
             color: (t) => alpha(t.palette.text.primary, 0.5),
             borderColor: 'border.light',
-            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            backgroundColor: 'surface.elevated',
             '& .MuiChip-icon': {
               color: (t) => alpha(t.palette.text.primary, 0.4),
             },
@@ -350,17 +353,15 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
               {githubData?.name || username}
             </Typography>
             <Chip
+              variant="tier"
               label={`${minerStats.currentTier || 'Unranked'}`}
               size="small"
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
-                fontWeight: 700,
-                fontSize: '0.7rem',
+                color: tColor,
+                borderColor: alpha(tColor, 0.35),
+                backgroundColor: alpha(tColor, 0.1),
                 letterSpacing: '0.5px',
                 textTransform: 'uppercase',
-                color: tColor,
-                backgroundColor: alpha(tColor, 0.1),
-                border: `1px solid ${alpha(tColor, 0.35)}`,
               }}
             />
           </Box>
@@ -394,16 +395,28 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
               sx={{
                 color: (t) => alpha(t.palette.text.primary, 0.45),
                 fontFamily: '"JetBrains Mono", monospace',
-                fontSize: { xs: '0.6rem', sm: '0.7rem' },
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                maxWidth: { xs: 140, sm: 280 },
+                fontSize: { xs: '0.55rem', sm: '0.65rem' },
+                wordBreak: 'break-all',
               }}
             >
               {minerStats.hotkey || ''}
             </Typography>
           </Box>
+
+          {/* Bio / about me */}
+          {githubData?.bio && (
+            <Typography
+              sx={{
+                color: (t) => alpha(t.palette.text.primary, 0.7),
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.8rem',
+                mt: 1,
+                lineHeight: 1.5,
+              }}
+            >
+              {githubData.bio}
+            </Typography>
+          )}
 
           {/* GitHub meta — compact inline chips */}
           {githubData && (
@@ -463,7 +476,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                 fontSize: '0.65rem',
                 color: (t) => alpha(t.palette.text.primary, 0.5),
                 borderColor: 'border.light',
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                backgroundColor: 'surface.elevated',
                 '& .MuiChip-icon': {
                   color: (t) => alpha(t.palette.text.primary, 0.4),
                 },

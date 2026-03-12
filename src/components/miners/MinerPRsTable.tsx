@@ -34,7 +34,7 @@ import {
   type MinerStatusFilter,
   countPrTiers,
   filterPrsByTier,
-} from './explorerUtils';
+} from '../../utils/ExplorerUtils';
 
 type PrSortField = 'number' | 'score' | 'lines' | 'date';
 type SortDir = 'asc' | 'desc';
@@ -44,7 +44,7 @@ const PAGE_SIZE = 20;
 const tooltipSlotProps = {
   tooltip: {
     sx: {
-      backgroundColor: 'rgba(30, 30, 30, 0.95)',
+      backgroundColor: 'surface.tooltip',
       color: 'text.primary',
       fontSize: '0.72rem',
       fontFamily: '"JetBrains Mono", monospace',
@@ -55,7 +55,7 @@ const tooltipSlotProps = {
       maxWidth: 260,
     },
   },
-  arrow: { sx: { color: 'rgba(30, 30, 30, 0.95)' } },
+  arrow: { sx: { color: 'surface.tooltip' } },
 };
 
 const getScoreTooltip = (pr: CommitLog): string | null => {

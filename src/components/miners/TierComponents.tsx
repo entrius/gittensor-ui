@@ -15,7 +15,7 @@ import { STATUS_COLORS } from '../../theme';
 const tooltipSlotProps: TooltipProps['slotProps'] = {
   tooltip: {
     sx: {
-      backgroundColor: 'rgba(30, 30, 30, 0.95)',
+      backgroundColor: 'surface.tooltip',
       color: 'text.primary',
       fontSize: '0.75rem',
       fontFamily: '"JetBrains Mono", monospace',
@@ -28,7 +28,7 @@ const tooltipSlotProps: TooltipProps['slotProps'] = {
   },
   arrow: {
     sx: {
-      color: 'rgba(30, 30, 30, 0.95)',
+      color: 'surface.tooltip',
     },
   },
 };
@@ -36,7 +36,7 @@ const tooltipSlotProps: TooltipProps['slotProps'] = {
 const largeTooltipSlotProps: TooltipProps['slotProps'] = {
   tooltip: {
     sx: {
-      backgroundColor: 'rgba(30, 30, 30, 0.95)',
+      backgroundColor: 'surface.tooltip',
       color: 'text.primary',
       fontSize: '0.8rem',
       fontFamily: '"JetBrains Mono", monospace',
@@ -49,7 +49,7 @@ const largeTooltipSlotProps: TooltipProps['slotProps'] = {
   },
   arrow: {
     sx: {
-      color: 'rgba(30, 30, 30, 0.95)',
+      color: 'surface.tooltip',
     },
   },
 };
