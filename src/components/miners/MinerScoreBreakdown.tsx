@@ -275,11 +275,16 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
                 alignItems: 'center',
               }}
             >
-              {pr.credibilityMultiplier != null && (
+              {(pr.credibilityMultiplier != null ||
+                pr.credibilityScalar != null) && (
                 <MultiplierPill
                   label="cred"
-                  value={parseFloat(pr.credibilityMultiplier)}
-                  tooltip={`Credibility multiplier: ${Number(pr.credibilityMultiplier).toFixed(4)}×. Raw credibility: ${(Number(pr.rawCredibility ?? 0) * 100).toFixed(1)}%.`}
+                  value={
+                    pr.credibilityMultiplier != null
+                      ? parseFloat(pr.credibilityMultiplier)
+                      : (pr.credibilityScalar ?? 1)
+                  }
+                  tooltip={`Credibility multiplier: ${(pr.credibilityMultiplier != null ? Number(pr.credibilityMultiplier) : (pr.credibilityScalar ?? 1)).toFixed(4)}×. Raw credibility: ${(Number(pr.rawCredibility ?? 0) * 100).toFixed(1)}%.`}
                 />
               )}
               {pr.repoWeightMultiplier != null && (
