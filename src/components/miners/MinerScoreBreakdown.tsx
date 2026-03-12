@@ -16,7 +16,12 @@ import {
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useMinerPRs, useReposAndWeights, type CommitLog } from '../../api';
+import {
+  useMinerPRs,
+  useReposAndWeights,
+  usePullRequestDetails,
+  type CommitLog,
+} from '../../api';
 import { TIER_COLORS, STATUS_COLORS } from '../../theme';
 
 interface MinerScoreBreakdownProps {
@@ -137,6 +142,12 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
   onNavigateToPr,
 }) => {
   const [expanded, setExpanded] = useState(false);
+
+  // Fetch full PR details (with all multipliers) — cached by React Query
+  const { data: prDetails } = usePullRequestDetails(
+    pr.repository,
+    pr.pullRequestNumber,
+  );
 
   const score = parseFloat(pr.score || '0');
   const baseScore = parseFloat(pr.baseScore || '0');
@@ -278,7 +289,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
             gap: 1,
           }}
         >
-          {/* Score multiplier chips */}
+          {/* Score multiplier chips — sourced from PR details API */}
           {isMerged && (
             <Box
               sx={{
@@ -288,62 +299,54 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
                 alignItems: 'center',
               }}
             >
-              {pr.rawCredibility != null && (
+              {prDetails?.credibilityMultiplier != null && (
                 <MultiplierPill
                   label="cred"
-                  value={pr.rawCredibility}
-                  format="percent"
-                  pillColor={
-                    pr.rawCredibility >= 0.8
-                      ? STATUS_COLORS.success
-                      : pr.rawCredibility >= 0.5
-                        ? STATUS_COLORS.neutral
-                        : STATUS_COLORS.warningOrange
-                  }
-                  tooltip={`Raw credibility: ${(Number(pr.rawCredibility) * 100).toFixed(1)}%. Higher credibility gives a stronger score multiplier.`}
+                  value={parseFloat(prDetails.credibilityMultiplier)}
+                  tooltip={`Credibility multiplier: ${Number(prDetails.credibilityMultiplier).toFixed(4)}×. Raw credibility: ${(Number(prDetails.rawCredibility ?? pr.rawCredibility ?? 0) * 100).toFixed(1)}%.`}
                 />
               )}
-              {pr.repoWeightMultiplier != null && (
+              {prDetails?.repoWeightMultiplier != null && (
                 <MultiplierPill
                   label="repo wt"
-                  value={parseFloat(pr.repoWeightMultiplier)}
-                  tooltip={`Repository weight multiplier: ${Number(pr.repoWeightMultiplier).toFixed(4)}×. Based on repository tier and activity.`}
+                  value={parseFloat(prDetails.repoWeightMultiplier)}
+                  tooltip={`Repository weight multiplier: ${Number(prDetails.repoWeightMultiplier).toFixed(4)}×. Based on repository tier and activity.`}
                 />
               )}
-              {pr.issueMultiplier != null && (
+              {prDetails?.issueMultiplier != null && (
                 <MultiplierPill
                   label="issue"
-                  value={parseFloat(pr.issueMultiplier)}
-                  tooltip={`Issue multiplier: ${Number(pr.issueMultiplier).toFixed(4)}×. Bonus for PRs linked to issues.`}
+                  value={parseFloat(prDetails.issueMultiplier)}
+                  tooltip={`Issue multiplier: ${Number(prDetails.issueMultiplier).toFixed(4)}×. Bonus for PRs linked to issues.`}
                 />
               )}
-              {pr.repositoryUniquenessMultiplier != null && (
+              {prDetails?.repositoryUniquenessMultiplier != null && (
                 <MultiplierPill
                   label="unique"
-                  value={parseFloat(pr.repositoryUniquenessMultiplier)}
-                  tooltip={`Repository uniqueness multiplier: ${Number(pr.repositoryUniquenessMultiplier).toFixed(4)}×. Rewards contributing to diverse repos.`}
+                  value={parseFloat(prDetails.repositoryUniquenessMultiplier)}
+                  tooltip={`Repository uniqueness multiplier: ${Number(prDetails.repositoryUniquenessMultiplier).toFixed(4)}×. Rewards contributing to diverse repos.`}
                 />
               )}
-              {pr.timeDecayMultiplier != null && (
+              {prDetails?.timeDecayMultiplier != null && (
                 <MultiplierPill
                   label="decay"
-                  value={parseFloat(pr.timeDecayMultiplier)}
-                  tooltip={`Time decay multiplier: ${Number(pr.timeDecayMultiplier).toFixed(4)}×. Recent PRs score higher.`}
+                  value={parseFloat(prDetails.timeDecayMultiplier)}
+                  tooltip={`Time decay multiplier: ${Number(prDetails.timeDecayMultiplier).toFixed(4)}×. Recent PRs score higher.`}
                 />
               )}
-              {pr.openPrSpamMultiplier != null && (
+              {prDetails?.openPrSpamMultiplier != null && (
                 <MultiplierPill
                   label="spam"
-                  value={parseFloat(pr.openPrSpamMultiplier)}
-                  tooltip={`Open PR spam multiplier: ${Number(pr.openPrSpamMultiplier).toFixed(4)}×. Penalty for excessive open PRs.`}
+                  value={parseFloat(prDetails.openPrSpamMultiplier)}
+                  tooltip={`Open PR spam multiplier: ${Number(prDetails.openPrSpamMultiplier).toFixed(4)}×. Penalty for excessive open PRs.`}
                 />
               )}
-              {pr.tokenScore != null && (
+              {(prDetails?.tokenScore ?? pr.tokenScore) != null && (
                 <MultiplierPill
                   label="tokens"
-                  value={Number(pr.tokenScore)}
+                  value={Number(prDetails?.tokenScore ?? pr.tokenScore)}
                   format="value"
-                  tooltip={`Token score: ${Number(pr.tokenScore).toFixed(2)}. ${pr.structuralCount ?? 0} structural (${Number(pr.structuralScore ?? 0).toFixed(2)}) + ${pr.leafCount ?? 0} leaf (${Number(pr.leafScore ?? 0).toFixed(2)}).`}
+                  tooltip={`Token score: ${Number(prDetails?.tokenScore ?? pr.tokenScore).toFixed(2)}. ${prDetails?.structuralCount ?? pr.structuralCount ?? 0} structural (${Number(prDetails?.structuralScore ?? pr.structuralScore ?? 0).toFixed(2)}) + ${prDetails?.leafCount ?? pr.leafCount ?? 0} leaf (${Number(prDetails?.leafScore ?? pr.leafScore ?? 0).toFixed(2)}).`}
                 />
               )}
             </Box>
