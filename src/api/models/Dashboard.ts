@@ -95,6 +95,14 @@ export type CommitLog = {
   baseScore?: string; // Backend returns as string
   tier: string | null; // Bronze, Silver, Gold - from joined repositories table (null if repo not registered)
 
+  // Score multiplier fields (from /miners/{id}/prs endpoint)
+  repoWeightMultiplier?: string;
+  issueMultiplier?: string;
+  openPrSpamMultiplier?: string;
+  repositoryUniquenessMultiplier?: string;
+  timeDecayMultiplier?: string;
+  credibilityMultiplier?: string;
+
   // Token scoring fields
   totalNodesScored?: number;
   rawCredibility?: number;

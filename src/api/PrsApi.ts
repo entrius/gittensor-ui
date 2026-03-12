@@ -10,12 +10,14 @@ const usePrsQuery = <TResponse = void, TSelect = TResponse>(
   url: string,
   refetchInterval?: number,
   queryParams?: Record<string, string | number | undefined>,
+  enabled?: boolean,
 ) =>
   useApiQuery<TResponse, TSelect>(
     queryName,
     `/prs${url}`,
     refetchInterval,
     queryParams,
+    enabled,
   );
 
 /**
@@ -29,12 +31,17 @@ export const useAllPrs = () => usePrsQuery<CommitLog[]>('useAllPrs', '');
  * @param repo - Full repository name (e.g., "opentensor/btcli")
  * @param number - Pull request number
  */
-export const usePullRequestDetails = (repo: string, number: number) =>
+export const usePullRequestDetails = (
+  repo: string,
+  number: number,
+  enabled?: boolean,
+) =>
   usePrsQuery<PullRequestDetails>(
     'usePullRequestDetails',
     '/details',
     undefined,
     { repo, number },
+    enabled,
   );
 
 /**
