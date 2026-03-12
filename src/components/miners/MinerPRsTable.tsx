@@ -13,11 +13,21 @@ import {
   Avatar,
   Chip,
   Button,
+  TableSortLabel,
   useTheme,
   alpha,
 } from '@mui/material';
 import { useMinerPRs, useReposAndWeights } from '../../api';
 import { useNavigate } from 'react-router-dom';
+
+type SortField =
+  | 'number'
+  | 'title'
+  | 'repository'
+  | 'changes'
+  | 'score'
+  | 'merged';
+type SortOrder = 'asc' | 'desc';
 
 interface MinerPRsTableProps {
   githubId: string;
@@ -64,6 +74,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'open' | 'merged' | 'closed'
   >('all');
+  const [sortField, setSortField] = useState<SortField>('score');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
   const repoTiers = useMemo(() => {
     const map = new Map<string, string>();
@@ -111,6 +123,101 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
     }
     return filtered;
   }, [prsInTier, selectedRepo, selectedAuthor, statusFilter]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+
+    setSortField(field);
+
+    // Default sort direction per column
+    if (field === 'title' || field === 'repository') {
+      setSortOrder('asc');
+    } else {
+      setSortOrder('desc');
+    }
+  };
+
+  const sortedPRs = useMemo(() => {
+    const prsToSort = [...filteredPRs];
+
+    const getScoreValue = (pr: any) => {
+      if (pr.prState === 'CLOSED' && !pr.mergedAt) return 0;
+      const rawScore =
+        !pr.mergedAt && pr.collateralScore ? pr.collateralScore : pr.score;
+      const num = rawScore ? parseFloat(rawScore) : 0;
+      return Number.isNaN(num) ? 0 : num;
+    };
+
+    const getMergedValue = (pr: any) => {
+      if (pr.mergedAt) {
+        const ts = new Date(pr.mergedAt).getTime();
+        return Number.isNaN(ts) ? 0 : ts;
+      }
+
+      const state = pr.prState?.toUpperCase() || (pr.mergedAt ? 'MERGED' : 'OPEN');
+      if (state === 'OPEN') return Number.MAX_SAFE_INTEGER;
+      if (state === 'CLOSED') return 0;
+      return 1;
+    };
+
+    prsToSort.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortField) {
+        case 'number':
+          aValue = a.pullRequestNumber ?? 0;
+          bValue = b.pullRequestNumber ?? 0;
+          break;
+        case 'title':
+          aValue = (a.pullRequestTitle || '').toLowerCase();
+          bValue = (b.pullRequestTitle || '').toLowerCase();
+          break;
+        case 'repository':
+          aValue = (a.repository || '').toLowerCase();
+          bValue = (b.repository || '').toLowerCase();
+          break;
+        case 'changes':
+          aValue = (a.additions ?? 0) + (a.deletions ?? 0);
+          bValue = (b.additions ?? 0) + (b.deletions ?? 0);
+          break;
+        case 'score':
+          aValue = getScoreValue(a);
+          bValue = getScoreValue(b);
+          break;
+        case 'merged':
+          aValue = getMergedValue(a);
+          bValue = getMergedValue(b);
+          break;
+        default:
+          aValue = getScoreValue(a);
+          bValue = getScoreValue(b);
+      }
+
+      // String comparison
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortOrder === 'asc'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      const aNum =
+        typeof aValue === 'string' ? parseFloat(aValue) : Number(aValue);
+      const bNum =
+        typeof bValue === 'string' ? parseFloat(bValue) : Number(bValue);
+
+      if (Number.isNaN(aNum) && Number.isNaN(bNum)) return 0;
+      if (Number.isNaN(aNum)) return 1;
+      if (Number.isNaN(bNum)) return -1;
+
+      return sortOrder === 'asc' ? aNum - bNum : bNum - aNum;
+    });
+
+    return prsToSort;
+  }, [filteredPRs, sortField, sortOrder]);
 
   const statusCounts = useMemo(() => {
     if (!prsInTier) return { all: 0, open: 0, merged: 0, closed: 0 };
@@ -326,15 +433,37 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={headerCellStyle}>PR #</TableCell>
-                <TableCell sx={headerCellStyle}>Title</TableCell>
+                <TableCell sx={headerCellStyle}>
+                  <TableSortLabel
+                    active={sortField === 'number'}
+                    direction={sortField === 'number' ? sortOrder : 'asc'}
+                    onClick={() => handleSort('number')}
+                  >
+                    PR #
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={headerCellStyle}>
+                  <TableSortLabel
+                    active={sortField === 'title'}
+                    direction={sortField === 'title' ? sortOrder : 'asc'}
+                    onClick={() => handleSort('title')}
+                  >
+                    Title
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell
                   sx={{
                     ...headerCellStyle,
                     display: { xs: 'none', sm: 'table-cell' },
                   }}
                 >
-                  Repository
+                  <TableSortLabel
+                    active={sortField === 'repository'}
+                    direction={sortField === 'repository' ? sortOrder : 'asc'}
+                    onClick={() => handleSort('repository')}
+                  >
+                    Repository
+                  </TableSortLabel>
                 </TableCell>
                 <TableCell
                   align="right"
@@ -343,10 +472,22 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                     display: { xs: 'none', md: 'table-cell' },
                   }}
                 >
-                  +/-
+                  <TableSortLabel
+                    active={sortField === 'changes'}
+                    direction={sortField === 'changes' ? sortOrder : 'desc'}
+                    onClick={() => handleSort('changes')}
+                  >
+                    +/-
+                  </TableSortLabel>
                 </TableCell>
                 <TableCell align="right" sx={headerCellStyle}>
-                  Score
+                  <TableSortLabel
+                    active={sortField === 'score'}
+                    direction={sortField === 'score' ? sortOrder : 'desc'}
+                    onClick={() => handleSort('score')}
+                  >
+                    Score
+                  </TableSortLabel>
                 </TableCell>
                 <TableCell
                   align="right"
@@ -355,12 +496,18 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                     display: { xs: 'none', sm: 'table-cell' },
                   }}
                 >
-                  Merged
+                  <TableSortLabel
+                    active={sortField === 'merged'}
+                    direction={sortField === 'merged' ? sortOrder : 'desc'}
+                    onClick={() => handleSort('merged')}
+                  >
+                    Merged
+                  </TableSortLabel>
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredPRs.map((pr, index) => (
+              {sortedPRs.map((pr, index) => (
                 <TableRow
                   key={`${pr.repository}-${pr.pullRequestNumber}-${index}`}
                   onClick={() => {
