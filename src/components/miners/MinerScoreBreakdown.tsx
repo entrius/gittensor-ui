@@ -57,20 +57,33 @@ interface MultiplierPillProps {
   label: string;
   value: number;
   tooltip: string;
+  format?: 'multiplier' | 'value' | 'percent';
+  pillColor?: string;
 }
 
 const MultiplierPill: React.FC<MultiplierPillProps> = ({
   label,
   value,
   tooltip,
+  format = 'multiplier',
+  pillColor,
 }) => {
-  const isNeutral = value === 1;
-  const isGood = value > 1;
-  const color = isNeutral
-    ? STATUS_COLORS.neutral
-    : isGood
-      ? STATUS_COLORS.success
-      : STATUS_COLORS.warningOrange;
+  const color =
+    pillColor ??
+    (format === 'multiplier'
+      ? value === 1
+        ? STATUS_COLORS.neutral
+        : value > 1
+          ? STATUS_COLORS.success
+          : STATUS_COLORS.warningOrange
+      : STATUS_COLORS.neutral);
+
+  const display =
+    format === 'percent'
+      ? `${(value * 100).toFixed(1)}%`
+      : format === 'value'
+        ? Number(value).toFixed(2)
+        : `×${Number(value).toFixed(2)}`;
 
   return (
     <Tooltip title={tooltip} arrow placement="top" slotProps={tooltipSlotProps}>
@@ -105,7 +118,7 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
             color,
           }}
         >
-          ×{Number(value).toFixed(2)}
+          {display}
         </Typography>
       </Box>
     </Tooltip>
@@ -278,12 +291,16 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
               {pr.rawCredibility != null && (
                 <MultiplierPill
                   label="cred"
-                  value={
-                    pr.credibilityMultiplier != null
-                      ? parseFloat(pr.credibilityMultiplier)
-                      : (pr.credibilityScalar ?? 1)
+                  value={pr.rawCredibility}
+                  format="percent"
+                  pillColor={
+                    pr.rawCredibility >= 0.8
+                      ? STATUS_COLORS.success
+                      : pr.rawCredibility >= 0.5
+                        ? STATUS_COLORS.neutral
+                        : STATUS_COLORS.warningOrange
                   }
-                  tooltip={`Raw credibility: ${(Number(pr.rawCredibility) * 100).toFixed(1)}%. Applied as ×${(pr.credibilityMultiplier != null ? Number(pr.credibilityMultiplier) : (pr.credibilityScalar ?? 1)).toFixed(2)}.`}
+                  tooltip={`Raw credibility: ${(Number(pr.rawCredibility) * 100).toFixed(1)}%. Higher credibility gives a stronger score multiplier.`}
                 />
               )}
               {pr.repoWeightMultiplier != null && (
@@ -325,6 +342,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
                 <MultiplierPill
                   label="tokens"
                   value={Number(pr.tokenScore)}
+                  format="value"
                   tooltip={`Token score: ${Number(pr.tokenScore).toFixed(2)}. ${pr.structuralCount ?? 0} structural (${Number(pr.structuralScore ?? 0).toFixed(2)}) + ${pr.leafCount ?? 0} leaf (${Number(pr.leafScore ?? 0).toFixed(2)}).`}
                 />
               )}
