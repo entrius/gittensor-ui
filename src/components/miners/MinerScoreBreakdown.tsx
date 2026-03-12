@@ -275,8 +275,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
                 alignItems: 'center',
               }}
             >
-              {(pr.credibilityMultiplier != null ||
-                pr.credibilityScalar != null) && (
+              {pr.rawCredibility != null && (
                 <MultiplierPill
                   label="cred"
                   value={
@@ -284,7 +283,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
                       ? parseFloat(pr.credibilityMultiplier)
                       : (pr.credibilityScalar ?? 1)
                   }
-                  tooltip={`Credibility multiplier: ${(pr.credibilityMultiplier != null ? Number(pr.credibilityMultiplier) : (pr.credibilityScalar ?? 1)).toFixed(4)}×. Raw credibility: ${(Number(pr.rawCredibility ?? 0) * 100).toFixed(1)}%.`}
+                  tooltip={`Raw credibility: ${(Number(pr.rawCredibility) * 100).toFixed(1)}%. Applied as ×${(pr.credibilityMultiplier != null ? Number(pr.credibilityMultiplier) : (pr.credibilityScalar ?? 1)).toFixed(2)}.`}
                 />
               )}
               {pr.repoWeightMultiplier != null && (
@@ -320,6 +319,13 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
                   label="spam"
                   value={parseFloat(pr.openPrSpamMultiplier)}
                   tooltip={`Open PR spam multiplier: ${Number(pr.openPrSpamMultiplier).toFixed(4)}×. Penalty for excessive open PRs.`}
+                />
+              )}
+              {pr.tokenScore != null && (
+                <MultiplierPill
+                  label="tokens"
+                  value={Number(pr.tokenScore)}
+                  tooltip={`Token score: ${Number(pr.tokenScore).toFixed(2)}. ${pr.structuralCount ?? 0} structural (${Number(pr.structuralScore ?? 0).toFixed(2)}) + ${pr.leafCount ?? 0} leaf (${Number(pr.leafScore ?? 0).toFixed(2)}).`}
                 />
               )}
             </Box>
