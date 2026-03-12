@@ -356,7 +356,10 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
             startAdornment: (
               <InputAdornment position="start">
                 <SearchIcon
-                  sx={{ color: (t) => alpha(t.palette.text.primary, 0.3), fontSize: '1rem' }}
+                  sx={{
+                    color: (t) => alpha(t.palette.text.primary, 0.3),
+                    fontSize: '1rem',
+                  }}
                 />
               </InputAdornment>
             ),
@@ -636,7 +639,10 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                 </TableCell>
                 <TableCell
                   align="right"
-                  sx={{ ...bodyCellStyle, color: (t) => alpha(t.palette.text.primary, 0.5) }}
+                  sx={{
+                    ...bodyCellStyle,
+                    color: (t) => alpha(t.palette.text.primary, 0.5),
+                  }}
                 >
                   {repo.prs > 0 ? (repo.score / repo.prs).toFixed(4) : '—'}
                 </TableCell>

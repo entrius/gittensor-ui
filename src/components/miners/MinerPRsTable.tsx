@@ -149,14 +149,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
       );
     }
     return filtered;
-  }, [
-    prs,
-    selectedAuthor,
-    statusFilter,
-    tierFilter,
-    repoTiers,
-    searchQuery,
-  ]);
+  }, [prs, selectedAuthor, statusFilter, tierFilter, repoTiers, searchQuery]);
 
   const sortedPRs = useMemo(() => {
     const sorted = [...filteredPRs];
@@ -397,7 +390,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
             startAdornment: (
               <InputAdornment position="start">
                 <SearchIcon
-                  sx={{ color: (t) => alpha(t.palette.text.primary, 0.3), fontSize: '1rem' }}
+                  sx={{
+                    color: (t) => alpha(t.palette.text.primary, 0.3),
+                    fontSize: '1rem',
+                  }}
                 />
               </InputAdornment>
             ),
@@ -652,7 +648,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                                 fontFamily: '"JetBrains Mono", monospace',
                                 fontSize: { xs: '0.7rem', sm: '0.75rem' },
                                 fontWeight: 600,
-                                color: (t) => alpha(t.palette.text.primary, 0.3),
+                                color: (t) =>
+                                  alpha(t.palette.text.primary, 0.3),
                               }}
                             >
                               -
@@ -704,7 +701,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                                 sx={{
                                   fontFamily: '"JetBrains Mono", monospace',
                                   fontSize: '0.6rem',
-                                  color: (t) => alpha(t.palette.text.primary, 0.5),
+                                  color: (t) =>
+                                    alpha(t.palette.text.primary, 0.5),
                                 }}
                               >
                                 Collateral
@@ -776,7 +774,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   color: (t) => alpha(t.palette.text.primary, 0.6),
-                  '&:hover': page < totalPages - 1 ? { color: 'text.primary' } : {},
+                  '&:hover':
+                    page < totalPages - 1 ? { color: 'text.primary' } : {},
                 }}
               >
                 <NextIcon sx={{ fontSize: '1.2rem' }} />
@@ -790,10 +789,14 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
 };
 
 const sortLabelSx = {
-  '&.MuiTableSortLabel-root': { color: (t: Theme) => alpha(t.palette.text.primary, 0.7) },
+  '&.MuiTableSortLabel-root': {
+    color: (t: Theme) => alpha(t.palette.text.primary, 0.7),
+  },
   '&.MuiTableSortLabel-root:hover': { color: 'text.primary' },
   '&.Mui-active': { color: 'text.primary' },
-  '& .MuiTableSortLabel-icon': { color: (t: Theme) => `${alpha(t.palette.text.primary, 0.4)} !important` },
+  '& .MuiTableSortLabel-icon': {
+    color: (t: Theme) => `${alpha(t.palette.text.primary, 0.4)} !important`,
+  },
 };
 
 const headerCellStyle = {

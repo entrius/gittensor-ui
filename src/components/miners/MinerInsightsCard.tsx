@@ -267,7 +267,10 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({ githubId }) => {
           Insights & Next Actions
         </Typography>
         <Typography
-          sx={{ color: (t) => alpha(t.palette.text.primary, 0.55), fontSize: '0.85rem' }}
+          sx={{
+            color: (t) => alpha(t.palette.text.primary, 0.55),
+            fontSize: '0.85rem',
+          }}
         >
           Prioritized recommendations based on your tier progress, credibility,
           collateral, and open-PR posture.

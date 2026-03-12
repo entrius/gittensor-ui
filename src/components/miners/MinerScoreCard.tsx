@@ -27,7 +27,12 @@ import {
   useMinerGithubData,
   useGeneralConfig,
 } from '../../api';
-import { TIER_COLORS, STATUS_COLORS, CREDIBILITY_COLORS, RISK_COLORS } from '../../theme';
+import {
+  TIER_COLORS,
+  STATUS_COLORS,
+  CREDIBILITY_COLORS,
+  RISK_COLORS,
+} from '../../theme';
 import { calculateDynamicOpenPrThreshold, parseNumber } from './explorerUtils';
 
 const formatTimeAgo = (date: Date): string => {
@@ -305,7 +310,9 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             color: (t) => alpha(t.palette.text.primary, 0.5),
             borderColor: 'border.light',
             backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            '& .MuiChip-icon': { color: (t) => alpha(t.palette.text.primary, 0.4) },
+            '& .MuiChip-icon': {
+              color: (t) => alpha(t.palette.text.primary, 0.4),
+            },
           }}
         />
       )}
@@ -457,7 +464,9 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                 color: (t) => alpha(t.palette.text.primary, 0.5),
                 borderColor: 'border.light',
                 backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                '& .MuiChip-icon': { color: (t) => alpha(t.palette.text.primary, 0.4) },
+                '& .MuiChip-icon': {
+                  color: (t) => alpha(t.palette.text.primary, 0.4),
+                },
               }}
             />
           )}

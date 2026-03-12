@@ -14,7 +14,12 @@ import {
   SEO,
 } from '../components';
 
-const TAB_NAMES = ['overview', 'activity', 'pull-requests', 'repositories'] as const;
+const TAB_NAMES = [
+  'overview',
+  'activity',
+  'pull-requests',
+  'repositories',
+] as const;
 type MinerDetailsTab = (typeof TAB_NAMES)[number];
 
 const MinerDetailsPage: React.FC = () => {
@@ -27,7 +32,10 @@ const MinerDetailsPage: React.FC = () => {
       ? (tabParam as MinerDetailsTab)
       : 'overview';
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: MinerDetailsTab) => {
+  const handleTabChange = (
+    _event: React.SyntheticEvent,
+    newValue: MinerDetailsTab,
+  ) => {
     const newParams = new URLSearchParams(searchParams);
     newParams.set('tab', newValue);
     setSearchParams(newParams);

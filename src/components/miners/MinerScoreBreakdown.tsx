@@ -577,7 +577,10 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
             sx={{
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.72rem',
-              color: page === 0 ? (t) => alpha(t.palette.text.primary, 0.2) : 'primary.main',
+              color:
+                page === 0
+                  ? (t) => alpha(t.palette.text.primary, 0.2)
+                  : 'primary.main',
               cursor: page === 0 ? 'default' : 'pointer',
               userSelect: 'none',
               '&:hover': page > 0 ? { textDecoration: 'underline' } : {},
