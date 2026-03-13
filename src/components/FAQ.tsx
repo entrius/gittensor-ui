@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Collapse, Stack, Typography } from '@mui/material';
+import { Box, Collapse, Stack, Typography, useTheme } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
 
 export interface FAQProps {
@@ -8,6 +8,7 @@ export interface FAQProps {
 }
 
 export const FAQ: React.FC<FAQProps> = ({ question, answer }) => {
+  const theme = useTheme();
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -16,11 +17,11 @@ export const FAQ: React.FC<FAQProps> = ({ question, answer }) => {
         p: 3,
         borderRadius: 3,
         backgroundColor: 'transparent',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: `1px solid ${theme.palette.border.light}`,
         cursor: 'pointer',
         transition: 'all 0.2s ease-in-out',
         '&:hover': {
-          borderColor: 'rgba(255, 255, 255, 0.3)',
+          borderColor: theme.palette.border.medium,
         },
       }}
       onClick={() => setExpanded(!expanded)}

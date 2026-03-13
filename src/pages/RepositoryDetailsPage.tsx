@@ -11,6 +11,7 @@ import {
   Chip,
   Avatar,
   alpha,
+  useTheme,
 } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import CodeIcon from '@mui/icons-material/Code';
@@ -59,6 +60,8 @@ function CustomTabPanel(props: TabPanelProps) {
 }
 
 const RepositoryDetailsPage: React.FC = () => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const repo = searchParams.get('name');
@@ -88,8 +91,10 @@ const RepositoryDetailsPage: React.FC = () => {
       {/* Header Section */}
       <Box
         sx={{
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
-          backgroundColor: 'rgba(0,0,0,0.2)',
+          borderBottom: `1px solid ${theme.palette.border.light}`,
+          backgroundColor: isDark
+            ? 'rgba(0,0,0,0.2)'
+            : theme.palette.surface.light,
         }}
       >
         <Container maxWidth="xl">
@@ -124,7 +129,7 @@ const RepositoryDetailsPage: React.FC = () => {
                     sx={{
                       fontFamily: '"JetBrains Mono", monospace',
                       fontWeight: 600,
-                      color: '#fff',
+                      color: 'text.primary',
                     }}
                   >
                     {repo}
@@ -167,8 +172,8 @@ const RepositoryDetailsPage: React.FC = () => {
                   href={`https://github.com/${repo}`}
                   target="_blank"
                   sx={{
-                    borderColor: 'rgba(255,255,255,0.2)',
-                    color: '#fff',
+                    borderColor: theme.palette.border.medium,
+                    color: 'text.primary',
                     '&:hover': { borderColor: 'primary.main' },
                   }}
                 >
@@ -191,7 +196,7 @@ const RepositoryDetailsPage: React.FC = () => {
                   minHeight: '48px',
                   fontSize: '14px',
                   '&.Mui-selected': {
-                    color: '#fff',
+                    color: theme.palette.text.primary,
                     fontWeight: 600,
                   },
                 },

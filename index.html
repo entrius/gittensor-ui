@@ -39,6 +39,18 @@
 </head>
 
 <body style="margin: 0; background-color: #000000">
+  <script>
+    (function () {
+      try {
+        var mode = localStorage.getItem('gittensor-theme');
+        if (mode === 'light') {
+          document.body.style.backgroundColor = '#f5f6fa';
+        } else if (!mode && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+          document.body.style.backgroundColor = '#f5f6fa';
+        }
+      } catch (e) { }
+    })();
+  </script>
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>

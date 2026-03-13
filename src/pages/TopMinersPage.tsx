@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
-import { useMediaQuery, Box } from '@mui/material';
+import { useMediaQuery, useTheme, Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { TopMinersTable, LeaderboardSidebar, SEO } from '../components';
 import { useAllMiners } from '../api';
-import theme from '../theme';
 
 const TopMinersPage: React.FC = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
 
   const allMinerStatsQuery = useAllMiners();
@@ -95,10 +95,10 @@ const TopMinersPage: React.FC = () => {
               backgroundColor: 'transparent',
             },
             '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              backgroundColor: theme.palette.border.light,
               borderRadius: '4px',
               '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                backgroundColor: theme.palette.border.medium,
               },
             },
           }}

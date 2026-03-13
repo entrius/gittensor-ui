@@ -32,6 +32,7 @@ import {
   Chip,
   Switch,
   FormControlLabel,
+  useTheme,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import BarChartIcon from '@mui/icons-material/BarChart';
@@ -90,6 +91,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   onSelectRepository,
   initialTierFilter,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Read initial state from URL params, falling back to defaults
@@ -212,8 +215,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
 
   const getChartOption = () => {
     const chartData = filteredRepositories.slice(0, 50); // Limit for performance
-    const textColor = 'rgba(255, 255, 255, 0.85)';
-    const gridColor = 'rgba(255, 255, 255, 0.08)';
+    const textColor = alpha(theme.palette.text.primary, 0.85);
+    const gridColor = alpha(theme.palette.text.primary, 0.08);
+    const tc = theme.palette.text.primary;
 
     const getTierColorGradient = (tier: string) => {
       switch (tier) {
@@ -309,13 +313,13 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         left: 'center',
         top: 20,
         textStyle: {
-          color: '#ffffff',
+          color: tc,
           fontFamily: 'JetBrains Mono',
           fontSize: 18,
           fontWeight: 600,
         },
         subtextStyle: {
-          color: 'rgba(255, 255, 255, 0.5)',
+          color: alpha(tc, 0.5),
           fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
@@ -325,14 +329,16 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         axisPointer: {
           type: 'shadow',
           shadowStyle: {
-            color: 'rgba(255, 255, 255, 0.05)',
+            color: alpha(tc, 0.05),
           },
         },
-        backgroundColor: 'rgba(15, 15, 18, 0.95)',
-        borderColor: 'rgba(255, 255, 255, 0.15)',
+        backgroundColor: isDark
+          ? 'rgba(15, 15, 18, 0.95)'
+          : 'rgba(255, 255, 255, 0.95)',
+        borderColor: alpha(tc, 0.15),
         borderWidth: 1,
         textStyle: {
-          color: '#fff',
+          color: tc,
           fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
@@ -357,11 +363,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                 <span style="color: ${tierColor}; font-weight: 600;">${item.tier} Tier</span>
               </div>
-              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
-                <div style="color: rgba(255,255,255,0.7); margin-bottom: 4px;">Total Score: <span style="color: #fff; font-weight: 600;">${item.value.toFixed(2)}</span></div>
-                <div style="color: rgba(255,255,255,0.7); margin-bottom: 4px;">Weight: <span style="color: #fff; font-weight: 600;">${item.weight.toFixed(2)}</span></div>
-                <div style="color: rgba(255,255,255,0.7); margin-bottom: 4px;">Pull Requests: <span style="color: #fff; font-weight: 600;">${item.prs}</span></div>
-                <div style="color: rgba(255,255,255,0.7);">Contributors: <span style="color: #fff; font-weight: 600;">${item.contributors}</span></div>
+              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid ${alpha(tc, 0.1)};">
+                <div style="color: ${alpha(tc, 0.7)}; margin-bottom: 4px;">Total Score: <span style="color: ${tc}; font-weight: 600;">${item.value.toFixed(2)}</span></div>
+                <div style="color: ${alpha(tc, 0.7)}; margin-bottom: 4px;">Weight: <span style="color: ${tc}; font-weight: 600;">${item.weight.toFixed(2)}</span></div>
+                <div style="color: ${alpha(tc, 0.7)}; margin-bottom: 4px;">Pull Requests: <span style="color: ${tc}; font-weight: 600;">${item.prs}</span></div>
+                <div style="color: ${alpha(tc, 0.7)};">Contributors: <span style="color: ${tc}; font-weight: 600;">${item.contributors}</span></div>
               </div>
             </div>
           `;
@@ -447,7 +453,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           barWidth: '60%',
           showBackground: true,
           backgroundStyle: {
-            color: 'rgba(255, 255, 255, 0.02)',
+            color: alpha(tc, 0.02),
             borderRadius: [6, 6, 0, 0],
           },
           emphasis: {
@@ -506,12 +512,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     <TableCell
       align={align}
       sx={{
-        ...headerCellStyle,
+        ...getHeaderCellStyle(theme),
         ...(sx || {}),
         cursor: 'pointer',
         userSelect: 'none',
         '&:hover': {
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          backgroundColor: theme.palette.surface.subtle,
         },
       }}
       onClick={() => handleSort(column)}
@@ -579,9 +585,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         syncToUrl({ tier: value, page: '0' });
       }}
       sx={{
-        color: tierFilter === value ? '#fff' : 'rgba(255,255,255,0.5)',
+        color:
+          tierFilter === value ? theme.palette.text.primary : 'text.secondary',
         backgroundColor:
-          tierFilter === value ? 'rgba(255,255,255,0.1)' : 'transparent',
+          tierFilter === value ? theme.palette.surface.light : 'transparent',
         borderRadius: '6px',
         px: 2,
         minWidth: 'auto',
@@ -591,7 +598,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         border:
           tierFilter === value ? `1px solid ${color}` : '1px solid transparent',
         '&:hover': {
-          backgroundColor: 'rgba(255,255,255,0.15)',
+          backgroundColor: theme.palette.surface.light,
         },
       }}
     >
@@ -623,7 +630,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: `1px solid ${theme.palette.border.light}`,
         backgroundColor: 'transparent',
         overflow: 'hidden',
         display: 'flex',
@@ -633,7 +640,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     >
       <Box
         sx={{
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          borderBottom: `1px solid ${theme.palette.border.light}`,
         }}
       >
         {/* Row 2: All Controls */}
@@ -680,13 +687,15 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 onClick={() => setShowChart(!showChart)}
                 size="small"
                 sx={{
-                  color: showChart ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: showChart
+                    ? theme.palette.text.primary
+                    : 'text.secondary',
+                  border: `1px solid ${theme.palette.border.light}`,
                   borderRadius: 2,
                   padding: '6px',
                   '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    backgroundColor: theme.palette.surface.subtle,
+                    borderColor: theme.palette.border.medium,
                   },
                 }}
               >
@@ -710,7 +719,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                         color: '#primary.main',
                       },
                       '& .MuiSwitch-track': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                        backgroundColor: theme.palette.border.medium,
                       },
                     }}
                   />
@@ -721,7 +730,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     sx={{
                       fontFamily: 'JetBrains Mono',
                       fontSize: '0.8rem',
-                      color: 'rgba(255, 255, 255, 0.7)',
+                      color: alpha(theme.palette.text.primary, 0.7),
                     }}
                   >
                     Log Scale
@@ -735,7 +744,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 <Typography
                   variant="body2"
                   sx={{
-                    color: 'rgba(255, 255, 255, 0.7)',
+                    color: alpha(theme.palette.text.primary, 0.7),
                     fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.8rem',
                   }}
@@ -751,16 +760,18 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     syncToUrl({ rows: String(newRows), page: '0' });
                   }}
                   sx={{
-                    color: '#ffffff',
+                    color: theme.palette.text.primary,
                     fontFamily: '"JetBrains Mono", monospace',
-                    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                    backgroundColor: isDark
+                      ? 'rgba(0, 0, 0, 0.4)'
+                      : theme.palette.surface.light,
                     fontSize: '0.8rem',
                     height: '36px',
                     borderRadius: 2,
                     minWidth: '80px',
-                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                    '& fieldset': { borderColor: theme.palette.border.light },
                     '&:hover fieldset': {
-                      borderColor: 'rgba(255, 255, 255, 0.2)',
+                      borderColor: theme.palette.border.medium,
                     },
                     '&.Mui-focused fieldset': { borderColor: 'primary.main' },
                     '& .MuiSelect-select': { py: 0.75 },
@@ -783,7 +794,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                   <InputAdornment position="start">
                     <SearchIcon
                       sx={{
-                        color: 'rgba(255, 255, 255, 0.5)',
+                        color: 'text.secondary',
                         fontSize: '1rem',
                       }}
                     />
@@ -793,15 +804,17 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               sx={{
                 width: '200px',
                 '& .MuiOutlinedInput-root': {
-                  color: '#ffffff',
+                  color: theme.palette.text.primary,
                   fontFamily: '"JetBrains Mono", monospace',
-                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  backgroundColor: isDark
+                    ? 'rgba(0, 0, 0, 0.4)'
+                    : theme.palette.surface.light,
                   fontSize: '0.8rem',
                   height: '36px',
                   borderRadius: 2,
-                  '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                  '& fieldset': { borderColor: theme.palette.border.light },
                   '&:hover fieldset': {
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    borderColor: theme.palette.border.medium,
                   },
                   '&.Mui-focused fieldset': { borderColor: 'primary.main' },
                 },
@@ -815,9 +828,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         <Box
           sx={{
             p: 2,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            borderBottom: `1px solid ${theme.palette.border.light}`,
             height: '500px',
-            backgroundColor: 'rgba(0,0,0,0.2)',
+            backgroundColor: isDark
+              ? 'rgba(0,0,0,0.2)'
+              : theme.palette.surface.subtle,
           }}
         >
           {showChart && filteredRepositories.length > 0 && (
@@ -839,10 +854,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             backgroundColor: 'transparent',
           },
           '&::-webkit-scrollbar-thumb': {
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            backgroundColor: theme.palette.border.light,
             borderRadius: '4px',
             '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              backgroundColor: theme.palette.border.medium,
             },
           },
         }}
@@ -853,7 +868,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         >
           <TableHead>
             <TableRow>
-              <TableCell sx={{ ...headerCellStyle, width: '60px' }}>
+              <TableCell sx={{ ...getHeaderCellStyle(theme), width: '60px' }}>
                 Rank
               </TableCell>
               <SortableHeader column="repository" sx={{ width: '35%' }}>
@@ -903,17 +918,21 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     sx={{
                       cursor: 'pointer',
                       '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                        backgroundColor: theme.palette.surface.subtle,
                       },
                       transition: 'all 0.2s',
                       opacity: repo.inactiveAt ? 0.5 : 1,
-                      borderBottom: '1px solid rgba(255,255,255,0.05)',
+                      borderBottom: `1px solid ${theme.palette.border.subtle}`,
                     }}
                   >
-                    <TableCell sx={{ ...bodyCellStyle, width: '60px', pr: 0 }}>
-                      {getRankIcon(repo.rank || 0)}
+                    <TableCell
+                      sx={{ ...getBodyCellStyle(theme), width: '60px', pr: 0 }}
+                    >
+                      {getRankIcon(repo.rank || 0, theme)}
                     </TableCell>
-                    <TableCell sx={{ ...bodyCellStyle, width: '35%', pl: 1.5 }}>
+                    <TableCell
+                      sx={{ ...getBodyCellStyle(theme), width: '35%', pl: 1.5 }}
+                    >
                       <Box
                         sx={{
                           display: 'flex',
@@ -934,7 +953,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           sx={{
                             width: 20,
                             height: 20,
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            border: `1px solid ${theme.palette.border.medium}`,
                             backgroundColor:
                               (repo.repository || '').split('/')[0] ===
                               'opentensor'
@@ -949,7 +968,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           <Typography
                             component="span"
                             sx={{
-                              color: '#ffffff',
+                              color: theme.palette.text.primary,
                               fontWeight: 500,
                               transition: 'color 0.2s',
                               overflow: 'hidden',
@@ -975,14 +994,14 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     </TableCell>
                     <TableCell
                       align="right"
-                      sx={{ ...bodyCellStyle, width: '12%' }}
+                      sx={{ ...getBodyCellStyle(theme), width: '12%' }}
                     >
                       <Typography
                         sx={{
                           fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.75rem',
                           fontWeight: 600,
-                          color: '#ffffff',
+                          color: theme.palette.text.primary,
                         }}
                       >
                         {repo.weight.toFixed(2)}
@@ -990,7 +1009,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     </TableCell>
                     <TableCell
                       align="right"
-                      sx={{ ...bodyCellStyle, width: '18%' }}
+                      sx={{ ...getBodyCellStyle(theme), width: '18%' }}
                     >
                       <Typography
                         sx={{
@@ -999,8 +1018,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           fontWeight: 600,
                           color:
                             (repo.totalScore || 0) > 0
-                              ? '#fff'
-                              : 'rgba(255,255,255,0.3)',
+                              ? theme.palette.text.primary
+                              : theme.palette.text.disabled,
                         }}
                       >
                         {(repo.totalScore || 0) > 0
@@ -1010,7 +1029,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     </TableCell>
                     <TableCell
                       align="right"
-                      sx={{ ...bodyCellStyle, width: '15%' }}
+                      sx={{ ...getBodyCellStyle(theme), width: '15%' }}
                     >
                       <Typography
                         sx={{
@@ -1018,8 +1037,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           fontSize: '0.75rem',
                           color:
                             (repo.totalPRs || 0) > 0
-                              ? '#fff'
-                              : 'rgba(255,255,255,0.3)',
+                              ? theme.palette.text.primary
+                              : theme.palette.text.disabled,
                         }}
                       >
                         {(repo.totalPRs || 0) > 0 ? repo.totalPRs : '-'}
@@ -1027,7 +1046,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     </TableCell>
                     <TableCell
                       align="right"
-                      sx={{ ...bodyCellStyle, width: '15%' }}
+                      sx={{ ...getBodyCellStyle(theme), width: '15%' }}
                     >
                       <Typography
                         sx={{
@@ -1035,8 +1054,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           fontSize: '0.75rem',
                           color:
                             (repo.uniqueMiners?.size || 0) > 0
-                              ? '#fff'
-                              : 'rgba(255,255,255,0.3)',
+                              ? theme.palette.text.primary
+                              : theme.palette.text.disabled,
                         }}
                       >
                         {(repo.uniqueMiners?.size || 0) > 0
@@ -1061,8 +1080,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         showFirstButton
         showLastButton
         sx={{
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          color: 'rgba(255, 255, 255, 0.7)',
+          borderTop: `1px solid ${theme.palette.border.light}`,
+          color: alpha(theme.palette.text.primary, 0.7),
           '.MuiTablePagination-displayedRows': {
             fontFamily: '"JetBrains Mono", monospace',
           },
@@ -1072,33 +1091,39 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   );
 };
 
-const headerCellStyle = {
-  backgroundColor: 'rgba(18, 18, 20, 0.95)',
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getHeaderCellStyle = (t: any) => ({
+  backgroundColor:
+    t.palette.mode === 'dark'
+      ? 'rgba(18, 18, 20, 0.95)'
+      : 'rgba(255, 255, 255, 0.95)',
   backdropFilter: 'blur(8px)',
-  color: '#ffffff',
+  color: t.palette.text.primary,
   fontFamily: '"JetBrains Mono", monospace',
   fontWeight: 500,
   fontSize: '0.75rem',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  borderBottom: `1px solid ${t.palette.border.light}`,
   height: '48px',
   py: 1,
   boxSizing: 'border-box' as const,
-};
+});
 
-const bodyCellStyle = {
-  color: '#ffffff',
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getBodyCellStyle = (t: any) => ({
+  color: t.palette.text.primary,
   fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  borderBottom: `1px solid ${t.palette.border.light}`,
   fontSize: '0.75rem',
   py: 0.75,
   height: '52px',
   boxSizing: 'border-box' as const,
-};
+});
 
-const getRankIcon = (rank: number) => (
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getRankIcon = (rank: number, t: any) => (
   <Box
     sx={{
-      backgroundColor: '#000000',
+      backgroundColor: t.palette.background.default,
       borderRadius: '2px',
       width: '22px',
       height: '22px',
@@ -1114,7 +1139,7 @@ const getRankIcon = (rank: number) => (
             ? alpha(TIER_COLORS.silver, 0.4)
             : rank === 3
               ? alpha(TIER_COLORS.bronze, 0.4)
-              : 'rgba(255, 255, 255, 0.15)',
+              : t.palette.border.light,
       boxShadow:
         rank === 1
           ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
@@ -1135,7 +1160,7 @@ const getRankIcon = (rank: number) => (
               ? TIER_COLORS.silver
               : rank === 3
                 ? TIER_COLORS.bronze
-                : 'rgba(255, 255, 255, 0.6)',
+                : alpha(t.palette.text.primary, 0.6),
         fontFamily: '"JetBrains Mono", monospace',
         fontSize: '0.65rem',
         fontWeight: 600,

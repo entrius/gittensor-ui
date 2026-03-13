@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Card, Typography, Avatar } from '@mui/material';
+import { Box, Card, Typography, Avatar, useTheme } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS, STATUS_COLORS } from '../../theme';
@@ -11,6 +11,7 @@ interface MinerCardProps {
 }
 
 export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
+  const theme = useTheme();
   const tierColors = getTierColors(miner.currentTier);
 
   // Helper to check for numeric IDs or missing values
@@ -41,16 +42,16 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
         sx={{
           p: 1.5,
           cursor: 'pointer',
-          backgroundColor: '#000000',
-          border: '1px solid rgba(48, 54, 61, 0.4)',
+          backgroundColor: theme.palette.background.paper,
+          border: `1px solid ${theme.palette.border.light}`,
           borderRadius: 2,
           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
           display: 'flex',
           alignItems: 'center',
           gap: 1.5,
           '&:hover': {
-            backgroundColor: 'rgba(13, 17, 23, 0.8)',
-            borderColor: 'rgba(110, 118, 129, 0.5)',
+            backgroundColor: theme.palette.surface.subtle,
+            borderColor: theme.palette.border.medium,
             transform: 'translateY(-1px)',
           },
         }}
@@ -61,7 +62,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
           sx={{
             width: 24,
             height: 24,
-            border: '1px solid rgba(48, 54, 61, 0.5)',
+            border: `1px solid ${theme.palette.border.light}`,
             filter: 'grayscale(100%)',
             opacity: 0.7,
           }}
@@ -85,9 +86,9 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
             fontFamily: FONTS.mono,
             fontSize: '0.7rem',
             fontWeight: 600,
-            color: '#484f58',
+            color: theme.palette.text.disabled,
             textTransform: 'uppercase',
-            border: '1px solid rgba(48, 54, 61, 0.5)',
+            border: `1px solid ${theme.palette.border.light}`,
             borderRadius: 1,
             px: 0.75,
             py: 0.1,
@@ -104,7 +105,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
       onClick={onClick}
       sx={{
         p: 1,
-        backgroundColor: '#000000',
+        backgroundColor: theme.palette.background.paper,
         backdropFilter: 'blur(12px)',
         border: `1px solid ${borderColor}`,
         borderRadius: 2,
@@ -117,7 +118,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
         position: 'relative',
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         '&:hover': {
-          backgroundColor: 'rgba(22, 27, 34, 0.6)',
+          backgroundColor: theme.palette.surface.subtle,
           borderColor: tierColors.text,
           transform: 'translateY(-2px)',
           boxShadow: `0 8px 24px -6px rgba(0, 0, 0, 0.6), 0 0 0 1px ${tierColors.border}40`,
@@ -151,80 +152,85 @@ const MinerCardHeader: React.FC<MinerCardHeaderProps> = ({
   username,
   miner,
   tierColors,
-}) => (
-  <Box
-    sx={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'flex-start',
-    }}
-  >
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
-      <Box sx={{ position: 'relative' }}>
-        <Avatar
-          src={`https://avatars.githubusercontent.com/${username}`}
-          sx={{
-            width: 36,
-            height: 36,
-            border: `2px solid ${tierColors.border}`,
-            boxShadow: `0 0 10px ${tierColors.border}20`,
-          }}
-        />
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: -4,
-            right: -4,
-            backgroundColor: '#0d1117',
-            border: `1px solid ${tierColors.border}`,
-            borderRadius: '4px',
-            px: 0.5,
-            py: 0,
-          }}
-        >
+}) => {
+  const theme = useTheme();
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+      }}
+    >
+      <Box
+        sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}
+      >
+        <Box sx={{ position: 'relative' }}>
+          <Avatar
+            src={`https://avatars.githubusercontent.com/${username}`}
+            sx={{
+              width: 36,
+              height: 36,
+              border: `2px solid ${tierColors.border}`,
+              boxShadow: `0 0 10px ${tierColors.border}20`,
+            }}
+          />
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: -4,
+              right: -4,
+              backgroundColor: theme.palette.background.default,
+              border: `1px solid ${tierColors.border}`,
+              borderRadius: '4px',
+              px: 0.5,
+              py: 0,
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.6rem',
+                fontWeight: 700,
+                color: tierColors.text,
+              }}
+            >
+              #{miner.rank}
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ overflow: 'hidden' }}>
           <Typography
             sx={{
               fontFamily: FONTS.mono,
-              fontSize: '0.6rem',
+              fontSize: '1rem',
               fontWeight: 700,
-              color: tierColors.text,
+              color: theme.palette.text.primary,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
-            #{miner.rank}
+            {username}
           </Typography>
         </Box>
       </Box>
-      <Box sx={{ overflow: 'hidden' }}>
-        <Typography
-          sx={{
-            fontFamily: FONTS.mono,
-            fontSize: '1rem',
-            fontWeight: 700,
-            color: '#ffffff',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {username}
-        </Typography>
-      </Box>
+      <Typography
+        sx={{
+          fontFamily: FONTS.mono,
+          fontSize: '0.65rem',
+          fontWeight: 700,
+          color: tierColors.text,
+          textTransform: 'uppercase',
+          mt: 0.5,
+          opacity: 0.8,
+        }}
+      >
+        {miner.currentTier}
+      </Typography>
     </Box>
-    <Typography
-      sx={{
-        fontFamily: FONTS.mono,
-        fontSize: '0.65rem',
-        fontWeight: 700,
-        color: tierColors.text,
-        textTransform: 'uppercase',
-        mt: 0.5,
-        opacity: 0.8,
-      }}
-    >
-      {miner.currentTier}
-    </Typography>
-  </Box>
-);
+  );
+};
 
 interface MinerCardStatsProps {
   miner: MinerStats;
@@ -234,176 +240,192 @@ interface MinerCardStatsProps {
 const MinerCardStats: React.FC<MinerCardStatsProps> = ({
   miner,
   credibilityPercent,
-}) => (
-  <Box
-    sx={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 2,
-    }}
-  >
-    {/* Earnings */}
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+}) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 2,
+      }}
+    >
+      {/* Earnings */}
+      <Box>
+        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+          <Typography
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '1.6rem',
+              fontWeight: 800,
+              color: STATUS_COLORS.merged,
+              lineHeight: 1,
+            }}
+          >
+            ${Math.round(miner.usdPerDay || 0).toLocaleString()}
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.75rem',
+              color: STATUS_COLORS.open,
+            }}
+          >
+            /day
+          </Typography>
+        </Box>
         <Typography
           sx={{
             fontFamily: FONTS.mono,
-            fontSize: '1.6rem',
-            fontWeight: 800,
+            fontSize: '0.7rem',
             color: STATUS_COLORS.merged,
-            lineHeight: 1,
+            opacity: 0.7,
+            mt: 0.2,
           }}
         >
-          ${Math.round(miner.usdPerDay || 0).toLocaleString()}
-        </Typography>
-        <Typography
-          sx={{
-            fontFamily: FONTS.mono,
-            fontSize: '0.75rem',
-            color: STATUS_COLORS.open,
-          }}
-        >
-          /day
+          ~${Math.round((miner.usdPerDay || 0) * 30).toLocaleString()}/mo
         </Typography>
       </Box>
-      <Typography
-        sx={{
-          fontFamily: FONTS.mono,
-          fontSize: '0.7rem',
-          color: STATUS_COLORS.merged,
-          opacity: 0.7,
-          mt: 0.2,
-        }}
-      >
-        ~${Math.round((miner.usdPerDay || 0) * 30).toLocaleString()}/mo
-      </Typography>
-    </Box>
 
-    {/* Credibility Donut */}
-    <Box sx={{ position: 'relative', width: 56, height: 56, flexShrink: 0 }}>
-      <ReactECharts
-        option={{
-          backgroundColor: 'transparent',
-          series: [
-            {
-              type: 'pie',
-              radius: ['65%', '90%'],
-              silent: true,
-              label: { show: false },
-              itemStyle: {
-                borderRadius: 3,
-                borderColor: 'rgba(13, 17, 23, 0.8)',
-                borderWidth: 2,
+      {/* Credibility Donut */}
+      <Box sx={{ position: 'relative', width: 56, height: 56, flexShrink: 0 }}>
+        <ReactECharts
+          option={{
+            backgroundColor: 'transparent',
+            series: [
+              {
+                type: 'pie',
+                radius: ['65%', '90%'],
+                silent: true,
+                label: { show: false },
+                itemStyle: {
+                  borderRadius: 3,
+                  borderColor: isDark
+                    ? 'rgba(13, 17, 23, 0.8)'
+                    : theme.palette.background.paper,
+                  borderWidth: 2,
+                },
+                data: [
+                  {
+                    value: miner.totalMergedPrs || 0,
+                    itemStyle: { color: CHART_COLORS.merged },
+                  },
+                  {
+                    value: miner.totalOpenPrs || 0,
+                    itemStyle: { color: CHART_COLORS.open },
+                  },
+                  {
+                    value: miner.totalClosedPrs || 0,
+                    itemStyle: { color: CHART_COLORS.closed },
+                  },
+                ],
               },
-              data: [
-                {
-                  value: miner.totalMergedPrs || 0,
-                  itemStyle: { color: CHART_COLORS.merged },
-                },
-                {
-                  value: miner.totalOpenPrs || 0,
-                  itemStyle: { color: CHART_COLORS.open },
-                },
-                {
-                  value: miner.totalClosedPrs || 0,
-                  itemStyle: { color: CHART_COLORS.closed },
-                },
-              ],
-            },
-          ],
-        }}
-        style={{ width: '100%', height: '100%' }}
-        opts={{ renderer: 'svg' }}
-      />
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Typography
+            ],
+          }}
+          style={{ width: '100%', height: '100%' }}
+          opts={{ renderer: 'svg' }}
+        />
+        <Box
           sx={{
-            fontFamily: FONTS.mono,
-            fontSize: '0.75rem',
-            color:
-              credibilityPercent >= 80
-                ? STATUS_COLORS.merged
-                : STATUS_COLORS.open,
-            fontWeight: 700,
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          {credibilityPercent.toFixed(0)}%
-        </Typography>
+          <Typography
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.75rem',
+              color:
+                credibilityPercent >= 80
+                  ? STATUS_COLORS.merged
+                  : STATUS_COLORS.open,
+              fontWeight: 700,
+            }}
+          >
+            {credibilityPercent.toFixed(0)}%
+          </Typography>
+        </Box>
       </Box>
     </Box>
-  </Box>
-);
+  );
+};
 
 interface MinerCardFooterProps {
   miner: MinerStats;
 }
 
-const MinerCardFooter: React.FC<MinerCardFooterProps> = ({ miner }) => (
-  <Box
-    sx={{
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr 1fr auto',
-      gap: 1,
-      backgroundColor: 'rgba(0,0,0,0.2)',
-      borderRadius: 1.5,
-      p: 1,
-      alignItems: 'center',
-    }}
-  >
-    <StatItem
-      label="Merged"
-      value={miner.totalMergedPrs || 0}
-      color={STATUS_COLORS.merged}
-    />
-    <StatItem label="Open" value={miner.totalOpenPrs || 0} color="#c9d1d9" />
-    <StatItem
-      label="Closed"
-      value={miner.totalClosedPrs || 0}
-      color="#f85149"
-    />
+const MinerCardFooter: React.FC<MinerCardFooterProps> = ({ miner }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  return (
     <Box
       sx={{
-        textAlign: 'right',
-        borderLeft: '1px solid rgba(255,255,255,0.1)',
-        pl: 1.5,
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr 1fr auto',
+        gap: 1,
+        backgroundColor: isDark
+          ? 'rgba(0,0,0,0.2)'
+          : theme.palette.surface.subtle,
+        borderRadius: 1.5,
+        p: 1,
+        alignItems: 'center',
       }}
     >
-      <Typography
+      <StatItem
+        label="Merged"
+        value={miner.totalMergedPrs || 0}
+        color={STATUS_COLORS.merged}
+      />
+      <StatItem
+        label="Open"
+        value={miner.totalOpenPrs || 0}
+        color={theme.palette.text.secondary}
+      />
+      <StatItem
+        label="Closed"
+        value={miner.totalClosedPrs || 0}
+        color={STATUS_COLORS.closed}
+      />
+      <Box
         sx={{
-          fontFamily: FONTS.mono,
-          fontSize: '0.6rem',
-          color: STATUS_COLORS.open,
-          textTransform: 'uppercase',
-          mb: 0.2,
+          textAlign: 'right',
+          borderLeft: `1px solid ${theme.palette.border.light}`,
+          pl: 1.5,
         }}
       >
-        Score
-      </Typography>
-      <Typography
-        sx={{
-          fontFamily: FONTS.mono,
-          fontSize: '0.9rem',
-          color: '#e6edf3',
-          fontWeight: 700,
-        }}
-      >
-        {Number(miner.totalScore).toFixed(2)}
-      </Typography>
+        <Typography
+          sx={{
+            fontFamily: FONTS.mono,
+            fontSize: '0.6rem',
+            color: STATUS_COLORS.open,
+            textTransform: 'uppercase',
+            mb: 0.2,
+          }}
+        >
+          Score
+        </Typography>
+        <Typography
+          sx={{
+            fontFamily: FONTS.mono,
+            fontSize: '0.9rem',
+            color: theme.palette.text.primary,
+            fontWeight: 700,
+          }}
+        >
+          {Number(miner.totalScore).toFixed(2)}
+        </Typography>
+      </Box>
     </Box>
-  </Box>
-);
+  );
+};
 
 interface StatItemProps {
   label: string;

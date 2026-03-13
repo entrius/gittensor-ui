@@ -61,9 +61,9 @@ export const getTierColors = (tier: string | undefined): TierColorSet => {
       };
     default:
       return {
-        border: 'rgba(255, 255, 255, 0.15)',
-        text: 'rgba(255, 255, 255, 0.5)',
-        bg: 'rgba(255, 255, 255, 0.02)',
+        border: 'rgba(128, 128, 128, 0.3)',
+        text: 'rgba(128, 128, 128, 0.7)',
+        bg: 'rgba(128, 128, 128, 0.05)',
       };
   }
 };

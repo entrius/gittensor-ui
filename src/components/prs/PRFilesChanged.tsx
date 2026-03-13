@@ -22,6 +22,7 @@ import {
   TableContainer,
   TableRow,
   alpha,
+  useTheme,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -151,6 +152,8 @@ const FileTreeItem: React.FC<{
   onSelect: (file: PRFile) => void;
   selectedParams: { filename: string | null };
 }> = ({ node, level, onSelect, selectedParams }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   // Auto-expand if it has changes, otherwise collapse to reduce noise in full tree
   const [open, setOpen] = useState(!!node.hasChanges);
   const hasChildren = Object.keys(node.children).length > 0;
@@ -208,7 +211,7 @@ const FileTreeItem: React.FC<{
           '&:hover': {
             backgroundColor: isSelected
               ? 'rgba(56, 139, 253, 0.15)'
-              : 'rgba(255, 255, 255, 0.04)',
+              : alpha(theme.palette.text.primary, 0.04),
           },
           opacity: node.file || node.hasChanges ? 1 : 0.6, // Dim unchanged items
         }}
@@ -274,9 +277,13 @@ const FileTreeItem: React.FC<{
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '12px',
               color: isSelected
-                ? '#fff'
+                ? isDark
+                  ? '#fff'
+                  : '#1f2328'
                 : node.file || node.hasChanges
-                  ? '#c9d1d9'
+                  ? isDark
+                    ? '#c9d1d9'
+                    : '#1f2328'
                   : STATUS_COLORS.open,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
@@ -322,6 +329,10 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
   patch,
   lineWrap,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const codeBg = isDark ? '#0d1117' : '#f6f8fa';
+  const codeHeaderBg = isDark ? '#1c2128' : '#eaeef2';
   const files = useMemo(() => parseDiff(patch), [patch]);
 
   // Scroll Synchronization Refs
@@ -382,7 +393,7 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
         className="split-diff-table"
         sx={{
           overflowX: 'auto',
-          backgroundColor: '#0d1117',
+          backgroundColor: codeBg,
           fontFamily: '"JetBrains Mono", monospace',
           fontSize: '12px',
         }}
@@ -398,12 +409,14 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
             {rows.map((row: any, idx) => {
               if (row.type === 'chunk-header') {
                 return (
-                  <TableRow key={idx} sx={{ backgroundColor: '#1c2128' }}>
+                  <TableRow key={idx} sx={{ backgroundColor: codeHeaderBg }}>
                     <TableCell
                       colSpan={4}
                       sx={{
                         color: STATUS_COLORS.open,
-                        borderBottom: '1px solid #30363d',
+                        borderBottom: isDark
+                          ? '1px solid #30363d'
+                          : '1px solid #d0d7de',
                         py: 1,
                         px: 2,
                         fontFamily: 'inherit',
@@ -420,8 +433,10 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                 <TableRow key={idx}>
                   <TableCell
                     sx={{
-                      color: '#6e7681',
-                      borderRight: '1px solid #30363d',
+                      color: isDark ? '#6e7681' : '#636c76',
+                      borderRight: isDark
+                        ? '1px solid #30363d'
+                        : '1px solid #d0d7de',
                       borderBottom: 'none',
                       textAlign: 'right',
                       verticalAlign: 'top',
@@ -443,14 +458,16 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                   </TableCell>
                   <TableCell
                     sx={{
-                      borderRight: '1px solid #30363d',
+                      borderRight: isDark
+                        ? '1px solid #30363d'
+                        : '1px solid #d0d7de',
                       borderBottom: 'none',
                       verticalAlign: 'top',
                       backgroundColor:
                         row.left?.type === 'del'
                           ? 'rgba(248,81,73,0.15)'
                           : 'transparent',
-                      color: '#e6edf3',
+                      color: isDark ? '#e6edf3' : '#1f2328',
                       whiteSpace: 'pre-wrap',
                       wordBreak: 'break-all',
                       p: '4px 8px',
@@ -467,8 +484,10 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                   </TableCell>
                   <TableCell
                     sx={{
-                      color: '#6e7681',
-                      borderRight: '1px solid #30363d',
+                      color: isDark ? '#6e7681' : '#636c76',
+                      borderRight: isDark
+                        ? '1px solid #30363d'
+                        : '1px solid #d0d7de',
                       borderBottom: 'none',
                       textAlign: 'right',
                       verticalAlign: 'top',
@@ -496,7 +515,7 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                         row.right?.type === 'add'
                           ? 'rgba(46,160,67,0.15)'
                           : 'transparent',
-                      color: '#e6edf3',
+                      color: isDark ? '#e6edf3' : '#1f2328',
                       whiteSpace: 'pre-wrap',
                       wordBreak: 'break-all',
                       p: '4px 8px',
@@ -545,11 +564,17 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
       onScroll={() => handleScroll(side)}
       sx={{
         width: '50%',
-        overflowX: 'auto',
-        borderRight: side === 'left' ? '1px solid #30363d' : 'none',
+        overflow: 'auto',
+        contain: 'paint',
+        borderRight:
+          side === 'left'
+            ? isDark
+              ? '1px solid #30363d'
+              : '1px solid #d0d7de'
+            : 'none',
         '&::-webkit-scrollbar': { height: '8px' },
         '&::-webkit-scrollbar-thumb': {
-          backgroundColor: '#30363d',
+          backgroundColor: isDark ? '#30363d' : '#d0d7de',
           borderRadius: '4px',
         },
       }}
@@ -568,22 +593,26 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
               return (
                 <TableRow
                   key={idx}
-                  sx={{ height: '24px', backgroundColor: '#1c2128' }}
+                  sx={{ height: '24px', backgroundColor: codeHeaderBg }}
                 >
                   <TableCell
                     sx={{
                       position: 'sticky',
                       left: 0,
+                      zIndex: 2,
                       width: '50px',
                       minWidth: '50px',
-                      backgroundColor: '#1c2128',
-                      borderBottom: '1px solid #30363d',
-                      borderRight: '1px solid #30363d',
+                      backgroundColor: codeHeaderBg,
+                      borderBottom: isDark
+                        ? '1px solid #30363d'
+                        : '1px solid #d0d7de',
+                      borderRight: isDark
+                        ? '1px solid #30363d'
+                        : '1px solid #d0d7de',
                       p: '4px 8px',
                       color: STATUS_COLORS.open,
                       fontFamily: 'inherit',
                       fontSize: '12px',
-                      zIndex: 2,
                     }}
                   >
                     ...
@@ -591,7 +620,9 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                   <TableCell
                     sx={{
                       color: STATUS_COLORS.open,
-                      borderBottom: '1px solid #30363d',
+                      borderBottom: isDark
+                        ? '1px solid #30363d'
+                        : '1px solid #d0d7de',
                       p: '4px 8px',
                       fontFamily: 'inherit',
                       fontSize: '12px',
@@ -614,8 +645,15 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
               : '';
 
             let bg = 'transparent';
-            if (item && item.type === 'add') bg = 'rgba(46, 160, 67, 0.15)';
-            if (item && item.type === 'del') bg = 'rgba(248, 81, 73, 0.15)';
+            let lnBg = codeBg;
+            if (item && item.type === 'add') {
+              bg = 'rgba(46, 160, 67, 0.15)';
+              lnBg = isDark ? '#1a3a2a' : '#d4f8db';
+            }
+            if (item && item.type === 'del') {
+              bg = 'rgba(248, 81, 73, 0.15)';
+              lnBg = isDark ? '#3d1a1a' : '#fde0dc';
+            }
 
             return (
               <TableRow key={idx} sx={{ height: '24px' }}>
@@ -623,11 +661,14 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                   sx={{
                     position: 'sticky',
                     left: 0,
+                    zIndex: 2,
                     width: '50px',
                     minWidth: '50px',
-                    backgroundColor: bg === 'transparent' ? '#0d1117' : bg,
-                    color: '#6e7681',
-                    borderRight: '1px solid #30363d',
+                    backgroundColor: lnBg,
+                    color: isDark ? '#6e7681' : '#636c76',
+                    borderRight: isDark
+                      ? '1px solid #30363d'
+                      : '1px solid #d0d7de',
                     borderBottom: 'none',
                     textAlign: 'right',
                     verticalAlign: 'top',
@@ -636,7 +677,6 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                     fontFamily: 'inherit',
                     fontSize: '12px',
                     lineHeight: '24px',
-                    zIndex: 2,
                   }}
                 >
                   {ln}
@@ -644,7 +684,7 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                 <TableCell
                   sx={{
                     backgroundColor: bg,
-                    color: '#e6edf3',
+                    color: isDark ? '#e6edf3' : '#1f2328',
                     borderBottom: 'none',
                     verticalAlign: 'top',
                     whiteSpace: 'pre',
@@ -676,7 +716,8 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
       sx={{
         display: 'flex',
         width: '100%',
-        backgroundColor: '#0d1117',
+        overflow: 'hidden',
+        backgroundColor: codeBg,
         fontFamily: '"JetBrains Mono", monospace',
         fontSize: '12px',
       }}
@@ -692,6 +733,10 @@ const UnifiedDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
   patch,
   lineWrap,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const codeBg = isDark ? '#0d1117' : '#f6f8fa';
+  const codeHeaderBg = isDark ? '#1c2128' : '#eaeef2';
   const files = useMemo(() => parseDiff(patch), [patch]);
 
   if (!files || files.length === 0) return null;
@@ -709,7 +754,7 @@ const UnifiedDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
     <TableContainer
       sx={{
         overflowX: 'auto',
-        backgroundColor: '#0d1117',
+        backgroundColor: codeBg,
         fontFamily: '"JetBrains Mono", monospace',
         fontSize: '12px',
       }}
@@ -727,12 +772,14 @@ const UnifiedDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
           {rows.map((row, idx) => {
             if (row.type === 'chunk-header') {
               return (
-                <TableRow key={idx} sx={{ backgroundColor: '#1c2128' }}>
+                <TableRow key={idx} sx={{ backgroundColor: codeHeaderBg }}>
                   <TableCell
                     colSpan={3}
                     sx={{
                       color: STATUS_COLORS.open,
-                      borderBottom: '1px solid #30363d',
+                      borderBottom: isDark
+                        ? '1px solid #30363d'
+                        : '1px solid #d0d7de',
                       py: 1,
                       px: 2,
                       fontFamily: 'inherit',
@@ -758,9 +805,11 @@ const UnifiedDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                   sx={{
                     width: '50px',
                     minWidth: '50px',
-                    backgroundColor: bg === 'transparent' ? '#0d1117' : bg,
-                    color: '#6e7681',
-                    borderRight: '1px solid #30363d',
+                    backgroundColor: bg === 'transparent' ? codeBg : bg,
+                    color: isDark ? '#6e7681' : '#636c76',
+                    borderRight: isDark
+                      ? '1px solid #30363d'
+                      : '1px solid #d0d7de',
                     borderBottom: 'none',
                     textAlign: 'right',
                     verticalAlign: 'top',
@@ -783,9 +832,11 @@ const UnifiedDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                   sx={{
                     width: '50px',
                     minWidth: '50px',
-                    backgroundColor: bg === 'transparent' ? '#0d1117' : bg,
-                    color: '#6e7681',
-                    borderRight: '1px solid #30363d',
+                    backgroundColor: bg === 'transparent' ? codeBg : bg,
+                    color: isDark ? '#6e7681' : '#636c76',
+                    borderRight: isDark
+                      ? '1px solid #30363d'
+                      : '1px solid #d0d7de',
                     borderBottom: 'none',
                     textAlign: 'right',
                     verticalAlign: 'top',
@@ -807,7 +858,7 @@ const UnifiedDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                 <TableCell
                   sx={{
                     backgroundColor: bg,
-                    color: '#e6edf3',
+                    color: isDark ? '#e6edf3' : '#1f2328',
                     borderBottom: 'none',
                     verticalAlign: 'top',
                     whiteSpace: lineWrap ? 'pre-wrap' : 'pre',
@@ -838,6 +889,8 @@ const DiffMinimap: React.FC<{
   files: any[];
   scrollContainerRef: React.RefObject<HTMLDivElement>;
 }> = ({ files, scrollContainerRef }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(0);
   const [contentHeight, setContentHeight] = useState(0);
@@ -967,12 +1020,16 @@ const DiffMinimap: React.FC<{
         top: 0,
         right: 0,
         zIndex: 5,
-        backgroundColor: 'rgba(13, 17, 23, 0.5)', // semi-transparent bg
-        borderLeft: '1px solid #30363d',
+        backgroundColor: isDark
+          ? 'rgba(13, 17, 23, 0.5)'
+          : 'rgba(0, 0, 0, 0.04)',
+        borderLeft: isDark ? '1px solid #30363d' : '1px solid #d0d7de',
         cursor: 'pointer',
         overflow: 'hidden', // Hide map parts that overflow
         '&:hover': {
-          backgroundColor: 'rgba(13, 17, 23, 0.8)',
+          backgroundColor: isDark
+            ? 'rgba(13, 17, 23, 0.8)'
+            : 'rgba(0, 0, 0, 0.08)',
         },
       }}
     >
@@ -1019,15 +1076,15 @@ const DiffMinimap: React.FC<{
           left: 0,
           right: 0,
           height: `${overlayHeightPct}%`,
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.2)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+          backgroundColor: alpha(theme.palette.text.primary, 0.1),
+          borderTop: '1px solid ' + alpha(theme.palette.text.primary, 0.2),
+          borderBottom: '1px solid ' + alpha(theme.palette.text.primary, 0.2),
           transition: isDragging ? 'none' : 'top 0.1s',
           zIndex: 2,
           cursor: 'grab',
           '&:active': {
             cursor: 'grabbing',
-            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            backgroundColor: alpha(theme.palette.text.primary, 0.2),
           },
         }}
       />
@@ -1045,6 +1102,10 @@ const PRFileDiffViewer: React.FC<{
   viewMode: 'unified' | 'split';
   lineWrap: boolean;
 }> = ({ file, viewMode, lineWrap }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const codeBg = isDark ? '#0d1117' : '#f6f8fa';
+  const codeSidebarBg = isDark ? '#161b22' : '#f0f3f6';
   // Memoize parseDiff result
   const parsedDiff = useMemo(() => {
     if (!file.patch) return [];
@@ -1093,9 +1154,9 @@ const PRFileDiffViewer: React.FC<{
       id={`file-${file.sha}`}
       elevation={0}
       sx={{
-        border: '1px solid #30363d',
+        border: isDark ? '1px solid #30363d' : '1px solid #d0d7de',
         borderRadius: '6px',
-        backgroundColor: '#0d1117',
+        backgroundColor: codeBg,
         overflow: 'hidden',
         scrollMarginTop: '100px',
         mb: 3,
@@ -1105,8 +1166,8 @@ const PRFileDiffViewer: React.FC<{
         defaultExpanded
         disableGutters
         sx={{
-          backgroundColor: '#161b22',
-          color: '#c9d1d9',
+          backgroundColor: codeSidebarBg,
+          color: isDark ? '#c9d1d9' : '#1f2328',
           boxShadow: 'none',
           borderRadius: 0,
           '&:before': { display: 'none' },
@@ -1116,12 +1177,12 @@ const PRFileDiffViewer: React.FC<{
         <AccordionSummary
           expandIcon={<ExpandMoreIcon sx={{ color: STATUS_COLORS.open }} />}
           sx={{
-            borderBottom: '1px solid #30363d',
+            borderBottom: isDark ? '1px solid #30363d' : '1px solid #d0d7de',
             minHeight: '48px',
             position: 'sticky', // STICKY HEADER
             top: 0,
             zIndex: 10,
-            backgroundColor: '#161b22',
+            backgroundColor: codeSidebarBg,
             '& .MuiAccordionSummary-content': {
               display: 'flex',
               alignItems: 'center',
@@ -1195,7 +1256,7 @@ const PRFileDiffViewer: React.FC<{
         <AccordionDetails
           sx={{
             p: 0,
-            backgroundColor: '#0d1117',
+            backgroundColor: codeBg,
             position: 'relative',
             display: 'flex',
             maxHeight: '80vh',
@@ -1234,6 +1295,10 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
   pullRequestNumber,
   headSha,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  // Diff color constants
+  const codeBg = isDark ? '#0d1117' : '#f6f8fa';
   // ... existing state ...
   const [files, setFiles] = useState<PRFile[]>([]);
   const [fullTreeData, setFullTreeData] = useState<any[]>([]);
@@ -1342,9 +1407,9 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
             top: 24,
             maxHeight: 'calc(100vh - 100px)',
             overflowY: 'auto',
-            backgroundColor: '#0d1117',
+            backgroundColor: codeBg,
             borderRadius: '8px',
-            border: '1px solid #30363d',
+            border: isDark ? '1px solid #30363d' : '1px solid #d0d7de',
             p: 1,
             display: 'flex',
             flexDirection: 'column',
@@ -1354,7 +1419,7 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
             sx={{
               px: 2,
               py: 1.5,
-              borderBottom: '1px solid #30363d',
+              borderBottom: isDark ? '1px solid #30363d' : '1px solid #d0d7de',
               mb: 1,
               display: 'flex',
               flexDirection: 'column',
@@ -1366,7 +1431,7 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.85rem',
                 fontWeight: 600,
-                color: '#fff',
+                color: isDark ? '#fff' : '#1f2328',
               }}
             >
               Files Changed ({files.length})
@@ -1408,18 +1473,18 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
                 '& .MuiToggleButton-root': {
                   flex: 1,
                   color: STATUS_COLORS.open,
-                  borderColor: '#30363d',
+                  borderColor: isDark ? '#30363d' : '#d0d7de',
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.75rem',
                   textTransform: 'none',
                   py: 0.5,
                   '&.Mui-selected': {
-                    color: '#fff',
+                    color: isDark ? '#fff' : '#1f2328',
                     backgroundColor: 'rgba(56, 139, 253, 0.15)',
-                    borderColor: '#388bfd',
+                    borderColor: isDark ? '#388bfd' : '#0969da',
                   },
                   '&:hover': {
-                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    backgroundColor: alpha(theme.palette.text.primary, 0.05),
                   },
                 },
               }}

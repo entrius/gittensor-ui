@@ -12,6 +12,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  alpha,
   useTheme,
 } from '@mui/material';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -28,24 +29,26 @@ const formatDate = (dateStr: string | null | undefined): string => {
   });
 };
 
-const headerCellSx = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getHeaderCellSx = (t: any) => ({
   fontFamily: '"JetBrains Mono", monospace',
   fontSize: '0.7rem',
   fontWeight: 600,
   letterSpacing: '0.5px',
   textTransform: 'uppercase' as const,
-  color: 'rgba(255, 255, 255, 0.3)',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  color: t.palette.text.disabled,
+  borderBottom: `1px solid ${t.palette.border.light}`,
   py: 1.5,
-};
+});
 
-const bodyCellSx = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getBodyCellSx = (t: any) => ({
   fontFamily: '"JetBrains Mono", monospace',
   fontSize: '0.85rem',
-  color: '#ffffff',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+  color: t.palette.text.primary,
+  borderBottom: `1px solid ${t.palette.border.subtle}`,
   py: 1.5,
-};
+});
 
 interface IssueSubmissionsTableProps {
   submissions: IssueSubmission[] | undefined;
@@ -64,8 +67,8 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
   return (
     <Card
       sx={{
-        backgroundColor: '#000000',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: theme.palette.background.default,
+        border: `1px solid ${theme.palette.border.light}`,
         borderRadius: 3,
         overflow: 'hidden',
       }}
@@ -77,7 +80,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.8rem',
             fontWeight: 600,
-            color: 'rgba(255, 255, 255, 0.5)',
+            color: theme.palette.text.secondary,
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
           }}
@@ -94,7 +97,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
         <Box sx={{ p: 4, pt: 2, textAlign: 'center' }}>
           <Typography
             sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
+              color: theme.palette.text.secondary,
               fontSize: '0.9rem',
             }}
           >
@@ -106,16 +109,22 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell sx={headerCellSx}>PR</TableCell>
-                <TableCell sx={headerCellSx}>Title</TableCell>
-                <TableCell sx={headerCellSx}>Author</TableCell>
-                <TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>
+                <TableCell sx={getHeaderCellSx(theme)}>PR</TableCell>
+                <TableCell sx={getHeaderCellSx(theme)}>Title</TableCell>
+                <TableCell sx={getHeaderCellSx(theme)}>Author</TableCell>
+                <TableCell
+                  sx={{ ...getHeaderCellSx(theme), textAlign: 'center' }}
+                >
                   Status
                 </TableCell>
-                <TableCell sx={{ ...headerCellSx, textAlign: 'right' }}>
+                <TableCell
+                  sx={{ ...getHeaderCellSx(theme), textAlign: 'right' }}
+                >
                   Tokens
                 </TableCell>
-                <TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>
+                <TableCell
+                  sx={{ ...getHeaderCellSx(theme), textAlign: 'center' }}
+                >
                   Date
                 </TableCell>
               </TableRow>
@@ -134,11 +143,11 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                     cursor: 'pointer',
                     transition: 'background-color 0.2s',
                     '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      backgroundColor: theme.palette.surface.subtle,
                     },
                   }}
                 >
-                  <TableCell sx={bodyCellSx}>
+                  <TableCell sx={getBodyCellSx(theme)}>
                     <Box
                       sx={{
                         display: 'flex',
@@ -156,7 +165,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                   </TableCell>
                   <TableCell
                     sx={{
-                      ...bodyCellSx,
+                      ...getBodyCellSx(theme),
                       maxWidth: 300,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -165,7 +174,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                   >
                     {submission.title}
                   </TableCell>
-                  <TableCell sx={bodyCellSx}>
+                  <TableCell sx={getBodyCellSx(theme)}>
                     {submission.authorGithubId ? (
                       <Typography
                         component="span"
@@ -200,7 +209,9 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
+                  <TableCell
+                    sx={{ ...getBodyCellSx(theme), textAlign: 'center' }}
+                  >
                     {(() => {
                       const state = submission.mergedAt
                         ? 'MERGED'
@@ -227,24 +238,28 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                       );
                     })()}
                   </TableCell>
-                  <TableCell sx={{ ...bodyCellSx, textAlign: 'right' }}>
+                  <TableCell
+                    sx={{ ...getBodyCellSx(theme), textAlign: 'right' }}
+                  >
                     <Typography
                       sx={{
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.85rem',
                         fontWeight: 600,
-                        color: '#ffffff',
+                        color: theme.palette.text.primary,
                       }}
                     >
                       {Number(submission.tokenScore).toLocaleString()}
                     </Typography>
                   </TableCell>
-                  <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
+                  <TableCell
+                    sx={{ ...getBodyCellSx(theme), textAlign: 'center' }}
+                  >
                     <Typography
                       sx={{
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.8rem',
-                        color: 'rgba(255, 255, 255, 0.6)',
+                        color: alpha(theme.palette.text.primary, 0.6),
                       }}
                     >
                       {formatDate(submission.prCreatedAt)}

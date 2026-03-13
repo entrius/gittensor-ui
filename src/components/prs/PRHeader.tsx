@@ -1,9 +1,17 @@
 import React from 'react';
-import { Box, Typography, Avatar, Chip, Tooltip, alpha } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Avatar,
+  Chip,
+  Tooltip,
+  alpha,
+  useTheme,
+} from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useNavigate } from 'react-router-dom';
 import { formatUsdEstimate } from '../../utils';
-import theme, { TIER_COLORS, STATUS_COLORS } from '../../theme';
+import { TIER_COLORS, STATUS_COLORS } from '../../theme';
 interface PRHeaderProps {
   repository: string;
   pullRequestNumber: number;
@@ -15,6 +23,8 @@ const PRHeader: React.FC<PRHeaderProps> = ({
   pullRequestNumber,
   prDetails,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const navigate = useNavigate();
   const [owner] = repository.split('/');
 
@@ -60,10 +70,12 @@ const PRHeader: React.FC<PRHeaderProps> = ({
           sx={{
             width: 64,
             height: 64,
-            border: '2px solid rgba(255, 255, 255, 0.2)',
+            border: `2px solid ${theme.palette.border.light}`,
             backgroundColor:
               owner === 'opentensor'
-                ? '#ffffff'
+                ? isDark
+                  ? '#ffffff'
+                  : '#000000'
                 : owner === 'bitcoin'
                   ? '#F7931A'
                   : 'transparent',
@@ -75,7 +87,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
           <Typography
             variant="h5"
             sx={{
-              color: '#ffffff',
+              color: theme.palette.text.primary,
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '1.3rem',
               fontWeight: 500,
@@ -118,7 +130,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
         </Box>
         <Typography
           sx={{
-            color: '#ffffff',
+            color: theme.palette.text.primary,
             fontSize: '1rem',
             fontWeight: 400,
             mb: 0.5,
@@ -135,7 +147,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               )
             }
             sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
+              color: 'text.secondary',
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.85rem',
               cursor: 'pointer',
@@ -182,26 +194,30 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                 slotProps={{
                   tooltip: {
                     sx: {
-                      backgroundColor: 'rgba(30, 30, 30, 0.95)',
-                      color: '#ffffff',
+                      backgroundColor: isDark
+                        ? 'rgba(30, 30, 30, 0.95)'
+                        : 'rgba(255, 255, 255, 0.95)',
+                      color: theme.palette.text.primary,
                       fontSize: '0.75rem',
                       fontFamily: '"JetBrains Mono", monospace',
                       padding: '8px 12px',
                       borderRadius: '6px',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      border: `1px solid ${theme.palette.border.light}`,
                       maxWidth: 280,
                     },
                   },
                   arrow: {
                     sx: {
-                      color: 'rgba(30, 30, 30, 0.95)',
+                      color: isDark
+                        ? 'rgba(30, 30, 30, 0.95)'
+                        : 'rgba(255, 255, 255, 0.95)',
                     },
                   },
                 }}
               >
                 <Typography
                   sx={{
-                    color: 'rgba(255, 255, 255, 0.5)',
+                    color: 'text.secondary',
                     fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.75rem',
                     textTransform: 'uppercase',
@@ -224,7 +240,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                   fontSize: '2.25rem',
                   fontWeight: 700,
                   lineHeight: 1,
-                  color: 'rgba(255, 255, 255, 0.6)',
+                  color: alpha(theme.palette.text.primary, 0.6),
                 }}
               >
                 {(collateralScore * 5).toFixed(2)}
@@ -236,7 +252,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               sx={{
                 width: '1px',
                 height: '55px',
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                backgroundColor: theme.palette.border.light,
                 mt: 0.5,
               }}
             />
@@ -250,26 +266,30 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                 slotProps={{
                   tooltip: {
                     sx: {
-                      backgroundColor: 'rgba(30, 30, 30, 0.95)',
-                      color: '#ffffff',
+                      backgroundColor: isDark
+                        ? 'rgba(30, 30, 30, 0.95)'
+                        : 'rgba(255, 255, 255, 0.95)',
+                      color: theme.palette.text.primary,
                       fontSize: '0.75rem',
                       fontFamily: '"JetBrains Mono", monospace',
                       padding: '8px 12px',
                       borderRadius: '6px',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      border: `1px solid ${theme.palette.border.light}`,
                       maxWidth: 240,
                     },
                   },
                   arrow: {
                     sx: {
-                      color: 'rgba(30, 30, 30, 0.95)',
+                      color: isDark
+                        ? 'rgba(30, 30, 30, 0.95)'
+                        : 'rgba(255, 255, 255, 0.95)',
                     },
                   },
                 }}
               >
                 <Typography
                   sx={{
-                    color: 'rgba(255, 255, 255, 0.5)',
+                    color: 'text.secondary',
                     fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.75rem',
                     textTransform: 'uppercase',
@@ -294,8 +314,8 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                   lineHeight: 1,
                   color:
                     collateralScore > 0
-                      ? 'rgba(248, 113, 113, 0.9)'
-                      : 'rgba(255, 255, 255, 0.4)',
+                      ? STATUS_COLORS.closed
+                      : theme.palette.text.disabled,
                 }}
               >
                 {collateralScore > 0
@@ -309,7 +329,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
           <Box sx={{ textAlign: 'right' }}>
             <Typography
               sx={{
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: 'text.secondary',
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.75rem',
                 textTransform: 'uppercase',
@@ -325,7 +345,9 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                 fontSize: '2.25rem',
                 fontWeight: 700,
                 lineHeight: 1,
-                color: isClosed ? 'rgba(255, 255, 255, 0.4)' : '#ffffff',
+                color: isClosed
+                  ? alpha(theme.palette.text.primary, 0.4)
+                  : theme.palette.text.primary,
               }}
             >
               {earnedScore.toFixed(2)}
@@ -340,19 +362,23 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                   slotProps={{
                     tooltip: {
                       sx: {
-                        backgroundColor: 'rgba(30, 30, 30, 0.95)',
-                        color: '#ffffff',
+                        backgroundColor: isDark
+                          ? 'rgba(30, 30, 30, 0.95)'
+                          : 'rgba(255, 255, 255, 0.95)',
+                        color: theme.palette.text.primary,
                         fontSize: '0.75rem',
                         fontFamily: '"JetBrains Mono", monospace',
                         padding: '8px 12px',
                         borderRadius: '6px',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        border: `1px solid ${theme.palette.border.light}`,
                         maxWidth: 280,
                       },
                     },
                     arrow: {
                       sx: {
-                        color: 'rgba(30, 30, 30, 0.95)',
+                        color: isDark
+                          ? 'rgba(30, 30, 30, 0.95)'
+                          : 'rgba(255, 255, 255, 0.95)',
                       },
                     },
                   }}

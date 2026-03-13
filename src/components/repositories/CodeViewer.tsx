@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, CircularProgress, Alert } from '@mui/material';
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Alert,
+  useTheme,
+} from '@mui/material';
 import axios from 'axios';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -16,6 +22,8 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
   filePath,
   defaultBranch = 'main',
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const [content, setContent] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,7 +108,7 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          backgroundColor: '#0d1117',
+          backgroundColor: isDark ? '#0d1117' : '#f6f8fa',
           p: 4,
         }}
       >
@@ -112,9 +120,9 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
             maxWidth: '100%',
             maxHeight: '100%',
             objectFit: 'contain',
-            border: '1px solid #30363d',
+            border: `1px solid ${theme.palette.border.light}`,
             borderRadius: '6px',
-            backgroundColor: '#161b22', // slight background to see transparent pngs better
+            backgroundColor: isDark ? '#161b22' : '#f0f0f0', // slight background to see transparent pngs better
           }}
         />
       </Box>
@@ -131,23 +139,25 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
           overflow: 'auto',
           '& img': { maxWidth: '100%' },
           '& pre': {
-            backgroundColor: '#1e1e1e',
+            backgroundColor: isDark ? '#1e1e1e' : '#f6f8fa',
             p: 2,
             borderRadius: 1,
             overflowX: 'auto',
           },
           '& code': {
             fontFamily: 'monospace',
-            backgroundColor: 'rgba(255,255,255,0.1)',
+            backgroundColor: isDark
+              ? 'rgba(255,255,255,0.1)'
+              : 'rgba(0,0,0,0.05)',
             px: 0.5,
             borderRadius: 0.5,
           },
           '& h1, & h2, & h3': {
-            color: '#fff',
-            borderBottom: '1px solid #30363d',
+            color: theme.palette.text.primary,
+            borderBottom: `1px solid ${theme.palette.border.light}`,
             pb: 1,
           },
-          color: '#c9d1d9',
+          color: theme.palette.text.primary,
           lineHeight: 1.6,
         }}
       >
@@ -162,7 +172,7 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
         height: '100%',
         width: '100%',
         overflow: 'auto',
-        backgroundColor: '#1e1e1e',
+        backgroundColor: isDark ? '#1e1e1e' : '#f8f8f8',
         fontSize: '14px',
       }}
     >

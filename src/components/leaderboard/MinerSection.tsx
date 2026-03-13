@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Card, Typography, Grid } from '@mui/material';
+import { Box, Card, Typography, Grid, useTheme } from '@mui/material';
 import { MinerCard } from './MinerCard';
 import { STATUS_COLORS } from '../../theme';
 import { type MinerStats, type TierColorSet, FONTS } from './types';
@@ -19,6 +19,7 @@ export const MinerSection: React.FC<MinerSectionProps> = ({
   onSelectMiner,
   defaultExpanded = false,
 }) => {
+  const theme = useTheme();
   const [expanded, setExpanded] = useState(defaultExpanded);
 
   // Determine how many items to show
@@ -34,7 +35,7 @@ export const MinerSection: React.FC<MinerSectionProps> = ({
   return (
     <Card
       sx={{
-        backgroundColor: '#000000',
+        backgroundColor: theme.palette.background.paper,
         border: `1px solid ${color.border}`,
         borderRadius: 3,
         boxShadow:
@@ -120,35 +121,38 @@ const SectionFooter: React.FC<SectionFooterProps> = ({
   onToggle,
   remainingCount,
   color,
-}) => (
-  <Box
-    onClick={onToggle}
-    sx={{
-      py: 1,
-      borderTop: `1px solid ${color.border}`,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer',
-      transition: 'all 0.2s',
-      backgroundColor: 'rgba(0, 0, 0, 0.2)',
-      color: 'text.secondary',
-      '&:hover': {
-        backgroundColor: 'rgba(255, 255, 255, 0.03)',
-        color: 'text.primary',
-      },
-    }}
-  >
-    <Typography
+}) => {
+  const theme = useTheme();
+  return (
+    <Box
+      onClick={onToggle}
       sx={{
-        fontFamily: FONTS.mono,
-        fontSize: '0.75rem',
-        fontWeight: 600,
-        textTransform: 'uppercase',
-        letterSpacing: '1px',
+        py: 1,
+        borderTop: `1px solid ${color.border}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        backgroundColor: theme.palette.surface.subtle,
+        color: 'text.secondary',
+        '&:hover': {
+          backgroundColor: theme.palette.surface.light,
+          color: 'text.primary',
+        },
       }}
     >
-      {expanded ? 'Show Less' : `View ${remainingCount} More`}
-    </Typography>
-  </Box>
-);
+      <Typography
+        sx={{
+          fontFamily: FONTS.mono,
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          letterSpacing: '1px',
+        }}
+      >
+        {expanded ? 'Show Less' : `View ${remainingCount} More`}
+      </Typography>
+    </Box>
+  );
+};

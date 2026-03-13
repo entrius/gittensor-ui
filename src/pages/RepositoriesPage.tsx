@@ -1,6 +1,15 @@
 import React, { useMemo } from 'react';
 
-import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
+import {
+  Avatar,
+  Box,
+  Card,
+  Tooltip,
+  Typography,
+  alpha,
+  useTheme,
+} from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
@@ -19,48 +28,51 @@ const HighlightRow: React.FC<{
   avatarBg?: string;
   label: React.ReactNode;
   right: React.ReactNode;
-}> = ({ onClick, avatar, avatarBg = 'transparent', label, right }) => (
-  <Box
-    onClick={onClick}
-    sx={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      height: ROW_HEIGHT,
-      py: 0,
-      px: 1,
-      borderRadius: 1,
-      cursor: 'pointer',
-      transition: 'background 0.15s',
-      mx: -1,
-      '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
-    }}
-  >
+}> = ({ onClick, avatar, avatarBg = 'transparent', label, right }) => {
+  const theme = useTheme();
+  return (
     <Box
+      onClick={onClick}
       sx={{
         display: 'flex',
         alignItems: 'center',
-        gap: 1.5,
-        overflow: 'hidden',
-        mr: 2,
-        flex: 1,
+        justifyContent: 'space-between',
+        height: ROW_HEIGHT,
+        py: 0,
+        px: 1,
+        borderRadius: 1,
+        cursor: 'pointer',
+        transition: 'background 0.15s',
+        mx: -1,
+        '&:hover': { backgroundColor: theme.palette.surface.light },
       }}
     >
-      <Avatar
-        src={avatar}
+      <Box
         sx={{
-          width: 24,
-          height: 24,
-          flexShrink: 0,
-          border: '1px solid rgba(255,255,255,0.1)',
-          backgroundColor: avatarBg,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          overflow: 'hidden',
+          mr: 2,
+          flex: 1,
         }}
-      />
-      {label}
+      >
+        <Avatar
+          src={avatar}
+          sx={{
+            width: 24,
+            height: 24,
+            flexShrink: 0,
+            border: `1px solid ${theme.palette.border.light}`,
+            backgroundColor: avatarBg,
+          }}
+        />
+        {label}
+      </Box>
+      {right}
     </Box>
-    {right}
-  </Box>
-);
+  );
+};
 
 const getAvatarBg = (name: string) => {
   const owner = name.split('/')[0];
@@ -71,42 +83,47 @@ const getAvatarBg = (name: string) => {
 
 const SectionHeader: React.FC<{ children: React.ReactNode }> = ({
   children,
-}) => (
-  <Typography
-    sx={{
-      fontFamily: FONTS.mono,
-      fontSize: '0.75rem',
-      fontWeight: 600,
-      color: 'rgba(255,255,255,0.5)',
-      textTransform: 'uppercase',
-      letterSpacing: '0.05em',
-      mb: 1.5,
-      pb: 1,
-      borderBottom: '1px solid rgba(255,255,255,0.05)',
-    }}
-  >
-    {children}
-  </Typography>
-);
+}) => {
+  const theme = useTheme();
+  return (
+    <Typography
+      sx={{
+        fontFamily: FONTS.mono,
+        fontSize: '0.75rem',
+        fontWeight: 600,
+        color: 'text.secondary',
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        mb: 1.5,
+        pb: 1,
+        borderBottom: `1px solid ${theme.palette.border.subtle}`,
+      }}
+    >
+      {children}
+    </Typography>
+  );
+};
 
-const cardSx = {
+const getCardSx = (theme: Theme) => ({
   p: 2,
   borderRadius: 2,
-  border: '1px solid rgba(255, 255, 255, 0.1)',
+  border: `1px solid ${theme.palette.border.light}`,
   backgroundColor: 'transparent',
   display: 'flex',
   flexDirection: 'column' as const,
   transition: 'all 0.2s',
   '&:hover': {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: theme.palette.surface.light,
+    borderColor: theme.palette.border.medium,
   },
-};
+});
 
 // ── Page ────────────────────────────────────────────────────────────────────
 const RepositoriesPage: React.FC = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const cardSx = getCardSx(theme);
 
   const formatRelativeTime = (date: Date) => {
     const now = new Date();
@@ -350,7 +367,7 @@ const RepositoriesPage: React.FC = () => {
                   {trendingRepos.length === 0 && !isLoading ? (
                     <Typography
                       sx={{
-                        color: 'rgba(255,255,255,0.3)',
+                        color: 'text.secondary',
                         fontSize: '0.8rem',
                         fontStyle: 'italic',
                         p: 1,
@@ -371,7 +388,7 @@ const RepositoriesPage: React.FC = () => {
                               sx={{
                                 fontFamily: FONTS.mono,
                                 fontSize: '0.82rem',
-                                color: 'rgba(255,255,255,0.9)',
+                                color: 'text.primary',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -415,7 +432,7 @@ const RepositoriesPage: React.FC = () => {
                   {topCollateralRepos.length === 0 && !isLoading ? (
                     <Typography
                       sx={{
-                        color: 'rgba(255,255,255,0.3)',
+                        color: 'text.secondary',
                         fontSize: '0.8rem',
                         fontStyle: 'italic',
                         p: 1,
@@ -436,7 +453,7 @@ const RepositoriesPage: React.FC = () => {
                               sx={{
                                 fontFamily: FONTS.mono,
                                 fontSize: '0.82rem',
-                                color: 'rgba(255,255,255,0.9)',
+                                color: 'text.primary',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -451,7 +468,7 @@ const RepositoriesPage: React.FC = () => {
                             sx={{
                               fontFamily: FONTS.mono,
                               fontSize: '0.72rem',
-                              color: 'rgba(255,255,255,0.7)',
+                              color: alpha(theme.palette.text.primary, 0.7),
                               flexShrink: 0,
                               whiteSpace: 'nowrap',
                             }}
@@ -477,7 +494,7 @@ const RepositoriesPage: React.FC = () => {
                   {recentPrs.length === 0 && !isLoading ? (
                     <Typography
                       sx={{
-                        color: 'rgba(255,255,255,0.3)',
+                        color: 'text.secondary',
                         fontSize: '0.8rem',
                         fontStyle: 'italic',
                         p: 1,
@@ -511,7 +528,10 @@ const RepositoriesPage: React.FC = () => {
                                 sx={{
                                   fontFamily: FONTS.mono,
                                   fontSize: '0.68rem',
-                                  color: 'rgba(255,255,255,0.45)',
+                                  color: alpha(
+                                    theme.palette.text.primary,
+                                    0.45,
+                                  ),
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
                                   whiteSpace: 'nowrap',
@@ -526,7 +546,7 @@ const RepositoriesPage: React.FC = () => {
                                 sx={{
                                   fontFamily: FONTS.mono,
                                   fontSize: '0.78rem',
-                                  color: 'rgba(255,255,255,0.9)',
+                                  color: 'text.primary',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
                                   whiteSpace: 'nowrap',
@@ -543,7 +563,7 @@ const RepositoriesPage: React.FC = () => {
                             sx={{
                               fontFamily: FONTS.mono,
                               fontSize: '0.68rem',
-                              color: 'rgba(255,255,255,0.35)',
+                              color: 'text.secondary',
                               flexShrink: 0,
                               whiteSpace: 'nowrap',
                               ml: 1,
@@ -565,7 +585,7 @@ const RepositoriesPage: React.FC = () => {
         <Card
           sx={{
             borderRadius: 3,
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            border: `1px solid ${theme.palette.border.light}`,
             backgroundColor: 'transparent',
             overflow: 'hidden',
           }}

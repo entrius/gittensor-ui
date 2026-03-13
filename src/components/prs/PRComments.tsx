@@ -7,11 +7,13 @@ import {
   Link,
   CircularProgress,
   Chip,
+  useTheme,
 } from '@mui/material';
 import { usePullRequestComments } from '../../api';
 import { type PullRequestDetails } from '../../api/models/Dashboard';
 import { STATUS_COLORS } from '../../theme';
-import 'github-markdown-css/github-markdown-dark.css'; // Import standard GitHub Dark styles
+import 'github-markdown-css/github-markdown-dark.css';
+import 'github-markdown-css/github-markdown-light.css';
 
 interface PRCommentsProps {
   repository: string;
@@ -24,6 +26,8 @@ const PRComments: React.FC<PRCommentsProps> = ({
   pullRequestNumber,
   prDetails,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const {
     data: comments,
     isLoading,
@@ -64,26 +68,26 @@ const PRComments: React.FC<PRCommentsProps> = ({
     ...comments,
   ];
 
-  // Premium Dark Theme Colors
+  // Theme-aware Colors
   const colors = {
     canvas: {
-      default: '#0d1117',
-      subtle: '#161b22',
-      box: '#0d1117',
+      default: isDark ? '#0d1117' : '#ffffff',
+      subtle: isDark ? '#161b22' : '#f6f8fa',
+      box: isDark ? '#0d1117' : '#ffffff',
     },
     border: {
-      default: '#30363d',
-      muted: '#21262d',
+      default: isDark ? '#30363d' : '#d0d7de',
+      muted: isDark ? '#21262d' : '#d8dee4',
     },
     fg: {
-      default: '#c9d1d9',
+      default: isDark ? '#c9d1d9' : '#1f2328',
       muted: STATUS_COLORS.open,
     },
     accent: {
       fg: STATUS_COLORS.info,
     },
     timeline: {
-      line: '#30363d',
+      line: isDark ? '#30363d' : '#d0d7de',
     },
   };
 
@@ -132,8 +136,8 @@ const PRComments: React.FC<PRCommentsProps> = ({
                 sx={{
                   width: 40,
                   height: 40,
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  backgroundColor: '#0d1117', // Avoid transparency issues over the line
+                  border: `1px solid ${colors.border.default}`,
+                  backgroundColor: colors.canvas.default, // Avoid transparency issues over the line
                 }}
               />
             </Link>
@@ -314,7 +318,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
                   lineHeight: 1.6,
                 },
                 '& .markdown-body pre': {
-                  backgroundColor: '#161b22', // Distinct code block background
+                  backgroundColor: colors.canvas.subtle, // Distinct code block background
                   border: `1px solid ${colors.border.default}`,
                   borderRadius: '6px',
                 },
@@ -324,7 +328,9 @@ const PRComments: React.FC<PRCommentsProps> = ({
               }}
             >
               <div
-                className="markdown-body"
+                className={
+                  isDark ? 'markdown-body' : 'markdown-body markdown-body-light'
+                }
                 dangerouslySetInnerHTML={{ __html: item.body }}
                 style={{ fontSize: '14px' }}
               />

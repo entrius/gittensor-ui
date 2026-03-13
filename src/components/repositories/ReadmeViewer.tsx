@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, CircularProgress, Alert, Paper } from '@mui/material';
+import { Box, CircularProgress, Alert, Paper, useTheme } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -11,6 +11,8 @@ interface ReadmeViewerProps {
 }
 
 const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const [content, setContent] = useState<string | null>(null);
   const [defaultBranch, setDefaultBranch] = useState<string>('main');
   const [loading, setLoading] = useState<boolean>(true);
@@ -108,34 +110,34 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
         maxWidth: '900px',
         mx: 'auto',
         backgroundColor: 'transparent', // Seamless look
-        color: '#c9d1d9', // GitHub Dark Text
+        color: theme.palette.text.primary,
         fontFamily:
           '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
         lineHeight: 1.6,
         '& h1': {
           fontSize: '2em',
-          borderBottom: '1px solid #30363d',
+          borderBottom: `1px solid ${theme.palette.border.light}`,
           pb: 0.3,
           mb: 3,
-          mt: 1, // Reduced from 4
+          mt: 1,
           fontWeight: 600,
-          color: '#ffffff',
+          color: theme.palette.text.primary,
         },
         '& h2': {
           fontSize: '1.5em',
-          borderBottom: '1px solid #30363d',
+          borderBottom: `1px solid ${theme.palette.border.light}`,
           pb: 0.3,
           mb: 3,
-          mt: 2, // Reduced from 4
+          mt: 2,
           fontWeight: 600,
-          color: '#ffffff',
+          color: theme.palette.text.primary,
         },
         '& h3': {
           fontSize: '1.25em',
           mb: 2,
           mt: 3,
           fontWeight: 600,
-          color: '#ffffff',
+          color: theme.palette.text.primary,
         },
         '& p': {
           marginBottom: '16px',
@@ -154,21 +156,23 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
           marginBottom: '4px',
         },
         '& blockquote': {
-          borderLeft: '4px solid #30363d',
+          borderLeft: `4px solid ${theme.palette.border.light}`,
           padding: '0 1em',
           color: STATUS_COLORS.open,
           marginLeft: 0,
           marginBottom: '16px',
         },
         '& code': {
-          backgroundColor: 'rgba(110, 118, 129, 0.4)',
+          backgroundColor: isDark
+            ? 'rgba(110, 118, 129, 0.4)'
+            : 'rgba(175, 184, 193, 0.2)',
           padding: '0.2em 0.4em',
           borderRadius: '6px',
           fontSize: '85%',
           fontFamily: '"JetBrains Mono", monospace',
         },
         '& pre': {
-          backgroundColor: '#161b22',
+          backgroundColor: isDark ? '#161b22' : '#f6f8fa',
           padding: '16px',
           overflow: 'auto',
           borderRadius: '6px',
@@ -177,7 +181,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
             backgroundColor: 'transparent',
             padding: 0,
             fontSize: '100%',
-            color: '#c9d1d9',
+            color: theme.palette.text.primary,
           },
         },
         '& table': {
@@ -189,16 +193,16 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
         },
         '& th': {
           fontWeight: 600,
-          border: '1px solid #30363d',
+          border: `1px solid ${theme.palette.border.light}`,
           padding: '6px 13px',
           textAlign: 'left',
         },
         '& td': {
-          border: '1px solid #30363d',
+          border: `1px solid ${theme.palette.border.light}`,
           padding: '6px 13px',
         },
         '& tr:nth-of-type(2n)': {
-          backgroundColor: '#161b22',
+          backgroundColor: isDark ? '#161b22' : '#f6f8fa',
         },
         '& img': {
           backgroundColor: 'transparent',

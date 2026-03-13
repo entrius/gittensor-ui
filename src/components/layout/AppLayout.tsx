@@ -2,6 +2,7 @@ import React, { Suspense, useRef, useState } from 'react';
 import {
   Box,
   useMediaQuery,
+  useTheme,
   Drawer,
   IconButton,
   AppBar,
@@ -12,11 +13,12 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { LoadingPage } from '../../pages';
 import useOnNavigate from '../../hooks/useOnNavigate';
 import { Sidebar } from '..';
-import theme from '../../theme';
 
 const AppLayout: React.FC = () => {
   const mainRef = useRef<HTMLElement>(null);
   useOnNavigate(() => mainRef.current?.scrollTo(0, 0));
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -62,8 +64,9 @@ const AppLayout: React.FC = () => {
               style={{
                 height: '40px',
                 width: 'auto',
-                filter:
-                  'brightness(0) invert(1) drop-shadow(0 0 6px rgba(255, 255, 255, 0.8))',
+                filter: isDark
+                  ? 'brightness(0) invert(1) drop-shadow(0 0 6px rgba(255, 255, 255, 0.8))'
+                  : 'brightness(0) drop-shadow(0 0 6px rgba(0, 0, 0, 0.15))',
               }}
             />
           </Toolbar>
@@ -84,13 +87,14 @@ const AppLayout: React.FC = () => {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: 280,
-              backgroundColor: '#000000',
-              backgroundImage:
-                'linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))',
-              borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+              backgroundColor: theme.palette.background.default,
+              backgroundImage: `linear-gradient(${theme.palette.surface.light}, ${theme.palette.surface.light})`,
+              borderRight: `1px solid ${theme.palette.border.light}`,
             },
             '& .MuiBackdrop-root': {
-              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              backgroundColor: isDark
+                ? 'rgba(0, 0, 0, 0.7)'
+                : 'rgba(0, 0, 0, 0.3)',
             },
           }}
         >
@@ -105,7 +109,7 @@ const AppLayout: React.FC = () => {
             flexShrink: 0,
             width: '240px',
             minWidth: '240px',
-            borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRight: `1px solid ${theme.palette.border.light}`,
           }}
         >
           <Sidebar />

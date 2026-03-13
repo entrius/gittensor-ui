@@ -7,12 +7,12 @@ import {
   Stack,
   CircularProgress,
   useMediaQuery,
+  useTheme,
   alpha,
   Avatar,
   Chip,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import theme from '../../theme';
 import { useInfiniteCommitLog, usePullRequestDetails } from '../../api';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -35,22 +35,23 @@ interface CommitLogEntry {
   isNew?: boolean;
 }
 
-const getScoreColor = (score: string) => {
-  const scoreNum = parseFloat(score);
-  if (isNaN(scoreNum)) return theme.palette.grey[500];
-  if (scoreNum >= 10) return '#ffffff';
-  if (scoreNum >= 5) return '#b0b0b0';
-  return '#7d7d7d';
-};
-
 const CommitLogItem: React.FC<{
   entry: CommitLogEntry;
   isNew: boolean;
   innerRef?: React.Ref<HTMLDivElement>;
 }> = ({ entry, isNew, innerRef }) => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+
+  const getScoreColor = (score: string) => {
+    const scoreNum = parseFloat(score);
+    if (isNaN(scoreNum)) return theme.palette.grey[500];
+    if (scoreNum >= 10) return theme.palette.text.primary;
+    if (scoreNum >= 5) return theme.palette.text.secondary;
+    return theme.palette.text.secondary;
+  };
 
   // Hydrate with detailed data
   const { data: details } = usePullRequestDetails(
@@ -92,8 +93,8 @@ const CommitLogItem: React.FC<{
         border: '1px solid',
         borderColor: isNew
           ? theme.palette.secondary.main
-          : 'rgba(255, 255, 255, 0.1)',
-        backgroundColor: 'rgba(255,255,255,0.02)',
+          : theme.palette.border.light,
+        backgroundColor: theme.palette.surface.subtle,
         backdropFilter: 'blur(8px)',
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         animation: isNew ? 'slideIn 0.5s ease-out' : undefined,
@@ -138,7 +139,7 @@ const CommitLogItem: React.FC<{
               sx={{
                 width: 16,
                 height: 16,
-                border: '1px solid rgba(255,255,255,0.2)',
+                border: `1px solid ${theme.palette.border.medium}`,
                 backgroundColor:
                   entry.repository.split('/')[0] === 'opentensor'
                     ? '#ffffff'
@@ -192,7 +193,7 @@ const CommitLogItem: React.FC<{
           </Stack>
           <Typography
             sx={{
-              color: '#fff',
+              color: theme.palette.text.primary,
               fontSize: '0.9rem',
               fontWeight: 500,
               lineHeight: 1.4,
@@ -211,7 +212,7 @@ const CommitLogItem: React.FC<{
           direction="row"
           justifyContent="space-between"
           alignItems="center"
-          sx={{ pt: 1, borderTop: '1px solid rgba(255,255,255,0.05)' }}
+          sx={{ pt: 1, borderTop: `1px solid ${theme.palette.border.subtle}` }}
         >
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             by {entry.author}
@@ -254,6 +255,7 @@ const CommitLogItem: React.FC<{
 };
 
 const LiveCommitLog: React.FC = () => {
+  const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
@@ -342,7 +344,7 @@ const LiveCommitLog: React.FC = () => {
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: `1px solid ${theme.palette.border.light}`,
         backgroundColor: 'transparent',
         height: '100%',
         display: 'flex',
@@ -427,9 +429,9 @@ const LiveCommitLog: React.FC = () => {
               '&::-webkit-scrollbar': { width: '6px' },
               '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
               '&::-webkit-scrollbar-thumb': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                backgroundColor: theme.palette.border.light,
                 borderRadius: '3px',
-                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+                '&:hover': { backgroundColor: theme.palette.border.medium },
               },
             }}
           >

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, alpha, useTheme } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
 import { STATUS_COLORS } from '../../theme';
 
@@ -20,6 +20,7 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
   totalPRs,
   avgRepoWeight,
 }) => {
+  const theme = useTheme();
   const chartOption = useMemo(
     () => ({
       backgroundColor: 'transparent',
@@ -37,19 +38,19 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
         shape: 'circle',
         splitNumber: 5,
         axisName: {
-          color: 'rgba(255, 255, 255, 0.6)',
+          color: alpha(theme.palette.text.primary, 0.6),
           fontFamily: '"JetBrains Mono", monospace',
           fontSize: 9,
           lineHeight: 12,
         },
         splitLine: {
           lineStyle: {
-            color: Array(5).fill('rgba(255, 255, 255, 0.05)'),
+            color: Array(5).fill(theme.palette.border.subtle),
           },
         },
         splitArea: { show: false },
         axisLine: {
-          lineStyle: { color: 'rgba(255, 255, 255, 0.1)' },
+          lineStyle: { color: theme.palette.border.light },
         },
       },
       series: [
@@ -88,6 +89,7 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
       uniqueRepos,
       totalPRs,
       avgRepoWeight,
+      theme,
     ],
   );
 
@@ -101,7 +103,11 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
     >
       <Typography
         variant="monoSmall"
-        sx={{ color: 'rgba(255, 255, 255, 0.4)', mb: 2, textAlign: 'center' }}
+        sx={{
+          color: alpha(theme.palette.text.primary, 0.4),
+          mb: 2,
+          textAlign: 'center',
+        }}
       >
         Performance Profile
       </Typography>

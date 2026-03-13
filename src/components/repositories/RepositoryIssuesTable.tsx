@@ -14,6 +14,8 @@ import {
   Chip,
   Button,
   Stack,
+  alpha,
+  useTheme,
 } from '@mui/material';
 import { useRepositoryIssues, useRepoIssues } from '../../api';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -30,6 +32,7 @@ interface RepositoryIssuesTableProps {
 const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   repositoryFullName,
 }) => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { data: issues, isLoading } = useRepositoryIssues(repositoryFullName);
   const { data: bounties } = useRepoIssues(repositoryFullName);
@@ -78,9 +81,12 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       size="small"
       onClick={() => setFilter(value)}
       sx={{
-        color: filter === value ? 'text.primary' : 'rgba(255,255,255,0.5)',
+        color:
+          filter === value
+            ? theme.palette.text.primary
+            : theme.palette.text.secondary,
         backgroundColor:
-          filter === value ? 'rgba(255,255,255,0.1)' : 'transparent',
+          filter === value ? theme.palette.surface.subtle : 'transparent',
         borderRadius: '6px',
         px: 2,
         minWidth: 'auto',
@@ -90,7 +96,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         border:
           filter === value ? `1px solid ${color}` : '1px solid transparent',
         '&:hover': {
-          backgroundColor: 'rgba(255,255,255,0.15)',
+          backgroundColor: theme.palette.surface.light,
         },
       }}
     >
@@ -108,7 +114,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       <Card
         sx={{
           borderRadius: 3,
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: `1px solid ${theme.palette.border.light}`,
           backgroundColor: 'transparent',
           p: 4,
           textAlign: 'center',
@@ -194,16 +200,16 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
               case 'completed':
                 return STATUS_COLORS.merged;
               case 'cancelled':
-                return 'rgba(255, 255, 255, 0.4)';
+                return alpha(theme.palette.text.primary, 0.4);
               default:
-                return 'rgba(255, 255, 255, 0.6)';
+                return alpha(theme.palette.text.primary, 0.6);
             }
           };
           return (
             <Card
               sx={{
                 borderRadius: 3,
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                border: `1px solid ${theme.palette.border.light}`,
                 backgroundColor: 'transparent',
                 p: 0,
                 overflow: 'hidden',
@@ -213,7 +219,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
               <Box
                 sx={{
                   p: 3,
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderBottom: `1px solid ${theme.palette.border.light}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -250,13 +256,13 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                         justifyContent: 'space-between',
                         p: 2,
                         borderRadius: 2,
-                        border: '1px solid rgba(255, 255, 255, 0.06)',
-                        backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                        border: `1px solid ${theme.palette.border.subtle}`,
+                        backgroundColor: theme.palette.surface.subtle,
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
                         '&:hover': {
-                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                          borderColor: 'rgba(255, 255, 255, 0.15)',
+                          backgroundColor: theme.palette.surface.light,
+                          borderColor: theme.palette.border.light,
                           transform: 'translateX(2px)',
                         },
                       }}
@@ -295,7 +301,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                         </Typography>
                         <Typography
                           sx={{
-                            color: 'rgba(255, 255, 255, 0.85)',
+                            color: theme.palette.text.primary,
                             fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.85rem',
                             overflow: 'hidden',
@@ -332,7 +338,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                         </Typography>
                         <ArrowForwardIcon
                           sx={{
-                            color: 'rgba(255, 255, 255, 0.2)',
+                            color: theme.palette.text.disabled,
                             fontSize: 16,
                           }}
                         />
@@ -349,7 +355,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       <Card
         sx={{
           borderRadius: 3,
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: `1px solid ${theme.palette.border.light}`,
           backgroundColor: 'transparent',
           p: 0,
           display: 'flex',
@@ -361,7 +367,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         <Box
           sx={{
             p: 3,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            borderBottom: `1px solid ${theme.palette.border.light}`,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -407,7 +413,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
           <Box sx={{ p: 4, textAlign: 'center' }}>
             <Typography
               sx={{
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: 'text.secondary',
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.9rem',
               }}
@@ -428,10 +434,10 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                 backgroundColor: 'transparent',
               },
               '&::-webkit-scrollbar-thumb': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                backgroundColor: theme.palette.border.light,
                 borderRadius: '4px',
                 '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  backgroundColor: theme.palette.border.medium,
                 },
               },
             }}
@@ -439,14 +445,16 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
             <Table stickyHeader>
               <TableHead>
                 <TableRow>
-                  <TableCell sx={headerCellStyle}>Issue #</TableCell>
-                  <TableCell sx={headerCellStyle}>Title</TableCell>
-                  <TableCell sx={headerCellStyle}>Status</TableCell>
-                  <TableCell sx={headerCellStyle}>Linked PR</TableCell>
-                  <TableCell align="right" sx={headerCellStyle}>
+                  <TableCell sx={getHeaderCellStyle(theme)}>Issue #</TableCell>
+                  <TableCell sx={getHeaderCellStyle(theme)}>Title</TableCell>
+                  <TableCell sx={getHeaderCellStyle(theme)}>Status</TableCell>
+                  <TableCell sx={getHeaderCellStyle(theme)}>
+                    Linked PR
+                  </TableCell>
+                  <TableCell align="right" sx={getHeaderCellStyle(theme)}>
                     Created
                   </TableCell>
-                  <TableCell align="right" sx={headerCellStyle}>
+                  <TableCell align="right" sx={getHeaderCellStyle(theme)}>
                     Closed
                   </TableCell>
                 </TableRow>
@@ -460,7 +468,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                       sx={{
                         cursor: 'pointer',
                         '&:hover': {
-                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          backgroundColor: theme.palette.surface.subtle,
                         },
                         transition: 'background-color 0.2s',
                       }}
@@ -471,7 +479,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                         );
                       }}
                     >
-                      <TableCell sx={bodyCellStyle}>
+                      <TableCell sx={getBodyCellStyle(theme)}>
                         <a
                           href={`https://github.com/${issue.repositoryFullName}/issues/${issue.number}`}
                           target="_blank"
@@ -486,7 +494,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                           #{issue.number}
                         </a>
                       </TableCell>
-                      <TableCell sx={bodyCellStyle}>
+                      <TableCell sx={getBodyCellStyle(theme)}>
                         <Box
                           sx={{
                             maxWidth: '400px',
@@ -498,7 +506,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                           {issue.title}
                         </Box>
                       </TableCell>
-                      <TableCell sx={bodyCellStyle}>
+                      <TableCell sx={getBodyCellStyle(theme)}>
                         <Chip
                           variant="status"
                           icon={
@@ -520,7 +528,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                           }}
                         />
                       </TableCell>
-                      <TableCell sx={bodyCellStyle}>
+                      <TableCell sx={getBodyCellStyle(theme)}>
                         {issue.prNumber ? (
                           <a
                             href={`https://github.com/${issue.repositoryFullName}/pull/${issue.prNumber}`}
@@ -536,17 +544,17 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                             #{issue.prNumber}
                           </a>
                         ) : (
-                          <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>
+                          <span style={{ color: theme.palette.text.disabled }}>
                             -
                           </span>
                         )}
                       </TableCell>
-                      <TableCell align="right" sx={bodyCellStyle}>
+                      <TableCell align="right" sx={getBodyCellStyle(theme)}>
                         {issue.createdAt
                           ? new Date(issue.createdAt).toLocaleDateString()
                           : '-'}
                       </TableCell>
-                      <TableCell align="right" sx={bodyCellStyle}>
+                      <TableCell align="right" sx={getBodyCellStyle(theme)}>
                         {issue.closedAt
                           ? new Date(issue.closedAt).toLocaleDateString()
                           : '-'}
@@ -563,23 +571,28 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   );
 };
 
-const headerCellStyle = {
-  backgroundColor: 'rgba(18, 18, 20, 0.95)',
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getHeaderCellStyle = (t: any) => ({
+  backgroundColor:
+    t.palette.mode === 'dark'
+      ? 'rgba(18, 18, 20, 0.95)'
+      : 'rgba(255, 255, 255, 0.95)',
   backdropFilter: 'blur(8px)',
-  color: 'rgba(255, 255, 255, 0.7)',
+  color: alpha(t.palette.text.primary, 0.7),
   fontFamily: '"JetBrains Mono", monospace',
   fontWeight: 500,
   fontSize: '0.75rem',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  borderBottom: `1px solid ${t.palette.border.light}`,
   textTransform: 'uppercase' as const,
   letterSpacing: '0.5px',
-};
+});
 
-const bodyCellStyle = {
-  color: 'text.primary',
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getBodyCellStyle = (t: any) => ({
+  color: t.palette.text.primary,
   fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  borderBottom: `1px solid ${t.palette.border.light}`,
   fontSize: '0.85rem',
-};
+});
 
 export default RepositoryIssuesTable;

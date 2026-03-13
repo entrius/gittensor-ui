@@ -7,6 +7,7 @@ import {
   Divider,
   Card,
   CircularProgress,
+  useTheme,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -31,6 +32,8 @@ interface HealthCheck {
 const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
   repositoryFullName,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [repoData, setRepoData] = useState<any>(null);
@@ -188,7 +191,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
       <Box sx={{ mb: 3 }}>
         <Typography
           variant="h6"
-          sx={{ color: '#fff', mb: 0.5, fontWeight: 600 }}
+          sx={{ color: theme.palette.text.primary, mb: 0.5, fontWeight: 600 }}
         >
           Repository Health Check & Feasibility
         </Typography>
@@ -213,8 +216,8 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
             <Card
               sx={{
                 p: 3,
-                backgroundColor: '#000000',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backgroundColor: theme.palette.background.default,
+                border: `1px solid ${theme.palette.border.light}`,
                 borderRadius: 2,
                 display: 'flex',
                 flexDirection: 'column',
@@ -259,7 +262,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                   <Typography
                     component="div"
                     sx={{
-                      color: '#fff',
+                      color: theme.palette.text.primary,
                       fontWeight: 700,
                       fontSize: '32px',
                       fontFamily: '"JetBrains Mono", monospace',
@@ -271,7 +274,11 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
               </Box>
               <Typography
                 variant="h6"
-                sx={{ color: '#fff', mb: 0.5, fontSize: '16px' }}
+                sx={{
+                  color: theme.palette.text.primary,
+                  mb: 0.5,
+                  fontSize: '16px',
+                }}
               >
                 Health Score
               </Typography>
@@ -291,8 +298,8 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
             <Card
               sx={{
                 p: 3,
-                backgroundColor: '#000000',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backgroundColor: theme.palette.background.default,
+                border: `1px solid ${theme.palette.border.light}`,
                 borderRadius: 2,
                 flex: 1, // Fill remaining space
               }}
@@ -300,7 +307,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
               <Typography
                 variant="h6"
                 sx={{
-                  color: '#fff',
+                  color: theme.palette.text.primary,
                   mb: 2,
                   fontSize: '14px',
                   fontWeight: 600,
@@ -322,7 +329,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                   <Typography
                     variant="body2"
                     sx={{
-                      color: '#c9d1d9',
+                      color: theme.palette.text.primary,
                       fontSize: '13px',
                       fontFamily: '"JetBrains Mono", monospace',
                     }}
@@ -340,7 +347,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                   <Typography
                     variant="body2"
                     sx={{
-                      color: '#c9d1d9',
+                      color: theme.palette.text.primary,
                       fontSize: '13px',
                       fontFamily: '"JetBrains Mono", monospace',
                     }}
@@ -364,12 +371,14 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                       bgcolor: repoData.archived
                         ? 'error.dark'
                         : 'success.dark',
-                      color: '#fff',
+                      color: isDark ? '#fff' : '#fff',
                     }}
                   />
                 </Box>
               </Box>
-              <Divider sx={{ my: 2, borderColor: 'rgba(255,255,255,0.1)' }} />
+              <Divider
+                sx={{ my: 2, borderColor: theme.palette.border.light }}
+              />
               <Typography
                 variant="body2"
                 sx={{
@@ -400,8 +409,8 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
             <Card
               sx={{
                 p: 3,
-                backgroundColor: '#000000',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backgroundColor: theme.palette.background.default,
+                border: `1px solid ${theme.palette.border.light}`,
                 borderRadius: 2,
               }}
             >
@@ -409,7 +418,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 <Typography
                   variant="h6"
                   sx={{
-                    color: '#fff',
+                    color: theme.palette.text.primary,
                     fontSize: '14px',
                     fontWeight: 600,
                     display: 'flex',
@@ -428,8 +437,8 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     sx={{
                       p: 2,
                       borderRadius: 1,
-                      bgcolor: 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(255,255,255,0.05)',
+                      bgcolor: theme.palette.surface.subtle,
+                      border: `1px solid ${theme.palette.border.subtle}`,
                       height: '100%',
                       display: 'flex',
                       flexDirection: 'column',
@@ -439,7 +448,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     <Typography
                       variant="h4"
                       sx={{
-                        color: '#fff',
+                        color: theme.palette.text.primary,
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '24px',
                         mb: 0.5,
@@ -464,8 +473,8 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     sx={{
                       p: 2,
                       borderRadius: 1,
-                      bgcolor: 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(255,255,255,0.05)',
+                      bgcolor: theme.palette.surface.subtle,
+                      border: `1px solid ${theme.palette.border.subtle}`,
                       height: '100%',
                       display: 'flex',
                       flexDirection: 'column',
@@ -475,7 +484,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     <Typography
                       variant="h4"
                       sx={{
-                        color: '#fff',
+                        color: theme.palette.text.primary,
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '24px',
                         mb: 0.5,
@@ -501,8 +510,8 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     sx={{
                       p: 2,
                       borderRadius: 1,
-                      bgcolor: 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(255,255,255,0.05)',
+                      bgcolor: theme.palette.surface.subtle,
+                      border: `1px solid ${theme.palette.border.subtle}`,
                       height: '100%',
                       display: 'flex',
                       flexDirection: 'column',
@@ -511,8 +520,8 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                       '&:hover': {
-                        bgcolor: 'rgba(255,255,255,0.08)',
-                        border: '1px solid rgba(255,255,255,0.1)',
+                        bgcolor: theme.palette.surface.light,
+                        border: `1px solid ${theme.palette.border.light}`,
                         transform: 'translateY(-2px)',
                       },
                     }}
@@ -529,7 +538,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                         <Typography
                           variant="h4"
                           sx={{
-                            color: '#fff',
+                            color: theme.palette.text.primary,
                             fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '24px',
                             mb: 0.5,
@@ -556,7 +565,10 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     </Box>
                     <Typography
                       variant="caption"
-                      sx={{ color: '#6e7681', fontSize: '11px' }}
+                      sx={{
+                        color: theme.palette.text.disabled,
+                        fontSize: '11px',
+                      }}
                     >
                       Perfect for beginners
                     </Typography>
@@ -625,7 +637,10 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     </Box>
                     <Typography
                       variant="caption"
-                      sx={{ color: '#6e7681', fontSize: '11px' }}
+                      sx={{
+                        color: theme.palette.text.disabled,
+                        fontSize: '11px',
+                      }}
                     >
                       General contributions
                     </Typography>
@@ -638,8 +653,8 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
             <Card
               sx={{
                 p: 0,
-                backgroundColor: '#000000',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backgroundColor: theme.palette.background.default,
+                border: `1px solid ${theme.palette.border.light}`,
                 borderRadius: 2,
                 flex: 1,
                 overflow: 'hidden',
@@ -648,14 +663,14 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
               <Box
                 sx={{
                   p: 2,
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                  backgroundColor: 'rgba(255,255,255,0.03)',
+                  borderBottom: `1px solid ${theme.palette.border.light}`,
+                  backgroundColor: theme.palette.surface.subtle,
                 }}
               >
                 <Typography
                   variant="subtitle1"
                   sx={{
-                    color: '#fff',
+                    color: theme.palette.text.primary,
                     fontWeight: 600,
                     fontSize: '14px',
                     display: 'flex',
@@ -675,15 +690,15 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                         sx={{
                           p: 2,
                           borderRadius: 1,
-                          bgcolor: 'rgba(255,255,255,0.02)',
-                          border: '1px solid rgba(255,255,255,0.05)',
+                          bgcolor: theme.palette.surface.subtle,
+                          border: `1px solid ${theme.palette.border.subtle}`,
                           display: 'flex',
                           alignItems: 'flex-start',
                           gap: 2,
                           height: '100%',
                           transition: 'background-color 0.2s',
                           '&:hover': {
-                            bgcolor: 'rgba(255,255,255,0.04)',
+                            bgcolor: theme.palette.surface.light,
                           },
                         }}
                       >
@@ -701,7 +716,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                         <Box>
                           <Typography
                             sx={{
-                              color: '#c9d1d9',
+                              color: theme.palette.text.primary,
                               fontWeight: 600,
                               fontSize: '14px',
                               mb: 0.5,

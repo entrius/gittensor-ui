@@ -125,8 +125,10 @@ const RoadmapItem: React.FC<RoadmapItemProps> = ({
             p: 3,
             borderRadius: 4,
             background:
-              'linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+              theme.palette.mode === 'dark'
+                ? 'linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)'
+                : 'linear-gradient(145deg, rgba(0, 0, 0, 0.02) 0%, rgba(0, 0, 0, 0.01) 100%)',
+            border: `1px solid ${theme.palette.border.light}`,
             backdropFilter: 'blur(10px)',
           }}
         >
@@ -149,7 +151,7 @@ const RoadmapItem: React.FC<RoadmapItemProps> = ({
           <Typography
             variant="h5"
             fontWeight="bold"
-            sx={{ mb: 1.5, color: '#fff' }}
+            sx={{ mb: 1.5, color: theme.palette.text.primary }}
           >
             {title}
           </Typography>
@@ -163,6 +165,7 @@ const RoadmapItem: React.FC<RoadmapItemProps> = ({
 };
 
 export const RoadmapContent: React.FC = () => {
+  const theme = useTheme();
   const roadmapItems = [
     {
       title: 'Issue Bounty Marketplace',
@@ -223,8 +226,10 @@ export const RoadmapContent: React.FC = () => {
             mt: 4,
             borderRadius: 4,
             background:
-              'linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+              theme.palette.mode === 'dark'
+                ? 'linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)'
+                : 'linear-gradient(145deg, rgba(0, 0, 0, 0.02) 0%, rgba(0, 0, 0, 0.01) 100%)',
+            border: `1px solid ${theme.palette.border.light}`,
             backdropFilter: 'blur(10px)',
             position: 'relative',
             overflow: 'hidden',
@@ -239,7 +244,9 @@ export const RoadmapContent: React.FC = () => {
               width: 300,
               height: 300,
               background:
-                'radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 70%)',
+                theme.palette.mode === 'dark'
+                  ? 'radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 70%)'
+                  : 'radial-gradient(circle, rgba(0, 0, 0, 0.02) 0%, transparent 70%)',
               borderRadius: '50%',
               pointerEvents: 'none',
             }}
@@ -250,7 +257,7 @@ export const RoadmapContent: React.FC = () => {
             fontWeight="bold"
             sx={{
               mb: 4,
-              color: '#fff',
+              color: theme.palette.text.primary,
               fontFamily: '"JetBrains Mono", monospace',
               textAlign: 'center',
             }}

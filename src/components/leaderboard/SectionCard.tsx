@@ -1,5 +1,12 @@
 import React from 'react';
-import { Card, Box, Typography, CardContent, Grid } from '@mui/material';
+import {
+  Card,
+  Box,
+  Typography,
+  CardContent,
+  Grid,
+  useTheme,
+} from '@mui/material';
 
 export const SectionCard: React.FC<{
   children: React.ReactNode;
@@ -8,6 +15,7 @@ export const SectionCard: React.FC<{
   action?: React.ReactNode;
   centerContent?: React.ReactNode;
 }> = ({ children, sx, title, action, centerContent }) => {
+  const theme = useTheme();
   const hasAction = !!action;
   const hasCenter = !!centerContent;
 
@@ -15,8 +23,8 @@ export const SectionCard: React.FC<{
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        backgroundColor: '#000000',
+        border: `1px solid ${theme.palette.border.light}`,
+        backgroundColor: theme.palette.background.paper,
         display: 'flex',
         flexDirection: 'column',
         ...sx,

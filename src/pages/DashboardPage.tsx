@@ -1,5 +1,5 @@
 import React from 'react';
-import { useMediaQuery, Box, Grid } from '@mui/material';
+import { useMediaQuery, useTheme, Box, Grid } from '@mui/material';
 import { Page } from '../components/layout';
 import {
   LeaderboardCharts,
@@ -9,10 +9,10 @@ import {
   SEO,
   GlobalActivity,
 } from '../components';
-import theme from '../theme';
 import { useStats } from '../api';
 
 const DashboardPage: React.FC = () => {
+  const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
@@ -60,10 +60,10 @@ const DashboardPage: React.FC = () => {
               backgroundColor: 'transparent',
             },
             '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              backgroundColor: theme.palette.border.light,
               borderRadius: '4px',
               '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                backgroundColor: theme.palette.border.medium,
               },
             },
           }}

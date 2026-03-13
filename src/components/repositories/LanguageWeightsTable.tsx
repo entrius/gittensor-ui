@@ -20,18 +20,21 @@ import {
   IconButton,
   Collapse,
   Tooltip,
+  alpha,
+  useTheme,
 } from '@mui/material';
 import { Search, Check, Close } from '@mui/icons-material';
 import ReactECharts from 'echarts-for-react';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
-import theme from '../../theme';
 import { useLanguagesAndWeights } from '../../api';
 
 type SortField = 'extension' | 'weight' | 'language';
 type SortOrder = 'asc' | 'desc';
 
 const LanguageWeightsTable: React.FC = () => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const { data: languages, isLoading } = useLanguagesAndWeights();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('weight');
@@ -115,8 +118,8 @@ const LanguageWeightsTable: React.FC = () => {
 
   const getChartOption = () => {
     const chartData = filteredAndSortedLanguages;
-    const textColor = 'rgba(255, 255, 255, 0.85)';
-    const gridColor = 'rgba(255, 255, 255, 0.08)';
+    const textColor = theme.palette.text.primary;
+    const gridColor = theme.palette.border.subtle;
 
     const xAxisData = chartData.map((item) => item.extension);
     const seriesData = chartData.map((item) => {
@@ -132,13 +135,13 @@ const LanguageWeightsTable: React.FC = () => {
         left: 'center',
         top: 20,
         textStyle: {
-          color: '#ffffff',
+          color: theme.palette.text.primary,
           fontFamily: 'JetBrains Mono',
           fontSize: 18,
           fontWeight: 600,
         },
         subtextStyle: {
-          color: 'rgba(255, 255, 255, 0.5)',
+          color: theme.palette.text.secondary,
           fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
@@ -146,10 +149,15 @@ const LanguageWeightsTable: React.FC = () => {
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
-        backgroundColor: 'rgba(15, 15, 18, 0.95)',
-        borderColor: 'rgba(255, 255, 255, 0.15)',
+        backgroundColor: isDark
+          ? 'rgba(15, 15, 18, 0.95)'
+          : 'rgba(255, 255, 255, 0.95)',
+        borderColor: theme.palette.border.light,
         borderWidth: 1,
-        textStyle: { color: '#fff', fontFamily: 'JetBrains Mono' },
+        textStyle: {
+          color: theme.palette.text.primary,
+          fontFamily: 'JetBrains Mono',
+        },
       },
       grid: {
         left: '3%',
@@ -232,13 +240,15 @@ const LanguageWeightsTable: React.FC = () => {
               onClick={() => setShowChart(!showChart)}
               size="small"
               sx={{
-                color: showChart ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: showChart
+                  ? theme.palette.text.primary
+                  : theme.palette.text.secondary,
+                border: `1px solid ${theme.palette.border.light}`,
                 borderRadius: 2,
                 padding: '6px',
                 '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                  backgroundColor: theme.palette.surface.subtle,
+                  borderColor: theme.palette.border.medium,
                 },
               }}
             >
@@ -254,7 +264,7 @@ const LanguageWeightsTable: React.FC = () => {
               <Typography
                 variant="body2"
                 sx={{
-                  color: 'rgba(255, 255, 255, 0.7)',
+                  color: alpha(theme.palette.text.primary, 0.7),
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.8rem',
                 }}
@@ -268,16 +278,16 @@ const LanguageWeightsTable: React.FC = () => {
                   setPage(0);
                 }}
                 sx={{
-                  color: '#ffffff',
+                  color: theme.palette.text.primary,
                   fontFamily: '"JetBrains Mono", monospace',
-                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  backgroundColor: theme.palette.surface.subtle,
                   fontSize: '0.8rem',
                   height: '36px',
                   borderRadius: 2,
                   minWidth: '80px',
-                  '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                  '& fieldset': { borderColor: theme.palette.border.light },
                   '&:hover fieldset': {
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    borderColor: theme.palette.border.medium,
                   },
                   '&.Mui-focused fieldset': { borderColor: 'primary.main' },
                   '& .MuiSelect-select': {
@@ -301,7 +311,10 @@ const LanguageWeightsTable: React.FC = () => {
               startAdornment: (
                 <InputAdornment position="start">
                   <Search
-                    sx={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '1rem' }}
+                    sx={{
+                      color: theme.palette.text.secondary,
+                      fontSize: '1rem',
+                    }}
                   />
                 </InputAdornment>
               ),
@@ -309,14 +322,16 @@ const LanguageWeightsTable: React.FC = () => {
             sx={{
               width: '200px',
               '& .MuiOutlinedInput-root': {
-                color: '#ffffff',
+                color: theme.palette.text.primary,
                 fontFamily: '"JetBrains Mono", monospace',
-                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                backgroundColor: theme.palette.surface.subtle,
                 fontSize: '0.8rem',
                 height: '36px',
                 borderRadius: 2,
-                '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
-                '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
+                '& fieldset': { borderColor: theme.palette.border.light },
+                '&:hover fieldset': {
+                  borderColor: theme.palette.border.medium,
+                },
                 '&.Mui-focused fieldset': { borderColor: 'primary.main' },
               },
             }}
@@ -328,9 +343,9 @@ const LanguageWeightsTable: React.FC = () => {
         <Box
           sx={{
             p: 2,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            borderBottom: `1px solid ${theme.palette.border.light}`,
             height: '500px',
-            backgroundColor: 'rgba(0,0,0,0.2)',
+            backgroundColor: theme.palette.surface.subtle,
           }}
         >
           {showChart && filteredAndSortedLanguages.length > 0 && (
@@ -361,10 +376,10 @@ const LanguageWeightsTable: React.FC = () => {
               backgroundColor: 'transparent',
             },
             '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              backgroundColor: theme.palette.border.light,
               borderRadius: '4px',
               '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                backgroundColor: theme.palette.border.medium,
               },
             },
           }}
@@ -374,9 +389,11 @@ const LanguageWeightsTable: React.FC = () => {
               <TableRow>
                 <TableCell
                   sx={{
-                    backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                    backgroundColor: isDark
+                      ? 'rgba(18, 18, 20, 0.95)'
+                      : 'rgba(255, 255, 255, 0.95)',
                     backdropFilter: 'blur(8px)',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderBottom: `1px solid ${theme.palette.border.light}`,
                   }}
                 >
                   <TableSortLabel
@@ -397,9 +414,11 @@ const LanguageWeightsTable: React.FC = () => {
                 </TableCell>
                 <TableCell
                   sx={{
-                    backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                    backgroundColor: isDark
+                      ? 'rgba(18, 18, 20, 0.95)'
+                      : 'rgba(255, 255, 255, 0.95)',
                     backdropFilter: 'blur(8px)',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderBottom: `1px solid ${theme.palette.border.light}`,
                   }}
                 >
                   <TableSortLabel
@@ -421,9 +440,11 @@ const LanguageWeightsTable: React.FC = () => {
                 <TableCell
                   align="center"
                   sx={{
-                    backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                    backgroundColor: isDark
+                      ? 'rgba(18, 18, 20, 0.95)'
+                      : 'rgba(255, 255, 255, 0.95)',
                     backdropFilter: 'blur(8px)',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderBottom: `1px solid ${theme.palette.border.light}`,
                   }}
                 >
                   <Tooltip title="Indicates if this extension supports token-based scoring. Token scoring uses AST parsing for more accurate contribution measurement.">
@@ -435,9 +456,11 @@ const LanguageWeightsTable: React.FC = () => {
                 <TableCell
                   align="right"
                   sx={{
-                    backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                    backgroundColor: isDark
+                      ? 'rgba(18, 18, 20, 0.95)'
+                      : 'rgba(255, 255, 255, 0.95)',
                     backdropFilter: 'blur(8px)',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderBottom: `1px solid ${theme.palette.border.light}`,
                   }}
                 >
                   <TableSortLabel

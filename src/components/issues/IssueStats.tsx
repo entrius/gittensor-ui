@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, Skeleton, Box } from '@mui/material';
+import { Grid, Skeleton, Box, useTheme } from '@mui/material';
 import { IssuesStats } from '../../api/models/Issues';
 import { useStats } from '../../api';
 import KpiCard from '../dashboard/KpiCard';
@@ -27,6 +27,7 @@ const IssueStats: React.FC<IssueStatsProps> = ({
   stats,
   isLoading = false,
 }) => {
+  const theme = useTheme();
   const { data: dashStats } = useStats();
   const taoPrice = dashStats?.prices?.tao?.data?.price ?? 0;
   const alphaPrice = dashStats?.prices?.alpha?.data?.price ?? 0;
@@ -41,7 +42,7 @@ const IssueStats: React.FC<IssueStatsProps> = ({
               sx={{
                 p: 2,
                 backgroundColor: 'transparent',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                border: `1px solid ${theme.palette.border.light}`,
                 borderRadius: 3,
               }}
             >

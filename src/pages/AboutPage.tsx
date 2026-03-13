@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Grid, Button, Stack } from '@mui/material';
+import { Box, Typography, Grid, Button, Stack, useTheme } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CodeIcon from '@mui/icons-material/Code';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
@@ -10,6 +10,8 @@ import { useStats } from '../api';
 
 export const AboutContent: React.FC = () => {
   const { data: stats } = useStats();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
 
   const monthlyRewards = React.useMemo(() => {
     if (
@@ -54,7 +56,7 @@ export const AboutContent: React.FC = () => {
             sx={{
               mb: 3,
               fontFamily: '"JetBrains Mono", monospace',
-              color: '#fff',
+              color: 'text.primary',
             }}
           >
             The Marketplace for Open Source
@@ -64,7 +66,7 @@ export const AboutContent: React.FC = () => {
               <Typography
                 variant="body1"
                 sx={{
-                  color: 'rgba(255, 255, 255, 0.8)',
+                  color: 'text.primary',
                   lineHeight: 1.8,
                   fontSize: '1.05rem',
                   mb: 2,
@@ -78,7 +80,7 @@ export const AboutContent: React.FC = () => {
               <Typography
                 variant="body1"
                 sx={{
-                  color: 'rgba(255, 255, 255, 0.8)',
+                  color: 'text.primary',
                   lineHeight: 1.8,
                   fontSize: '1.05rem',
                 }}
@@ -86,7 +88,7 @@ export const AboutContent: React.FC = () => {
                 We have built a permissionless network where anyone can submit
                 Pull Requests to recognized repositories. When your code is
                 merged, you earn direct emissions. It's that simple:{' '}
-                <strong style={{ color: 'white' }}>Code, Merge, Earn.</strong>
+                <strong>Code, Merge, Earn.</strong>
               </Typography>
             </Grid>
             <Grid item xs={12} md={6}>
@@ -94,9 +96,8 @@ export const AboutContent: React.FC = () => {
                 sx={{
                   p: 3,
                   borderRadius: 4,
-                  background:
-                    'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  background: `linear-gradient(135deg, ${theme.palette.surface.light} 0%, ${theme.palette.surface.subtle} 100%)`,
+                  border: `1px solid ${theme.palette.border.light}`,
                 }}
               >
                 <Typography
@@ -192,8 +193,8 @@ export const AboutContent: React.FC = () => {
                     p: 4,
                     height: '100%',
                     borderRadius: 4,
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: theme.palette.surface.subtle,
+                    border: `1px solid ${theme.palette.border.subtle}`,
                   }}
                 >
                   <Box sx={{ color: 'secondary.main', mb: 2 }}>{card.icon}</Box>
@@ -201,7 +202,7 @@ export const AboutContent: React.FC = () => {
                     variant="h6"
                     fontWeight="bold"
                     gutterBottom
-                    sx={{ color: '#fff' }}
+                    sx={{ color: 'text.primary' }}
                   >
                     {card.title}
                   </Typography>
@@ -224,9 +225,8 @@ export const AboutContent: React.FC = () => {
             textAlign: 'center',
             p: 6,
             borderRadius: 4,
-            background:
-              'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(255,255,255,0.03) 100%)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            background: `linear-gradient(180deg, transparent 0%, ${theme.palette.surface.subtle} 100%)`,
+            border: `1px solid ${theme.palette.border.light}`,
             mb: 8,
           }}
         >
@@ -269,8 +269,10 @@ export const AboutContent: React.FC = () => {
             mt: { xs: 4, sm: 5, md: 6 },
             p: { xs: 3, sm: 4 },
             borderRadius: 3,
-            backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backgroundColor: isDark
+              ? 'rgba(0, 0, 0, 0.3)'
+              : theme.palette.surface.light,
+            border: `1px solid ${theme.palette.border.light}`,
             position: 'relative',
             overflow: 'hidden',
             width: '100%',
@@ -283,7 +285,7 @@ export const AboutContent: React.FC = () => {
             sx={{
               mb: 2.5,
               fontSize: { xs: '1.2rem', sm: '1.3rem' },
-              color: '#ffffff',
+              color: 'text.primary',
               fontFamily: '"JetBrains Mono", monospace',
               letterSpacing: '0.02em',
             }}
@@ -293,7 +295,7 @@ export const AboutContent: React.FC = () => {
           <Typography
             variant="body1"
             lineHeight={1.8}
-            color="rgba(255, 255, 255, 0.9)"
+            color="text.primary"
             fontSize={{ xs: '0.95rem', sm: '1rem' }}
             sx={{ mb: 2 }}
           >
@@ -319,7 +321,7 @@ export const AboutContent: React.FC = () => {
           <Typography
             variant="body1"
             lineHeight={1.8}
-            color="rgba(255, 255, 255, 0.9)"
+            color="text.primary"
             fontSize={{ xs: '0.95rem', sm: '1rem' }}
           >
             Review our codebase and get started mining by checking out the

@@ -1,4 +1,7 @@
 import { createTheme } from '@mui/material/styles';
+import type { PaletteMode } from '@mui/material';
+
+export const THEME_STORAGE_KEY = 'gittensor-theme';
 
 // Shared Color Constants (exported for use outside MUI components)
 export const TIER_COLORS = {
@@ -210,301 +213,314 @@ declare module '@mui/material/Chip' {
   }
 }
 
-const theme = createTheme({
-  palette: {
-    mode: 'dark',
-    primary: {
-      main: '#1d37fc',
-    },
-    secondary: {
-      main: '#fff30d',
-    },
-    background: {
-      default: '#000000',
-      paper: '#0a0f1f',
-    },
-    text: {
-      primary: '#ffffff',
-      secondary: '#7d7d7d',
-    },
-    divider: '#ffffff',
-    // Custom tier colors
-    tier: {
-      gold: TIER_COLORS.gold,
-      silver: TIER_COLORS.silver,
-      bronze: TIER_COLORS.bronze,
-    },
-    // Custom status colors
-    status: {
-      merged: STATUS_COLORS.merged,
-      open: STATUS_COLORS.open,
-      closed: STATUS_COLORS.closed,
-      neutral: STATUS_COLORS.neutral,
-      success: STATUS_COLORS.success,
-      warning: STATUS_COLORS.warning,
-      warningOrange: STATUS_COLORS.warningOrange,
-      error: STATUS_COLORS.error,
-      info: STATUS_COLORS.info,
-      award: STATUS_COLORS.award,
-    },
-    // Credibility scale colors
-    credibility: {
-      excellent: CREDIBILITY_COLORS.excellent,
-      good: CREDIBILITY_COLORS.good,
-      moderate: CREDIBILITY_COLORS.moderate,
-      low: CREDIBILITY_COLORS.low,
-      poor: CREDIBILITY_COLORS.poor,
-    },
-    // Open PR risk colors
-    risk: {
-      exceeded: RISK_COLORS.exceeded,
-      critical: RISK_COLORS.critical,
-      approaching: RISK_COLORS.approaching,
-    },
-    // Diff colors for additions/deletions
-    diff: {
-      additions: DIFF_COLORS.additions,
-      deletions: DIFF_COLORS.deletions,
-    },
-    // Border colors
-    border: {
-      subtle: 'rgba(255, 255, 255, 0.05)',
-      light: 'rgba(255, 255, 255, 0.1)',
-      medium: 'rgba(255, 255, 255, 0.2)',
-    },
-    // Surface colors
-    surface: {
-      transparent: 'transparent',
-      subtle: 'rgba(255, 255, 255, 0.02)',
-      light: 'rgba(255, 255, 255, 0.05)',
-      elevated: '#161b22',
-      tooltip: 'rgba(30, 30, 30, 0.95)',
-    },
-  },
-  typography: {
-    fontFamily:
-      '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    h1: {
-      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
-    },
-    h2: {
-      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
-    },
-    h3: {
-      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
-    },
-    h4: {
-      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
-    },
-    h5: {
-      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
-    },
-    h6: {
-      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
-    },
-    body1: {
-      fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-    },
-    body2: {
-      fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-    },
-    button: {
-      fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-    },
-    dataValue: {
-      fontFamily: '"JetBrains Mono", "Courier New", monospace',
-      fontWeight: 500,
-      letterSpacing: '0.02em',
-    },
-    dataLabel: {
-      fontFamily: '"JetBrains Mono", "Courier New", monospace',
-      fontSize: '0.75rem',
-      fontWeight: 400,
-      letterSpacing: '0.05em',
-      textTransform: 'uppercase',
-    },
-    // Base monospace style
-    mono: {
-      fontFamily: '"JetBrains Mono", monospace',
-      fontWeight: 500,
-    },
-    // Small monospace for labels
-    monoSmall: {
-      fontFamily: '"JetBrains Mono", monospace',
-      fontSize: '0.7rem',
-      fontWeight: 600,
-      letterSpacing: '0.5px',
-      textTransform: 'uppercase',
-    },
-    // Section titles
-    sectionTitle: {
-      fontFamily: '"JetBrains Mono", monospace',
-      fontSize: '1rem',
-      fontWeight: 600,
-      color: '#fff',
-    },
-    // Table headers
-    tableHeader: {
-      fontFamily: '"JetBrains Mono", monospace',
-      fontSize: '0.7rem',
-      fontWeight: 600,
-      letterSpacing: '0.5px',
-      textTransform: 'uppercase',
-      color: 'rgba(255, 255, 255, 0.3)',
-    },
-    // Large stat values
-    statValue: {
-      fontFamily: '"JetBrains Mono", monospace',
-      fontSize: '1.1rem',
-      fontWeight: 600,
-      color: '#fff',
-    },
-    // Stat labels
-    statLabel: {
-      fontFamily: '"JetBrains Mono", monospace',
-      fontSize: '0.7rem',
-      fontWeight: 500,
-      textTransform: 'uppercase',
-      color: 'rgba(255, 255, 255, 0.4)',
-    },
-  },
-  components: {
-    MuiCssBaseline: {
-      styleOverrides: {
-        body: {
-          fontFamily:
-            '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-        },
+export const getTheme = (mode: PaletteMode) => {
+  const isDark = mode === 'dark';
+
+  return createTheme({
+    palette: {
+      mode,
+      primary: {
+        main: '#1d37fc',
+      },
+      secondary: {
+        main: isDark ? '#fff30d' : '#c5b800',
+      },
+      background: {
+        default: isDark ? '#000000' : '#f5f6fa',
+        paper: isDark ? '#000000' : '#ffffff',
+      },
+      text: {
+        primary: isDark ? '#ffffff' : '#1a1a2e',
+        secondary: isDark ? '#7d7d7d' : '#6b7280',
+        disabled: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.38)',
+      },
+      divider: isDark ? '#ffffff' : '#d1d5db',
+      // Custom tier colors
+      tier: {
+        gold: TIER_COLORS.gold,
+        silver: TIER_COLORS.silver,
+        bronze: TIER_COLORS.bronze,
+      },
+      // Custom status colors
+      status: {
+        merged: STATUS_COLORS.merged,
+        open: STATUS_COLORS.open,
+        closed: STATUS_COLORS.closed,
+        neutral: STATUS_COLORS.neutral,
+        success: STATUS_COLORS.success,
+        warning: STATUS_COLORS.warning,
+        warningOrange: STATUS_COLORS.warningOrange,
+        error: STATUS_COLORS.error,
+        info: STATUS_COLORS.info,
+        award: STATUS_COLORS.award,
+      },
+      // Credibility scale colors
+      credibility: {
+        excellent: CREDIBILITY_COLORS.excellent,
+        good: CREDIBILITY_COLORS.good,
+        moderate: CREDIBILITY_COLORS.moderate,
+        low: CREDIBILITY_COLORS.low,
+        poor: CREDIBILITY_COLORS.poor,
+      },
+      // Open PR risk colors
+      risk: {
+        exceeded: RISK_COLORS.exceeded,
+        critical: RISK_COLORS.critical,
+        approaching: RISK_COLORS.approaching,
+      },
+      // Diff colors for additions/deletions
+      diff: {
+        additions: DIFF_COLORS.additions,
+        deletions: DIFF_COLORS.deletions,
+      },
+      // Border colors
+      border: {
+        subtle: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.06)',
+        light: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+        medium: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.18)',
+      },
+      // Surface colors
+      surface: {
+        transparent: 'transparent',
+        subtle: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+        light: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+        elevated: isDark ? '#161b22' : '#ffffff',
+        tooltip: isDark
+          ? 'rgba(30, 30, 30, 0.95)'
+          : 'rgba(255, 255, 255, 0.95)',
       },
     },
-    MuiButtonBase: {
-      defaultProps: {
-        disableRipple: true,
+    typography: {
+      fontFamily:
+        '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      h1: {
+        fontFamily: '"Inter", "Helvetica Neue", sans-serif',
+      },
+      h2: {
+        fontFamily: '"Inter", "Helvetica Neue", sans-serif',
+      },
+      h3: {
+        fontFamily: '"Inter", "Helvetica Neue", sans-serif',
+      },
+      h4: {
+        fontFamily: '"Inter", "Helvetica Neue", sans-serif',
+      },
+      h5: {
+        fontFamily: '"Inter", "Helvetica Neue", sans-serif',
+      },
+      h6: {
+        fontFamily: '"Inter", "Helvetica Neue", sans-serif',
+      },
+      body1: {
+        fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+      },
+      body2: {
+        fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+      },
+      button: {
+        fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+      },
+      dataValue: {
+        fontFamily: '"JetBrains Mono", "Courier New", monospace',
+        fontWeight: 500,
+        letterSpacing: '0.02em',
+      },
+      dataLabel: {
+        fontFamily: '"JetBrains Mono", "Courier New", monospace',
+        fontSize: '0.75rem',
+        fontWeight: 400,
+        letterSpacing: '0.05em',
+        textTransform: 'uppercase',
+      },
+      // Base monospace style
+      mono: {
+        fontFamily: '"JetBrains Mono", monospace',
+        fontWeight: 500,
+      },
+      // Small monospace for labels
+      monoSmall: {
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: '0.7rem',
+        fontWeight: 600,
+        letterSpacing: '0.5px',
+        textTransform: 'uppercase',
+      },
+      // Section titles
+      sectionTitle: {
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: '1rem',
+        fontWeight: 600,
+      },
+      // Table headers
+      tableHeader: {
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: '0.7rem',
+        fontWeight: 600,
+        letterSpacing: '0.5px',
+        textTransform: 'uppercase',
+      },
+      // Large stat values
+      statValue: {
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: '1.1rem',
+        fontWeight: 600,
+      },
+      // Stat labels
+      statLabel: {
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: '0.7rem',
+        fontWeight: 500,
+        textTransform: 'uppercase',
       },
     },
-    MuiAppBar: {
-      styleOverrides: {
-        root: {
-          backgroundColor: 'rgb(190, 52, 85)',
-        },
-      },
-    },
-    MuiButton: {
-      variants: [
-        {
-          props: { variant: 'back' },
-          style: {
-            color: 'rgba(255, 255, 255, 0.7)',
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: '0.8rem',
-            fontWeight: 500,
-            letterSpacing: '0.5px',
-            textTransform: 'none',
-            backgroundColor: '#000000',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '8px',
-            padding: '8px 16px',
-            transition: 'all 0.2s',
-            '&:hover': {
-              color: '#ffffff',
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              borderColor: 'rgba(255, 255, 255, 0.2)',
-            },
-          },
-        },
-      ],
-    },
-    MuiCard: {
-      defaultProps: {
-        elevation: 0,
-      },
-      styleOverrides: {
-        root: {
-          borderRadius: 12,
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          backgroundColor: 'transparent',
-        },
-      },
-    },
-    MuiChip: {
-      defaultProps: {
-        size: 'small',
-      },
-      styleOverrides: {
-        root: {
-          fontFamily: '"JetBrains Mono", monospace',
-          fontSize: '0.75rem',
-          fontWeight: 600,
-          borderRadius: '6px',
-          height: '24px',
-          '& .MuiChip-label': {
-            px: 1.5,
-          },
-          '& .MuiChip-icon': {
-            fontSize: 14,
-          },
-        },
-        sizeSmall: {
-          height: '22px',
-          fontSize: '0.7rem',
-          '& .MuiChip-label': {
-            px: 1,
-          },
-          '& .MuiChip-icon': {
-            fontSize: 14,
+    components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
+            fontFamily:
+              '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           },
         },
       },
-      variants: [
-        // Tier variant - for Gold/Silver/Bronze badges
-        {
-          props: { variant: 'tier' },
-          style: {
-            backgroundColor: 'transparent',
-            border: '1px solid',
-            borderRadius: '6px',
+      MuiButtonBase: {
+        defaultProps: {
+          disableRipple: true,
+        },
+      },
+      MuiAppBar: {
+        styleOverrides: {
+          root: {
+            backgroundColor: 'rgb(190, 52, 85)',
           },
         },
-        // Status variant - for merged/open/closed states
-        {
-          props: { variant: 'status' },
-          style: {
-            backgroundColor: 'transparent',
-            border: '1px solid',
-            borderRadius: '6px',
-          },
-        },
-        // Info variant - for neutral information chips
-        {
-          props: { variant: 'info' },
-          style: ({ theme: t }) => ({
-            backgroundColor: t.palette.surface.light,
-            border: `1px solid ${t.palette.border.light}`,
-            color: t.palette.text.primary,
-            borderRadius: '6px',
-            '& .MuiChip-icon': {
-              color: t.palette.text.secondary,
-            },
-          }),
-        },
-        // Filter variant - for deletable filter chips
-        {
-          props: { variant: 'filter' },
-          style: ({ theme: t }) => ({
-            backgroundColor: t.palette.border.light,
-            color: t.palette.text.primary,
-            borderRadius: '6px',
-            '& .MuiChip-deleteIcon': {
-              color: t.palette.text.secondary,
+      },
+      MuiButton: {
+        variants: [
+          {
+            props: { variant: 'back' },
+            style: {
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.8rem',
+              fontWeight: 500,
+              letterSpacing: '0.5px',
+              textTransform: 'none',
+              backgroundColor: isDark ? '#000000' : '#f5f6fa',
+              color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+              border: isDark
+                ? '1px solid rgba(255, 255, 255, 0.1)'
+                : '1px solid rgba(0, 0, 0, 0.12)',
+              borderRadius: '8px',
+              padding: '8px 16px',
+              transition: 'all 0.2s',
               '&:hover': {
-                color: t.palette.text.primary,
+                color: isDark ? '#ffffff' : '#1a1a2e',
+                backgroundColor: isDark
+                  ? 'rgba(0, 0, 0, 0.8)'
+                  : 'rgba(0, 0, 0, 0.04)',
+                borderColor: isDark
+                  ? 'rgba(255, 255, 255, 0.2)'
+                  : 'rgba(0, 0, 0, 0.2)',
               },
             },
-          }),
+          },
+        ],
+      },
+      MuiCard: {
+        defaultProps: {
+          elevation: 0,
         },
-      ],
+        styleOverrides: {
+          root: {
+            borderRadius: 12,
+            border: isDark
+              ? '1px solid rgba(255, 255, 255, 0.1)'
+              : '1px solid rgba(0, 0, 0, 0.1)',
+            backgroundColor: 'transparent',
+          },
+        },
+      },
+      MuiChip: {
+        defaultProps: {
+          size: 'small',
+        },
+        styleOverrides: {
+          root: {
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            borderRadius: '6px',
+            height: '24px',
+            '& .MuiChip-label': {
+              px: 1.5,
+            },
+            '& .MuiChip-icon': {
+              fontSize: 14,
+            },
+          },
+          sizeSmall: {
+            height: '22px',
+            fontSize: '0.7rem',
+            '& .MuiChip-label': {
+              px: 1,
+            },
+            '& .MuiChip-icon': {
+              fontSize: 14,
+            },
+          },
+        },
+        variants: [
+          // Tier variant - for Gold/Silver/Bronze badges
+          {
+            props: { variant: 'tier' },
+            style: {
+              backgroundColor: 'transparent',
+              border: '1px solid',
+              borderRadius: '6px',
+            },
+          },
+          // Status variant - for merged/open/closed states
+          {
+            props: { variant: 'status' },
+            style: {
+              backgroundColor: 'transparent',
+              border: '1px solid',
+              borderRadius: '6px',
+            },
+          },
+          // Info variant - for neutral information chips
+          {
+            props: { variant: 'info' },
+            style: ({ theme: t }) => ({
+              backgroundColor: t.palette.surface.light,
+              border: `1px solid ${t.palette.border.light}`,
+              color: t.palette.text.primary,
+              borderRadius: '6px',
+              '& .MuiChip-icon': {
+                color: t.palette.text.secondary,
+              },
+            }),
+          },
+          // Filter variant - for deletable filter chips
+          {
+            props: { variant: 'filter' },
+            style: ({ theme: t }) => ({
+              backgroundColor: t.palette.border.light,
+              color: t.palette.text.primary,
+              borderRadius: '6px',
+              '& .MuiChip-deleteIcon': {
+                color: t.palette.text.secondary,
+                '&:hover': {
+                  color: t.palette.text.primary,
+                },
+              },
+            }),
+          },
+        ],
+      },
     },
-  },
-});
+  });
+};
+
+const theme = getTheme('dark');
 
 export default theme;

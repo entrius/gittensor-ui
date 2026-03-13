@@ -26,6 +26,7 @@ import {
   Switch,
   FormControlLabel,
   alpha,
+  useTheme,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
@@ -34,7 +35,7 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
 import { type CommitLog } from '../../api/models/Dashboard';
 import { formatUsdEstimate } from '../../utils';
-import theme, { TIER_COLORS, STATUS_COLORS } from '../../theme';
+import { TIER_COLORS, STATUS_COLORS } from '../../theme';
 
 interface TopPRsTableProps {
   prs: CommitLog[];
@@ -57,6 +58,8 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
   onSelectMiner,
   onSelectRepository,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showChart, setShowChart] = useState(false);
@@ -170,9 +173,10 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         setPage(0);
       }}
       sx={{
-        color: tierFilter === value ? '#fff' : 'rgba(255,255,255,0.5)',
+        color:
+          tierFilter === value ? theme.palette.text.primary : 'text.secondary',
         backgroundColor:
-          tierFilter === value ? 'rgba(255,255,255,0.1)' : 'transparent',
+          tierFilter === value ? theme.palette.surface.light : 'transparent',
         borderRadius: '6px',
         px: 2,
         minWidth: 'auto',
@@ -182,7 +186,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         border:
           tierFilter === value ? `1px solid ${color}` : '1px solid transparent',
         '&:hover': {
-          backgroundColor: 'rgba(255,255,255,0.15)',
+          backgroundColor: theme.palette.surface.light,
         },
       }}
     >
@@ -208,9 +212,12 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
       size="small"
       onClick={() => setStatusFilter(value)}
       sx={{
-        color: statusFilter === value ? '#fff' : 'rgba(255,255,255,0.5)',
+        color:
+          statusFilter === value
+            ? theme.palette.text.primary
+            : 'text.secondary',
         backgroundColor:
-          statusFilter === value ? 'rgba(255,255,255,0.1)' : 'transparent',
+          statusFilter === value ? theme.palette.surface.light : 'transparent',
         borderRadius: '6px',
         px: 2,
         minWidth: 'auto',
@@ -222,7 +229,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
             ? `1px solid ${color}`
             : '1px solid transparent',
         '&:hover': {
-          backgroundColor: 'rgba(255,255,255,0.15)',
+          backgroundColor: theme.palette.surface.light,
         },
       }}
     >
@@ -237,8 +244,9 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
 
   const getChartOption = () => {
     const chartData = filteredPRs.slice(0, 50);
-    const textColor = 'rgba(255, 255, 255, 0.85)';
-    const gridColor = 'rgba(255, 255, 255, 0.08)';
+    const textColor = alpha(theme.palette.text.primary, 0.85);
+    const gridColor = alpha(theme.palette.text.primary, 0.08);
+    const tc = theme.palette.text.primary;
 
     const getTierColor = (tier: string) => {
       switch (tier) {
@@ -290,13 +298,13 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         left: 'center',
         top: 20,
         textStyle: {
-          color: '#ffffff',
+          color: tc,
           fontFamily: 'JetBrains Mono',
           fontSize: 18,
           fontWeight: 600,
         },
         subtextStyle: {
-          color: 'rgba(255, 255, 255, 0.6)',
+          color: alpha(tc, 0.6),
           fontFamily: 'JetBrains Mono',
           fontSize: 11,
         },
@@ -306,14 +314,16 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         axisPointer: {
           type: 'shadow',
           shadowStyle: {
-            color: 'rgba(255, 255, 255, 0.05)',
+            color: alpha(tc, 0.05),
           },
         },
-        backgroundColor: 'rgba(10, 10, 12, 0.98)',
-        borderColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: isDark
+          ? 'rgba(10, 10, 12, 0.98)'
+          : 'rgba(255, 255, 255, 0.98)',
+        borderColor: alpha(tc, 0.2),
         borderWidth: 1,
         textStyle: {
-          color: '#fff',
+          color: tc,
           fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
@@ -325,10 +335,10 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
 
           return `
             <div style="font-family: 'JetBrains Mono', monospace;">
-              <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 8px;">
+              <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid ${alpha(tc, 0.15)}; padding-bottom: 8px;">
                 PR #${data.prNumber}
               </div>
-              <div style="margin-bottom: 10px; color: rgba(255,255,255,0.85); font-size: 11px; max-width: 300px; white-space: normal; word-break: break-word; line-height: 1.4;">
+              <div style="margin-bottom: 10px; color: ${alpha(tc, 0.85)}; font-size: 11px; max-width: 300px; white-space: normal; word-break: break-word; line-height: 1.4;">
                 ${data.title}
               </div>
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
@@ -337,20 +347,20 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
               </div>
               <div style="display: grid; gap: 6px; font-size: 11px;">
                 <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Rank:</span>
-                  <span style="color: #fff; font-weight: 600;">#${data.rank}</span>
+                  <span style="color: ${alpha(tc, 0.65)};">Rank:</span>
+                  <span style="color: ${tc}; font-weight: 600;">#${data.rank}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Score:</span>
-                  <span style="color: #fff; font-weight: 600;">${data.value.toFixed(4)}</span>
+                  <span style="color: ${alpha(tc, 0.65)};">Score:</span>
+                  <span style="color: ${tc}; font-weight: 600;">${data.value.toFixed(4)}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Author:</span>
-                  <span style="color: #fff; font-weight: 600;">${data.author}</span>
+                  <span style="color: ${alpha(tc, 0.65)};">Author:</span>
+                  <span style="color: ${tc}; font-weight: 600;">${data.author}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Repository:</span>
-                  <span style="color: #fff; font-weight: 600;">${data.repository.split('/')[1] || data.repository}</span>
+                  <span style="color: ${alpha(tc, 0.65)};">Repository:</span>
+                  <span style="color: ${tc}; font-weight: 600;">${data.repository.split('/')[1] || data.repository}</span>
                 </div>
               </div>
             </div>
@@ -502,7 +512,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
       ref={cardRef}
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: `1px solid ${theme.palette.border.light}`,
         backgroundColor: 'transparent',
         overflow: 'hidden',
         display: 'flex',
@@ -517,13 +527,13 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 2,
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          borderBottom: `1px solid ${theme.palette.border.light}`,
         }}
       >
         <Typography
           variant="h6"
           sx={{
-            color: '#ffffff',
+            color: 'text.primary',
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '1.1rem',
             fontWeight: 500,
@@ -541,13 +551,15 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
               onClick={() => setShowFilters(!showFilters)}
               size="small"
               sx={{
-                color: showFilters ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: showFilters
+                  ? theme.palette.text.primary
+                  : 'text.secondary',
+                border: `1px solid ${theme.palette.border.light}`,
                 borderRadius: 2,
                 padding: '6px',
                 '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                  backgroundColor: theme.palette.surface.subtle,
+                  borderColor: theme.palette.border.medium,
                 },
               }}
             >
@@ -560,13 +572,15 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
               onClick={() => setShowChart(!showChart)}
               size="small"
               sx={{
-                color: showChart ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: showChart
+                  ? theme.palette.text.primary
+                  : 'text.secondary',
+                border: `1px solid ${theme.palette.border.light}`,
                 borderRadius: 2,
                 padding: '6px',
                 '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                  backgroundColor: theme.palette.surface.subtle,
+                  borderColor: theme.palette.border.medium,
                 },
               }}
             >
@@ -590,7 +604,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                       color: '#primary.main',
                     },
                     '& .MuiSwitch-track': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                      backgroundColor: theme.palette.border.medium,
                     },
                   }}
                 />
@@ -601,7 +615,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                   sx={{
                     fontFamily: 'JetBrains Mono',
                     fontSize: '0.8rem',
-                    color: 'rgba(255, 255, 255, 0.7)',
+                    color: alpha(theme.palette.text.primary, 0.7),
                   }}
                 >
                   Log Scale
@@ -615,7 +629,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
               <Typography
                 variant="body2"
                 sx={{
-                  color: 'rgba(255, 255, 255, 0.7)',
+                  color: alpha(theme.palette.text.primary, 0.7),
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.8rem',
                 }}
@@ -629,18 +643,20 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                   setPage(0);
                 }}
                 sx={{
-                  color: '#ffffff',
+                  color: theme.palette.text.primary,
                   fontFamily: '"JetBrains Mono", monospace',
-                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  backgroundColor: theme.palette.background.paper,
                   fontSize: '0.8rem',
                   height: '36px',
                   borderRadius: 2,
                   minWidth: '80px',
-                  '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                  '& fieldset': { borderColor: theme.palette.border.light },
                   '&:hover fieldset': {
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    borderColor: theme.palette.border.medium,
                   },
-                  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                  '&.Mui-focused fieldset': {
+                    borderColor: theme.palette.primary.main,
+                  },
                   '& .MuiSelect-select': { py: 0.75 },
                 }}
               >
@@ -660,7 +676,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
               startAdornment: (
                 <InputAdornment position="start">
                   <SearchIcon
-                    sx={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '1rem' }}
+                    sx={{ color: 'text.secondary', fontSize: '1rem' }}
                   />
                 </InputAdornment>
               ),
@@ -668,14 +684,18 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
             sx={{
               width: '200px',
               '& .MuiOutlinedInput-root': {
-                color: '#ffffff',
+                color: theme.palette.text.primary,
                 fontFamily: '"JetBrains Mono", monospace',
-                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                backgroundColor: isDark
+                  ? 'rgba(0, 0, 0, 0.4)'
+                  : theme.palette.surface.light,
                 fontSize: '0.8rem',
                 height: '36px',
                 borderRadius: 2,
-                '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
-                '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
+                '& fieldset': { borderColor: theme.palette.border.light },
+                '&:hover fieldset': {
+                  borderColor: theme.palette.border.medium,
+                },
                 '&.Mui-focused fieldset': { borderColor: 'primary.main' },
               },
             }}
@@ -687,8 +707,8 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         <Box
           sx={{
             p: 2,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-            backgroundColor: 'rgba(255, 255, 255, 0.02)',
+            borderBottom: `1px solid ${theme.palette.border.light}`,
+            backgroundColor: theme.palette.surface.subtle,
             display: 'flex',
             gap: 4,
             flexWrap: 'wrap',
@@ -698,7 +718,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
             <Typography
               variant="caption"
               sx={{
-                color: 'rgba(255,255,255,0.5)',
+                color: 'text.secondary',
                 display: 'block',
                 mb: 1,
                 fontFamily: '"JetBrains Mono", monospace',
@@ -738,7 +758,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
             <Typography
               variant="caption"
               sx={{
-                color: 'rgba(255,255,255,0.5)',
+                color: 'text.secondary',
                 display: 'block',
                 mb: 1,
                 fontFamily: '"JetBrains Mono", monospace',
@@ -780,9 +800,11 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         <Box
           sx={{
             p: 2,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            borderBottom: `1px solid ${theme.palette.border.light}`,
             height: '600px',
-            backgroundColor: 'rgba(0,0,0,0.2)',
+            backgroundColor: isDark
+              ? 'rgba(0,0,0,0.2)'
+              : theme.palette.surface.subtle,
           }}
         >
           {showChart && filteredPRs.length > 0 && (
@@ -804,10 +826,10 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
             backgroundColor: 'transparent',
           },
           '&::-webkit-scrollbar-thumb': {
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            backgroundColor: theme.palette.border.light,
             borderRadius: '4px',
             '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              backgroundColor: theme.palette.border.medium,
             },
           },
         }}
@@ -818,25 +840,25 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         >
           <TableHead>
             <TableRow>
-              <TableCell sx={{ ...headerCellStyle, width: '80px' }}>
+              <TableCell sx={{ ...getHeaderCellStyle(theme), width: '80px' }}>
                 Rank
               </TableCell>
-              <TableCell sx={{ ...headerCellStyle, width: '40%' }}>
+              <TableCell sx={{ ...getHeaderCellStyle(theme), width: '40%' }}>
                 Pull Request
               </TableCell>
-              <TableCell sx={{ ...headerCellStyle, width: '20%' }}>
+              <TableCell sx={{ ...getHeaderCellStyle(theme), width: '20%' }}>
                 Author
               </TableCell>
-              <TableCell sx={{ ...headerCellStyle, width: '20%' }}>
+              <TableCell sx={{ ...getHeaderCellStyle(theme), width: '20%' }}>
                 Repository
               </TableCell>
-              <TableCell sx={{ ...headerCellStyle, width: '10%' }}>
+              <TableCell sx={{ ...getHeaderCellStyle(theme), width: '10%' }}>
                 Status
               </TableCell>
               <TableCell
                 align="right"
                 sx={{
-                  ...headerCellStyle,
+                  ...getHeaderCellStyle(theme),
                   color: 'secondary.main',
                   width: '15%',
                 }}
@@ -858,20 +880,20 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                   sx={{
                     cursor: 'pointer',
                     '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      backgroundColor: theme.palette.surface.subtle,
                     },
                     transition: 'all 0.2s',
                   }}
                 >
-                  <TableCell sx={{ ...bodyCellStyle, width: '80px' }}>
-                    {getRankIcon(pr.rank || 0)}
+                  <TableCell sx={{ ...getBodyCellStyle(theme), width: '80px' }}>
+                    {getRankIcon(pr.rank || 0, theme)}
                   </TableCell>
-                  <TableCell sx={{ ...bodyCellStyle, width: '40%' }}>
+                  <TableCell sx={{ ...getBodyCellStyle(theme), width: '40%' }}>
                     <Tooltip title={pr.pullRequestTitle || ''} placement="top">
                       <Typography
                         component="span"
                         sx={{
-                          color: '#ffffff',
+                          color: theme.palette.text.primary,
                           fontWeight: 500,
                           cursor: 'pointer',
                           overflow: 'hidden',
@@ -888,7 +910,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                       </Typography>
                     </Tooltip>
                   </TableCell>
-                  <TableCell sx={{ ...bodyCellStyle, width: '20%' }}>
+                  <TableCell sx={{ ...getBodyCellStyle(theme), width: '20%' }}>
                     <Box
                       onClick={(e) => {
                         e.stopPropagation();
@@ -930,7 +952,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                       </Tooltip>
                     </Box>
                   </TableCell>
-                  <TableCell sx={{ ...bodyCellStyle, width: '20%' }}>
+                  <TableCell sx={{ ...getBodyCellStyle(theme), width: '20%' }}>
                     <Box
                       onClick={(e) => {
                         e.stopPropagation();
@@ -955,7 +977,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                         sx={{
                           width: 20,
                           height: 20,
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          border: `1px solid ${theme.palette.border.medium}`,
                           backgroundColor:
                             (pr.repository || '').split('/')[0] === 'opentensor'
                               ? '#ffffff'
@@ -969,7 +991,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                         <Typography
                           component="span"
                           sx={{
-                            color: '#ffffff',
+                            color: theme.palette.text.primary,
                             fontWeight: 500,
                             transition: 'color 0.2s',
                             overflow: 'hidden',
@@ -993,7 +1015,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                       />
                     </Box>
                   </TableCell>
-                  <TableCell sx={{ ...bodyCellStyle, width: '10%' }}>
+                  <TableCell sx={{ ...getBodyCellStyle(theme), width: '10%' }}>
                     {(() => {
                       const state =
                         pr.prState?.toUpperCase() ||
@@ -1023,7 +1045,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                   </TableCell>
                   <TableCell
                     align="right"
-                    sx={{ ...bodyCellStyle, width: '15%' }}
+                    sx={{ ...getBodyCellStyle(theme), width: '15%' }}
                   >
                     <Box
                       sx={{
@@ -1038,7 +1060,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                           fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.8rem',
                           fontWeight: 600,
-                          color: '#ffffff',
+                          color: theme.palette.text.primary,
                           lineHeight: 1.2,
                         }}
                       >
@@ -1055,19 +1077,23 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                             slotProps={{
                               tooltip: {
                                 sx: {
-                                  backgroundColor: 'rgba(15, 15, 17, 0.98)',
-                                  color: 'rgba(255, 255, 255, 0.85)',
+                                  backgroundColor: isDark
+                                    ? 'rgba(15, 15, 17, 0.98)'
+                                    : 'rgba(255, 255, 255, 0.98)',
+                                  color: theme.palette.text.primary,
                                   fontSize: '0.7rem',
                                   fontFamily: '"JetBrains Mono", monospace',
                                   padding: '8px 12px',
                                   borderRadius: '6px',
-                                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                                  border: `1px solid ${theme.palette.border.light}`,
                                   boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
                                 },
                               },
                               arrow: {
                                 sx: {
-                                  color: 'rgba(15, 15, 17, 0.98)',
+                                  color: isDark
+                                    ? 'rgba(15, 15, 17, 0.98)'
+                                    : 'rgba(255, 255, 255, 0.98)',
                                 },
                               },
                             }}
@@ -1112,8 +1138,8 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         showFirstButton
         showLastButton
         sx={{
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          color: 'rgba(255, 255, 255, 0.7)',
+          borderTop: `1px solid ${theme.palette.border.light}`,
+          color: alpha(theme.palette.text.primary, 0.7),
           '.MuiTablePagination-displayedRows': {
             fontFamily: '"JetBrains Mono", monospace',
           },
@@ -1123,33 +1149,39 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
   );
 };
 
-const headerCellStyle = {
-  backgroundColor: 'rgba(18, 18, 20, 0.95)',
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getHeaderCellStyle = (t: any) => ({
+  backgroundColor:
+    t.palette.mode === 'dark'
+      ? 'rgba(18, 18, 20, 0.95)'
+      : 'rgba(255, 255, 255, 0.95)',
   backdropFilter: 'blur(8px)',
-  color: '#ffffff',
+  color: t.palette.text.primary,
   fontFamily: '"JetBrains Mono", monospace',
   fontWeight: 500,
   fontSize: '0.75rem',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  borderBottom: `1px solid ${t.palette.border.light}`,
   height: '48px',
   py: 1,
   boxSizing: 'border-box' as const,
-};
+});
 
-const bodyCellStyle = {
-  color: '#ffffff',
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getBodyCellStyle = (t: any) => ({
+  color: t.palette.text.primary,
   fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  borderBottom: `1px solid ${t.palette.border.light}`,
   fontSize: '0.75rem',
   py: 0.75,
   height: '52px',
   boxSizing: 'border-box' as const,
-};
+});
 
-const getRankIcon = (rank: number) => (
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getRankIcon = (rank: number, t: any) => (
   <Box
     sx={{
-      backgroundColor: '#000000',
+      backgroundColor: t.palette.background.default,
       borderRadius: '2px',
       width: '22px',
       height: '22px',
@@ -1165,7 +1197,7 @@ const getRankIcon = (rank: number) => (
             ? alpha(TIER_COLORS.silver, 0.4)
             : rank === 3
               ? alpha(TIER_COLORS.bronze, 0.4)
-              : 'rgba(255, 255, 255, 0.15)',
+              : t.palette.border.light,
       boxShadow:
         rank === 1
           ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
@@ -1186,7 +1218,7 @@ const getRankIcon = (rank: number) => (
               ? TIER_COLORS.silver
               : rank === 3
                 ? TIER_COLORS.bronze
-                : 'rgba(255, 255, 255, 0.6)',
+                : alpha(t.palette.text.primary, 0.6),
         fontFamily: '"JetBrains Mono", monospace',
         fontSize: '0.65rem',
         fontWeight: 600,

@@ -5,6 +5,8 @@ import {
   CircularProgress,
   TextField,
   InputAdornment,
+  alpha,
+  useTheme,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { SectionCard } from './SectionCard';
@@ -31,6 +33,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   isLoading,
   onSelectMiner,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState<SortOption>('totalScore');
 
@@ -107,9 +111,11 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           position: 'sticky',
           top: 0,
           zIndex: 100,
-          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          backgroundColor: isDark
+            ? 'rgba(0, 0, 0, 0.65)'
+            : 'rgba(255, 255, 255, 0.85)',
           backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          borderBottom: `1px solid ${theme.palette.border.light}`,
           boxShadow: 'none',
         }}
       >
@@ -153,9 +159,9 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             title="Unranked"
             miners={groupedMiners.others}
             color={{
-              border: 'rgba(255,255,255,0.1)',
+              border: theme.palette.border.light,
               text: STATUS_COLORS.open,
-              bg: 'rgba(255, 255, 255, 0.02)',
+              bg: theme.palette.surface.subtle,
             }}
             onSelectMiner={onSelectMiner}
           />
@@ -181,97 +187,114 @@ interface SortButtonsProps {
 const SortButtons: React.FC<SortButtonsProps> = ({
   sortOption,
   onSortChange,
-}) => (
-  <Box
-    sx={{
-      display: 'flex',
-      gap: 0.5,
-      flexWrap: 'wrap',
-      justifyContent: 'center',
-    }}
-  >
-    {[
-      { label: 'Score', value: 'totalScore' },
-      { label: 'Earnings', value: 'usdPerDay' },
-      { label: 'PRs', value: 'totalPRs' },
-      { label: 'Credibility', value: 'credibility' },
-    ].map((option) => (
-      <Box
-        key={option.value}
-        onClick={() => onSortChange(option.value as SortOption)}
-        sx={{
-          px: 1.5,
-          height: 32,
-          display: 'flex',
-          alignItems: 'center',
-          borderRadius: 2,
-          cursor: 'pointer',
-          backgroundColor:
-            sortOption === option.value
-              ? 'rgba(255, 255, 255, 0.1)'
-              : 'transparent',
-          color: sortOption === option.value ? '#fff' : STATUS_COLORS.open,
-          border: '1px solid',
-          borderColor:
-            sortOption === option.value
-              ? 'rgba(255, 255, 255, 0.2)'
-              : 'transparent',
-          transition: 'all 0.2s',
-          '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            color: '#e6edf3',
-          },
-        }}
-      >
-        <Typography
+}) => {
+  const theme = useTheme();
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        gap: 0.5,
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+      }}
+    >
+      {[
+        { label: 'Score', value: 'totalScore' },
+        { label: 'Earnings', value: 'usdPerDay' },
+        { label: 'PRs', value: 'totalPRs' },
+        { label: 'Credibility', value: 'credibility' },
+      ].map((option) => (
+        <Box
+          key={option.value}
+          onClick={() => onSortChange(option.value as SortOption)}
           sx={{
-            fontFamily: FONTS.mono,
-            fontSize: '0.75rem',
-            fontWeight: 600,
+            px: 1.5,
+            height: 32,
+            display: 'flex',
+            alignItems: 'center',
+            borderRadius: 2,
+            cursor: 'pointer',
+            backgroundColor:
+              sortOption === option.value
+                ? theme.palette.surface.light
+                : 'transparent',
+            color:
+              sortOption === option.value
+                ? theme.palette.text.primary
+                : STATUS_COLORS.open,
+            border: '1px solid',
+            borderColor:
+              sortOption === option.value
+                ? theme.palette.border.medium
+                : 'transparent',
+            transition: 'all 0.2s',
+            '&:hover': {
+              backgroundColor: theme.palette.surface.subtle,
+              color: theme.palette.text.primary,
+            },
           }}
         >
-          {option.label}
-        </Typography>
-      </Box>
-    ))}
-  </Box>
-);
+          <Typography
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.75rem',
+              fontWeight: 600,
+            }}
+          >
+            {option.label}
+          </Typography>
+        </Box>
+      ))}
+    </Box>
+  );
+};
 
 interface SearchFieldProps {
   value: string;
   onChange: (value: string) => void;
 }
 
-const SearchField: React.FC<SearchFieldProps> = ({ value, onChange }) => (
-  <TextField
-    placeholder="Search..."
-    size="small"
-    value={value}
-    onChange={(e) => onChange(e.target.value)}
-    InputProps={{
-      startAdornment: (
-        <InputAdornment position="start">
-          <SearchIcon
-            sx={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: '1rem' }}
-          />
-        </InputAdornment>
-      ),
-    }}
-    sx={{
-      width: 180,
-      '& .MuiOutlinedInput-root': {
-        color: '#ffffff',
-        fontFamily: FONTS.mono,
-        backgroundColor: 'rgba(0, 0, 0, 0.2)',
-        fontSize: '0.8rem',
-        borderRadius: 2,
-        height: 32,
-        '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
-        '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
-        '&.Mui-focused fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
-      },
-    }}
-  />
-);
+const SearchField: React.FC<SearchFieldProps> = ({ value, onChange }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  return (
+    <TextField
+      placeholder="Search..."
+      size="small"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            <SearchIcon
+              sx={{
+                color: alpha(theme.palette.text.primary, 0.4),
+                fontSize: '1rem',
+              }}
+            />
+          </InputAdornment>
+        ),
+      }}
+      sx={{
+        width: 180,
+        '& .MuiOutlinedInput-root': {
+          color: theme.palette.text.primary,
+          fontFamily: FONTS.mono,
+          backgroundColor: isDark
+            ? 'rgba(0, 0, 0, 0.2)'
+            : theme.palette.surface.light,
+          fontSize: '0.8rem',
+          borderRadius: 2,
+          height: 32,
+          '& fieldset': { borderColor: theme.palette.border.light },
+          '&:hover fieldset': { borderColor: theme.palette.border.medium },
+          '&.Mui-focused fieldset': {
+            borderColor: theme.palette.border.medium,
+          },
+        },
+      }}
+    />
+  );
+};
 
 export default TopMinersTable;

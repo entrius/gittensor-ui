@@ -1,11 +1,13 @@
 import React from 'react';
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Stack, Typography, alpha, useTheme } from '@mui/material';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { useStats } from '../api';
 
 const HomePage: React.FC = () => {
   const { data: stats } = useStats();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
 
   // Calculate monthly rewards: TAO price × Alpha price × 2952 × days in current month
   const monthlyRewards = React.useMemo(() => {
@@ -56,13 +58,14 @@ const HomePage: React.FC = () => {
             style={{
               height: window.innerWidth < 600 ? '96px' : '128px',
               width: 'auto',
-              filter:
-                'grayscale(100%) invert(1) drop-shadow(0 0 12px rgba(255, 255, 255, 0.8))',
+              filter: isDark
+                ? 'brightness(0) invert(1) drop-shadow(0 0 12px rgba(255, 255, 255, 0.8))'
+                : 'brightness(0) drop-shadow(0 0 12px rgba(0, 0, 0, 0.15))',
             }}
           />
           <Typography
             variant="h1"
-            color="#ffffff"
+            color="text.primary"
             fontWeight="bold"
             sx={{
               fontFamily: '"JetBrains Mono", monospace',
@@ -92,14 +95,20 @@ const HomePage: React.FC = () => {
                 px: { xs: 3, sm: 5, md: 7 },
                 py: { xs: 2.5, sm: 3.5 },
                 borderRadius: 2,
-                background: 'rgba(0, 0, 0, 0.4)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
+                background: isDark
+                  ? 'rgba(0, 0, 0, 0.4)'
+                  : 'rgba(255, 255, 255, 0.8)',
+                border: `1px solid ${theme.palette.border.medium}`,
                 backdropFilter: 'blur(10px)',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+                boxShadow: isDark
+                  ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+                  : '0 8px 32px rgba(0, 0, 0, 0.08)',
                 transition: 'all 0.3s ease-in-out',
                 '&:hover': {
-                  border: '1px solid rgba(255, 255, 255, 0.25)',
-                  boxShadow: '0 12px 48px rgba(0, 0, 0, 0.4)',
+                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)'}`,
+                  boxShadow: isDark
+                    ? '0 12px 48px rgba(0, 0, 0, 0.4)'
+                    : '0 12px 48px rgba(0, 0, 0, 0.12)',
                   transform: 'translateY(-2px)',
                 },
               }}
@@ -107,7 +116,7 @@ const HomePage: React.FC = () => {
               <Stack alignItems="center" gap={{ xs: 1, sm: 1.5 }}>
                 <Typography
                   variant="body2"
-                  color="rgba(255, 255, 255, 0.5)"
+                  color="text.secondary"
                   sx={{
                     fontSize: { xs: '0.7rem', sm: '0.75rem' },
                     textTransform: 'uppercase',
@@ -119,7 +128,7 @@ const HomePage: React.FC = () => {
                 </Typography>
                 <Typography
                   variant="h2"
-                  color="#ffffff"
+                  color="text.primary"
                   fontWeight="600"
                   sx={{
                     fontFamily: '"JetBrains Mono", monospace',
@@ -135,8 +144,8 @@ const HomePage: React.FC = () => {
                 </Typography>
                 <Typography
                   variant="body2"
-                  color="rgba(255, 255, 255, 0.4)"
                   sx={{
+                    color: alpha(theme.palette.text.primary, 0.4),
                     fontSize: { xs: '0.75rem', sm: '0.85rem' },
                     textAlign: 'center',
                     maxWidth: '400px',

@@ -1,5 +1,14 @@
 import React from 'react';
-import { Box, Card, Typography, Chip, Link, Stack } from '@mui/material';
+import {
+  Box,
+  Card,
+  Typography,
+  Chip,
+  Link,
+  Stack,
+  alpha,
+  useTheme,
+} from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueDetails } from '../../api/models/Issues';
 import { useStats } from '../../api';
@@ -58,6 +67,7 @@ interface IssueHeaderCardProps {
 }
 
 const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
+  const theme = useTheme();
   const statusBadge = getStatusBadge(issue.status);
   const { data: dashStats } = useStats();
   const taoPrice = dashStats?.prices?.tao?.data?.price ?? 0;
@@ -74,8 +84,8 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
   return (
     <Card
       sx={{
-        backgroundColor: '#000000',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: theme.palette.background.default,
+        border: `1px solid ${theme.palette.border.light}`,
         borderRadius: 3,
         p: 3,
       }}
@@ -133,7 +143,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                 '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
               fontSize: '1.5rem',
               fontWeight: 600,
-              color: '#ffffff',
+              color: theme.palette.text.primary,
             }}
           >
             {issue.title}
@@ -154,7 +164,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
               sx={{
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.7rem',
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: theme.palette.text.secondary,
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
                 mb: 0.5,
@@ -184,7 +194,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                   sx={{
                     fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.9rem',
-                    color: 'rgba(255, 255, 255, 0.5)',
+                    color: theme.palette.text.secondary,
                   }}
                 >
                   / {formatTokenAmount(issue.targetBounty)} ل
@@ -210,7 +220,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                   color:
                     issue.status === 'active'
                       ? STATUS_COLORS.merged
-                      : 'rgba(255, 255, 255, 0.6)',
+                      : alpha(theme.palette.text.primary, 0.6),
                 }}
               >
                 {formatTokenAmount(issue.targetBounty)} ل
@@ -221,7 +231,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                 sx={{
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.8rem',
-                  color: 'rgba(255, 255, 255, 0.4)',
+                  color: alpha(theme.palette.text.primary, 0.4),
                   mt: 0.25,
                 }}
               >
@@ -236,7 +246,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                 sx={{
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.7rem',
-                  color: 'rgba(255, 255, 255, 0.5)',
+                  color: theme.palette.text.secondary,
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
                   mb: 0.5,
@@ -248,7 +258,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                 sx={{
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.9rem',
-                  color: '#ffffff',
+                  color: theme.palette.text.primary,
                 }}
               >
                 {issue.authorLogin}
@@ -261,7 +271,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
               sx={{
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.7rem',
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: theme.palette.text.secondary,
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
                 mb: 0.5,
@@ -273,7 +283,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
               sx={{
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.9rem',
-                color: '#ffffff',
+                color: theme.palette.text.primary,
               }}
             >
               {formatDate(issue.createdAt)}
@@ -292,8 +302,8 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                 sx={{
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.7rem',
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  color: '#ffffff',
+                  backgroundColor: theme.palette.surface.subtle,
+                  color: theme.palette.text.primary,
                 }}
               />
             ))}

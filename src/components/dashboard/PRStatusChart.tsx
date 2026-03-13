@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Stack, Typography, alpha, useTheme } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
 import { CHART_COLORS, STATUS_COLORS } from '../../theme';
 
@@ -23,6 +23,8 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
   subtitle,
   variant = 'primary',
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const { merged, open, closed, credibility } = stats;
   const credibilityPercent = credibility * 100;
   const isPrimary = variant === 'primary';
@@ -35,7 +37,9 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
         left: 'center',
         top: '28%',
         textStyle: {
-          color: isPrimary ? '#fff' : 'rgba(255, 255, 255, 0.7)',
+          color: isPrimary
+            ? theme.palette.text.primary
+            : alpha(theme.palette.text.primary, 0.7),
           fontSize: isPrimary ? 28 : 24,
           fontWeight: 'bold',
           fontFamily: '"JetBrains Mono", monospace',
@@ -45,10 +49,15 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
       tooltip: {
         trigger: 'item',
         formatter: '{b}: {c} ({d}%)',
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        borderColor: 'rgba(255, 255, 255, 0.15)',
+        backgroundColor: isDark
+          ? 'rgba(0, 0, 0, 0.9)'
+          : 'rgba(255, 255, 255, 0.95)',
+        borderColor: theme.palette.border.medium,
         borderWidth: 1,
-        textStyle: { color: '#fff', fontFamily: '"JetBrains Mono", monospace' },
+        textStyle: {
+          color: theme.palette.text.primary,
+          fontFamily: '"JetBrains Mono", monospace',
+        },
       },
       series: [
         {
@@ -59,7 +68,7 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
           avoidLabelOverlap: false,
           itemStyle: {
             borderRadius: 4,
-            borderColor: '#0d1117',
+            borderColor: theme.palette.background.default,
             borderWidth: 2,
           },
           label: { show: false, position: 'center' },
@@ -94,7 +103,17 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
         },
       ],
     }),
-    [merged, open, closed, credibilityPercent, isPrimary],
+    [
+      merged,
+      open,
+      closed,
+      credibilityPercent,
+      isPrimary,
+      isDark,
+      theme.palette.text.primary,
+      theme.palette.background.default,
+      theme.palette.border.medium,
+    ],
   );
 
   return (
@@ -108,7 +127,9 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
     >
       <Typography
         sx={{
-          color: isPrimary ? STATUS_COLORS.success : 'rgba(255, 255, 255, 0.5)',
+          color: isPrimary
+            ? STATUS_COLORS.success
+            : theme.palette.text.secondary,
           fontSize: '0.85rem',
           fontWeight: 700,
           fontFamily: '"JetBrains Mono", monospace',

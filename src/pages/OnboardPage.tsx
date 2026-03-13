@@ -1,5 +1,13 @@
 import React from 'react';
-import { Box, Tabs, Tab, Card, CardContent } from '@mui/material';
+import {
+  Box,
+  Tabs,
+  Tab,
+  Card,
+  CardContent,
+  alpha,
+  useTheme,
+} from '@mui/material';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { useSearchParams } from 'react-router-dom';
@@ -15,6 +23,7 @@ import {
 } from '../components/repositories';
 
 const OnboardPage: React.FC = () => {
+  const theme = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Determine active tab from URL query param or default to 0
@@ -71,7 +80,7 @@ const OnboardPage: React.FC = () => {
             maxWidth: 1200,
             width: '100%',
             mb: 4,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            borderBottom: `1px solid ${theme.palette.border.light}`,
           }}
         >
           <Tabs
@@ -86,7 +95,7 @@ const OnboardPage: React.FC = () => {
                 textTransform: 'none',
                 fontWeight: 500,
                 fontSize: '1rem',
-                color: 'rgba(255, 255, 255, 0.6)',
+                color: alpha(theme.palette.text.primary, 0.6),
                 '&.Mui-selected': {
                   color: 'primary.main',
                 },
@@ -119,7 +128,7 @@ const OnboardPage: React.FC = () => {
               <Card
                 sx={{
                   borderRadius: 3,
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  border: `1px solid ${theme.palette.border.light}`,
                   backgroundColor: 'transparent',
                   maxWidth: 1200,
                   width: '100%',
@@ -144,7 +153,7 @@ const OnboardPage: React.FC = () => {
               <Card
                 sx={{
                   borderRadius: 3,
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  border: `1px solid ${theme.palette.border.light}`,
                   backgroundColor: 'transparent',
                   maxWidth: 1200,
                   width: '100%',

@@ -20,10 +20,10 @@ import {
   TextField,
   InputAdornment,
   Avatar,
+  useTheme,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
-import theme from '../../theme';
 import { useRepoChanges } from '../../api';
 import dayjs from 'dayjs';
 
@@ -37,6 +37,8 @@ type SortField =
 type SortOrder = 'asc' | 'desc';
 
 const RepositoriesTable: React.FC = () => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isMedium = useMediaQuery(theme.breakpoints.down('md'));
@@ -195,7 +197,7 @@ const RepositoriesTable: React.FC = () => {
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: `1px solid ${theme.palette.border.light}`,
         backgroundColor: 'transparent',
         height: '100%',
         display: 'flex',
@@ -245,7 +247,7 @@ const RepositoriesTable: React.FC = () => {
               startAdornment: (
                 <InputAdornment position="start">
                   <SearchIcon
-                    sx={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '1rem' }}
+                    sx={{ color: 'text.secondary', fontSize: '1rem' }}
                   />
                 </InputAdornment>
               ),
@@ -253,14 +255,18 @@ const RepositoriesTable: React.FC = () => {
             sx={{
               width: isMobile ? '100%' : '200px',
               '& .MuiOutlinedInput-root': {
-                color: '#ffffff',
+                color: theme.palette.text.primary,
                 fontFamily: '"JetBrains Mono", monospace',
-                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                backgroundColor: isDark
+                  ? 'rgba(0, 0, 0, 0.4)'
+                  : theme.palette.surface.light,
                 fontSize: '0.8rem',
                 height: '36px',
                 borderRadius: 2,
-                '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
-                '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
+                '& fieldset': { borderColor: theme.palette.border.light },
+                '&:hover fieldset': {
+                  borderColor: theme.palette.border.medium,
+                },
                 '&.Mui-focused fieldset': { borderColor: 'primary.main' },
               },
             }}
@@ -286,10 +292,10 @@ const RepositoriesTable: React.FC = () => {
                 backgroundColor: 'transparent',
               },
               '&::-webkit-scrollbar-thumb': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                backgroundColor: theme.palette.border.light,
                 borderRadius: '4px',
                 '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  backgroundColor: theme.palette.border.medium,
                 },
               },
             }}
@@ -299,9 +305,11 @@ const RepositoriesTable: React.FC = () => {
                 <TableRow>
                   <TableCell
                     sx={{
-                      backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                      backgroundColor: isDark
+                        ? 'rgba(18, 18, 20, 0.95)'
+                        : 'rgba(255, 255, 255, 0.95)',
                       backdropFilter: 'blur(8px)',
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderBottom: `1px solid ${theme.palette.border.light}`,
                       minWidth: isMobile ? 120 : 180,
                       maxWidth: isMobile ? 200 : 300,
                       width: isMobile ? 150 : 250,
@@ -334,9 +342,11 @@ const RepositoriesTable: React.FC = () => {
                     <TableCell
                       align="right"
                       sx={{
-                        backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                        backgroundColor: isDark
+                          ? 'rgba(18, 18, 20, 0.95)'
+                          : 'rgba(255, 255, 255, 0.95)',
                         backdropFilter: 'blur(8px)',
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderBottom: `1px solid ${theme.palette.border.light}`,
                         width: '12%',
                       }}
                     >
@@ -366,9 +376,11 @@ const RepositoriesTable: React.FC = () => {
                     <TableCell
                       align="right"
                       sx={{
-                        backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                        backgroundColor: isDark
+                          ? 'rgba(18, 18, 20, 0.95)'
+                          : 'rgba(255, 255, 255, 0.95)',
                         backdropFilter: 'blur(8px)',
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderBottom: `1px solid ${theme.palette.border.light}`,
                         width: '15%',
                       }}
                     >
@@ -400,9 +412,11 @@ const RepositoriesTable: React.FC = () => {
                     <TableCell
                       align="right"
                       sx={{
-                        backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                        backgroundColor: isDark
+                          ? 'rgba(18, 18, 20, 0.95)'
+                          : 'rgba(255, 255, 255, 0.95)',
                         backdropFilter: 'blur(8px)',
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderBottom: `1px solid ${theme.palette.border.light}`,
                         width: '15%',
                       }}
                     >
@@ -433,9 +447,11 @@ const RepositoriesTable: React.FC = () => {
                   <TableCell
                     align="right"
                     sx={{
-                      backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                      backgroundColor: isDark
+                        ? 'rgba(18, 18, 20, 0.95)'
+                        : 'rgba(255, 255, 255, 0.95)',
                       backdropFilter: 'blur(8px)',
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderBottom: `1px solid ${theme.palette.border.light}`,
                       width: isMobile ? '25%' : '15%',
                     }}
                   >
@@ -466,9 +482,11 @@ const RepositoriesTable: React.FC = () => {
                     <TableCell
                       align="right"
                       sx={{
-                        backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                        backgroundColor: isDark
+                          ? 'rgba(18, 18, 20, 0.95)'
+                          : 'rgba(255, 255, 255, 0.95)',
                         backdropFilter: 'blur(8px)',
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderBottom: `1px solid ${theme.palette.border.light}`,
                         width: '12%',
                       }}
                     >
@@ -550,7 +568,7 @@ const RepositoriesTable: React.FC = () => {
                               sx={{
                                 width: 20,
                                 height: 20,
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                border: `1px solid ${theme.palette.border.medium}`,
                                 backgroundColor:
                                   (repo.repositoryFullName || '').split(
                                     '/',

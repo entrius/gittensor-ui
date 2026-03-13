@@ -6,6 +6,7 @@ import {
   Grid,
   CircularProgress,
   Chip,
+  useTheme,
 } from '@mui/material';
 import PublicIcon from '@mui/icons-material/Public';
 import CodeOffIcon from '@mui/icons-material/CodeOff';
@@ -18,6 +19,7 @@ import PRStatusChart from './PRStatusChart';
 import TierPerformanceTable from './TierPerformanceTable';
 
 const GlobalActivity: React.FC = () => {
+  const theme = useTheme();
   const { data: allMinerStats, isLoading: isLoadingStats } = useAllMiners();
   const { data: allPrs, isLoading: isLoadingPRs } = useAllPrs();
   const { data: repos } = useReposAndWeights();
@@ -313,11 +315,11 @@ const GlobalActivity: React.FC = () => {
           }}
         >
           <CodeOffIcon
-            sx={{ fontSize: 48, color: 'rgba(255, 255, 255, 0.2)', mb: 2 }}
+            sx={{ fontSize: 48, color: theme.palette.border.medium, mb: 2 }}
           />
           <Typography
             sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
+              color: 'text.secondary',
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
               textAlign: 'center',

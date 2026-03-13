@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Card, Typography, Tooltip } from '@mui/material';
+import { Box, Card, Typography, Tooltip, alpha, useTheme } from '@mui/material';
 import { TIER_COLORS } from '../../theme';
 
 interface TierRepoCardProps {
@@ -9,6 +9,7 @@ interface TierRepoCardProps {
 }
 
 const TierRepoCard: React.FC<TierRepoCardProps> = ({ tier, repos }) => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [maxItems, setMaxItems] = React.useState(9);
@@ -97,7 +98,7 @@ const TierRepoCard: React.FC<TierRepoCardProps> = ({ tier, repos }) => {
                       ? '#ffffff'
                       : repo.owner === 'bitcoin'
                         ? '#F7931A'
-                        : '#161b22',
+                        : theme.palette.surface.elevated,
                   transition: 'all 0.2s',
                   position: 'relative',
                   zIndex: 1,
@@ -123,8 +124,8 @@ const TierRepoCard: React.FC<TierRepoCardProps> = ({ tier, repos }) => {
                 minHeight: 42,
                 flexShrink: 0,
                 borderRadius: '50%',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                border: '2px solid #0d1117',
+                backgroundColor: theme.palette.border.light,
+                border: `2px solid ${theme.palette.background.default}`,
                 marginLeft: '-12px',
                 display: 'flex',
                 alignItems: 'center',
@@ -135,8 +136,8 @@ const TierRepoCard: React.FC<TierRepoCardProps> = ({ tier, repos }) => {
                 zIndex: 1,
                 '&:hover': {
                   transform: 'scale(1.2)',
-                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                  borderColor: 'rgba(255, 255, 255, 0.3)',
+                  backgroundColor: theme.palette.border.medium,
+                  borderColor: theme.palette.border.medium,
                   zIndex: 100,
                 },
               }}
@@ -144,7 +145,7 @@ const TierRepoCard: React.FC<TierRepoCardProps> = ({ tier, repos }) => {
               <Typography
                 variant="monoSmall"
                 sx={{
-                  color: 'rgba(255, 255, 255, 0.7)',
+                  color: alpha(theme.palette.text.primary, 0.7),
                   textTransform: 'none',
                 }}
               >

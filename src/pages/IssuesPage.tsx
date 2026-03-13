@@ -8,7 +8,7 @@
  */
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Box, Tabs, Tab, Stack } from '@mui/material';
+import { Box, Tabs, Tab, Stack, useTheme } from '@mui/material';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { IssueStats, IssuesList } from '../components/issues';
@@ -17,6 +17,7 @@ import { useIssuesStats, useIssues } from '../api';
 const TAB_SLUGS = ['available', 'pending', 'history'] as const;
 
 const IssuesPage: React.FC = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { tab: tabParam } = useParams<{ tab?: string }>();
 
@@ -60,7 +61,7 @@ const IssuesPage: React.FC = () => {
           {/* Tabs Navigation */}
           <Box
             sx={{
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+              borderBottom: `1px solid ${theme.palette.border.light}`,
             }}
           >
             <Tabs
@@ -72,14 +73,14 @@ const IssuesPage: React.FC = () => {
                   fontSize: '0.85rem',
                   fontWeight: 600,
                   textTransform: 'none',
-                  color: 'rgba(255, 255, 255, 0.5)',
+                  color: 'text.secondary',
                   minHeight: 48,
                   '&.Mui-selected': {
-                    color: '#ffffff',
+                    color: theme.palette.text.primary,
                   },
                 },
                 '& .MuiTabs-indicator': {
-                  backgroundColor: '#ffffff',
+                  backgroundColor: theme.palette.text.primary,
                   height: 2,
                 },
               }}

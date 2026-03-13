@@ -6,6 +6,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  useTheme,
 } from '@mui/material';
 import FolderIcon from '@mui/icons-material/Folder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
@@ -34,6 +35,7 @@ const FileItem: React.FC<{
   onSelect: (path: string) => void;
   selectedFile: string | null;
 }> = ({ node, level, onSelect, selectedFile }) => {
+  const theme = useTheme();
   const [open, setOpen] = useState(false);
   const isSelected = selectedFile === node.path;
 
@@ -77,7 +79,7 @@ const FileItem: React.FC<{
           '&:hover': {
             backgroundColor: isSelected
               ? 'rgba(56, 139, 253, 0.15)'
-              : 'rgba(255, 255, 255, 0.04)',
+              : theme.palette.surface.subtle,
           },
           transition: 'all 0.1s ease-in-out',
         }}
@@ -123,7 +125,9 @@ const FileItem: React.FC<{
               fontFamily:
                 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
               fontSize: '13px',
-              color: isSelected ? '#fff' : STATUS_COLORS.open,
+              color: isSelected
+                ? theme.palette.text.primary
+                : STATUS_COLORS.open,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',

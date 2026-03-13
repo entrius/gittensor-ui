@@ -7,6 +7,7 @@ import {
   CircularProgress,
   Avatar,
   alpha,
+  useTheme,
 } from '@mui/material';
 import { useAllPrs } from '../../api';
 import { TIER_COLORS, STATUS_COLORS } from '../../theme';
@@ -18,6 +19,8 @@ interface RepositoryScoreCardProps {
 const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
   repositoryFullName,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const { data: allPRs, isLoading } = useAllPrs();
 
   const repoStats = useMemo(() => {
@@ -147,7 +150,7 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
         sx={{
           backgroundColor: 'transparent',
           borderRadius: '8px',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: `1px solid ${theme.palette.border.light}`,
           p: 4,
           textAlign: 'center',
         }}
@@ -162,9 +165,9 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
     return (
       <Card
         sx={{
-          backgroundColor: 'rgba(255, 255, 255, 0.02)',
+          backgroundColor: theme.palette.surface.subtle,
           borderRadius: '8px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: `1px solid ${theme.palette.border.light}`,
           p: 4,
         }}
         elevation={0}
@@ -216,7 +219,7 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: `1px solid ${theme.palette.border.light}`,
         backgroundColor: 'transparent',
         p: 3,
       }}
@@ -229,10 +232,12 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
           sx={{
             width: 64,
             height: 64,
-            border: '2px solid rgba(255, 255, 255, 0.2)',
+            border: `2px solid ${theme.palette.border.medium}`,
             backgroundColor:
               owner === 'opentensor'
-                ? '#ffffff'
+                ? isDark
+                  ? '#ffffff'
+                  : '#000000'
                 : owner === 'bitcoin'
                   ? '#F7931A'
                   : 'transparent',
@@ -242,7 +247,7 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
           <Typography
             variant="h5"
             sx={{
-              color: '#ffffff',
+              color: theme.palette.text.primary,
               fontFamily: '"JetBrains Mono", monospace',
               mb: 0.5,
               fontSize: '1.3rem',
@@ -253,7 +258,7 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
           </Typography>
           <Typography
             sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
+              color: 'text.secondary',
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.85rem',
             }}
@@ -270,7 +275,7 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
               sx={{
                 backgroundColor: 'transparent',
                 borderRadius: 3,
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                border: `1px solid ${theme.palette.border.light}`,
                 p: 2.5,
                 height: '100%',
                 display: 'flex',
@@ -288,7 +293,7 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
               >
                 <Typography
                   sx={{
-                    color: 'rgba(255, 255, 255, 0.5)',
+                    color: 'text.secondary',
                     fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.7rem',
                     textTransform: 'uppercase',
@@ -301,7 +306,7 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
                 {item.rank && (
                   <Box
                     sx={{
-                      backgroundColor: '#000000',
+                      backgroundColor: theme.palette.background.default,
                       borderRadius: '2px',
                       width: '20px',
                       height: '20px',
@@ -317,7 +322,7 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
                             ? alpha(TIER_COLORS.silver, 0.4)
                             : item.rank === 3
                               ? alpha(TIER_COLORS.bronze, 0.4)
-                              : 'rgba(255, 255, 255, 0.15)',
+                              : theme.palette.border.light,
                       boxShadow:
                         item.rank === 1
                           ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
@@ -338,7 +343,7 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
                               ? TIER_COLORS.silver
                               : item.rank === 3
                                 ? TIER_COLORS.bronze
-                                : 'rgba(255, 255, 255, 0.6)',
+                                : alpha(theme.palette.text.primary, 0.6),
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.6rem',
                         fontWeight: 600,
@@ -355,7 +360,7 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
               </Box>
               <Typography
                 sx={{
-                  color: '#ffffff',
+                  color: theme.palette.text.primary,
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '1.5rem',
                   fontWeight: 600,

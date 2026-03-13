@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Card, Typography, Tooltip } from '@mui/material';
+import { Box, Card, Typography, Tooltip, alpha, useTheme } from '@mui/material';
 import { ActivityCalendar } from 'react-activity-calendar';
 
 interface ContributionData {
@@ -20,7 +20,7 @@ interface ContributionHeatmapProps {
 }
 
 const HEATMAP_THEME = {
-  light: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
+  light: ['#e0e0e0', '#9be9a8', '#40c463', '#30a14e', '#216e39'],
   dark: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
 };
 
@@ -34,6 +34,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
   emptySubtitle = 'Activity will appear here once PRs are merged',
   bare = false,
 }) => {
+  const theme = useTheme();
   const isEmpty = data.length === 0;
 
   const content = (
@@ -41,7 +42,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
       <Box sx={{ mb: 2.5 }}>
         <Typography
           sx={{
-            color: '#fff',
+            color: theme.palette.text.primary,
             fontFamily: '"JetBrains Mono", monospace',
             fontWeight: 700,
             fontSize: '2.5rem',
@@ -53,7 +54,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
         <Typography
           variant="body2"
           sx={{
-            color: 'rgba(255, 255, 255, 0.4)',
+            color: alpha(theme.palette.text.primary, 0.4),
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.85rem',
             mt: 0.5,
@@ -77,7 +78,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
           >
             <Typography
               sx={{
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: 'text.secondary',
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.85rem',
                 textAlign: 'center',
@@ -88,7 +89,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
             {emptySubtitle && (
               <Typography
                 sx={{
-                  color: 'rgba(255, 255, 255, 0.3)',
+                  color: 'text.secondary',
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.75rem',
                   textAlign: 'center',
@@ -125,7 +126,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
             blockSize={11}
             blockMargin={3}
             fontSize={11}
-            style={{ color: '#fff' }}
+            style={{ color: theme.palette.text.primary }}
             showWeekdayLabels={false}
             renderBlock={(block, activity) => (
               <Tooltip
@@ -144,7 +145,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
         <Typography
           variant="caption"
           sx={{
-            color: 'rgba(255, 255, 255, 0.25)',
+            color: 'text.secondary',
             display: 'block',
             fontStyle: 'italic',
             fontSize: '0.7rem',
