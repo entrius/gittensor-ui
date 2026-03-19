@@ -410,6 +410,24 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
                   }
                 />
               )}
+              {prDetails?.reviewQualityMultiplier != null && (
+                <MultiplierPill
+                  label="review"
+                  value={parseFloat(prDetails.reviewQualityMultiplier)}
+                  tooltip={
+                    <Stack direction="column">
+                      <Typography variant="tooltipLabel">
+                        Review Quality{' '}
+                        {Number(prDetails.reviewQualityMultiplier).toFixed(4)}×
+                      </Typography>
+                      <Typography variant="tooltipDesc">
+                        Multiplier based on the amount of requested changes the
+                        PR required.
+                      </Typography>
+                    </Stack>
+                  }
+                />
+              )}
             </Box>
           )}
 
