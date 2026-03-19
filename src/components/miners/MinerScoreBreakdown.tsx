@@ -307,10 +307,17 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
                   tooltip={
                     <Stack direction="column">
                       <Typography variant="tooltipLabel">
-                        Credibility {Number(prDetails.credibilityMultiplier).toFixed(4)}×
+                        Credibility{' '}
+                        {Number(prDetails.credibilityMultiplier).toFixed(4)}×
                       </Typography>
                       <Typography variant="tooltipDesc">
-                        Raw credibility: {(Number(prDetails.rawCredibility ?? pr.rawCredibility ?? 0) * 100).toFixed(1)}%
+                        Raw credibility:{' '}
+                        {(
+                          Number(
+                            prDetails.rawCredibility ?? pr.rawCredibility ?? 0,
+                          ) * 100
+                        ).toFixed(1)}
+                        %
                       </Typography>
                     </Stack>
                   }
@@ -323,7 +330,8 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
                   tooltip={
                     <Stack direction="column">
                       <Typography variant="tooltipLabel">
-                        Repo Weight {Number(prDetails.repoWeightMultiplier).toFixed(4)}×
+                        Repo Weight{' '}
+                        {Number(prDetails.repoWeightMultiplier).toFixed(4)}×
                       </Typography>
                       <Typography variant="tooltipDesc">
                         Based on repository tier and activity.
@@ -355,7 +363,11 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
                   tooltip={
                     <Stack direction="column">
                       <Typography variant="tooltipLabel">
-                        Uniqueness {Number(prDetails.repositoryUniquenessMultiplier).toFixed(4)}×
+                        Uniqueness{' '}
+                        {Number(
+                          prDetails.repositoryUniquenessMultiplier,
+                        ).toFixed(4)}
+                        ×
                       </Typography>
                       <Typography variant="tooltipDesc">
                         Rewards contributing to diverse repos.
@@ -371,7 +383,8 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
                   tooltip={
                     <Stack direction="column">
                       <Typography variant="tooltipLabel">
-                        Time Decay {Number(prDetails.timeDecayMultiplier).toFixed(4)}×
+                        Time Decay{' '}
+                        {Number(prDetails.timeDecayMultiplier).toFixed(4)}×
                       </Typography>
                       <Typography variant="tooltipDesc">
                         Recent PRs score higher.
@@ -387,7 +400,8 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
                   tooltip={
                     <Stack direction="column">
                       <Typography variant="tooltipLabel">
-                        Open PR Spam {Number(prDetails.openPrSpamMultiplier).toFixed(4)}×
+                        Open PR Spam{' '}
+                        {Number(prDetails.openPrSpamMultiplier).toFixed(4)}×
                       </Typography>
                       <Typography variant="tooltipDesc">
                         Penalty for excessive open PRs.
