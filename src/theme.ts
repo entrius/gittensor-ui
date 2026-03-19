@@ -66,6 +66,8 @@ declare module '@mui/material/styles' {
     tableHeader: React.CSSProperties;
     statValue: React.CSSProperties;
     statLabel: React.CSSProperties;
+    tooltipLabel: React.CSSProperties;
+    tooltipDesc: React.CSSProperties;
   }
 
   interface TypographyVariantsOptions {
@@ -77,6 +79,8 @@ declare module '@mui/material/styles' {
     tableHeader?: React.CSSProperties;
     statValue?: React.CSSProperties;
     statLabel?: React.CSSProperties;
+    tooltipLabel?: React.CSSProperties;
+    tooltipDesc?: React.CSSProperties;
   }
 
   interface Palette {
@@ -186,6 +190,8 @@ declare module '@mui/material/Typography' {
     tableHeader: true;
     statValue: true;
     statLabel: true;
+    tooltipLabel: true;
+    tooltipDesc: true;
   }
 }
 
@@ -366,6 +372,20 @@ const theme = createTheme({
       fontWeight: 500,
       textTransform: 'uppercase',
       color: 'rgba(255, 255, 255, 0.4)',
+    },
+    // Tooltip heading — multiplier name + value
+    tooltipLabel: {
+      fontFamily: '"JetBrains Mono", monospace',
+      fontSize: '0.72rem',
+      fontWeight: 600,
+    },
+    // Tooltip supporting description
+    tooltipDesc: {
+      fontFamily: '"JetBrains Mono", monospace',
+      fontSize: '0.72rem',
+      fontWeight: 400,
+      opacity: 0.7,
+      marginTop: '2px',
     },
   },
   components: {

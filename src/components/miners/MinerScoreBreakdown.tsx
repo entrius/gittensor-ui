@@ -4,6 +4,7 @@ import {
   Card,
   Typography,
   Tooltip,
+  Stack,
   alpha,
   Collapse,
   IconButton,
@@ -61,7 +62,7 @@ const tierColor = (tier: string | null | undefined): string => {
 interface MultiplierPillProps {
   label: string;
   value: number;
-  tooltip: string;
+  tooltip: React.ReactNode;
   format?: 'multiplier' | 'value' | 'percent';
   pillColor?: string;
 }
@@ -303,50 +304,96 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
                 <MultiplierPill
                   label="cred"
                   value={parseFloat(prDetails.credibilityMultiplier)}
-                  tooltip={`Credibility multiplier: ${Number(prDetails.credibilityMultiplier).toFixed(4)}×. Raw credibility: ${(Number(prDetails.rawCredibility ?? pr.rawCredibility ?? 0) * 100).toFixed(1)}%.`}
+                  tooltip={
+                    <Stack direction="column">
+                      <Typography variant="tooltipLabel">
+                        Credibility {Number(prDetails.credibilityMultiplier).toFixed(4)}×
+                      </Typography>
+                      <Typography variant="tooltipDesc">
+                        Raw credibility: {(Number(prDetails.rawCredibility ?? pr.rawCredibility ?? 0) * 100).toFixed(1)}%
+                      </Typography>
+                    </Stack>
+                  }
                 />
               )}
               {prDetails?.repoWeightMultiplier != null && (
                 <MultiplierPill
                   label="repo wt"
                   value={parseFloat(prDetails.repoWeightMultiplier)}
-                  tooltip={`Repository weight multiplier: ${Number(prDetails.repoWeightMultiplier).toFixed(4)}×. Based on repository tier and activity.`}
+                  tooltip={
+                    <Stack direction="column">
+                      <Typography variant="tooltipLabel">
+                        Repo Weight {Number(prDetails.repoWeightMultiplier).toFixed(4)}×
+                      </Typography>
+                      <Typography variant="tooltipDesc">
+                        Based on repository tier and activity.
+                      </Typography>
+                    </Stack>
+                  }
                 />
               )}
               {prDetails?.issueMultiplier != null && (
                 <MultiplierPill
                   label="issue"
                   value={parseFloat(prDetails.issueMultiplier)}
-                  tooltip={`Issue multiplier: ${Number(prDetails.issueMultiplier).toFixed(4)}×. Bonus for PRs linked to issues.`}
+                  tooltip={
+                    <Stack direction="column">
+                      <Typography variant="tooltipLabel">
+                        Issue {Number(prDetails.issueMultiplier).toFixed(4)}×
+                      </Typography>
+                      <Typography variant="tooltipDesc">
+                        Bonus for PRs linked to issues.
+                      </Typography>
+                    </Stack>
+                  }
                 />
               )}
               {prDetails?.repositoryUniquenessMultiplier != null && (
                 <MultiplierPill
                   label="unique"
                   value={parseFloat(prDetails.repositoryUniquenessMultiplier)}
-                  tooltip={`Repository uniqueness multiplier: ${Number(prDetails.repositoryUniquenessMultiplier).toFixed(4)}×. Rewards contributing to diverse repos.`}
+                  tooltip={
+                    <Stack direction="column">
+                      <Typography variant="tooltipLabel">
+                        Uniqueness {Number(prDetails.repositoryUniquenessMultiplier).toFixed(4)}×
+                      </Typography>
+                      <Typography variant="tooltipDesc">
+                        Rewards contributing to diverse repos.
+                      </Typography>
+                    </Stack>
+                  }
                 />
               )}
               {prDetails?.timeDecayMultiplier != null && (
                 <MultiplierPill
                   label="decay"
                   value={parseFloat(prDetails.timeDecayMultiplier)}
-                  tooltip={`Time decay multiplier: ${Number(prDetails.timeDecayMultiplier).toFixed(4)}×. Recent PRs score higher.`}
+                  tooltip={
+                    <Stack direction="column">
+                      <Typography variant="tooltipLabel">
+                        Time Decay {Number(prDetails.timeDecayMultiplier).toFixed(4)}×
+                      </Typography>
+                      <Typography variant="tooltipDesc">
+                        Recent PRs score higher.
+                      </Typography>
+                    </Stack>
+                  }
                 />
               )}
               {prDetails?.openPrSpamMultiplier != null && (
                 <MultiplierPill
                   label="spam"
                   value={parseFloat(prDetails.openPrSpamMultiplier)}
-                  tooltip={`Open PR spam multiplier: ${Number(prDetails.openPrSpamMultiplier).toFixed(4)}×. Penalty for excessive open PRs.`}
-                />
-              )}
-              {(prDetails?.tokenScore ?? pr.tokenScore) != null && (
-                <MultiplierPill
-                  label="tokens"
-                  value={Number(prDetails?.tokenScore ?? pr.tokenScore)}
-                  format="value"
-                  tooltip={`Token score: ${Number(prDetails?.tokenScore ?? pr.tokenScore).toFixed(2)}. ${prDetails?.structuralCount ?? pr.structuralCount ?? 0} structural (${Number(prDetails?.structuralScore ?? pr.structuralScore ?? 0).toFixed(2)}) + ${prDetails?.leafCount ?? pr.leafCount ?? 0} leaf (${Number(prDetails?.leafScore ?? pr.leafScore ?? 0).toFixed(2)}).`}
+                  tooltip={
+                    <Stack direction="column">
+                      <Typography variant="tooltipLabel">
+                        Open PR Spam {Number(prDetails.openPrSpamMultiplier).toFixed(4)}×
+                      </Typography>
+                      <Typography variant="tooltipDesc">
+                        Penalty for excessive open PRs.
+                      </Typography>
+                    </Stack>
+                  }
                 />
               )}
             </Box>
