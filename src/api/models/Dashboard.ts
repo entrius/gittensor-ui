@@ -259,6 +259,7 @@ export type PullRequestDetails = {
   repositoryUniquenessMultiplier: string; // float returned as string
   timeDecayMultiplier: string; // float returned as string
   credibilityMultiplier: string; // float returned as string
+  reviewQualityMultiplier?: string; // float returned as string
   earnedScore: string; // float returned as string
   collateralScore: string; // float returned as string
   additions: number;
