@@ -160,12 +160,16 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
           credibilityScalar: prDetails.credibilityScalar,
         },
         {
-          label: 'Repo Unique',
-          value: `${parseFloat(prDetails.repositoryUniquenessMultiplier ?? '0').toFixed(2)}x`,
+          label: 'Review Quality',
+          value: `${parseFloat(prDetails.reviewQualityMultiplier ?? '1').toFixed(2)}x`,
         },
         {
           label: 'Time Decay',
           value: `${parseFloat(prDetails.timeDecayMultiplier ?? '0').toFixed(2)}x`,
+        },
+        {
+          label: 'Repo Unique',
+          value: `${parseFloat(prDetails.repositoryUniquenessMultiplier ?? '0').toFixed(2)}x`,
         },
       ];
 
