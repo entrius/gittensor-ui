@@ -161,7 +161,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
         },
         {
           label: 'Review Quality',
-          value: `${parseFloat(prDetails.reviewQualityMultiplier ?? '1').toFixed(2)}x`,
+          value: `${parseFloat(prDetails.reviewQualityMultiplier ?? '0').toFixed(2)}x`,
         },
         {
           label: 'Time Decay',
