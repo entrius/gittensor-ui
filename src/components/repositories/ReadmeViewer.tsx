@@ -68,6 +68,38 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
     );
   }
 
+  // Custom renderer for links to handle relative paths
+  const LinkRenderer = (props: any) => {
+    const { href, children, ...rest } = props;
+    let finalHref = href;
+
+    if (
+      href &&
+      !href.startsWith('http') &&
+      !href.startsWith('//') &&
+      !href.startsWith('#') &&
+      !href.startsWith('mailto:')
+    ) {
+      const cleanPath = href.startsWith('./')
+        ? href.slice(2)
+        : href.startsWith('/')
+          ? href.slice(1)
+          : href;
+      // Use /tree/ for directories (no extension or ends with /), /blob/ for files
+      const hasExtension = /\.[a-zA-Z0-9]+$/.test(cleanPath.replace(/\/$/, ''));
+      const isDirectory = cleanPath.endsWith('/') || !hasExtension;
+      const type = isDirectory ? 'tree' : 'blob';
+      const normalizedPath = cleanPath.replace(/\/$/, '');
+      finalHref = `https://github.com/${repositoryFullName}/${type}/${defaultBranch}/${normalizedPath}`;
+    }
+
+    return (
+      <a href={finalHref} target="_blank" rel="noopener noreferrer" {...rest}>
+        {children}
+      </a>
+    );
+  };
+
   // Custom renderer for images to handle relative paths
   const ImageRenderer = (props: any) => {
     const { src, alt, ...rest } = props;
@@ -209,6 +241,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
         components={{
+          a: LinkRenderer,
           img: ImageRenderer,
         }}
       >
