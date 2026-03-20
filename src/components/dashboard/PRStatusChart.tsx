@@ -33,13 +33,12 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
       title: {
         text: `${credibilityPercent.toFixed(0)}%`,
         left: 'center',
-        top: '28%',
+        top: 'center',
         textStyle: {
           color: isPrimary ? '#fff' : 'rgba(255, 255, 255, 0.7)',
-          fontSize: isPrimary ? 28 : 24,
+          fontSize: isPrimary ? 22 : 18,
           fontWeight: 'bold',
           fontFamily: '"JetBrains Mono", monospace',
-          textVerticalAlign: 'middle',
         },
       },
       tooltip: {
@@ -55,7 +54,7 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
           name: 'PR Status',
           type: 'pie',
           radius: ['70%', '85%'],
-          center: ['50%', '42%'],
+          center: ['50%', '50%'],
           avoidLabelOverlap: false,
           itemStyle: {
             borderRadius: 4,
@@ -101,28 +100,39 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
     <Box
       sx={{
         flex: 1,
+        minWidth: 0,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
+        overflow: 'hidden',
       }}
     >
       <Typography
         sx={{
           color: isPrimary ? STATUS_COLORS.success : 'rgba(255, 255, 255, 0.5)',
-          fontSize: '0.85rem',
+          fontSize: {
+            xs: '0.6rem',
+            sm: '0.65rem',
+            lg: '0.7rem',
+            xl: '0.75rem',
+          },
           fontWeight: 700,
           fontFamily: '"JetBrains Mono", monospace',
           textTransform: 'uppercase',
           textAlign: 'center',
           mb: 1,
+          width: '100%',
+          minHeight: { xs: '2.5em', xl: 'auto' },
         }}
       >
-        {title}{' '}
+        {title}
         {subtitle && (
           <Box
             component="span"
             sx={{
-              fontSize: '0.7rem',
+              display: { xs: 'block', xl: 'inline' },
+              ml: { xl: 1 },
+              fontSize: { xs: '0.55rem', lg: '0.6rem', xl: '0.65rem' },
               opacity: 0.7,
               textTransform: 'none',
               fontWeight: 500,
@@ -137,12 +147,10 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
         sx={{
           width: '100%',
           flex: 1,
-          minHeight: '150px',
+          minHeight: { xs: '100px', md: '120px' },
           position: 'relative',
           zIndex: 1,
-          overflow: 'visible',
-          '& div': { overflow: 'visible !important' },
-          '& svg': { overflow: 'visible !important' },
+          overflow: 'hidden',
         }}
       >
         <ReactECharts
@@ -155,10 +163,11 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
       <Box
         sx={{
           display: 'flex',
-          gap: { xs: 1, sm: 2, md: 3, lg: 1, xl: 2 },
+          gap: { xs: 0.5, sm: 1, xl: 2 },
           mt: 1,
           width: '100%',
-          justifyContent: 'center',
+          justifyContent: 'space-evenly',
+          overflow: 'hidden',
         }}
       >
         <StatItem label="Merged" value={merged} />
@@ -173,9 +182,36 @@ const StatItem: React.FC<{ label: string; value: number }> = ({
   label,
   value,
 }) => (
-  <Stack gap={1} direction="column" alignItems="center">
-    <Typography variant="statLabel">{label}</Typography>
-    <Typography variant="statValue">{value}</Typography>
+  <Stack gap={0.25} direction="column" alignItems="center" sx={{ minWidth: 0 }}>
+    <Typography
+      sx={{
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: { xs: '0.45rem', sm: '0.5rem', lg: '0.55rem', xl: '0.6rem' },
+        fontWeight: 600,
+        textTransform: 'uppercase',
+        color: 'rgba(255, 255, 255, 0.4)',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {label}
+    </Typography>
+    <Typography
+      sx={{
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: {
+          xs: '0.65rem',
+          sm: '0.75rem',
+          md: '0.8rem',
+          lg: '0.85rem',
+          xl: '0.95rem',
+        },
+        fontWeight: 600,
+        color: '#fff',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {value}
+    </Typography>
   </Stack>
 );
 

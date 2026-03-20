@@ -36,10 +36,10 @@ const DashboardPage: React.FC = () => {
           height: showSidebarRight ? 'calc(100vh - 64px)' : 'auto',
           display: 'flex',
           flexDirection: showSidebarRight ? 'row' : 'column',
-          gap: { xs: 2, sm: 2, md: 2.5, lg: 3 },
-          py: { xs: 2, sm: 2, md: 2.5, lg: 3 },
-          px: { xs: 2, sm: 2, md: 2.5, lg: 3 },
-          overflow: 'hidden',
+          gap: { xs: 1.5, sm: 2, md: 2.5, lg: 3 },
+          py: { xs: 1.5, sm: 2, md: 2.5, lg: 3 },
+          px: { xs: 1, sm: 1.5, md: 2, lg: 3 },
+          overflow: showSidebarRight ? 'hidden' : 'visible',
         }}
       >
         {/* Main Content Area */}

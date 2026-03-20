@@ -52,9 +52,6 @@ const GlobalActivity: React.FC = () => {
         dataMap.set(format(subDays(today, i), 'yyyy-MM-dd'), 0);
       }
 
-      let last30Count = 0;
-      const thirtyDaysAgo = subDays(today, 30);
-
       allPrs.forEach((pr) => {
         if (!pr?.mergedAt) return;
         const date = new Date(pr.mergedAt);
@@ -64,8 +61,13 @@ const GlobalActivity: React.FC = () => {
         if (dataMap.has(dateStr)) {
           dataMap.set(dateStr, (dataMap.get(dateStr) || 0) + 1);
         }
-        if (date >= thirtyDaysAgo) last30Count++;
       });
+
+      let last30Count = 0;
+      for (let i = 29; i >= 0; i--) {
+        const dateStr = format(subDays(today, i), 'yyyy-MM-dd');
+        last30Count += dataMap.get(dateStr) || 0;
+      }
 
       let maxDaily = 0;
       dataMap.forEach((count) => {
@@ -327,9 +329,9 @@ const GlobalActivity: React.FC = () => {
           </Typography>
         </Card>
       ) : (
-        <Grid container spacing={2}>
+        <Grid container spacing={{ xs: 1.5, lg: 2 }}>
           {/* Heatmap */}
-          <Grid item xs={12} lg={7}>
+          <Grid item xs={12} lg={8}>
             <ContributionHeatmap
               data={contributionData}
               contributionsLast30Days={contributionsLast30Days}
@@ -338,23 +340,23 @@ const GlobalActivity: React.FC = () => {
           </Grid>
 
           {/* Active & Candidate Stats */}
-          <Grid item xs={12} lg={5}>
+          <Grid item xs={12} lg={4}>
             <Card
               sx={(theme) => ({
                 height: '100%',
-                p: { xs: 1.5, sm: 3 },
+                p: { xs: 1.5, sm: 3, lg: 2, xl: 3 },
                 display: 'flex',
                 flexDirection: 'column',
-                [theme.breakpoints.between('lg', 'xl')]: { padding: '16px' },
-                overflow: 'visible',
+                overflow: 'hidden',
               })}
             >
               <Box
                 sx={{
                   display: 'flex',
                   flexDirection: 'row',
-                  gap: { xs: 1, sm: 3, lg: 1.5, xl: 3 },
+                  gap: { xs: 1, sm: 3, lg: 1, xl: 3 },
                   flex: 1,
+                  minWidth: 0,
                 }}
               >
                 <PRStatusChart
