@@ -159,6 +159,7 @@ export interface RepoStats {
   repository: string;
   prs: number;
   score: number;
+  tokenScore: number;
   weight: number;
   tier: string;
 }
@@ -173,7 +174,7 @@ export const filterMinerRepoStats = (
   );
 };
 
-export type RepoSortField = 'rank' | 'repository' | 'prs' | 'score' | 'weight';
+export type RepoSortField = 'rank' | 'repository' | 'prs' | 'score' | 'tokenScore' | 'weight';
 export type SortOrder = 'asc' | 'desc';
 
 export const sortMinerRepoStats = (
@@ -193,6 +194,9 @@ export const sortMinerRepoStats = (
         break;
       case 'score':
         compareValue = a.score - b.score;
+        break;
+      case 'tokenScore':
+        compareValue = a.tokenScore - b.tokenScore;
         break;
       case 'weight':
         compareValue = a.weight - b.weight;

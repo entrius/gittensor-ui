@@ -17,8 +17,12 @@ import {
   alpha,
   useTheme,
 } from '@mui/material';
-import { Search as SearchIcon } from '@mui/icons-material';
-import { useMinerPRs, useReposAndWeights } from '../../api';
+import {
+  Search as SearchIcon,
+  NavigateBefore as PrevIcon,
+  NavigateNext as NextIcon,
+} from '@mui/icons-material';
+import { useMinerPRs, useReposAndWeights, useTierConfigurations } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import { TIER_COLORS } from '../../theme';
 import ExplorerFilterButton from './ExplorerFilterButton';
@@ -41,9 +45,12 @@ interface RepoStats {
   repository: string;
   prs: number;
   score: number;
+  tokenScore: number;
   weight: number;
   tier: string;
 }
+
+const PAGE_SIZE = 20;
 
 const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   githubId,
@@ -53,13 +60,18 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   const navigate = useNavigate();
   const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
+  const { data: tierConfig } = useTierConfigurations();
   const [sortField, setSortField] = useState<RepoSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [internalTierFilter, setTierFilter] = useState<MinerTierFilter>('all');
   const tierFilter: MinerTierFilter =
     (externalTierFilter?.toLowerCase() as MinerTierFilter) ||
     internalTierFilter;
+  const [qualificationFilter, setQualificationFilter] = useState<
+    'all' | 'qualified' | 'unqualified'
+  >('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
 
   const headerCellStyle = {
     backgroundColor: theme.palette.surface.elevated,
@@ -105,6 +117,24 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     return map;
   }, [repos]);
 
+  // Build tier threshold map: tier name -> requiredMinTokenScorePerRepo
+  const tierThresholds = useMemo(() => {
+    const map = new Map<string, number>();
+    if (tierConfig?.tiers) {
+      tierConfig.tiers.forEach((t) => {
+        map.set(t.name.toLowerCase(), t.requiredMinTokenScorePerRepo);
+      });
+    }
+    return map;
+  }, [tierConfig]);
+
+  const isRepoQualified = (repo: RepoStats) => {
+    const tier = repo.tier.toLowerCase();
+    const threshold = tierThresholds.get(tier);
+    if (threshold == null) return false;
+    return repo.tokenScore >= threshold;
+  };
+
   // Aggregate PRs by repository
   const repoStats = useMemo(() => {
     if (!prs || prs.length === 0) return [];
@@ -116,11 +146,15 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
         repository: pr.repository,
         prs: 0,
         score: 0,
+        tokenScore: 0,
         weight: repoWeights.get(pr.repository) || 0,
         tier: repoTiers.get(pr.repository) || '',
       };
       existing.prs += 1;
       existing.score += parseFloat(pr.score || '0');
+      if (pr.prState === 'MERGED') {
+        existing.tokenScore += parseFloat(String(pr.tokenScore ?? '0'));
+      }
       statsMap.set(pr.repository, existing);
     });
 
@@ -130,17 +164,31 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   // Filter and sort repository stats
   const filteredRepoStats = useMemo(() => {
     let filtered = filterMinerRepoStats(repoStats, tierFilter);
+    if (qualificationFilter !== 'all') {
+      filtered = filtered.filter((r) =>
+        qualificationFilter === 'qualified'
+          ? isRepoQualified(r)
+          : !isRepoQualified(r),
+      );
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter((r) => r.repository.toLowerCase().includes(q));
     }
     return filtered;
-  }, [repoStats, tierFilter, searchQuery]);
+  }, [repoStats, tierFilter, qualificationFilter, searchQuery]);
 
   const sortedRepoStats = useMemo(
     () => sortMinerRepoStats(filteredRepoStats, sortField, sortOrder),
     [filteredRepoStats, sortField, sortOrder],
   );
+
+  const pagedRepoStats = useMemo(() => {
+    const start = page * PAGE_SIZE;
+    return sortedRepoStats.slice(start, start + PAGE_SIZE);
+  }, [sortedRepoStats, page]);
+
+  const totalPages = Math.ceil(sortedRepoStats.length / PAGE_SIZE);
 
   const tierCounts = useMemo(() => {
     const counts = { all: repoStats.length, gold: 0, silver: 0, bronze: 0 };
@@ -152,6 +200,16 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     }
     return counts;
   }, [repoStats]);
+
+  const qualificationCounts = useMemo(() => {
+    let qualified = 0;
+    let unqualified = 0;
+    for (const repo of repoStats) {
+      if (isRepoQualified(repo)) qualified++;
+      else unqualified++;
+    }
+    return { all: repoStats.length, qualified, unqualified };
+  }, [repoStats, tierThresholds]);
 
   const handleSort = (field: RepoSortField) => {
     if (sortField === field) {
@@ -178,84 +236,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
         elevation={0}
       >
         <CircularProgress size={40} sx={{ color: 'primary.main' }} />
-      </Card>
-    );
-  }
-
-  if (!prs || prs.length === 0) {
-    return (
-      <Card
-        sx={{
-          borderRadius: 3,
-          border: '1px solid',
-          borderColor: 'border.light',
-          backgroundColor: 'transparent',
-          p: 4,
-        }}
-        elevation={0}
-      >
-        <Typography
-          sx={{
-            color: (t) => alpha(t.palette.text.primary, 0.5),
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: '0.9rem',
-            textAlign: 'center',
-          }}
-        >
-          No repository contributions found
-        </Typography>
-      </Card>
-    );
-  }
-
-  if (!tierFilter && repoStats.length === 0) {
-    return (
-      <Card
-        sx={{
-          borderRadius: 3,
-          border: '1px solid',
-          borderColor: 'border.light',
-          backgroundColor: 'transparent',
-          p: 4,
-        }}
-        elevation={0}
-      >
-        <Typography
-          sx={{
-            color: (t) => alpha(t.palette.text.primary, 0.5),
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: '0.9rem',
-            textAlign: 'center',
-          }}
-        >
-          No repository contributions found
-        </Typography>
-      </Card>
-    );
-  }
-
-  if (tierFilter && filteredRepoStats.length === 0) {
-    return (
-      <Card
-        sx={{
-          borderRadius: 3,
-          border: '1px solid',
-          borderColor: 'border.light',
-          backgroundColor: 'transparent',
-          p: 4,
-        }}
-        elevation={0}
-      >
-        <Typography
-          sx={{
-            color: (t) => alpha(t.palette.text.primary, 0.5),
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: '0.9rem',
-            textAlign: 'center',
-          }}
-        >
-          No repositories in this tier
-        </Typography>
       </Card>
     );
   }
@@ -297,11 +277,11 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
               sx={{
                 color: 'text.primary',
                 fontFamily: '"JetBrains Mono", monospace',
-                fontSize: '1.1rem',
+                fontSize: { xs: '0.95rem', sm: '1.1rem' },
                 fontWeight: 500,
               }}
             >
-              Top Repositories
+              Repositories
             </Typography>
             <Typography
               sx={{
@@ -310,39 +290,77 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                 fontSize: '0.75rem',
               }}
             >
-              ({sortedRepoStats.length}
-              {tierFilter !== 'all' ? ` of ${repoStats.length}` : ''})
+              ({tierFilter !== 'all' || qualificationFilter !== 'all' || searchQuery.trim()
+                ? `${sortedRepoStats.length} of ${repoStats.length}`
+                : sortedRepoStats.length})
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-            <ExplorerFilterButton
-              label="All"
-              count={tierCounts.all}
-              color={theme.palette.status.neutral}
-              selected={tierFilter === 'all'}
-              onClick={() => setTierFilter('all')}
-            />
-            <ExplorerFilterButton
-              label="Gold"
-              count={tierCounts.gold}
-              color={TIER_COLORS.gold}
-              selected={tierFilter === 'gold'}
-              onClick={() => setTierFilter('gold')}
-            />
-            <ExplorerFilterButton
-              label="Silver"
-              count={tierCounts.silver}
-              color={TIER_COLORS.silver}
-              selected={tierFilter === 'silver'}
-              onClick={() => setTierFilter('silver')}
-            />
-            <ExplorerFilterButton
-              label="Bronze"
-              count={tierCounts.bronze}
-              color={TIER_COLORS.bronze}
-              selected={tierFilter === 'bronze'}
-              onClick={() => setTierFilter('bronze')}
-            />
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: { xs: 1.5, sm: 1 },
+              flexWrap: 'wrap',
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              width: { xs: '100%', sm: 'auto' },
+            }}
+          >
+            {/* Qualification Filter Buttons */}
+            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+              <ExplorerFilterButton
+                label="All"
+                count={qualificationCounts.all}
+                color={theme.palette.status.neutral}
+                selected={qualificationFilter === 'all'}
+                onClick={() => { setQualificationFilter('all'); setPage(0); }}
+              />
+              <ExplorerFilterButton
+                label="Qualified"
+                count={qualificationCounts.qualified}
+                color={theme.palette.status.merged}
+                selected={qualificationFilter === 'qualified'}
+                onClick={() => { setQualificationFilter('qualified'); setPage(0); }}
+              />
+              <ExplorerFilterButton
+                label="Unqualified"
+                count={qualificationCounts.unqualified}
+                color={theme.palette.status.closed}
+                selected={qualificationFilter === 'unqualified'}
+                onClick={() => { setQualificationFilter('unqualified'); setPage(0); }}
+              />
+            </Box>
+
+            {/* Tier Filter Buttons */}
+            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+              <ExplorerFilterButton
+                label="All Tiers"
+                count={tierCounts.all}
+                color={theme.palette.status.neutral}
+                selected={tierFilter === 'all'}
+                onClick={() => { setTierFilter('all'); setPage(0); }}
+              />
+              <ExplorerFilterButton
+                label="Gold"
+                count={tierCounts.gold}
+                color={TIER_COLORS.gold}
+                selected={tierFilter === 'gold'}
+                onClick={() => { setTierFilter('gold'); setPage(0); }}
+              />
+              <ExplorerFilterButton
+                label="Silver"
+                count={tierCounts.silver}
+                color={TIER_COLORS.silver}
+                selected={tierFilter === 'silver'}
+                onClick={() => { setTierFilter('silver'); setPage(0); }}
+              />
+              <ExplorerFilterButton
+                label="Bronze"
+                count={tierCounts.bronze}
+                color={TIER_COLORS.bronze}
+                selected={tierFilter === 'bronze'}
+                onClick={() => { setTierFilter('bronze'); setPage(0); }}
+              />
+            </Box>
           </Box>
         </Box>
 
@@ -351,7 +369,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
           size="small"
           placeholder="Search repositories..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -366,7 +384,8 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
           }}
           sx={{
             mt: 2,
-            maxWidth: 300,
+            maxWidth: 400,
+            minWidth: 350,
             '& .MuiOutlinedInput-root': {
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.8rem',
@@ -381,8 +400,52 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
         />
       </Box>
 
-      <TableContainer sx={{ maxHeight: '400px', overflow: 'auto' }}>
-        <Table stickyHeader>
+      {!prs || prs.length === 0 ? (
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <Typography
+            sx={{
+              color: (t) => alpha(t.palette.text.primary, 0.5),
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.9rem',
+            }}
+          >
+            No repository contributions found
+          </Typography>
+        </Box>
+      ) : sortedRepoStats.length === 0 ? (
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <Typography
+            sx={{
+              color: (t) => alpha(t.palette.text.primary, 0.5),
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.9rem',
+            }}
+          >
+            No repositories found for the selected filters
+          </Typography>
+        </Box>
+      ) : (
+      <>
+      <TableContainer
+        sx={{
+          overflowY: 'auto',
+          overflowX: 'auto',
+          '&::-webkit-scrollbar': {
+            width: { xs: '6px', sm: '8px' },
+            height: { xs: '6px', sm: '8px' },
+          },
+          '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'border.light',
+            borderRadius: '4px',
+            '&:hover': { backgroundColor: 'border.medium' },
+          },
+        }}
+      >
+        <Table
+          stickyHeader
+          sx={{ tableLayout: 'fixed', minWidth: '700px' }}
+        >
           <TableHead>
             <TableRow>
               <TableCell sx={headerCellStyle}>
@@ -474,6 +537,28 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                 </TableSortLabel>
               </TableCell>
               <TableCell align="right" sx={headerCellStyle}>
+                <TableSortLabel
+                  active={sortField === 'tokenScore'}
+                  direction={sortField === 'tokenScore' ? sortOrder : 'desc'}
+                  onClick={() => handleSort('tokenScore')}
+                  sx={{
+                    color: 'inherit',
+                    '&:hover': {
+                      color: (t) => alpha(t.palette.text.primary, 0.9),
+                    },
+                    '&.Mui-active': {
+                      color: (t) => alpha(t.palette.text.primary, 0.9),
+                      '& .MuiTableSortLabel-icon': {
+                        color: (t) =>
+                          `${alpha(t.palette.text.primary, 0.9)} !important`,
+                      },
+                    },
+                  }}
+                >
+                  Token Score
+                </TableSortLabel>
+              </TableCell>
+              <TableCell align="right" sx={headerCellStyle}>
                 Avg/PR
               </TableCell>
               <TableCell align="right" sx={headerCellStyle}>
@@ -501,7 +586,9 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {sortedRepoStats.map((repo, index) => (
+            {pagedRepoStats.map((repo, index) => {
+              const rank = page * PAGE_SIZE + index;
+              return (
               <TableRow
                 key={repo.repository}
                 sx={{
@@ -524,19 +611,19 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                       flexShrink: 0,
                       border: '1px solid',
                       borderColor: (t) =>
-                        index === 0
+                        rank === 0
                           ? alpha(TIER_COLORS.gold, 0.4)
-                          : index === 1
+                          : rank === 1
                             ? alpha(TIER_COLORS.silver, 0.4)
-                            : index === 2
+                            : rank === 2
                               ? alpha(TIER_COLORS.bronze, 0.4)
                               : alpha(t.palette.text.primary, 0.15),
                       boxShadow:
-                        index === 0
+                        rank === 0
                           ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
-                          : index === 1
+                          : rank === 1
                             ? `0 0 12px ${alpha(TIER_COLORS.silver, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.silver, 0.2)}`
-                            : index === 2
+                            : rank === 2
                               ? `0 0 12px ${alpha(TIER_COLORS.bronze, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.bronze, 0.2)}`
                               : 'none',
                     }}
@@ -545,11 +632,11 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                       component="span"
                       sx={{
                         color: (t) =>
-                          index === 0
+                          rank === 0
                             ? TIER_COLORS.gold
-                            : index === 1
+                            : rank === 1
                               ? TIER_COLORS.silver
-                              : index === 2
+                              : rank === 2
                                 ? TIER_COLORS.bronze
                                 : alpha(t.palette.text.primary, 0.6),
                         fontFamily: '"JetBrains Mono", monospace',
@@ -561,7 +648,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                         justifyContent: 'center',
                       }}
                     >
-                      {index + 1}
+                      {page * PAGE_SIZE + index + 1}
                     </Typography>
                   </Box>
                 </TableCell>
@@ -637,6 +724,9 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                 <TableCell align="right" sx={bodyCellStyle}>
                   {repo.score.toFixed(4)}
                 </TableCell>
+                <TableCell align="right" sx={bodyCellStyle}>
+                  {repo.tokenScore.toFixed(2)}
+                </TableCell>
                 <TableCell
                   align="right"
                   sx={{
@@ -650,10 +740,65 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                   {repo.weight.toFixed(4)}
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 2,
+            py: 1.5,
+            borderTop: '1px solid',
+            borderColor: 'border.subtle',
+          }}
+        >
+          <Box
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            sx={{
+              cursor: page > 0 ? 'pointer' : 'default',
+              opacity: page > 0 ? 1 : 0.3,
+              display: 'flex',
+              alignItems: 'center',
+              color: (t) => alpha(t.palette.text.primary, 0.6),
+              '&:hover': page > 0 ? { color: 'text.primary' } : {},
+            }}
+          >
+            <PrevIcon sx={{ fontSize: '1.2rem' }} />
+          </Box>
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.75rem',
+              color: (t) => alpha(t.palette.text.primary, 0.5),
+            }}
+          >
+            {page + 1} / {totalPages}
+          </Typography>
+          <Box
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            sx={{
+              cursor: page < totalPages - 1 ? 'pointer' : 'default',
+              opacity: page < totalPages - 1 ? 1 : 0.3,
+              display: 'flex',
+              alignItems: 'center',
+              color: (t) => alpha(t.palette.text.primary, 0.6),
+              '&:hover':
+                page < totalPages - 1 ? { color: 'text.primary' } : {},
+            }}
+          >
+            <NextIcon sx={{ fontSize: '1.2rem' }} />
+          </Box>
+        </Box>
+      )}
+      </>
+      )}
     </Card>
   );
 };
