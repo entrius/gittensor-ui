@@ -1,9 +1,10 @@
 import React from 'react';
-import { type PathRouteProps } from 'react-router-dom';
+import { matchPath, type PathRouteProps } from 'react-router-dom';
 
 export type AppRoute = Omit<PathRouteProps, 'path'> & {
   name: string;
   path: string;
+  showGlobalSearch?: boolean;
 };
 
 // main menu pages
@@ -12,6 +13,7 @@ const AboutPage = React.lazy(() => import('./pages/AboutPage'));
 const FAQPage = React.lazy(() => import('./pages/FAQPage'));
 const DashboardPage = React.lazy(() => import('./pages/DashboardPage'));
 const IssuesPage = React.lazy(() => import('./pages/IssuesPage'));
+const SearchPage = React.lazy(() => import('./pages/search/SearchPage'));
 const IssueDetailsPage = React.lazy(() => import('./pages/IssueDetailsPage'));
 const TopMinersPage = React.lazy(() => import('./pages/TopMinersPage'));
 const RepositoriesPage = React.lazy(() => import('./pages/RepositoriesPage'));
@@ -27,14 +29,25 @@ const OnboardPage = React.lazy(() => import('./pages/OnboardPage'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 
 const routesArray: AppRoute[] = [
-  { name: 'home', path: '/', element: <HomePage /> },
-  { name: 'dashboard', path: '/dashboard', element: <DashboardPage /> },
+  { name: 'home', path: '/', element: <HomePage />, showGlobalSearch: true },
+  {
+    name: 'dashboard',
+    path: '/dashboard',
+    element: <DashboardPage />,
+    showGlobalSearch: true,
+  },
   {
     name: 'issue-details',
     path: '/issues/details',
     element: <IssueDetailsPage />,
   },
-  { name: 'issues', path: '/issues/:tab?', element: <IssuesPage /> },
+  {
+    name: 'issues',
+    path: '/issues/:tab?',
+    element: <IssuesPage />,
+    showGlobalSearch: true,
+  },
+  { name: 'search', path: '/search', element: <SearchPage /> },
   { name: 'top-miners', path: '/top-miners', element: <TopMinersPage /> },
   {
     name: 'repositories',
@@ -84,6 +97,13 @@ export const routePaths = routesArray.reduce<Record<string, AppRoute>>(
   },
   {},
 );
+
+// Matches a pathname against app route definitions so layout code can
+// read route-level UI metadata such as showGlobalSearch.
+export const getRouteForPathname = (pathname: string) =>
+  routesArray.find((route) =>
+    matchPath({ path: route.path, end: true }, pathname),
+  );
 
 export default routesArray.reduce<Record<string, AppRoute>>((acc, x) => {
   acc[x.name] = x;
