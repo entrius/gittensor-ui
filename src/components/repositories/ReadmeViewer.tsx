@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import axios from 'axios';
 import { STATUS_COLORS } from '../../theme';
+import { createLinkRenderer, createImageRenderer } from './MarkdownRenderers';
 
 interface ReadmeViewerProps {
   repositoryFullName: string; // e.g., "opentensor/bittensor"
@@ -68,68 +69,8 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
     );
   }
 
-  // Custom renderer for links to handle relative paths
-  const LinkRenderer = (props: any) => {
-    const { href, children, ...rest } = props;
-    let finalHref = href;
-
-    if (
-      href &&
-      !href.startsWith('http') &&
-      !href.startsWith('//') &&
-      !href.startsWith('#') &&
-      !href.startsWith('mailto:')
-    ) {
-      const cleanPath = href.startsWith('./')
-        ? href.slice(2)
-        : href.startsWith('/')
-          ? href.slice(1)
-          : href;
-      // Use /tree/ for directories (no extension or ends with /), /blob/ for files
-      const hasExtension = /\.[a-zA-Z0-9]+$/.test(cleanPath.replace(/\/$/, ''));
-      const isDirectory = cleanPath.endsWith('/') || !hasExtension;
-      const type = isDirectory ? 'tree' : 'blob';
-      const normalizedPath = cleanPath.replace(/\/$/, '');
-      finalHref = `https://github.com/${repositoryFullName}/${type}/${defaultBranch}/${normalizedPath}`;
-    }
-
-    return (
-      <a href={finalHref} target="_blank" rel="noopener noreferrer" {...rest}>
-        {children}
-      </a>
-    );
-  };
-
-  // Custom renderer for images to handle relative paths
-  const ImageRenderer = (props: any) => {
-    const { src, alt, ...rest } = props;
-    let finalSrc = src;
-
-    if (src && !src.startsWith('http') && !src.startsWith('//')) {
-      // Convert relative path to absolute GitHub user content path
-      // e.g. ./assets/img.png -> https://raw.githubusercontent.com/user/repo/branch/assets/img.png
-      const cleanPath = src.startsWith('./')
-        ? src.slice(2)
-        : src.startsWith('/')
-          ? src.slice(1)
-          : src;
-      finalSrc = `https://cdn.jsdelivr.net/gh/${repositoryFullName}@${defaultBranch}/${cleanPath}`;
-    }
-
-    return (
-      <img
-        src={finalSrc}
-        alt={alt}
-        style={{
-          maxWidth: '100%',
-          height: 'auto',
-          borderRadius: '6px',
-          margin: '16px 0',
-        }}
-        {...rest}
-      />
-    );
-  };
+  const LinkRenderer = createLinkRenderer(repositoryFullName, defaultBranch);
+  const ImageRenderer = createImageRenderer(repositoryFullName, defaultBranch);
 
   return (
     <Paper
