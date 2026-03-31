@@ -1,34 +1,22 @@
 /**
- * Shared frontend search utilities.
- *
- * Provides cache-aware dataset access plus normalization and ranking
- * helpers for miners, repositories, pull requests, and issues.
+ * Search data utilities.
+ * Normalizes raw search datasets and derives search-specific data, matching, and ranking.
  */
 import { useMemo } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import {
-  getAllMinersQueryKey,
-  getAllPrsQueryKey,
-  getIssuesQueryKey,
-  getReposQueryKey,
-  useApiQuery,
-} from '../../api';
 import { type IssueBounty } from '../../api/models/Issues';
 import {
   type CommitLog,
   type MinerEvaluation,
   type Repository,
 } from '../../api/models/Dashboard';
+import { useSearchDatasets } from '../../api/SearchApi';
 import { parseNumber } from '../../utils';
 
 export const MIN_SEARCH_QUERY_LENGTH = 2;
-export const SEARCH_TABS = ['miners', 'repositories', 'prs', 'issues'] as const;
-
-export type SearchTab = (typeof SEARCH_TABS)[number];
 
 export type SearchMatchMode = 'quick' | 'full';
 
-export type SearchMiner = {
+export type MinerSearchData = {
   githubId: string;
   githubUsername: string;
   hotkey: string;
@@ -40,28 +28,15 @@ export type SearchMiner = {
   totalScore: number;
 };
 
-export type SearchRepositoryMetrics = {
+export type RepoSearchData = {
+  fullName: string;
+  owner: string;
+  tier: string;
+  weight: number;
+  rank: number;
   contributors: number;
   totalPRs: number;
   totalScore: number;
-};
-
-type SearchRepositoryTableData = {
-  metricsByName: Map<string, SearchRepositoryMetrics>;
-  rankByName: Map<string, number>;
-};
-
-type SearchDatasetState<T> = {
-  data: T[];
-  isLoading: boolean;
-  isError: boolean;
-};
-
-type SearchDatasets = {
-  miners: SearchDatasetState<SearchMiner>;
-  repositories: SearchDatasetState<Repository>;
-  prs: SearchDatasetState<CommitLog>;
-  issues: SearchDatasetState<IssueBounty>;
 };
 
 type SearchResultLimits = {
@@ -71,57 +46,11 @@ type SearchResultLimits = {
   issues?: number;
 };
 
-type SearchResults = {
-  datasets: SearchDatasets;
-  hasQuery: boolean;
-  minerResults: SearchMiner[];
-  repositoryResults: Repository[];
-  prResults: CommitLog[];
-  issueResults: IssueBounty[];
-};
-
-const pickString = (
-  record: Record<string, unknown>,
-  keys: string[],
-): string => {
-  for (const key of keys) {
-    const value = record[key];
-    if (typeof value === 'string' && value.trim()) return value.trim();
-    if (typeof value === 'number' && Number.isFinite(value))
-      return String(value);
-  }
-
-  return '';
-};
-
 const normalizeSearchText = (value: string) =>
   value.trim().toLowerCase().replace(/\s+/g, ' ');
 
-const isDatasetLoading = (
-  enabled: boolean,
-  cachedData: unknown,
-  isLoading: boolean,
-) => enabled && cachedData === undefined && isLoading;
-
-const normalizeMiner = (raw: MinerEvaluation | unknown): SearchMiner | null => {
-  const record = (raw ?? {}) as Record<string, unknown>;
-  const githubId = pickString(record, ['githubId', 'github_id', 'githubID']);
-  if (!githubId) return null;
-
-  return {
-    githubId,
-    githubUsername: pickString(record, ['githubUsername', 'github_username']),
-    hotkey: pickString(record, ['hotkey']),
-    currentTier: pickString(record, ['currentTier', 'current_tier']),
-    credibility: parseNumber(record.credibility),
-    leaderboardRank: 0,
-    totalPrs: parseNumber(record.totalPrs ?? record.total_prs),
-    totalTokenScore: parseNumber(
-      record.totalTokenScore ?? record.total_token_score,
-    ),
-    totalScore: parseNumber(record.totalScore ?? record.total_score),
-  };
-};
+const limitResults = <T>(results: T[], limit?: number) =>
+  limit === undefined ? results : results.slice(0, limit);
 
 const getMatchRank = (query: string, candidate: string) => {
   const normalizedCandidate = normalizeSearchText(candidate);
@@ -157,8 +86,33 @@ const sortByMatchThenTiebreaker = <T>(
     })
     .map((item) => item.item);
 
+const buildMinerSearchData = (miners: MinerEvaluation[]): MinerSearchData[] => {
+  const normalizedMiners = miners.map((miner) => ({
+    githubId: miner.githubId,
+    githubUsername: miner.githubUsername || '',
+    hotkey: miner.hotkey || '',
+    currentTier: miner.currentTier || '',
+    credibility: parseNumber(miner.credibility),
+    leaderboardRank: 0,
+    totalPrs: parseNumber(miner.totalPrs),
+    totalTokenScore: parseNumber(miner.totalTokenScore),
+    totalScore: parseNumber(miner.totalScore),
+  }));
+
+  const rankByGithubId = new Map(
+    [...normalizedMiners]
+      .sort((a, b) => b.totalScore - a.totalScore)
+      .map((miner, index) => [miner.githubId, index + 1]),
+  );
+
+  return normalizedMiners.map((miner) => ({
+    ...miner,
+    leaderboardRank: rankByGithubId.get(miner.githubId) || 0,
+  }));
+};
+
 const getMinerSearchResults = (
-  miners: SearchMiner[],
+  miners: MinerSearchData[],
   query: string,
   matchMode: SearchMatchMode,
   limit?: number,
@@ -173,11 +127,70 @@ const getMinerSearchResults = (
     (miner) => miner.totalScore,
   );
 
-  return limit === undefined ? results : results.slice(0, limit);
+  return limitResults(results, limit);
+};
+
+const buildRepoSearchData = (
+  repositories: Repository[],
+  prs: CommitLog[],
+): RepoSearchData[] => {
+  const prStatsMap = new Map<
+    string,
+    Pick<RepoSearchData, 'contributors' | 'totalPRs' | 'totalScore'> & {
+      uniqueAuthors: Set<string>;
+    }
+  >();
+
+  // Aggregate merged PR stats by repository
+  prs.forEach((pr) => {
+    if (!pr?.repository || !pr.mergedAt) return;
+
+    const repositoryKey = pr.repository.toLowerCase();
+    const current = prStatsMap.get(repositoryKey) || {
+      contributors: 0,
+      totalPRs: 0,
+      totalScore: 0,
+      uniqueAuthors: new Set<string>(),
+    };
+
+    current.totalScore += parseFloat(pr.score || '0');
+    current.totalPRs += 1;
+
+    if (pr.author) {
+      current.uniqueAuthors.add(pr.author);
+      current.contributors = current.uniqueAuthors.size;
+    }
+
+    prStatsMap.set(repositoryKey, current);
+  });
+
+  // Build repository search data ranked by weight, then total score.
+  return repositories
+    .map((repo) => {
+      const stats = prStatsMap.get(repo.fullName.toLowerCase());
+
+      return {
+        fullName: repo.fullName,
+        owner: repo.owner,
+        tier: repo.tier || '',
+        weight: parseNumber(repo.weight),
+        totalScore: stats?.totalScore || 0,
+        totalPRs: stats?.totalPRs || 0,
+        contributors: stats?.uniqueAuthors.size || 0,
+      };
+    })
+    .sort((a, b) => {
+      if (b.weight !== a.weight) return b.weight - a.weight;
+      return b.totalScore - a.totalScore;
+    })
+    .map((repo, index) => ({
+      ...repo,
+      rank: index + 1,
+    }));
 };
 
 const getRepositorySearchResults = (
-  repositories: Repository[],
+  repositories: RepoSearchData[],
   query: string,
   matchMode: SearchMatchMode,
   limit?: number,
@@ -188,17 +201,12 @@ const getRepositorySearchResults = (
     (repo) =>
       matchMode === 'quick'
         ? [repo.fullName]
-        : [repo.fullName, repo.owner, repo.tier || ''],
-    (repo) => parseNumber(repo.weight),
+        : [repo.fullName, repo.owner, repo.tier],
+    (repo) => repo.weight,
   );
 
-  return limit === undefined ? results : results.slice(0, limit);
+  return limitResults(results, limit);
 };
-
-const getPrTimestamp = (pr: CommitLog) =>
-  pr.mergedAt
-    ? new Date(pr.mergedAt).getTime()
-    : new Date(pr.prCreatedAt).getTime();
 
 const getPrSearchResults = (
   prs: CommitLog[],
@@ -223,14 +231,11 @@ const getPrSearchResults = (
             pr.prState || '',
             String(pr.pullRequestNumber || ''),
           ],
-    getPrTimestamp,
+    (pr) => new Date(pr.mergedAt ?? pr.prCreatedAt).getTime(),
   );
 
-  return limit === undefined ? results : results.slice(0, limit);
+  return limitResults(results, limit);
 };
-
-const getIssueTimestamp = (issue: IssueBounty) =>
-  new Date(issue.updatedAt || issue.createdAt).getTime();
 
 const getIssueSearchResults = (
   issues: IssueBounty[],
@@ -254,220 +259,63 @@ const getIssueSearchResults = (
             issue.status || '',
             String(issue.issueNumber || ''),
           ],
-    getIssueTimestamp,
+    (issue) => new Date(issue.updatedAt || issue.createdAt).getTime(),
   );
 
-  return limit === undefined ? results : results.slice(0, limit);
-};
-
-const useCachedSearchDataset = <T>(
-  queryName: string,
-  url: string,
-  cachedData: T[] | undefined,
-  enabled: boolean,
-): SearchDatasetState<T> => {
-  const query = useApiQuery<T[]>(
-    queryName,
-    url,
-    undefined,
-    undefined,
-    enabled && cachedData === undefined,
-  );
-
-  return {
-    data: query.data ?? cachedData ?? [],
-    isLoading: isDatasetLoading(enabled, cachedData, query.isLoading),
-    isError: query.isError,
-  };
+  return limitResults(results, limit);
 };
 
 /**
- * Derives repository rank and metrics maps for the search results table.
- */
-export const getRepositorySearchTableData = (
-  repositories: Repository[],
-  prs: CommitLog[],
-): SearchRepositoryTableData => {
-  const prStatsMap = new Map<
-    string,
-    SearchRepositoryMetrics & { uniqueAuthors: Set<string> }
-  >();
-
-  prs.forEach((pr) => {
-    if (!pr?.repository || !pr.mergedAt) return;
-
-    const repositoryKey = pr.repository.toLowerCase();
-    const current = prStatsMap.get(repositoryKey) || {
-      contributors: 0,
-      totalPRs: 0,
-      totalScore: 0,
-      uniqueAuthors: new Set<string>(),
-    };
-
-    current.totalScore += parseFloat(pr.score || '0');
-    current.totalPRs += 1;
-
-    if (pr.author) {
-      current.uniqueAuthors.add(pr.author);
-      current.contributors = current.uniqueAuthors.size;
-    }
-
-    prStatsMap.set(repositoryKey, current);
-  });
-
-  const repositoryStats = repositories
-    .map((repo) => {
-      const stats = prStatsMap.get(repo.fullName.toLowerCase());
-
-      return {
-        repository: repo.fullName,
-        totalScore: stats?.totalScore || 0,
-        totalPRs: stats?.totalPRs || 0,
-        uniqueAuthors: stats?.uniqueAuthors || new Set<string>(),
-        weight: repo.weight ? parseFloat(String(repo.weight)) : 0,
-      };
-    })
-    .sort((a, b) => b.totalScore - a.totalScore)
-    .sort((a, b) => b.weight - a.weight);
-
-  return {
-    metricsByName: new Map(
-      repositoryStats.map((repo) => [
-        repo.repository.toLowerCase(),
-        {
-          contributors: repo.uniqueAuthors.size,
-          totalPRs: repo.totalPRs,
-          totalScore: repo.totalScore,
-        },
-      ]),
-    ),
-    rankByName: new Map(
-      repositoryStats.map((repo, index) => [
-        repo.repository.toLowerCase(),
-        index + 1,
-      ]),
-    ),
-  };
-};
-
-/**
- * Loads the search datasets
- */
-const useSearchDatasets = (enabled: boolean): SearchDatasets => {
-  const queryClient = useQueryClient();
-
-  const cachedMiners = queryClient.getQueryData<MinerEvaluation[]>(
-    getAllMinersQueryKey(),
-  );
-  const cachedRepositories =
-    queryClient.getQueryData<Repository[]>(getReposQueryKey());
-  const cachedPrs = queryClient.getQueryData<CommitLog[]>(getAllPrsQueryKey());
-  const cachedIssues =
-    queryClient.getQueryData<IssueBounty[]>(getIssuesQueryKey());
-
-  const minerDataset = useCachedSearchDataset<MinerEvaluation>(
-    getAllMinersQueryKey()[0],
-    '/miners',
-    cachedMiners,
-    enabled,
-  );
-  const repositoryDataset = useCachedSearchDataset<Repository>(
-    getReposQueryKey()[0],
-    '/dash/repos',
-    cachedRepositories,
-    enabled,
-  );
-  const prDataset = useCachedSearchDataset<CommitLog>(
-    getAllPrsQueryKey()[0],
-    '/prs',
-    cachedPrs,
-    enabled,
-  );
-  const issueDataset = useCachedSearchDataset<IssueBounty>(
-    getIssuesQueryKey()[0],
-    '/issues',
-    cachedIssues,
-    enabled,
-  );
-
-  // Miners are normalized into the search-specific shape before return.
-  const miners = useMemo(() => {
-    const normalizedMiners = minerDataset.data
-      .map(normalizeMiner)
-      .filter((miner): miner is SearchMiner => Boolean(miner));
-
-    const rankByGithubId = new Map(
-      [...normalizedMiners]
-        .sort((a, b) => b.totalScore - a.totalScore)
-        .map((miner, index) => [miner.githubId, index + 1]),
-    );
-
-    return normalizedMiners.map((miner) => ({
-      ...miner,
-      leaderboardRank: rankByGithubId.get(miner.githubId) || 0,
-    }));
-  }, [minerDataset.data]);
-
-  return {
-    miners: {
-      data: miners,
-      isLoading: minerDataset.isLoading,
-      isError: minerDataset.isError,
-    },
-    repositories: repositoryDataset,
-    prs: prDataset,
-    issues: issueDataset,
-  };
-};
-
-/**
- * Returns grouped search results across miners, repositories, PRs, and issues.
- *
- * @param query Raw user search input.
- * @param limits Per-entity result caps. Omit a key for no limit.
- * @param enabled Whether search datasets should be loaded.
- * @param matchMode Search matching mode for quick vs full results.
+ * Build search results from the raw datasets exposed by SearchApi.
+ * @param query Raw search input.
+ * @param limits Per-entity result limits.
+ * @param shouldFetch When true, missing datasets are allowed to fetch.
+ * @param matchMode Controls quick vs full search matching.
  */
 export const useSearchResults = (
   query: string,
   limits: SearchResultLimits,
-  enabled: boolean,
+  shouldFetch: boolean,
   matchMode: SearchMatchMode = 'full',
-): SearchResults => {
-  const datasets = useSearchDatasets(enabled);
+) => {
+  const datasets = useSearchDatasets(shouldFetch);
   const normalizedQuery = normalizeSearchText(query);
   const hasQuery = normalizedQuery.length >= MIN_SEARCH_QUERY_LENGTH;
+
+  const minerSearchData = useMemo(
+    () => buildMinerSearchData(datasets.miners.data),
+    [datasets.miners.data],
+  );
+
+  const repoSearchData = useMemo(
+    () => buildRepoSearchData(datasets.repositories.data, datasets.prs.data),
+    [datasets.prs.data, datasets.repositories.data],
+  );
 
   const minerResults = useMemo(() => {
     if (!hasQuery) return [];
     return getMinerSearchResults(
-      datasets.miners.data,
+      minerSearchData,
       normalizedQuery,
       matchMode,
       limits.miners,
     );
-  }, [
-    datasets.miners.data,
-    hasQuery,
-    limits.miners,
-    matchMode,
-    normalizedQuery,
-  ]);
+  }, [hasQuery, limits.miners, matchMode, normalizedQuery, minerSearchData]);
 
-  const repositoryResults = useMemo(() => {
+  const repoResults = useMemo(() => {
     if (!hasQuery) return [];
     return getRepositorySearchResults(
-      datasets.repositories.data,
+      repoSearchData,
       normalizedQuery,
       matchMode,
       limits.repositories,
     );
   }, [
-    datasets.repositories.data,
     hasQuery,
     limits.repositories,
     matchMode,
     normalizedQuery,
+    repoSearchData,
   ]);
 
   const prResults = useMemo(() => {
@@ -500,7 +348,7 @@ export const useSearchResults = (
     datasets,
     hasQuery,
     minerResults,
-    repositoryResults,
+    repositoryResults: repoResults,
     prResults,
     issueResults,
   };

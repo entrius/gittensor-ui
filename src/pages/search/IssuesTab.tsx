@@ -1,43 +1,117 @@
 import React from 'react';
-import {
-  Alert,
-  Avatar,
-  Box,
-  Card,
-  Chip,
-  CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { alpha, type Theme } from '@mui/material/styles';
 import { type IssueBounty } from '../../api/models/Issues';
-import { STATUS_COLORS } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils';
+import SearchResultsTable, {
+  type SearchResultsTableColumn,
+} from './SearchResultsTable';
 import {
-  bodyCellSx,
-  clickableRowSx,
-  headerCellSx,
-  tableCardSx,
-  tableContainerSx,
-  tablePaginationSx,
-  tableSx,
-} from './styles';
+  SearchAvatarContentCell,
+  SearchStatusChip,
+  SearchTruncatedText,
+} from './SearchTableCells';
+
+const getStatusMeta = (
+  status: IssueBounty['status'],
+): {
+  tone: keyof Theme['palette']['status'];
+  text: string;
+} => {
+  switch (status) {
+    case 'registered':
+      return { tone: 'warning', text: 'Pending' };
+    case 'active':
+      return { tone: 'info', text: 'Available' };
+    case 'completed':
+      return { tone: 'merged', text: 'Completed' };
+    case 'cancelled':
+      return { tone: 'error', text: 'Cancelled' };
+    default:
+      return { tone: 'open', text: status };
+  }
+};
+
+const issueColumns: SearchResultsTableColumn<IssueBounty>[] = [
+  {
+    key: 'issueNumber',
+    header: 'Issue #',
+    width: 100,
+    renderCell: (issue: IssueBounty) => `#${issue.issueNumber}`,
+    cellSx: {
+      color: 'text.secondary',
+    },
+  },
+  {
+    key: 'repository',
+    header: 'Repository',
+    width: '30%',
+    renderCell: (issue: IssueBounty) => {
+      const repositoryOwner = issue.repositoryFullName.split('/')[0];
+
+      return (
+        <SearchAvatarContentCell
+          avatarAlt={repositoryOwner}
+          avatarBorderRadius={1}
+          avatarSrc={getGithubAvatarSrc(repositoryOwner)}
+          showAvatarBorder={false}
+        >
+          <SearchTruncatedText
+            tooltip={issue.repositoryFullName}
+            sx={(theme) => ({
+              ...theme.typography.mono,
+              color: theme.palette.status.info,
+            })}
+            text={issue.repositoryFullName}
+          />
+        </SearchAvatarContentCell>
+      );
+    },
+  },
+  {
+    key: 'title',
+    header: 'Issue',
+    width: '42%',
+    renderCell: (issue: IssueBounty) => (
+      <SearchTruncatedText
+        tooltip={issue.title || 'Untitled issue'}
+        sx={(theme) => ({
+          ...theme.typography.mono,
+          color: theme.palette.text.primary,
+        })}
+        text={issue.title || 'Untitled issue'}
+      />
+    ),
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    width: '18%',
+    align: 'center',
+    renderCell: (issue: IssueBounty) => {
+      const statusMeta = getStatusMeta(issue.status);
+
+      return (
+        <SearchStatusChip
+          backgroundColor={(theme) =>
+            alpha(theme.palette.status[statusMeta.tone], 0.15)
+          }
+          borderColor={(theme) =>
+            alpha(theme.palette.status[statusMeta.tone], 0.25)
+          }
+          color={(theme) => theme.palette.status[statusMeta.tone]}
+          label={statusMeta.text}
+        />
+      );
+    },
+  },
+];
 
 type IssuesTabProps = {
-  emptyLabel: string;
   isError: boolean;
   isLoading: boolean;
   issueResults: IssueBounty[];
-  onPageChange: (_event: unknown, newPage: number) => void;
-  onRowsPerPageChange: (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => void;
+  onPageChange: (newPage: number) => void;
+  onRowsPerPageChange: (rowsPerPage: number) => void;
   onSelectIssue: (id: number) => void;
   page: number;
   paginatedIssueResults: IssueBounty[];
@@ -45,45 +119,7 @@ type IssuesTabProps = {
   rowsPerPageOptions: number[];
 };
 
-const getStatusBadge = (
-  status: IssueBounty['status'],
-): { color: string; bgColor: string; text: string } => {
-  switch (status) {
-    case 'registered':
-      return {
-        color: STATUS_COLORS.warning,
-        bgColor: 'rgba(245, 158, 11, 0.15)',
-        text: 'Pending',
-      };
-    case 'active':
-      return {
-        color: STATUS_COLORS.info,
-        bgColor: 'rgba(88, 166, 255, 0.15)',
-        text: 'Available',
-      };
-    case 'completed':
-      return {
-        color: STATUS_COLORS.merged,
-        bgColor: 'rgba(63, 185, 80, 0.15)',
-        text: 'Completed',
-      };
-    case 'cancelled':
-      return {
-        color: STATUS_COLORS.error,
-        bgColor: 'rgba(239, 68, 68, 0.15)',
-        text: 'Cancelled',
-      };
-    default:
-      return {
-        color: STATUS_COLORS.open,
-        bgColor: 'rgba(139, 148, 158, 0.15)',
-        text: status,
-      };
-  }
-};
-
 const IssuesTab: React.FC<IssuesTabProps> = ({
-  emptyLabel,
   isError,
   isLoading,
   issueResults,
@@ -95,185 +131,23 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
   rowsPerPage,
   rowsPerPageOptions,
 }) => (
-  <Card elevation={0} sx={tableCardSx}>
-    {isLoading && (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress />
-      </Box>
-    )}
-    {isError && !isLoading && (
-      <Alert severity="error" sx={{ m: 2 }}>
-        Failed to load issues for search.
-      </Alert>
-    )}
-    {!isLoading && !isError && issueResults.length === 0 ? (
-      <Box sx={{ p: 3 }}>
-        <Typography color="text.secondary">{emptyLabel}</Typography>
-      </Box>
-    ) : null}
-    {!isLoading && !isError && issueResults.length > 0 ? (
-      <>
-        <TableContainer sx={tableContainerSx}>
-          <Table stickyHeader size="small" sx={{ ...tableSx, minWidth: 900 }}>
-            <TableHead>
-              <TableRow>
-                <TableCell
-                  sx={(theme) => ({
-                    ...headerCellSx(theme),
-                    width: 100,
-                  })}
-                >
-                  Issue #
-                </TableCell>
-                <TableCell
-                  sx={(theme) => ({
-                    ...headerCellSx(theme),
-                    width: '30%',
-                  })}
-                >
-                  Repository
-                </TableCell>
-                <TableCell
-                  sx={(theme) => ({
-                    ...headerCellSx(theme),
-                    width: '42%',
-                  })}
-                >
-                  Issue
-                </TableCell>
-                <TableCell
-                  sx={(theme) => ({
-                    ...headerCellSx(theme),
-                    width: '18%',
-                    textAlign: 'center',
-                  })}
-                >
-                  Status
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {paginatedIssueResults.map((issue) => {
-                const statusBadge = getStatusBadge(issue.status);
-                const repositoryOwner = issue.repositoryFullName.split('/')[0];
-
-                return (
-                  <TableRow
-                    key={issue.id}
-                    onClick={() => onSelectIssue(issue.id)}
-                    sx={(theme) => clickableRowSx(theme)}
-                  >
-                    <TableCell
-                      sx={(theme) => ({
-                        ...bodyCellSx(theme),
-                        color: theme.palette.text.secondary,
-                      })}
-                    >
-                      #{issue.issueNumber}
-                    </TableCell>
-                    <TableCell sx={bodyCellSx}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1.25,
-                          minWidth: 0,
-                        }}
-                      >
-                        <Avatar
-                          src={getGithubAvatarSrc(repositoryOwner)}
-                          alt={repositoryOwner}
-                          sx={{ width: 22, height: 22, borderRadius: 1 }}
-                        />
-                        <Tooltip
-                          title={issue.repositoryFullName}
-                          placement="top"
-                        >
-                          <Typography
-                            sx={(theme) => ({
-                              fontFamily: theme.typography.mono.fontFamily,
-                              fontSize: '0.85rem',
-                              color: STATUS_COLORS.info,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            })}
-                          >
-                            {issue.repositoryFullName}
-                          </Typography>
-                        </Tooltip>
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={bodyCellSx}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 0.5,
-                          minWidth: 0,
-                        }}
-                      >
-                        <Tooltip
-                          title={issue.title || 'Untitled issue'}
-                          placement="top"
-                        >
-                          <Typography
-                            sx={(theme) => ({
-                              fontFamily: theme.typography.mono.fontFamily,
-                              fontSize: '0.85rem',
-                              color: theme.palette.text.primary,
-                              fontWeight: 500,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            })}
-                          >
-                            {issue.title || 'Untitled issue'}
-                          </Typography>
-                        </Tooltip>
-                      </Box>
-                    </TableCell>
-                    <TableCell
-                      sx={(theme) => ({
-                        ...bodyCellSx(theme),
-                        textAlign: 'center',
-                      })}
-                    >
-                      <Chip
-                        label={statusBadge.text}
-                        size="small"
-                        sx={(theme) => ({
-                          fontFamily: theme.typography.mono.fontFamily,
-                          fontSize: '0.7rem',
-                          fontWeight: 600,
-                          backgroundColor: statusBadge.bgColor,
-                          color: statusBadge.color,
-                          border: `1px solid ${statusBadge.color}40`,
-                        })}
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          component="div"
-          count={issueResults.length}
-          labelRowsPerPage="Rows"
-          page={page}
-          onPageChange={onPageChange}
-          rowsPerPage={rowsPerPage}
-          rowsPerPageOptions={rowsPerPageOptions}
-          onRowsPerPageChange={onRowsPerPageChange}
-          showFirstButton
-          showLastButton
-          sx={tablePaginationSx}
-        />
-      </>
-    ) : null}
-  </Card>
+  <SearchResultsTable
+    columns={issueColumns}
+    emptyLabel="No issue matches."
+    errorLabel="Failed to load issues for search."
+    getRowKey={(issue) => issue.id}
+    isError={isError}
+    isLoading={isLoading}
+    minWidth={900}
+    onPageChange={onPageChange}
+    onRowClick={(issue) => onSelectIssue(issue.id)}
+    onRowsPerPageChange={onRowsPerPageChange}
+    page={page}
+    rows={paginatedIssueResults}
+    rowsPerPage={rowsPerPage}
+    rowsPerPageOptions={rowsPerPageOptions}
+    totalCount={issueResults.length}
+  />
 );
 
 export default IssuesTab;

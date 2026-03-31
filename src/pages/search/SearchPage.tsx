@@ -3,30 +3,22 @@ import { Alert, Box, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { BackButton, SEO } from '../../components';
 import { GlobalSearchBar, Page } from '../../components/layout';
-import {
-  getRepositorySearchTableData,
-  MIN_SEARCH_QUERY_LENGTH,
-  SEARCH_TABS,
-  type SearchTab,
-  useSearchResults,
-} from './searchData';
 import IssuesTab from './IssuesTab';
 import MinerTab from './MinerTab';
 import PullRequestsTab from './PullRequestsTab';
 import RepositoryTab from './RepositoryTab';
+import { MIN_SEARCH_QUERY_LENGTH, useSearchResults } from './searchData';
 
 const ROWS_PER_PAGE_OPTIONS = [10, 25, 50];
+const SEARCH_TABS = ['miners', 'repositories', 'prs', 'issues'] as const;
+
+type SearchTab = (typeof SEARCH_TABS)[number];
+
 const TAB_LABELS: Record<SearchTab, string> = {
   miners: 'Miners',
   repositories: 'Repositories',
   prs: 'Pull Requests',
   issues: 'Issues',
-};
-const EMPTY_LABELS: Record<SearchTab, string> = {
-  miners: 'No miner matches.',
-  repositories: 'No repository matches.',
-  prs: 'No pull request matches.',
-  issues: 'No issue matches.',
 };
 
 const getLastValidPage = (count: number, rowsPerPage: number) =>
@@ -158,31 +150,16 @@ const SearchPage: React.FC = () => {
     [issueResults, page, rowsPerPage],
   );
 
-  const handlePageChange = (_event: unknown, newPage: number) => {
+  const handlePageChange = (newPage: number) => {
     updateSearchParams({ page: newPage === 0 ? null : newPage });
   };
 
-  const handleRowsPerPageChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    const nextRows = parseInt(event.target.value, 10);
+  const handleRowsPerPageChange = (nextRows: number) => {
     updateSearchParams({
       rows: nextRows === 10 ? null : nextRows,
       page: null,
     });
   };
-
-  const {
-    metricsByName: repositoryMetricsByName,
-    rankByName: repositoryRankByName,
-  } = React.useMemo(
-    () =>
-      getRepositorySearchTableData(
-        datasets.repositories.data,
-        datasets.prs.data,
-      ),
-    [datasets.repositories.data, datasets.prs.data],
-  );
 
   const searchBackState = {
     backTo: `${location.pathname}${location.search}`,
@@ -295,7 +272,6 @@ const SearchPage: React.FC = () => {
 
             {tabValue === 'miners' && (
               <MinerTab
-                emptyLabel={EMPTY_LABELS.miners}
                 isError={tabState.isError}
                 isLoading={tabState.isLoading}
                 onPageChange={handlePageChange}
@@ -311,7 +287,6 @@ const SearchPage: React.FC = () => {
 
             {tabValue === 'repositories' && (
               <RepositoryTab
-                emptyLabel={EMPTY_LABELS.repositories}
                 isError={tabState.isError}
                 isLoading={tabState.isLoading}
                 onPageChange={handlePageChange}
@@ -320,8 +295,6 @@ const SearchPage: React.FC = () => {
                 page={page}
                 rowsPerPage={rowsPerPage}
                 rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
-                repositoryMetricsByName={repositoryMetricsByName}
-                repositoryRankByName={repositoryRankByName}
                 paginatedRepositoryResults={paginatedRepositoryResults}
                 repositoryResults={repositoryResults}
               />
@@ -329,7 +302,6 @@ const SearchPage: React.FC = () => {
 
             {tabValue === 'prs' && (
               <PullRequestsTab
-                emptyLabel={EMPTY_LABELS.prs}
                 isError={tabState.isError}
                 isLoading={tabState.isLoading}
                 onPageChange={handlePageChange}
@@ -345,7 +317,6 @@ const SearchPage: React.FC = () => {
 
             {tabValue === 'issues' && (
               <IssuesTab
-                emptyLabel={EMPTY_LABELS.issues}
                 isError={tabState.isError}
                 isLoading={tabState.isLoading}
                 onPageChange={handlePageChange}
