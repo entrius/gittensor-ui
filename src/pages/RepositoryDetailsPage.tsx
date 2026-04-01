@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
+  Alert,
   Box,
   Tab,
   Tabs,
   Typography,
   Button,
   Container,
+  CircularProgress,
   Grid,
   Chip,
   Avatar,
@@ -63,8 +65,10 @@ const RepositoryDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const repo = searchParams.get('name');
   const [tabValue, setTabValue] = useState(0);
-  const { data: repos } = useReposAndWeights();
+  const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
   const { data: bountySummary } = useRepoBountySummary(repo || '');
+  const trackedRepo = repos?.find((r) => r.fullName === repo);
+  const isTrackedRepository = Boolean(trackedRepo);
 
   const owner = repo ? repo.split('/')[0] : '';
 
@@ -72,6 +76,50 @@ const RepositoryDetailsPage: React.FC = () => {
   if (!repo) {
     navigate('/miners');
     return null;
+  }
+
+  if (isLoadingRepos) {
+    return (
+      <Page title={`Repository - ${repo} `}>
+        <Container maxWidth="xl" sx={{ py: 8 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <CircularProgress size={36} />
+          </Box>
+        </Container>
+      </Page>
+    );
+  }
+
+  if (!isTrackedRepository) {
+    return (
+      <Page title={`Repository - ${repo} `}>
+        <SEO
+          title={`Repository - ${repo} `}
+          description={`View code, issues, PRs, and contributors for ${repo} on Gittensor.`}
+        />
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+          <BackButton to="/repositories" label="Back to Repositories" />
+          <Alert
+            severity="warning"
+            sx={{
+              mt: 2,
+              backgroundColor: 'rgba(245, 124, 0, 0.08)',
+              border: '1px solid rgba(255, 183, 77, 0.3)',
+              color: '#ffcc80',
+              '& .MuiAlert-icon': { color: '#ffb74d' },
+            }}
+          >
+            <Typography sx={{ fontWeight: 600, mb: 0.5 }}>
+              This repository is not tracked by Gittensor.
+            </Typography>
+            <Typography sx={{ fontSize: '0.9rem' }}>
+              The repository details view is only available for tracked
+              repositories listed on the Repositories page.
+            </Typography>
+          </Alert>
+        </Container>
+      </Page>
+    );
   }
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -130,8 +178,19 @@ const RepositoryDetailsPage: React.FC = () => {
                     {repo}
                   </Typography>
                   <Chip variant="info" label="Public" />
+                  <Chip
+                    label="Tracked"
+                    sx={{
+                      backgroundColor: 'rgba(46, 125, 50, 0.15)',
+                      color: '#66bb6a',
+                      border: '1px solid rgba(102, 187, 106, 0.35)',
+                      fontSize: '0.75rem',
+                      height: '24px',
+                      fontWeight: 600,
+                    }}
+                  />
                   {(() => {
-                    const currentRepo = repos?.find((r) => r.fullName === repo);
+                    const currentRepo = trackedRepo;
 
                     if (currentRepo?.inactiveAt) {
                       return (

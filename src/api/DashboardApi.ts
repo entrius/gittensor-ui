@@ -37,6 +37,10 @@ export const useRepoChanges = (options?: { refetchInterval?: number }) =>
     options?.refetchInterval,
   );
 
+// Shared cache key for the repositories dataset.
+export const getReposQueryKey = () =>
+  ['useReposAndWeights', '/dash/repos', undefined] as const;
+
 export const useReposAndWeights = () =>
   useDashboardQuery<Repository[]>('useReposAndWeights', '/repos');
 

@@ -10,12 +10,22 @@ export const TIER_LEVELS: Record<string, number> = {
   gold: 3,
 };
 
+export const getGithubAvatarSrc = (username?: string | null) => {
+  if (username) {
+    return `https://avatars.githubusercontent.com/${username}`;
+  }
+
+  return '';
+};
+
+// Parses numeric-like values and falls back when the value is missing or invalid.
 export const parseNumber = (value: unknown, fallback = 0): number => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   if (typeof value === 'string' && value.trim()) {
     const parsed = Number(value);
     if (Number.isFinite(parsed)) return parsed;
   }
+
   return fallback;
 };
 
