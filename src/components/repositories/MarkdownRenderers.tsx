@@ -1,6 +1,9 @@
 import React from 'react';
 
-export const createLinkRenderer = (repositoryFullName: string, defaultBranch: string) => {
+export const createLinkRenderer = (
+  repositoryFullName: string,
+  defaultBranch: string,
+) => {
   const LinkRenderer = (props: any) => {
     const { href, children, ...rest } = props;
     let finalHref = href;
@@ -33,7 +36,10 @@ export const createLinkRenderer = (repositoryFullName: string, defaultBranch: st
   return LinkRenderer;
 };
 
-export const createImageRenderer = (repositoryFullName: string, defaultBranch: string) => {
+export const createImageRenderer = (
+  repositoryFullName: string,
+  defaultBranch: string,
+) => {
   const ImageRenderer = (props: any) => {
     const { src, alt, ...rest } = props;
     let finalSrc = src;
