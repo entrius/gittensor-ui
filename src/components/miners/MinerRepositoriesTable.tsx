@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Card,
   Typography,
@@ -22,7 +22,11 @@ import {
   NavigateBefore as PrevIcon,
   NavigateNext as NextIcon,
 } from '@mui/icons-material';
-import { useMinerPRs, useReposAndWeights, useTierConfigurations } from '../../api';
+import {
+  useMinerPRs,
+  useReposAndWeights,
+  useTierConfigurations,
+} from '../../api';
 import { useNavigate } from 'react-router-dom';
 import { TIER_COLORS } from '../../theme';
 import ExplorerFilterButton from './ExplorerFilterButton';
@@ -128,12 +132,15 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     return map;
   }, [tierConfig]);
 
-  const isRepoQualified = (repo: RepoStats) => {
-    const tier = repo.tier.toLowerCase();
-    const threshold = tierThresholds.get(tier);
-    if (threshold == null) return false;
-    return repo.tokenScore >= threshold;
-  };
+  const isRepoQualified = useCallback(
+    (repo: RepoStats) => {
+      const tier = repo.tier.toLowerCase();
+      const threshold = tierThresholds.get(tier);
+      if (threshold == null) return false;
+      return repo.tokenScore >= threshold;
+    },
+    [tierThresholds],
+  );
 
   // Aggregate PRs by repository
   const repoStats = useMemo(() => {
@@ -176,7 +183,13 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       filtered = filtered.filter((r) => r.repository.toLowerCase().includes(q));
     }
     return filtered;
-  }, [repoStats, tierFilter, qualificationFilter, searchQuery]);
+  }, [
+    repoStats,
+    tierFilter,
+    qualificationFilter,
+    searchQuery,
+    isRepoQualified,
+  ]);
 
   const sortedRepoStats = useMemo(
     () => sortMinerRepoStats(filteredRepoStats, sortField, sortOrder),
@@ -209,7 +222,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       else unqualified++;
     }
     return { all: repoStats.length, qualified, unqualified };
-  }, [repoStats, tierThresholds]);
+  }, [repoStats, isRepoQualified]);
 
   const handleSort = (field: RepoSortField) => {
     if (sortField === field) {
@@ -290,9 +303,13 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                 fontSize: '0.75rem',
               }}
             >
-              ({tierFilter !== 'all' || qualificationFilter !== 'all' || searchQuery.trim()
+              (
+              {tierFilter !== 'all' ||
+              qualificationFilter !== 'all' ||
+              searchQuery.trim()
                 ? `${sortedRepoStats.length} of ${repoStats.length}`
-                : sortedRepoStats.length})
+                : sortedRepoStats.length}
+              )
             </Typography>
           </Box>
           <Box
@@ -312,21 +329,30 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                 count={qualificationCounts.all}
                 color={theme.palette.status.neutral}
                 selected={qualificationFilter === 'all'}
-                onClick={() => { setQualificationFilter('all'); setPage(0); }}
+                onClick={() => {
+                  setQualificationFilter('all');
+                  setPage(0);
+                }}
               />
               <ExplorerFilterButton
                 label="Qualified"
                 count={qualificationCounts.qualified}
                 color={theme.palette.status.merged}
                 selected={qualificationFilter === 'qualified'}
-                onClick={() => { setQualificationFilter('qualified'); setPage(0); }}
+                onClick={() => {
+                  setQualificationFilter('qualified');
+                  setPage(0);
+                }}
               />
               <ExplorerFilterButton
                 label="Unqualified"
                 count={qualificationCounts.unqualified}
                 color={theme.palette.status.closed}
                 selected={qualificationFilter === 'unqualified'}
-                onClick={() => { setQualificationFilter('unqualified'); setPage(0); }}
+                onClick={() => {
+                  setQualificationFilter('unqualified');
+                  setPage(0);
+                }}
               />
             </Box>
 
@@ -337,28 +363,40 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                 count={tierCounts.all}
                 color={theme.palette.status.neutral}
                 selected={tierFilter === 'all'}
-                onClick={() => { setTierFilter('all'); setPage(0); }}
+                onClick={() => {
+                  setTierFilter('all');
+                  setPage(0);
+                }}
               />
               <ExplorerFilterButton
                 label="Gold"
                 count={tierCounts.gold}
                 color={TIER_COLORS.gold}
                 selected={tierFilter === 'gold'}
-                onClick={() => { setTierFilter('gold'); setPage(0); }}
+                onClick={() => {
+                  setTierFilter('gold');
+                  setPage(0);
+                }}
               />
               <ExplorerFilterButton
                 label="Silver"
                 count={tierCounts.silver}
                 color={TIER_COLORS.silver}
                 selected={tierFilter === 'silver'}
-                onClick={() => { setTierFilter('silver'); setPage(0); }}
+                onClick={() => {
+                  setTierFilter('silver');
+                  setPage(0);
+                }}
               />
               <ExplorerFilterButton
                 label="Bronze"
                 count={tierCounts.bronze}
                 color={TIER_COLORS.bronze}
                 selected={tierFilter === 'bronze'}
-                onClick={() => { setTierFilter('bronze'); setPage(0); }}
+                onClick={() => {
+                  setTierFilter('bronze');
+                  setPage(0);
+                }}
               />
             </Box>
           </Box>
@@ -369,7 +407,10 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
           size="small"
           placeholder="Search repositories..."
           value={searchQuery}
-          onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setPage(0);
+          }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -425,379 +466,386 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
           </Typography>
         </Box>
       ) : (
-      <>
-      <TableContainer
-        sx={{
-          overflowY: 'auto',
-          overflowX: 'auto',
-          '&::-webkit-scrollbar': {
-            width: { xs: '6px', sm: '8px' },
-            height: { xs: '6px', sm: '8px' },
-          },
-          '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
-          '&::-webkit-scrollbar-thumb': {
-            backgroundColor: 'border.light',
-            borderRadius: '4px',
-            '&:hover': { backgroundColor: 'border.medium' },
-          },
-        }}
-      >
-        <Table
-          stickyHeader
-          sx={{ tableLayout: 'fixed', minWidth: '700px' }}
-        >
-          <TableHead>
-            <TableRow>
-              <TableCell sx={headerCellStyle}>
-                <TableSortLabel
-                  active={sortField === 'rank'}
-                  direction={sortField === 'rank' ? sortOrder : 'desc'}
-                  onClick={() => handleSort('rank')}
-                  sx={{
-                    color: 'inherit',
-                    '&:hover': {
-                      color: (t) => alpha(t.palette.text.primary, 0.9),
-                    },
-                    '&.Mui-active': {
-                      color: (t) => alpha(t.palette.text.primary, 0.9),
-                      '& .MuiTableSortLabel-icon': {
-                        color: (t) =>
-                          `${alpha(t.palette.text.primary, 0.9)} !important`,
-                      },
-                    },
-                  }}
-                >
-                  Rank
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sx={headerCellStyle}>
-                <TableSortLabel
-                  active={sortField === 'repository'}
-                  direction={sortField === 'repository' ? sortOrder : 'asc'}
-                  onClick={() => handleSort('repository')}
-                  sx={{
-                    color: 'inherit',
-                    '&:hover': {
-                      color: (t) => alpha(t.palette.text.primary, 0.9),
-                    },
-                    '&.Mui-active': {
-                      color: (t) => alpha(t.palette.text.primary, 0.9),
-                      '& .MuiTableSortLabel-icon': {
-                        color: (t) =>
-                          `${alpha(t.palette.text.primary, 0.9)} !important`,
-                      },
-                    },
-                  }}
-                >
-                  Repository
-                </TableSortLabel>
-              </TableCell>
-              <TableCell align="right" sx={headerCellStyle}>
-                <TableSortLabel
-                  active={sortField === 'prs'}
-                  direction={sortField === 'prs' ? sortOrder : 'desc'}
-                  onClick={() => handleSort('prs')}
-                  sx={{
-                    color: 'inherit',
-                    '&:hover': {
-                      color: (t) => alpha(t.palette.text.primary, 0.9),
-                    },
-                    '&.Mui-active': {
-                      color: (t) => alpha(t.palette.text.primary, 0.9),
-                      '& .MuiTableSortLabel-icon': {
-                        color: (t) =>
-                          `${alpha(t.palette.text.primary, 0.9)} !important`,
-                      },
-                    },
-                  }}
-                >
-                  PRs
-                </TableSortLabel>
-              </TableCell>
-              <TableCell align="right" sx={headerCellStyle}>
-                <TableSortLabel
-                  active={sortField === 'score'}
-                  direction={sortField === 'score' ? sortOrder : 'desc'}
-                  onClick={() => handleSort('score')}
-                  sx={{
-                    color: 'inherit',
-                    '&:hover': {
-                      color: (t) => alpha(t.palette.text.primary, 0.9),
-                    },
-                    '&.Mui-active': {
-                      color: (t) => alpha(t.palette.text.primary, 0.9),
-                      '& .MuiTableSortLabel-icon': {
-                        color: (t) =>
-                          `${alpha(t.palette.text.primary, 0.9)} !important`,
-                      },
-                    },
-                  }}
-                >
-                  Score
-                </TableSortLabel>
-              </TableCell>
-              <TableCell align="right" sx={headerCellStyle}>
-                <TableSortLabel
-                  active={sortField === 'tokenScore'}
-                  direction={sortField === 'tokenScore' ? sortOrder : 'desc'}
-                  onClick={() => handleSort('tokenScore')}
-                  sx={{
-                    color: 'inherit',
-                    '&:hover': {
-                      color: (t) => alpha(t.palette.text.primary, 0.9),
-                    },
-                    '&.Mui-active': {
-                      color: (t) => alpha(t.palette.text.primary, 0.9),
-                      '& .MuiTableSortLabel-icon': {
-                        color: (t) =>
-                          `${alpha(t.palette.text.primary, 0.9)} !important`,
-                      },
-                    },
-                  }}
-                >
-                  Token Score
-                </TableSortLabel>
-              </TableCell>
-              <TableCell align="right" sx={headerCellStyle}>
-                Avg/PR
-              </TableCell>
-              <TableCell align="right" sx={headerCellStyle}>
-                <TableSortLabel
-                  active={sortField === 'weight'}
-                  direction={sortField === 'weight' ? sortOrder : 'desc'}
-                  onClick={() => handleSort('weight')}
-                  sx={{
-                    color: 'inherit',
-                    '&:hover': {
-                      color: (t) => alpha(t.palette.text.primary, 0.9),
-                    },
-                    '&.Mui-active': {
-                      color: (t) => alpha(t.palette.text.primary, 0.9),
-                      '& .MuiTableSortLabel-icon': {
-                        color: (t) =>
-                          `${alpha(t.palette.text.primary, 0.9)} !important`,
-                      },
-                    },
-                  }}
-                >
-                  Weight
-                </TableSortLabel>
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {pagedRepoStats.map((repo, index) => {
-              const rank = page * PAGE_SIZE + index;
-              return (
-              <TableRow
-                key={repo.repository}
-                sx={{
-                  '&:hover': {
-                    backgroundColor: 'surface.light',
-                  },
-                  transition: 'background-color 0.2s',
-                }}
-              >
-                <TableCell sx={bodyCellStyle}>
-                  <Box
-                    sx={{
-                      backgroundColor: 'background.default',
-                      borderRadius: '2px',
-                      width: '28px',
-                      height: '28px',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      border: '1px solid',
-                      borderColor: (t) =>
-                        rank === 0
-                          ? alpha(TIER_COLORS.gold, 0.4)
-                          : rank === 1
-                            ? alpha(TIER_COLORS.silver, 0.4)
-                            : rank === 2
-                              ? alpha(TIER_COLORS.bronze, 0.4)
-                              : alpha(t.palette.text.primary, 0.15),
-                      boxShadow:
-                        rank === 0
-                          ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
-                          : rank === 1
-                            ? `0 0 12px ${alpha(TIER_COLORS.silver, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.silver, 0.2)}`
-                            : rank === 2
-                              ? `0 0 12px ${alpha(TIER_COLORS.bronze, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.bronze, 0.2)}`
-                              : 'none',
-                    }}
-                  >
-                    <Typography
-                      component="span"
+        <>
+          <TableContainer
+            sx={{
+              overflowY: 'auto',
+              overflowX: 'auto',
+              '&::-webkit-scrollbar': {
+                width: { xs: '6px', sm: '8px' },
+                height: { xs: '6px', sm: '8px' },
+              },
+              '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: 'border.light',
+                borderRadius: '4px',
+                '&:hover': { backgroundColor: 'border.medium' },
+              },
+            }}
+          >
+            <Table
+              stickyHeader
+              sx={{ tableLayout: 'fixed', minWidth: '700px' }}
+            >
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={headerCellStyle}>
+                    <TableSortLabel
+                      active={sortField === 'rank'}
+                      direction={sortField === 'rank' ? sortOrder : 'desc'}
+                      onClick={() => handleSort('rank')}
                       sx={{
-                        color: (t) =>
-                          rank === 0
-                            ? TIER_COLORS.gold
-                            : rank === 1
-                              ? TIER_COLORS.silver
-                              : rank === 2
-                                ? TIER_COLORS.bronze
-                                : alpha(t.palette.text.primary, 0.6),
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        lineHeight: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      {page * PAGE_SIZE + index + 1}
-                    </Typography>
-                  </Box>
-                </TableCell>
-                <TableCell sx={bodyCellStyle}>
-                  <Box
-                    onClick={() =>
-                      navigate(
-                        `/miners/repository?name=${encodeURIComponent(repo.repository)}`,
-                        {
-                          state: {
-                            backLabel: `Back to ${prs?.[0]?.author || githubId}`,
+                        color: 'inherit',
+                        '&:hover': {
+                          color: (t) => alpha(t.palette.text.primary, 0.9),
+                        },
+                        '&.Mui-active': {
+                          color: (t) => alpha(t.palette.text.primary, 0.9),
+                          '& .MuiTableSortLabel-icon': {
+                            color: (t) =>
+                              `${alpha(t.palette.text.primary, 0.9)} !important`,
                           },
                         },
-                      )
-                    }
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1.5,
-                      cursor: 'pointer',
-                      '&:hover': {
-                        color: 'primary.main',
-                        '& .MuiTypography-root': {
-                          textDecoration: 'underline',
-                        },
-                      },
-                      transition: 'color 0.2s',
-                    }}
-                  >
-                    <Avatar
-                      src={`https://avatars.githubusercontent.com/${repo.repository.split('/')[0]}`}
-                      alt={repo.repository.split('/')[0]}
-                      sx={{
-                        width: 24,
-                        height: 24,
-                        border: '1px solid',
-                        borderColor: 'border.medium',
-                        backgroundColor:
-                          repo.repository.split('/')[0] === 'opentensor'
-                            ? 'text.primary'
-                            : repo.repository.split('/')[0] === 'bitcoin'
-                              ? 'status.warning'
-                              : 'transparent',
-                      }}
-                    />
-                    {repo.tier && (
-                      <Box
-                        sx={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: '50%',
-                          backgroundColor: tierColorFor(repo.tier, TIER_COLORS),
-                          flexShrink: 0,
-                        }}
-                        title={`${repo.tier} tier`}
-                      />
-                    )}
-                    <Typography
-                      component="span"
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: '0.85rem',
-                        transition: 'color 0.2s',
                       }}
                     >
-                      {repo.repository}
-                    </Typography>
-                  </Box>
-                </TableCell>
-                <TableCell align="right" sx={bodyCellStyle}>
-                  {repo.prs}
-                </TableCell>
-                <TableCell align="right" sx={bodyCellStyle}>
-                  {repo.score.toFixed(4)}
-                </TableCell>
-                <TableCell align="right" sx={bodyCellStyle}>
-                  {repo.tokenScore.toFixed(2)}
-                </TableCell>
-                <TableCell
-                  align="right"
-                  sx={{
-                    ...bodyCellStyle,
-                    color: (t) => alpha(t.palette.text.primary, 0.5),
-                  }}
-                >
-                  {repo.prs > 0 ? (repo.score / repo.prs).toFixed(4) : '—'}
-                </TableCell>
-                <TableCell align="right" sx={bodyCellStyle}>
-                  {repo.weight.toFixed(4)}
-                </TableCell>
-              </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                      Rank
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell sx={headerCellStyle}>
+                    <TableSortLabel
+                      active={sortField === 'repository'}
+                      direction={sortField === 'repository' ? sortOrder : 'asc'}
+                      onClick={() => handleSort('repository')}
+                      sx={{
+                        color: 'inherit',
+                        '&:hover': {
+                          color: (t) => alpha(t.palette.text.primary, 0.9),
+                        },
+                        '&.Mui-active': {
+                          color: (t) => alpha(t.palette.text.primary, 0.9),
+                          '& .MuiTableSortLabel-icon': {
+                            color: (t) =>
+                              `${alpha(t.palette.text.primary, 0.9)} !important`,
+                          },
+                        },
+                      }}
+                    >
+                      Repository
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell align="right" sx={headerCellStyle}>
+                    <TableSortLabel
+                      active={sortField === 'prs'}
+                      direction={sortField === 'prs' ? sortOrder : 'desc'}
+                      onClick={() => handleSort('prs')}
+                      sx={{
+                        color: 'inherit',
+                        '&:hover': {
+                          color: (t) => alpha(t.palette.text.primary, 0.9),
+                        },
+                        '&.Mui-active': {
+                          color: (t) => alpha(t.palette.text.primary, 0.9),
+                          '& .MuiTableSortLabel-icon': {
+                            color: (t) =>
+                              `${alpha(t.palette.text.primary, 0.9)} !important`,
+                          },
+                        },
+                      }}
+                    >
+                      PRs
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell align="right" sx={headerCellStyle}>
+                    <TableSortLabel
+                      active={sortField === 'score'}
+                      direction={sortField === 'score' ? sortOrder : 'desc'}
+                      onClick={() => handleSort('score')}
+                      sx={{
+                        color: 'inherit',
+                        '&:hover': {
+                          color: (t) => alpha(t.palette.text.primary, 0.9),
+                        },
+                        '&.Mui-active': {
+                          color: (t) => alpha(t.palette.text.primary, 0.9),
+                          '& .MuiTableSortLabel-icon': {
+                            color: (t) =>
+                              `${alpha(t.palette.text.primary, 0.9)} !important`,
+                          },
+                        },
+                      }}
+                    >
+                      Score
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell align="right" sx={headerCellStyle}>
+                    <TableSortLabel
+                      active={sortField === 'tokenScore'}
+                      direction={
+                        sortField === 'tokenScore' ? sortOrder : 'desc'
+                      }
+                      onClick={() => handleSort('tokenScore')}
+                      sx={{
+                        color: 'inherit',
+                        '&:hover': {
+                          color: (t) => alpha(t.palette.text.primary, 0.9),
+                        },
+                        '&.Mui-active': {
+                          color: (t) => alpha(t.palette.text.primary, 0.9),
+                          '& .MuiTableSortLabel-icon': {
+                            color: (t) =>
+                              `${alpha(t.palette.text.primary, 0.9)} !important`,
+                          },
+                        },
+                      }}
+                    >
+                      Token Score
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell align="right" sx={headerCellStyle}>
+                    Avg/PR
+                  </TableCell>
+                  <TableCell align="right" sx={headerCellStyle}>
+                    <TableSortLabel
+                      active={sortField === 'weight'}
+                      direction={sortField === 'weight' ? sortOrder : 'desc'}
+                      onClick={() => handleSort('weight')}
+                      sx={{
+                        color: 'inherit',
+                        '&:hover': {
+                          color: (t) => alpha(t.palette.text.primary, 0.9),
+                        },
+                        '&.Mui-active': {
+                          color: (t) => alpha(t.palette.text.primary, 0.9),
+                          '& .MuiTableSortLabel-icon': {
+                            color: (t) =>
+                              `${alpha(t.palette.text.primary, 0.9)} !important`,
+                          },
+                        },
+                      }}
+                    >
+                      Weight
+                    </TableSortLabel>
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {pagedRepoStats.map((repo, index) => {
+                  const rank = page * PAGE_SIZE + index;
+                  return (
+                    <TableRow
+                      key={repo.repository}
+                      sx={{
+                        '&:hover': {
+                          backgroundColor: 'surface.light',
+                        },
+                        transition: 'background-color 0.2s',
+                      }}
+                    >
+                      <TableCell sx={bodyCellStyle}>
+                        <Box
+                          sx={{
+                            backgroundColor: 'background.default',
+                            borderRadius: '2px',
+                            width: '28px',
+                            height: '28px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            border: '1px solid',
+                            borderColor: (t) =>
+                              rank === 0
+                                ? alpha(TIER_COLORS.gold, 0.4)
+                                : rank === 1
+                                  ? alpha(TIER_COLORS.silver, 0.4)
+                                  : rank === 2
+                                    ? alpha(TIER_COLORS.bronze, 0.4)
+                                    : alpha(t.palette.text.primary, 0.15),
+                            boxShadow:
+                              rank === 0
+                                ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
+                                : rank === 1
+                                  ? `0 0 12px ${alpha(TIER_COLORS.silver, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.silver, 0.2)}`
+                                  : rank === 2
+                                    ? `0 0 12px ${alpha(TIER_COLORS.bronze, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.bronze, 0.2)}`
+                                    : 'none',
+                          }}
+                        >
+                          <Typography
+                            component="span"
+                            sx={{
+                              color: (t) =>
+                                rank === 0
+                                  ? TIER_COLORS.gold
+                                  : rank === 1
+                                    ? TIER_COLORS.silver
+                                    : rank === 2
+                                      ? TIER_COLORS.bronze
+                                      : alpha(t.palette.text.primary, 0.6),
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: '0.7rem',
+                              fontWeight: 600,
+                              lineHeight: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            {page * PAGE_SIZE + index + 1}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell sx={bodyCellStyle}>
+                        <Box
+                          onClick={() =>
+                            navigate(
+                              `/miners/repository?name=${encodeURIComponent(repo.repository)}`,
+                              {
+                                state: {
+                                  backLabel: `Back to ${prs?.[0]?.author || githubId}`,
+                                },
+                              },
+                            )
+                          }
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.5,
+                            cursor: 'pointer',
+                            '&:hover': {
+                              color: 'primary.main',
+                              '& .MuiTypography-root': {
+                                textDecoration: 'underline',
+                              },
+                            },
+                            transition: 'color 0.2s',
+                          }}
+                        >
+                          <Avatar
+                            src={`https://avatars.githubusercontent.com/${repo.repository.split('/')[0]}`}
+                            alt={repo.repository.split('/')[0]}
+                            sx={{
+                              width: 24,
+                              height: 24,
+                              border: '1px solid',
+                              borderColor: 'border.medium',
+                              backgroundColor:
+                                repo.repository.split('/')[0] === 'opentensor'
+                                  ? 'text.primary'
+                                  : repo.repository.split('/')[0] === 'bitcoin'
+                                    ? 'status.warning'
+                                    : 'transparent',
+                            }}
+                          />
+                          {repo.tier && (
+                            <Box
+                              sx={{
+                                width: 6,
+                                height: 6,
+                                borderRadius: '50%',
+                                backgroundColor: tierColorFor(
+                                  repo.tier,
+                                  TIER_COLORS,
+                                ),
+                                flexShrink: 0,
+                              }}
+                              title={`${repo.tier} tier`}
+                            />
+                          )}
+                          <Typography
+                            component="span"
+                            sx={{
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: '0.85rem',
+                              transition: 'color 0.2s',
+                            }}
+                          >
+                            {repo.repository}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell align="right" sx={bodyCellStyle}>
+                        {repo.prs}
+                      </TableCell>
+                      <TableCell align="right" sx={bodyCellStyle}>
+                        {repo.score.toFixed(4)}
+                      </TableCell>
+                      <TableCell align="right" sx={bodyCellStyle}>
+                        {repo.tokenScore.toFixed(2)}
+                      </TableCell>
+                      <TableCell
+                        align="right"
+                        sx={{
+                          ...bodyCellStyle,
+                          color: (t) => alpha(t.palette.text.primary, 0.5),
+                        }}
+                      >
+                        {repo.prs > 0
+                          ? (repo.score / repo.prs).toFixed(4)
+                          : '—'}
+                      </TableCell>
+                      <TableCell align="right" sx={bodyCellStyle}>
+                        {repo.weight.toFixed(4)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 2,
-            py: 1.5,
-            borderTop: '1px solid',
-            borderColor: 'border.subtle',
-          }}
-        >
-          <Box
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            sx={{
-              cursor: page > 0 ? 'pointer' : 'default',
-              opacity: page > 0 ? 1 : 0.3,
-              display: 'flex',
-              alignItems: 'center',
-              color: (t) => alpha(t.palette.text.primary, 0.6),
-              '&:hover': page > 0 ? { color: 'text.primary' } : {},
-            }}
-          >
-            <PrevIcon sx={{ fontSize: '1.2rem' }} />
-          </Box>
-          <Typography
-            sx={{
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: '0.75rem',
-              color: (t) => alpha(t.palette.text.primary, 0.5),
-            }}
-          >
-            {page + 1} / {totalPages}
-          </Typography>
-          <Box
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-            sx={{
-              cursor: page < totalPages - 1 ? 'pointer' : 'default',
-              opacity: page < totalPages - 1 ? 1 : 0.3,
-              display: 'flex',
-              alignItems: 'center',
-              color: (t) => alpha(t.palette.text.primary, 0.6),
-              '&:hover':
-                page < totalPages - 1 ? { color: 'text.primary' } : {},
-            }}
-          >
-            <NextIcon sx={{ fontSize: '1.2rem' }} />
-          </Box>
-        </Box>
-      )}
-      </>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 2,
+                py: 1.5,
+                borderTop: '1px solid',
+                borderColor: 'border.subtle',
+              }}
+            >
+              <Box
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                sx={{
+                  cursor: page > 0 ? 'pointer' : 'default',
+                  opacity: page > 0 ? 1 : 0.3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: (t) => alpha(t.palette.text.primary, 0.6),
+                  '&:hover': page > 0 ? { color: 'text.primary' } : {},
+                }}
+              >
+                <PrevIcon sx={{ fontSize: '1.2rem' }} />
+              </Box>
+              <Typography
+                sx={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.75rem',
+                  color: (t) => alpha(t.palette.text.primary, 0.5),
+                }}
+              >
+                {page + 1} / {totalPages}
+              </Typography>
+              <Box
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                sx={{
+                  cursor: page < totalPages - 1 ? 'pointer' : 'default',
+                  opacity: page < totalPages - 1 ? 1 : 0.3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: (t) => alpha(t.palette.text.primary, 0.6),
+                  '&:hover':
+                    page < totalPages - 1 ? { color: 'text.primary' } : {},
+                }}
+              >
+                <NextIcon sx={{ fontSize: '1.2rem' }} />
+              </Box>
+            </Box>
+          )}
+        </>
       )}
     </Card>
   );
