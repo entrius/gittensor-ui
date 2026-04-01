@@ -1054,39 +1054,41 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                   </TableRow>
                 );
               })}
-            {!filteredRepositories.length && trimmedSearch && isDirectRepoInput && (
-              <TableRow hover>
-                <TableCell colSpan={6} sx={{ ...bodyCellStyle, py: 2 }}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 2,
-                    }}
-                  >
-                    <Typography sx={{ color: 'rgba(255,255,255,0.75)' }}>
-                      Repository not in tracked list. Open details for{' '}
-                      <Typography
-                        component="span"
-                        sx={{ fontFamily: '"JetBrains Mono", monospace' }}
-                      >
-                        {trimmedSearch}
-                      </Typography>
-                      ?
-                    </Typography>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => onSelectRepository(trimmedSearch)}
-                      sx={{ textTransform: 'none' }}
+            {!filteredRepositories.length &&
+              trimmedSearch &&
+              isDirectRepoInput && (
+                <TableRow hover>
+                  <TableCell colSpan={6} sx={{ ...bodyCellStyle, py: 2 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 2,
+                      }}
                     >
-                      Open repository
-                    </Button>
-                  </Box>
-                </TableCell>
-              </TableRow>
-            )}
+                      <Typography sx={{ color: 'rgba(255,255,255,0.75)' }}>
+                        Repository not in tracked list. Open details for{' '}
+                        <Typography
+                          component="span"
+                          sx={{ fontFamily: '"JetBrains Mono", monospace' }}
+                        >
+                          {trimmedSearch}
+                        </Typography>
+                        ?
+                      </Typography>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => onSelectRepository(trimmedSearch)}
+                        sx={{ textTransform: 'none' }}
+                      >
+                        Open repository
+                      </Button>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              )}
           </TableBody>
         </Table>
       </TableContainer>
