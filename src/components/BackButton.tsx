@@ -13,20 +13,27 @@ interface BackButtonProps {
 }
 
 const BackButton: React.FC<BackButtonProps> = ({
-  label = 'Back to Leaderboard',
+  label = 'Back',
   to,
   mb = 2,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const stateLabel = (location.state as { backLabel?: string })?.backLabel;
+  const state = (location.state as { backTo?: string }) || {};
+  const canGoBack = typeof window !== 'undefined' && window.history.length > 1;
 
   const handleClick = () => {
-    if (window.history.length > 1) {
+    if (canGoBack) {
       navigate(-1);
-    } else {
-      navigate(to);
+      return;
     }
+
+    if (state.backTo) {
+      navigate(state.backTo);
+      return;
+    }
+
+    navigate(to);
   };
 
   return (
@@ -36,7 +43,7 @@ const BackButton: React.FC<BackButtonProps> = ({
       onClick={handleClick}
       sx={{ mb, alignSelf: 'flex-start' }}
     >
-      {stateLabel || label}
+      {label}
     </Button>
   );
 };
