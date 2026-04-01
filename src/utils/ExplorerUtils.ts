@@ -184,7 +184,13 @@ export const filterMinerRepoStats = (
   );
 };
 
-export type RepoSortField = 'rank' | 'repository' | 'prs' | 'score' | 'tokenScore' | 'weight';
+export type RepoSortField =
+  | 'rank'
+  | 'repository'
+  | 'prs'
+  | 'score'
+  | 'tokenScore'
+  | 'weight';
 export type SortOrder = 'asc' | 'desc';
 
 export const sortMinerRepoStats = (

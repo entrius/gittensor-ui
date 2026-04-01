@@ -129,10 +129,38 @@ describe('getTierFilterValue', () => {
 
 describe('filterMinerRepoStats', () => {
   const mockStats: RepoStats[] = [
-    { repository: 'repo1', prs: 5, score: 100, tokenScore: 80, weight: 0.5, tier: 'gold' },
-    { repository: 'repo2', prs: 3, score: 50, tokenScore: 40, weight: 0.3, tier: 'silver' },
-    { repository: 'repo3', prs: 2, score: 25, tokenScore: 20, weight: 0.2, tier: 'bronze' },
-    { repository: 'repo4', prs: 4, score: 75, tokenScore: 60, weight: 0.4, tier: 'Gold' },
+    {
+      repository: 'repo1',
+      prs: 5,
+      score: 100,
+      tokenScore: 80,
+      weight: 0.5,
+      tier: 'gold',
+    },
+    {
+      repository: 'repo2',
+      prs: 3,
+      score: 50,
+      tokenScore: 40,
+      weight: 0.3,
+      tier: 'silver',
+    },
+    {
+      repository: 'repo3',
+      prs: 2,
+      score: 25,
+      tokenScore: 20,
+      weight: 0.2,
+      tier: 'bronze',
+    },
+    {
+      repository: 'repo4',
+      prs: 4,
+      score: 75,
+      tokenScore: 60,
+      weight: 0.4,
+      tier: 'Gold',
+    },
   ];
 
   it('returns all stats when filter is all', () => {
@@ -160,9 +188,30 @@ describe('filterMinerRepoStats', () => {
 
 describe('sortMinerRepoStats', () => {
   const mockStats: RepoStats[] = [
-    { repository: 'beta', prs: 5, score: 100, tokenScore: 80, weight: 0.5, tier: 'gold' },
-    { repository: 'alpha', prs: 3, score: 50, tokenScore: 40, weight: 0.3, tier: 'silver' },
-    { repository: 'gamma', prs: 2, score: 75, tokenScore: 60, weight: 0.2, tier: 'bronze' },
+    {
+      repository: 'beta',
+      prs: 5,
+      score: 100,
+      tokenScore: 80,
+      weight: 0.5,
+      tier: 'gold',
+    },
+    {
+      repository: 'alpha',
+      prs: 3,
+      score: 50,
+      tokenScore: 40,
+      weight: 0.3,
+      tier: 'silver',
+    },
+    {
+      repository: 'gamma',
+      prs: 2,
+      score: 75,
+      tokenScore: 60,
+      weight: 0.2,
+      tier: 'bronze',
+    },
   ];
 
   it('sorts by repository name ascending', () => {
