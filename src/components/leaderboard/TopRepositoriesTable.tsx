@@ -126,6 +126,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   );
   const [useLogScale, setUseLogScale] = useState(true);
   const isInitialMount = useRef(true);
+  const trimmedSearch = searchQuery.trim();
+  const isDirectRepoInput = /^[^/\s]+\/[^/\s]+$/.test(trimmedSearch);
 
   // Sync filter state to URL params (replace, don't push)
   const syncToUrl = useCallback(
@@ -774,10 +776,15 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             </FormControl>
 
             <TextField
-              placeholder="Search..."
+              placeholder="Search or enter owner/repo..."
               size="small"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && isDirectRepoInput) {
+                  onSelectRepository(trimmedSearch);
+                }
+              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -1047,6 +1054,41 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                   </TableRow>
                 );
               })}
+            {!filteredRepositories.length &&
+              trimmedSearch &&
+              isDirectRepoInput && (
+                <TableRow hover>
+                  <TableCell colSpan={6} sx={{ ...bodyCellStyle, py: 2 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 2,
+                      }}
+                    >
+                      <Typography sx={{ color: 'rgba(255,255,255,0.75)' }}>
+                        Repository not in tracked list. Open details for{' '}
+                        <Typography
+                          component="span"
+                          sx={{ fontFamily: '"JetBrains Mono", monospace' }}
+                        >
+                          {trimmedSearch}
+                        </Typography>
+                        ?
+                      </Typography>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => onSelectRepository(trimmedSearch)}
+                        sx={{ textTransform: 'none' }}
+                      >
+                        Open repository
+                      </Button>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              )}
           </TableBody>
         </Table>
       </TableContainer>
