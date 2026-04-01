@@ -32,6 +32,10 @@ const useMinersQuery = <TResponse = void, TSelect = TResponse>(
 export const useAllMiners = () =>
   useMinersQuery<MinerEvaluation[]>('useAllMiners', '');
 
+// Shared cache key for the miners dataset.
+export const getAllMinersQueryKey = () =>
+  ['useAllMiners', '/miners', undefined] as const;
+
 /**
  * Get pre-computed stats for a specific miner
  * @param githubId - Numeric GitHub ID (e.g., "583231"), NOT username
