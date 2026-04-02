@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import { Box, Typography, Skeleton, Divider } from '@mui/material';
+import { Box, Typography, Skeleton, Divider, Chip } from '@mui/material';
 import {
   useReposAndWeights,
   useAllPrs,
   useRepositoryIssues,
   useRepoBountySummary,
+  useRepositoryConfig,
 } from '../../api';
 import { TIER_COLORS, STATUS_COLORS } from '../../theme';
 
@@ -20,6 +21,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
   const { data: issues, isLoading: isLoadingIssues } =
     useRepositoryIssues(repositoryFullName);
   const { data: bountySummary } = useRepoBountySummary(repositoryFullName);
+  const { data: repoConfig } = useRepositoryConfig(repositoryFullName);
 
   const repository = useMemo(
     () =>
@@ -339,6 +341,43 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
             )}
           </>
         )}
+
+        {/* Additional Acceptable Branches */}
+        {repoConfig?.additionalAcceptableBranches &&
+          repoConfig.additionalAcceptableBranches.length > 0 && (
+            <>
+              <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', my: 0.5 }} />
+              <Typography
+                variant="body2"
+                sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
+              >
+                Scorable Branches
+              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 0.75,
+                }}
+              >
+                {repoConfig.additionalAcceptableBranches.map((branch) => (
+                  <Chip
+                    key={branch}
+                    label={branch}
+                    size="small"
+                    sx={{
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: '12px',
+                      height: '24px',
+                      bgcolor: 'rgba(255,255,255,0.06)',
+                      color: '#fff',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                    }}
+                  />
+                ))}
+              </Box>
+            </>
+          )}
       </Box>
     </Box>
   );
