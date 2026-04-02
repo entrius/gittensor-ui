@@ -1,7 +1,7 @@
 // Repository API hooks - uses /repos endpoints
 import { useApiQuery } from './ApiUtils';
 import { type RepositoryMaintainer, type RepositoryIssue } from './models';
-import { type CommitLog } from './models/Dashboard';
+import { type CommitLog, type Repository } from './models/Dashboard';
 
 /**
  * Helper to create /repos endpoint queries
@@ -17,6 +17,16 @@ const useReposQuery = <TResponse = void, TSelect = TResponse>(
     `/repos${url}`,
     refetchInterval,
     queryParams,
+  );
+
+/**
+ * Get config for a specific repository (weight, tier, additional branches, etc.)
+ * @param repo - Full repository name (e.g., "opentensor/btcli")
+ */
+export const useRepositoryConfig = (repo: string) =>
+  useReposQuery<Repository>(
+    'useRepositoryConfig',
+    `/${encodeURIComponent(repo)}`,
   );
 
 /**
