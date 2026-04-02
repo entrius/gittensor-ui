@@ -346,9 +346,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
         {repoConfig?.additionalAcceptableBranches &&
           repoConfig.additionalAcceptableBranches.length > 0 && (
             <>
-              <Divider
-                sx={{ borderColor: 'rgba(255,255,255,0.1)', my: 0.5 }}
-              />
+              <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', my: 0.5 }} />
               <Typography
                 variant="body2"
                 sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
