@@ -51,7 +51,7 @@ export const MinerSection: React.FC<MinerSectionProps> = ({
       <Box sx={{ p: 1.5, pt: 1, flex: 1 }}>
         <Grid container spacing={2}>
           {visibleMiners.map((miner) => (
-            <Grid item xs={12} sm={12} md={6} lg={4} xl={4} key={miner.hotkey}>
+            <Grid item xs={12} sm={12} md={6} lg={4} xl={4} key={miner.githubId || miner.hotkey}>
               <MinerCard
                 miner={miner}
                 onClick={() =>
