@@ -5,7 +5,6 @@ export type RepoChanges = {
   deletions: number;
   linesChanged: number;
   weight: string; // bc float
-  tier: string; // Bronze, Silver, Gold
   inactiveAt: string | null;
 };
 
@@ -14,7 +13,6 @@ export type Repository = {
   owner: string;
   name: string;
   weight: string; // bc float
-  tier: string; // Bronze, Silver, Gold
   additionalAcceptableBranches?: string[] | null;
   inactiveAt?: string | null;
 };
@@ -34,13 +32,6 @@ export type CommitsTrend = {
  * Dashboard statistics
  *
  * API endpoint: GET /dash/stats
- * Optional query parameter: tier (Bronze, Silver, or Gold) - filters all stats to specific repository tier
- *
- * Examples:
- * - GET /dash/stats - returns overall stats
- * - GET /dash/stats?tier=Bronze - returns stats filtered to Bronze tier repositories only
- * - GET /dash/stats?tier=Silver - returns stats filtered to Silver tier repositories only
- * - GET /dash/stats?tier=Gold - returns stats filtered to Gold tier repositories only
  */
 export type Stats = {
   uniqueRepositories: string | number;
@@ -48,7 +39,6 @@ export type Stats = {
   recentLinesChanged: string | number;
   totalIssues: number;
   totalCommits: string | number;
-  tier?: string; // Returned when tier filter is applied
   prices?: {
     tao: {
       data: {
@@ -93,7 +83,6 @@ export type CommitLog = {
   githubId?: string; // Numeric GitHub ID - only present in /miners endpoints, not /dash/commits
   score: string; // Backend returns as string
   baseScore?: string; // Backend returns as string
-  tier: string | null; // Bronze, Silver, Gold - from joined repositories table (null if repo not registered)
 
   // Score multiplier fields (from /miners/{id}/prs endpoint)
   repoWeightMultiplier?: string;
@@ -101,23 +90,21 @@ export type CommitLog = {
   openPrSpamMultiplier?: string;
   pioneerDividend?: number;
   pioneerRank?: number;
-  repositoryUniquenessMultiplier?: string;
   timeDecayMultiplier?: string;
   credibilityMultiplier?: string;
 
   // Token scoring fields
   totalNodesScored?: number;
-  rawCredibility?: number;
-  credibilityScalar?: number;
   tokenScore?: number;
   structuralCount?: number;
   structuralScore?: number;
   leafCount?: number;
   leafScore?: number;
 
-  // TODO: these values do not come in the /dash/commits endpoint, refactor to perhaps make a new model to include these attributes
-  // Payout predictions (from /miners/all/prs endpoint)
-  // Note: dollar values are null for open PRs, only calculated for merged PRs
+  // Review quality
+  reviewQualityMultiplier?: string;
+
+  // Payout predictions
   potentialScore?: number;
   predictedAlphaPerDay?: number | null;
   predictedTaoPerDay?: number | null;
@@ -137,63 +124,18 @@ export type MinerEvaluation = {
   totalOpenPrs: number;
   totalPrs: number;
   uniqueReposCount: number;
-  qualifiedUniqueReposCount?: number;
-  // Tier system properties
-  currentTier?: string;
   totalCollateralScore?: number;
   totalClosedPrs?: number;
   totalMergedPrs?: number;
+  // Eligibility gate
+  isEligible?: boolean;
+  credibility?: number;
   // Total token scoring fields
   totalTokenScore?: number;
   totalStructuralCount?: number;
   totalStructuralScore?: number;
   totalLeafCount?: number;
   totalLeafScore?: number;
-  // Bronze tier
-  bronzeMergedPrs?: number;
-  bronzeClosedPrs?: number;
-  bronzeTotalPrs?: number;
-  bronzeCollateralScore?: number;
-  bronzeScore?: number;
-  bronzeTokenScore?: number;
-  bronzeStructuralCount?: number;
-  bronzeStructuralScore?: number;
-  bronzeLeafCount?: number;
-  bronzeLeafScore?: number;
-  // Silver tier
-  silverMergedPrs?: number;
-  silverClosedPrs?: number;
-  silverTotalPrs?: number;
-  silverCollateralScore?: number;
-  silverScore?: number;
-  silverTokenScore?: number;
-  silverStructuralCount?: number;
-  silverStructuralScore?: number;
-  silverLeafCount?: number;
-  silverLeafScore?: number;
-  // Gold tier
-  goldMergedPrs?: number;
-  goldClosedPrs?: number;
-  goldTotalPrs?: number;
-  goldCollateralScore?: number;
-  goldScore?: number;
-  goldTokenScore?: number;
-  goldStructuralCount?: number;
-  goldStructuralScore?: number;
-  goldLeafCount?: number;
-  goldLeafScore?: number;
-  // Credibility metrics (PR success rates as decimals 0-1)
-  credibility?: number;
-  bronzeCredibility?: number;
-  silverCredibility?: number;
-  goldCredibility?: number;
-  // Unique repo contribution counts per tier
-  bronzeUniqueRepos?: number;
-  bronzeQualifiedUniqueRepos?: number;
-  silverUniqueRepos?: number;
-  silverQualifiedUniqueRepos?: number;
-  goldUniqueRepos?: number;
-  goldQualifiedUniqueRepos?: number;
   // Timestamps
   evaluatedAt: string;
   createdAt: string;
@@ -256,7 +198,6 @@ export type PullRequestDetails = {
   openPrSpamMultiplier: string; // float returned as string
   pioneerDividend: number;
   pioneerRank: number;
-  repositoryUniquenessMultiplier: string; // float returned as string
   timeDecayMultiplier: string; // float returned as string
   credibilityMultiplier: string; // float returned as string
   reviewQualityMultiplier?: string; // float returned as string
@@ -267,8 +208,6 @@ export type PullRequestDetails = {
   commits: number;
   // Token scoring fields
   totalNodesScored: number;
-  rawCredibility: number;
-  credibilityScalar: number;
   tokenScore: string;
   structuralCount: number;
   structuralScore: number;
@@ -279,9 +218,7 @@ export type PullRequestDetails = {
   lastEditedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  tier: string; // Bronze, Silver, Gold
   // Predicted daily payouts based on potential score
-  // Note: dollar values are null for open PRs, only calculated for merged PRs
   potentialScore?: number;
   predictedAlphaPerDay?: number | null;
   predictedTaoPerDay?: number | null;
