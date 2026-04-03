@@ -14,7 +14,7 @@ export interface MinerStats {
   rank?: number;
   uniqueReposCount?: number;
   credibility?: number;
-  currentTier?: string;
+  isEligible?: boolean;
   usdPerDay?: number;
   totalMergedPrs?: number;
   totalOpenPrs?: number;
@@ -26,7 +26,6 @@ export type SortOption =
   | 'usdPerDay'
   | 'totalPRs'
   | 'credibility';
-export type TierFilter = 'all' | 'Gold' | 'Silver' | 'Bronze';
 
 export const FONTS = {
   mono: '"JetBrains Mono", monospace',

@@ -1,22 +1,3 @@
-export interface TierConfig {
-  name: string;
-  level: number;
-  requiredCredibility: number;
-  requiredMinTokenScore: number | null;
-  requiredMinTokenScorePerRepo: number;
-  requiredQualifiedUniqueRepos: number;
-  credibilityScalar: number;
-  mergedPrBaseScore: number;
-  contributionScoreForFullBonus: number;
-  contributionScoreMaxBonus: number;
-  openPrCollateralPercentage: number;
-}
-
-export interface TierConfigResponse {
-  tiers: TierConfig[];
-  tierOrder: string[];
-}
-
 export interface LanguageFileScoring {
   defaultProgrammingLanguageWeight: number;
   testFileContributionWeight: number;
