@@ -3,7 +3,6 @@ export * from './ConfigurationsApi';
 export * from './DashboardApi';
 export * from './IssuesApi';
 export * from './MinerApi';
-export * from './PredictionsApi';
 export * from './PrsApi';
 export * from './ReposApi';
 export * from './SearchApi';
