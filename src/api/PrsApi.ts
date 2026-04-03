@@ -26,6 +26,10 @@ const usePrsQuery = <TResponse = void, TSelect = TResponse>(
  */
 export const useAllPrs = () => usePrsQuery<CommitLog[]>('useAllPrs', '');
 
+// Shared cache key for the pull requests dataset.
+export const getAllPrsQueryKey = () =>
+  ['useAllPrs', '/prs', undefined] as const;
+
 /**
  * Get detailed information for a specific pull request
  * @param repo - Full repository name (e.g., "opentensor/btcli")

@@ -25,6 +25,14 @@ export const useIssues = (status?: string, repository?: string) => {
   );
 };
 
+// Shared cache key for the issues dataset.
+export const getIssuesQueryKey = (status?: string, repository?: string) =>
+  [
+    'useIssues',
+    '/issues',
+    status || repository ? { status, repository } : undefined,
+  ] as const;
+
 /**
  * Fetch all bounties for a specific repository.
  */

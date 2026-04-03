@@ -12,6 +12,17 @@ import {
   sortMinerRepoStats,
   countPrTiers,
   filterPrsByTier,
+  buildRepoWeightsMap,
+  buildRepoTiersMap,
+  buildTierThresholdsMap,
+  isRepoQualified,
+  aggregatePRsByRepository,
+  computeTierCounts,
+  computeQualificationCounts,
+  hasActiveFilters,
+  getDisplayCount,
+  filterByQualification,
+  filterBySearch,
   type RepoStats,
 } from '../utils/ExplorerUtils';
 
@@ -129,10 +140,38 @@ describe('getTierFilterValue', () => {
 
 describe('filterMinerRepoStats', () => {
   const mockStats: RepoStats[] = [
-    { repository: 'repo1', prs: 5, score: 100, weight: 0.5, tier: 'gold' },
-    { repository: 'repo2', prs: 3, score: 50, weight: 0.3, tier: 'silver' },
-    { repository: 'repo3', prs: 2, score: 25, weight: 0.2, tier: 'bronze' },
-    { repository: 'repo4', prs: 4, score: 75, weight: 0.4, tier: 'Gold' },
+    {
+      repository: 'repo1',
+      prs: 5,
+      score: 100,
+      tokenScore: 80,
+      weight: 0.5,
+      tier: 'gold',
+    },
+    {
+      repository: 'repo2',
+      prs: 3,
+      score: 50,
+      tokenScore: 40,
+      weight: 0.3,
+      tier: 'silver',
+    },
+    {
+      repository: 'repo3',
+      prs: 2,
+      score: 25,
+      tokenScore: 20,
+      weight: 0.2,
+      tier: 'bronze',
+    },
+    {
+      repository: 'repo4',
+      prs: 4,
+      score: 75,
+      tokenScore: 60,
+      weight: 0.4,
+      tier: 'Gold',
+    },
   ];
 
   it('returns all stats when filter is all', () => {
@@ -160,9 +199,30 @@ describe('filterMinerRepoStats', () => {
 
 describe('sortMinerRepoStats', () => {
   const mockStats: RepoStats[] = [
-    { repository: 'beta', prs: 5, score: 100, weight: 0.5, tier: 'gold' },
-    { repository: 'alpha', prs: 3, score: 50, weight: 0.3, tier: 'silver' },
-    { repository: 'gamma', prs: 2, score: 75, weight: 0.2, tier: 'bronze' },
+    {
+      repository: 'beta',
+      prs: 5,
+      score: 100,
+      tokenScore: 80,
+      weight: 0.5,
+      tier: 'gold',
+    },
+    {
+      repository: 'alpha',
+      prs: 3,
+      score: 50,
+      tokenScore: 40,
+      weight: 0.3,
+      tier: 'silver',
+    },
+    {
+      repository: 'gamma',
+      prs: 2,
+      score: 75,
+      tokenScore: 60,
+      weight: 0.2,
+      tier: 'bronze',
+    },
   ];
 
   it('sorts by repository name ascending', () => {
@@ -379,5 +439,379 @@ describe('normalizeCommitLogs', () => {
   it('filters out non-commit-log items from array', () => {
     const arr = [{ repository: 'r', pullRequestNumber: 1 }, { foo: 'bar' }];
     expect(normalizeCommitLogs(arr)).toHaveLength(1);
+  });
+});
+
+describe('buildRepoWeightsMap', () => {
+  it('returns empty map for undefined', () => {
+    expect(buildRepoWeightsMap(undefined).size).toBe(0);
+  });
+
+  it('returns empty map for empty array', () => {
+    expect(buildRepoWeightsMap([]).size).toBe(0);
+  });
+
+  it('builds map from valid repos', () => {
+    const repos = [
+      {
+        fullName: 'org/repo1',
+        owner: 'org',
+        name: 'repo1',
+        weight: '0.5',
+        tier: 'gold',
+      },
+      {
+        fullName: 'org/repo2',
+        owner: 'org',
+        name: 'repo2',
+        weight: '0.3',
+        tier: 'silver',
+      },
+    ];
+    const map = buildRepoWeightsMap(repos);
+    expect(map.get('org/repo1')).toBe(0.5);
+    expect(map.get('org/repo2')).toBe(0.3);
+  });
+
+  it('skips entries with missing fullName', () => {
+    const repos = [
+      { fullName: '', owner: '', name: '', weight: '0.5', tier: 'gold' },
+    ];
+    const map = buildRepoWeightsMap(repos);
+    expect(map.size).toBe(0);
+  });
+});
+
+describe('buildRepoTiersMap', () => {
+  it('returns empty map for undefined', () => {
+    expect(buildRepoTiersMap(undefined).size).toBe(0);
+  });
+
+  it('builds map from valid repos', () => {
+    const repos = [
+      {
+        fullName: 'org/repo1',
+        owner: 'org',
+        name: 'repo1',
+        weight: '0.5',
+        tier: 'gold',
+      },
+    ];
+    const map = buildRepoTiersMap(repos);
+    expect(map.get('org/repo1')).toBe('gold');
+  });
+});
+
+describe('buildTierThresholdsMap', () => {
+  it('returns empty map for undefined', () => {
+    expect(buildTierThresholdsMap(undefined).size).toBe(0);
+  });
+
+  it('builds map from tier config', () => {
+    const config = {
+      tiers: [
+        { name: 'Gold', requiredMinTokenScorePerRepo: 100 } as any,
+        { name: 'Silver', requiredMinTokenScorePerRepo: 50 } as any,
+      ],
+      tierOrder: ['Gold', 'Silver'],
+    };
+    const map = buildTierThresholdsMap(config);
+    expect(map.get('gold')).toBe(100);
+    expect(map.get('silver')).toBe(50);
+  });
+});
+
+describe('isRepoQualified', () => {
+  const thresholds = new Map([
+    ['gold', 100],
+    ['silver', 50],
+    ['bronze', 25],
+  ]);
+
+  it('returns true when tokenScore meets threshold', () => {
+    const repo: RepoStats = {
+      repository: 'r',
+      prs: 1,
+      score: 10,
+      tokenScore: 100,
+      weight: 0.5,
+      tier: 'gold',
+    };
+    expect(isRepoQualified(repo, thresholds)).toBe(true);
+  });
+
+  it('returns true when tokenScore exceeds threshold', () => {
+    const repo: RepoStats = {
+      repository: 'r',
+      prs: 1,
+      score: 10,
+      tokenScore: 200,
+      weight: 0.5,
+      tier: 'gold',
+    };
+    expect(isRepoQualified(repo, thresholds)).toBe(true);
+  });
+
+  it('returns false when tokenScore is below threshold', () => {
+    const repo: RepoStats = {
+      repository: 'r',
+      prs: 1,
+      score: 10,
+      tokenScore: 99,
+      weight: 0.5,
+      tier: 'gold',
+    };
+    expect(isRepoQualified(repo, thresholds)).toBe(false);
+  });
+
+  it('returns false when tier is not in thresholds', () => {
+    const repo: RepoStats = {
+      repository: 'r',
+      prs: 1,
+      score: 10,
+      tokenScore: 999,
+      weight: 0.5,
+      tier: 'platinum',
+    };
+    expect(isRepoQualified(repo, thresholds)).toBe(false);
+  });
+});
+
+describe('aggregatePRsByRepository', () => {
+  const weights = new Map([['org/repo1', 0.5]]);
+  const tiers = new Map([['org/repo1', 'gold']]);
+
+  it('returns empty array for empty prs', () => {
+    expect(aggregatePRsByRepository([], weights, tiers)).toEqual([]);
+  });
+
+  it('aggregates PRs into repo stats', () => {
+    const prs = [
+      {
+        repository: 'org/repo1',
+        score: '10',
+        prState: 'MERGED',
+        tokenScore: 50,
+      },
+      { repository: 'org/repo1', score: '5', prState: 'OPEN', tokenScore: 30 },
+    ] as any[];
+    const result = aggregatePRsByRepository(prs, weights, tiers);
+    expect(result).toHaveLength(1);
+    expect(result[0].prs).toBe(2);
+    expect(result[0].score).toBe(15);
+    expect(result[0].tokenScore).toBe(50); // only MERGED PR counted
+    expect(result[0].weight).toBe(0.5);
+    expect(result[0].tier).toBe('gold');
+  });
+
+  it('creates separate entries for different repos', () => {
+    const prs = [
+      {
+        repository: 'org/repo1',
+        score: '10',
+        prState: 'MERGED',
+        tokenScore: 50,
+      },
+      {
+        repository: 'org/repo2',
+        score: '5',
+        prState: 'MERGED',
+        tokenScore: 30,
+      },
+    ] as any[];
+    const result = aggregatePRsByRepository(prs, weights, tiers);
+    expect(result).toHaveLength(2);
+  });
+});
+
+describe('computeTierCounts', () => {
+  it('counts tiers correctly', () => {
+    const stats: RepoStats[] = [
+      {
+        repository: 'r1',
+        prs: 1,
+        score: 10,
+        tokenScore: 50,
+        weight: 0.5,
+        tier: 'gold',
+      },
+      {
+        repository: 'r2',
+        prs: 1,
+        score: 10,
+        tokenScore: 50,
+        weight: 0.5,
+        tier: 'Gold',
+      },
+      {
+        repository: 'r3',
+        prs: 1,
+        score: 10,
+        tokenScore: 50,
+        weight: 0.5,
+        tier: 'silver',
+      },
+      {
+        repository: 'r4',
+        prs: 1,
+        score: 10,
+        tokenScore: 50,
+        weight: 0.5,
+        tier: 'bronze',
+      },
+    ];
+    const counts = computeTierCounts(stats);
+    expect(counts.all).toBe(4);
+    expect(counts.gold).toBe(2);
+    expect(counts.silver).toBe(1);
+    expect(counts.bronze).toBe(1);
+  });
+
+  it('returns zeros for empty array', () => {
+    const counts = computeTierCounts([]);
+    expect(counts).toEqual({ all: 0, gold: 0, silver: 0, bronze: 0 });
+  });
+});
+
+describe('computeQualificationCounts', () => {
+  const thresholds = new Map([
+    ['gold', 100],
+    ['silver', 50],
+  ]);
+
+  it('counts qualified and unqualified repos', () => {
+    const stats: RepoStats[] = [
+      {
+        repository: 'r1',
+        prs: 1,
+        score: 10,
+        tokenScore: 150,
+        weight: 0.5,
+        tier: 'gold',
+      },
+      {
+        repository: 'r2',
+        prs: 1,
+        score: 10,
+        tokenScore: 30,
+        weight: 0.5,
+        tier: 'silver',
+      },
+      {
+        repository: 'r3',
+        prs: 1,
+        score: 10,
+        tokenScore: 80,
+        weight: 0.5,
+        tier: 'gold',
+      },
+    ];
+    const counts = computeQualificationCounts(stats, thresholds);
+    expect(counts.all).toBe(3);
+    expect(counts.qualified).toBe(1);
+    expect(counts.unqualified).toBe(2);
+  });
+});
+
+describe('hasActiveFilters', () => {
+  it('returns false when all filters are default', () => {
+    expect(hasActiveFilters('all', 'all', '')).toBe(false);
+    expect(hasActiveFilters('all', 'all', '  ')).toBe(false);
+  });
+
+  it('returns true when tier filter is active', () => {
+    expect(hasActiveFilters('gold', 'all', '')).toBe(true);
+  });
+
+  it('returns true when qualification filter is active', () => {
+    expect(hasActiveFilters('all', 'qualified', '')).toBe(true);
+  });
+
+  it('returns true when search query is active', () => {
+    expect(hasActiveFilters('all', 'all', 'repo')).toBe(true);
+  });
+});
+
+describe('getDisplayCount', () => {
+  it('returns filtered format when filtered', () => {
+    expect(getDisplayCount(5, 10, true)).toBe('5 of 10');
+  });
+
+  it('returns simple count when not filtered', () => {
+    expect(getDisplayCount(10, 10, false)).toBe('10');
+  });
+});
+
+describe('filterByQualification', () => {
+  const thresholds = new Map([['gold', 100]]);
+  const stats: RepoStats[] = [
+    {
+      repository: 'r1',
+      prs: 1,
+      score: 10,
+      tokenScore: 150,
+      weight: 0.5,
+      tier: 'gold',
+    },
+    {
+      repository: 'r2',
+      prs: 1,
+      score: 10,
+      tokenScore: 50,
+      weight: 0.5,
+      tier: 'gold',
+    },
+  ];
+
+  it('returns all when filter is all', () => {
+    expect(filterByQualification(stats, 'all', thresholds)).toEqual(stats);
+  });
+
+  it('returns only qualified repos', () => {
+    const result = filterByQualification(stats, 'qualified', thresholds);
+    expect(result).toHaveLength(1);
+    expect(result[0].repository).toBe('r1');
+  });
+
+  it('returns only unqualified repos', () => {
+    const result = filterByQualification(stats, 'unqualified', thresholds);
+    expect(result).toHaveLength(1);
+    expect(result[0].repository).toBe('r2');
+  });
+});
+
+describe('filterBySearch', () => {
+  const stats: RepoStats[] = [
+    {
+      repository: 'org/alpha',
+      prs: 1,
+      score: 10,
+      tokenScore: 50,
+      weight: 0.5,
+      tier: 'gold',
+    },
+    {
+      repository: 'org/beta',
+      prs: 1,
+      score: 10,
+      tokenScore: 50,
+      weight: 0.5,
+      tier: 'silver',
+    },
+  ];
+
+  it('returns all when search is empty', () => {
+    expect(filterBySearch(stats, '')).toEqual(stats);
+    expect(filterBySearch(stats, '  ')).toEqual(stats);
+  });
+
+  it('filters by repository name (case insensitive)', () => {
+    const result = filterBySearch(stats, 'Alpha');
+    expect(result).toHaveLength(1);
+    expect(result[0].repository).toBe('org/alpha');
+  });
+
+  it('returns empty when no match', () => {
+    expect(filterBySearch(stats, 'gamma')).toEqual([]);
   });
 });

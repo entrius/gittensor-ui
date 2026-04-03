@@ -1,7 +1,9 @@
 import {
   type CommitLog,
   type MinerEvaluation,
+  type Repository,
   type RepositoryPrScoring,
+  type TierConfigResponse,
 } from '../api';
 
 export const TIER_LEVELS: Record<string, number> = {
@@ -10,12 +12,22 @@ export const TIER_LEVELS: Record<string, number> = {
   gold: 3,
 };
 
+export const getGithubAvatarSrc = (username?: string | null) => {
+  if (username) {
+    return `https://avatars.githubusercontent.com/${username}`;
+  }
+
+  return '';
+};
+
+// Parses numeric-like values and falls back when the value is missing or invalid.
 export const parseNumber = (value: unknown, fallback = 0): number => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   if (typeof value === 'string' && value.trim()) {
     const parsed = Number(value);
     if (Number.isFinite(parsed)) return parsed;
   }
+
   return fallback;
 };
 
@@ -159,6 +171,7 @@ export interface RepoStats {
   repository: string;
   prs: number;
   score: number;
+  tokenScore: number;
   weight: number;
   tier: string;
 }
@@ -173,7 +186,13 @@ export const filterMinerRepoStats = (
   );
 };
 
-export type RepoSortField = 'rank' | 'repository' | 'prs' | 'score' | 'weight';
+export type RepoSortField =
+  | 'rank'
+  | 'repository'
+  | 'prs'
+  | 'score'
+  | 'tokenScore'
+  | 'weight';
 export type SortOrder = 'asc' | 'desc';
 
 export const sortMinerRepoStats = (
@@ -193,6 +212,9 @@ export const sortMinerRepoStats = (
         break;
       case 'score':
         compareValue = a.score - b.score;
+        break;
+      case 'tokenScore':
+        compareValue = a.tokenScore - b.tokenScore;
         break;
       case 'weight':
         compareValue = a.weight - b.weight;
@@ -243,4 +265,207 @@ export const filterPrsByTier = <
     const tier = pr.tier || repoTiers.get(pr.repository) || '';
     return tier.toLowerCase() === tierFilter.toLowerCase();
   });
+};
+
+// ---------------------------------------------------------------------------
+// Qualification filter
+// ---------------------------------------------------------------------------
+
+export type QualificationFilter = 'all' | 'qualified' | 'unqualified';
+
+// ---------------------------------------------------------------------------
+// Map builders – extract lookup maps from API data
+// ---------------------------------------------------------------------------
+
+export const buildRepoWeightsMap = (
+  repos: Repository[] | undefined,
+): Map<string, number> => {
+  const map = new Map<string, number>();
+  if (!Array.isArray(repos)) return map;
+  for (const repo of repos) {
+    if (repo && repo.fullName) {
+      map.set(repo.fullName, parseFloat(repo.weight || '0'));
+    }
+  }
+  return map;
+};
+
+export const buildRepoTiersMap = (
+  repos: Repository[] | undefined,
+): Map<string, string> => {
+  const map = new Map<string, string>();
+  if (!Array.isArray(repos)) return map;
+  for (const repo of repos) {
+    if (repo && repo.fullName) {
+      map.set(repo.fullName, repo.tier || '');
+    }
+  }
+  return map;
+};
+
+export const buildTierThresholdsMap = (
+  tierConfig: TierConfigResponse | undefined,
+): Map<string, number> => {
+  const map = new Map<string, number>();
+  if (!tierConfig?.tiers) return map;
+  for (const t of tierConfig.tiers) {
+    map.set(t.name.toLowerCase(), t.requiredMinTokenScorePerRepo);
+  }
+  return map;
+};
+
+// ---------------------------------------------------------------------------
+// Qualification helpers
+// ---------------------------------------------------------------------------
+
+export const isRepoQualified = (
+  repo: RepoStats,
+  tierThresholds: Map<string, number>,
+): boolean => {
+  const tier = repo.tier.toLowerCase();
+  const threshold = tierThresholds.get(tier);
+  if (threshold == null) return false;
+  return repo.tokenScore >= threshold;
+};
+
+export interface QualificationCounts {
+  all: number;
+  qualified: number;
+  unqualified: number;
+}
+
+export const computeQualificationCounts = (
+  repoStats: RepoStats[],
+  tierThresholds: Map<string, number>,
+): QualificationCounts => {
+  let qualified = 0;
+  let unqualified = 0;
+  for (const repo of repoStats) {
+    if (isRepoQualified(repo, tierThresholds)) {
+      qualified++;
+    } else {
+      unqualified++;
+    }
+  }
+  return { all: repoStats.length, qualified, unqualified };
+};
+
+// ---------------------------------------------------------------------------
+// PR aggregation – builds per-repository stats from commit logs
+// ---------------------------------------------------------------------------
+
+export const aggregatePRsByRepository = (
+  prs: CommitLog[],
+  repoWeights: Map<string, number>,
+  repoTiers: Map<string, string>,
+): RepoStats[] => {
+  if (!prs || prs.length === 0) return [];
+
+  const statsMap = new Map<string, RepoStats>();
+
+  for (const pr of prs) {
+    const existing = statsMap.get(pr.repository) || {
+      repository: pr.repository,
+      prs: 0,
+      score: 0,
+      tokenScore: 0,
+      weight: repoWeights.get(pr.repository) || 0,
+      tier: repoTiers.get(pr.repository) || '',
+    };
+    existing.prs += 1;
+    existing.score += parseFloat(pr.score || '0');
+    if (pr.prState === 'MERGED') {
+      existing.tokenScore += parseFloat(String(pr.tokenScore ?? '0'));
+    }
+    statsMap.set(pr.repository, existing);
+  }
+
+  return Array.from(statsMap.values());
+};
+
+// ---------------------------------------------------------------------------
+// Tier counts
+// ---------------------------------------------------------------------------
+
+export interface TierCounts {
+  all: number;
+  gold: number;
+  silver: number;
+  bronze: number;
+}
+
+export const computeTierCounts = (repoStats: RepoStats[]): TierCounts => {
+  const counts: TierCounts = {
+    all: repoStats.length,
+    gold: 0,
+    silver: 0,
+    bronze: 0,
+  };
+  for (const repo of repoStats) {
+    const tier = repo.tier.toLowerCase();
+    if (tier === 'gold') {
+      counts.gold++;
+    } else if (tier === 'silver') {
+      counts.silver++;
+    } else if (tier === 'bronze') {
+      counts.bronze++;
+    }
+  }
+  return counts;
+};
+
+// ---------------------------------------------------------------------------
+// Filter / display helpers
+// ---------------------------------------------------------------------------
+
+export const hasActiveFilters = (
+  tierFilter: MinerTierFilter,
+  qualificationFilter: QualificationFilter,
+  searchQuery: string,
+): boolean => {
+  return (
+    tierFilter !== 'all' ||
+    qualificationFilter !== 'all' ||
+    !!searchQuery.trim()
+  );
+};
+
+export const getDisplayCount = (
+  filteredCount: number,
+  totalCount: number,
+  isFiltered: boolean,
+): string => {
+  if (isFiltered) {
+    return `${filteredCount} of ${totalCount}`;
+  }
+  return String(filteredCount);
+};
+
+// ---------------------------------------------------------------------------
+// Qualification-based filtering
+// ---------------------------------------------------------------------------
+
+export const filterByQualification = (
+  stats: RepoStats[],
+  qualificationFilter: QualificationFilter,
+  tierThresholds: Map<string, number>,
+): RepoStats[] => {
+  switch (qualificationFilter) {
+    case 'qualified':
+      return stats.filter((r) => isRepoQualified(r, tierThresholds));
+    case 'unqualified':
+      return stats.filter((r) => !isRepoQualified(r, tierThresholds));
+    case 'all':
+    default:
+      return stats;
+  }
+};
+
+export const filterBySearch = (
+  stats: RepoStats[],
+  searchQuery: string,
+): RepoStats[] => {
+  const q = searchQuery.trim().toLowerCase();
+  if (!q) return stats;
+  return stats.filter((r) => r.repository.toLowerCase().includes(q));
 };
