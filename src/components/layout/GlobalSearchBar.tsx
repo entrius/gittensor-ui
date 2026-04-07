@@ -180,6 +180,13 @@ const GlobalSearchBar: React.FC = () => {
   const [query, setQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  // Debounced query: avoid firing search requests on every keystroke.
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
   // Activate dataset loading after search interaction or on the /search page.
   const [isSearchActivated, setIsSearchActivated] = useState(isSearchPage);
 
@@ -192,7 +199,7 @@ const GlobalSearchBar: React.FC = () => {
     prResults,
     issueResults,
   } = useSearchResults(
-    query,
+    debouncedQuery,
     {
       miners: QUICK_RESULT_LIMIT,
       repositories: QUICK_RESULT_LIMIT,
@@ -295,15 +302,19 @@ const GlobalSearchBar: React.FC = () => {
           ),
           endAdornment: query ? (
             <InputAdornment position="end">
-              <IconButton
-                size="small"
-                onClick={clearQuery}
-                edge="end"
-                aria-label="clear search"
-                sx={(theme) => ({ color: theme.palette.text.secondary })}
-              >
-                <CloseIcon fontSize="small" />
-              </IconButton>
+              {isLoading ? (
+                <CircularProgress size={18} />
+              ) : (
+                <IconButton
+                  size="small"
+                  onClick={clearQuery}
+                  edge="end"
+                  aria-label="clear search"
+                  sx={(theme) => ({ color: theme.palette.text.secondary })}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              )}
             </InputAdornment>
           ) : undefined,
         }}
