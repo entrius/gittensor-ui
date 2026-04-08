@@ -13,7 +13,7 @@ import {
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { usePullRequestDetails } from '../../api';
 import { useNavigate } from 'react-router-dom';
-import theme, { TIER_COLORS, STATUS_COLORS } from '../../theme';
+import theme, { RANK_COLORS, STATUS_COLORS } from '../../theme';
 
 interface PRDetailsCardProps {
   repository: string;
@@ -73,19 +73,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
 
   const [owner] = repository.split('/');
 
-  const getTierColor = (tier: string) => {
-    switch (tier) {
-      case 'Gold':
-        return TIER_COLORS.gold;
-      case 'Silver':
-        return TIER_COLORS.silver;
-      case 'Bronze':
-        return TIER_COLORS.bronze;
-      default:
-        return STATUS_COLORS.open;
-    }
-  };
-
   const isOpenPR = prDetails.prState === 'OPEN';
 
   // Score/Collateral is now shown in header, so only show other stats here
@@ -126,8 +113,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     label: string;
     value: string;
     isCredibility?: boolean;
-    rawCredibility?: number;
-    credibilityScalar?: number;
   }> = isOpenPR
     ? [
         {
@@ -156,8 +141,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
           label: 'Credibility',
           value: `${parseFloat(prDetails.credibilityMultiplier ?? '0').toFixed(2)}x`,
           isCredibility: true,
-          rawCredibility: prDetails.rawCredibility,
-          credibilityScalar: prDetails.credibilityScalar,
         },
         {
           label: 'Review Quality',
@@ -166,10 +149,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
         {
           label: 'Time Decay',
           value: `${parseFloat(prDetails.timeDecayMultiplier ?? '0').toFixed(2)}x`,
-        },
-        {
-          label: 'Repo Unique',
-          value: `${parseFloat(prDetails.repositoryUniquenessMultiplier ?? '0').toFixed(2)}x`,
         },
       ];
 
@@ -299,16 +278,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               >
                 {repository}
               </Typography>
-              {prDetails.tier && (
-                <Chip
-                  variant="tier"
-                  label={prDetails.tier}
-                  sx={{
-                    color: getTierColor(prDetails.tier),
-                    borderColor: getTierColor(prDetails.tier),
-                  }}
-                />
-              )}
             </Box>
           </Box>
         </Box>
@@ -364,19 +333,19 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                       border: '1px solid',
                       borderColor:
                         item.rank === 1
-                          ? alpha(TIER_COLORS.gold, 0.4)
+                          ? alpha(RANK_COLORS.first, 0.4)
                           : item.rank === 2
-                            ? alpha(TIER_COLORS.silver, 0.4)
+                            ? alpha(RANK_COLORS.second, 0.4)
                             : item.rank === 3
-                              ? alpha(TIER_COLORS.bronze, 0.4)
+                              ? alpha(RANK_COLORS.third, 0.4)
                               : 'rgba(255, 255, 255, 0.15)',
                       boxShadow:
                         item.rank === 1
-                          ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
+                          ? `0 0 12px ${alpha(RANK_COLORS.first, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.first, 0.2)}`
                           : item.rank === 2
-                            ? `0 0 12px ${alpha(TIER_COLORS.silver, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.silver, 0.2)}`
+                            ? `0 0 12px ${alpha(RANK_COLORS.second, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.second, 0.2)}`
                             : item.rank === 3
-                              ? `0 0 12px ${alpha(TIER_COLORS.bronze, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.bronze, 0.2)}`
+                              ? `0 0 12px ${alpha(RANK_COLORS.third, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.third, 0.2)}`
                               : 'none',
                     }}
                   >
@@ -385,11 +354,11 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                       sx={{
                         color:
                           item.rank === 1
-                            ? TIER_COLORS.gold
+                            ? RANK_COLORS.first
                             : item.rank === 2
-                              ? TIER_COLORS.silver
+                              ? RANK_COLORS.second
                               : item.rank === 3
-                                ? TIER_COLORS.bronze
+                                ? RANK_COLORS.third
                                 : 'rgba(255, 255, 255, 0.6)',
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.6rem',
@@ -477,14 +446,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
         <Grid container spacing={2}>
           {multipliers.map((item, index) => {
             const isCredibilityItem = item.isCredibility === true;
-            const rawCred: number | undefined =
-              typeof item.rawCredibility === 'number'
-                ? item.rawCredibility
-                : undefined;
-            const scalar: number | undefined =
-              typeof item.credibilityScalar === 'number'
-                ? item.credibilityScalar
-                : undefined;
 
             const content = (
               <Box
@@ -526,17 +487,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                 >
                   {item.value}
                 </Typography>
-                {isCredibilityItem && rawCred !== undefined && (
-                  <Typography
-                    sx={{
-                      color: 'rgba(255, 255, 255, 0.4)',
-                      fontSize: '0.65rem',
-                      mt: 0.5,
-                    }}
-                  >
-                    from {(rawCred * 100).toFixed(1)}%
-                  </Typography>
-                )}
               </Box>
             );
 
@@ -551,56 +501,15 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                         >
                           Credibility Multiplier
                         </Typography>
-                        {rawCred !== undefined && scalar !== undefined ? (
-                          <>
-                            <Typography
-                              sx={{
-                                fontSize: '0.7rem',
-                                mb: 1,
-                                color: 'rgba(255, 255, 255, 0.9)',
-                              }}
-                            >
-                              Your raw credibility ({(rawCred * 100).toFixed(1)}
-                              %) is your PR success rate: merged PRs ÷ (merged +
-                              closed)
-                            </Typography>
-                            <Typography
-                              sx={{
-                                fontSize: '0.7rem',
-                                mb: 1,
-                                color: 'rgba(255, 255, 255, 0.9)',
-                              }}
-                            >
-                              It's then scaled using the tier's scalar ({scalar}
-                              x) to reward consistency:
-                            </Typography>
-                            <Box
-                              sx={{
-                                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                                p: 1,
-                                borderRadius: 1,
-                                fontFamily: '"JetBrains Mono", monospace',
-                                fontSize: '0.7rem',
-                                textAlign: 'center',
-                              }}
-                            >
-                              {(rawCred * 100).toFixed(1)}%<sup>{scalar}</sup> ={' '}
-                              {(Math.pow(rawCred, scalar) * 100).toFixed(0)}% →{' '}
-                              {item.value}
-                            </Box>
-                          </>
-                        ) : (
-                          <Typography
-                            sx={{
-                              fontSize: '0.7rem',
-                              color: 'rgba(255, 255, 255, 0.9)',
-                            }}
-                          >
-                            This multiplier is based on your PR success rate
-                            (raw credibility), exponentially scaled by the
-                            tier's scalar to reward consistency.
-                          </Typography>
-                        )}
+                        <Typography
+                          sx={{
+                            fontSize: '0.7rem',
+                            color: 'rgba(255, 255, 255, 0.9)',
+                          }}
+                        >
+                          This multiplier is based on your PR success rate,
+                          scaled to reward consistency.
+                        </Typography>
                       </Box>
                     }
                     arrow

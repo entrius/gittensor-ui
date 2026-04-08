@@ -10,17 +10,14 @@ import {
 import PublicIcon from '@mui/icons-material/Public';
 import CodeOffIcon from '@mui/icons-material/CodeOff';
 import { subDays, format } from 'date-fns';
-import { useAllMiners, useAllPrs, useReposAndWeights } from '../../api';
+import { useAllMiners, useAllPrs } from '../../api';
 import { STATUS_COLORS } from '../../theme';
-import TierRepoCard from './TierRepoCard';
 import ContributionHeatmap from './ContributionHeatmap';
 import PRStatusChart from './PRStatusChart';
-import TierPerformanceTable from './TierPerformanceTable';
 
 const GlobalActivity: React.FC = () => {
   const { data: allMinerStats, isLoading: isLoadingStats } = useAllMiners();
   const { data: allPrs, isLoading: isLoadingPRs } = useAllPrs();
-  const { data: repos } = useReposAndWeights();
 
   // Calculate Heatmap Data
   const { contributionData, contributionsLast30Days, totalDaysShown } =
@@ -90,101 +87,28 @@ const GlobalActivity: React.FC = () => {
       };
     }, [allPrs]);
 
-  // Calculate Tier Stats
-  const { activeStats, inactiveStats, tierStats } = useMemo(() => {
+  // Calculate Active/Inactive Stats
+  const { activeStats, inactiveStats } = useMemo(() => {
     const defaultStats = { merged: 0, open: 0, closed: 0, total: 0 };
-    const defaultTierStats = {
-      merged: 0,
-      open: 0,
-      closed: 0,
-      total: 0,
-      credibility: 0,
-      totalScore: 0,
-      uniqueRepos: 0,
-      avgScorePerMiner: 0,
-      totalPRs: 0,
-    };
 
     if (!Array.isArray(allMinerStats)) {
       return {
         activeStats: { ...defaultStats, credibility: 0 },
         inactiveStats: { ...defaultStats, credibility: 0 },
-        tierStats: {
-          Gold: { ...defaultTierStats },
-          Silver: { ...defaultTierStats },
-          Bronze: { ...defaultTierStats },
-          Candidate: { ...defaultTierStats },
-        },
       };
     }
 
     const active = { ...defaultStats };
     const inactive = { ...defaultStats };
-    const tiers: Record<string, typeof defaultTierStats> = {
-      Gold: { ...defaultTierStats },
-      Silver: { ...defaultTierStats },
-      Bronze: { ...defaultTierStats },
-    };
 
     allMinerStats.forEach((m) => {
-      const isActive =
-        m.currentTier && ['Bronze', 'Silver', 'Gold'].includes(m.currentTier);
-      const target = isActive ? active : inactive;
+      const target = m.isEligible ? active : inactive;
 
       target.merged += m.totalMergedPrs || 0;
       target.open += m.totalOpenPrs || 0;
       target.closed += m.totalClosedPrs || 0;
       target.total += 1;
-
-      if (m.currentTier && tiers[m.currentTier]) {
-        const t = tiers[m.currentTier];
-        const tierKey = m.currentTier.toLowerCase();
-        t.merged += (m[`${tierKey}MergedPrs` as keyof typeof m] as number) || 0;
-        t.closed += (m[`${tierKey}ClosedPrs` as keyof typeof m] as number) || 0;
-        t.totalScore += Number(m[`${tierKey}Score` as keyof typeof m]) || 0;
-        t.open +=
-          ((m[`${tierKey}TotalPrs` as keyof typeof m] as number) || 0) -
-          ((m[`${tierKey}MergedPrs` as keyof typeof m] as number) || 0) -
-          ((m[`${tierKey}ClosedPrs` as keyof typeof m] as number) || 0);
-        t.total += 1;
-      }
     });
-
-    // Calculate credibility and metrics for each tier
-    const calculateCredibility = (stats: typeof defaultTierStats) => {
-      const totalResolved = stats.merged + stats.closed;
-      return totalResolved > 0 ? stats.merged / totalResolved : 0;
-    };
-
-    ['Gold', 'Silver', 'Bronze'].forEach((tier) => {
-      const t = tiers[tier];
-      t.credibility = calculateCredibility(t);
-      t.totalPRs = t.merged + t.open + t.closed;
-      t.avgScorePerMiner = t.total > 0 ? t.totalScore / t.total : 0;
-    });
-
-    // Candidate tier
-    const candidateTier = {
-      ...inactive,
-      credibility:
-        inactive.merged + inactive.closed > 0
-          ? inactive.merged / (inactive.merged + inactive.closed)
-          : 0,
-      totalScore: allMinerStats
-        .filter(
-          (m) =>
-            !m.currentTier ||
-            !['Bronze', 'Silver', 'Gold'].includes(m.currentTier),
-        )
-        .reduce((sum, m) => sum + (Number(m.totalScore) || 0), 0),
-      uniqueRepos: 0,
-      totalPRs: inactive.merged + inactive.open + inactive.closed,
-      avgScorePerMiner: 0,
-    };
-    candidateTier.avgScorePerMiner =
-      candidateTier.total > 0
-        ? candidateTier.totalScore / candidateTier.total
-        : 0;
 
     return {
       activeStats: {
@@ -201,70 +125,8 @@ const GlobalActivity: React.FC = () => {
             ? inactive.merged / (inactive.merged + inactive.closed)
             : 0,
       },
-      tierStats: { ...tiers, Candidate: candidateTier },
     };
   }, [allMinerStats]);
-
-  // Calculate max values for opacity scaling
-  const { maxValues, getOpacity } = useMemo(() => {
-    const tierNames = ['Gold', 'Silver', 'Bronze'];
-    const maxVals = tierNames.reduce(
-      (acc, tier) => {
-        const s = (tierStats[tier as keyof typeof tierStats] as any) || {};
-        return {
-          total: Math.max(acc.total, s.total || 0),
-          merged: Math.max(acc.merged, s.merged || 0),
-          open: Math.max(acc.open, s.open || 0),
-          closed: Math.max(acc.closed, s.closed || 0),
-          totalScore: Math.max(acc.totalScore, s.totalScore || 0),
-          avgScorePerMiner: Math.max(
-            acc.avgScorePerMiner,
-            s.avgScorePerMiner || 0,
-          ),
-        };
-      },
-      {
-        total: 0,
-        merged: 0,
-        open: 0,
-        closed: 0,
-        totalScore: 0,
-        avgScorePerMiner: 0,
-      },
-    );
-
-    const getOp = (value: number, max: number) => {
-      if (max === 0) return 0.6;
-      return (0.6 + 0.4 * Math.min(value / max, 1)).toFixed(2);
-    };
-
-    return { maxValues: maxVals, getOpacity: getOp };
-  }, [tierStats]);
-
-  // Group repos by tier
-  const topReposByTier = useMemo(() => {
-    if (!repos || !Array.isArray(repos))
-      return { Gold: [], Silver: [], Bronze: [] };
-
-    const result: Record<string, Array<{ fullName: string; owner: string }>> = {
-      Gold: [],
-      Silver: [],
-      Bronze: [],
-    };
-
-    repos.forEach((repo) => {
-      if (repo.tier && result[repo.tier]) {
-        result[repo.tier].push({ fullName: repo.fullName, owner: repo.owner });
-      }
-    });
-
-    // Shuffle for variety
-    Object.keys(result).forEach((tier) => {
-      result[tier] = result[tier].sort(() => Math.random() - 0.5);
-    });
-
-    return result;
-  }, [repos]);
 
   if (isLoadingPRs || isLoadingStats) {
     return (
@@ -337,7 +199,7 @@ const GlobalActivity: React.FC = () => {
             />
           </Grid>
 
-          {/* Active & Candidate Stats */}
+          {/* Active & Inactive Stats */}
           <Grid item xs={12} lg={5}>
             <Card
               sx={(theme) => ({
@@ -371,36 +233,6 @@ const GlobalActivity: React.FC = () => {
                 />
               </Box>
             </Card>
-          </Grid>
-
-          {/* Tier Repo Cards */}
-          <Grid item xs={12} lg={4}>
-            <Box
-              sx={(theme) => ({
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1,
-                height: '100%',
-                [theme.breakpoints.between('lg', 'xl')]: { gap: 0.5 },
-              })}
-            >
-              {['Gold', 'Silver', 'Bronze'].map((tier) => (
-                <TierRepoCard
-                  key={tier}
-                  tier={tier}
-                  repos={topReposByTier[tier] || []}
-                />
-              ))}
-            </Box>
-          </Grid>
-
-          {/* Tier Performance Table */}
-          <Grid item xs={12} lg={8}>
-            <TierPerformanceTable
-              tierStats={tierStats}
-              maxValues={maxValues}
-              getOpacity={getOpacity}
-            />
           </Grid>
         </Grid>
       )}

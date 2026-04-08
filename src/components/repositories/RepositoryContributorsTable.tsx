@@ -20,9 +20,9 @@ const RepositoryContributorsTable: React.FC<
   // State for how many items to show. Minimum 7.
   const [visibleCount, setVisibleCount] = useState(7);
 
-  // Build githubId -> miner rank/tier map
+  // Build githubId -> miner rank/eligibility map
   const minerDataMap = useMemo(() => {
-    const map = new Map<string, { rank: number; tier?: string }>();
+    const map = new Map<string, { rank: number; isEligible?: boolean }>();
     if (Array.isArray(allMinersStats)) {
       const sorted = [...allMinersStats].sort(
         (a, b) => Number(b.totalScore) - Number(a.totalScore),
@@ -30,7 +30,7 @@ const RepositoryContributorsTable: React.FC<
       sorted.forEach((miner, index) => {
         map.set(miner.githubId, {
           rank: index + 1,
-          tier: miner.currentTier,
+          isEligible: miner.isEligible,
         });
       });
     }
@@ -167,7 +167,7 @@ const RepositoryContributorsTable: React.FC<
         {displayedContributors.map((contributor, index) => {
           const minerData = minerDataMap.get(contributor.githubId);
           const minerRank = minerData?.rank;
-          const isInactive = !minerData?.tier;
+          const isInactive = !minerData?.isEligible;
 
           return (
             <Box

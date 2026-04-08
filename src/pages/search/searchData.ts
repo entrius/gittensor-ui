@@ -20,7 +20,6 @@ export type MinerSearchData = {
   githubId: string;
   githubUsername: string;
   hotkey: string;
-  currentTier: string;
   credibility: number;
   leaderboardRank: number;
   totalPrs: number;
@@ -31,7 +30,6 @@ export type MinerSearchData = {
 export type RepoSearchData = {
   fullName: string;
   owner: string;
-  tier: string;
   weight: number;
   rank: number;
   contributors: number;
@@ -91,7 +89,6 @@ const buildMinerSearchData = (miners: MinerEvaluation[]): MinerSearchData[] => {
     githubId: miner.githubId,
     githubUsername: miner.githubUsername || '',
     hotkey: miner.hotkey || '',
-    currentTier: miner.currentTier || '',
     credibility: parseNumber(miner.credibility),
     leaderboardRank: 0,
     totalPrs: parseNumber(miner.totalPrs),
@@ -120,10 +117,7 @@ const getMinerSearchResults = (
   const results = sortByMatchThenTiebreaker(
     miners,
     query,
-    (miner) =>
-      matchMode === 'quick'
-        ? [miner.githubId, miner.githubUsername]
-        : [miner.githubId, miner.githubUsername, miner.currentTier],
+    (miner) => [miner.githubId, miner.githubUsername],
     (miner) => miner.totalScore,
   );
 
@@ -172,7 +166,6 @@ const buildRepoSearchData = (
       return {
         fullName: repo.fullName,
         owner: repo.owner,
-        tier: repo.tier || '',
         weight: parseNumber(repo.weight),
         totalScore: stats?.totalScore || 0,
         totalPRs: stats?.totalPRs || 0,
@@ -198,10 +191,7 @@ const getRepositorySearchResults = (
   const results = sortByMatchThenTiebreaker(
     repositories,
     query,
-    (repo) =>
-      matchMode === 'quick'
-        ? [repo.fullName]
-        : [repo.fullName, repo.owner, repo.tier],
+    (repo) => [repo.fullName, repo.owner],
     (repo) => repo.weight,
   );
 

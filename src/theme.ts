@@ -1,10 +1,10 @@
 import { createTheme } from '@mui/material/styles';
 
 // Shared Color Constants (exported for use outside MUI components)
-export const TIER_COLORS = {
-  gold: '#FFD700',
-  silver: '#C0C0C0',
-  bronze: '#CD7F32',
+export const RANK_COLORS = {
+  first: '#FFD700',
+  second: '#C0C0C0',
+  third: '#CD7F32',
 } as const;
 
 export const STATUS_COLORS = {
@@ -84,10 +84,10 @@ declare module '@mui/material/styles' {
   }
 
   interface Palette {
-    tier: {
-      gold: string;
-      silver: string;
-      bronze: string;
+    rank: {
+      first: string;
+      second: string;
+      third: string;
     };
     status: {
       merged: string;
@@ -132,10 +132,10 @@ declare module '@mui/material/styles' {
   }
 
   interface PaletteOptions {
-    tier?: {
-      gold: string;
-      silver: string;
-      bronze: string;
+    rank?: {
+      first: string;
+      second: string;
+      third: string;
     };
     status?: {
       merged: string;
@@ -209,7 +209,6 @@ declare module '@mui/material/Card' {
 
 declare module '@mui/material/Chip' {
   interface ChipPropsVariantOverrides {
-    tier: true;
     status: true;
     info: true;
     filter: true;
@@ -234,11 +233,11 @@ const theme = createTheme({
       secondary: '#7d7d7d',
     },
     divider: '#ffffff',
-    // Custom tier colors
-    tier: {
-      gold: TIER_COLORS.gold,
-      silver: TIER_COLORS.silver,
-      bronze: TIER_COLORS.bronze,
+    // Rank podium colors (1st/2nd/3rd)
+    rank: {
+      first: RANK_COLORS.first,
+      second: RANK_COLORS.second,
+      third: RANK_COLORS.third,
     },
     // Custom status colors
     status: {
@@ -476,15 +475,6 @@ const theme = createTheme({
         },
       },
       variants: [
-        // Tier variant - for Gold/Silver/Bronze badges
-        {
-          props: { variant: 'tier' },
-          style: {
-            backgroundColor: 'transparent',
-            border: '1px solid',
-            borderRadius: '6px',
-          },
-        },
         // Status variant - for merged/open/closed states
         {
           props: { variant: 'status' },

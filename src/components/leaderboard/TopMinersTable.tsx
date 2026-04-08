@@ -10,12 +10,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import { SectionCard } from './SectionCard';
 import { MinerSection } from './MinerSection';
 import { STATUS_COLORS } from '../../theme';
-import {
-  type MinerStats,
-  type SortOption,
-  getTierColors,
-  FONTS,
-} from './types';
+import { type MinerStats, type SortOption, FONTS } from './types';
 
 // Re-export MinerStats for backward compatibility
 export type { MinerStats } from './types';
@@ -66,19 +61,15 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       );
     }
 
-    // 2. Group by Tier
-    const gold = result.filter((m) => m.currentTier === 'Gold');
-    const silver = result.filter((m) => m.currentTier === 'Silver');
-    const bronze = result.filter((m) => m.currentTier === 'Bronze');
-    const others = result.filter((m) => !m.currentTier);
+    // 2. Group by eligibility
+    const eligible = result.filter((m) => m.isEligible);
+    const ineligible = result.filter((m) => !m.isEligible);
 
     // 3. Sort each Group
     return {
-      gold: sortMinersList(gold, sortOption),
-      silver: sortMinersList(silver, sortOption),
-      bronze: sortMinersList(bronze, sortOption),
-      others: sortMinersList(
-        others,
+      eligible: sortMinersList(eligible, sortOption),
+      ineligible: sortMinersList(
+        ineligible,
         sortOption === 'totalScore' ? 'credibility' : sortOption,
       ),
       totalFiltered: result.length,
@@ -117,41 +108,26 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       </SectionCard>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {/* GOLD SECTION */}
-        {groupedMiners.gold.length > 0 && (
+        {/* ELIGIBLE SECTION */}
+        {groupedMiners.eligible.length > 0 && (
           <MinerSection
-            title="GOLD TIER"
-            miners={groupedMiners.gold}
-            color={getTierColors('Gold')}
+            title="ELIGIBLE"
+            miners={groupedMiners.eligible}
+            color={{
+              border: 'rgba(63, 185, 80, 0.3)',
+              text: STATUS_COLORS.merged,
+              bg: 'rgba(63, 185, 80, 0.05)',
+            }}
             onSelectMiner={onSelectMiner}
+            defaultExpanded
           />
         )}
 
-        {/* SILVER SECTION */}
-        {groupedMiners.silver.length > 0 && (
+        {/* INELIGIBLE SECTION */}
+        {groupedMiners.ineligible.length > 0 && (
           <MinerSection
-            title="SILVER TIER"
-            miners={groupedMiners.silver}
-            color={getTierColors('Silver')}
-            onSelectMiner={onSelectMiner}
-          />
-        )}
-
-        {/* BRONZE SECTION */}
-        {groupedMiners.bronze.length > 0 && (
-          <MinerSection
-            title="BRONZE TIER"
-            miners={groupedMiners.bronze}
-            color={getTierColors('Bronze')}
-            onSelectMiner={onSelectMiner}
-          />
-        )}
-
-        {/* INACTIVE / OTHER SECTION */}
-        {groupedMiners.others.length > 0 && (
-          <MinerSection
-            title="Unranked"
-            miners={groupedMiners.others}
+            title="Ineligible"
+            miners={groupedMiners.ineligible}
             color={{
               border: 'rgba(255,255,255,0.1)',
               text: STATUS_COLORS.open,

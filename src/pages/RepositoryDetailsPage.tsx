@@ -21,7 +21,7 @@ import MergeTypeIcon from '@mui/icons-material/MergeType';
 import ArticleIcon from '@mui/icons-material/Article';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
-import { TIER_COLORS, STATUS_COLORS } from '../theme';
+import { RANK_COLORS, STATUS_COLORS } from '../theme';
 import { Page } from '../components/layout';
 import { useReposAndWeights, useRepoBountySummary } from '../api';
 import {
@@ -291,9 +291,9 @@ const RepositoryDetailsPage: React.FC = () => {
                           <Box
                             component="span"
                             sx={{
-                              backgroundColor: alpha(TIER_COLORS.gold, 0.15),
-                              color: TIER_COLORS.gold,
-                              border: `1px solid ${alpha(TIER_COLORS.gold, 0.3)}`,
+                              backgroundColor: alpha(RANK_COLORS.first, 0.15),
+                              color: RANK_COLORS.first,
+                              border: `1px solid ${alpha(RANK_COLORS.first, 0.3)}`,
                               fontSize: '0.65rem',
                               fontWeight: 700,
                               px: 0.8,

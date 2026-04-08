@@ -25,16 +25,10 @@ import {
   NavigateBefore as PrevIcon,
   NavigateNext as NextIcon,
 } from '@mui/icons-material';
-import { useMinerPRs, useReposAndWeights, type CommitLog } from '../../api';
+import { useMinerPRs, type CommitLog } from '../../api';
 import { useNavigate } from 'react-router-dom';
-import { TIER_COLORS } from '../../theme';
 import ExplorerFilterButton from './ExplorerFilterButton';
-import {
-  type MinerTierFilter,
-  type MinerStatusFilter,
-  countPrTiers,
-  filterPrsByTier,
-} from '../../utils/ExplorerUtils';
+import { type MinerStatusFilter } from '../../utils/ExplorerUtils';
 
 type PrSortField = 'number' | 'score' | 'lines' | 'date';
 type SortDir = 'asc' | 'desc';
@@ -64,47 +58,25 @@ const getScoreTooltip = (pr: CommitLog): string | null => {
   const parts: string[] = [`Base: ${base.toFixed(2)}`];
   if (pr.tokenScore != null)
     parts.push(`Tokens: ${Number(pr.tokenScore).toFixed(2)}`);
-  if (pr.rawCredibility != null)
-    parts.push(`Cred: ${(pr.rawCredibility * 100).toFixed(0)}%`);
-  if (pr.credibilityScalar != null)
-    parts.push(`Cred scalar: ${pr.credibilityScalar.toFixed(2)}×`);
+  if (pr.credibilityMultiplier != null)
+    parts.push(`Cred: ${Number(pr.credibilityMultiplier).toFixed(2)}×`);
   return parts.join(' · ');
 };
 
 interface MinerPRsTableProps {
   githubId: string;
-  /** When set externally (e.g. from TierDetailsPage), overrides internal tier filter. */
-  tierFilter?: string;
 }
 
-const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
-  githubId,
-  tierFilter: externalTierFilter,
-}) => {
+const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { data: prs, isLoading } = useMinerPRs(githubId);
-  const { data: repos } = useReposAndWeights();
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<MinerStatusFilter>('all');
-  const [internalTierFilter, setTierFilter] = useState<MinerTierFilter>('all');
-  const tierFilter: MinerTierFilter =
-    (externalTierFilter?.toLowerCase() as MinerTierFilter) ||
-    internalTierFilter;
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<PrSortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [page, setPage] = useState(0);
-
-  const repoTiers = useMemo(() => {
-    const map = new Map<string, string>();
-    if (Array.isArray(repos)) {
-      repos.forEach((repo) => {
-        if (repo?.fullName) map.set(repo.fullName, repo.tier || '');
-      });
-    }
-    return map;
-  }, [repos]);
 
   const handleSort = useCallback(
     (field: PrSortField) => {
@@ -138,7 +110,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
         (pr) => pr.prState === 'CLOSED' && !pr.mergedAt,
       );
     }
-    filtered = filterPrsByTier(filtered, tierFilter, repoTiers);
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -149,7 +120,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
       );
     }
     return filtered;
-  }, [prs, selectedAuthor, statusFilter, tierFilter, repoTiers, searchQuery]);
+  }, [prs, selectedAuthor, statusFilter, searchQuery]);
 
   const sortedPRs = useMemo(() => {
     const sorted = [...filteredPRs];
@@ -200,11 +171,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
       ).length,
     };
   }, [prs]);
-
-  const tierCounts = useMemo(() => {
-    if (!prs) return { all: 0, gold: 0, silver: 0, bronze: 0 };
-    return countPrTiers(prs, repoTiers);
-  }, [prs, repoTiers]);
 
   if (isLoading) {
     return (
@@ -262,7 +228,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
               ({filteredPRs.length}
               {selectedAuthor ||
               statusFilter !== 'all' ||
-              tierFilter !== 'all' ||
               searchQuery.trim()
                 ? ` of ${prs?.length || 0}`
                 : ''}
@@ -331,49 +296,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
               />
             </Box>
 
-            {/* Tier Filter Buttons */}
-            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-              <ExplorerFilterButton
-                label="All Tiers"
-                count={tierCounts.all}
-                color={theme.palette.status.neutral}
-                selected={tierFilter === 'all'}
-                onClick={() => {
-                  setTierFilter('all');
-                  setPage(0);
-                }}
-              />
-              <ExplorerFilterButton
-                label="Gold"
-                count={tierCounts.gold}
-                color={TIER_COLORS.gold}
-                selected={tierFilter === 'gold'}
-                onClick={() => {
-                  setTierFilter('gold');
-                  setPage(0);
-                }}
-              />
-              <ExplorerFilterButton
-                label="Silver"
-                count={tierCounts.silver}
-                color={TIER_COLORS.silver}
-                selected={tierFilter === 'silver'}
-                onClick={() => {
-                  setTierFilter('silver');
-                  setPage(0);
-                }}
-              />
-              <ExplorerFilterButton
-                label="Bronze"
-                count={tierCounts.bronze}
-                color={TIER_COLORS.bronze}
-                selected={tierFilter === 'bronze'}
-                onClick={() => {
-                  setTierFilter('bronze');
-                  setPage(0);
-                }}
-              />
-            </Box>
           </Box>
         </Box>
 
