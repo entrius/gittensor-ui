@@ -230,9 +230,7 @@ describe('buildRepoWeightsMap', () => {
   });
 
   it('skips entries with missing fullName', () => {
-    const repos = [
-      { fullName: '', owner: '', name: '', weight: '0.5' },
-    ];
+    const repos = [{ fullName: '', owner: '', name: '', weight: '0.5' }];
     const map = buildRepoWeightsMap(repos);
     expect(map.size).toBe(0);
   });

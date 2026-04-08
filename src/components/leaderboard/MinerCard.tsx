@@ -119,7 +119,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
           backgroundColor: 'rgba(22, 27, 34, 0.6)',
           borderColor: 'rgba(63, 185, 80, 0.5)',
           transform: 'translateY(-2px)',
-          boxShadow: `0 8px 24px -6px rgba(0, 0, 0, 0.6)`,
+          boxShadow: '0 8px 24px -6px rgba(0, 0, 0, 0.6)',
         },
       }}
       elevation={0}
@@ -159,7 +159,7 @@ const MinerCardHeader: React.FC<MinerCardHeaderProps> = ({
           sx={{
             width: 36,
             height: 36,
-            border: `2px solid rgba(63, 185, 80, 0.3)`,
+            border: '2px solid rgba(63, 185, 80, 0.3)',
           }}
         />
         <Box
@@ -168,7 +168,7 @@ const MinerCardHeader: React.FC<MinerCardHeaderProps> = ({
             bottom: -4,
             right: -4,
             backgroundColor: '#0d1117',
-            border: `1px solid rgba(63, 185, 80, 0.3)`,
+            border: '1px solid rgba(63, 185, 80, 0.3)',
             borderRadius: '4px',
             px: 0.5,
             py: 0,
