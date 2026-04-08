@@ -1,6 +1,9 @@
 import React from 'react';
 import { Box, Typography, Avatar, Paper, Link, Chip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import { type IssueDetails } from '../../api/models/Issues';
 import { STATUS_COLORS } from '../../theme';
 import 'github-markdown-css/github-markdown-dark.css'; // Import standard GitHub Dark styles
@@ -56,7 +59,6 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
         gap: 3,
         pt: 2,
         maxWidth: '960px', // Widen slightly for better code block readability
-        mx: 'auto',
         position: 'relative',
       }}
     >
@@ -284,11 +286,14 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                 },
               }}
             >
-              <div
-                className="markdown-body"
-                dangerouslySetInnerHTML={{ __html: item.body }}
-                style={{ fontSize: '14px' }}
-              />
+              <div className="markdown-body" style={{ fontSize: '14px' }}>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
+                >
+                  {item.body}
+                </ReactMarkdown>
+              </div>
             </Box>
           </Paper>
         </Box>

@@ -8,6 +8,9 @@ import {
   CircularProgress,
   Chip,
 } from '@mui/material';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import { usePullRequestComments } from '../../api';
 import { type PullRequestDetails } from '../../api/models/Dashboard';
 import { STATUS_COLORS } from '../../theme';
@@ -95,7 +98,6 @@ const PRComments: React.FC<PRCommentsProps> = ({
         gap: 3,
         pt: 2,
         maxWidth: '960px', // Widen slightly for better code block readability
-        mx: 'auto',
         position: 'relative',
       }}
     >
@@ -323,11 +325,14 @@ const PRComments: React.FC<PRCommentsProps> = ({
                 },
               }}
             >
-              <div
-                className="markdown-body"
-                dangerouslySetInnerHTML={{ __html: item.body }}
-                style={{ fontSize: '14px' }}
-              />
+              <div className="markdown-body" style={{ fontSize: '14px' }}>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
+                >
+                  {item.body}
+                </ReactMarkdown>
+              </div>
             </Box>
           </Paper>
         </Box>
