@@ -20,7 +20,7 @@ const useReposQuery = <TResponse = void, TSelect = TResponse>(
   );
 
 /**
- * Get config for a specific repository (weight, tier, additional branches, etc.)
+ * Get config for a specific repository (weight, additional branches, etc.)
  * @param repo - Full repository name (e.g., "opentensor/btcli")
  */
 export const useRepositoryConfig = (repo: string) =>

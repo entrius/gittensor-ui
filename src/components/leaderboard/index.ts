@@ -8,5 +8,5 @@ export { MinerSection } from './MinerSection';
 export { SectionCard } from './SectionCard';
 
 // Types and utilities
-export type { MinerStats, SortOption, TierFilter, TierColorSet } from './types';
-export { FONTS, getTierColors, getRankColors } from './types';
+export type { MinerStats, SortOption, RankColorSet } from './types';
+export { FONTS, getRankColors } from './types';

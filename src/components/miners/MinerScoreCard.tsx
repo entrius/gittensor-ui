@@ -28,7 +28,7 @@ import {
   useGeneralConfig,
 } from '../../api';
 import {
-  TIER_COLORS,
+  RANK_COLORS,
   STATUS_COLORS,
   CREDIBILITY_COLORS,
   RISK_COLORS,
@@ -52,19 +52,6 @@ const formatTimeAgo = (date: Date): string => {
   }
   if (diffDays === 1) return '1 day ago';
   return `${diffDays} days ago`;
-};
-
-const tierColor = (tier: string | undefined) => {
-  switch (tier) {
-    case 'Gold':
-      return TIER_COLORS.gold;
-    case 'Silver':
-      return TIER_COLORS.silver;
-    case 'Bronze':
-      return TIER_COLORS.bronze;
-    default:
-      return STATUS_COLORS.neutral;
-  }
 };
 
 const credibilityColor = (cred: number) => {
@@ -168,10 +155,10 @@ const StatTile: React.FC<StatTileProps> = ({
               rank <= 3
                 ? alpha(
                     rank === 1
-                      ? TIER_COLORS.gold
+                      ? RANK_COLORS.first
                       : rank === 2
-                        ? TIER_COLORS.silver
-                        : TIER_COLORS.bronze,
+                        ? RANK_COLORS.second
+                        : RANK_COLORS.third,
                     0.4,
                   )
                 : 'border.light',
@@ -185,11 +172,11 @@ const StatTile: React.FC<StatTileProps> = ({
               fontWeight: 600,
               color:
                 rank === 1
-                  ? TIER_COLORS.gold
+                  ? RANK_COLORS.first
                   : rank === 2
-                    ? TIER_COLORS.silver
+                    ? RANK_COLORS.second
                     : rank === 3
-                      ? TIER_COLORS.bronze
+                      ? RANK_COLORS.third
                       : (t) => alpha(t.palette.text.primary, 0.6),
             }}
           >
@@ -292,7 +279,8 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
   const cred = parseNumber(minerStats.credibility);
   const openPrs = parseNumber(minerStats.totalOpenPrs);
   const collateral = parseNumber(minerStats.totalCollateralScore);
-  const tColor = tierColor(minerStats.currentTier);
+  const isEligible = minerStats.isEligible ?? false;
+  const eligibilityColor = isEligible ? STATUS_COLORS.success : STATUS_COLORS.neutral;
 
   return (
     <Card sx={{ p: 3, position: 'relative' }} elevation={0}>
@@ -353,13 +341,15 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
               {githubData?.name || username}
             </Typography>
             <Chip
-              variant="tier"
-              label={`${minerStats.currentTier || 'Unranked'}`}
+              variant="outlined"
+              label={isEligible ? 'Eligible' : 'Ineligible'}
               size="small"
               sx={{
-                color: tColor,
-                borderColor: alpha(tColor, 0.35),
-                backgroundColor: alpha(tColor, 0.1),
+                color: eligibilityColor,
+                borderColor: alpha(eligibilityColor, 0.35),
+                backgroundColor: alpha(eligibilityColor, 0.1),
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.7rem',
                 letterSpacing: '0.5px',
                 textTransform: 'uppercase',
               }}
@@ -535,7 +525,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                 : 'No collateral'
             }
             color={openPrColor(openPrs, openPrThreshold)}
-            tooltip={`Open PRs have collateral deducted from score. Exceeding ${openPrThreshold} triggers a full penalty. Threshold scales with token score (+1 per 500).`}
+            tooltip={`Open PRs have collateral deducted from score. Exceeding ${openPrThreshold} triggers a full penalty. Threshold scales with token score (+1 per 300).`}
           />
         </Grid>
         <Grid item xs={6} sm={4} md={2}>

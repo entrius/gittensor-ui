@@ -1,45 +1,45 @@
 import React from 'react';
 import { Box, Typography, alpha, useTheme } from '@mui/material';
-import { TIER_COLORS } from '../../theme';
+import { RANK_COLORS } from '../../theme';
 
 interface RankBadgeProps {
   rank: number;
   displayNumber: number;
 }
 
-const getRankTierColor = (rank: number): string | null => {
+const getRankPodiumColor = (rank: number): string | null => {
   switch (rank) {
     case 0:
-      return TIER_COLORS.gold;
+      return RANK_COLORS.first;
     case 1:
-      return TIER_COLORS.silver;
+      return RANK_COLORS.second;
     case 2:
-      return TIER_COLORS.bronze;
+      return RANK_COLORS.third;
     default:
       return null;
   }
 };
 
 const getRankBorderColor = (rank: number, fallbackColor: string): string => {
-  const tierColor = getRankTierColor(rank);
-  if (tierColor) {
-    return alpha(tierColor, 0.4);
+  const rankColor = getRankPodiumColor(rank);
+  if (rankColor) {
+    return alpha(rankColor, 0.4);
   }
   return fallbackColor;
 };
 
 const getRankBoxShadow = (rank: number): string => {
-  const tierColor = getRankTierColor(rank);
-  if (tierColor) {
-    return `0 0 12px ${alpha(tierColor, 0.4)}, 0 0 4px ${alpha(tierColor, 0.2)}`;
+  const rankColor = getRankPodiumColor(rank);
+  if (rankColor) {
+    return `0 0 12px ${alpha(rankColor, 0.4)}, 0 0 4px ${alpha(rankColor, 0.2)}`;
   }
   return 'none';
 };
 
 const getRankTextColor = (rank: number, fallbackColor: string): string => {
-  const tierColor = getRankTierColor(rank);
-  if (tierColor) {
-    return tierColor;
+  const rankColor = getRankPodiumColor(rank);
+  if (rankColor) {
+    return rankColor;
   }
   return fallbackColor;
 };

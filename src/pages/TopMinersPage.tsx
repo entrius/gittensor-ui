@@ -34,7 +34,7 @@ const TopMinersPage: React.FC = () => {
       hotkey: stat.hotkey || 'N/A',
       uniqueReposCount: Number(stat.uniqueReposCount) || 0,
       credibility: Number(stat.credibility) || 0,
-      currentTier: stat.currentTier,
+      isEligible: stat.isEligible ?? false,
       usdPerDay: Number(stat.usdPerDay) || 0,
       // PR status counts for credibility donut
       totalMergedPrs: Number(stat.totalMergedPrs) || 0,

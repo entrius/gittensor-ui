@@ -1,9 +1,9 @@
 import React from 'react';
-import { Box, Typography, Avatar, Chip, Tooltip, alpha } from '@mui/material';
+import { Box, Typography, Avatar, Tooltip, alpha } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useNavigate } from 'react-router-dom';
 import { formatUsdEstimate } from '../../utils';
-import theme, { TIER_COLORS, STATUS_COLORS } from '../../theme';
+import theme, { STATUS_COLORS } from '../../theme';
 interface PRHeaderProps {
   repository: string;
   pullRequestNumber: number;
@@ -17,19 +17,6 @@ const PRHeader: React.FC<PRHeaderProps> = ({
 }) => {
   const navigate = useNavigate();
   const [owner] = repository.split('/');
-
-  const getTierColor = (tier: string) => {
-    switch (tier) {
-      case 'Gold':
-        return TIER_COLORS.gold;
-      case 'Silver':
-        return TIER_COLORS.silver;
-      case 'Bronze':
-        return TIER_COLORS.bronze;
-      default:
-        return STATUS_COLORS.open;
-    }
-  };
 
   const isOpenPR = prDetails.prState === 'OPEN';
   const isClosed = prDetails.prState === 'CLOSED';
@@ -148,16 +135,6 @@ const PRHeader: React.FC<PRHeaderProps> = ({
           >
             {repository}
           </Typography>
-          {prDetails.tier && (
-            <Chip
-              variant="tier"
-              label={prDetails.tier}
-              sx={{
-                color: getTierColor(prDetails.tier),
-                borderColor: getTierColor(prDetails.tier),
-              }}
-            />
-          )}
         </Box>
       </Box>
 

@@ -33,7 +33,7 @@ export const Scoring: React.FC = () => (
         },
         {
           title: 'Credibility',
-          desc: 'Keep your merge rate high. A strong ratio of merged vs. closed PRs increases your credibility and unlocks tier multipliers.',
+          desc: 'Keep your merge rate high. A strong ratio of merged vs. closed PRs increases your credibility. You need at least 75% credibility to become eligible for rewards.',
         },
       ].map((item, index) => (
         <Grid item xs={12} md={3} key={index}>

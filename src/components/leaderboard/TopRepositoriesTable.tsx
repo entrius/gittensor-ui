@@ -28,8 +28,6 @@ import {
   MenuItem,
   FormControl,
   Button,
-  Stack,
-  Chip,
   Switch,
   FormControlLabel,
 } from '@mui/material';
@@ -38,7 +36,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
 import { useSearchParams } from 'react-router-dom';
-import { TIER_COLORS, STATUS_COLORS } from '../../theme';
+import { RANK_COLORS } from '../../theme';
 
 interface RepoStats {
   repository: string;
@@ -46,7 +44,6 @@ interface RepoStats {
   totalPRs: number;
   uniqueMiners: Set<string>;
   weight: number;
-  tier: string;
   rank?: number;
   inactiveAt?: string | null;
 }
@@ -64,7 +61,6 @@ interface TopRepositoriesTableProps {
   repositories: RepoStats[];
   isLoading?: boolean;
   onSelectRepository: (repositoryFullName: string) => void;
-  initialTierFilter?: 'Gold' | 'Silver' | 'Bronze';
 }
 
 // Utility function to truncate text
@@ -73,7 +69,6 @@ const truncateText = (text: string, maxLength: number): string => {
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 };
 
-const VALID_TIERS = ['all', 'Gold', 'Silver', 'Bronze'] as const;
 const VALID_SORT_COLUMNS: SortColumn[] = [
   'rank',
   'repository',
@@ -88,17 +83,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   repositories,
   isLoading,
   onSelectRepository,
-  initialTierFilter,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Read initial state from URL params, falling back to defaults
-  const urlTier = searchParams.get('tier') as
-    | 'all'
-    | 'Gold'
-    | 'Silver'
-    | 'Bronze'
-    | null;
   const urlRows = parseInt(searchParams.get('rows') || '', 10);
   const urlPage = parseInt(searchParams.get('page') || '', 10);
   const urlSort = searchParams.get('sort') as SortColumn;
@@ -117,13 +105,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>(
     urlDir === 'asc' || urlDir === 'desc' ? urlDir : 'desc',
   );
-  const [tierFilter, setTierFilter] = useState<
-    'all' | 'Gold' | 'Silver' | 'Bronze'
-  >(
-    urlTier && VALID_TIERS.includes(urlTier)
-      ? urlTier
-      : initialTierFilter || 'all',
-  );
   const [useLogScale, setUseLogScale] = useState(true);
   const isInitialMount = useRef(true);
   const trimmedSearch = searchQuery.trim();
@@ -133,14 +114,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const syncToUrl = useCallback(
     (overrides?: Record<string, string | undefined>) => {
       const params: Record<string, string> = {};
-      const tier = overrides?.tier ?? tierFilter;
       const rows = overrides?.rows ?? String(rowsPerPage);
       const pg = overrides?.page ?? String(page);
       const sort = overrides?.sort ?? sortColumn;
       const dir = overrides?.dir ?? sortDirection;
       const search = overrides?.search ?? searchQuery;
 
-      if (tier !== 'all') params.tier = tier;
       if (rows !== '10') params.rows = rows;
       if (pg !== '0') params.page = pg;
       if (sort !== 'weight') params.sort = sort;
@@ -150,7 +129,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       setSearchParams(params, { replace: true });
     },
     [
-      tierFilter,
       rowsPerPage,
       page,
       sortColumn,
@@ -196,11 +174,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const filteredRepositories = useMemo(() => {
     let filtered = rankedRepositories;
 
-    // Apply tier filter
-    if (tierFilter !== 'all') {
-      filtered = filtered.filter((repo) => repo.tier === tierFilter);
-    }
-
     // Apply search filter
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
@@ -210,95 +183,42 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     }
 
     return filtered;
-  }, [rankedRepositories, searchQuery, tierFilter]);
+  }, [rankedRepositories, searchQuery]);
 
   const getChartOption = () => {
     const chartData = filteredRepositories.slice(0, 50); // Limit for performance
     const textColor = 'rgba(255, 255, 255, 0.85)';
     const gridColor = 'rgba(255, 255, 255, 0.08)';
 
-    const getTierColorGradient = (tier: string) => {
-      switch (tier) {
-        case 'Gold':
-          return {
-            type: 'linear',
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [
-              { offset: 0, color: 'rgba(255, 215, 0, 0.9)' },
-              { offset: 0.5, color: 'rgba(255, 215, 0, 0.7)' },
-              { offset: 1, color: 'rgba(255, 200, 0, 0.5)' },
-            ],
-          };
-        case 'Silver':
-          return {
-            type: 'linear',
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [
-              { offset: 0, color: 'rgba(192, 192, 192, 0.9)' },
-              { offset: 0.5, color: 'rgba(192, 192, 192, 0.7)' },
-              { offset: 1, color: 'rgba(170, 170, 170, 0.5)' },
-            ],
-          };
-        case 'Bronze':
-          return {
-            type: 'linear',
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [
-              { offset: 0, color: 'rgba(205, 127, 50, 0.9)' },
-              { offset: 0.5, color: 'rgba(205, 127, 50, 0.7)' },
-              { offset: 1, color: 'rgba(184, 115, 51, 0.5)' },
-            ],
-          };
-        default:
-          return {
-            type: 'linear',
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [
-              { offset: 0, color: 'rgba(139, 148, 158, 0.8)' },
-              { offset: 0.5, color: 'rgba(139, 148, 158, 0.6)' },
-              { offset: 1, color: 'rgba(100, 108, 118, 0.4)' },
-            ],
-          };
-      }
+    const barGradient = {
+      type: 'linear',
+      x: 0,
+      y: 0,
+      x2: 0,
+      y2: 1,
+      colorStops: [
+        { offset: 0, color: 'rgba(139, 148, 158, 0.8)' },
+        { offset: 0.5, color: 'rgba(139, 148, 158, 0.6)' },
+        { offset: 1, color: 'rgba(100, 108, 118, 0.4)' },
+      ],
     };
 
     const xAxisData = chartData.map((item) => ({
       name: (item?.repository || '').split('/')[1] || item?.repository || '',
       fullName: item?.repository || '',
-      tier: item?.tier || 'N/A',
     }));
 
     const seriesData = chartData.map((item, index) => ({
       value: Number(item?.totalScore) || 0,
       rank: item?.rank || index + 1,
-      tier: item?.tier || 'N/A',
       repository: item?.repository || '',
       weight: item?.weight || 0,
       prs: item?.totalPRs || 0,
       contributors: item?.uniqueMiners?.size || 0,
       itemStyle: {
-        color: getTierColorGradient(item?.tier || ''),
+        color: barGradient,
         borderRadius: [6, 6, 0, 0],
-        shadowColor:
-          item?.tier === 'Gold'
-            ? 'rgba(255, 215, 0, 0.4)'
-            : item?.tier === 'Silver'
-              ? 'rgba(192, 192, 192, 0.3)'
-              : item?.tier === 'Bronze'
-                ? 'rgba(205, 127, 50, 0.3)'
-                : 'rgba(100, 100, 100, 0.2)',
+        shadowColor: 'rgba(100, 100, 100, 0.2)',
         shadowBlur: 12,
       },
     }));
@@ -342,22 +262,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         formatter: (params: any) => {
           const data = params[0];
           const item = seriesData[data.dataIndex];
-          const tierColor =
-            item.tier === 'Gold'
-              ? TIER_COLORS.gold
-              : item.tier === 'Silver'
-                ? TIER_COLORS.silver
-                : item.tier === 'Bronze'
-                  ? TIER_COLORS.bronze
-                  : STATUS_COLORS.open;
 
           return `
             <div style="font-family: 'JetBrains Mono', monospace;">
               <div style="font-weight: 600; margin-bottom: 8px; font-size: 13px;">
                 #${item.rank} ${item.repository}
-              </div>
-              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                <span style="color: ${tierColor}; font-weight: 600;">${item.tier} Tier</span>
               </div>
               <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
                 <div style="color: rgba(255,255,255,0.7); margin-bottom: 4px;">Total Score: <span style="color: #fff; font-weight: 600;">${item.value.toFixed(2)}</span></div>
@@ -539,71 +448,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     </TableCell>
   );
 
-  const getTierColor = (tier: string) => {
-    switch (tier) {
-      case 'Gold':
-        return TIER_COLORS.gold;
-      case 'Silver':
-        return TIER_COLORS.silver;
-      case 'Bronze':
-        return TIER_COLORS.bronze;
-      default:
-        return STATUS_COLORS.open;
-    }
-  };
-
-  const tierCounts = useMemo(
-    () => ({
-      all: rankedRepositories.length,
-      gold: rankedRepositories.filter((r) => r.tier === 'Gold').length,
-      silver: rankedRepositories.filter((r) => r.tier === 'Silver').length,
-      bronze: rankedRepositories.filter((r) => r.tier === 'Bronze').length,
-    }),
-    [rankedRepositories],
-  );
-
-  const TierFilterButton = ({
-    label,
-    value,
-    count,
-    color,
-  }: {
-    label: string;
-    value: typeof tierFilter;
-    count: number;
-    color: string;
-  }) => (
-    <Button
-      size="small"
-      onClick={() => {
-        setTierFilter(value);
-        setPage(0);
-        syncToUrl({ tier: value, page: '0' });
-      }}
-      sx={{
-        color: tierFilter === value ? '#fff' : 'rgba(255,255,255,0.5)',
-        backgroundColor:
-          tierFilter === value ? 'rgba(255,255,255,0.1)' : 'transparent',
-        borderRadius: '6px',
-        px: 2,
-        minWidth: 'auto',
-        textTransform: 'none',
-        fontFamily: '"JetBrains Mono", monospace',
-        fontSize: '0.8rem',
-        border:
-          tierFilter === value ? `1px solid ${color}` : '1px solid transparent',
-        '&:hover': {
-          backgroundColor: 'rgba(255,255,255,0.15)',
-        },
-      }}
-    >
-      {label}{' '}
-      <span style={{ opacity: 0.6, marginLeft: '6px', fontSize: '0.75rem' }}>
-        {count}
-      </span>
-    </Button>
-  );
-
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -649,33 +493,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             flexWrap: 'wrap',
           }}
         >
-          <Stack direction="row" spacing={1}>
-            <TierFilterButton
-              label="All"
-              value="all"
-              count={tierCounts.all}
-              color={STATUS_COLORS.open}
-            />
-            <TierFilterButton
-              label="Gold"
-              value="Gold"
-              count={tierCounts.gold}
-              color={TIER_COLORS.gold}
-            />
-            <TierFilterButton
-              label="Silver"
-              value="Silver"
-              count={tierCounts.silver}
-              color={TIER_COLORS.silver}
-            />
-            <TierFilterButton
-              label="Bronze"
-              value="Bronze"
-              count={tierCounts.bronze}
-              color={TIER_COLORS.bronze}
-            />
-          </Stack>
-
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
             <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
               <IconButton
@@ -969,15 +786,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                             {truncateText(repo.repository || '', 40)}
                           </Typography>
                         </Tooltip>
-                        <Chip
-                          variant="tier"
-                          label={repo.tier || 'N/A'}
-                          sx={{
-                            ml: 1,
-                            color: getTierColor(repo.tier),
-                            borderColor: getTierColor(repo.tier),
-                          }}
-                        />
                       </Box>
                     </TableCell>
                     <TableCell
@@ -1151,19 +959,19 @@ const getRankIcon = (rank: number) => (
       border: '1px solid',
       borderColor:
         rank === 1
-          ? alpha(TIER_COLORS.gold, 0.4)
+          ? alpha(RANK_COLORS.first, 0.4)
           : rank === 2
-            ? alpha(TIER_COLORS.silver, 0.4)
+            ? alpha(RANK_COLORS.second, 0.4)
             : rank === 3
-              ? alpha(TIER_COLORS.bronze, 0.4)
+              ? alpha(RANK_COLORS.third, 0.4)
               : 'rgba(255, 255, 255, 0.15)',
       boxShadow:
         rank === 1
-          ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
+          ? `0 0 12px ${alpha(RANK_COLORS.first, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.first, 0.2)}`
           : rank === 2
-            ? `0 0 12px ${alpha(TIER_COLORS.silver, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.silver, 0.2)}`
+            ? `0 0 12px ${alpha(RANK_COLORS.second, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.second, 0.2)}`
             : rank === 3
-              ? `0 0 12px ${alpha(TIER_COLORS.bronze, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.bronze, 0.2)}`
+              ? `0 0 12px ${alpha(RANK_COLORS.third, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.third, 0.2)}`
               : 'none',
     }}
   >
@@ -1172,11 +980,11 @@ const getRankIcon = (rank: number) => (
       sx={{
         color:
           rank === 1
-            ? TIER_COLORS.gold
+            ? RANK_COLORS.first
             : rank === 2
-              ? TIER_COLORS.silver
+              ? RANK_COLORS.second
               : rank === 3
-                ? TIER_COLORS.bronze
+                ? RANK_COLORS.third
                 : 'rgba(255, 255, 255, 0.6)',
         fontFamily: '"JetBrains Mono", monospace',
         fontSize: '0.65rem',
