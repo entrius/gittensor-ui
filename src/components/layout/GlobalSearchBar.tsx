@@ -153,23 +153,11 @@ const SearchActionRow: React.FC<SearchActionRowProps> = ({
   </ButtonBase>
 );
 
-const getMinerSubtitle = (miner: {
-  currentTier: string;
-  leaderboardRank: number;
-}) => {
-  const parts: string[] = [];
-
+const getMinerSubtitle = (miner: { leaderboardRank: number }) => {
   if (miner.leaderboardRank > 0) {
-    parts.push(`Rank #${miner.leaderboardRank}`);
+    return `Rank #${miner.leaderboardRank}`;
   }
-
-  const currentTier = miner.currentTier.trim();
-
-  if (currentTier) {
-    parts.push(currentTier);
-  }
-
-  return parts.join(' · ');
+  return '';
 };
 
 const GlobalSearchBar: React.FC = () => {
@@ -391,9 +379,7 @@ const GlobalSearchBar: React.FC = () => {
                     <SearchResultRow
                       key={`repo-${repo.fullName}`}
                       title={repo.fullName}
-                      subtitle={
-                        repo.tier ? `${repo.owner} · ${repo.tier}` : repo.owner
-                      }
+                      subtitle={repo.owner}
                       onClick={() =>
                         navigateAndClose(
                           `/miners/repository?name=${encodeURIComponent(repo.fullName)}`,

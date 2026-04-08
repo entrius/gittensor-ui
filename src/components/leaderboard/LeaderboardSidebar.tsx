@@ -42,7 +42,7 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
   const networkStats = useMemo(
     () => ({
       totalMiners: miners.length,
-      activeTier: miners.filter((m) => m.currentTier).length,
+      eligible: miners.filter((m) => m.isEligible).length,
       totalPRs: miners.reduce((acc, m) => acc + (m.totalPRs || 0), 0),
       dailyPool: miners.reduce((acc, m) => acc + (m.usdPerDay || 0), 0),
     }),
@@ -64,7 +64,7 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
           }}
         >
           <StatRow label="Total Miners" value={networkStats.totalMiners} />
-          <StatRow label="Active Tier" value={networkStats.activeTier} />
+          <StatRow label="Eligible" value={networkStats.eligible} />
           <StatRow label="Total PRs" value={networkStats.totalPRs} />
           <StatRow
             label="Daily Pool"

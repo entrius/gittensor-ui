@@ -128,10 +128,9 @@ export const FAQContent: React.FC = () => (
         answer={
           <>
             You must contribute to an incentivized repository listed in our
-            master list. Repositories are organized into three tiers (Bronze,
-            Silver, Gold), and you must unlock each tier by meeting specific
-            merged PR count and credibility requirements to earn rewards from
-            it. Check the{' '}
+            master list. To become eligible for rewards, you need at least 5
+            merged PRs with a token score of 5 or higher, 75% credibility, and
+            a GitHub account that is at least 180 days old. Check the{' '}
             <a
               href="https://docs.gittensor.io/oss-contributions.html"
               target="_blank"
@@ -140,7 +139,7 @@ export const FAQContent: React.FC = () => (
             >
               Scoring documentation
             </a>{' '}
-            for details on unlocking tiers.
+            for full eligibility details.
           </>
         }
       />

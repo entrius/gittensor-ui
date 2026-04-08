@@ -8,7 +8,6 @@ export { default as MinerPRsTable } from './MinerPRsTable';
 export { default as MinerRepositoriesTable } from './MinerRepositoriesTable';
 export { default as MinerScoreBreakdown } from './MinerScoreBreakdown';
 export { default as MinerScoreCard } from './MinerScoreCard';
-export { default as MinerTierPerformance } from './MinerTierPerformance';
 export { default as PerformanceRadar } from './PerformanceRadar';
 export { default as RankBadge } from './RankBadge';
 export { default as SortableHeaderCell } from './SortableHeaderCell';

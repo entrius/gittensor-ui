@@ -19,11 +19,10 @@ import {
 import { useNavigate } from 'react-router-dom';
 import {
   useMinerPRs,
-  useReposAndWeights,
   usePullRequestDetails,
   type CommitLog,
 } from '../../api';
-import { TIER_COLORS, STATUS_COLORS } from '../../theme';
+import { STATUS_COLORS } from '../../theme';
 
 interface MinerScoreBreakdownProps {
   githubId: string;
@@ -44,19 +43,6 @@ const tooltipSlotProps = {
     },
   },
   arrow: { sx: { color: 'surface.tooltip' } },
-};
-
-const tierColor = (tier: string | null | undefined): string => {
-  switch (tier) {
-    case 'Gold':
-      return TIER_COLORS.gold;
-    case 'Silver':
-      return TIER_COLORS.silver;
-    case 'Bronze':
-      return TIER_COLORS.bronze;
-    default:
-      return STATUS_COLORS.neutral;
-  }
 };
 
 interface MultiplierPillProps {
@@ -133,13 +119,11 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
 
 interface PrScoreRowProps {
   pr: CommitLog;
-  repoTier: string;
   onNavigateToPr: (repo: string, prNumber: number) => void;
 }
 
 const PrScoreRow: React.FC<PrScoreRowProps> = ({
   pr,
-  repoTier,
   onNavigateToPr,
 }) => {
   const [expanded, setExpanded] = useState(false);
@@ -219,7 +203,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
               sx={{
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.62rem',
-                color: tierColor(repoTier),
+                color: (t) => alpha(t.palette.text.primary, 0.5),
               }}
             >
               {repoName}
@@ -311,13 +295,8 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
                         {Number(prDetails.credibilityMultiplier).toFixed(4)}×
                       </Typography>
                       <Typography variant="tooltipDesc">
-                        Raw credibility:{' '}
-                        {(
-                          Number(
-                            prDetails.rawCredibility ?? pr.rawCredibility ?? 0,
-                          ) * 100
-                        ).toFixed(1)}
-                        %
+                        Based on your PR success rate, scaled to reward
+                        consistency.
                       </Typography>
                     </Stack>
                   }
@@ -334,7 +313,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
                         {Number(prDetails.repoWeightMultiplier).toFixed(4)}×
                       </Typography>
                       <Typography variant="tooltipDesc">
-                        Based on repository tier and activity.
+                        Based on repository weight and activity.
                       </Typography>
                     </Stack>
                   }
@@ -351,26 +330,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({
                       </Typography>
                       <Typography variant="tooltipDesc">
                         Bonus for PRs linked to issues.
-                      </Typography>
-                    </Stack>
-                  }
-                />
-              )}
-              {prDetails?.repositoryUniquenessMultiplier != null && (
-                <MultiplierPill
-                  label="unique"
-                  value={parseFloat(prDetails.repositoryUniquenessMultiplier)}
-                  tooltip={
-                    <Stack direction="column">
-                      <Typography variant="tooltipLabel">
-                        Uniqueness{' '}
-                        {Number(
-                          prDetails.repositoryUniquenessMultiplier,
-                        ).toFixed(4)}
-                        ×
-                      </Typography>
-                      <Typography variant="tooltipDesc">
-                        Rewards contributing to diverse repos.
                       </Typography>
                     </Stack>
                   }
@@ -563,7 +522,6 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
 }) => {
   const navigate = useNavigate();
   const { data: prs, isLoading } = useMinerPRs(githubId);
-  const { data: repos } = useReposAndWeights();
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 10;
 
@@ -571,44 +529,12 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
     navigate(`/miners/pr?repo=${encodeURIComponent(repo)}&number=${prNumber}`);
   };
 
-  const repoTierMap = useMemo(() => {
-    const map = new Map<string, string>();
-    if (Array.isArray(repos)) {
-      repos.forEach((r) => {
-        if (r?.fullName) map.set(r.fullName, r.tier || '');
-      });
-    }
-    return map;
-  }, [repos]);
-
   const sortedPrs = useMemo(() => {
     if (!prs) return [];
     return [...prs].sort(
       (a, b) => parseFloat(b.score || '0') - parseFloat(a.score || '0'),
     );
   }, [prs]);
-
-  const tierDistribution = useMemo(() => {
-    if (!prs) return { bronze: 0, silver: 0, gold: 0, total: 0 };
-    let bronze = 0;
-    let silver = 0;
-    let gold = 0;
-    let total = 0;
-    prs.forEach((pr) => {
-      if (!pr.mergedAt) return;
-      const score = parseFloat(pr.score || '0');
-      total += score;
-      const tier = (
-        pr.tier ||
-        repoTierMap.get(pr.repository) ||
-        ''
-      ).toLowerCase();
-      if (tier === 'gold') gold += score;
-      else if (tier === 'silver') silver += score;
-      else bronze += score;
-    });
-    return { bronze, silver, gold, total };
-  }, [prs, repoTierMap]);
 
   if (isLoading || !prs || prs.length === 0) return null;
 
@@ -651,95 +577,12 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
         </Box>
       </Box>
 
-      {/* Tier score distribution bar */}
-      {tierDistribution.total > 0 && (
-        <Box
-          sx={{
-            px: 2.5,
-            py: 1.5,
-            borderBottom: '1px solid',
-            borderColor: 'border.subtle',
-          }}
-        >
-          <Box sx={{ display: 'flex', gap: 2, mb: 0.75 }}>
-            {tierDistribution.gold > 0 && (
-              <Typography
-                sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '0.65rem',
-                  color: TIER_COLORS.gold,
-                }}
-              >
-                Gold: {tierDistribution.gold.toFixed(2)}
-              </Typography>
-            )}
-            {tierDistribution.silver > 0 && (
-              <Typography
-                sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '0.65rem',
-                  color: TIER_COLORS.silver,
-                }}
-              >
-                Silver: {tierDistribution.silver.toFixed(2)}
-              </Typography>
-            )}
-            {tierDistribution.bronze > 0 && (
-              <Typography
-                sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '0.65rem',
-                  color: TIER_COLORS.bronze,
-                }}
-              >
-                Bronze: {tierDistribution.bronze.toFixed(2)}
-              </Typography>
-            )}
-          </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              height: 6,
-              borderRadius: 3,
-              overflow: 'hidden',
-              backgroundColor: 'border.subtle',
-            }}
-          >
-            {tierDistribution.gold > 0 && (
-              <Box
-                sx={{
-                  width: `${(tierDistribution.gold / tierDistribution.total) * 100}%`,
-                  backgroundColor: TIER_COLORS.gold,
-                }}
-              />
-            )}
-            {tierDistribution.silver > 0 && (
-              <Box
-                sx={{
-                  width: `${(tierDistribution.silver / tierDistribution.total) * 100}%`,
-                  backgroundColor: TIER_COLORS.silver,
-                }}
-              />
-            )}
-            {tierDistribution.bronze > 0 && (
-              <Box
-                sx={{
-                  width: `${(tierDistribution.bronze / tierDistribution.total) * 100}%`,
-                  backgroundColor: TIER_COLORS.bronze,
-                }}
-              />
-            )}
-          </Box>
-        </Box>
-      )}
-
       {/* PR list */}
       <Box>
         {displayPrs.map((pr, i) => (
           <PrScoreRow
             key={`${pr.repository}-${pr.pullRequestNumber}-${i}`}
             pr={pr}
-            repoTier={pr.tier || repoTierMap.get(pr.repository) || ''}
             onNavigateToPr={handleNavigateToPr}
           />
         ))}

@@ -34,7 +34,7 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
 import { type CommitLog } from '../../api/models/Dashboard';
 import { formatUsdEstimate } from '../../utils';
-import theme, { TIER_COLORS, STATUS_COLORS } from '../../theme';
+import theme, { RANK_COLORS, STATUS_COLORS } from '../../theme';
 
 interface TopPRsTableProps {
   prs: CommitLog[];
@@ -62,9 +62,6 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
   const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [tierFilter, setTierFilter] = useState<
-    'all' | 'Gold' | 'Silver' | 'Bronze'
-  >('all');
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'open' | 'closed' | 'merged'
   >('all');
@@ -78,11 +75,6 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
 
   const filteredPRs = useMemo(() => {
     let filtered = rankedPRs;
-
-    // Apply tier filter
-    if (tierFilter !== 'all') {
-      filtered = filtered.filter((pr) => pr.tier === tierFilter);
-    }
 
     // Apply status filter
     if (statusFilter !== 'all') {
@@ -113,7 +105,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
     }
 
     return filtered;
-  }, [rankedPRs, searchQuery, tierFilter, statusFilter]);
+  }, [rankedPRs, searchQuery, statusFilter]);
 
   const statusCounts = useMemo(
     () => ({
@@ -127,70 +119,6 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         .length,
     }),
     [rankedPRs],
-  );
-
-  const tierCounts = useMemo(
-    () => ({
-      all: rankedPRs.length,
-      gold: rankedPRs.filter((pr) => pr.tier === 'Gold').length,
-      silver: rankedPRs.filter((pr) => pr.tier === 'Silver').length,
-      bronze: rankedPRs.filter((pr) => pr.tier === 'Bronze').length,
-    }),
-    [rankedPRs],
-  );
-
-  const getTierColor = (tier: string) => {
-    switch (tier) {
-      case 'Gold':
-        return theme.palette.tier.gold;
-      case 'Silver':
-        return theme.palette.tier.silver;
-      case 'Bronze':
-        return theme.palette.tier.bronze;
-      default:
-        return theme.palette.status.neutral;
-    }
-  };
-
-  const TierFilterButton = ({
-    label,
-    value,
-    count,
-    color,
-  }: {
-    label: string;
-    value: typeof tierFilter;
-    count: number;
-    color: string;
-  }) => (
-    <Button
-      size="small"
-      onClick={() => {
-        setTierFilter(value);
-        setPage(0);
-      }}
-      sx={{
-        color: tierFilter === value ? '#fff' : 'rgba(255,255,255,0.5)',
-        backgroundColor:
-          tierFilter === value ? 'rgba(255,255,255,0.1)' : 'transparent',
-        borderRadius: '6px',
-        px: 2,
-        minWidth: 'auto',
-        textTransform: 'none',
-        fontFamily: '"JetBrains Mono", monospace',
-        fontSize: '0.8rem',
-        border:
-          tierFilter === value ? `1px solid ${color}` : '1px solid transparent',
-        '&:hover': {
-          backgroundColor: 'rgba(255,255,255,0.15)',
-        },
-      }}
-    >
-      {label}{' '}
-      <span style={{ opacity: 0.6, marginLeft: '6px', fontSize: '0.75rem' }}>
-        {count}
-      </span>
-    </Button>
   );
 
   const FilterButton = ({
@@ -240,18 +168,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
     const textColor = 'rgba(255, 255, 255, 0.85)';
     const gridColor = 'rgba(255, 255, 255, 0.08)';
 
-    const getTierColor = (tier: string) => {
-      switch (tier) {
-        case 'Gold':
-          return theme.palette.tier.gold;
-        case 'Silver':
-          return theme.palette.tier.silver;
-        case 'Bronze':
-          return theme.palette.tier.bronze;
-        default:
-          return theme.palette.status.neutral;
-      }
-    };
+    const chartColor = theme.palette.primary.main;
 
     const xAxisData = chartData.map(
       (item) => `#${item?.pullRequestNumber || ''}`,
@@ -259,7 +176,6 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
 
     const stemData = chartData.map((item) => ({
       value: Number(parseFloat(item?.score || '0')),
-      tier: item?.tier || 'N/A',
       title: item?.pullRequestTitle || '',
       author: item?.author || '',
       repository: item?.repository || '',
@@ -269,16 +185,15 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
 
     const dotData = stemData.map((item) => ({
       value: item.value,
-      tier: item.tier,
       title: item.title,
       author: item.author,
       repository: item.repository,
       prNumber: item.prNumber,
       rank: item.rank,
       itemStyle: {
-        color: getTierColor(item.tier),
+        color: chartColor,
         shadowBlur: 10,
-        shadowColor: getTierColor(item.tier),
+        shadowColor: chartColor,
       },
     }));
 
@@ -286,7 +201,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
       backgroundColor: 'transparent',
       title: {
         text: 'Pull Request Performance Ranking',
-        subtext: 'Individual PR scores with tier classification',
+        subtext: 'Individual PR scores ranked by performance',
         left: 'center',
         top: 20,
         textStyle: {
@@ -321,7 +236,6 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         formatter: (params: any) => {
           const data = params[0]?.data || params[1]?.data;
           if (!data) return '';
-          const tierColor = getTierColor(data.tier);
 
           return `
             <div style="font-family: 'JetBrains Mono', monospace;">
@@ -330,10 +244,6 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
               </div>
               <div style="margin-bottom: 10px; color: rgba(255,255,255,0.85); font-size: 11px; max-width: 300px; white-space: normal; word-break: break-word; line-height: 1.4;">
                 ${data.title}
-              </div>
-              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                <div style="width: 8px; height: 8px; border-radius: 50%; background: ${tierColor};"></div>
-                <span style="color: ${tierColor}; font-weight: 600; font-size: 13px;">${data.tier} Tier</span>
               </div>
               <div style="display: grid; gap: 6px; font-size: 11px;">
                 <div style="display: flex; justify-content: space-between; gap: 20px;">
@@ -435,7 +345,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           data: dotData.map((item) => ({
             ...item,
             itemStyle: {
-              color: getTierColor(item.tier),
+              color: chartColor,
               opacity: 0.4,
               borderRadius: [2, 2, 0, 0],
             },
@@ -704,46 +614,6 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                 fontFamily: '"JetBrains Mono", monospace',
               }}
             >
-              TIER
-            </Typography>
-            <Stack direction="row" spacing={1}>
-              <TierFilterButton
-                label="All"
-                value="all"
-                count={tierCounts.all}
-                color={theme.palette.status.neutral}
-              />
-              <TierFilterButton
-                label="Gold"
-                value="Gold"
-                count={tierCounts.gold}
-                color={theme.palette.tier.gold}
-              />
-              <TierFilterButton
-                label="Silver"
-                value="Silver"
-                count={tierCounts.silver}
-                color={theme.palette.tier.silver}
-              />
-              <TierFilterButton
-                label="Bronze"
-                value="Bronze"
-                count={tierCounts.bronze}
-                color={theme.palette.tier.bronze}
-              />
-            </Stack>
-          </Box>
-
-          <Box>
-            <Typography
-              variant="caption"
-              sx={{
-                color: 'rgba(255,255,255,0.5)',
-                display: 'block',
-                mb: 1,
-                fontFamily: '"JetBrains Mono", monospace',
-              }}
-            >
               STATUS
             </Typography>
             <Stack direction="row" spacing={1}>
@@ -982,15 +852,6 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                           {truncateText(pr.repository || '', 30)}
                         </Typography>
                       </Tooltip>
-                      <Chip
-                        variant="tier"
-                        label={pr.tier || 'N/A'}
-                        sx={{
-                          ml: 1,
-                          color: getTierColor(pr.tier || ''),
-                          borderColor: getTierColor(pr.tier || ''),
-                        }}
-                      />
                     </Box>
                   </TableCell>
                   <TableCell sx={{ ...bodyCellStyle, width: '10%' }}>
@@ -1160,19 +1021,19 @@ const getRankIcon = (rank: number) => (
       border: '1px solid',
       borderColor:
         rank === 1
-          ? alpha(TIER_COLORS.gold, 0.4)
+          ? alpha(RANK_COLORS.first, 0.4)
           : rank === 2
-            ? alpha(TIER_COLORS.silver, 0.4)
+            ? alpha(RANK_COLORS.second, 0.4)
             : rank === 3
-              ? alpha(TIER_COLORS.bronze, 0.4)
+              ? alpha(RANK_COLORS.third, 0.4)
               : 'rgba(255, 255, 255, 0.15)',
       boxShadow:
         rank === 1
-          ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
+          ? `0 0 12px ${alpha(RANK_COLORS.first, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.first, 0.2)}`
           : rank === 2
-            ? `0 0 12px ${alpha(TIER_COLORS.silver, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.silver, 0.2)}`
+            ? `0 0 12px ${alpha(RANK_COLORS.second, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.second, 0.2)}`
             : rank === 3
-              ? `0 0 12px ${alpha(TIER_COLORS.bronze, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.bronze, 0.2)}`
+              ? `0 0 12px ${alpha(RANK_COLORS.third, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.third, 0.2)}`
               : 'none',
     }}
   >
@@ -1181,11 +1042,11 @@ const getRankIcon = (rank: number) => (
       sx={{
         color:
           rank === 1
-            ? TIER_COLORS.gold
+            ? RANK_COLORS.first
             : rank === 2
-              ? TIER_COLORS.silver
+              ? RANK_COLORS.second
               : rank === 3
-                ? TIER_COLORS.bronze
+                ? RANK_COLORS.third
                 : 'rgba(255, 255, 255, 0.6)',
         fontFamily: '"JetBrains Mono", monospace',
         fontSize: '0.65rem',

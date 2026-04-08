@@ -9,7 +9,7 @@ import {
   alpha,
 } from '@mui/material';
 import { useAllPrs } from '../../api';
-import { TIER_COLORS, STATUS_COLORS } from '../../theme';
+import { RANK_COLORS, STATUS_COLORS } from '../../theme';
 
 interface RepositoryScoreCardProps {
   repositoryFullName: string;
@@ -312,19 +312,19 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
                       border: '1px solid',
                       borderColor:
                         item.rank === 1
-                          ? alpha(TIER_COLORS.gold, 0.4)
+                          ? alpha(RANK_COLORS.first, 0.4)
                           : item.rank === 2
-                            ? alpha(TIER_COLORS.silver, 0.4)
+                            ? alpha(RANK_COLORS.second, 0.4)
                             : item.rank === 3
-                              ? alpha(TIER_COLORS.bronze, 0.4)
+                              ? alpha(RANK_COLORS.third, 0.4)
                               : 'rgba(255, 255, 255, 0.15)',
                       boxShadow:
                         item.rank === 1
-                          ? `0 0 12px ${alpha(TIER_COLORS.gold, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.gold, 0.2)}`
+                          ? `0 0 12px ${alpha(RANK_COLORS.first, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.first, 0.2)}`
                           : item.rank === 2
-                            ? `0 0 12px ${alpha(TIER_COLORS.silver, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.silver, 0.2)}`
+                            ? `0 0 12px ${alpha(RANK_COLORS.second, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.second, 0.2)}`
                             : item.rank === 3
-                              ? `0 0 12px ${alpha(TIER_COLORS.bronze, 0.4)}, 0 0 4px ${alpha(TIER_COLORS.bronze, 0.2)}`
+                              ? `0 0 12px ${alpha(RANK_COLORS.third, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.third, 0.2)}`
                               : 'none',
                     }}
                   >
@@ -333,11 +333,11 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
                       sx={{
                         color:
                           item.rank === 1
-                            ? TIER_COLORS.gold
+                            ? RANK_COLORS.first
                             : item.rank === 2
-                              ? TIER_COLORS.silver
+                              ? RANK_COLORS.second
                               : item.rank === 3
-                                ? TIER_COLORS.bronze
+                                ? RANK_COLORS.third
                                 : 'rgba(255, 255, 255, 0.6)',
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.6rem',
