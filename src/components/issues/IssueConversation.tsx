@@ -6,7 +6,8 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { type IssueDetails } from '../../api/models/Issues';
 import { STATUS_COLORS } from '../../theme';
-import 'github-markdown-css/github-markdown-dark.css'; // Import standard GitHub Dark styles
+import { getMarkdownContentSx } from '../../utils';
+import 'github-markdown-css/github-markdown-dark.css';
 
 interface IssueConversationProps {
   issue: IssueDetails;
@@ -22,9 +23,9 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
         avatarUrl: `https://avatars.githubusercontent.com/${issue.authorLogin}`,
         htmlUrl: `https://github.com/${issue.authorLogin}`,
       },
-      body: issue.body || '*No description provided.*',
+      body: issue.body || '<em>No description provided.</em>',
       createdAt: issue.createdAt,
-      authorAssociation: 'OWNER', // Assuming creator is owner for display purposes, or fetch actual association if available
+      authorAssociation: 'OWNER',
       isDescription: true,
     },
   ];
@@ -58,7 +59,7 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
         flexDirection: 'column',
         gap: 3,
         pt: 2,
-        maxWidth: '960px', // Widen slightly for better code block readability
+        maxWidth: '960px',
         position: 'relative',
       }}
     >
@@ -96,7 +97,7 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                   width: 40,
                   height: 40,
                   border: '1px solid rgba(255,255,255,0.1)',
-                  backgroundColor: theme.palette.background.paper, // Avoid transparency issues over the line
+                  backgroundColor: theme.palette.background.paper,
                 }}
               />
             </Link>
@@ -120,8 +121,8 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                 left: '-8px',
                 width: '16px',
                 height: '16px',
-                backgroundColor: colors.canvas.subtle, // Match the header background
-                borderBottom: `1px solid ${colors.border.default}`, // Only bottom and left create the visible arrow borders
+                backgroundColor: colors.canvas.subtle,
+                borderBottom: `1px solid ${colors.border.default}`,
                 borderLeft: `1px solid ${colors.border.default}`,
                 transform: 'rotate(45deg)',
               },
@@ -131,7 +132,7 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
             <Box
               sx={{
                 px: 2,
-                py: 1.5, // Slightly more vertical padding
+                py: 1.5,
                 backgroundColor: colors.canvas.subtle,
                 borderBottom: `1px solid ${colors.border.default}`,
                 borderTopLeftRadius: '6px',
@@ -142,7 +143,7 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                 color: colors.fg.muted,
                 fontSize: '14px',
                 position: 'relative',
-                zIndex: 1, // Ensure above the arrow pseudo-element's main body
+                zIndex: 1,
               }}
             >
               <Box
@@ -188,7 +189,6 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
               </Box>
 
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {/* Author Association Badge */}
                 {item.authorAssociation &&
                   item.authorAssociation !== 'NONE' && (
                     <Chip
@@ -203,7 +203,6 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                       }}
                     />
                   )}
-                {/* Description Badge - Special styling */}
                 {item.isDescription && (
                   <Chip
                     variant="status"
@@ -219,81 +218,15 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
 
             {/* Markdown Content */}
             <Box
-              sx={{
-                p: { xs: 2, md: 3 }, // More padding on larger screens
-                color: colors.fg.default,
-                fontSize: '14px',
-                lineHeight: 1.6,
-                fontFamily:
-                  '-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji"', // GitHub's exact font stack
-                overflowX: 'auto',
-                // Typography refinements
-                '& > *:first-of-type': { mt: 0 },
-                '& > *:last-child': { mb: 0 },
-                '& h1, & h2, & h3, & h4, & h5, & h6': {
-                  mt: 3,
-                  mb: 2,
-                  fontWeight: 600,
-                  lineHeight: 1.25,
-                  color: colors.fg.default,
-                  borderBottom: `1px solid ${colors.border.muted}`,
-                  pb: 0.3,
-                },
-                '& h1': { fontSize: '2em' },
-                '& h2': { fontSize: '1.5em' },
-                '& a': { color: colors.accent.fg, textDecoration: 'none' },
-                '& a:hover': { textDecoration: 'underline' },
-                '& blockquote': {
-                  padding: '0 1em',
-                  color: colors.fg.muted,
-                  borderLeft: `0.25em solid ${colors.border.default}`,
-                  my: 2,
-                },
-                // Updated Code Block Styling
-                '& code': {
-                  padding: '0.2em 0.4em',
-                  margin: 0,
-                  fontSize: '85%',
-                  backgroundColor: 'rgba(110, 118, 129, 0.4)',
-                  borderRadius: '6px',
-                  fontFamily: '"JetBrains Mono", monospace',
-                },
-                '& pre': {
-                  mt: 2,
-                  mb: 2,
-                  borderRadius: '6px',
-                  overflow: 'hidden', // Let SyntaxHighlighter handle scroll
-                },
-                '& img': {
-                  maxWidth: '100%',
-                  borderRadius: '6px',
-                  backgroundColor: 'transparent',
-                },
-                '& .markdown-body': {
-                  backgroundColor: 'transparent',
-                  color: colors.fg.default,
-                  fontFamily: 'inherit',
-                  fontSize: '14px',
-                  lineHeight: 1.6,
-                },
-                '& .markdown-body pre': {
-                  backgroundColor: theme.palette.surface.elevated, // Distinct code block background
-                  border: `1px solid ${colors.border.default}`,
-                  borderRadius: '6px',
-                },
-                '& .markdown-body code': {
-                  fontFamily: '"JetBrains Mono", monospace',
-                },
-              }}
+              className="markdown-body"
+              sx={getMarkdownContentSx(theme, colors)}
             >
-              <div className="markdown-body" style={{ fontSize: '14px' }}>
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeRaw]}
-                >
-                  {item.body}
-                </ReactMarkdown>
-              </div>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+              >
+                {item.body}
+              </ReactMarkdown>
             </Box>
           </Paper>
         </Box>

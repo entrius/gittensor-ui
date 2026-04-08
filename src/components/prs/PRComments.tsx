@@ -8,13 +8,15 @@ import {
   CircularProgress,
   Chip,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { usePullRequestComments } from '../../api';
 import { type PullRequestDetails } from '../../api/models/Dashboard';
 import { STATUS_COLORS } from '../../theme';
-import 'github-markdown-css/github-markdown-dark.css'; // Import standard GitHub Dark styles
+import { getMarkdownContentSx } from '../../utils';
+import 'github-markdown-css/github-markdown-dark.css';
 
 interface PRCommentsProps {
   repository: string;
@@ -27,6 +29,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
   pullRequestNumber,
   prDetails,
 }) => {
+  const theme = useTheme();
   const {
     data: comments,
     isLoading,
@@ -59,7 +62,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
         avatarUrl: `https://avatars.githubusercontent.com/${prDetails.authorLogin}`,
         htmlUrl: `https://github.com/${prDetails.authorLogin}`,
       },
-      body: prDetails.description || '*No description provided.*',
+      body: prDetails.description || '<em>No description provided.</em>',
       createdAt: prDetails.createdAt,
       authorAssociation: 'OWNER',
       isDescription: true,
@@ -67,26 +70,25 @@ const PRComments: React.FC<PRCommentsProps> = ({
     ...comments,
   ];
 
-  // Premium Dark Theme Colors
   const colors = {
     canvas: {
-      default: '#0d1117',
-      subtle: '#161b22',
-      box: '#0d1117',
+      default: theme.palette.background.paper,
+      subtle: theme.palette.surface.elevated,
+      box: theme.palette.background.paper,
     },
     border: {
-      default: '#30363d',
-      muted: '#21262d',
+      default: theme.palette.border.medium,
+      muted: theme.palette.border.light,
     },
     fg: {
-      default: '#c9d1d9',
+      default: theme.palette.text.primary,
       muted: STATUS_COLORS.open,
     },
     accent: {
       fg: STATUS_COLORS.info,
     },
     timeline: {
-      line: '#30363d',
+      line: theme.palette.border.medium,
     },
   };
 
@@ -135,7 +137,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
                   width: 40,
                   height: 40,
                   border: '1px solid rgba(255,255,255,0.1)',
-                  backgroundColor: '#0d1117', // Avoid transparency issues over the line
+                  backgroundColor: theme.palette.background.paper,
                 }}
               />
             </Link>
@@ -258,81 +260,15 @@ const PRComments: React.FC<PRCommentsProps> = ({
 
             {/* Markdown Content */}
             <Box
-              sx={{
-                p: { xs: 2, md: 3 }, // More padding on larger screens
-                color: colors.fg.default,
-                fontSize: '14px',
-                lineHeight: 1.6,
-                fontFamily:
-                  '-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji"', // GitHub's exact font stack
-                overflowX: 'auto',
-                // Typography refinements
-                '& > *:first-of-type': { mt: 0 },
-                '& > *:last-child': { mb: 0 },
-                '& h1, & h2, & h3, & h4, & h5, & h6': {
-                  mt: 3,
-                  mb: 2,
-                  fontWeight: 600,
-                  lineHeight: 1.25,
-                  color: colors.fg.default,
-                  borderBottom: `1px solid ${colors.border.muted}`,
-                  pb: 0.3,
-                },
-                '& h1': { fontSize: '2em' },
-                '& h2': { fontSize: '1.5em' },
-                '& a': { color: colors.accent.fg, textDecoration: 'none' },
-                '& a:hover': { textDecoration: 'underline' },
-                '& blockquote': {
-                  padding: '0 1em',
-                  color: colors.fg.muted,
-                  borderLeft: `0.25em solid ${colors.border.default}`,
-                  my: 2,
-                },
-                // Updated Code Block Styling
-                '& code': {
-                  padding: '0.2em 0.4em',
-                  margin: 0,
-                  fontSize: '85%',
-                  backgroundColor: 'rgba(110, 118, 129, 0.4)',
-                  borderRadius: '6px',
-                  fontFamily: '"JetBrains Mono", monospace',
-                },
-                '& pre': {
-                  mt: 2,
-                  mb: 2,
-                  borderRadius: '6px',
-                  overflow: 'hidden', // Let SyntaxHighlighter handle scroll
-                },
-                '& img': {
-                  maxWidth: '100%',
-                  borderRadius: '6px',
-                  backgroundColor: 'transparent',
-                },
-                '& .markdown-body': {
-                  backgroundColor: 'transparent',
-                  color: colors.fg.default,
-                  fontFamily: 'inherit',
-                  fontSize: '14px',
-                  lineHeight: 1.6,
-                },
-                '& .markdown-body pre': {
-                  backgroundColor: '#161b22', // Distinct code block background
-                  border: `1px solid ${colors.border.default}`,
-                  borderRadius: '6px',
-                },
-                '& .markdown-body code': {
-                  fontFamily: '"JetBrains Mono", monospace',
-                },
-              }}
+              className="markdown-body"
+              sx={getMarkdownContentSx(theme, colors)}
             >
-              <div className="markdown-body" style={{ fontSize: '14px' }}>
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeRaw]}
-                >
-                  {item.body}
-                </ReactMarkdown>
-              </div>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+              >
+                {item.body}
+              </ReactMarkdown>
             </Box>
           </Paper>
         </Box>
