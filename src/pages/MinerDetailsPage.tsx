@@ -10,7 +10,6 @@ import {
   MinerRepositoriesTable,
   MinerScoreBreakdown,
   MinerScoreCard,
-  MinerTierPerformance,
   SEO,
 } from '../components';
 
@@ -49,7 +48,7 @@ const MinerDetailsPage: React.FC = () => {
     <Page title="Miner Dashboard">
       <SEO
         title={`Miner Dashboard - ${githubId}`}
-        description={`Track earnings, tier progression, contribution quality, and pull request performance for miner ${githubId}.`}
+        description={`Track earnings, contribution quality, and pull request performance for miner ${githubId}.`}
         type="website"
       />
       <Box
@@ -109,7 +108,6 @@ const MinerDetailsPage: React.FC = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {activeTab === 'overview' && (
               <>
-                <MinerTierPerformance githubId={githubId} />
                 <MinerInsightsCard githubId={githubId} />
                 <MinerScoreBreakdown githubId={githubId} />
               </>

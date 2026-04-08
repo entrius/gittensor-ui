@@ -8,7 +8,6 @@ import SearchResultsTable, {
 } from './SearchResultsTable';
 import {
   SearchAvatarContentCell,
-  SearchTierBadge,
   SearchTruncatedText,
 } from './SearchTableCells';
 import { type RepoSearchData } from './searchData';
@@ -75,25 +74,14 @@ const repositoryColumns: SearchResultsTableColumn<RepoSearchData>[] = [
         avatarAlt={repo.owner}
         avatarSrc={getGithubAvatarSrc(repo.owner)}
       >
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            minWidth: 0,
-          }}
-        >
-          <SearchTruncatedText
-            tooltip={repo.fullName}
-            sx={(theme) => ({
-              flex: 1,
-              color: theme.palette.text.primary,
-              fontWeight: 600,
-            })}
-            text={repo.fullName}
-          />
-          <SearchTierBadge tier={repo.tier} label="Unranked" />
-        </Box>
+        <SearchTruncatedText
+          tooltip={repo.fullName}
+          sx={(theme) => ({
+            color: theme.palette.text.primary,
+            fontWeight: 600,
+          })}
+          text={repo.fullName}
+        />
       </SearchAvatarContentCell>
     ),
   },

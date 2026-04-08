@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { Box, Card, Typography, Grid } from '@mui/material';
 import { MinerCard } from './MinerCard';
 import { STATUS_COLORS } from '../../theme';
-import { type MinerStats, type TierColorSet, FONTS } from './types';
+import { type MinerStats, type RankColorSet, FONTS } from './types';
 
 interface MinerSectionProps {
   title?: string;
   miners: MinerStats[];
-  color: TierColorSet;
+  color: RankColorSet;
   onSelectMiner: (githubId: string) => void;
   defaultExpanded?: boolean;
 }
@@ -22,7 +22,7 @@ export const MinerSection: React.FC<MinerSectionProps> = ({
   const [expanded, setExpanded] = useState(defaultExpanded);
 
   // Determine how many items to show
-  // User Requirement: "see at least top 3 in every tier without expanding the view"
+  // Show at least top 3 in every section without expanding
   const INITIAL_DISPLAY_COUNT = 3;
 
   // If not expanded, show INITIAL_DISPLAY_COUNT. If expanded, show all.
@@ -78,7 +78,7 @@ export const MinerSection: React.FC<MinerSectionProps> = ({
 
 interface SectionHeaderProps {
   title: string;
-  color: TierColorSet;
+  color: RankColorSet;
 }
 
 const SectionHeader: React.FC<SectionHeaderProps> = ({ title, color }) => (
@@ -112,7 +112,7 @@ interface SectionFooterProps {
   expanded: boolean;
   onToggle: () => void;
   remainingCount: number;
-  color: TierColorSet;
+  color: RankColorSet;
 }
 
 const SectionFooter: React.FC<SectionFooterProps> = ({

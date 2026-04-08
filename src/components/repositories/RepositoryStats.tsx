@@ -7,7 +7,7 @@ import {
   useRepoBountySummary,
   useRepositoryConfig,
 } from '../../api';
-import { TIER_COLORS, STATUS_COLORS } from '../../theme';
+import { RANK_COLORS, STATUS_COLORS } from '../../theme';
 
 interface RepositoryStatsProps {
   repositoryFullName: string;
@@ -81,19 +81,6 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
     return null;
   }
 
-  const getTierColor = (tier: string) => {
-    switch (tier) {
-      case 'Gold':
-        return TIER_COLORS.gold;
-      case 'Silver':
-        return TIER_COLORS.silver;
-      case 'Bronze':
-        return TIER_COLORS.bronze;
-      default:
-        return STATUS_COLORS.open;
-    }
-  };
-
   return (
     <Box sx={{ mb: 4 }}>
       <Typography
@@ -127,33 +114,6 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
             }}
           >
             {repository.weight}
-          </Typography>
-        </Box>
-
-        {/* Tier */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
-          >
-            Tier
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              color: getTierColor(repository.tier),
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: '13px',
-              fontWeight: 500,
-            }}
-          >
-            {repository.tier}
           </Typography>
         </Box>
 
@@ -254,14 +214,14 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
             >
               <Typography
                 variant="body2"
-                sx={{ fontSize: '13px', color: TIER_COLORS.gold }}
+                sx={{ fontSize: '13px', color: RANK_COLORS.first }}
               >
                 Bounties
               </Typography>
               <Typography
                 variant="body2"
                 sx={{
-                  color: TIER_COLORS.gold,
+                  color: RANK_COLORS.first,
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '13px',
                   fontWeight: 600,

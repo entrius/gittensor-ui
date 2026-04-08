@@ -4,20 +4,16 @@ import {
   CheckCircle as AchievementIcon,
   ErrorOutline as WarningIcon,
   Lightbulb as TipIcon,
-  TrackChanges as ProgressIcon,
 } from '@mui/icons-material';
 import {
   useGeneralConfig,
   useMinerStats,
-  useTierConfigurations,
   type MinerEvaluation,
   type RepositoryPrScoring,
-  type TierConfig,
 } from '../../api';
-import { STATUS_COLORS, TIER_COLORS } from '../../theme';
+import { STATUS_COLORS } from '../../theme';
 import {
   calculateDynamicOpenPrThreshold,
-  getTierLevel,
   parseNumber,
 } from '../../utils/ExplorerUtils';
 
@@ -25,7 +21,7 @@ interface MinerInsightsCardProps {
   githubId: string;
 }
 
-type InsightType = 'warning' | 'tip' | 'achievement' | 'progress';
+type InsightType = 'warning' | 'tip' | 'achievement';
 
 interface InsightItem {
   id: string;
@@ -34,18 +30,6 @@ interface InsightItem {
   description: string;
   priority: number;
 }
-
-const fieldByTier = (
-  tierName: string,
-  suffix: 'QualifiedUniqueRepos' | 'TokenScore' | 'Credibility',
-): keyof MinerEvaluation =>
-  `${tierName.toLowerCase()}${suffix}` as keyof MinerEvaluation;
-
-const getNextTierName = (tierLevel: number): 'Bronze' | 'Silver' | 'Gold' => {
-  if (tierLevel <= 0) return 'Bronze';
-  if (tierLevel === 1) return 'Silver';
-  return 'Gold';
-};
 
 const getOpenPrInsight = (
   minerStats: MinerEvaluation,
@@ -112,58 +96,19 @@ const getCredibilityInsight = (minerStats: MinerEvaluation): InsightItem => {
   };
 };
 
-const getTierProgressInsight = (
+const getEligibilityInsight = (
   minerStats: MinerEvaluation,
-  tierConfigList: TierConfig[] | undefined,
-): InsightItem => {
-  const currentTierLevel = getTierLevel(minerStats.currentTier);
+): InsightItem | null => {
+  const isEligible = minerStats.isEligible ?? false;
 
-  if (currentTierLevel >= 3) {
-    return {
-      id: 'tier-maxed',
-      type: 'achievement',
-      title: 'Top tier unlocked',
-      description:
-        'You are currently in Gold. Keep credibility and merge consistency high to preserve payout quality.',
-      priority: 40,
-    };
-  }
-
-  const nextTierName = getNextTierName(currentTierLevel);
-  const nextTierConfig = tierConfigList?.find(
-    (tierConfig) =>
-      tierConfig.name.toLowerCase() === nextTierName.toLowerCase(),
-  );
-
-  const qualifiedRepos = parseNumber(
-    minerStats[fieldByTier(nextTierName, 'QualifiedUniqueRepos')],
-  );
-  const tierTokenScore = parseNumber(
-    minerStats[fieldByTier(nextTierName, 'TokenScore')],
-  );
-  const tierCredibility = parseNumber(
-    minerStats[fieldByTier(nextTierName, 'Credibility')],
-  );
-
-  const requiredRepos = parseNumber(
-    nextTierConfig?.requiredQualifiedUniqueRepos,
-    3,
-  );
-  const requiredToken = parseNumber(nextTierConfig?.requiredMinTokenScore, 0);
-  const requiredCredibility = parseNumber(
-    nextTierConfig?.requiredCredibility,
-    0.7,
-  );
-
-  const missingRepos = Math.max(requiredRepos - qualifiedRepos, 0);
-  const missingToken = Math.max(requiredToken - tierTokenScore, 0);
-  const missingCredibility = Math.max(requiredCredibility - tierCredibility, 0);
+  if (isEligible) return null;
 
   return {
-    id: `tier-progress-${nextTierName.toLowerCase()}`,
-    type: 'progress',
-    title: `Unlock ${nextTierName}`,
-    description: `Need ${missingRepos} more qualified repo${missingRepos === 1 ? '' : 's'}, ${missingToken.toFixed(2)} token score, and ${(missingCredibility * 100).toFixed(1)}% credibility in ${nextTierName} scope.`,
+    id: 'eligibility-ineligible',
+    type: 'warning',
+    title: 'Not yet eligible',
+    description:
+      'You are currently ineligible for rewards. Improve your credibility, increase your token score, and contribute to more repositories to become eligible.',
     priority: 90,
   };
 };
@@ -199,13 +144,6 @@ const getInsightStyle = (type: InsightType) => {
         background: alpha(STATUS_COLORS.success, 0.1),
         icon: <AchievementIcon sx={{ fontSize: '1rem' }} />,
       };
-    case 'progress':
-      return {
-        color: TIER_COLORS.gold,
-        border: alpha(TIER_COLORS.gold, 0.35),
-        background: alpha(TIER_COLORS.gold, 0.1),
-        icon: <ProgressIcon sx={{ fontSize: '1rem' }} />,
-      };
     default:
       return {
         color: STATUS_COLORS.info,
@@ -219,7 +157,6 @@ const getInsightStyle = (type: InsightType) => {
 const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({ githubId }) => {
   const { data: minerStats } = useMinerStats(githubId);
   const { data: generalConfig } = useGeneralConfig();
-  const { data: tierConfigData } = useTierConfigurations();
 
   const insights = useMemo(() => {
     if (!minerStats) return [];
@@ -235,11 +172,13 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({ githubId }) => {
     const collateralInsight = getCollateralInsight(minerStats);
     if (collateralInsight) assembled.push(collateralInsight);
 
-    assembled.push(getTierProgressInsight(minerStats, tierConfigData?.tiers));
+    const eligibilityInsight = getEligibilityInsight(minerStats);
+    if (eligibilityInsight) assembled.push(eligibilityInsight);
+
     assembled.push(getCredibilityInsight(minerStats));
 
     return assembled.sort((a, b) => b.priority - a.priority).slice(0, 4);
-  }, [minerStats, generalConfig, tierConfigData]);
+  }, [minerStats, generalConfig]);
 
   if (!minerStats) return null;
 
@@ -272,7 +211,7 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({ githubId }) => {
             fontSize: '0.85rem',
           }}
         >
-          Prioritized recommendations based on your tier progress, credibility,
+          Prioritized recommendations based on your eligibility, credibility,
           collateral, and open-PR posture.
         </Typography>
       </Box>

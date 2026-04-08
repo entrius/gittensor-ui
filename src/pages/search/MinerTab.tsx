@@ -7,7 +7,6 @@ import SearchResultsTable, {
 } from './SearchResultsTable';
 import {
   SearchAvatarContentCell,
-  SearchTierBadge,
   SearchTruncatedText,
 } from './SearchTableCells';
 import { type MinerSearchData } from './searchData';
@@ -72,13 +71,6 @@ const minerColumns: SearchResultsTableColumn<MinerSearchData>[] = [
     cellSx: {
       minWidth: 260,
     },
-  },
-  {
-    key: 'tier',
-    header: 'Tier',
-    width: '12%',
-    renderCell: (miner: MinerSearchData) =>
-      miner.currentTier ? <SearchTierBadge tier={miner.currentTier} /> : null,
   },
   {
     key: 'credibility',

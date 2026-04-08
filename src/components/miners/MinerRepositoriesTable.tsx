@@ -17,14 +17,8 @@ import {
   useTheme,
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
-import {
-  useMinerPRs,
-  useReposAndWeights,
-  useTierConfigurations,
-} from '../../api';
+import { useMinerPRs, useReposAndWeights } from '../../api';
 import { useNavigate } from 'react-router-dom';
-import { TIER_COLORS } from '../../theme';
-import ExplorerFilterButton from './ExplorerFilterButton';
 import SortableHeaderCell from './SortableHeaderCell';
 import RankBadge from './RankBadge';
 import EmptyStateMessage from './EmptyStateMessage';
@@ -36,51 +30,32 @@ import {
   tableContainerSx,
 } from './MinerRepositoriesTable.styles';
 import {
-  type MinerTierFilter,
-  type QualificationFilter,
   type RepoSortField,
   type SortOrder,
   type RepoStats,
   buildRepoWeightsMap,
-  buildRepoTiersMap,
-  buildTierThresholdsMap,
   aggregatePRsByRepository,
-  filterMinerRepoStats,
-  filterByQualification,
   filterBySearch,
   sortMinerRepoStats,
-  computeTierCounts,
-  computeQualificationCounts,
   hasActiveFilters,
   getDisplayCount,
-  tierColorFor,
 } from '../../utils/ExplorerUtils';
 
 interface MinerRepositoriesTableProps {
   githubId: string;
-  /** When set externally (e.g. from TierDetailsPage), overrides internal tier filter. */
-  tierFilter?: string;
 }
 
 const PAGE_SIZE = 20;
 
 const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   githubId,
-  tierFilter: externalTierFilter,
 }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
-  const { data: tierConfig } = useTierConfigurations();
   const [sortField, setSortField] = useState<RepoSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [internalTierFilter, setTierFilter] = useState<MinerTierFilter>('all');
-  const tierFilter: MinerTierFilter =
-    (externalTierFilter?.toLowerCase() as MinerTierFilter) ||
-    internalTierFilter;
-  const [qualificationFilter, setQualificationFilter] =
-    useState<QualificationFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
 
@@ -89,29 +64,17 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
 
   // Build lookup maps from API data
   const repoWeights = useMemo(() => buildRepoWeightsMap(repos), [repos]);
-  const repoTiers = useMemo(() => buildRepoTiersMap(repos), [repos]);
-  const tierThresholds = useMemo(
-    () => buildTierThresholdsMap(tierConfig),
-    [tierConfig],
-  );
 
   // Aggregate PRs by repository
   const repoStats = useMemo(
-    () => aggregatePRsByRepository(prs || [], repoWeights, repoTiers),
-    [prs, repoWeights, repoTiers],
+    () => aggregatePRsByRepository(prs || [], repoWeights),
+    [prs, repoWeights],
   );
 
   // Filter and sort repository stats
   const filteredRepoStats = useMemo(() => {
-    let filtered = filterMinerRepoStats(repoStats, tierFilter);
-    filtered = filterByQualification(
-      filtered,
-      qualificationFilter,
-      tierThresholds,
-    );
-    filtered = filterBySearch(filtered, searchQuery);
-    return filtered;
-  }, [repoStats, tierFilter, qualificationFilter, tierThresholds, searchQuery]);
+    return filterBySearch(repoStats, searchQuery);
+  }, [repoStats, searchQuery]);
 
   const sortedRepoStats = useMemo(
     () => sortMinerRepoStats(filteredRepoStats, sortField, sortOrder),
@@ -125,13 +88,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
 
   const totalPages = Math.ceil(sortedRepoStats.length / PAGE_SIZE);
 
-  const tierCounts = useMemo(() => computeTierCounts(repoStats), [repoStats]);
-
-  const qualificationCounts = useMemo(
-    () => computeQualificationCounts(repoStats, tierThresholds),
-    [repoStats, tierThresholds],
-  );
-
   const handleSort = (field: RepoSortField) => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -143,11 +99,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
 
   const resetPage = () => setPage(0);
 
-  const isFiltered = hasActiveFilters(
-    tierFilter,
-    qualificationFilter,
-    searchQuery,
-  );
+  const isFiltered = hasActiveFilters(searchQuery);
   const displayCount = getDisplayCount(
     sortedRepoStats.length,
     repoStats.length,
@@ -226,94 +178,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
             >
               ({displayCount})
             </Typography>
-          </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              gap: { xs: 1.5, sm: 1 },
-              flexWrap: 'wrap',
-              alignItems: { xs: 'flex-start', sm: 'center' },
-              width: { xs: '100%', sm: 'auto' },
-            }}
-          >
-            {/* Qualification Filter Buttons */}
-            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-              <ExplorerFilterButton
-                label="All"
-                count={qualificationCounts.all}
-                color={theme.palette.status.neutral}
-                selected={qualificationFilter === 'all'}
-                onClick={() => {
-                  setQualificationFilter('all');
-                  resetPage();
-                }}
-              />
-              <ExplorerFilterButton
-                label="Qualified"
-                count={qualificationCounts.qualified}
-                color={theme.palette.status.merged}
-                selected={qualificationFilter === 'qualified'}
-                onClick={() => {
-                  setQualificationFilter('qualified');
-                  resetPage();
-                }}
-              />
-              <ExplorerFilterButton
-                label="Unqualified"
-                count={qualificationCounts.unqualified}
-                color={theme.palette.status.closed}
-                selected={qualificationFilter === 'unqualified'}
-                onClick={() => {
-                  setQualificationFilter('unqualified');
-                  resetPage();
-                }}
-              />
-            </Box>
-
-            {/* Tier Filter Buttons */}
-            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-              <ExplorerFilterButton
-                label="All Tiers"
-                count={tierCounts.all}
-                color={theme.palette.status.neutral}
-                selected={tierFilter === 'all'}
-                onClick={() => {
-                  setTierFilter('all');
-                  resetPage();
-                }}
-              />
-              <ExplorerFilterButton
-                label="Gold"
-                count={tierCounts.gold}
-                color={TIER_COLORS.gold}
-                selected={tierFilter === 'gold'}
-                onClick={() => {
-                  setTierFilter('gold');
-                  resetPage();
-                }}
-              />
-              <ExplorerFilterButton
-                label="Silver"
-                count={tierCounts.silver}
-                color={TIER_COLORS.silver}
-                selected={tierFilter === 'silver'}
-                onClick={() => {
-                  setTierFilter('silver');
-                  resetPage();
-                }}
-              />
-              <ExplorerFilterButton
-                label="Bronze"
-                count={tierCounts.bronze}
-                color={TIER_COLORS.bronze}
-                selected={tierFilter === 'bronze'}
-                onClick={() => {
-                  setTierFilter('bronze');
-                  resetPage();
-                }}
-              />
-            </Box>
           </Box>
         </Box>
 
@@ -522,18 +386,6 @@ const RepoTableRow: React.FC<RepoTableRowProps> = ({
               backgroundColor: avatarBgColor,
             }}
           />
-          {repo.tier && (
-            <Box
-              sx={{
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                backgroundColor: tierColorFor(repo.tier, TIER_COLORS),
-                flexShrink: 0,
-              }}
-              title={`${repo.tier} tier`}
-            />
-          )}
           <Typography
             component="span"
             sx={{

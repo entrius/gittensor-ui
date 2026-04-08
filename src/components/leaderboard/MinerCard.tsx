@@ -3,7 +3,7 @@ import { Box, Card, Typography, Avatar } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS, STATUS_COLORS } from '../../theme';
-import { type MinerStats, getTierColors, FONTS } from './types';
+import { type MinerStats, FONTS } from './types';
 
 interface MinerCardProps {
   miner: MinerStats;
@@ -11,15 +11,13 @@ interface MinerCardProps {
 }
 
 export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
-  const tierColors = getTierColors(miner.currentTier);
-
   // Helper to check for numeric IDs or missing values
   const isNumericId = (val: string | undefined) => !val || /^\d+$/.test(val);
 
   // Fetch profile if author is missing or looks like an ID
   const shouldFetch = isNumericId(miner.author);
   const { data: githubData } = useMinerGithubData(miner.githubId, shouldFetch);
-  // Also fetch PRs as fallback if github data is missing (common for unranked miners)
+  // Also fetch PRs as fallback if github data is missing
   const { data: prs } = useMinerPRs(miner.githubId, shouldFetch);
 
   const username =
@@ -30,11 +28,12 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
     '';
   const credibilityPercent = (miner.credibility || 0) * 100;
 
-  const borderColor = miner.currentTier
-    ? tierColors.border
+  const isEligible = miner.isEligible ?? false;
+  const borderColor = isEligible
+    ? 'rgba(63, 185, 80, 0.3)'
     : 'rgba(48, 54, 61, 0.4)';
 
-  if (!miner.currentTier) {
+  if (!isEligible) {
     return (
       <Card
         onClick={onClick}
@@ -93,7 +92,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
             py: 0.1,
           }}
         >
-          Unranked
+          Ineligible
         </Typography>
       </Card>
     );
@@ -118,19 +117,15 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         '&:hover': {
           backgroundColor: 'rgba(22, 27, 34, 0.6)',
-          borderColor: tierColors.text,
+          borderColor: 'rgba(63, 185, 80, 0.5)',
           transform: 'translateY(-2px)',
-          boxShadow: `0 8px 24px -6px rgba(0, 0, 0, 0.6), 0 0 0 1px ${tierColors.border}40`,
+          boxShadow: `0 8px 24px -6px rgba(0, 0, 0, 0.6)`,
         },
       }}
       elevation={0}
     >
       {/* Header: Identity + Rank */}
-      <MinerCardHeader
-        username={username}
-        miner={miner}
-        tierColors={tierColors}
-      />
+      <MinerCardHeader username={username} miner={miner} />
 
       {/* Main Stats: Earnings & Credibility */}
       <MinerCardStats miner={miner} credibilityPercent={credibilityPercent} />
@@ -144,13 +139,11 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
 interface MinerCardHeaderProps {
   username: string;
   miner: MinerStats;
-  tierColors: ReturnType<typeof getTierColors>;
 }
 
 const MinerCardHeader: React.FC<MinerCardHeaderProps> = ({
   username,
   miner,
-  tierColors,
 }) => (
   <Box
     sx={{
@@ -166,8 +159,7 @@ const MinerCardHeader: React.FC<MinerCardHeaderProps> = ({
           sx={{
             width: 36,
             height: 36,
-            border: `2px solid ${tierColors.border}`,
-            boxShadow: `0 0 10px ${tierColors.border}20`,
+            border: `2px solid rgba(63, 185, 80, 0.3)`,
           }}
         />
         <Box
@@ -176,7 +168,7 @@ const MinerCardHeader: React.FC<MinerCardHeaderProps> = ({
             bottom: -4,
             right: -4,
             backgroundColor: '#0d1117',
-            border: `1px solid ${tierColors.border}`,
+            border: `1px solid rgba(63, 185, 80, 0.3)`,
             borderRadius: '4px',
             px: 0.5,
             py: 0,
@@ -187,7 +179,7 @@ const MinerCardHeader: React.FC<MinerCardHeaderProps> = ({
               fontFamily: FONTS.mono,
               fontSize: '0.6rem',
               fontWeight: 700,
-              color: tierColors.text,
+              color: 'rgba(255, 255, 255, 0.7)',
             }}
           >
             #{miner.rank}
@@ -210,19 +202,6 @@ const MinerCardHeader: React.FC<MinerCardHeaderProps> = ({
         </Typography>
       </Box>
     </Box>
-    <Typography
-      sx={{
-        fontFamily: FONTS.mono,
-        fontSize: '0.65rem',
-        fontWeight: 700,
-        color: tierColors.text,
-        textTransform: 'uppercase',
-        mt: 0.5,
-        opacity: 0.8,
-      }}
-    >
-      {miner.currentTier}
-    </Typography>
   </Box>
 );
 

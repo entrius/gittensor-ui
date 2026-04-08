@@ -7,14 +7,14 @@ import {
   FormControlLabel,
   Switch,
   Typography,
-  Stack,
-  Button,
   CircularProgress,
 } from '@mui/material';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ReactECharts from 'echarts-for-react';
 import { useAllPrs, useReposAndWeights } from '../../api';
-import { TIER_COLORS, STATUS_COLORS } from '../../theme';
+import { STATUS_COLORS } from '../../theme';
+
+const CHART_DOT_COLOR = 'rgba(88, 166, 255, 0.9)';
 
 const truncateText = (text: string, maxLength: number): string => {
   if (!text) return '';
@@ -24,9 +24,6 @@ const truncateText = (text: string, maxLength: number): string => {
 const LeaderboardCharts: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [useLogScale, setUseLogScale] = useState(true);
-  const [tierFilter, setTierFilter] = useState<
-    'all' | 'Gold' | 'Silver' | 'Bronze'
-  >('all');
 
   const { data: allPRs, isLoading: isLoadingPRs } = useAllPrs();
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
@@ -56,7 +53,6 @@ const LeaderboardCharts: React.FC = () => {
         totalPRs: 0,
         uniqueMiners: new Set(),
         weight: 0,
-        tier: '',
       };
       current.totalScore += parseFloat(pr.score || '0');
       current.totalPRs += 1;
@@ -70,7 +66,6 @@ const LeaderboardCharts: React.FC = () => {
         stats.weight = repoData.weight
           ? parseFloat(String(repoData.weight))
           : 0;
-        stats.tier = repoData.tier || '';
       }
     });
 
@@ -80,56 +75,8 @@ const LeaderboardCharts: React.FC = () => {
       .map((repo, index) => ({ ...repo, rank: index + 1 }));
   }, [allPRs, repos]);
 
-  const getTierColor = (tier: string) => {
-    switch (tier) {
-      case 'Gold':
-        return TIER_COLORS.gold;
-      case 'Silver':
-        return TIER_COLORS.silver;
-      case 'Bronze':
-        return TIER_COLORS.bronze;
-      default:
-        return 'rgba(139, 148, 158, 0.9)';
-    }
-  };
-
-  const TierFilterButton = ({
-    label,
-    value,
-    color,
-  }: {
-    label: string;
-    value: typeof tierFilter;
-    color: string;
-  }) => (
-    <Button
-      size="small"
-      onClick={() => setTierFilter(value)}
-      sx={{
-        color: tierFilter === value ? '#fff' : 'rgba(255,255,255,0.5)',
-        backgroundColor:
-          tierFilter === value ? 'rgba(255,255,255,0.1)' : 'transparent',
-        borderRadius: '6px',
-        px: 2,
-        minWidth: 'auto',
-        textTransform: 'none',
-        fontFamily: '"JetBrains Mono", monospace',
-        fontSize: '0.8rem',
-        border:
-          tierFilter === value ? `1px solid ${color}` : '1px solid transparent',
-        '&:hover': { backgroundColor: 'rgba(255,255,255,0.15)' },
-      }}
-    >
-      {label}
-    </Button>
-  );
-
   const getPRsChartOption = () => {
-    const filteredData =
-      tierFilter === 'all'
-        ? topPRs
-        : topPRs.filter((pr) => pr.tier === tierFilter);
-    const chartData = filteredData
+    const chartData = topPRs
       .filter((item) => parseFloat(item?.score || '0') >= 1)
       .slice(0, 50);
 
@@ -138,16 +85,15 @@ const LeaderboardCharts: React.FC = () => {
     );
     const dotData = chartData.map((item) => ({
       value: Number(parseFloat(item?.score || '0')),
-      tier: item?.tier || 'N/A',
       title: item?.pullRequestTitle || '',
       author: item?.author || '',
       repository: item?.repository || '',
       prNumber: item?.pullRequestNumber || 0,
       rank: item?.rank || 0,
       itemStyle: {
-        color: getTierColor(item?.tier || ''),
+        color: CHART_DOT_COLOR,
         shadowBlur: 10,
-        shadowColor: getTierColor(item?.tier || ''),
+        shadowColor: CHART_DOT_COLOR,
       },
     }));
 
@@ -155,7 +101,7 @@ const LeaderboardCharts: React.FC = () => {
       backgroundColor: 'transparent',
       title: {
         text: 'Pull Request Performance Ranking',
-        subtext: 'Individual PR scores with tier classification',
+        subtext: 'Individual PR scores ranked by performance',
         left: 'center',
         top: 20,
         textStyle: {
@@ -188,11 +134,10 @@ const LeaderboardCharts: React.FC = () => {
         formatter: (params: any) => {
           const data = params[0]?.data || params[1]?.data;
           if (!data) return '';
-          const tierColor = getTierColor(data.tier);
           return `
             <div style="font-family: 'JetBrains Mono', monospace;">
               <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.15);">
-                <img src="https://avatars.githubusercontent.com/${data.author}" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid ${tierColor};" />
+                <img src="https://avatars.githubusercontent.com/${data.author}" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid ${CHART_DOT_COLOR};" />
                 <div>
                   <div style="font-weight: 700; font-size: 14px; color: #fff;">PR #${data.prNumber}</div>
                   <div style="font-size: 11px; color: rgba(255,255,255,0.6);">${data.author}</div>
@@ -200,10 +145,6 @@ const LeaderboardCharts: React.FC = () => {
               </div>
               <div style="margin-bottom: 10px; color: rgba(255,255,255,0.85); font-size: 11px; max-width: 300px; white-space: normal; word-break: break-word; line-height: 1.4;">
                 ${data.title}
-              </div>
-              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                <div style="width: 8px; height: 8px; border-radius: 50%; background: ${tierColor};"></div>
-                <span style="color: ${tierColor}; font-weight: 600; font-size: 13px;">${data.tier} Tier</span>
               </div>
               <div style="display: grid; gap: 6px; font-size: 11px;">
                 <div style="display: flex; justify-content: space-between; gap: 20px;">
@@ -280,7 +221,7 @@ const LeaderboardCharts: React.FC = () => {
           data: dotData.map((item) => ({
             ...item,
             itemStyle: {
-              color: getTierColor(item.tier),
+              color: CHART_DOT_COLOR,
               opacity: 0.4,
               borderRadius: [2, 2, 0, 0],
             },
@@ -310,11 +251,7 @@ const LeaderboardCharts: React.FC = () => {
   };
 
   const getReposChartOption = () => {
-    const filteredData =
-      tierFilter === 'all'
-        ? repoStats
-        : repoStats.filter((repo) => repo.tier === tierFilter);
-    const chartData = filteredData
+    const chartData = repoStats
       .filter((item) => item.totalScore >= 1)
       .slice(0, 50);
 
@@ -323,16 +260,15 @@ const LeaderboardCharts: React.FC = () => {
     );
     const dotData = chartData.map((item) => ({
       value: item.totalScore,
-      tier: item.tier,
       repository: item.repository,
       totalPRs: item.totalPRs,
       uniqueMiners: item.uniqueMiners.size,
       weight: item.weight,
       rank: item.rank,
       itemStyle: {
-        color: getTierColor(item.tier),
+        color: CHART_DOT_COLOR,
         shadowBlur: 10,
-        shadowColor: getTierColor(item.tier),
+        shadowColor: CHART_DOT_COLOR,
       },
     }));
 
@@ -373,7 +309,6 @@ const LeaderboardCharts: React.FC = () => {
         formatter: (params: any) => {
           const data = params[0]?.data || params[1]?.data;
           if (!data) return '';
-          const tierColor = getTierColor(data.tier);
           const repoOwner = data.repository.split('/')[0];
           const repoName = data.repository.split('/')[1] || data.repository;
           const avatarBg =
@@ -385,15 +320,11 @@ const LeaderboardCharts: React.FC = () => {
           return `
             <div style="font-family: 'JetBrains Mono', monospace;">
               <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.15);">
-                <img src="https://avatars.githubusercontent.com/${repoOwner}" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid ${tierColor}; background-color: ${avatarBg};" onerror="this.style.display='none'" />
+                <img src="https://avatars.githubusercontent.com/${repoOwner}" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid ${CHART_DOT_COLOR}; background-color: ${avatarBg};" onerror="this.style.display='none'" />
                 <div>
                   <div style="font-weight: 700; font-size: 14px; color: #fff;">${repoName}</div>
                   <div style="font-size: 11px; color: rgba(255,255,255,0.6);">${repoOwner}</div>
                 </div>
-              </div>
-              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                <div style="width: 8px; height: 8px; border-radius: 50%; background: ${tierColor};"></div>
-                <span style="color: ${tierColor}; font-weight: 600; font-size: 13px;">${data.tier} Tier</span>
               </div>
               <div style="display: grid; gap: 6px; font-size: 11px;">
                 <div style="display: flex; justify-content: space-between; gap: 20px;">
@@ -474,7 +405,7 @@ const LeaderboardCharts: React.FC = () => {
           data: dotData.map((item) => ({
             ...item,
             itemStyle: {
-              color: getTierColor(item.tier),
+              color: CHART_DOT_COLOR,
               opacity: 0.4,
               borderRadius: [2, 2, 0, 0],
             },
@@ -548,74 +479,37 @@ const LeaderboardCharts: React.FC = () => {
           <Tab label="Top Pull Requests" />
           <Tab label="Top Repositories" />
         </Tabs>
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 2,
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            width: { xs: '100%', lg: 'auto' },
-          }}
-        >
-          <Stack
-            direction="row"
-            spacing={1}
-            sx={{ flexWrap: 'wrap', gap: 1 }}
-            useFlexGap
-          >
-            <TierFilterButton
-              label="All"
-              value="all"
-              color={STATUS_COLORS.open}
+        <FormControlLabel
+          control={
+            <Switch
+              checked={useLogScale}
+              onChange={(e) => setUseLogScale(e.target.checked)}
+              size="small"
+              sx={{
+                '& .MuiSwitch-switchBase.Mui-checked': {
+                  color: 'primary.main',
+                },
+                '& .MuiSwitch-track': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                },
+              }}
             />
-            <TierFilterButton
-              label="Gold"
-              value="Gold"
-              color={TIER_COLORS.gold}
-            />
-            <TierFilterButton
-              label="Silver"
-              value="Silver"
-              color={TIER_COLORS.silver}
-            />
-            <TierFilterButton
-              label="Bronze"
-              value="Bronze"
-              color={TIER_COLORS.bronze}
-            />
-          </Stack>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={useLogScale}
-                onChange={(e) => setUseLogScale(e.target.checked)}
-                size="small"
-                sx={{
-                  '& .MuiSwitch-switchBase.Mui-checked': {
-                    color: 'primary.main',
-                  },
-                  '& .MuiSwitch-track': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                  },
-                }}
-              />
-            }
-            label={
-              <Typography
-                variant="body2"
-                sx={{
-                  fontFamily: 'JetBrains Mono',
-                  fontSize: '0.8rem',
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                Log Scale
-              </Typography>
-            }
-            sx={{ ml: 'auto' }}
-          />
-        </Box>
+          }
+          label={
+            <Typography
+              variant="body2"
+              sx={{
+                fontFamily: 'JetBrains Mono',
+                fontSize: '0.8rem',
+                color: 'rgba(255, 255, 255, 0.7)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Log Scale
+            </Typography>
+          }
+          sx={{ ml: 'auto' }}
+        />
       </Box>
       <Box sx={{ flex: 1, p: 2, backgroundColor: 'rgba(0,0,0,0.2)' }}>
         {isLoading ? (

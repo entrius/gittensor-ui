@@ -18,7 +18,6 @@ const IssueDetailsPage = React.lazy(() => import('./pages/IssueDetailsPage'));
 const TopMinersPage = React.lazy(() => import('./pages/TopMinersPage'));
 const RepositoriesPage = React.lazy(() => import('./pages/RepositoriesPage'));
 const MinerDetailsPage = React.lazy(() => import('./pages/MinerDetailsPage'));
-const TierDetailsPage = React.lazy(() => import('./pages/TierDetailsPage'));
 const RepositoryDetailsPage = React.lazy(
   () => import('./pages/RepositoryDetailsPage'),
 );
@@ -58,11 +57,6 @@ const routesArray: AppRoute[] = [
     name: 'miner-details',
     path: '/miners/details',
     element: <MinerDetailsPage />,
-  },
-  {
-    name: 'tier-details',
-    path: '/miners/tier-details',
-    element: <TierDetailsPage />,
   },
   {
     name: 'repository-details',

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 
 import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
 
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { TopRepositoriesTable, SEO } from '../components';
 import { useAllPrs, useReposAndWeights } from '../api';
@@ -106,7 +106,6 @@ const cardSx = {
 // ── Page ────────────────────────────────────────────────────────────────────
 const RepositoriesPage: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
   const formatRelativeTime = (date: Date) => {
     const now = new Date();
@@ -122,11 +121,6 @@ const RepositoriesPage: React.FC = () => {
     if (days < 30) return `${days}d ${hrs % 24}h ago`;
     return `${days}d ago`;
   };
-  const initialTierFilter = searchParams.get('tier') as
-    | 'Gold'
-    | 'Silver'
-    | 'Bronze'
-    | null;
 
   const { data: allPRs, isLoading: isLoadingPRs } = useAllPrs();
   const { data: reposWithWeights, isLoading: isLoadingRepos } =
@@ -178,7 +172,6 @@ const RepositoriesPage: React.FC = () => {
           totalPRs: s?.totalPRs || 0,
           uniqueMiners: s?.uniqueMiners || new Set<string>(),
           weight: repo.weight ? parseFloat(String(repo.weight)) : 0,
-          tier: repo.tier || '',
           inactiveAt: repo.inactiveAt,
         };
       })
@@ -227,7 +220,6 @@ const RepositoriesPage: React.FC = () => {
       )
       .map(([name, s]) => ({
         name,
-        tier: repoMap.get(name)?.tier || '',
         recentScore: s.recentScore,
         priorScore: s.priorScore,
         pctIncrease: (s.recentScore / s.priorScore) * 100,
@@ -267,7 +259,6 @@ const RepositoriesPage: React.FC = () => {
     return Array.from(repoCollateral.entries())
       .map(([name, data]) => ({
         name,
-        tier: repoMap.get(name)?.tier || '',
         collateral: data.totalCollateral,
         openPRs: data.openPRs,
       }))
@@ -308,7 +299,6 @@ const RepositoriesPage: React.FC = () => {
       .slice(0, 5)
       .map((pr) => ({
         name: pr.repository,
-        tier: repoMap.get(pr.repository)?.tier || '',
         title: pr.pullRequestTitle,
         createdAt: new Date(pr.mergedAt || new Date()),
         number: pr.pullRequestNumber,
@@ -575,7 +565,6 @@ const RepositoriesPage: React.FC = () => {
             repositories={repoStats}
             isLoading={isLoading}
             onSelectRepository={handleSelectRepository}
-            initialTierFilter={initialTierFilter || undefined}
           />
         </Card>
       </Box>

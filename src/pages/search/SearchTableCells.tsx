@@ -2,7 +2,6 @@ import React from 'react';
 import { Avatar, Box, Chip, Tooltip, Typography } from '@mui/material';
 import { type Theme } from '@mui/material/styles';
 import { type SystemStyleObject } from '@mui/system';
-import { getTierColors } from '../../components/leaderboard/types';
 
 type CellSx =
   | SystemStyleObject<Theme>
@@ -97,41 +96,6 @@ const SearchTruncatedText: React.FC<TruncatedTextProps> = ({
   );
 };
 
-type TierBadgeProps = {
-  label?: string;
-  tier?: string;
-};
-
-const SearchTierBadge: React.FC<TierBadgeProps> = ({ label, tier }) => {
-  const resolvedLabel = tier || label;
-  if (!resolvedLabel) return null;
-
-  return (
-    <Box
-      component="span"
-      sx={(theme) => {
-        const tierColors = getTierColors(tier);
-
-        return {
-          display: 'inline-flex',
-          alignItems: 'center',
-          border: '1px solid',
-          borderRadius: 1.25,
-          px: 1,
-          py: 0.25,
-          ...theme.typography.monoSmall,
-          lineHeight: 1,
-          color: tierColors.text,
-          borderColor: tierColors.border,
-          backgroundColor: tierColors.bg,
-        };
-      }}
-    >
-      {resolvedLabel}
-    </Box>
-  );
-};
-
 type StatusChipProps = {
   backgroundColor: ThemeColorValue;
   borderColor: ThemeColorValue;
@@ -165,6 +129,5 @@ const SearchStatusChip: React.FC<StatusChipProps> = ({
 export {
   SearchAvatarContentCell,
   SearchStatusChip,
-  SearchTierBadge,
   SearchTruncatedText,
 };
