@@ -1,9 +1,12 @@
 import React from 'react';
 import { Box, Typography, Avatar, Paper, Link, Chip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import { type IssueDetails } from '../../api/models/Issues';
 import { STATUS_COLORS } from '../../theme';
-import 'github-markdown-css/github-markdown-dark.css'; // Import standard GitHub Dark styles
+import 'github-markdown-css/github-markdown-dark.css';
 
 interface IssueConversationProps {
   issue: IssueDetails;
@@ -19,7 +22,7 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
         avatarUrl: `https://avatars.githubusercontent.com/${issue.authorLogin}`,
         htmlUrl: `https://github.com/${issue.authorLogin}`,
       },
-      body: issue.body || '*No description provided.*',
+      body: issue.body || '<em>No description provided.</em>',
       createdAt: issue.createdAt,
       authorAssociation: 'OWNER', // Assuming creator is owner for display purposes, or fetch actual association if available
       isDescription: true,
@@ -55,7 +58,7 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
         flexDirection: 'column',
         gap: 3,
         pt: 2,
-        maxWidth: '960px', // Widen slightly for better code block readability
+        maxWidth: '960px',
         mx: 'auto',
         position: 'relative',
       }}
@@ -239,15 +242,29 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                 },
                 '& h1': { fontSize: '2em' },
                 '& h2': { fontSize: '1.5em' },
+                '& h3': { fontSize: '1.25em' },
+                '& p': { mb: 2, mt: 0 },
                 '& a': { color: colors.accent.fg, textDecoration: 'none' },
                 '& a:hover': { textDecoration: 'underline' },
+                '& ul, & ol': {
+                  pl: '2em',
+                  mb: 2,
+                  listStyleType: 'disc',
+                },
+                '& ol': { listStyleType: 'decimal' },
+                '& li': { mb: 0.5 },
+                '& li + li': { mt: '0.25em' },
                 '& blockquote': {
                   padding: '0 1em',
                   color: colors.fg.muted,
                   borderLeft: `0.25em solid ${colors.border.default}`,
                   my: 2,
+                  mx: 0,
                 },
-                // Updated Code Block Styling
+                '& input[type="checkbox"]': {
+                  mr: 0.5,
+                  verticalAlign: 'middle',
+                },
                 '& code': {
                   padding: '0.2em 0.4em',
                   margin: 0,
@@ -259,8 +276,36 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                 '& pre': {
                   mt: 2,
                   mb: 2,
+                  p: 2,
                   borderRadius: '6px',
-                  overflow: 'hidden', // Let SyntaxHighlighter handle scroll
+                  overflow: 'auto',
+                  backgroundColor: theme.palette.surface.elevated,
+                  border: `1px solid ${colors.border.default}`,
+                  '& code': {
+                    backgroundColor: 'transparent',
+                    p: 0,
+                    fontSize: '100%',
+                  },
+                },
+                '& table': {
+                  borderCollapse: 'collapse',
+                  width: '100%',
+                  mb: 2,
+                  overflowX: 'auto',
+                },
+                '& th, & td': {
+                  border: `1px solid ${colors.border.default}`,
+                  padding: '6px 13px',
+                },
+                '& th': { fontWeight: 600 },
+                '& tr:nth-of-type(2n)': {
+                  backgroundColor: theme.palette.surface.elevated,
+                },
+                '& hr': {
+                  height: '0.25em',
+                  my: 3,
+                  backgroundColor: colors.border.default,
+                  border: 0,
                 },
                 '& img': {
                   maxWidth: '100%',
@@ -274,21 +319,16 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                   fontSize: '14px',
                   lineHeight: 1.6,
                 },
-                '& .markdown-body pre': {
-                  backgroundColor: theme.palette.surface.elevated, // Distinct code block background
-                  border: `1px solid ${colors.border.default}`,
-                  borderRadius: '6px',
-                },
-                '& .markdown-body code': {
-                  fontFamily: '"JetBrains Mono", monospace',
-                },
               }}
             >
-              <div
-                className="markdown-body"
-                dangerouslySetInnerHTML={{ __html: item.body }}
-                style={{ fontSize: '14px' }}
-              />
+              <div className="markdown-body" style={{ fontSize: '14px' }}>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
+                >
+                  {item.body}
+                </ReactMarkdown>
+              </div>
             </Box>
           </Paper>
         </Box>
