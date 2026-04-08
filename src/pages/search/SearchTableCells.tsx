@@ -126,8 +126,4 @@ const SearchStatusChip: React.FC<StatusChipProps> = ({
   />
 );
 
-export {
-  SearchAvatarContentCell,
-  SearchStatusChip,
-  SearchTruncatedText,
-};
+export { SearchAvatarContentCell, SearchStatusChip, SearchTruncatedText };

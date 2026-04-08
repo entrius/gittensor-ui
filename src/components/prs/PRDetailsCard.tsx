@@ -6,7 +6,6 @@ import {
   CircularProgress,
   Avatar,
   Grid,
-  Chip,
   alpha,
   Tooltip,
 } from '@mui/material';

@@ -280,7 +280,9 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
   const openPrs = parseNumber(minerStats.totalOpenPrs);
   const collateral = parseNumber(minerStats.totalCollateralScore);
   const isEligible = minerStats.isEligible ?? false;
-  const eligibilityColor = isEligible ? STATUS_COLORS.success : STATUS_COLORS.neutral;
+  const eligibilityColor = isEligible
+    ? STATUS_COLORS.success
+    : STATUS_COLORS.neutral;
 
   return (
     <Card sx={{ p: 3, position: 'relative' }} elevation={0}>

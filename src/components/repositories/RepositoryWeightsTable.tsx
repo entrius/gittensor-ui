@@ -30,7 +30,6 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
 import { useReposAndWeights } from '../../api';
-import { STATUS_COLORS } from '../../theme';
 import dayjs from 'dayjs';
 
 type SortField = 'owner' | 'name' | 'weight';
@@ -780,9 +779,7 @@ const RepositoryWeightsTable: React.FC = () => {
                           <Typography
                             variant="dataValue"
                             sx={{
-                              color: isInactive
-                                ? 'error.dark'
-                                : 'text.primary',
+                              color: isInactive ? 'error.dark' : 'text.primary',
                             }}
                           >
                             {repo.weight}

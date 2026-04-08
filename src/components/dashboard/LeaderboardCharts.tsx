@@ -12,7 +12,6 @@ import {
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ReactECharts from 'echarts-for-react';
 import { useAllPrs, useReposAndWeights } from '../../api';
-import { STATUS_COLORS } from '../../theme';
 
 const CHART_DOT_COLOR = 'rgba(88, 166, 255, 0.9)';
 
