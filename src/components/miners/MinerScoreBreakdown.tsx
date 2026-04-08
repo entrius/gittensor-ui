@@ -17,11 +17,7 @@ import {
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import {
-  useMinerPRs,
-  usePullRequestDetails,
-  type CommitLog,
-} from '../../api';
+import { useMinerPRs, usePullRequestDetails, type CommitLog } from '../../api';
 import { STATUS_COLORS } from '../../theme';
 
 interface MinerScoreBreakdownProps {
@@ -122,10 +118,7 @@ interface PrScoreRowProps {
   onNavigateToPr: (repo: string, prNumber: number) => void;
 }
 
-const PrScoreRow: React.FC<PrScoreRowProps> = ({
-  pr,
-  onNavigateToPr,
-}) => {
+const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
   const [expanded, setExpanded] = useState(false);
 
   // Fetch full PR details (with all multipliers) — cached by React Query

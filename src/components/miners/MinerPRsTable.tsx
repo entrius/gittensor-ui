@@ -226,9 +226,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               }}
             >
               ({filteredPRs.length}
-              {selectedAuthor ||
-              statusFilter !== 'all' ||
-              searchQuery.trim()
+              {selectedAuthor || statusFilter !== 'all' || searchQuery.trim()
                 ? ` of ${prs?.length || 0}`
                 : ''}
               )
@@ -295,7 +293,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 }}
               />
             </Box>
-
           </Box>
         </Box>
 
