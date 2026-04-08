@@ -105,7 +105,9 @@ const CodeBlock: React.FC<{
             right: 8,
             cursor: 'pointer',
             color: copied ? 'success.main' : 'rgba(255,255,255,0.3)',
-            '&:hover': { color: copied ? 'success.main' : 'rgba(255,255,255,0.6)' },
+            '&:hover': {
+              color: copied ? 'success.main' : 'rgba(255,255,255,0.6)',
+            },
             transition: 'color 0.2s',
           }}
         >
@@ -123,14 +125,22 @@ const StepDetail: React.FC<{ step: number }> = ({ step }) => {
     case 1:
       return (
         <Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.7 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: 2, lineHeight: 1.7 }}
+          >
             Create a Bittensor wallet with a coldkey and hotkey. See the{' '}
             <Typography
               component="a"
               href="https://docs.learnbittensor.org/keys/working-with-keys"
               target="_blank"
               rel="noopener noreferrer"
-              sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+              sx={{
+                color: 'primary.main',
+                textDecoration: 'none',
+                '&:hover': { textDecoration: 'underline' },
+              }}
             >
               official Bittensor docs
             </Typography>{' '}
@@ -142,7 +152,11 @@ const StepDetail: React.FC<{ step: number }> = ({ step }) => {
     case 2:
       return (
         <Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.7 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: 2, lineHeight: 1.7 }}
+          >
             Register your hotkey to the Gittensor subnet.
           </Typography>
           <NetworkTabs network={network} onChange={setNetwork} />
@@ -162,18 +176,39 @@ const StepDetail: React.FC<{ step: number }> = ({ step }) => {
     case 3:
       return (
         <Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.7 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: 2, lineHeight: 1.7 }}
+          >
             Create a fine-grained personal access token in GitHub:
           </Typography>
-          <Box component="ol" sx={{ pl: 2.5, color: 'text.secondary', '& li': { mb: 1, fontSize: '0.875rem', lineHeight: 1.7 } }}>
+          <Box
+            component="ol"
+            sx={{
+              pl: 2.5,
+              color: 'text.secondary',
+              '& li': { mb: 1, fontSize: '0.875rem', lineHeight: 1.7 },
+            }}
+          >
             <li>
-              Go to <strong>Settings</strong> → <strong>Developer settings</strong> → <strong>Personal access tokens</strong> → <strong>Fine-grained tokens</strong>
+              Go to <strong>Settings</strong> →{' '}
+              <strong>Developer settings</strong> →{' '}
+              <strong>Personal access tokens</strong> →{' '}
+              <strong>Fine-grained tokens</strong>
             </li>
-            <li>Click <strong>Generate new token</strong></li>
             <li>
-              Set <strong>Token name</strong> to <code>gittensor</code>, <strong>Expiration</strong> to <code>No Expiration</code>, and <strong>Repository access</strong> to <code>Public repositories (read-only)</code>
+              Click <strong>Generate new token</strong>
             </li>
-            <li>Click <strong>Generate token</strong> and copy it</li>
+            <li>
+              Set <strong>Token name</strong> to <code>gittensor</code>,{' '}
+              <strong>Expiration</strong> to <code>No Expiration</code>, and{' '}
+              <strong>Repository access</strong> to{' '}
+              <code>Public repositories (read-only)</code>
+            </li>
+            <li>
+              Click <strong>Generate token</strong> and copy it
+            </li>
           </Box>
           <Box
             sx={{
@@ -184,8 +219,17 @@ const StepDetail: React.FC<{ step: number }> = ({ step }) => {
               border: '1px solid rgba(245, 158, 11, 0.2)',
             }}
           >
-            <Typography variant="body2" sx={{ color: 'rgba(245, 158, 11, 0.9)', fontSize: '0.8rem', lineHeight: 1.6 }}>
-              Some GitHub organizations forbid fine-grained PATs with indefinite lifetime. If so, create a PAT with an expiration and rotate it periodically.
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'rgba(245, 158, 11, 0.9)',
+                fontSize: '0.8rem',
+                lineHeight: 1.6,
+              }}
+            >
+              Some GitHub organizations forbid fine-grained PATs with indefinite
+              lifetime. If so, create a PAT with an expiration and rotate it
+              periodically.
             </Typography>
           </Box>
         </Box>
@@ -194,7 +238,11 @@ const StepDetail: React.FC<{ step: number }> = ({ step }) => {
     case 4:
       return (
         <Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.7 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: 2, lineHeight: 1.7 }}
+          >
             Install the Gittensor CLI tool.
           </Typography>
           <CodeBlock>{`pip install uv
@@ -208,8 +256,13 @@ uv pip install -e .`}</CodeBlock>
     case 5:
       return (
         <Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.7 }}>
-            Broadcast your GitHub PAT to validators so they can score your contributions.
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: 2, lineHeight: 1.7 }}
+          >
+            Broadcast your GitHub PAT to validators so they can score your
+            contributions.
           </Typography>
           <NetworkTabs network={network} onChange={setNetwork} />
           {network === 'mainnet' ? (
@@ -223,8 +276,12 @@ uv pip install -e .`}</CodeBlock>
   --hotkey <HOTKEY_NAME> \\
   --netuid 422 --network test`}</CodeBlock>
           )}
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', mt: 1 }}>
-            If you omit --pat, the CLI checks the GITTENSOR_MINER_PAT environment variable, then prompts interactively.
+          <Typography
+            variant="body2"
+            sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', mt: 1 }}
+          >
+            If you omit --pat, the CLI checks the GITTENSOR_MINER_PAT
+            environment variable, then prompts interactively.
           </Typography>
         </Box>
       );
@@ -232,7 +289,11 @@ uv pip install -e .`}</CodeBlock>
     case 6:
       return (
         <Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.7 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: 2, lineHeight: 1.7 }}
+          >
             Confirm that validators received and validated your PAT.
           </Typography>
           <NetworkTabs network={network} onChange={setNetwork} />
@@ -247,8 +308,12 @@ uv pip install -e .`}</CodeBlock>
   --hotkey <HOTKEY_NAME> \\
   --netuid 422 --network test`}</CodeBlock>
           )}
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', mt: 1 }}>
-            You should see a table showing which validators have your PAT stored and whether it's valid.
+          <Typography
+            variant="body2"
+            sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', mt: 1 }}
+          >
+            You should see a table showing which validators have your PAT stored
+            and whether it's valid.
           </Typography>
         </Box>
       );
@@ -256,13 +321,36 @@ uv pip install -e .`}</CodeBlock>
     case 7:
       return (
         <Box>
-          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-            You're all set! Open PRs to recognized repositories and your scores are calculated when PRs are merged. No miner process needs to be running — the validator scoring round runs every 2 hours.
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ lineHeight: 1.7 }}
+          >
+            You're all set! Open PRs to recognized repositories and your scores
+            are calculated when PRs are merged. No miner process needs to be
+            running — the validator scoring round runs every 2 hours.
           </Typography>
-          <Box component="ul" sx={{ pl: 2.5, mt: 2, color: 'text.secondary', '& li': { mb: 1, fontSize: '0.875rem', lineHeight: 1.7 } }}>
-            <li>Browse recognized repositories in the <strong>Repositories</strong> tab</li>
-            <li>Eligibility requires 5 merged PRs with token score &ge; 5, 75% credibility, and a 180-day-old GitHub account</li>
-            <li>See the <strong>Scoring</strong> tab for how rewards are calculated</li>
+          <Box
+            component="ul"
+            sx={{
+              pl: 2.5,
+              mt: 2,
+              color: 'text.secondary',
+              '& li': { mb: 1, fontSize: '0.875rem', lineHeight: 1.7 },
+            }}
+          >
+            <li>
+              Browse recognized repositories in the{' '}
+              <strong>Repositories</strong> tab
+            </li>
+            <li>
+              Eligibility requires 5 merged PRs with token score &ge; 5, 75%
+              credibility, and a 180-day-old GitHub account
+            </li>
+            <li>
+              See the <strong>Scoring</strong> tab for how rewards are
+              calculated
+            </li>
           </Box>
         </Box>
       );
@@ -364,32 +452,32 @@ export const GettingStarted: React.FC = () => {
                   width: 48,
                   height: 48,
                   borderRadius: '50%',
-                  bgcolor: activeStep === index ? 'rgba(29, 55, 252, 0.15)' : '#0b0b0b',
+                  bgcolor:
+                    activeStep === index
+                      ? 'rgba(29, 55, 252, 0.15)'
+                      : '#0b0b0b',
                   border: '2px solid',
-                  borderColor:
-                    item.active
-                      ? 'secondary.main'
-                      : activeStep === index
-                        ? 'primary.main'
-                        : 'rgba(255,255,255,0.1)',
-                  color:
-                    item.active
-                      ? 'secondary.main'
-                      : activeStep === index
-                        ? 'primary.main'
-                        : 'rgba(255, 255, 255, 0.5)',
+                  borderColor: item.active
+                    ? 'secondary.main'
+                    : activeStep === index
+                      ? 'primary.main'
+                      : 'rgba(255,255,255,0.1)',
+                  color: item.active
+                    ? 'secondary.main'
+                    : activeStep === index
+                      ? 'primary.main'
+                      : 'rgba(255, 255, 255, 0.5)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontFamily: MONO,
                   fontWeight: 'bold',
                   fontSize: '1.1rem',
-                  boxShadow:
-                    item.active
-                      ? '0 0 20px rgba(255, 215, 0, 0.15)'
-                      : activeStep === index
-                        ? '0 0 15px rgba(29, 55, 252, 0.2)'
-                        : 'none',
+                  boxShadow: item.active
+                    ? '0 0 20px rgba(255, 215, 0, 0.15)'
+                    : activeStep === index
+                      ? '0 0 15px rgba(29, 55, 252, 0.2)'
+                      : 'none',
                   transition: 'all 0.2s ease',
                   flexShrink: 0,
                 }}
@@ -402,12 +490,11 @@ export const GettingStarted: React.FC = () => {
                     fontFamily: MONO,
                     fontWeight: 600,
                     fontSize: '0.85rem',
-                    color:
-                      item.active
-                        ? 'secondary.main'
-                        : activeStep === index
-                          ? '#fff'
-                          : 'rgba(255,255,255,0.7)',
+                    color: item.active
+                      ? 'secondary.main'
+                      : activeStep === index
+                        ? '#fff'
+                        : 'rgba(255,255,255,0.7)',
                     mb: 0.25,
                   }}
                 >
@@ -468,7 +555,11 @@ export const GettingStarted: React.FC = () => {
           border: '1px solid rgba(255, 255, 255, 0.08)',
         }}
       >
-        <Typography variant="h5" fontWeight="bold" sx={{ mb: 2, color: '#fff' }}>
+        <Typography
+          variant="h5"
+          fontWeight="bold"
+          sx={{ mb: 2, color: '#fff' }}
+        >
           Full Documentation
         </Typography>
         <Typography
@@ -476,7 +567,8 @@ export const GettingStarted: React.FC = () => {
           color="text.secondary"
           sx={{ mb: 3, maxWidth: 500, mx: 'auto' }}
         >
-          For advanced configuration and troubleshooting, see the complete miner guide.
+          For advanced configuration and troubleshooting, see the complete miner
+          guide.
         </Typography>
         <Button
           variant="contained"

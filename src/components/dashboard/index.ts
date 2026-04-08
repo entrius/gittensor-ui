@@ -21,4 +21,3 @@ export * from './PRStatusChart';
 
 export { default as RepositoriesTable } from './RepositoriesTable';
 export * from './RepositoriesTable';
-
