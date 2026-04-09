@@ -1,19 +1,16 @@
-import React, { useState, useMemo } from 'react';
-import {
-  Box,
-  Typography,
-  CircularProgress,
-  TextField,
-  InputAdornment,
-} from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Box, Typography, CircularProgress, Grid } from '@mui/material';
+import { alpha, type Theme } from '@mui/material/styles';
 import { SectionCard } from './SectionCard';
-import { MinerSection } from './MinerSection';
+import { MinerCard } from './MinerCard';
+import { SearchInput } from '../common/SearchInput';
 import { STATUS_COLORS } from '../../theme';
 import { type MinerStats, type SortOption, FONTS } from './types';
 
 // Re-export MinerStats for backward compatibility
 export type { MinerStats } from './types';
+
+const MINERS_PAGE_SIZE = 60;
 
 interface TopMinersTableProps {
   miners: MinerStats[];
@@ -28,30 +25,30 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState<SortOption>('totalScore');
+  const [showEligibleOnly, setShowEligibleOnly] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(MINERS_PAGE_SIZE);
 
   // Helper to sort a list of miners
   const sortMinersList = (list: MinerStats[], option: SortOption) =>
     [...list].sort((a, b) => {
       switch (option) {
         case 'totalScore':
-          return (b.totalScore || 0) - (a.totalScore || 0);
+          return b.totalScore - a.totalScore;
         case 'usdPerDay':
-          return (b.usdPerDay || 0) - (a.usdPerDay || 0);
+          return (b.usdPerDay ?? 0) - (a.usdPerDay ?? 0);
         case 'totalPRs':
-          return (b.totalPRs || 0) - (a.totalPRs || 0);
+          return b.totalPRs - a.totalPRs;
         case 'credibility':
-          return (b.credibility || 0) - (a.credibility || 0);
+          return (b.credibility ?? 0) - (a.credibility ?? 0);
         default:
           return 0;
       }
     });
 
   // Process and filter miners
-  const groupedMiners = useMemo(() => {
+  const filteredMiners = useMemo(() => {
     let result = [...miners];
-    result = result.map((miner, index) => ({ ...miner, rank: index + 1 }));
 
-    // 1. Filter by Search
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
       result = result.filter(
@@ -61,20 +58,26 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       );
     }
 
-    // 2. Group by eligibility
-    const eligible = result.filter((m) => m.isEligible);
-    const ineligible = result.filter((m) => !m.isEligible);
+    if (showEligibleOnly) {
+      result = result.filter((m) => m.isEligible);
+    }
 
-    // 3. Sort each Group
-    return {
-      eligible: sortMinersList(eligible, sortOption),
-      ineligible: sortMinersList(
-        ineligible,
-        sortOption === 'totalScore' ? 'credibility' : sortOption,
-      ),
-      totalFiltered: result.length,
-    };
-  }, [miners, searchQuery, sortOption]);
+    return sortMinersList(result, sortOption);
+  }, [miners, searchQuery, showEligibleOnly, sortOption]);
+
+  useEffect(() => {
+    setVisibleCount(MINERS_PAGE_SIZE);
+  }, [miners, searchQuery, showEligibleOnly, sortOption]);
+
+  const visibleMiners = useMemo(
+    () => filteredMiners.slice(0, visibleCount),
+    [filteredMiners, visibleCount],
+  );
+
+  const remainingMiners = Math.max(
+    0,
+    filteredMiners.length - visibleMiners.length,
+  );
 
   if (isLoading) {
     return (
@@ -88,19 +91,36 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     <Box sx={{ p: 2 }}>
       {/* Header Card */}
       <SectionCard
-        title={`Miners (${groupedMiners.totalFiltered})`}
+        title={`Miners (${filteredMiners.length})`}
         centerContent={
-          <SortButtons sortOption={sortOption} onSortChange={setSortOption} />
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
+              flexWrap: 'wrap',
+            }}
+          >
+            <SortButtons sortOption={sortOption} onSortChange={setSortOption} />
+            <FilterButton
+              label="Eligible"
+              isActive={showEligibleOnly}
+              onClick={() => setShowEligibleOnly((prev) => !prev)}
+            />
+          </Box>
         }
-        action={<SearchField value={searchQuery} onChange={setSearchQuery} />}
+        action={<SearchInput value={searchQuery} onChange={setSearchQuery} />}
         sx={{
           mb: 2,
           position: 'sticky',
           top: 0,
           zIndex: 100,
-          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          backgroundColor: (theme: Theme) =>
+            alpha(theme.palette.background.default, 0.65),
           backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          borderBottom: (theme: Theme) =>
+            `1px solid ${theme.palette.border.light}`,
           boxShadow: 'none',
         }}
       >
@@ -108,37 +128,66 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       </SectionCard>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {/* ELIGIBLE SECTION */}
-        {groupedMiners.eligible.length > 0 && (
-          <MinerSection
-            title="ELIGIBLE"
-            miners={groupedMiners.eligible}
-            color={{
-              border: 'rgba(63, 185, 80, 0.3)',
-              text: STATUS_COLORS.merged,
-              bg: 'rgba(63, 185, 80, 0.05)',
-            }}
-            onSelectMiner={onSelectMiner}
-            defaultExpanded
-          />
+        {filteredMiners.length > 0 && (
+          <Grid container spacing={2}>
+            {visibleMiners.map((miner) => (
+              <Grid item xs={12} sm={12} md={6} lg={4} xl={4} key={miner.id}>
+                <MinerCard
+                  miner={miner}
+                  onClick={() => onSelectMiner(miner.githubId)}
+                />
+              </Grid>
+            ))}
+          </Grid>
         )}
 
-        {/* INELIGIBLE SECTION */}
-        {groupedMiners.ineligible.length > 0 && (
-          <MinerSection
-            title="Ineligible"
-            miners={groupedMiners.ineligible}
-            color={{
-              border: 'rgba(255,255,255,0.1)',
-              text: STATUS_COLORS.open,
-              bg: 'rgba(255, 255, 255, 0.02)',
-            }}
-            onSelectMiner={onSelectMiner}
-          />
+        {remainingMiners > 0 && (
+          <Box
+            onClick={() =>
+              setVisibleCount((prev) =>
+                Math.min(prev + MINERS_PAGE_SIZE, filteredMiners.length),
+              )
+            }
+            sx={(theme) => ({
+              py: 1.25,
+              borderRadius: 2,
+              border: `1px solid ${theme.palette.border.light}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              backgroundColor: theme.palette.surface.subtle,
+              color: STATUS_COLORS.open,
+              '&:hover': {
+                backgroundColor: theme.palette.surface.light,
+                color: theme.palette.text.primary,
+                borderColor: theme.palette.border.light,
+              },
+            })}
+          >
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+              }}
+            >
+              Show {Math.min(MINERS_PAGE_SIZE, remainingMiners)} More
+            </Typography>
+          </Box>
         )}
 
-        {groupedMiners.totalFiltered === 0 && (
-          <Box sx={{ py: 8, textAlign: 'center', color: 'text.secondary' }}>
+        {filteredMiners.length === 0 && (
+          <Box
+            sx={(theme) => ({
+              py: 8,
+              textAlign: 'center',
+              color: theme.palette.text.secondary,
+            })}
+          >
             <Typography sx={{ fontFamily: FONTS.mono }}>
               No miners found matching your filters.
             </Typography>
@@ -175,7 +224,7 @@ const SortButtons: React.FC<SortButtonsProps> = ({
       <Box
         key={option.value}
         onClick={() => onSortChange(option.value as SortOption)}
-        sx={{
+        sx={(theme) => ({
           px: 1.5,
           height: 32,
           display: 'flex',
@@ -184,20 +233,23 @@ const SortButtons: React.FC<SortButtonsProps> = ({
           cursor: 'pointer',
           backgroundColor:
             sortOption === option.value
-              ? 'rgba(255, 255, 255, 0.1)'
+              ? alpha(theme.palette.text.primary, 0.1)
               : 'transparent',
-          color: sortOption === option.value ? '#fff' : STATUS_COLORS.open,
+          color:
+            sortOption === option.value
+              ? theme.palette.text.primary
+              : STATUS_COLORS.open,
           border: '1px solid',
           borderColor:
             sortOption === option.value
-              ? 'rgba(255, 255, 255, 0.2)'
+              ? theme.palette.border.medium
               : 'transparent',
           transition: 'all 0.2s',
           '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            color: '#e6edf3',
+            backgroundColor: theme.palette.surface.light,
+            color: theme.palette.text.primary,
           },
-        }}
+        })}
       >
         <Typography
           sx={{
@@ -213,41 +265,53 @@ const SortButtons: React.FC<SortButtonsProps> = ({
   </Box>
 );
 
-interface SearchFieldProps {
-  value: string;
-  onChange: (value: string) => void;
+interface FilterButtonProps {
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
 }
 
-const SearchField: React.FC<SearchFieldProps> = ({ value, onChange }) => (
-  <TextField
-    placeholder="Search..."
-    size="small"
-    value={value}
-    onChange={(e) => onChange(e.target.value)}
-    InputProps={{
-      startAdornment: (
-        <InputAdornment position="start">
-          <SearchIcon
-            sx={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: '1rem' }}
-          />
-        </InputAdornment>
-      ),
-    }}
-    sx={{
-      width: 180,
-      '& .MuiOutlinedInput-root': {
-        color: '#ffffff',
-        fontFamily: FONTS.mono,
-        backgroundColor: 'rgba(0, 0, 0, 0.2)',
-        fontSize: '0.8rem',
-        borderRadius: 2,
-        height: 32,
-        '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
-        '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
-        '&.Mui-focused fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+const FilterButton: React.FC<FilterButtonProps> = ({
+  label,
+  isActive,
+  onClick,
+}) => (
+  <Box
+    onClick={onClick}
+    sx={(theme) => ({
+      px: 1.5,
+      height: 32,
+      display: 'flex',
+      alignItems: 'center',
+      borderRadius: 2,
+      cursor: 'pointer',
+      backgroundColor: isActive
+        ? alpha(theme.palette.status.merged, 0.16)
+        : 'transparent',
+      color: isActive ? theme.palette.text.primary : STATUS_COLORS.open,
+      border: '1px solid',
+      borderColor: isActive
+        ? alpha(theme.palette.status.merged, 0.4)
+        : 'transparent',
+      transition: 'all 0.2s',
+      '&:hover': {
+        backgroundColor: isActive
+          ? alpha(theme.palette.status.merged, 0.2)
+          : theme.palette.surface.light,
+        color: theme.palette.text.primary,
       },
-    }}
-  />
+    })}
+  >
+    <Typography
+      sx={{
+        fontFamily: FONTS.mono,
+        fontSize: '0.75rem',
+        fontWeight: 600,
+      }}
+    >
+      {label}
+    </Typography>
+  </Box>
 );
 
 export default TopMinersTable;

@@ -57,6 +57,10 @@ export const TEXT_OPACITY = {
 
 // Module Augmentation for Custom Theme Properties
 declare module '@mui/material/styles' {
+  interface TypeText {
+    tertiary: string;
+  }
+
   interface TypographyVariants {
     dataValue: React.CSSProperties;
     dataLabel: React.CSSProperties;
@@ -231,6 +235,7 @@ const theme = createTheme({
     text: {
       primary: '#ffffff',
       secondary: '#7d7d7d',
+      tertiary: 'rgba(201, 209, 217, 0.64)',
     },
     divider: '#ffffff',
     // Rank podium colors (1st/2nd/3rd)
