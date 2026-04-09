@@ -180,15 +180,30 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
         rehypePlugins={[rehypeRaw]}
         components={{
           a: ({ href, children, ...rest }: any) => (
-            <a href={resolveRelativeUrl(href, repositoryFullName, defaultBranch)} target="_blank" rel="noopener noreferrer" {...rest}>
+            <a
+              href={resolveRelativeUrl(href, repositoryFullName, defaultBranch)}
+              target="_blank"
+              rel="noopener noreferrer"
+              {...rest}
+            >
               {children}
             </a>
           ),
           img: ({ src, alt, ...rest }: any) => (
             <img
-              src={resolveRelativeUrl(src, repositoryFullName, defaultBranch, 'cdn')}
+              src={resolveRelativeUrl(
+                src,
+                repositoryFullName,
+                defaultBranch,
+                'cdn',
+              )}
               alt={alt}
-              style={{ maxWidth: '100%', height: 'auto', borderRadius: '6px', margin: '16px 0' }}
+              style={{
+                maxWidth: '100%',
+                height: 'auto',
+                borderRadius: '6px',
+                margin: '16px 0',
+              }}
               {...rest}
             />
           ),

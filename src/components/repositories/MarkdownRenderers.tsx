@@ -8,7 +8,13 @@ export const resolveRelativeUrl = (
   defaultBranch: string,
   type: 'blob' | 'cdn' = 'blob',
 ): string | undefined => {
-  if (!url || url.startsWith('http') || url.startsWith('//') || url.startsWith('#') || url.startsWith('mailto:')) {
+  if (
+    !url ||
+    url.startsWith('http') ||
+    url.startsWith('//') ||
+    url.startsWith('#') ||
+    url.startsWith('mailto:')
+  ) {
     return url;
   }
 
