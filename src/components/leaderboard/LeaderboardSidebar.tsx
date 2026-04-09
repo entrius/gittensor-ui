@@ -66,8 +66,14 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
           }}
         >
           <StatRow label="Total Miners" value={networkStats.totalMiners} />
-          <StatRow label={variant === 'discoveries' ? 'Issues Eligible' : 'Eligible'} value={networkStats.eligible} />
-          <StatRow label={variant === 'discoveries' ? 'Total Issues' : 'Total PRs'} value={networkStats.totalPRs} />
+          <StatRow
+            label={variant === 'discoveries' ? 'Issues Eligible' : 'Eligible'}
+            value={networkStats.eligible}
+          />
+          <StatRow
+            label={variant === 'discoveries' ? 'Total Issues' : 'Total PRs'}
+            value={networkStats.totalPRs}
+          />
           <StatRow
             label="Daily Pool"
             value={`$${networkStats.dailyPool.toLocaleString()}`}
@@ -171,7 +177,10 @@ const LeaderboardTabs: React.FC<LeaderboardTabsProps> = ({
   >
     {[
       { label: '$', value: 'earners' as const },
-      { label: variant === 'discoveries' ? 'Issues' : 'PRs', value: 'active' as const },
+      {
+        label: variant === 'discoveries' ? 'Issues' : 'PRs',
+        value: 'active' as const,
+      },
     ].map((option) => (
       <Box
         key={option.value}
@@ -214,7 +223,10 @@ interface LeaderboardHeaderProps {
   variant?: 'oss' | 'discoveries';
 }
 
-const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({ type, variant = 'oss' }) => (
+const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({
+  type,
+  variant = 'oss',
+}) => (
   <Box
     sx={{
       display: 'flex',
@@ -253,7 +265,11 @@ const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({ type, variant = '
         textTransform: 'uppercase',
       }}
     >
-      {type === 'earners' ? '$/Day' : variant === 'discoveries' ? 'Issues' : 'PRs'}
+      {type === 'earners'
+        ? '$/Day'
+        : variant === 'discoveries'
+          ? 'Issues'
+          : 'PRs'}
     </Typography>
   </Box>
 );

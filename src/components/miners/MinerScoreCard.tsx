@@ -376,7 +376,9 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             >
               <Chip
                 variant="outlined"
-                label={isIssueEligible ? 'Issues Eligible' : 'Issues Ineligible'}
+                label={
+                  isIssueEligible ? 'Issues Eligible' : 'Issues Ineligible'
+                }
                 size="small"
                 sx={{
                   color: issueEligibilityColor,

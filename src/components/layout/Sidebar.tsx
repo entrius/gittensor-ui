@@ -79,14 +79,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.95rem',
               textTransform: 'none',
-              backgroundColor:
-                location.pathname.startsWith(item.path)
-                  ? 'rgba(255, 255, 255, 0.1)'
-                  : 'transparent',
-              borderLeft:
-                location.pathname.startsWith(item.path)
-                  ? '2px solid #ffffff'
-                  : '2px solid transparent',
+              backgroundColor: location.pathname.startsWith(item.path)
+                ? 'rgba(255, 255, 255, 0.1)'
+                : 'transparent',
+              borderLeft: location.pathname.startsWith(item.path)
+                ? '2px solid #ffffff'
+                : '2px solid transparent',
               borderRadius: 0,
               textAlign: 'left',
               '&:hover': {
