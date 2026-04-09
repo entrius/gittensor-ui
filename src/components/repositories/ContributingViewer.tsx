@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import axios from 'axios';
 import { STATUS_COLORS } from '../../theme';
-import { createLinkRenderer, createImageRenderer } from './MarkdownRenderers';
+import { resolveRelativeUrl } from './MarkdownRenderers';
 
 interface ContributingViewerProps {
   repositoryFullName: string; // e.g., "opentensor/bittensor"
@@ -81,9 +81,6 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
       </Alert>
     );
   }
-
-  const LinkRenderer = createLinkRenderer(repositoryFullName, defaultBranch);
-  const ImageRenderer = createImageRenderer(repositoryFullName, defaultBranch);
 
   return (
     <Paper
@@ -179,7 +176,21 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
-        components={{ a: LinkRenderer, img: ImageRenderer }}
+        components={{
+          a: ({ href, children, ...rest }: any) => (
+            <a href={resolveRelativeUrl(href, repositoryFullName, defaultBranch)} target="_blank" rel="noopener noreferrer" {...rest}>
+              {children}
+            </a>
+          ),
+          img: ({ src, alt, ...rest }: any) => (
+            <img
+              src={resolveRelativeUrl(src, repositoryFullName, defaultBranch, 'cdn')}
+              alt={alt}
+              style={{ maxWidth: '100%', height: 'auto', borderRadius: '6px', margin: '16px 0' }}
+              {...rest}
+            />
+          ),
+        }}
       >
         {content || ''}
       </ReactMarkdown>
