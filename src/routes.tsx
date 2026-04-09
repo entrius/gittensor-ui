@@ -22,6 +22,10 @@ const RepositoryDetailsPage = React.lazy(
   () => import('./pages/RepositoryDetailsPage'),
 );
 const PRDetailsPage = React.lazy(() => import('./pages/PRDetailsPage'));
+const DiscoveriesPage = React.lazy(() => import('./pages/DiscoveriesPage'));
+const DiscoveryMinerDetailsPage = React.lazy(
+  () => import('./pages/DiscoveryMinerDetailsPage'),
+);
 const OnboardPage = React.lazy(() => import('./pages/OnboardPage'));
 
 // 404 page
@@ -47,7 +51,23 @@ const routesArray: AppRoute[] = [
     showGlobalSearch: true,
   },
   { name: 'search', path: '/search', element: <SearchPage /> },
-  { name: 'top-miners', path: '/top-miners', element: <TopMinersPage /> },
+  {
+    name: 'discoveries',
+    path: '/discoveries',
+    element: <DiscoveriesPage />,
+    showGlobalSearch: true,
+  },
+  {
+    name: 'discovery-miner-details',
+    path: '/discoveries/details',
+    element: <DiscoveryMinerDetailsPage />,
+  },
+  {
+    name: 'top-miners',
+    path: '/top-miners',
+    element: <TopMinersPage />,
+    showGlobalSearch: true,
+  },
   {
     name: 'repositories',
     path: '/repositories',

@@ -130,6 +130,15 @@ export type MinerEvaluation = {
   // Eligibility gate
   isEligible?: boolean;
   credibility?: number;
+  // Issue discovery scoring
+  issueDiscoveryScore?: number;
+  issueTokenScore?: number;
+  issueCredibility?: number;
+  isIssueEligible?: boolean;
+  totalSolvedIssues?: number;
+  totalValidSolvedIssues?: number;
+  totalClosedIssues?: number;
+  totalOpenIssues?: number;
   // Total token scoring fields
   totalTokenScore?: number;
   totalStructuralCount?: number;

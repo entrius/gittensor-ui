@@ -6,7 +6,7 @@ import { TopMinersTable, LeaderboardSidebar, SEO } from '../components';
 import { useAllMiners } from '../api';
 import theme from '../theme';
 
-const TopMinersPage: React.FC = () => {
+const DiscoveriesPage: React.FC = () => {
   const navigate = useNavigate();
 
   const allMinerStatsQuery = useAllMiners();
@@ -14,36 +14,38 @@ const TopMinersPage: React.FC = () => {
   const isLoadingMinerStats = allMinerStatsQuery?.isLoading;
 
   const handleSelectMiner = (githubId: string) => {
-    navigate(`/miners/details?githubId=${githubId}`, {
-      state: { backLabel: 'Back to Leaderboard' },
+    navigate(`/discoveries/details?githubId=${githubId}`, {
+      state: { backLabel: 'Back to Discoveries' },
     });
   };
 
-  // Process miner stats for TopMinersTable
+  // Process miner stats for TopMinersTable, using issue discovery fields
   const minerStats = useMemo(() => {
     if (!Array.isArray(allMinersStats)) return [];
     return allMinersStats.map((stat) => ({
       githubId: stat.githubId || '',
       author: stat.githubUsername || undefined,
-      totalScore: Number(stat.totalScore) || 0,
+      totalScore: Number(stat.issueDiscoveryScore) || 0,
       baseTotalScore: Number(stat.baseTotalScore) || 0,
-      totalPRs: Number(stat.totalPrs) || 0,
+      totalPRs:
+        (Number(stat.totalSolvedIssues) || 0) +
+        (Number(stat.totalClosedIssues) || 0),
       linesChanged: Number(stat.totalNodesScored) || 0,
       linesAdded: Number(stat.totalAdditions) || 0,
       linesDeleted: Number(stat.totalDeletions) || 0,
       hotkey: stat.hotkey || 'N/A',
       uniqueReposCount: Number(stat.uniqueReposCount) || 0,
-      credibility: Number(stat.credibility) || 0,
-      isEligible: stat.isEligible ?? false,
+      credibility: Number(stat.issueCredibility) || 0,
+      isEligible: stat.isIssueEligible ?? false,
       usdPerDay: Number(stat.usdPerDay) || 0,
-      // PR status counts for credibility donut
-      totalMergedPrs: Number(stat.totalMergedPrs) || 0,
-      totalOpenPrs: Number(stat.totalOpenPrs) || 0,
-      totalClosedPrs: Number(stat.totalClosedPrs) || 0,
+      // Issue counts mapped to PR status fields
+      totalMergedPrs: Number(stat.totalSolvedIssues) || 0,
+      totalOpenPrs: Number(stat.totalOpenIssues) || 0,
+      totalClosedPrs: Number(stat.totalClosedIssues) || 0,
     }));
   }, [allMinersStats]);
 
-  // Sort miners by total score
+  // Sort miners by issue discovery score
   const sortedMinerStats = useMemo(
     () => [...minerStats].sort((a, b) => b.totalScore - a.totalScore),
     [minerStats],
@@ -60,10 +62,10 @@ const TopMinersPage: React.FC = () => {
     isMobile || isTablet ? '100%' : isLargeScreen ? '340px' : '300px';
 
   return (
-    <Page title="Miner Leaderboard">
+    <Page title="Issue Discoveries">
       <SEO
-        title="Miner Leaderboard"
-        description="Top contributors on Gittensor. View miner rankings, scores, and contribution statistics."
+        title="Issue Discoveries"
+        description="Issue discovery rankings on Gittensor. View miner scores for discovering and solving issues."
       />
       <Box
         sx={{
@@ -111,9 +113,8 @@ const TopMinersPage: React.FC = () => {
               lineHeight: 1.6,
             }}
           >
-            Miners earn OSS contribution rewards by getting pull requests merged
-            into recognized repositories. Scored on code quality via AST token
-            analysis. Rewarded separately from issue discovery.
+            Miners earn discovery rewards by filing quality issues that others
+            solve via merged PRs. Rewarded separately from OSS contributions.
           </Typography>
           <Box sx={{ width: '100%' }}>
             <TopMinersTable
@@ -124,22 +125,22 @@ const TopMinersPage: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Right Sidebar - Spacer to match Dashboard Live Activity */}
+        {/* Right Sidebar */}
         <Box
           sx={{
             width: showSidebarRight ? sidebarWidth : '100%',
             height: showSidebarRight ? '100%' : 'auto',
-            maxHeight: showSidebarRight ? '100%' : 'none', // Allow full height when stacked
+            maxHeight: showSidebarRight ? '100%' : 'none',
             flexShrink: 0,
             display: 'flex',
             flexDirection: 'column',
-            gap: 2, // Add gap for spacing when stacked
+            gap: 2,
           }}
         >
-          {/* Render extracted Sidebar Content here */}
           <LeaderboardSidebar
             miners={minerStats}
             onSelectMiner={handleSelectMiner}
+            variant="discoveries"
           />
         </Box>
       </Box>
@@ -147,4 +148,4 @@ const TopMinersPage: React.FC = () => {
   );
 };
 
-export default TopMinersPage;
+export default DiscoveriesPage;

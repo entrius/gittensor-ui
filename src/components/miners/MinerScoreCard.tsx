@@ -280,7 +280,11 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
   const openPrs = parseNumber(minerStats.totalOpenPrs);
   const collateral = parseNumber(minerStats.totalCollateralScore);
   const isEligible = minerStats.isEligible ?? false;
+  const isIssueEligible = minerStats.isIssueEligible ?? false;
   const eligibilityColor = isEligible
+    ? STATUS_COLORS.success
+    : STATUS_COLORS.neutral;
+  const issueEligibilityColor = isIssueEligible
     ? STATUS_COLORS.success
     : STATUS_COLORS.neutral;
 
@@ -342,20 +346,52 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             >
               {githubData?.name || username}
             </Typography>
-            <Chip
-              variant="outlined"
-              label={isEligible ? 'Eligible' : 'Ineligible'}
-              size="small"
-              sx={{
-                color: eligibilityColor,
-                borderColor: alpha(eligibilityColor, 0.35),
-                backgroundColor: alpha(eligibilityColor, 0.1),
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: '0.7rem',
-                letterSpacing: '0.5px',
-                textTransform: 'uppercase',
-              }}
-            />
+            <Tooltip
+              title="Requires 5+ merged PRs with token score >= 5 and 90%+ credibility"
+              arrow
+              placement="bottom"
+              slotProps={tooltipSlotProps}
+            >
+              <Chip
+                variant="outlined"
+                label={isEligible ? 'OSS Eligible' : 'OSS Ineligible'}
+                size="small"
+                sx={{
+                  color: eligibilityColor,
+                  borderColor: alpha(eligibilityColor, 0.35),
+                  backgroundColor: alpha(eligibilityColor, 0.1),
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.7rem',
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                }}
+              />
+            </Tooltip>
+            <Tooltip
+              title="Requires 7+ solved issues with token score >= 5 and 80%+ issue credibility"
+              arrow
+              placement="bottom"
+              slotProps={tooltipSlotProps}
+            >
+              <Chip
+                variant="outlined"
+                label={
+                  isIssueEligible ? 'Issues Eligible' : 'Issues Ineligible'
+                }
+                size="small"
+                sx={{
+                  color: issueEligibilityColor,
+                  borderColor: alpha(issueEligibilityColor, 0.35),
+                  backgroundColor: alpha(issueEligibilityColor, 0.1),
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.7rem',
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                }}
+              />
+            </Tooltip>
           </Box>
           <Box
             sx={{
