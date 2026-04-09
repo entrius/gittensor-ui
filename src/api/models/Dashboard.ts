@@ -135,6 +135,7 @@ export type MinerEvaluation = {
   issueCredibility?: number;
   isIssueEligible?: boolean;
   totalSolvedIssues?: number;
+  totalValidSolvedIssues?: number;
   totalClosedIssues?: number;
   totalOpenIssues?: number;
   // Total token scoring fields

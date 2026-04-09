@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useMinerStats } from '../../api';
-import { CREDIBILITY_COLORS } from '../../theme';
+import { CREDIBILITY_COLORS, RISK_COLORS } from '../../theme';
 
 const tooltipSlotProps = {
   tooltip: {
@@ -140,7 +140,26 @@ const IssueDiscoveryScoreCard: React.FC<IssueDiscoveryScoreCardProps> = ({
   const discoveryScore = Number(minerStats.issueDiscoveryScore) || 0;
   const issueCred = Number(minerStats.issueCredibility) || 0;
   const solvedIssues = Number(minerStats.totalSolvedIssues) || 0;
+  const validSolvedIssues = Number(minerStats.totalValidSolvedIssues) || 0;
   const closedIssues = Number(minerStats.totalClosedIssues) || 0;
+  const openIssues = Number(minerStats.totalOpenIssues) || 0;
+
+  // Open issue spam threshold: min(5 + floor(discoveryScore / 300), 30)
+  // Using discovery score as proxy for solved token score (same as backend)
+  const openIssueThreshold = Math.min(
+    5 + Math.floor(discoveryScore / 300),
+    30,
+  );
+
+  const openIssueColor =
+    openIssues >= openIssueThreshold
+      ? RISK_COLORS.exceeded
+      : openIssues >= openIssueThreshold - 1
+        ? RISK_COLORS.critical
+        : openIssues >= openIssueThreshold - 2
+          ? RISK_COLORS.approaching
+          : undefined;
+
   return (
     <Card sx={{ p: 3 }} elevation={0}>
       <Typography
@@ -156,24 +175,37 @@ const IssueDiscoveryScoreCard: React.FC<IssueDiscoveryScoreCardProps> = ({
       </Typography>
 
       <Grid container spacing={1.5}>
-        <Grid item xs={6} sm={4}>
+        <Grid item xs={6} sm={3}>
           <StatTile
             label="Discovery Score"
             value={discoveryScore.toFixed(2)}
             tooltip="Aggregate score for issue discovery contributions."
           />
         </Grid>
-        <Grid item xs={6} sm={4}>
+        <Grid item xs={6} sm={3}>
           <StatTile
             label="Issue Credibility"
             value={`${(issueCred * 100).toFixed(1)}%`}
-            sub={`${solvedIssues} solved \u00B7 ${closedIssues} closed`}
+            sub={`${solvedIssues} solved \u00B7 ${validSolvedIssues} valid \u00B7 ${closedIssues} closed`}
             color={credibilityColor(issueCred)}
-            tooltip="Ratio of solved issues to total attempts (solved + closed). Higher credibility means stronger scoring."
+            tooltip="Ratio of solved issues to total attempts. 'Valid' = solved issues where the PR had token score >= 5 (counts toward the 7-issue eligibility gate)."
           />
         </Grid>
-        <Grid item xs={6} sm={4}>
-          <StatTile label="Solved Issues" value={String(solvedIssues)} />
+        <Grid item xs={6} sm={3}>
+          <StatTile
+            label="Solved Issues"
+            value={String(solvedIssues)}
+            sub={`${validSolvedIssues} valid (need 7)`}
+            tooltip="Total solved issues and how many meet the quality gate (solving PR token score >= 5). You need 7 valid solved issues for eligibility."
+          />
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <StatTile
+            label="Open Risk"
+            value={`${openIssues} / ${openIssueThreshold}`}
+            color={openIssueColor}
+            tooltip={`Open issues count toward spam detection. Exceeding ${openIssueThreshold} triggers a full penalty on all discovery scores. Threshold scales with token score (+1 per 300).`}
+          />
         </Grid>
       </Grid>
     </Card>
