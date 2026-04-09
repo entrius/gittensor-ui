@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { useMediaQuery, Box } from '@mui/material';
+import { useMediaQuery, Box, Typography, alpha } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { TopMinersTable, LeaderboardSidebar, SEO } from '../components';
@@ -103,6 +103,16 @@ const TopMinersPage: React.FC = () => {
             },
           }}
         >
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.8rem',
+              color: (t) => alpha(t.palette.text.primary, 0.5),
+              lineHeight: 1.6,
+            }}
+          >
+            Miners earn OSS contribution rewards by getting pull requests merged into recognized repositories. Scored on code quality via AST token analysis with a 30% emission pool.
+          </Typography>
           <Box sx={{ width: '100%' }}>
             <TopMinersTable
               miners={sortedMinerStats}

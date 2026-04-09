@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { useMediaQuery, Box } from '@mui/material';
+import { useMediaQuery, Box, Typography, alpha } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { TopMinersTable, LeaderboardSidebar, SEO } from '../components';
@@ -105,6 +105,16 @@ const DiscoveriesPage: React.FC = () => {
             },
           }}
         >
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.8rem',
+              color: (t) => alpha(t.palette.text.primary, 0.5),
+              lineHeight: 1.6,
+            }}
+          >
+            Miners earn discovery rewards by filing quality issues that other miners solve via merged PRs. Scored separately from OSS contributions with its own eligibility gate and 30% emission pool.
+          </Typography>
           <Box sx={{ width: '100%' }}>
             <TopMinersTable
               miners={sortedMinerStats}
@@ -129,6 +139,7 @@ const DiscoveriesPage: React.FC = () => {
           <LeaderboardSidebar
             miners={minerStats}
             onSelectMiner={handleSelectMiner}
+            variant="discoveries"
           />
         </Box>
       </Box>

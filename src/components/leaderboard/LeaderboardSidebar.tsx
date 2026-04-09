@@ -10,11 +10,13 @@ export type { MinerStats } from './types';
 interface LeaderboardSidebarProps {
   miners: MinerStats[];
   onSelectMiner: (githubId: string) => void;
+  variant?: 'oss' | 'discoveries';
 }
 
 export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
   miners,
   onSelectMiner,
+  variant = 'oss',
 }) => {
   // State for toggling lists
   const [leaderboardType, setLeaderboardType] = useState<'earners' | 'active'>(
@@ -64,8 +66,8 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
           }}
         >
           <StatRow label="Total Miners" value={networkStats.totalMiners} />
-          <StatRow label="Eligible" value={networkStats.eligible} />
-          <StatRow label="Total PRs" value={networkStats.totalPRs} />
+          <StatRow label={variant === 'discoveries' ? 'Issues Eligible' : 'Eligible'} value={networkStats.eligible} />
+          <StatRow label={variant === 'discoveries' ? 'Total Issues' : 'Total PRs'} value={networkStats.totalPRs} />
           <StatRow
             label="Daily Pool"
             value={`$${networkStats.dailyPool.toLocaleString()}`}
@@ -81,12 +83,13 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
           <LeaderboardTabs
             activeTab={leaderboardType}
             onTabChange={setLeaderboardType}
+            variant={variant}
           />
         }
         sx={{ flexShrink: 0 }}
       >
         <Box sx={{ px: 2, pb: 2 }}>
-          <LeaderboardHeader type={leaderboardType} />
+          <LeaderboardHeader type={leaderboardType} variant={variant} />
           {(leaderboardType === 'earners' ? topEarners : mostActive).map(
             (miner, i) => (
               <LeaderboardRow
@@ -149,11 +152,13 @@ const StatRow: React.FC<StatRowProps> = ({
 interface LeaderboardTabsProps {
   activeTab: 'earners' | 'active';
   onTabChange: (tab: 'earners' | 'active') => void;
+  variant?: 'oss' | 'discoveries';
 }
 
 const LeaderboardTabs: React.FC<LeaderboardTabsProps> = ({
   activeTab,
   onTabChange,
+  variant = 'oss',
 }) => (
   <Box
     sx={{
@@ -166,7 +171,7 @@ const LeaderboardTabs: React.FC<LeaderboardTabsProps> = ({
   >
     {[
       { label: '$', value: 'earners' as const },
-      { label: 'PRs', value: 'active' as const },
+      { label: variant === 'discoveries' ? 'Issues' : 'PRs', value: 'active' as const },
     ].map((option) => (
       <Box
         key={option.value}
@@ -206,9 +211,10 @@ const LeaderboardTabs: React.FC<LeaderboardTabsProps> = ({
 
 interface LeaderboardHeaderProps {
   type: 'earners' | 'active';
+  variant?: 'oss' | 'discoveries';
 }
 
-const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({ type }) => (
+const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({ type, variant = 'oss' }) => (
   <Box
     sx={{
       display: 'flex',
@@ -247,7 +253,7 @@ const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({ type }) => (
         textTransform: 'uppercase',
       }}
     >
-      {type === 'earners' ? '$/Day' : 'PRs'}
+      {type === 'earners' ? '$/Day' : variant === 'discoveries' ? 'Issues' : 'PRs'}
     </Typography>
   </Box>
 );
