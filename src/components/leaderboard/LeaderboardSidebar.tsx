@@ -99,7 +99,7 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
           {(leaderboardType === 'earners' ? topEarners : mostActive).map(
             (miner, i) => (
               <LeaderboardRow
-                key={miner.githubId || miner.hotkey}
+                key={miner.githubId}
                 miner={miner}
                 rank={i + 1}
                 type={leaderboardType}
