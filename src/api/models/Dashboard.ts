@@ -132,6 +132,7 @@ export type MinerEvaluation = {
   credibility?: number;
   // Issue discovery scoring
   issueDiscoveryScore?: number;
+  issueTokenScore?: number;
   issueCredibility?: number;
   isIssueEligible?: boolean;
   totalSolvedIssues?: number;
