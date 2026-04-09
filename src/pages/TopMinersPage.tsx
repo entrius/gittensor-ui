@@ -111,7 +111,9 @@ const TopMinersPage: React.FC = () => {
               lineHeight: 1.6,
             }}
           >
-            Miners earn OSS contribution rewards by getting pull requests merged into recognized repositories. Scored on code quality via AST token analysis with a 30% emission pool.
+            Miners earn OSS contribution rewards by getting pull requests merged
+            into recognized repositories. Scored on code quality via AST token
+            analysis. Rewarded separately from issue discovery.
           </Typography>
           <Box sx={{ width: '100%' }}>
             <TopMinersTable

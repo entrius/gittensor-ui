@@ -113,7 +113,8 @@ const DiscoveriesPage: React.FC = () => {
               lineHeight: 1.6,
             }}
           >
-            Miners earn discovery rewards by filing quality issues that other miners solve via merged PRs. Scored separately from OSS contributions with its own eligibility gate and 30% emission pool.
+            Miners earn discovery rewards by filing quality issues that others
+            solve via merged PRs. Rewarded separately from OSS contributions.
           </Typography>
           <Box sx={{ width: '100%' }}>
             <TopMinersTable
