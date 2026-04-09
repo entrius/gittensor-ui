@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useMinerStats } from '../../api';
-import { STATUS_COLORS, CREDIBILITY_COLORS } from '../../theme';
+import { CREDIBILITY_COLORS } from '../../theme';
 
 const tooltipSlotProps = {
   tooltip: {
@@ -141,11 +141,6 @@ const IssueDiscoveryScoreCard: React.FC<IssueDiscoveryScoreCardProps> = ({
   const issueCred = Number(minerStats.issueCredibility) || 0;
   const solvedIssues = Number(minerStats.totalSolvedIssues) || 0;
   const closedIssues = Number(minerStats.totalClosedIssues) || 0;
-  const isEligible = minerStats.isIssueEligible ?? false;
-  const eligibilityColor = isEligible
-    ? STATUS_COLORS.success
-    : STATUS_COLORS.neutral;
-
   return (
     <Card sx={{ p: 3 }} elevation={0}>
       <Typography
@@ -161,14 +156,14 @@ const IssueDiscoveryScoreCard: React.FC<IssueDiscoveryScoreCardProps> = ({
       </Typography>
 
       <Grid container spacing={1.5}>
-        <Grid item xs={6} sm={3}>
+        <Grid item xs={6} sm={4}>
           <StatTile
             label="Discovery Score"
             value={discoveryScore.toFixed(2)}
             tooltip="Aggregate score for issue discovery contributions."
           />
         </Grid>
-        <Grid item xs={6} sm={3}>
+        <Grid item xs={6} sm={4}>
           <StatTile
             label="Issue Credibility"
             value={`${(issueCred * 100).toFixed(1)}%`}
@@ -177,15 +172,8 @@ const IssueDiscoveryScoreCard: React.FC<IssueDiscoveryScoreCardProps> = ({
             tooltip="Ratio of solved issues to total attempts (solved + closed). Higher credibility means stronger scoring."
           />
         </Grid>
-        <Grid item xs={6} sm={3}>
+        <Grid item xs={6} sm={4}>
           <StatTile label="Solved Issues" value={String(solvedIssues)} />
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <StatTile
-            label="Eligibility"
-            value={isEligible ? 'Eligible' : 'Ineligible'}
-            color={eligibilityColor}
-          />
         </Grid>
       </Grid>
     </Card>
