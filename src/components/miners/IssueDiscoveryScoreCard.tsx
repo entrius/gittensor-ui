@@ -145,10 +145,9 @@ const IssueDiscoveryScoreCard: React.FC<IssueDiscoveryScoreCardProps> = ({
   const closedIssues = Number(minerStats.totalClosedIssues) || 0;
   const openIssues = Number(minerStats.totalOpenIssues) || 0;
 
-  // Open issue spam threshold: min(5 + floor(discoveryScore / 300), 30)
-  // Using discovery score as proxy for solved token score (same as backend)
+  // Open issue spam threshold: min(5 + floor(tokenScore / 300), 30)
   const openIssueThreshold = Math.min(
-    5 + Math.floor(discoveryScore / 300),
+    5 + Math.floor(issueTokenScore / 300),
     30,
   );
 
