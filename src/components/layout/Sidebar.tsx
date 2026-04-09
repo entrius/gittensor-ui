@@ -24,8 +24,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
 
   const navItems = [
     { label: 'dashboard', path: '/dashboard' },
-    { label: 'issues', path: '/issues', badge: 'new' },
-    { label: 'leaderboard', path: '/top-miners' },
+    { label: 'bounties', path: '/issues', badge: 'new' },
+    { label: 'discoveries', path: '/discoveries', badge: 'new' },
+    { label: 'oss contributions', path: '/top-miners' },
     { label: 'repositories', path: '/repositories' },
     { label: 'onboard', path: '/onboard' },
   ];
@@ -79,11 +80,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               fontSize: '0.95rem',
               textTransform: 'none',
               backgroundColor:
-                location.pathname === item.path
+                location.pathname.startsWith(item.path)
                   ? 'rgba(255, 255, 255, 0.1)'
                   : 'transparent',
               borderLeft:
-                location.pathname === item.path
+                location.pathname.startsWith(item.path)
                   ? '2px solid #ffffff'
                   : '2px solid transparent',
               borderRadius: 0,
