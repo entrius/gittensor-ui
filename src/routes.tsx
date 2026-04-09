@@ -62,7 +62,12 @@ const routesArray: AppRoute[] = [
     path: '/discoveries/details',
     element: <DiscoveryMinerDetailsPage />,
   },
-  { name: 'top-miners', path: '/top-miners', element: <TopMinersPage /> },
+  {
+    name: 'top-miners',
+    path: '/top-miners',
+    element: <TopMinersPage />,
+    showGlobalSearch: true,
+  },
   {
     name: 'repositories',
     path: '/repositories',
