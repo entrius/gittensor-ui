@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import axios from 'axios';
 import { STATUS_COLORS } from '../../theme';
-import { createLinkRenderer, createImageRenderer } from './MarkdownRenderers';
+import { resolveRelativeUrl } from './MarkdownRenderers';
 
 interface ReadmeViewerProps {
   repositoryFullName: string; // e.g., "opentensor/bittensor"
@@ -69,9 +69,6 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
     );
   }
 
-  const LinkRenderer = createLinkRenderer(repositoryFullName, defaultBranch);
-  const ImageRenderer = createImageRenderer(repositoryFullName, defaultBranch);
-
   return (
     <Paper
       elevation={0}
@@ -90,7 +87,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
           borderBottom: '1px solid #30363d',
           pb: 0.3,
           mb: 3,
-          mt: 1, // Reduced from 4
+          mt: 1,
           fontWeight: 600,
           color: '#ffffff',
         },
@@ -99,7 +96,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
           borderBottom: '1px solid #30363d',
           pb: 0.3,
           mb: 3,
-          mt: 2, // Reduced from 4
+          mt: 2,
           fontWeight: 600,
           color: '#ffffff',
         },
@@ -182,8 +179,19 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
         components={{
-          a: LinkRenderer,
-          img: ImageRenderer,
+          a: ({ href, children, ...rest }: any) => (
+            <a href={resolveRelativeUrl(href, repositoryFullName, defaultBranch)} target="_blank" rel="noopener noreferrer" {...rest}>
+              {children}
+            </a>
+          ),
+          img: ({ src, alt, ...rest }: any) => (
+            <img
+              src={resolveRelativeUrl(src, repositoryFullName, defaultBranch, 'cdn')}
+              alt={alt}
+              style={{ maxWidth: '100%', height: 'auto', borderRadius: '6px', margin: '16px 0' }}
+              {...rest}
+            />
+          ),
         }}
       >
         {content || ''}
