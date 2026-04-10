@@ -430,92 +430,99 @@ export const GettingStarted: React.FC = () => {
           alignItems={{ xs: 'flex-start', md: 'flex-start' }}
           sx={{ position: 'relative', zIndex: 1 }}
         >
-          {steps.map((item, index) => (
-            <Box
-              key={index}
-              onClick={() => setActiveStep(index)}
-              sx={{
-                display: 'flex',
-                flexDirection: { xs: 'row', md: 'column' },
-                alignItems: 'center',
-                gap: { xs: 1.5, md: 1 },
-                width: { xs: '100%', md: 'auto' },
-                cursor: 'pointer',
-                '&:hover .step-circle': {
-                  borderColor: 'rgba(255,255,255,0.3)',
-                },
-              }}
-            >
+          {steps.map((item, index) => {
+            const isCurrentStep = activeStep === index;
+            const isSpecialStep = Boolean(item.active);
+
+            return (
               <Box
-                className="step-circle"
+                key={index}
+                onClick={() => setActiveStep(index)}
                 sx={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: '50%',
-                  bgcolor:
-                    activeStep === index
-                      ? 'rgba(29, 55, 252, 0.15)'
-                      : '#0b0b0b',
-                  border: '2px solid',
-                  borderColor: item.active
-                    ? 'secondary.main'
-                    : activeStep === index
-                      ? 'primary.main'
-                      : 'rgba(255,255,255,0.1)',
-                  color: item.active
-                    ? 'secondary.main'
-                    : activeStep === index
-                      ? 'primary.main'
-                      : 'rgba(255, 255, 255, 0.5)',
                   display: 'flex',
+                  flexDirection: { xs: 'row', md: 'column' },
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  fontFamily: MONO,
-                  fontWeight: 'bold',
-                  fontSize: '1.1rem',
-                  boxShadow: item.active
-                    ? '0 0 20px rgba(255, 215, 0, 0.15)'
-                    : activeStep === index
-                      ? '0 0 15px rgba(29, 55, 252, 0.2)'
-                      : 'none',
-                  transition: 'all 0.2s ease',
-                  flexShrink: 0,
+                  gap: { xs: 1.5, md: 1 },
+                  width: { xs: '100%', md: 'auto' },
+                  cursor: 'pointer',
+                  '&:hover .step-circle': {
+                    borderColor: 'rgba(255,255,255,0.3)',
+                  },
                 }}
               >
-                {item.step}
-              </Box>
-              <Box sx={{ textAlign: { xs: 'left', md: 'center' } }}>
-                <Typography
+                <Box
+                  className="step-circle"
                   sx={{
-                    fontFamily: MONO,
-                    fontWeight: 600,
-                    fontSize: '0.85rem',
-                    color: item.active
+                    width: 48,
+                    height: 48,
+                    borderRadius: '50%',
+                    bgcolor:
+                      isCurrentStep && isSpecialStep
+                        ? 'rgba(255, 215, 0, 0.15)'
+                        : isCurrentStep
+                          ? 'rgba(29, 55, 252, 0.15)'
+                          : '#0b0b0b',
+                    border: '2px solid',
+                    borderColor: isSpecialStep
                       ? 'secondary.main'
-                      : activeStep === index
-                        ? '#fff'
-                        : 'rgba(255,255,255,0.7)',
-                    mb: 0.25,
+                      : isCurrentStep
+                        ? 'primary.main'
+                        : 'rgba(255,255,255,0.1)',
+                    color: isSpecialStep
+                      ? 'secondary.main'
+                      : isCurrentStep
+                        ? 'primary.main'
+                        : 'rgba(255, 255, 255, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: MONO,
+                    fontWeight: 'bold',
+                    fontSize: '1.1rem',
+                    boxShadow: isSpecialStep
+                      ? '0 0 20px rgba(255, 215, 0, 0.15)'
+                      : isCurrentStep
+                        ? '0 0 15px rgba(29, 55, 252, 0.2)'
+                        : 'none',
+                    transition: 'all 0.2s ease',
+                    flexShrink: 0,
                   }}
                 >
-                  {item.title}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: 'text.secondary',
-                    fontSize: '0.75rem',
-                    lineHeight: 1.3,
-                    display: { xs: 'block', md: 'block' },
-                    maxWidth: { md: 100 },
-                    mx: { md: 'auto' },
-                  }}
-                >
-                  {item.subtitle}
-                </Typography>
+                  {item.step}
+                </Box>
+                <Box sx={{ textAlign: { xs: 'left', md: 'center' } }}>
+                  <Typography
+                    sx={{
+                      fontFamily: MONO,
+                      fontWeight: 600,
+                      fontSize: '0.85rem',
+                      color: isSpecialStep
+                        ? 'secondary.main'
+                        : isCurrentStep
+                          ? '#fff'
+                          : 'rgba(255,255,255,0.7)',
+                      mb: 0.25,
+                    }}
+                  >
+                    {item.title}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: 'text.secondary',
+                      fontSize: '0.75rem',
+                      lineHeight: 1.3,
+                      display: { xs: 'block', md: 'block' },
+                      maxWidth: { md: 100 },
+                      mx: { md: 'auto' },
+                    }}
+                  >
+                    {item.subtitle}
+                  </Typography>
+                </Box>
               </Box>
-            </Box>
-          ))}
+            );
+          })}
         </Stack>
       </Box>
 
