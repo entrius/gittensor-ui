@@ -436,7 +436,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                       onClick={() => handleSort('date')}
                       sx={sortLabelSx}
                     >
-                      Date
+                      {statusFilter === 'all' || statusFilter === 'merged' ? 'Date' : 'Status'}
                     </TableSortLabel>
                   </TableCell>
                 </TableRow>
@@ -637,11 +637,17 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           color: (t) => alpha(t.palette.text.primary, 0.7),
                         }}
                       >
-                        {pr.mergedAt
-                          ? new Date(pr.mergedAt).toLocaleDateString()
-                          : pr.prState === 'CLOSED'
-                            ? 'Closed'
-                            : 'Open'}
+                        {statusFilter === 'all' || statusFilter === 'merged'
+                          ? pr.mergedAt
+                            ? new Date(pr.mergedAt).toLocaleDateString()
+                            : pr.prState === 'CLOSED'
+                              ? 'Closed'
+                              : 'Open'
+                          : pr.mergedAt
+                            ? 'Merged'
+                            : pr.prState === 'CLOSED'
+                              ? 'Closed'
+                              : 'Open'}
                       </TableCell>
                     </TableRow>
                   );
