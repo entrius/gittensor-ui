@@ -226,7 +226,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                     activeField={sortField}
                     activeOrder={sortOrder}
                     onSort={handleSort}
-                    cellStyle={headerCellStyle}
+                    cellStyle={{ ...headerCellStyle, width: '6%' }}
                   />
                   <SortableHeaderCell
                     field="repository"
@@ -235,7 +235,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                     activeField={sortField}
                     activeOrder={sortOrder}
                     onSort={handleSort}
-                    cellStyle={headerCellStyle}
+                    cellStyle={{ ...headerCellStyle, width: '30%' }}
                   />
                   <SortableHeaderCell
                     field="prs"
@@ -245,7 +245,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                     activeField={sortField}
                     activeOrder={sortOrder}
                     onSort={handleSort}
-                    cellStyle={headerCellStyle}
+                    cellStyle={{ ...headerCellStyle, width: '8%' }}
                   />
                   <SortableHeaderCell
                     field="score"
@@ -255,7 +255,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                     activeField={sortField}
                     activeOrder={sortOrder}
                     onSort={handleSort}
-                    cellStyle={headerCellStyle}
+                    cellStyle={{ ...headerCellStyle, width: '14%' }}
                   />
                   <SortableHeaderCell
                     field="tokenScore"
@@ -265,9 +265,12 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                     activeField={sortField}
                     activeOrder={sortOrder}
                     onSort={handleSort}
-                    cellStyle={headerCellStyle}
+                    cellStyle={{ ...headerCellStyle, width: '14%' }}
                   />
-                  <TableCell align="right" sx={headerCellStyle}>
+                  <TableCell
+                    align="right"
+                    sx={{ ...headerCellStyle, width: '14%' }}
+                  >
                     Avg/PR
                   </TableCell>
                   <SortableHeaderCell
@@ -278,7 +281,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                     activeField={sortField}
                     activeOrder={sortOrder}
                     onSort={handleSort}
-                    cellStyle={headerCellStyle}
+                    cellStyle={{ ...headerCellStyle, width: '14%' }}
                   />
                 </TableRow>
               </TableHead>
@@ -366,6 +369,7 @@ const RepoTableRow: React.FC<RepoTableRowProps> = ({
             alignItems: 'center',
             gap: 1.5,
             cursor: 'pointer',
+            overflow: 'hidden',
             '&:hover': {
               color: 'primary.main',
               '& .MuiTypography-root': {
@@ -388,10 +392,14 @@ const RepoTableRow: React.FC<RepoTableRowProps> = ({
           />
           <Typography
             component="span"
+            title={repo.repository}
             sx={{
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.85rem',
               transition: 'color 0.2s',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
             {repo.repository}
