@@ -453,31 +453,36 @@ export const GettingStarted: React.FC = () => {
                   height: 48,
                   borderRadius: '50%',
                   bgcolor:
-                    activeStep === index
-                      ? 'rgba(29, 55, 252, 0.15)'
-                      : '#0b0b0b',
+                    activeStep === index && item.active
+                      ? 'rgba(255, 215, 0, 0.15)'
+                      : activeStep === index
+                        ? 'rgba(29, 55, 252, 0.15)'
+                        : '#0b0b0b',
                   border: '2px solid',
-                  borderColor: item.active
-                    ? 'secondary.main'
-                    : activeStep === index
-                      ? 'primary.main'
-                      : 'rgba(255,255,255,0.1)',
-                  color: item.active
-                    ? 'secondary.main'
-                    : activeStep === index
-                      ? 'primary.main'
-                      : 'rgba(255, 255, 255, 0.5)',
+                  borderColor:
+                    activeStep === index && item.active
+                      ? 'secondary.main'
+                      : activeStep === index
+                        ? 'primary.main'
+                        : 'rgba(255,255,255,0.1)',
+                  color:
+                    activeStep === index && item.active
+                      ? 'secondary.main'
+                      : activeStep === index
+                        ? 'primary.main'
+                        : 'rgba(255, 255, 255, 0.5)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontFamily: MONO,
                   fontWeight: 'bold',
                   fontSize: '1.1rem',
-                  boxShadow: item.active
-                    ? '0 0 20px rgba(255, 215, 0, 0.15)'
-                    : activeStep === index
-                      ? '0 0 15px rgba(29, 55, 252, 0.2)'
-                      : 'none',
+                  boxShadow:
+                    activeStep === index && item.active
+                      ? '0 0 20px rgba(255, 215, 0, 0.15)'
+                      : activeStep === index
+                        ? '0 0 15px rgba(29, 55, 252, 0.2)'
+                        : 'none',
                   transition: 'all 0.2s ease',
                   flexShrink: 0,
                 }}
@@ -490,11 +495,12 @@ export const GettingStarted: React.FC = () => {
                     fontFamily: MONO,
                     fontWeight: 600,
                     fontSize: '0.85rem',
-                    color: item.active
-                      ? 'secondary.main'
-                      : activeStep === index
-                        ? '#fff'
-                        : 'rgba(255,255,255,0.7)',
+                    color:
+                      activeStep === index && item.active
+                        ? 'secondary.main'
+                        : activeStep === index
+                          ? '#fff'
+                          : 'rgba(255,255,255,0.7)',
                     mb: 0.25,
                   }}
                 >
