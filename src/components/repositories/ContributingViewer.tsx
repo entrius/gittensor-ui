@@ -110,6 +110,27 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
     );
   };
 
+  // Custom renderer for links to handle relative paths
+  const LinkRenderer = (props: any) => {
+    const { href, children, ...rest } = props;
+    let finalHref = href;
+
+    if (href && !href.startsWith('http') && !href.startsWith('//') && !href.startsWith('#') && !href.startsWith('mailto:')) {
+      const cleanPath = href.startsWith('./')
+        ? href.slice(2)
+        : href.startsWith('/')
+          ? href.slice(1)
+          : href;
+      finalHref = `https://github.com/${repositoryFullName}/blob/${defaultBranch}/${cleanPath}`;
+    }
+
+    return (
+      <a href={finalHref} target="_blank" rel="noopener noreferrer" {...rest}>
+        {children}
+      </a>
+    );
+  };
+
   return (
     <Paper
       elevation={0}
@@ -204,7 +225,7 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
-        components={{ img: ImageRenderer }}
+        components={{ img: ImageRenderer, a: LinkRenderer }}
       >
         {content || ''}
       </ReactMarkdown>
