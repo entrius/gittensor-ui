@@ -33,7 +33,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
 import { type CommitLog } from '../../api/models/Dashboard';
-import { formatUsdEstimate } from '../../utils';
+import { formatUsdEstimate, truncateText } from '../../utils';
 import theme, { RANK_COLORS, STATUS_COLORS } from '../../theme';
 
 interface TopPRsTableProps {
@@ -43,12 +43,6 @@ interface TopPRsTableProps {
   onSelectMiner: (githubId: string) => void;
   onSelectRepository: (repositoryFullName: string) => void;
 }
-
-// Utility function to truncate text
-const truncateText = (text: string, maxLength: number): string => {
-  if (!text) return '';
-  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-};
 
 const TopPRsTable: React.FC<TopPRsTableProps> = ({
   prs,
