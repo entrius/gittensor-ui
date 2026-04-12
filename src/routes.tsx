@@ -50,6 +50,12 @@ const routesArray: AppRoute[] = [
     element: <IssuesPage />,
     showGlobalSearch: true,
   },
+  {
+    name: 'bounties',
+    path: '/bounties',
+    element: <IssuesPage />,
+    showGlobalSearch: true,
+  },
   { name: 'search', path: '/search', element: <SearchPage /> },
   {
     name: 'discoveries',
