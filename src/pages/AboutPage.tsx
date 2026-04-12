@@ -72,8 +72,8 @@ export const AboutContent: React.FC = () => {
               >
                 Open source software powers the world, yet its builders are
                 rarely compensated for the immense value they create. Gittensor
-                changes this by transforming code contributions into a liquid
-                asset.
+                changes this by turning code contributions into direct,
+                on-chain rewards.
               </Typography>
               <Typography
                 variant="body1"
@@ -83,9 +83,9 @@ export const AboutContent: React.FC = () => {
                   fontSize: '1.05rem',
                 }}
               >
-                We have built a permissionless network where anyone can submit
-                Pull Requests to recognized repositories. When your code is
-                merged, you earn direct emissions. It's that simple:{' '}
+                Submit Pull Requests to whitelisted repositories and earn when
+                they merge. Discover open issues that others later solve and
+                earn from a separate pool. Two ways to earn, one network:{' '}
                 <strong style={{ color: 'white' }}>Code, Merge, Earn.</strong>
               </Typography>
             </Grid>
@@ -110,15 +110,15 @@ export const AboutContent: React.FC = () => {
                   {[
                     {
                       role: 'Miners (You)',
-                      desc: 'Submit high-quality PRs to OSS repos.',
+                      desc: 'Merge PRs to OSS repos and discover open issues for others to solve.',
                     },
                     {
                       role: 'Validators',
-                      desc: 'Verify merged PRs and distribute rewards.',
+                      desc: 'Score contributions, verify merges, and set on-chain weights.',
                     },
                     {
                       role: 'The Network',
-                      desc: 'Incentivizes production-ready software.',
+                      desc: 'Distributes emissions across two pools: OSS contributions and issue discovery.',
                     },
                   ].map((item, i) => (
                     <Box key={i} sx={{ display: 'flex', gap: 2 }}>
