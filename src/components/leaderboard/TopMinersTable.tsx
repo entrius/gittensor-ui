@@ -64,7 +64,10 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       result = result.filter((m) => m.isEligible);
     }
 
-    return sortMinersList(result, sortOption);
+    return sortMinersList(result, sortOption).map((miner, index) => ({
+      ...miner,
+      rank: index + 1,
+    }));
   }, [miners, searchQuery, showEligibleOnly, sortOption]);
 
   useEffect(() => {
