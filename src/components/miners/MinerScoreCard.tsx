@@ -347,7 +347,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
               {githubData?.name || username}
             </Typography>
             <Tooltip
-              title="Requires 5+ merged PRs with token score >= 5 and 90%+ credibility"
+              title="Requires 5+ merged PRs with token score >= 5 and 80%+ credibility"
               arrow
               placement="bottom"
               slotProps={tooltipSlotProps}
