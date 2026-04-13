@@ -432,7 +432,7 @@ const GlobalSearchBar: React.FC = () => {
                       }
                       subtitle={`${issue.repositoryFullName} · #${issue.issueNumber}`}
                       onClick={() =>
-                        navigateAndClose(`/issues/details?id=${issue.id}`)
+                        navigateAndClose(`/bounties/details?id=${issue.id}`)
                       }
                     />
                   ))}

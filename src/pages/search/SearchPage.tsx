@@ -187,7 +187,7 @@ const SearchPage: React.FC = () => {
   };
 
   const handleSelectIssue = (id: number) => {
-    navigate(`/issues/details?id=${id}`, {
+    navigate(`/bounties/details?id=${id}`, {
       state: searchBackState,
     });
   };
