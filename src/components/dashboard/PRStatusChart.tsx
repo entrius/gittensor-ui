@@ -104,6 +104,7 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
+        minWidth: 0,
       }}
     >
       <Typography
@@ -173,9 +174,13 @@ const StatItem: React.FC<{ label: string; value: number }> = ({
   label,
   value,
 }) => (
-  <Stack gap={1} direction="column" alignItems="center">
-    <Typography variant="statLabel">{label}</Typography>
-    <Typography variant="statValue">{value}</Typography>
+  <Stack gap={1} direction="column" alignItems="center" sx={{ minWidth: 0 }}>
+    <Typography variant="statLabel" noWrap>
+      {label}
+    </Typography>
+    <Typography variant="statValue" noWrap>
+      {value}
+    </Typography>
   </Stack>
 );
 
