@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   ButtonBase,
@@ -19,9 +19,27 @@ import { useSearchResults } from '../../pages/search/searchData';
 
 const QUICK_RESULT_LIMIT = 3;
 const DROPDOWN_CLOSE_DELAY_MS = 150;
+const LISTBOX_ID = 'global-search-listbox';
+const itemIdFromKey = (key: string) => `global-search-item-${key}`;
 
-// Quick-search dropdown styles.
-const resultRowSx = (theme: Theme) => ({
+type NavItemKind = 'miner' | 'repo' | 'pr' | 'issue' | 'action';
+
+type NavItem = {
+  key: string;
+  kind: NavItemKind;
+  title: string;
+  subtitle: string;
+  onSelect: () => void;
+};
+
+const SECTION_LABELS: Record<Exclude<NavItemKind, 'action'>, string> = {
+  miner: 'Miners',
+  repo: 'Repositories',
+  pr: 'Pull Requests',
+  issue: 'Issues',
+};
+
+const rowSx = (theme: Theme, active: boolean) => ({
   width: '100%',
   textAlign: 'left',
   display: 'flex',
@@ -29,27 +47,34 @@ const resultRowSx = (theme: Theme) => ({
   alignItems: 'center',
   p: 1.1,
   borderRadius: '8px',
-  border: `1px solid ${theme.palette.border.subtle}`,
-  backgroundColor: theme.palette.surface.subtle,
+  border: `1px solid ${
+    active ? theme.palette.primary.main : theme.palette.border.subtle
+  }`,
+  backgroundColor: active
+    ? theme.palette.surface.light
+    : theme.palette.surface.subtle,
+  transition: 'background-color 0.12s, border-color 0.12s',
   '&:hover': {
     backgroundColor: theme.palette.surface.light,
-    borderColor: theme.palette.border.light,
+    borderColor: active
+      ? theme.palette.primary.main
+      : theme.palette.border.light,
   },
 });
 
-const resultSubtitleSx = (theme: Theme) => ({
+const subtitleSx = (theme: Theme) => ({
   color: theme.palette.text.secondary,
   fontFamily: theme.typography.mono.fontFamily,
 });
 
-type SearchSectionLabelProps = {
+type SectionLabelProps = {
   label: string;
-  hasResultsAbove?: boolean;
+  hasResultsAbove: boolean;
 };
 
-const SearchSectionLabel: React.FC<SearchSectionLabelProps> = ({
+const SectionLabel: React.FC<SectionLabelProps> = ({
   label,
-  hasResultsAbove = false,
+  hasResultsAbove,
 }) => (
   <Typography
     sx={(theme) => ({
@@ -65,43 +90,67 @@ const SearchSectionLabel: React.FC<SearchSectionLabelProps> = ({
   </Typography>
 );
 
-type SearchResultRowProps = {
-  title: string;
-  subtitle: string;
-  onClick: () => void;
+type ResultRowProps = {
+  item: NavItem;
+  active: boolean;
+  rowRef: (el: HTMLButtonElement | null) => void;
+  onMouseEnter: () => void;
 };
 
-const SearchResultRow: React.FC<SearchResultRowProps> = ({
-  title,
-  subtitle,
-  onClick,
-}) => (
-  <ButtonBase
-    sx={resultRowSx}
-    onMouseDown={(e) => e.preventDefault()}
-    onClick={onClick}
-  >
-    <Box>
-      <Typography
-        sx={(theme) => ({
-          color: theme.palette.text.primary,
-          fontFamily: theme.typography.mono.fontFamily,
-          fontSize: '0.92rem',
-        })}
-      >
-        {title}
-      </Typography>
-      {subtitle ? (
-        <Typography variant="caption" sx={resultSubtitleSx}>
-          {subtitle}
+const ResultRow: React.FC<ResultRowProps> = ({
+  item,
+  active,
+  rowRef,
+  onMouseEnter,
+}) => {
+  const isAction = item.kind === 'action';
+  return (
+    <ButtonBase
+      id={itemIdFromKey(item.key)}
+      ref={rowRef}
+      role="option"
+      aria-selected={active}
+      sx={(theme) => rowSx(theme, active)}
+      onMouseDown={(e) => e.preventDefault()}
+      onMouseEnter={onMouseEnter}
+      onClick={item.onSelect}
+    >
+      <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
+        <Typography
+          sx={(theme) => ({
+            color: isAction
+              ? theme.palette.primary.main
+              : theme.palette.text.primary,
+            fontFamily: theme.typography.mono.fontFamily,
+            fontSize: isAction ? '0.9rem' : '0.92rem',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          })}
+        >
+          {item.title}
         </Typography>
-      ) : null}
-    </Box>
-    <ArrowForwardIcon fontSize="small" />
-  </ButtonBase>
-);
+        {item.subtitle ? (
+          <Typography
+            variant="caption"
+            sx={(theme) => ({
+              ...subtitleSx(theme),
+              display: 'block',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            })}
+          >
+            {item.subtitle}
+          </Typography>
+        ) : null}
+      </Box>
+      <ArrowForwardIcon fontSize="small" />
+    </ButtonBase>
+  );
+};
 
-const SearchEmptyState: React.FC = () => (
+const EmptyState: React.FC = () => (
   <Box
     sx={(theme) => ({
       px: 1,
@@ -120,44 +169,19 @@ const SearchEmptyState: React.FC = () => (
     >
       No quick matches found.
     </Typography>
-    <Typography variant="caption" sx={resultSubtitleSx}>
+    <Typography variant="caption" sx={subtitleSx}>
       Press Enter to search all results.
     </Typography>
   </Box>
 );
 
-type SearchActionRowProps = {
-  label: string;
-  onClick: () => void;
-};
+const getMinerSubtitle = (miner: { leaderboardRank: number }) =>
+  miner.leaderboardRank > 0 ? `Rank #${miner.leaderboardRank}` : '';
 
-const SearchActionRow: React.FC<SearchActionRowProps> = ({
-  label,
-  onClick,
-}) => (
-  <ButtonBase
-    sx={resultRowSx}
-    onMouseDown={(e) => e.preventDefault()}
-    onClick={onClick}
-  >
-    <Typography
-      sx={(theme) => ({
-        color: theme.palette.primary.main,
-        fontSize: '0.9rem',
-        fontFamily: theme.typography.mono.fontFamily,
-      })}
-    >
-      {label}
-    </Typography>
-    <ArrowForwardIcon fontSize="small" />
-  </ButtonBase>
-);
-
-const getMinerSubtitle = (miner: { leaderboardRank: number }) => {
-  if (miner.leaderboardRank > 0) {
-    return `Rank #${miner.leaderboardRank}`;
-  }
-  return '';
+const detectMac = () => {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  return /Mac|iPhone|iPad|iPod/i.test(ua);
 };
 
 const GlobalSearchBar: React.FC = () => {
@@ -167,11 +191,16 @@ const GlobalSearchBar: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [isMac] = useState(detectMac);
 
-  // Activate dataset loading after search interaction or on the /search page.
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const rowRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const blurTimerRef = useRef<number | null>(null);
+
+  // Activate dataset loading after first interaction (or immediately on /search).
   const [isSearchActivated, setIsSearchActivated] = useState(isSearchPage);
 
-  // Reuse cached search datasets and derive quick results after activation.
   const {
     datasets,
     hasQuery,
@@ -205,44 +234,254 @@ const GlobalSearchBar: React.FC = () => {
 
   const trimmedQuery = query.trim();
 
+  // Sync URL query param on /search page.
   useEffect(() => {
     if (!isSearchPage) return;
     const qFromUrl = searchParams.get('q') || '';
     setQuery((prev) => (prev === qFromUrl ? prev : qFromUrl));
   }, [isSearchPage, searchParams]);
 
-  const updateSearchPageQuery = (value: string) => {
-    if (!isSearchPage) return;
+  const updateSearchPageQuery = useCallback(
+    (value: string) => {
+      if (!isSearchPage) return;
+      const params = new URLSearchParams(searchParams);
+      const trimmedValue = value.trim();
+      if (trimmedValue) {
+        params.set('q', trimmedValue);
+      } else {
+        params.delete('q');
+      }
+      setSearchParams(params, { replace: true });
+    },
+    [isSearchPage, searchParams, setSearchParams],
+  );
 
-    const params = new URLSearchParams(searchParams);
-    const trimmedValue = value.trim();
-
-    if (trimmedValue) {
-      params.set('q', trimmedValue);
-    } else {
-      params.delete('q');
+  const closeDropdown = useCallback(() => {
+    if (blurTimerRef.current !== null) {
+      window.clearTimeout(blurTimerRef.current);
+      blurTimerRef.current = null;
     }
-    setSearchParams(params, { replace: true });
-  };
+    setIsDropdownOpen(false);
+  }, []);
 
-  const handleOpenSearchPage = () => {
+  const navigateAndClose = useCallback(
+    (path: string) => {
+      navigate(path);
+      closeDropdown();
+    },
+    [navigate, closeDropdown],
+  );
+
+  const openFullSearch = useCallback(() => {
     if (!trimmedQuery) return;
     navigate(`/search?q=${encodeURIComponent(trimmedQuery)}`);
-    setIsDropdownOpen(false);
-  };
-
-  const showDropdown = !isSearchPage && isDropdownOpen && hasQuery;
-  const closeDropdown = () => setIsDropdownOpen(false);
-
-  const navigateAndClose = (path: string) => {
-    navigate(path);
     closeDropdown();
-  };
+  }, [trimmedQuery, navigate, closeDropdown]);
 
   const clearQuery = () => {
     setQuery('');
     updateSearchPageQuery('');
   };
+
+  // Flat, indexable list of navigable items — single source of truth for both
+  // rendering and keyboard navigation.
+  const navItems: NavItem[] = useMemo(() => {
+    const items: NavItem[] = [];
+    minerResults.forEach((miner) => {
+      items.push({
+        key: `miner-${miner.githubId}`,
+        kind: 'miner',
+        title: miner.githubUsername || miner.githubId,
+        subtitle: getMinerSubtitle(miner),
+        onSelect: () =>
+          navigateAndClose(
+            `/miners/details?githubId=${encodeURIComponent(miner.githubId)}`,
+          ),
+      });
+    });
+    repositoryResults.forEach((repo) => {
+      items.push({
+        key: `repo-${repo.fullName}`,
+        kind: 'repo',
+        title: repo.fullName,
+        subtitle: repo.owner,
+        onSelect: () =>
+          navigateAndClose(
+            `/miners/repository?name=${encodeURIComponent(repo.fullName)}`,
+          ),
+      });
+    });
+    prResults.forEach((pr) => {
+      items.push({
+        key: `pr-${pr.repository}-${pr.pullRequestNumber}`,
+        kind: 'pr',
+        title: `${pr.repository} #${pr.pullRequestNumber}`,
+        subtitle: pr.pullRequestTitle,
+        onSelect: () =>
+          navigateAndClose(
+            `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
+          ),
+      });
+    });
+    issueResults.forEach((issue) => {
+      items.push({
+        key: `issue-${issue.id}`,
+        kind: 'issue',
+        title:
+          issue.title ||
+          `${issue.repositoryFullName} #${issue.issueNumber}`,
+        subtitle: `${issue.repositoryFullName} · #${issue.issueNumber}`,
+        onSelect: () => navigateAndClose(`/issues/details?id=${issue.id}`),
+      });
+    });
+    if (trimmedQuery) {
+      items.push({
+        key: 'action-open-full',
+        kind: 'action',
+        title: `Open full search for "${trimmedQuery}"`,
+        subtitle: '',
+        onSelect: openFullSearch,
+      });
+    }
+    return items;
+  }, [
+    minerResults,
+    repositoryResults,
+    prResults,
+    issueResults,
+    trimmedQuery,
+    navigateAndClose,
+    openFullSearch,
+  ]);
+
+  // Reset the active row when the result set changes. `navItems` is wrapped
+  // in useMemo with stable deps, so its identity only changes when the actual
+  // results change — safe to use as a dep directly.
+  useEffect(() => {
+    setActiveIndex(navItems.length > 0 ? 0 : -1);
+  }, [navItems]);
+
+  // Scroll the active row into view as it changes.
+  useEffect(() => {
+    if (activeIndex < 0) return;
+    const activeKey = navItems[activeIndex]?.key;
+    if (!activeKey) return;
+    const el = rowRefs.current[activeKey];
+    if (el && typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ block: 'nearest' });
+    }
+  }, [activeIndex, navItems]);
+
+  // Global shortcuts: Cmd/Ctrl+K and "/" to focus the search input.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        const input = inputRef.current;
+        if (input) {
+          input.focus();
+          input.select();
+        }
+        return;
+      }
+
+      if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const target =
+          (e.target as HTMLElement | null) ||
+          (document.activeElement as HTMLElement | null);
+        if (!target) return;
+        const tag = target.tagName;
+        const isEditable =
+          tag === 'INPUT' ||
+          tag === 'TEXTAREA' ||
+          target.isContentEditable === true;
+        if (isEditable) return;
+        // Don't steal focus from open modals / menus / select popovers.
+        if (
+          target.closest(
+            '[role="dialog"], [role="menu"], [role="listbox"], [aria-modal="true"]',
+          )
+        ) {
+          return;
+        }
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const showDropdown = !isSearchPage && isDropdownOpen && hasQuery;
+
+  const moveActive = (delta: number) => {
+    if (navItems.length === 0) return;
+    setActiveIndex((prev) => {
+      const base = prev < 0 ? 0 : prev;
+      return (base + delta + navItems.length) % navItems.length;
+    });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (showDropdown && activeIndex >= 0 && navItems[activeIndex]) {
+        navItems[activeIndex].onSelect();
+      } else {
+        openFullSearch();
+      }
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      if (showDropdown) {
+        e.preventDefault();
+        closeDropdown();
+      } else {
+        inputRef.current?.blur();
+      }
+      return;
+    }
+
+    if (!showDropdown) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        moveActive(1);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        moveActive(-1);
+        break;
+      case 'Home':
+        e.preventDefault();
+        if (navItems.length > 0) setActiveIndex(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        if (navItems.length > 0) setActiveIndex(navItems.length - 1);
+        break;
+    }
+  };
+
+  const activeDescendantId =
+    showDropdown && activeIndex >= 0 && navItems[activeIndex]
+      ? itemIdFromKey(navItems[activeIndex].key)
+      : undefined;
+
+  // Stable ref callback factory — the inner ref closure doesn't change per
+  // render, avoiding the "null then element" churn on every re-render.
+  const getRowRef = useCallback(
+    (key: string) => (el: HTMLButtonElement | null) => {
+      if (el) {
+        rowRefs.current[key] = el;
+      } else {
+        delete rowRefs.current[key];
+      }
+    },
+    [],
+  );
 
   return (
     <Box sx={{ position: 'relative', width: '100%', maxWidth: 900 }}>
@@ -252,25 +491,37 @@ const GlobalSearchBar: React.FC = () => {
         placeholder="Search miners, repositories, PRs, issues..."
         value={query}
         autoComplete="off"
+        inputRef={inputRef}
         onFocus={() => {
           setIsSearchActivated(true);
           setIsDropdownOpen(true);
         }}
         onBlur={() => {
-          setTimeout(() => setIsDropdownOpen(false), DROPDOWN_CLOSE_DELAY_MS);
+          if (blurTimerRef.current !== null) {
+            window.clearTimeout(blurTimerRef.current);
+          }
+          blurTimerRef.current = window.setTimeout(() => {
+            setIsDropdownOpen(false);
+            blurTimerRef.current = null;
+          }, DROPDOWN_CLOSE_DELAY_MS);
         }}
         onChange={(e) => {
           const value = e.target.value;
           setQuery(value);
+          // Reopen dropdown if the user dismissed it with Esc and is now
+          // typing again — the input still has focus, so this matches the
+          // common "Esc = hide for now, keep typing to reopen" pattern.
+          setIsDropdownOpen(true);
           updateSearchPageQuery(value);
         }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            handleOpenSearchPage();
-          }
-        }}
+        onKeyDown={handleKeyDown}
         InputProps={{
+          role: 'combobox',
+          'aria-expanded': showDropdown,
+          'aria-haspopup': 'listbox',
+          'aria-controls': LISTBOX_ID,
+          'aria-activedescendant': activeDescendantId,
+          'aria-autocomplete': 'list',
           startAdornment: (
             <InputAdornment position="start">
               <SearchIcon
@@ -286,6 +537,7 @@ const GlobalSearchBar: React.FC = () => {
               <IconButton
                 size="small"
                 onClick={clearQuery}
+                onMouseDown={(e) => e.preventDefault()}
                 edge="end"
                 aria-label="clear search"
                 sx={(theme) => ({ color: theme.palette.text.secondary })}
@@ -293,7 +545,29 @@ const GlobalSearchBar: React.FC = () => {
                 <CloseIcon fontSize="small" />
               </IconButton>
             </InputAdornment>
-          ) : undefined,
+          ) : (
+            <InputAdornment position="end">
+              <Box
+                aria-hidden
+                sx={(theme) => ({
+                  display: { xs: 'none', md: 'inline-flex' },
+                  alignItems: 'center',
+                  px: 0.75,
+                  py: 0.1,
+                  borderRadius: 1,
+                  border: `1px solid ${theme.palette.border.light}`,
+                  color: theme.palette.text.secondary,
+                  fontFamily: theme.typography.mono.fontFamily,
+                  fontSize: '0.68rem',
+                  lineHeight: 1.4,
+                  userSelect: 'none',
+                  pointerEvents: 'none',
+                })}
+              >
+                {isMac ? '⌘K' : 'Ctrl K'}
+              </Box>
+            </InputAdornment>
+          ),
         }}
         sx={(theme) => ({
           '& .MuiOutlinedInput-root': {
@@ -318,6 +592,8 @@ const GlobalSearchBar: React.FC = () => {
 
       {showDropdown && (
         <Paper
+          id={LISTBOX_ID}
+          role="listbox"
           elevation={0}
           sx={(theme) => ({
             position: 'absolute',
@@ -351,100 +627,34 @@ const GlobalSearchBar: React.FC = () => {
 
           {!isLoading && (
             <Stack spacing={0.5} sx={{ pb: 0.5 }}>
-              {minerResults.length > 0 && (
-                <>
-                  <SearchSectionLabel label="Miners" />
-                  {minerResults.map((miner) => (
-                    <SearchResultRow
-                      key={`miner-${miner.githubId}`}
-                      title={miner.githubUsername || miner.githubId}
-                      subtitle={getMinerSubtitle(miner)}
-                      onClick={() =>
-                        navigateAndClose(
-                          `/miners/details?githubId=${encodeURIComponent(miner.githubId)}`,
-                        )
-                      }
+              {!hasAnyResults && <EmptyState />}
+
+              {navItems.map((item, idx) => {
+                const prevItem = idx > 0 ? navItems[idx - 1] : null;
+                const showSectionLabel =
+                  item.kind !== 'action' &&
+                  (!prevItem || prevItem.kind !== item.kind);
+                return (
+                  <React.Fragment key={item.key}>
+                    {showSectionLabel && (
+                      <SectionLabel
+                        label={
+                          SECTION_LABELS[
+                            item.kind as Exclude<NavItemKind, 'action'>
+                          ]
+                        }
+                        hasResultsAbove={idx > 0}
+                      />
+                    )}
+                    <ResultRow
+                      item={item}
+                      active={idx === activeIndex}
+                      rowRef={getRowRef(item.key)}
+                      onMouseEnter={() => setActiveIndex(idx)}
                     />
-                  ))}
-                </>
-              )}
-
-              {repositoryResults.length > 0 && (
-                <>
-                  <SearchSectionLabel
-                    label="Repositories"
-                    hasResultsAbove={minerResults.length > 0}
-                  />
-                  {repositoryResults.map((repo) => (
-                    <SearchResultRow
-                      key={`repo-${repo.fullName}`}
-                      title={repo.fullName}
-                      subtitle={repo.owner}
-                      onClick={() =>
-                        navigateAndClose(
-                          `/miners/repository?name=${encodeURIComponent(repo.fullName)}`,
-                        )
-                      }
-                    />
-                  ))}
-                </>
-              )}
-
-              {prResults.length > 0 && (
-                <>
-                  <SearchSectionLabel
-                    label="Pull Requests"
-                    hasResultsAbove={
-                      minerResults.length > 0 || repositoryResults.length > 0
-                    }
-                  />
-                  {prResults.map((pr) => (
-                    <SearchResultRow
-                      key={`pr-${pr.repository}-${pr.pullRequestNumber}`}
-                      title={`${pr.repository} #${pr.pullRequestNumber}`}
-                      subtitle={pr.pullRequestTitle}
-                      onClick={() =>
-                        navigateAndClose(
-                          `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
-                        )
-                      }
-                    />
-                  ))}
-                </>
-              )}
-
-              {issueResults.length > 0 && (
-                <>
-                  <SearchSectionLabel
-                    label="Issues"
-                    hasResultsAbove={
-                      minerResults.length > 0 ||
-                      repositoryResults.length > 0 ||
-                      prResults.length > 0
-                    }
-                  />
-                  {issueResults.map((issue) => (
-                    <SearchResultRow
-                      key={`issue-${issue.id}`}
-                      title={
-                        issue.title ||
-                        `${issue.repositoryFullName} #${issue.issueNumber}`
-                      }
-                      subtitle={`${issue.repositoryFullName} · #${issue.issueNumber}`}
-                      onClick={() =>
-                        navigateAndClose(`/issues/details?id=${issue.id}`)
-                      }
-                    />
-                  ))}
-                </>
-              )}
-
-              {!hasAnyResults && <SearchEmptyState />}
-
-              <SearchActionRow
-                label={`Open full search for "${trimmedQuery}"`}
-                onClick={handleOpenSearchPage}
-              />
+                  </React.Fragment>
+                );
+              })}
             </Stack>
           )}
         </Paper>
