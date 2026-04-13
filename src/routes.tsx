@@ -1,5 +1,5 @@
 import React from 'react';
-import { matchPath, type PathRouteProps } from 'react-router-dom';
+import { Navigate, matchPath, type PathRouteProps } from 'react-router-dom';
 
 export type AppRoute = Omit<PathRouteProps, 'path'> & {
   name: string;
@@ -43,6 +43,11 @@ const routesArray: AppRoute[] = [
     name: 'issue-details',
     path: '/issues/details',
     element: <IssueDetailsPage />,
+  },
+  {
+    name: 'bounties',
+    path: '/bounties',
+    element: <Navigate to="/issues" replace />,
   },
   {
     name: 'issues',
