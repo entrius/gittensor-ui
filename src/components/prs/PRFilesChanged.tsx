@@ -33,7 +33,11 @@ import ViewAgendaIcon from '@mui/icons-material/ViewAgenda'; // Unified
 import ViewColumnIcon from '@mui/icons-material/ViewColumn'; // Split
 import axios from 'axios';
 
-import parseDiff, { type Change } from 'parse-diff';
+import parseDiff, {
+  type Change,
+  type Chunk,
+  type File as DiffFile,
+} from 'parse-diff';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
 import Tooltip from '@mui/material/Tooltip';
@@ -78,6 +82,11 @@ interface TreeNode {
   hasChanges?: boolean; // If this folder contains changed files
   changeCount?: number; // Number of changed files inside
 }
+
+type SplitDiffRow =
+  | { type: 'chunk-header'; left: null; right: null; headerContent: string }
+  | { type: 'normal'; left: Change; right: Change }
+  | { type: 'modify'; left: Change | null; right: Change | null };
 
 const buildFullTree = (
   allFilesParams: { path: string; type: 'blob' | 'tree' }[],
@@ -332,9 +341,9 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
 
   if (!files || files.length === 0) return null;
 
-  const rows: unknown[] = [];
+  const rows: SplitDiffRow[] = [];
 
-  files[0].chunks.forEach((chunk: any) => {
+  files[0].chunks.forEach((chunk: Chunk) => {
     rows.push({
       left: null,
       right: null,
@@ -342,10 +351,10 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
       headerContent: chunk.content,
     });
 
-    let deletions: any[] = [];
-    let additions: any[] = [];
+    let deletions: Change[] = [];
+    let additions: Change[] = [];
 
-    chunk.changes.forEach((change: any) => {
+    chunk.changes.forEach((change: Change) => {
       if (change.type === 'normal') {
         const maxLen = Math.max(deletions.length, additions.length);
         for (let i = 0; i < maxLen; i++) {
@@ -395,7 +404,7 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
             <col style={{ width: '50%' }} />
           </colgroup>
           <TableBody>
-            {rows.map((row: any, idx) => {
+            {rows.map((row, idx) => {
               if (row.type === 'chunk-header') {
                 return (
                   <TableRow key={idx} sx={{ backgroundColor: '#1c2128' }}>
@@ -563,7 +572,7 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
         }}
       >
         <TableBody>
-          {rows.map((row: any, idx) => {
+          {rows.map((row, idx) => {
             if (row.type === 'chunk-header') {
               return (
                 <TableRow
@@ -698,9 +707,9 @@ const UnifiedDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
 
   const rows: (Change | { type: 'chunk-header'; content: string })[] = [];
 
-  files[0].chunks.forEach((chunk: any) => {
+  files[0].chunks.forEach((chunk: Chunk) => {
     rows.push({ type: 'chunk-header', content: chunk.content });
-    chunk.changes.forEach((change: any) => {
+    chunk.changes.forEach((change: Change) => {
       rows.push(change);
     });
   });
@@ -835,7 +844,7 @@ const UnifiedDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
 
 // Minimap Component
 const DiffMinimap: React.FC<{
-  files: any[];
+  files: DiffFile[];
   scrollContainerRef: React.RefObject<HTMLDivElement>;
 }> = ({ files, scrollContainerRef }) => {
   const [scrollTop, setScrollTop] = useState(0);
@@ -851,12 +860,12 @@ const DiffMinimap: React.FC<{
     let tLines = 0;
     const mapLines: { type: string; index: number }[] = [];
 
-    chunks.forEach((chunk: any) => {
+    chunks.forEach((chunk: Chunk) => {
       // Chunk header counts as a line visually usually
       tLines++;
       mapLines.push({ type: 'header', index: tLines });
 
-      chunk.changes.forEach((change: any) => {
+      chunk.changes.forEach((change: Change) => {
         tLines++;
         mapLines.push({ type: change.type, index: tLines });
       });
@@ -1269,10 +1278,13 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
             treeErr,
           );
           setFullTreeData(
-            changedFiles.map((f: any) => ({ path: f.filename, type: 'blob' })),
+            changedFiles.map((f: PRFile) => ({
+              path: f.filename,
+              type: 'blob' as const,
+            })),
           );
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to fetch PR data', err);
         setError('Failed to load data.');
       } finally {
