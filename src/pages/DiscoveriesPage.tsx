@@ -23,6 +23,7 @@ const DiscoveriesPage: React.FC = () => {
   const minerStats = useMemo(() => {
     if (!Array.isArray(allMinersStats)) return [];
     return allMinersStats.map((stat) => ({
+      id: String(stat.id),
       githubId: stat.githubId || '',
       author: stat.githubUsername || undefined,
       totalScore: Number(stat.issueDiscoveryScore) || 0,
@@ -121,6 +122,7 @@ const DiscoveriesPage: React.FC = () => {
               miners={sortedMinerStats}
               isLoading={isLoadingMinerStats}
               onSelectMiner={handleSelectMiner}
+              activityLabel="Issues"
             />
           </Box>
         </Box>

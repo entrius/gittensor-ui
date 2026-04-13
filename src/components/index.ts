@@ -4,6 +4,7 @@ export * from './miners';
 export * from './repositories';
 export * from './prs';
 export * from './leaderboard';
+export * from './common';
 export { default as FAQ } from './FAQ';
 export { default as BackButton } from './BackButton';
 export { SEO } from './SEO';

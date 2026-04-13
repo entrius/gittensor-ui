@@ -6,29 +6,10 @@ import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
-import { useStats } from '../api';
+import { useMonthlyRewards } from '../hooks/useMonthlyRewards';
 
 export const AboutContent: React.FC = () => {
-  const { data: stats } = useStats();
-
-  const monthlyRewards = React.useMemo(() => {
-    if (
-      !stats?.prices?.tao?.data?.price ||
-      !stats?.prices?.alpha?.data?.price
-    ) {
-      return undefined;
-    }
-    const taoPrice = stats.prices.tao.data.price;
-    const alphaPrice = stats.prices.alpha.data.price;
-    const dailyAlphaEmissions = 2952;
-    const now = new Date();
-    const daysInMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0,
-    ).getDate();
-    return taoPrice * alphaPrice * dailyAlphaEmissions * daysInMonth;
-  }, [stats?.prices]);
+  const monthlyRewards = useMonthlyRewards();
 
   return (
     <Box

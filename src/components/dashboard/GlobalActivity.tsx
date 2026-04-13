@@ -217,6 +217,7 @@ const GlobalActivity: React.FC = () => {
                   flexDirection: 'row',
                   gap: { xs: 1, sm: 3, lg: 1.5, xl: 3 },
                   flex: 1,
+                  minWidth: 0,
                 }}
               >
                 <PRStatusChart
