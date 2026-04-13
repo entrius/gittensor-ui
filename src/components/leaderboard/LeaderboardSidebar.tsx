@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Box, Stack, Typography, Avatar } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { SectionCard } from './SectionCard';
 import { STATUS_COLORS } from '../../theme';
+import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { type MinerStats, FONTS } from './types';
 
 // Re-export MinerStats for backward compatibility
@@ -99,7 +101,7 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
           {(leaderboardType === 'earners' ? topEarners : mostActive).map(
             (miner, i) => (
               <LeaderboardRow
-                key={miner.githubId}
+                key={miner.id}
                 miner={miner}
                 rank={i + 1}
                 type={leaderboardType}
@@ -121,11 +123,7 @@ interface StatRowProps {
   valueColor?: string;
 }
 
-const StatRow: React.FC<StatRowProps> = ({
-  label,
-  value,
-  valueColor = '#e6edf3',
-}) => (
+const StatRow: React.FC<StatRowProps> = ({ label, value, valueColor }) => (
   <Box
     sx={{
       display: 'flex',
@@ -143,12 +141,12 @@ const StatRow: React.FC<StatRowProps> = ({
       {label}
     </Typography>
     <Typography
-      sx={{
+      sx={(theme) => ({
         fontFamily: FONTS.mono,
         fontWeight: 600,
         fontSize: '1.1rem',
-        color: valueColor,
-      }}
+        color: valueColor ?? theme.palette.text.primary,
+      })}
     >
       {value}
     </Typography>
@@ -167,13 +165,13 @@ const LeaderboardTabs: React.FC<LeaderboardTabsProps> = ({
   variant = 'oss',
 }) => (
   <Box
-    sx={{
+    sx={(theme) => ({
       display: 'flex',
       gap: 0.5,
-      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      backgroundColor: theme.palette.surface.light,
       p: 0.5,
       borderRadius: 2,
-    }}
+    })}
   >
     {[
       { label: '$', value: 'earners' as const },
@@ -185,7 +183,7 @@ const LeaderboardTabs: React.FC<LeaderboardTabsProps> = ({
       <Box
         key={option.value}
         onClick={() => onTabChange(option.value)}
-        sx={{
+        sx={(theme) => ({
           px: 1.5,
           height: 24,
           display: 'flex',
@@ -194,15 +192,18 @@ const LeaderboardTabs: React.FC<LeaderboardTabsProps> = ({
           cursor: 'pointer',
           backgroundColor:
             activeTab === option.value
-              ? 'rgba(255, 255, 255, 0.15)'
+              ? alpha(theme.palette.text.primary, 0.15)
               : 'transparent',
-          color: activeTab === option.value ? '#fff' : STATUS_COLORS.open,
+          color:
+            activeTab === option.value
+              ? theme.palette.text.primary
+              : STATUS_COLORS.open,
           transition: 'all 0.2s',
           '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            color: '#e6edf3',
+            backgroundColor: alpha(theme.palette.text.primary, 0.1),
+            color: theme.palette.text.primary,
           },
-        }}
+        })}
       >
         <Typography
           sx={{
@@ -228,12 +229,12 @@ const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({
   variant = 'oss',
 }) => (
   <Box
-    sx={{
+    sx={(theme) => ({
       display: 'flex',
       py: 1,
-      borderBottom: '1px solid rgba(48, 54, 61, 0.5)',
+      borderBottom: `1px solid ${theme.palette.border.light}`,
       mb: 1,
-    }}
+    })}
   >
     <Typography
       sx={{
@@ -289,16 +290,16 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
 }) => (
   <Box
     onClick={onClick}
-    sx={{
+    sx={(theme) => ({
       display: 'flex',
       alignItems: 'center',
       py: 1,
       cursor: 'pointer',
       '&:hover': {
-        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+        backgroundColor: alpha(theme.palette.text.primary, 0.03),
         borderRadius: 1,
       },
-    }}
+    })}
   >
     <Typography
       sx={{
@@ -320,29 +321,32 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
       }}
     >
       <Avatar
-        src={`https://avatars.githubusercontent.com/${miner.author || miner.githubId}`}
+        src={getGithubAvatarSrc(miner.author || miner.githubId)}
         sx={{ width: 20, height: 20 }}
       />
       <Typography
-        sx={{
+        sx={(theme) => ({
           fontFamily: FONTS.mono,
           fontSize: '0.85rem',
-          color: '#c9d1d9',
+          color: theme.palette.text.tertiary,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
-        }}
+        })}
       >
         {miner.author || miner.githubId}
       </Typography>
     </Box>
     <Typography
-      sx={{
+      sx={(theme) => ({
         fontFamily: FONTS.mono,
         fontSize: '0.95rem',
-        color: type === 'earners' ? STATUS_COLORS.merged : '#e6edf3',
+        color:
+          type === 'earners'
+            ? STATUS_COLORS.merged
+            : theme.palette.text.primary,
         fontWeight: 600,
-      }}
+      })}
     >
       {type === 'earners'
         ? `$${Math.round(miner.usdPerDay || 0).toLocaleString()}`
