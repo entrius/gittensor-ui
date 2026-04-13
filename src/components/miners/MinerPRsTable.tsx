@@ -436,7 +436,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                       onClick={() => handleSort('date')}
                       sx={sortLabelSx}
                     >
-                      {statusFilter === 'all' || statusFilter === 'merged' ? 'Date' : 'Status'}
+                      {statusFilter === 'all' || statusFilter === 'merged'
+                        ? 'Date'
+                        : 'Status'}
                     </TableSortLabel>
                   </TableCell>
                 </TableRow>
