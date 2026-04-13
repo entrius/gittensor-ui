@@ -246,7 +246,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               <Chip
                 variant="filter"
                 label={`Author: ${selectedAuthor}`}
-                onDelete={() => setSelectedAuthor(null)}
+                onDelete={() => { setSelectedAuthor(null); setPage(0); }}
               />
             )}
 
