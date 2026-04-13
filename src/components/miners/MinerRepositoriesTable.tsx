@@ -272,7 +272,10 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                     onSort={handleSort}
                     cellStyle={headerCellStyle}
                   />
-                  <TableCell align="right" sx={{ ...headerCellStyle, width: '12%' }}>
+                  <TableCell
+                    align="right"
+                    sx={{ ...headerCellStyle, width: '12%' }}
+                  >
                     Avg/PR
                   </TableCell>
                   <SortableHeaderCell
