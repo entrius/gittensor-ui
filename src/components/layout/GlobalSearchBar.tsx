@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Box,
   ButtonBase,
@@ -328,8 +334,7 @@ const GlobalSearchBar: React.FC = () => {
         key: `issue-${issue.id}`,
         kind: 'issue',
         title:
-          issue.title ||
-          `${issue.repositoryFullName} #${issue.issueNumber}`,
+          issue.title || `${issue.repositoryFullName} #${issue.issueNumber}`,
         subtitle: `${issue.repositoryFullName} · #${issue.issueNumber}`,
         onSelect: () => navigateAndClose(`/issues/details?id=${issue.id}`),
       });
