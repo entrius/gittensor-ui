@@ -87,11 +87,12 @@ export const FAQContent: React.FC = () => (
         question="How are rewards calculated?"
         answer={
           <>
-            Your rewards are primarily determined by the weight of the
-            repository you contribute to, the complexity of your Pull Request,
-            and the age of the issue you resolve. We also factor in your
-            'credibility', which is the ratio of your merged PRs to your total
-            closed/rejected PRs. See the{' '}
+            Your rewards are determined by the weight of the repository you
+            contribute to, the quality of your code changes (measured by
+            token-based scoring), and multipliers like time decay, review
+            quality, and issue bonuses. We also factor in your 'credibility',
+            which is the ratio of your merged PRs to your total PR attempts
+            (merged + closed). See the{' '}
             <a
               href="https://docs.gittensor.io/oss-contributions.html"
               target="_blank"
