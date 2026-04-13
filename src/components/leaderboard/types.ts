@@ -1,6 +1,7 @@
 import { RANK_COLORS } from '../../theme';
 
 export interface MinerStats {
+  id: string;
   githubId: string;
   author?: string;
   totalScore: number;
@@ -29,12 +30,6 @@ export type SortOption =
 export const FONTS = {
   mono: '"JetBrains Mono", monospace',
 } as const;
-
-export interface RankColorSet {
-  border: string;
-  text: string;
-  bg: string;
-}
 
 export const getRankColors = (rank: number) => {
   if (rank === 1) return { color: RANK_COLORS.first, icon: '🥇' };
