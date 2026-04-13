@@ -122,6 +122,7 @@ const DiscoveriesPage: React.FC = () => {
               miners={sortedMinerStats}
               isLoading={isLoadingMinerStats}
               onSelectMiner={handleSelectMiner}
+              activityLabel="Issues"
             />
           </Box>
         </Box>

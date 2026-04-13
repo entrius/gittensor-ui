@@ -16,12 +16,14 @@ interface TopMinersTableProps {
   miners: MinerStats[];
   isLoading?: boolean;
   onSelectMiner: (githubId: string) => void;
+  activityLabel?: string;
 }
 
 const TopMinersTable: React.FC<TopMinersTableProps> = ({
   miners,
   isLoading,
   onSelectMiner,
+  activityLabel = 'PRs',
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState<SortOption>('totalScore');
@@ -102,7 +104,11 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
               flexWrap: 'wrap',
             }}
           >
-            <SortButtons sortOption={sortOption} onSortChange={setSortOption} />
+            <SortButtons
+              sortOption={sortOption}
+              onSortChange={setSortOption}
+              activityLabel={activityLabel}
+            />
             <FilterButton
               label="Eligible"
               isActive={showEligibleOnly}
@@ -201,11 +207,13 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 interface SortButtonsProps {
   sortOption: SortOption;
   onSortChange: (option: SortOption) => void;
+  activityLabel: string;
 }
 
 const SortButtons: React.FC<SortButtonsProps> = ({
   sortOption,
   onSortChange,
+  activityLabel,
 }) => (
   <Box
     sx={{
@@ -218,7 +226,7 @@ const SortButtons: React.FC<SortButtonsProps> = ({
     {[
       { label: 'Score', value: 'totalScore' },
       { label: 'Earnings', value: 'usdPerDay' },
-      { label: 'PRs', value: 'totalPRs' },
+      { label: activityLabel, value: 'totalPRs' },
       { label: 'Credibility', value: 'credibility' },
     ].map((option) => (
       <Box
