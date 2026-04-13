@@ -10,7 +10,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { usePullRequestDetails } from '../../api';
+import { usePullRequestDetails, useReposAndWeights } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import theme, { RANK_COLORS, STATUS_COLORS } from '../../theme';
 
@@ -29,6 +29,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   // Fetch detailed PR data directly
   const { data: prDetails, isLoading: isDetailsLoading } =
     usePullRequestDetails(repository, pullRequestNumber);
+  const { data: reposWithWeights } = useReposAndWeights();
 
   if (isDetailsLoading) {
     return (
@@ -71,6 +72,12 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   }
 
   const [owner] = repository.split('/');
+  const canonicalRepoWeight = reposWithWeights?.find(
+    (repo) => repo.fullName.toLowerCase() === repository.toLowerCase(),
+  )?.weight;
+  const repoWeightValue = parseFloat(
+    canonicalRepoWeight ?? prDetails.repoWeightMultiplier ?? '0',
+  ).toFixed(2);
 
   const isOpenPR = prDetails.prState === 'OPEN';
 
@@ -116,7 +123,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     ? [
         {
           label: 'Repo Weight',
-          value: `${parseFloat(prDetails.repoWeightMultiplier ?? '0').toFixed(2)}x`,
+          value: `${repoWeightValue}x`,
         },
         {
           label: 'Issue Bonus',
@@ -130,7 +137,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     : [
         {
           label: 'Repo Weight',
-          value: `${parseFloat(prDetails.repoWeightMultiplier ?? '0').toFixed(2)}x`,
+          value: `${repoWeightValue}x`,
         },
         {
           label: 'Issue Bonus',
