@@ -50,6 +50,13 @@ const routesArray: AppRoute[] = [
     element: <IssuesPage />,
     showGlobalSearch: true,
   },
+  // /bounties is an alias for /issues (the bounties page)
+  {
+    name: 'bounties',
+    path: '/bounties/:tab?',
+    element: <IssuesPage />,
+    showGlobalSearch: true,
+  },
   { name: 'search', path: '/search', element: <SearchPage /> },
   {
     name: 'discoveries',
