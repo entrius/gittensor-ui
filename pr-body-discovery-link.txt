@@ -1,0 +1,15 @@
+## Fix: Wrong docs link on issue discovery page
+
+### Problem
+On the issue discovery page (/discoveries/details), the Insights card footer links to https://docs.gittensor.io/oss-contributions.html instead of https://docs.gittensor.io/issue-discovery.html. This is inconsistent — the OSS contributions miners already use the oss-contributions doc, so the issue discovery page should link to its own doc.
+
+### Solution
+Added an optional scoringDocsUrl prop to MinerInsightsCard:
+- MinerDetailsPage (/miners/details): uses default (oss-contributions.html) — unchanged
+- DiscoveryMinerDetailsPage (/discoveries/details): passes issue-discovery.html
+
+### Changes
+- src/components/miners/MinerInsightsCard.tsx: added optional scoringDocsUrl prop with default to oss-contributions.html
+- src/pages/DiscoveryMinerDetailsPage.tsx: passes the correct issue-discovery.html URL
+
+Closes entrius/gittensor-ui#152

@@ -1,0 +1,16 @@
+## Fix: OSS Eligible badge tooltip shows wrong credibility threshold
+
+### Problem
+The OSS Eligible badge tooltip stated "Requires 5+ merged PRs with token score >= 5 and 90%+ credibility", but miners with credibility between 80-90% are already being shown as OSS Eligible on the website. The tooltip was displaying a higher threshold (90%+) than the actual backend eligibility criteria (80%+).
+
+### Fix
+Updated the tooltip text from "90%+" to "80%+" to match the actual credibility threshold used by the backend.
+
+### Changes
+- src/components/miners/MinerScoreCard.tsx: corrected tooltip credibility threshold
+
+### Testing
+- Confirmed via live site: miners in the OSS ELIGIBLE section with credibility between 80-90% exist, proving the actual threshold is 80%
+- Tooltip now correctly reflects the 80% credibility requirement
+
+Closes entrius/gittensor-ui#151

@@ -1,0 +1,18 @@
+## Fix: Author filter chip removal doesn't reset page to 0
+
+### Problem
+In MinerPRsTable.tsx, the author filter chip's `onDelete` handler only called `setSelectedAuthor(null)` but did **not** call `setPage(0)`. This caused the table to show an empty page when removing the author filter after navigating to a later page, because the filtered results no longer filled that page index.
+
+### Fix
+Added `setPage(0)` to the chip's `onDelete` handler, consistent with all other filter controls (status filter buttons) which also reset the page when changed.
+
+### Changes
+- src/components/miners/MinerPRsTable.tsx: updated onDelete handler to also reset page to 0
+
+### Testing
+- Navigate to page 2+ of a PR list
+- Apply author filter
+- Remove author filter chip
+- Table now correctly shows page 1 (page index 0) instead of an empty page
+
+Closes entrius/gittensor-ui#158

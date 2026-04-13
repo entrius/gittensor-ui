@@ -1,0 +1,18 @@
+## Fix: 'last 1 days' -> 'last 1 day' pluralization
+
+### Problem
+On the miner details Activity tab, the contribution heatmap footer always used the plural form "days" regardless of the actual count. For miners with only 1 day of history, this read awkwardly: "0 contributions in the last 1 days".
+
+### Solution
+Made the totalCount label conditionally pluralize based on totalDaysShown:
+- totalDaysShown === 1 -> "last 1 day"
+- totalDaysShown > 1 -> "last N days"
+
+### Changes
+- src/components/dashboard/ContributionHeatmap.tsx: 1-line fix
+
+### Testing
+- totalDaysShown === 1 renders "last 1 day" (singular)
+- totalDaysShown > 1 renders "last N days" (existing behaviour unchanged)
+
+Closes entrius/gittensor-ui#163
