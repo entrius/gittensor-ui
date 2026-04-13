@@ -344,7 +344,7 @@ uv pip install -e .`}</CodeBlock>
               <strong>Repositories</strong> tab
             </li>
             <li>
-              Eligibility requires 5 merged PRs with token score &ge; 5, 75%
+              Eligibility requires 5 merged PRs with token score &ge; 5, 80%
               credibility, and a 180-day-old GitHub account
             </li>
             <li>
