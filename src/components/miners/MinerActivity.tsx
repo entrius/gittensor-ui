@@ -196,7 +196,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({ githubId }) => {
             />
           </Grid>
 
-          {/* PR Success Ratio */}
+          {/* Credibility */}
           <Grid
             item
             xs={12}
