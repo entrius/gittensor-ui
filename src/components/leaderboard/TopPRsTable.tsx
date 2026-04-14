@@ -100,10 +100,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
     return filtered;
   }, [rankedPRs, searchQuery, statusFilter]);
 
-  const statusCounts = useMemo(
-    () => getPrStatusCounts(rankedPRs),
-    [rankedPRs],
-  );
+  const statusCounts = useMemo(() => getPrStatusCounts(rankedPRs), [rankedPRs]);
 
   const FilterButton = ({
     label,
