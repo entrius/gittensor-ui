@@ -5,7 +5,12 @@ import { SectionCard } from './SectionCard';
 import { MinerCard } from './MinerCard';
 import { SearchInput } from '../common/SearchInput';
 import { STATUS_COLORS } from '../../theme';
-import { type MinerStats, type SortOption, type LeaderboardVariant, FONTS } from './types';
+import {
+  type MinerStats,
+  type SortOption,
+  type LeaderboardVariant,
+  FONTS,
+} from './types';
 
 // Re-export MinerStats for backward compatibility
 export type { MinerStats } from './types';
