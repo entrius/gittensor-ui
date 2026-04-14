@@ -15,15 +15,15 @@ interface LeaderboardSidebarProps {
   variant?: 'oss' | 'discoveries';
 }
 
-type LeaderboardListType = 'earners' | 'prs' | 'issues';
-
 export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
   miners,
   onSelectMiner,
   variant = 'oss',
 }) => {
-  const [leaderboardType, setLeaderboardType] =
-    useState<LeaderboardListType>('earners');
+  // State for toggling lists
+  const [leaderboardType, setLeaderboardType] = useState<'earners' | 'active'>(
+    'earners',
+  );
 
   // Stats (Use original unfiltered list for stats)
   const topEarners = useMemo(
@@ -34,20 +34,16 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
     [miners],
   );
 
-  const topPRs = useMemo(
+  const mostActive = useMemo(
     () =>
       [...miners]
-        .sort((a, b) => (b.totalPRs || 0) - (a.totalPRs || 0))
+        .sort((a, b) =>
+          variant === 'discoveries'
+            ? (b.totalIssues || 0) - (a.totalIssues || 0)
+            : (b.totalPRs || 0) - (a.totalPRs || 0),
+        )
         .slice(0, 5),
-    [miners],
-  );
-
-  const topIssues = useMemo(
-    () =>
-      [...miners]
-        .sort((a, b) => (b.totalIssues || 0) - (a.totalIssues || 0))
-        .slice(0, 5),
-    [miners],
+    [miners, variant],
   );
 
   // Network Stats Data
@@ -82,12 +78,13 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
             value={networkStats.eligible}
           />
           <StatRow
-            label="Total PRs"
-            value={networkStats.totalPRs}
+            label={variant === 'discoveries' ? 'Total Issues' : 'Total PRs'}
+            value={
+              variant === 'discoveries'
+                ? networkStats.totalIssues
+                : networkStats.totalPRs
+            }
           />
-          {variant === 'discoveries' && (
-            <StatRow label="Total Issues" value={networkStats.totalIssues} />
-          )}
           <StatRow
             label="Daily Pool"
             value={`$${networkStats.dailyPool.toLocaleString()}`}
@@ -98,7 +95,7 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
 
       {/* CARD 2: Leaderboard Lists (Tabs) */}
       <SectionCard
-        title={leaderboardType === 'earners' ? 'Top Earners' : leaderboardType === 'issues' ? 'Top Issues' : 'Top PRs'}
+        title={leaderboardType === 'earners' ? 'Top Earners' : 'Most Active'}
         action={
           <LeaderboardTabs
             activeTab={leaderboardType}
@@ -109,14 +106,15 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
         sx={{ flexShrink: 0 }}
       >
         <Box sx={{ px: 2, pb: 2 }}>
-          <LeaderboardHeader type={leaderboardType} />
-          {(leaderboardType === 'earners' ? topEarners : leaderboardType === 'issues' ? topIssues : topPRs).map(
+          <LeaderboardHeader type={leaderboardType} variant={variant} />
+          {(leaderboardType === 'earners' ? topEarners : mostActive).map(
             (miner, i) => (
               <LeaderboardRow
                 key={miner.id}
                 miner={miner}
                 rank={i + 1}
                 type={leaderboardType}
+                variant={variant}
                 onClick={() =>
                   onSelectMiner(miner.githubId || miner.author || '')
                 }
@@ -166,8 +164,8 @@ const StatRow: React.FC<StatRowProps> = ({ label, value, valueColor }) => (
 );
 
 interface LeaderboardTabsProps {
-  activeTab: LeaderboardListType;
-  onTabChange: (tab: LeaderboardListType) => void;
+  activeTab: 'earners' | 'active';
+  onTabChange: (tab: 'earners' | 'active') => void;
   variant?: 'oss' | 'discoveries';
 }
 
@@ -187,10 +185,10 @@ const LeaderboardTabs: React.FC<LeaderboardTabsProps> = ({
   >
     {[
       { label: '$', value: 'earners' as const },
-      { label: 'PRs', value: 'prs' as const },
-      ...(variant === 'discoveries'
-        ? [{ label: 'Issues', value: 'issues' as const }]
-        : []),
+      {
+        label: variant === 'discoveries' ? 'Issues' : 'PRs',
+        value: 'active' as const,
+      },
     ].map((option) => (
       <Box
         key={option.value}
@@ -232,11 +230,13 @@ const LeaderboardTabs: React.FC<LeaderboardTabsProps> = ({
 );
 
 interface LeaderboardHeaderProps {
-  type: LeaderboardListType;
+  type: 'earners' | 'active';
+  variant?: 'oss' | 'discoveries';
 }
 
 const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({
   type,
+  variant = 'oss',
 }) => (
   <Box
     sx={(theme) => ({
@@ -278,7 +278,7 @@ const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({
     >
       {type === 'earners'
         ? '$/Day'
-        : type === 'issues'
+        : variant === 'discoveries'
           ? 'Issues'
           : 'PRs'}
     </Typography>
@@ -288,7 +288,8 @@ const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({
 interface LeaderboardRowProps {
   miner: MinerStats;
   rank: number;
-  type: LeaderboardListType;
+  type: 'earners' | 'active';
+  variant?: 'oss' | 'discoveries';
   onClick: () => void;
 }
 
@@ -296,6 +297,7 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
   miner,
   rank,
   type,
+  variant = 'oss',
   onClick,
 }) => (
   <Box
@@ -360,7 +362,7 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
     >
       {type === 'earners'
         ? `$${Math.round(miner.usdPerDay || 0).toLocaleString()}`
-        : type === 'issues'
+        : variant === 'discoveries'
           ? miner.totalIssues
           : miner.totalPRs}
     </Typography>

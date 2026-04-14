@@ -15,7 +15,11 @@ interface MinerCardProps {
 
 const INACTIVE_OPACITY = 0.24;
 
-export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick, variant = 'oss' }) => {
+export const MinerCard: React.FC<MinerCardProps> = ({
+  miner,
+  onClick,
+  variant = 'oss',
+}) => {
   const muiTheme = useTheme();
   const isNumericId = (value?: string) => !value || /^\d+$/.test(value);
   const shouldFetch = !!miner.githubId && isNumericId(miner.author);
@@ -362,7 +366,14 @@ const PrimaryStatsRow: React.FC<PrimaryStatsRowProps> = ({
   const muiTheme = useTheme();
 
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 1, alignItems: 'center' }}>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr 1fr auto',
+        gap: 1,
+        alignItems: 'center',
+      }}
+    >
       {[
         {
           label: 'Merged',
@@ -400,7 +411,14 @@ const PrimaryStatsRow: React.FC<PrimaryStatsRowProps> = ({
           >
             {label}
           </Typography>
-          <Typography sx={{ fontFamily: FONTS.mono, fontSize: '0.85rem', color, fontWeight: 600 }}>
+          <Typography
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.85rem',
+              color,
+              fontWeight: 600,
+            }}
+          >
             {value}
           </Typography>
         </Box>
@@ -460,15 +478,43 @@ const IssueStatsSection: React.FC<IssueStatsSectionProps> = ({
   return (
     <Box sx={{ pt: 0.35, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
       <Typography
-        sx={{ fontFamily: FONTS.mono, fontSize: '0.7rem', fontWeight: 700, color: '#8b949e', minWidth: 28, textTransform: 'uppercase', mb: 0.35, letterSpacing: '0.04em' }}
+        sx={{
+          fontFamily: FONTS.mono,
+          fontSize: '0.7rem',
+          fontWeight: 700,
+          color: '#8b949e',
+          minWidth: 28,
+          textTransform: 'uppercase',
+          mb: 0.35,
+          letterSpacing: '0.04em',
+        }}
       >
         Issues
       </Typography>
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 1, alignItems: 'center' }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr 1fr auto',
+          gap: 1,
+          alignItems: 'center',
+        }}
+      >
         {[
-          { label: 'Solved', value: miner.totalSolvedIssues ?? 0, color: isEligible ? STATUS_COLORS.merged : textColor },
-          { label: 'Open', value: miner.totalOpenIssues ?? 0, color: isEligible ? alpha(muiTheme.palette.text.primary, 0.84) : textColor },
-          { label: 'Closed', value: miner.totalClosedIssues ?? 0, color: isEligible ? muiTheme.palette.status.closed : textColor },
+          {
+            label: 'Solved',
+            value: miner.totalSolvedIssues ?? 0,
+            color: isEligible ? STATUS_COLORS.merged : textColor,
+          },
+          {
+            label: 'Open',
+            value: miner.totalOpenIssues ?? 0,
+            color: isEligible ? alpha(muiTheme.palette.text.primary, 0.84) : textColor,
+          },
+          {
+            label: 'Closed',
+            value: miner.totalClosedIssues ?? 0,
+            color: isEligible ? muiTheme.palette.status.closed : textColor,
+          },
         ].map(({ label, value, color }) => (
           <Box key={label}>
             <Typography
@@ -484,7 +530,14 @@ const IssueStatsSection: React.FC<IssueStatsSectionProps> = ({
             >
               {label}
             </Typography>
-            <Typography sx={{ fontFamily: FONTS.mono, fontSize: '0.85rem', color, fontWeight: 600 }}>
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.85rem',
+                color,
+                fontWeight: 600,
+              }}
+            >
               {value}
             </Typography>
           </Box>

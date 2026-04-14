@@ -31,6 +31,7 @@ const DiscoveriesPage: React.FC = () => {
       totalPRs: Number(stat.totalPrs) || 0,
       totalIssues:
         (Number(stat.totalSolvedIssues) || 0) +
+        (Number(stat.totalOpenIssues) || 0) +
         (Number(stat.totalClosedIssues) || 0),
       linesChanged: Number(stat.totalNodesScored) || 0,
       linesAdded: Number(stat.totalAdditions) || 0,
