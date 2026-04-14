@@ -7,6 +7,7 @@ import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { useMonthlyRewards } from '../hooks/useMonthlyRewards';
+import { BORDER_SUBTLE } from '../theme';
 
 export const AboutContent: React.FC = () => {
   const monthlyRewards = useMonthlyRewards();
@@ -174,7 +175,7 @@ export const AboutContent: React.FC = () => {
                     height: '100%',
                     borderRadius: 4,
                     background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    border: `1px solid ${BORDER_SUBTLE}`,
                   }}
                 >
                   <Box sx={{ color: 'secondary.main', mb: 2 }}>{card.icon}</Box>

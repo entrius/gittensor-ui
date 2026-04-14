@@ -39,6 +39,9 @@ export const DIFF_COLORS = {
   deletions: '#ef4444', // Red - line deletions (same as closed/error)
 } as const;
 
+export const BORDER_SUBTLE = 'rgba(255, 255, 255, 0.08)';
+export const TEXT_MUTED = 'rgba(255, 255, 255, 0.85)';
+
 // Chart colors - different from status colors for better visual distinction in pie/donut charts
 export const CHART_COLORS = {
   merged: '#3fb950', // Green - successful merges
