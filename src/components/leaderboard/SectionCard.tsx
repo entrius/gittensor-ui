@@ -1,9 +1,17 @@
 import React from 'react';
-import { Card, Box, Typography, CardContent, Grid } from '@mui/material';
+import {
+  Card,
+  Box,
+  Typography,
+  CardContent,
+  Grid,
+  type SxProps,
+  type Theme,
+} from '@mui/material';
 
 export const SectionCard: React.FC<{
   children: React.ReactNode;
-  sx?: any;
+  sx?: SxProps<Theme>;
   title?: string;
   action?: React.ReactNode;
   centerContent?: React.ReactNode;

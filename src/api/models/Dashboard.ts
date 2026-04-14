@@ -48,7 +48,7 @@ export type Stats = {
         percentChange24h: number;
         percentChange7d: number;
         lastUpdated: string;
-        metadata: any;
+        metadata: Record<string, unknown>;
       } | null;
       lastUpdated: string | null;
     };
@@ -60,7 +60,7 @@ export type Stats = {
         percentChange24h: number;
         percentChange7d: number;
         lastUpdated: string;
-        metadata: any;
+        metadata: Record<string, unknown>;
       } | null;
       lastUpdated: string | null;
     };
