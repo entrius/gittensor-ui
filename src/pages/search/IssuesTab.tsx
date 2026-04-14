@@ -1,7 +1,7 @@
 import React from 'react';
-import { alpha, type Theme } from '@mui/material/styles';
+import { alpha } from '@mui/material/styles';
 import { type IssueBounty } from '../../api/models/Issues';
-import { getGithubAvatarSrc } from '../../utils';
+import { getGithubAvatarSrc, getIssueStatusMeta } from '../../utils';
 import SearchResultsTable, {
   type SearchResultsTableColumn,
 } from './SearchResultsTable';
@@ -10,26 +10,6 @@ import {
   SearchStatusChip,
   SearchTruncatedText,
 } from './SearchTableCells';
-
-const getStatusMeta = (
-  status: IssueBounty['status'],
-): {
-  tone: keyof Theme['palette']['status'];
-  text: string;
-} => {
-  switch (status) {
-    case 'registered':
-      return { tone: 'warning', text: 'Pending' };
-    case 'active':
-      return { tone: 'info', text: 'Available' };
-    case 'completed':
-      return { tone: 'merged', text: 'Completed' };
-    case 'cancelled':
-      return { tone: 'error', text: 'Cancelled' };
-    default:
-      return { tone: 'open', text: status };
-  }
-};
 
 const issueColumns: SearchResultsTableColumn<IssueBounty>[] = [
   {
@@ -88,7 +68,7 @@ const issueColumns: SearchResultsTableColumn<IssueBounty>[] = [
     width: '18%',
     align: 'center',
     renderCell: (issue: IssueBounty) => {
-      const statusMeta = getStatusMeta(issue.status);
+      const statusMeta = getIssueStatusMeta(issue.status);
 
       return (
         <SearchStatusChip
