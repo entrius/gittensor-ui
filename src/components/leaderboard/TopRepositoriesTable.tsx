@@ -6,7 +6,6 @@ import React, {
   useRef,
 } from 'react';
 import {
-  alpha,
   Box,
   Card,
   Table,
@@ -38,8 +37,8 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
 import { useSearchParams } from 'react-router-dom';
-import { RANK_COLORS } from '../../theme';
 import { truncateText } from '../../utils';
+import { RankIcon } from './RankIcon';
 
 interface RepoStats {
   repository: string;
@@ -732,7 +731,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     }}
                   >
                     <TableCell sx={{ ...bodyCellStyle, width: '60px', pr: 0 }}>
-                      {getRankIcon(repo.rank || 0)}
+                      <RankIcon rank={repo.rank || 0} />
                     </TableCell>
                     <TableCell sx={{ ...bodyCellStyle, width: '35%', pl: 1.5 }}>
                       <Box
@@ -941,60 +940,5 @@ const bodyCellStyle = {
   height: '52px',
   boxSizing: 'border-box' as const,
 };
-
-const getRankIcon = (rank: number) => (
-  <Box
-    sx={{
-      backgroundColor: '#000000',
-      borderRadius: '2px',
-      width: '22px',
-      height: '22px',
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0,
-      border: '1px solid',
-      borderColor:
-        rank === 1
-          ? alpha(RANK_COLORS.first, 0.4)
-          : rank === 2
-            ? alpha(RANK_COLORS.second, 0.4)
-            : rank === 3
-              ? alpha(RANK_COLORS.third, 0.4)
-              : 'rgba(255, 255, 255, 0.15)',
-      boxShadow:
-        rank === 1
-          ? `0 0 12px ${alpha(RANK_COLORS.first, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.first, 0.2)}`
-          : rank === 2
-            ? `0 0 12px ${alpha(RANK_COLORS.second, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.second, 0.2)}`
-            : rank === 3
-              ? `0 0 12px ${alpha(RANK_COLORS.third, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.third, 0.2)}`
-              : 'none',
-    }}
-  >
-    <Typography
-      component="span"
-      sx={{
-        color:
-          rank === 1
-            ? RANK_COLORS.first
-            : rank === 2
-              ? RANK_COLORS.second
-              : rank === 3
-                ? RANK_COLORS.third
-                : 'rgba(255, 255, 255, 0.6)',
-        fontFamily: '"JetBrains Mono", monospace',
-        fontSize: '0.65rem',
-        fontWeight: 600,
-        lineHeight: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      {rank}
-    </Typography>
-  </Box>
-);
 
 export default TopRepositoriesTable;
