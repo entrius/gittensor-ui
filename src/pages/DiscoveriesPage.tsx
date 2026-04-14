@@ -22,6 +22,17 @@ const DiscoveriesPage: React.FC = () => {
   // Process miner stats for TopMinersTable, using issue discovery fields
   const minerStats = useMemo(() => {
     if (!Array.isArray(allMinersStats)) return [];
+
+    const rankById = new Map(
+      [...allMinersStats]
+        .sort(
+          (a, b) =>
+            (Number(b.issueDiscoveryScore) || 0) -
+            (Number(a.issueDiscoveryScore) || 0),
+        )
+        .map((stat, index) => [String(stat.id), index + 1]),
+    );
+
     return allMinersStats.map((stat) => ({
       id: String(stat.id),
       githubId: stat.githubId || '',
@@ -35,6 +46,7 @@ const DiscoveriesPage: React.FC = () => {
       linesAdded: Number(stat.totalAdditions) || 0,
       linesDeleted: Number(stat.totalDeletions) || 0,
       hotkey: stat.hotkey || 'N/A',
+      rank: rankById.get(String(stat.id)),
       uniqueReposCount: Number(stat.uniqueReposCount) || 0,
       credibility: Number(stat.issueCredibility) || 0,
       isEligible: stat.isIssueEligible ?? false,
