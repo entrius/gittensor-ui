@@ -336,7 +336,7 @@ const GlobalSearchBar: React.FC = () => {
         title:
           issue.title || `${issue.repositoryFullName} #${issue.issueNumber}`,
         subtitle: `${issue.repositoryFullName} · #${issue.issueNumber}`,
-        onSelect: () => navigateAndClose(`/issues/details?id=${issue.id}`),
+        onSelect: () => navigateAndClose(`/bounties/details?id=${issue.id}`),
       });
     });
     if (trimmedQuery) {
