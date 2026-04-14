@@ -3,7 +3,7 @@ import { Box, Typography, CircularProgress, Avatar } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useAllPrs, useAllMiners } from '../../api';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import { STATUS_COLORS } from '../../theme';
 
 interface RepositoryContributorsTableProps {
@@ -13,7 +13,6 @@ interface RepositoryContributorsTableProps {
 const RepositoryContributorsTable: React.FC<
   RepositoryContributorsTableProps
 > = ({ repositoryFullName }) => {
-  const navigate = useNavigate();
   const { data: allPRs, isLoading } = useAllPrs();
   const { data: allMinersStats } = useAllMiners();
 
@@ -210,17 +209,17 @@ const RepositoryContributorsTable: React.FC<
 
               {/* Contributor */}
               <Box
-                onClick={() =>
-                  navigate(`/miners/details?githubId=${contributor.githubId}`, {
-                    state: { backLabel: `Back to ${repositoryFullName}` },
-                  })
-                }
+                component={RouterLink}
+                to={`/miners/details?githubId=${contributor.githubId}`}
+                state={{ backLabel: `Back to ${repositoryFullName}` }}
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: 1.5,
                   overflow: 'hidden',
                   cursor: 'pointer',
+                  textDecoration: 'none',
+                  color: 'inherit',
                   '&:hover .contributor-name': {
                     color: STATUS_COLORS.info,
                     textDecoration: 'underline',

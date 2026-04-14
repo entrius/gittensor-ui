@@ -1,6 +1,6 @@
 import React from 'react';
 import { Alert, Box, Stack, Tab, Tabs, Typography } from '@mui/material';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { BackButton, SEO } from '../../components';
 import { GlobalSearchBar, Page } from '../../components/layout';
 import IssuesTab from './IssuesTab';
@@ -35,7 +35,6 @@ const paginateResults = <T,>(
 
 const SearchPage: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
   const tabParam = searchParams.get('tab');
@@ -165,33 +164,6 @@ const SearchPage: React.FC = () => {
     backTo: `${location.pathname}${location.search}`,
   };
 
-  const handleSelectMiner = (githubId: string) => {
-    navigate(`/miners/details?githubId=${encodeURIComponent(githubId)}`, {
-      state: searchBackState,
-    });
-  };
-
-  const handleSelectRepository = (fullName: string) => {
-    navigate(`/miners/repository?name=${encodeURIComponent(fullName)}`, {
-      state: searchBackState,
-    });
-  };
-
-  const handleSelectPr = (repository: string, pullRequestNumber: number) => {
-    navigate(
-      `/miners/pr?repo=${encodeURIComponent(repository)}&number=${pullRequestNumber}`,
-      {
-        state: searchBackState,
-      },
-    );
-  };
-
-  const handleSelectIssue = (id: number) => {
-    navigate(`/bounties/details?id=${id}`, {
-      state: searchBackState,
-    });
-  };
-
   return (
     <Page title="Search">
       <SEO
@@ -276,7 +248,7 @@ const SearchPage: React.FC = () => {
                 isLoading={tabState.isLoading}
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
-                onSelectMiner={handleSelectMiner}
+                linkState={searchBackState}
                 page={page}
                 rowsPerPage={rowsPerPage}
                 rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
@@ -291,7 +263,7 @@ const SearchPage: React.FC = () => {
                 isLoading={tabState.isLoading}
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
-                onSelectRepository={handleSelectRepository}
+                linkState={searchBackState}
                 page={page}
                 rowsPerPage={rowsPerPage}
                 rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
@@ -306,7 +278,7 @@ const SearchPage: React.FC = () => {
                 isLoading={tabState.isLoading}
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
-                onSelectPr={handleSelectPr}
+                linkState={searchBackState}
                 page={page}
                 rowsPerPage={rowsPerPage}
                 rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
@@ -321,7 +293,7 @@ const SearchPage: React.FC = () => {
                 isLoading={tabState.isLoading}
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
-                onSelectIssue={handleSelectIssue}
+                linkState={searchBackState}
                 page={page}
                 rowsPerPage={rowsPerPage}
                 rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}

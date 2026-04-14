@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import { useMinerPRs, useReposAndWeights } from '../../api';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import SortableHeaderCell from './SortableHeaderCell';
 import RankBadge from './RankBadge';
 import EmptyStateMessage from './EmptyStateMessage';
@@ -51,7 +51,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   githubId,
 }) => {
   const theme = useTheme();
-  const navigate = useNavigate();
   const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
   const [sortField, setSortField] = useState<RepoSortField>('score');
@@ -302,7 +301,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                       bodyCellStyle={bodyCellStyle}
                       prs={prs}
                       githubId={githubId}
-                      navigate={navigate}
                     />
                   );
                 })}
@@ -331,7 +329,6 @@ interface RepoTableRowProps {
   bodyCellStyle: Record<string, unknown>;
   prs: { author?: string }[] | undefined;
   githubId: string;
-  navigate: ReturnType<typeof useNavigate>;
 }
 
 const RepoTableRow: React.FC<RepoTableRowProps> = ({
@@ -340,7 +337,6 @@ const RepoTableRow: React.FC<RepoTableRowProps> = ({
   bodyCellStyle,
   prs,
   githubId,
-  navigate,
 }) => {
   const owner = repo.repository.split('/')[0];
   const avatarBgColor = getAvatarBgColor(owner);
@@ -360,22 +356,19 @@ const RepoTableRow: React.FC<RepoTableRowProps> = ({
       </TableCell>
       <TableCell sx={bodyCellStyle}>
         <Box
-          onClick={() =>
-            navigate(
-              `/miners/repository?name=${encodeURIComponent(repo.repository)}`,
-              {
-                state: {
-                  backLabel: `Back to ${prs?.[0]?.author || githubId}`,
-                },
-              },
-            )
-          }
+          component={RouterLink}
+          to={`/miners/repository?name=${encodeURIComponent(repo.repository)}`}
+          state={{
+            backLabel: `Back to ${prs?.[0]?.author || githubId}`,
+          }}
           sx={{
             display: 'flex',
             alignItems: 'center',
             gap: 1.5,
             cursor: 'pointer',
             minWidth: 0,
+            textDecoration: 'none',
+            color: 'inherit',
             '&:hover': {
               color: 'primary.main',
               '& .MuiTypography-root': {

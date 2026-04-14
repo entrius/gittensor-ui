@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Card, Typography, Avatar } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
+import { Link as RouterLink } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS, STATUS_COLORS } from '../../theme';
@@ -9,7 +10,8 @@ import { type MinerStats, type LeaderboardVariant, FONTS } from './types';
 
 interface MinerCardProps {
   miner: MinerStats;
-  onClick: () => void;
+  href: string;
+  linkState?: unknown;
   variant?: LeaderboardVariant;
 }
 
@@ -17,7 +19,8 @@ const INACTIVE_OPACITY = 0.24;
 
 export const MinerCard: React.FC<MinerCardProps> = ({
   miner,
-  onClick,
+  href,
+  linkState,
   variant = 'oss',
 }) => {
   const muiTheme = useTheme();
@@ -39,9 +42,13 @@ export const MinerCard: React.FC<MinerCardProps> = ({
 
   return (
     <Card
-      onClick={onClick}
+      component={RouterLink}
+      to={href}
+      state={linkState}
       sx={(theme) => ({
         p: 1,
+        textDecoration: 'none',
+        color: 'inherit',
         backgroundColor: isEligible
           ? theme.palette.background.default
           : theme.palette.surface.subtle,

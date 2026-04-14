@@ -32,7 +32,7 @@ import {
   isMergedPr,
   isOpenPr,
 } from '../../utils';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import { type MinerStatusFilter } from '../../utils/ExplorerUtils';
 
@@ -75,7 +75,6 @@ interface MinerPRsTableProps {
 
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const theme = useTheme();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
@@ -449,18 +448,15 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   return (
                     <TableRow
                       key={`${pr.repository}-${pr.pullRequestNumber}-${index}`}
-                      onClick={() => {
-                        navigate(
-                          `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
-                          {
-                            state: {
-                              backLabel: `Back to ${prs?.[0]?.author || githubId}`,
-                            },
-                          },
-                        );
+                      component={RouterLink}
+                      to={`/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`}
+                      state={{
+                        backLabel: `Back to ${prs?.[0]?.author || githubId}`,
                       }}
                       sx={{
                         cursor: 'pointer',
+                        textDecoration: 'none',
+                        color: 'inherit',
                         '&:hover': {
                           backgroundColor: 'surface.subtle',
                         },

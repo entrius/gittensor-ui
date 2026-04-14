@@ -21,7 +21,7 @@ import {
   InputAdornment,
   Avatar,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import theme from '../../theme';
 import { useRepoChanges } from '../../api';
@@ -37,7 +37,6 @@ type SortField =
 type SortOrder = 'asc' | 'desc';
 
 const RepositoriesTable: React.FC = () => {
-  const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isMedium = useMediaQuery(theme.breakpoints.down('md'));
   const isLarge = useMediaQuery(theme.breakpoints.down('lg'));
@@ -567,17 +566,15 @@ const RepositoriesTable: React.FC = () => {
                             <Typography
                               variant="body2"
                               fontWeight="medium"
-                              onClick={() =>
-                                navigate(
-                                  `/miners/repository?name=${repo.repositoryFullName}`,
-                                  { state: { backLabel: 'Back to Dashboard' } },
-                                )
-                              }
+                              component={RouterLink}
+                              to={`/miners/repository?name=${repo.repositoryFullName}`}
+                              state={{ backLabel: 'Back to Dashboard' }}
                               sx={{
                                 color: isInactive
                                   ? 'error.dark'
                                   : 'text.primary',
                                 cursor: 'pointer',
+                                textDecoration: 'none',
                                 '&:hover': {
                                   textDecoration: 'underline',
                                   color: 'primary.main',

@@ -11,7 +11,7 @@ import {
   Avatar,
   Chip,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import theme from '../../theme';
 import { useInfiniteCommitLog, usePullRequestDetails } from '../../api';
 
@@ -69,7 +69,6 @@ const CommitLogItem: React.FC<{
   isNew: boolean;
   innerRef?: React.Ref<HTMLDivElement>;
 }> = ({ entry, isNew, innerRef }) => {
-  const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
@@ -101,13 +100,13 @@ const CommitLogItem: React.FC<{
   const content = (
     <Box
       ref={innerRef}
-      onClick={() =>
-        navigate(
-          `/miners/pr?repo=${entry.repository}&number=${entry.pullRequestNumber}`,
-          { state: { backLabel: 'Back to Dashboard' } },
-        )
-      }
+      component={RouterLink}
+      to={`/miners/pr?repo=${entry.repository}&number=${entry.pullRequestNumber}`}
+      state={{ backLabel: 'Back to Dashboard' }}
       sx={{
+        display: 'block',
+        textDecoration: 'none',
+        color: 'inherit',
         p: isMobile ? 0.75 : isTablet ? 1.25 : 1,
         borderRadius: 3,
         border: '1px solid',

@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { usePullRequestDetails } from '../../api';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import theme, { RANK_COLORS, STATUS_COLORS } from '../../theme';
 
 interface PRDetailsCardProps {
@@ -25,7 +25,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   pullRequestNumber,
   hideHeader = false,
 }) => {
-  const navigate = useNavigate();
+  const backLinkState = {
+    backLabel: `Back to PR #${pullRequestNumber}`,
+  };
+  const repoHref = `/miners/repository?name=${encodeURIComponent(repository)}`;
   // Fetch detailed PR data directly
   const { data: prDetails, isLoading: isDetailsLoading } =
     usePullRequestDetails(repository, pullRequestNumber);
@@ -165,14 +168,14 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
       {!hideHeader && (
         <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box
-            onClick={() =>
-              navigate(
-                `/miners/repository?name=${encodeURIComponent(repository)}`,
-                { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
-              )
-            }
+            component={RouterLink}
+            to={repoHref}
+            state={backLinkState}
             sx={{
               cursor: 'pointer',
+              textDecoration: 'none',
+              color: 'inherit',
+              display: 'inline-flex',
               transition: 'transform 0.2s',
               '&:hover': {
                 transform: 'scale(1.05)',
@@ -255,19 +258,15 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography
-                onClick={() =>
-                  navigate(
-                    `/miners/repository?name=${encodeURIComponent(repository)}`,
-                    {
-                      state: { backLabel: `Back to PR #${pullRequestNumber}` },
-                    },
-                  )
-                }
+                component={RouterLink}
+                to={repoHref}
+                state={backLinkState}
                 sx={{
                   color: 'rgba(255, 255, 255, 0.5)',
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.85rem',
                   cursor: 'pointer',
+                  textDecoration: 'none',
                   transition: 'color 0.2s',
                   '&:hover': {
                     color: 'primary.main',
@@ -567,16 +566,16 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               Author
             </Typography>
             <Box
-              onClick={() =>
-                navigate(`/miners/details?githubId=${prDetails.githubId}`, {
-                  state: { backLabel: `Back to PR #${pullRequestNumber}` },
-                })
-              }
+              component={RouterLink}
+              to={`/miners/details?githubId=${prDetails.githubId}`}
+              state={backLinkState}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1.5,
                 cursor: 'pointer',
+                textDecoration: 'none',
+                color: 'inherit',
                 '&:hover': {
                   '& .MuiTypography-root': {
                     color: 'primary.main',

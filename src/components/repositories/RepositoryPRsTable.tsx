@@ -16,7 +16,7 @@ import {
   Button,
 } from '@mui/material';
 import { useAllPrs } from '../../api';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   getPrStatusCounts,
   isClosedUnmergedPr,
@@ -34,7 +34,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   repositoryFullName,
   state = 'all',
 }) => {
-  const navigate = useNavigate();
   const [filter, setFilter] = useState<'all' | 'open' | 'closed' | 'merged'>(
     state,
   );
@@ -285,14 +284,13 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
               {sortedPRs.map((pr, index) => (
                 <TableRow
                   key={`${pr.pullRequestNumber}-${index}`}
-                  onClick={() => {
-                    navigate(
-                      `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
-                      { state: { backLabel: `Back to ${repositoryFullName}` } },
-                    );
-                  }}
+                  component={RouterLink}
+                  to={`/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`}
+                  state={{ backLabel: `Back to ${repositoryFullName}` }}
                   sx={{
                     cursor: 'pointer',
+                    textDecoration: 'none',
+                    color: 'inherit',
                     '&:hover': {
                       backgroundColor: 'rgba(255, 255, 255, 0.05)',
                     },

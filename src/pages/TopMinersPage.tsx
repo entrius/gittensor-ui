@@ -1,24 +1,19 @@
 import React, { useMemo } from 'react';
 import { useMediaQuery, Box, Typography, alpha } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { TopMinersTable, LeaderboardSidebar, SEO } from '../components';
 import { useAllMiners } from '../api';
 import { parseNumber } from '../utils';
 import theme from '../theme';
 
-const TopMinersPage: React.FC = () => {
-  const navigate = useNavigate();
+const getMinerHref = (githubId: string) =>
+  `/miners/details?githubId=${encodeURIComponent(githubId)}`;
+const minerLinkState = { backLabel: 'Back to Leaderboard' };
 
+const TopMinersPage: React.FC = () => {
   const allMinerStatsQuery = useAllMiners();
   const allMinersStats = allMinerStatsQuery?.data;
   const isLoadingMinerStats = allMinerStatsQuery?.isLoading;
-
-  const handleSelectMiner = (githubId: string) => {
-    navigate(`/miners/details?githubId=${githubId}`, {
-      state: { backLabel: 'Back to Leaderboard' },
-    });
-  };
 
   // Normalize leaderboard miner data.
   const minerStats = useMemo(() => {
@@ -123,7 +118,8 @@ const TopMinersPage: React.FC = () => {
             <TopMinersTable
               miners={minerStats}
               isLoading={isLoadingMinerStats}
-              onSelectMiner={handleSelectMiner}
+              getMinerHref={getMinerHref}
+              linkState={minerLinkState}
             />
           </Box>
         </Box>
@@ -143,7 +139,8 @@ const TopMinersPage: React.FC = () => {
           {/* Render extracted Sidebar Content here */}
           <LeaderboardSidebar
             miners={minerStats}
-            onSelectMiner={handleSelectMiner}
+            getMinerHref={getMinerHref}
+            linkState={minerLinkState}
           />
         </Box>
       </Box>

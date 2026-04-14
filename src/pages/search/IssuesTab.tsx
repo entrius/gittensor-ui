@@ -92,7 +92,7 @@ type IssuesTabProps = {
   issueResults: IssueBounty[];
   onPageChange: (newPage: number) => void;
   onRowsPerPageChange: (rowsPerPage: number) => void;
-  onSelectIssue: (id: number) => void;
+  linkState?: unknown;
   page: number;
   paginatedIssueResults: IssueBounty[];
   rowsPerPage: number;
@@ -105,7 +105,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
   issueResults,
   onPageChange,
   onRowsPerPageChange,
-  onSelectIssue,
+  linkState,
   page,
   paginatedIssueResults,
   rowsPerPage,
@@ -120,7 +120,8 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
     isLoading={isLoading}
     minWidth={900}
     onPageChange={onPageChange}
-    onRowClick={(issue) => onSelectIssue(issue.id)}
+    getRowHref={(issue) => `/bounties/details?id=${issue.id}`}
+    getRowLinkState={() => linkState}
     onRowsPerPageChange={onRowsPerPageChange}
     page={page}
     rows={paginatedIssueResults}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   Box,
   Card,
@@ -124,14 +124,13 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
               {submissions.map((submission) => (
                 <TableRow
                   key={`${submission.repositoryFullName}-${submission.number}`}
-                  onClick={() =>
-                    navigate(
-                      `/miners/pr?repo=${encodeURIComponent(submission.repositoryFullName)}&number=${submission.number}`,
-                      backLabel ? { state: { backLabel } } : undefined,
-                    )
-                  }
+                  component={RouterLink}
+                  to={`/miners/pr?repo=${encodeURIComponent(submission.repositoryFullName)}&number=${submission.number}`}
+                  state={backLabel ? { backLabel } : undefined}
                   sx={{
                     cursor: 'pointer',
+                    textDecoration: 'none',
+                    color: 'inherit',
                     transition: 'background-color 0.2s',
                     '&:hover': {
                       backgroundColor: 'rgba(255, 255, 255, 0.03)',
@@ -170,7 +169,16 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                       <Typography
                         component="span"
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
+                          if (e.metaKey || e.ctrlKey) {
+                            window.open(
+                              `/miners/details?githubId=${submission.authorGithubId}`,
+                              '_blank',
+                              'noopener,noreferrer',
+                            );
+                            return;
+                          }
                           navigate(
                             `/miners/details?githubId=${submission.authorGithubId}`,
                             backLabel ? { state: { backLabel } } : undefined,

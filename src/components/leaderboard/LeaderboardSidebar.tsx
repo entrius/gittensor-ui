@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Box, Stack, Typography, Avatar } from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import { Link as RouterLink } from 'react-router-dom';
 import { SectionCard } from './SectionCard';
 import { STATUS_COLORS } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
@@ -11,13 +12,15 @@ export type { MinerStats } from './types';
 
 interface LeaderboardSidebarProps {
   miners: MinerStats[];
-  onSelectMiner: (githubId: string) => void;
+  getMinerHref: (githubId: string) => string;
+  linkState?: unknown;
   variant?: 'oss' | 'discoveries';
 }
 
 export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
   miners,
-  onSelectMiner,
+  getMinerHref,
+  linkState,
   variant = 'oss',
 }) => {
   // State for toggling lists
@@ -115,9 +118,8 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
                 rank={i + 1}
                 type={leaderboardType}
                 variant={variant}
-                onClick={() =>
-                  onSelectMiner(miner.githubId || miner.author || '')
-                }
+                href={getMinerHref(miner.githubId || miner.author || '')}
+                linkState={linkState}
               />
             ),
           )}
@@ -290,7 +292,8 @@ interface LeaderboardRowProps {
   rank: number;
   type: 'earners' | 'active';
   variant?: 'oss' | 'discoveries';
-  onClick: () => void;
+  href: string;
+  linkState?: unknown;
 }
 
 const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
@@ -298,15 +301,20 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
   rank,
   type,
   variant = 'oss',
-  onClick,
+  href,
+  linkState,
 }) => (
   <Box
-    onClick={onClick}
+    component={RouterLink}
+    to={href}
+    state={linkState}
     sx={(theme) => ({
       display: 'flex',
       alignItems: 'center',
       py: 1,
       cursor: 'pointer',
+      textDecoration: 'none',
+      color: 'inherit',
       '&:hover': {
         backgroundColor: alpha(theme.palette.text.primary, 0.03),
         borderRadius: 1,

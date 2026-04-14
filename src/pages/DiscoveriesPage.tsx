@@ -1,23 +1,18 @@
 import React, { useMemo } from 'react';
 import { useMediaQuery, Box, Typography, alpha } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { TopMinersTable, LeaderboardSidebar, SEO } from '../components';
 import { useAllMiners } from '../api';
 import theme from '../theme';
 
-const DiscoveriesPage: React.FC = () => {
-  const navigate = useNavigate();
+const getMinerHref = (githubId: string) =>
+  `/miners/details?githubId=${encodeURIComponent(githubId)}&mode=issues`;
+const minerLinkState = { backLabel: 'Back to Discoveries' };
 
+const DiscoveriesPage: React.FC = () => {
   const allMinerStatsQuery = useAllMiners();
   const allMinersStats = allMinerStatsQuery?.data;
   const isLoadingMinerStats = allMinerStatsQuery?.isLoading;
-
-  const handleSelectMiner = (githubId: string) => {
-    navigate(`/miners/details?githubId=${githubId}&mode=issues`, {
-      state: { backLabel: 'Back to Discoveries' },
-    });
-  };
 
   // Process miner stats for TopMinersTable, using issue discovery fields
   const minerStats = useMemo(() => {
@@ -125,7 +120,8 @@ const DiscoveriesPage: React.FC = () => {
             <TopMinersTable
               miners={sortedMinerStats}
               isLoading={isLoadingMinerStats}
-              onSelectMiner={handleSelectMiner}
+              getMinerHref={getMinerHref}
+              linkState={minerLinkState}
               variant="discoveries"
             />
           </Box>
@@ -145,7 +141,8 @@ const DiscoveriesPage: React.FC = () => {
         >
           <LeaderboardSidebar
             miners={minerStats}
-            onSelectMiner={handleSelectMiner}
+            getMinerHref={getMinerHref}
+            linkState={minerLinkState}
             variant="discoveries"
           />
         </Box>

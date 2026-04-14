@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import { type SxProps, type Theme } from '@mui/material/styles';
 import { type SystemStyleObject } from '@mui/system';
+import { Link as RouterLink } from 'react-router-dom';
 
 export type SearchResultsTableColumn<T> = {
   key: string;
@@ -38,6 +39,8 @@ type SearchResultsTableProps<T> = {
   isLoading: boolean;
   minWidth: number;
   onRowClick?: (item: T) => void;
+  getRowHref?: (item: T) => string;
+  getRowLinkState?: (item: T) => unknown;
   onPageChange: (newPage: number) => void;
   onRowsPerPageChange: (rowsPerPage: number) => void;
   page: number;
@@ -63,6 +66,15 @@ const searchBodyCellSx: SxProps<Theme> = (theme) => ({
 
 const searchClickableRowSx: SxProps<Theme> = (theme) => ({
   cursor: 'pointer',
+  '&:hover': {
+    backgroundColor: theme.palette.surface.subtle,
+  },
+});
+
+const searchLinkRowSx: SxProps<Theme> = (theme) => ({
+  cursor: 'pointer',
+  textDecoration: 'none',
+  color: 'inherit',
   '&:hover': {
     backgroundColor: theme.palette.surface.subtle,
   },
@@ -116,6 +128,8 @@ const SearchResultsTable = <T,>({
   isLoading,
   minWidth,
   onRowClick,
+  getRowHref,
+  getRowLinkState,
   onPageChange,
   onRowsPerPageChange,
   page,
@@ -162,11 +176,29 @@ const SearchResultsTable = <T,>({
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.map((item) => (
+              {rows.map((item) => {
+                const href = getRowHref?.(item);
+                const linkProps = href
+                  ? {
+                      component: RouterLink,
+                      to: href,
+                      state: getRowLinkState?.(item),
+                    }
+                  : undefined;
+                return (
                 <TableRow
                   key={getRowKey(item)}
-                  onClick={onRowClick ? () => onRowClick(item) : undefined}
-                  sx={onRowClick ? searchClickableRowSx : undefined}
+                  {...linkProps}
+                  onClick={
+                    !href && onRowClick ? () => onRowClick(item) : undefined
+                  }
+                  sx={
+                    href
+                      ? searchLinkRowSx
+                      : onRowClick
+                        ? searchClickableRowSx
+                        : undefined
+                  }
                 >
                   {columns.map((column) => {
                     const customCellSx =
@@ -191,7 +223,8 @@ const SearchResultsTable = <T,>({
                     );
                   })}
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>

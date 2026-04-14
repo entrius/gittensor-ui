@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 
 import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
 
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { TopRepositoriesTable, SEO } from '../components';
 import { useAllPrs, useReposAndWeights } from '../api';
@@ -14,14 +14,17 @@ const FONTS = { mono: '"JetBrains Mono", monospace' } as const;
 const ROW_HEIGHT = 40; // px – keeps every row exactly the same across cards
 
 const HighlightRow: React.FC<{
-  onClick: () => void;
+  href: string;
+  linkState?: unknown;
   avatar: string;
   avatarBg?: string;
   label: React.ReactNode;
   right: React.ReactNode;
-}> = ({ onClick, avatar, avatarBg = 'transparent', label, right }) => (
+}> = ({ href, linkState, avatar, avatarBg = 'transparent', label, right }) => (
   <Box
-    onClick={onClick}
+    component={RouterLink}
+    to={href}
+    state={linkState}
     sx={{
       display: 'flex',
       alignItems: 'center',
@@ -31,6 +34,8 @@ const HighlightRow: React.FC<{
       px: 1,
       borderRadius: 1,
       cursor: 'pointer',
+      textDecoration: 'none',
+      color: 'inherit',
       transition: 'background 0.15s',
       mx: -1,
       '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
@@ -104,9 +109,9 @@ const cardSx = {
 };
 
 // ── Page ────────────────────────────────────────────────────────────────────
-const RepositoriesPage: React.FC = () => {
-  const navigate = useNavigate();
+const REPO_LINK_STATE = { backLabel: 'Back to Repositories' };
 
+const RepositoriesPage: React.FC = () => {
   const formatRelativeTime = (date: Date) => {
     const now = new Date();
     if (date > now) return 'just now';
@@ -127,13 +132,6 @@ const RepositoriesPage: React.FC = () => {
     useReposAndWeights();
 
   const isLoading = isLoadingPRs || isLoadingRepos;
-
-  const handleSelectRepository = (repositoryFullName: string) => {
-    navigate(
-      `/miners/repository?name=${encodeURIComponent(repositoryFullName)}`,
-      { state: { backLabel: 'Back to Repositories' } },
-    );
-  };
 
   // ── Main table stats ────────────────────────────────────────────────────
   const repoStats = useMemo(() => {
@@ -352,7 +350,8 @@ const RepositoriesPage: React.FC = () => {
                     trendingRepos.map((repo) => (
                       <HighlightRow
                         key={repo.name}
-                        onClick={() => handleSelectRepository(repo.name)}
+                        href={`/miners/repository?name=${encodeURIComponent(repo.name)}`}
+                        linkState={REPO_LINK_STATE}
                         avatar={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
                         avatarBg={getAvatarBg(repo.name)}
                         label={
@@ -417,7 +416,8 @@ const RepositoriesPage: React.FC = () => {
                     topCollateralRepos.map((repo) => (
                       <HighlightRow
                         key={repo.name}
-                        onClick={() => handleSelectRepository(repo.name)}
+                        href={`/miners/repository?name=${encodeURIComponent(repo.name)}`}
+                        linkState={REPO_LINK_STATE}
                         avatar={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
                         avatarBg={getAvatarBg(repo.name)}
                         label={
@@ -479,12 +479,8 @@ const RepositoriesPage: React.FC = () => {
                     recentPrs.map((pr) => (
                       <HighlightRow
                         key={`${pr.name}-${pr.number}`}
-                        onClick={() =>
-                          navigate(
-                            `/miners/pr?repo=${encodeURIComponent(pr.name)}&number=${pr.number}`,
-                            { state: { backLabel: 'Back to Repositories' } },
-                          )
-                        }
+                        href={`/miners/pr?repo=${encodeURIComponent(pr.name)}&number=${pr.number}`}
+                        linkState={REPO_LINK_STATE}
                         avatar={`https://avatars.githubusercontent.com/${pr.name.split('/')[0]}`}
                         avatarBg={getAvatarBg(pr.name)}
                         label={
@@ -564,7 +560,7 @@ const RepositoriesPage: React.FC = () => {
           <TopRepositoriesTable
             repositories={repoStats}
             isLoading={isLoading}
-            onSelectRepository={handleSelectRepository}
+            backLabel="Back to Repositories"
           />
         </Card>
       </Box>

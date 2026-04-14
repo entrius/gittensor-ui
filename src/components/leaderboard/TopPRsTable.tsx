@@ -27,6 +27,7 @@ import {
   FormControlLabel,
   alpha,
 } from '@mui/material';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import BarChartIcon from '@mui/icons-material/BarChart';
@@ -47,18 +48,35 @@ import theme, { STATUS_COLORS } from '../../theme';
 interface TopPRsTableProps {
   prs: CommitLog[];
   isLoading?: boolean;
-  onSelectPR: (repository: string, pullRequestNumber: number) => void;
-  onSelectMiner: (githubId: string) => void;
-  onSelectRepository: (repositoryFullName: string) => void;
+  backLabel?: string;
 }
+
+const buildPrHref = (repository: string, pullRequestNumber: number) =>
+  `/miners/pr?repo=${encodeURIComponent(repository)}&number=${pullRequestNumber}`;
+const buildMinerHref = (githubId: string) =>
+  `/miners/details?githubId=${encodeURIComponent(githubId)}`;
+const buildRepoHref = (repositoryFullName: string) =>
+  `/miners/repository?name=${encodeURIComponent(repositoryFullName)}`;
 
 const TopPRsTable: React.FC<TopPRsTableProps> = ({
   prs,
   isLoading,
-  onSelectPR,
-  onSelectMiner,
-  onSelectRepository,
+  backLabel,
 }) => {
+  const navigate = useNavigate();
+  const linkState = backLabel ? { backLabel } : undefined;
+  const navigateTo = (
+    e: React.MouseEvent,
+    href: string,
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.metaKey || e.ctrlKey || e.button === 1) {
+      window.open(href, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    navigate(href, { state: linkState });
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showChart, setShowChart] = useState(false);
@@ -703,11 +721,13 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                 <TableRow
                   key={`${pr.repository}-${pr.pullRequestNumber}`}
                   hover
-                  onClick={() =>
-                    onSelectPR(pr.repository || '', pr.pullRequestNumber)
-                  }
+                  component={RouterLink}
+                  to={buildPrHref(pr.repository || '', pr.pullRequestNumber)}
+                  state={linkState}
                   sx={{
                     cursor: 'pointer',
+                    textDecoration: 'none',
+                    color: 'inherit',
                     '&:hover': {
                       backgroundColor: 'rgba(255, 255, 255, 0.05)',
                     },
@@ -741,10 +761,12 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                   </TableCell>
                   <TableCell sx={{ ...bodyCellStyle, width: '20%' }}>
                     <Box
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectMiner(pr.githubId || pr.author || '');
-                      }}
+                      onClick={(e) =>
+                        navigateTo(
+                          e,
+                          buildMinerHref(pr.githubId || pr.author || ''),
+                        )
+                      }
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
@@ -783,10 +805,9 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                   </TableCell>
                   <TableCell sx={{ ...bodyCellStyle, width: '20%' }}>
                     <Box
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectRepository(pr.repository || '');
-                      }}
+                      onClick={(e) =>
+                        navigateTo(e, buildRepoHref(pr.repository || ''))
+                      }
                       sx={{
                         display: 'flex',
                         alignItems: 'center',

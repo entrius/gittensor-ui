@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography, Avatar, Tooltip, alpha } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import { formatUsdEstimate } from '../../utils';
 import { type PullRequestDetails } from '../../api/models/Dashboard';
 import theme, { STATUS_COLORS } from '../../theme';
@@ -16,8 +16,11 @@ const PRHeader: React.FC<PRHeaderProps> = ({
   pullRequestNumber,
   prDetails,
 }) => {
-  const navigate = useNavigate();
   const [owner] = repository.split('/');
+  const repoHref = `/miners/repository?name=${encodeURIComponent(repository)}`;
+  const backLinkState = {
+    backLabel: `Back to PR #${pullRequestNumber}`,
+  };
 
   const isOpenPR = prDetails.prState === 'OPEN';
   const isClosed = prDetails.prState === 'CLOSED';
@@ -28,14 +31,14 @@ const PRHeader: React.FC<PRHeaderProps> = ({
   return (
     <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-start', gap: 2 }}>
       <Box
-        onClick={() =>
-          navigate(
-            `/miners/repository?name=${encodeURIComponent(repository)}`,
-            { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
-          )
-        }
+        component={RouterLink}
+        to={repoHref}
+        state={backLinkState}
         sx={{
           cursor: 'pointer',
+          textDecoration: 'none',
+          color: 'inherit',
+          display: 'inline-flex',
           transition: 'transform 0.2s',
           '&:hover': {
             transform: 'scale(1.05)',
@@ -116,17 +119,15 @@ const PRHeader: React.FC<PRHeaderProps> = ({
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Typography
-            onClick={() =>
-              navigate(
-                `/miners/repository?name=${encodeURIComponent(repository)}`,
-                { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
-              )
-            }
+            component={RouterLink}
+            to={repoHref}
+            state={backLinkState}
             sx={{
               color: 'rgba(255, 255, 255, 0.5)',
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.85rem',
               cursor: 'pointer',
+              textDecoration: 'none',
               transition: 'color 0.2s',
               '&:hover': {
                 color: 'primary.main',

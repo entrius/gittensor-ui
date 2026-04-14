@@ -16,6 +16,7 @@ import {
   Avatar,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { Link as RouterLink } from 'react-router-dom';
 import { IssueBounty } from '../../api/models/Issues';
 import { useStats } from '../../api';
 import { formatTokenAmount } from '../../utils/format';
@@ -29,7 +30,7 @@ interface IssuesListProps {
   issues: IssueBounty[];
   isLoading?: boolean;
   listType: ListType;
-  onSelectIssue?: (id: number) => void;
+  backLabel?: string;
 }
 
 /**
@@ -58,8 +59,9 @@ const IssuesList: React.FC<IssuesListProps> = ({
   issues,
   isLoading = false,
   listType,
-  onSelectIssue,
+  backLabel,
 }) => {
+  const linkState = backLabel ? { backLabel } : undefined;
   const { data: dashStats } = useStats();
   const taoPrice = dashStats?.prices?.tao?.data?.price ?? 0;
   const alphaPrice = dashStats?.prices?.alpha?.data?.price ?? 0;
@@ -230,9 +232,13 @@ const IssuesList: React.FC<IssuesListProps> = ({
               return (
                 <TableRow
                   key={issue.id}
-                  onClick={() => onSelectIssue?.(issue.id)}
+                  component={RouterLink}
+                  to={`/bounties/details?id=${issue.id}`}
+                  state={linkState}
                   sx={{
-                    cursor: onSelectIssue ? 'pointer' : 'default',
+                    cursor: 'pointer',
+                    textDecoration: 'none',
+                    color: 'inherit',
                     transition: 'background-color 0.2s',
                     '&:hover': {
                       backgroundColor: 'rgba(255, 255, 255, 0.03)',

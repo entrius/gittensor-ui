@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Card,
   Typography,
@@ -30,7 +30,6 @@ interface RepositoryIssuesTableProps {
 const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   repositoryFullName,
 }) => {
-  const navigate = useNavigate();
   const { data: issues, isLoading } = useRepositoryIssues(repositoryFullName);
   const { data: bounties } = useRepoIssues(repositoryFullName);
   const [filter, setFilter] = useState<'all' | 'open' | 'closed'>('all');
@@ -239,11 +238,9 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                   return (
                     <Box
                       key={bounty.id}
-                      onClick={() =>
-                        navigate(`/bounties/details?id=${bounty.id}`, {
-                          state: { backLabel: `Back to ${repositoryFullName}` },
-                        })
-                      }
+                      component={RouterLink}
+                      to={`/bounties/details?id=${bounty.id}`}
+                      state={{ backLabel: `Back to ${repositoryFullName}` }}
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
@@ -253,6 +250,8 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                         border: '1px solid rgba(255, 255, 255, 0.06)',
                         backgroundColor: 'rgba(255, 255, 255, 0.02)',
                         cursor: 'pointer',
+                        textDecoration: 'none',
+                        color: 'inherit',
                         transition: 'all 0.2s ease',
                         '&:hover': {
                           backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -457,18 +456,18 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                   return (
                     <TableRow
                       key={`${issue.number}-${index}`}
+                      component="a"
+                      href={`https://github.com/${issue.repositoryFullName}/issues/${issue.number}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       sx={{
                         cursor: 'pointer',
+                        textDecoration: 'none',
+                        color: 'inherit',
                         '&:hover': {
                           backgroundColor: 'rgba(255, 255, 255, 0.05)',
                         },
                         transition: 'background-color 0.2s',
-                      }}
-                      onClick={() => {
-                        window.open(
-                          `https://github.com/${issue.repositoryFullName}/issues/${issue.number}`,
-                          '_blank',
-                        );
                       }}
                     >
                       <TableCell sx={bodyCellStyle}>
