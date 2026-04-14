@@ -48,6 +48,7 @@ const IssuesPage: React.FC = () => {
           maxWidth: 1400,
           mx: 'auto',
           px: { xs: 2, md: 3 },
+          overflow: 'hidden',
         }}
       >
         <Stack spacing={3}>
