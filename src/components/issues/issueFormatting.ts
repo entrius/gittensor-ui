@@ -44,9 +44,7 @@ export const getIssueStatusBadge = (
   }
 };
 
-export const formatIssueDate = (
-  dateStr: string | null | undefined,
-): string => {
+export const formatIssueDate = (dateStr: string | null | undefined): string => {
   if (!dateStr) return '-';
   const date = new Date(dateStr);
   return date.toLocaleDateString('en-US', {

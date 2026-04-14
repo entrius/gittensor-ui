@@ -69,8 +69,7 @@ const IssueStats: React.FC<IssueStatsProps> = ({
                   stats?.totalBountyPool,
                   taoPrice,
                   alphaPrice,
-                ) ??
-                'Total available')
+                ) ?? 'Total available')
               : 'Total available'
           }
         />
@@ -85,8 +84,7 @@ const IssueStats: React.FC<IssueStatsProps> = ({
                   stats?.totalPayouts,
                   taoPrice,
                   alphaPrice,
-                ) ??
-                'Paid to solvers')
+                ) ?? 'Paid to solvers')
               : 'Paid to solvers'
           }
           sx={{

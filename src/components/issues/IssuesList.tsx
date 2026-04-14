@@ -473,7 +473,9 @@ const IssuesList: React.FC<IssuesListProps> = ({
                             color: 'rgba(255, 255, 255, 0.6)',
                           }}
                         >
-                          {formatIssueDate(issue.completedAt || issue.updatedAt)}
+                          {formatIssueDate(
+                            issue.completedAt || issue.updatedAt,
+                          )}
                         </Typography>
                       </TableCell>
                     </>
