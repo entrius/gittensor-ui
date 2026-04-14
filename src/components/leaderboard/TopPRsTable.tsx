@@ -105,7 +105,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
   const getChartOption = () => {
     const chartData = filteredPRs.slice(0, 50);
     const textColor = 'rgba(255, 255, 255, 0.85)';
-    const gridColor = 'rgba(255, 255, 255, 0.08)';
+    const gridColor = theme.palette.border.subtle;
 
     const chartColor = theme.palette.primary.main;
 
@@ -853,7 +853,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                                   fontFamily: '"JetBrains Mono", monospace',
                                   padding: '8px 12px',
                                   borderRadius: '6px',
-                                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                                  border: `1px solid ${theme.palette.border.subtle}`,
                                   boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
                                 },
                               },

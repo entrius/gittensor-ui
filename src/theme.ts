@@ -295,7 +295,7 @@ const theme = createTheme({
     },
     // Border colors
     border: {
-      subtle: 'rgba(255, 255, 255, 0.05)',
+      subtle: 'rgba(255, 255, 255, 0.08)',
       light: 'rgba(255, 255, 255, 0.1)',
       medium: 'rgba(255, 255, 255, 0.2)',
     },
