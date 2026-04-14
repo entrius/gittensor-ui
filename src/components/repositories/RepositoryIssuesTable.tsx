@@ -21,7 +21,7 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { formatTokenAmount } from '../../utils/format';
-import { STATUS_COLORS } from '../../theme';
+import { STATUS_COLORS, scrollbarSx } from '../../theme';
 
 interface RepositoryIssuesTableProps {
   repositoryFullName: string;
@@ -420,20 +420,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
             sx={{
               maxHeight: '500px',
               overflow: 'auto',
-              '&::-webkit-scrollbar': {
-                width: '8px',
-                height: '8px',
-              },
-              '&::-webkit-scrollbar-track': {
-                backgroundColor: 'transparent',
-              },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                borderRadius: '4px',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                },
-              },
+              ...scrollbarSx,
             }}
           >
             <Table stickyHeader>

@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import { useAllPrs } from '../../api';
 import { useNavigate } from 'react-router-dom';
-import theme from '../../theme';
+import theme, { scrollbarSx } from '../../theme';
 
 interface RepositoryPRsTableProps {
   repositoryFullName: string;
@@ -252,20 +252,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           sx={{
             maxHeight: '500px',
             overflow: 'auto',
-            '&::-webkit-scrollbar': {
-              width: '8px',
-              height: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '4px',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              },
-            },
+            ...scrollbarSx,
           }}
         >
           <Table stickyHeader>

@@ -46,6 +46,23 @@ export const CHART_COLORS = {
   closed: '#ef4444', // Red - closed without merge
 } as const;
 
+export const scrollbarSx = {
+  '&::-webkit-scrollbar': {
+    width: '8px',
+    height: '8px',
+  },
+  '&::-webkit-scrollbar-track': {
+    backgroundColor: 'transparent',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: '4px',
+    '&:hover': {
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    },
+  },
+} as const;
+
 export const TEXT_OPACITY = {
   primary: 1,
   secondary: 0.7,

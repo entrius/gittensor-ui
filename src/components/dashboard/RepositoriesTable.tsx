@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
-import theme from '../../theme';
+import theme, { scrollbarSx } from '../../theme';
 import { useRepoChanges } from '../../api';
 import dayjs from 'dayjs';
 
@@ -279,19 +279,7 @@ const RepositoriesTable: React.FC = () => {
               backgroundColor: 'transparent',
               maxHeight: '600px',
               overflowY: 'auto',
-              '&::-webkit-scrollbar': {
-                width: '8px',
-              },
-              '&::-webkit-scrollbar-track': {
-                backgroundColor: 'transparent',
-              },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                borderRadius: '4px',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                },
-              },
+              ...scrollbarSx,
             }}
           >
             <Table sx={{ width: '100%', tableLayout: 'fixed' }}>
