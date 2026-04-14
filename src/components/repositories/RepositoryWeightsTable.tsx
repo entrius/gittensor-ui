@@ -317,128 +317,120 @@ const RepositoryWeightsTable: React.FC = () => {
     <Box ref={containerRef}>
       <Box
         sx={{
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 2,
+          mb: 3,
         }}
       >
-        <Box sx={{ p: 2, pb: 1 }}>
+        <Box sx={{ flex: 1 }}>
           <Typography variant="body2" color="text.secondary">
             Contribute to any of these projects to gain score and earn emissions
           </Typography>
         </Box>
 
-        <Box
-          sx={{
-            px: 2,
-            pb: 2,
-            display: 'flex',
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            gap: 2,
-            flexWrap: 'wrap',
-          }}
-        >
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
-              <IconButton
-                onClick={() => setShowChart(!showChart)}
-                size="small"
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+            <IconButton
+              onClick={() => setShowChart(!showChart)}
+              size="small"
+              sx={{
+                color: showChart ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: 2,
+                padding: '6px',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                },
+              }}
+            >
+              {showChart ? (
+                <TableChartIcon fontSize="small" />
+              ) : (
+                <BarChartIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
+
+          <FormControl size="small">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                variant="body2"
                 sx={{
-                  color: showChart ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: 2,
-                  padding: '6px',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
-                  },
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.8rem',
                 }}
               >
-                {showChart ? (
-                  <TableChartIcon fontSize="small" />
-                ) : (
-                  <BarChartIcon fontSize="small" />
-                )}
-              </IconButton>
-            </Tooltip>
-
-            <FormControl size="small">
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: 'rgba(255, 255, 255, 0.7)',
-                    fontFamily: '"JetBrains Mono", monospace',
-                    fontSize: '0.8rem',
-                  }}
-                >
-                  Rows:
-                </Typography>
-                <Select
-                  value={rowsPerPage}
-                  onChange={(e) => {
-                    setRowsPerPage(e.target.value as number);
-                    setPage(0);
-                  }}
-                  sx={{
-                    color: '#ffffff',
-                    fontFamily: '"JetBrains Mono", monospace',
-                    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                    fontSize: '0.8rem',
-                    height: '36px',
-                    borderRadius: 2,
-                    minWidth: '80px',
-                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
-                    '&:hover fieldset': {
-                      borderColor: 'rgba(255, 255, 255, 0.2)',
-                    },
-                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                    '& .MuiSelect-select': {
-                      py: 0.75,
-                    },
-                  }}
-                >
-                  <MenuItem value={5}>5</MenuItem>
-                  <MenuItem value={10}>10</MenuItem>
-                  <MenuItem value={25}>25</MenuItem>
-                  <MenuItem value={50}>50</MenuItem>
-                </Select>
-              </Box>
-            </FormControl>
-            <TextField
-              placeholder="Search..."
-              size="small"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search
-                      sx={{
-                        color: 'rgba(255, 255, 255, 0.5)',
-                        fontSize: '1rem',
-                      }}
-                    />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                width: '200px',
-                '& .MuiOutlinedInput-root': {
+                Rows:
+              </Typography>
+              <Select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(e.target.value as number);
+                  setPage(0);
+                }}
+                sx={{
                   color: '#ffffff',
                   fontFamily: '"JetBrains Mono", monospace',
                   backgroundColor: 'rgba(0, 0, 0, 0.4)',
                   fontSize: '0.8rem',
                   height: '36px',
                   borderRadius: 2,
+                  minWidth: '80px',
                   '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
                   '&:hover fieldset': {
                     borderColor: 'rgba(255, 255, 255, 0.2)',
                   },
                   '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                  '& .MuiSelect-select': {
+                    py: 0.75,
+                  },
+                }}
+              >
+                <MenuItem value={5}>5</MenuItem>
+                <MenuItem value={10}>10</MenuItem>
+                <MenuItem value={25}>25</MenuItem>
+                <MenuItem value={50}>50</MenuItem>
+              </Select>
+            </Box>
+          </FormControl>
+          <TextField
+            placeholder="Search..."
+            size="small"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search
+                    sx={{
+                      color: 'rgba(255, 255, 255, 0.5)',
+                      fontSize: '1rem',
+                    }}
+                  />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              width: '200px',
+              '& .MuiOutlinedInput-root': {
+                color: '#ffffff',
+                fontFamily: '"JetBrains Mono", monospace',
+                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                fontSize: '0.8rem',
+                height: '36px',
+                borderRadius: 2,
+                '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                '&:hover fieldset': {
+                  borderColor: 'rgba(255, 255, 255, 0.2)',
                 },
-              }}
-            />
-          </Box>
+                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+              },
+            }}
+          />
         </Box>
       </Box>
 
