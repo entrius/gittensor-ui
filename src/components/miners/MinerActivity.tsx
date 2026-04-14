@@ -7,7 +7,7 @@ import {
   useReposAndWeights,
   useAllMiners,
 } from '../../api';
-import { ContributionHeatmap } from '../dashboard';
+import ContributionHeatmap from '../ContributionHeatmap';
 import TrustBadge from './TrustBadge';
 import CredibilityChart from './CredibilityChart';
 import PerformanceRadar from './PerformanceRadar';

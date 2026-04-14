@@ -2,7 +2,7 @@ import React from 'react';
 import { Grid, Skeleton, Box } from '@mui/material';
 import { IssuesStats } from '../../api/models/Issues';
 import { useStats } from '../../api';
-import KpiCard from '../dashboard/KpiCard';
+import KpiCard from '../KpiCard';
 import { formatTokenAmount } from '../../utils/format';
 import { STATUS_COLORS } from '../../theme';
 

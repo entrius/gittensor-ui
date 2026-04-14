@@ -15,6 +15,7 @@ export interface IssueBounty {
   registeredAtBlock: number;
   createdAt: string;
   updatedAt: string;
+  closedAt: string | null;
   completedAt: string | null;
   title?: string;
 }
