@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Card,
   Typography,
@@ -83,6 +83,14 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<PrSortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+
+  useEffect(() => {
+    setSelectedAuthor(null);
+    setStatusFilter('all');
+    setSearchQuery('');
+    setSortField('date');
+    setSortDir('desc');
+  }, [githubId]);
 
   const page = parseInt(searchParams.get('prPage') || '0', 10);
   const setPage = useCallback(

@@ -56,7 +56,9 @@ const LeaderboardCharts: React.FC = () => {
     });
 
     statsMap.forEach((stats, repoName) => {
-      const repoData = repos.find((r) => r.fullName === repoName);
+      const repoData = repos.find(
+        (r) => r.fullName.toLowerCase() === repoName.toLowerCase(),
+      );
       if (repoData) {
         stats.weight = repoData.weight
           ? parseFloat(String(repoData.weight))

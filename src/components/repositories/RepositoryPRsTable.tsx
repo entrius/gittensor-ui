@@ -284,7 +284,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
             <TableBody>
               {sortedPRs.map((pr, index) => (
                 <TableRow
-                  key={`${pr.pullRequestNumber}-${index}`}
+                  key={`${pr.repository}-${pr.pullRequestNumber}`}
                   onClick={() => {
                     navigate(
                       `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,

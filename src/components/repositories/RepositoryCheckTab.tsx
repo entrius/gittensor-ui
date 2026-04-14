@@ -93,9 +93,9 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
           setHelpWantedCount(hwRes.data.total_count);
         } catch (e) {
           console.warn('Failed to fetch issue counts', e);
-          // Fallback to repoData count if search fails, though it includes PRs
-          if (repoData && repoData.open_issues_count !== undefined) {
-            setOpenIssuesCount(repoData.open_issues_count);
+          // Fallback to repoRes.data (local variable) — repoData state is stale here
+          if (repoRes.data && repoRes.data.open_issues_count !== undefined) {
+            setOpenIssuesCount(repoRes.data.open_issues_count);
           }
         }
       } catch (err: unknown) {

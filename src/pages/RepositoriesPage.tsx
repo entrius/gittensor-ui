@@ -211,12 +211,16 @@ const RepositoriesPage: React.FC = () => {
       repoScores.set(pr.repository, cur);
     });
 
-    const repoMap = new Map(reposWithWeights.map((r) => [r.fullName, r]));
+    const repoMap = new Map(
+      reposWithWeights.map((r) => [r.fullName.toLowerCase(), r]),
+    );
 
     return Array.from(repoScores.entries())
       .filter(
         ([name, s]) =>
-          repoMap.has(name) && s.recentScore > 0 && s.priorScore > 0,
+          repoMap.has(name.toLowerCase()) &&
+          s.recentScore > 0 &&
+          s.priorScore > 0,
       )
       .map(([name, s]) => ({
         name,
@@ -233,7 +237,9 @@ const RepositoriesPage: React.FC = () => {
   const topCollateralRepos = useMemo(() => {
     if (!allPRs || !reposWithWeights) return [];
 
-    const repoMap = new Map(reposWithWeights.map((r) => [r.fullName, r]));
+    const repoMap = new Map(
+      reposWithWeights.map((r) => [r.fullName.toLowerCase(), r]),
+    );
 
     // Sum collateral from open PRs per repo
     const repoCollateral = new Map<
@@ -243,7 +249,7 @@ const RepositoriesPage: React.FC = () => {
 
     allPRs.forEach((pr: CommitLog) => {
       if (!pr?.repository || pr.prState !== 'OPEN') return;
-      if (!repoMap.has(pr.repository)) return;
+      if (!repoMap.has(pr.repository.toLowerCase())) return;
       const collateral = parseFloat(pr.collateralScore || '0');
       if (collateral <= 0) return;
 
