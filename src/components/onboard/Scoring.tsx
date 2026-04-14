@@ -41,7 +41,7 @@ export const Scoring: React.FC = () => (
         },
         {
           title: 'Pioneer Bonus',
-          desc: 'Be the first quality contributor to a repository and earn a pioneer dividend — a percentage of every follower\'s score, up to doubling your own rewards.',
+          desc: "Be the first quality contributor to a repository and earn a pioneer dividend — a percentage of every follower's score, up to doubling your own rewards.",
         },
       ].map((item, index) => (
         <Grid item xs={12} sm={6} md={4} key={index}>

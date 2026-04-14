@@ -53,8 +53,8 @@ export const AboutContent: React.FC = () => {
               >
                 Open source software powers the world, yet its builders are
                 rarely compensated for the immense value they create. Gittensor
-                changes this by turning code contributions into direct,
-                on-chain rewards.
+                changes this by turning code contributions into direct, on-chain
+                rewards.
               </Typography>
               <Typography
                 variant="body1"
