@@ -26,6 +26,7 @@ import {
   useAllMiners,
   useMinerGithubData,
   useGeneralConfig,
+  type MinerEvaluation,
 } from '../../api';
 import {
   RANK_COLORS,
@@ -233,7 +234,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
 
   const rankings = useMemo(() => {
     if (!allMinersStats || !minerStats) return null;
-    const rank = (_key: string, extract: (m: any) => number) =>
+    const rank = (_key: string, extract: (m: MinerEvaluation) => number) =>
       allMinersStats
         .slice()
         .sort((a, b) => extract(b) - extract(a))

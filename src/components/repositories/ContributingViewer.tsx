@@ -177,7 +177,11 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
         components={{
-          a: ({ href, children, ...rest }: any) => (
+          a: ({
+            href,
+            children,
+            ...rest
+          }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
             <a
               href={resolveRelativeUrl(href, repositoryFullName, defaultBranch)}
               target="_blank"
@@ -187,7 +191,11 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
               {children}
             </a>
           ),
-          img: ({ src, alt, ...rest }: any) => (
+          img: ({
+            src,
+            alt,
+            ...rest
+          }: React.ImgHTMLAttributes<HTMLImageElement>) => (
             <img
               src={resolveRelativeUrl(
                 src,

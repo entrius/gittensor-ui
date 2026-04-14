@@ -70,7 +70,9 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
           `https://api.github.com/repos/${repositoryFullName}/git/trees/${branch}?recursive=1`,
         );
         if (treeRes.data.tree) {
-          setFileTree(treeRes.data.tree.map((node: any) => node.path));
+          setFileTree(
+            treeRes.data.tree.map((node: { path: string }) => node.path),
+          );
         }
 
         // Fetch issue counts
@@ -96,7 +98,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
             setOpenIssuesCount(repoData.open_issues_count);
           }
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to fetch repo check data', err);
         setError('Failed to load repository health data.');
       } finally {
