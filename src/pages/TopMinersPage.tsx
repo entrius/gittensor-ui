@@ -1,23 +1,52 @@
 import React, { useMemo } from 'react';
-import { useMediaQuery, Box, Typography, alpha } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import {
+  useMediaQuery,
+  Box,
+  Typography,
+  alpha,
+  Tabs,
+  Tab,
+} from '@mui/material';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { TopMinersTable, LeaderboardSidebar, SEO } from '../components';
 import { useAllMiners } from '../api';
 import { parseNumber } from '../utils';
 import theme from '../theme';
 
+type LeaderboardMode = 'oss' | 'discovery';
+
 const TopMinersPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const mode: LeaderboardMode =
+    searchParams.get('mode') === 'discovery' ? 'discovery' : 'oss';
 
   const allMinerStatsQuery = useAllMiners();
   const allMinersStats = allMinerStatsQuery?.data;
   const isLoadingMinerStats = allMinerStatsQuery?.isLoading;
 
+  const handleModeChange = (
+    _e: React.SyntheticEvent,
+    next: LeaderboardMode,
+  ) => {
+    setSearchParams(
+      (prev) => {
+        const p = new URLSearchParams(prev);
+        if (next === 'oss') p.delete('mode');
+        else p.set('mode', 'discovery');
+        return p;
+      },
+      { replace: true },
+    );
+  };
+
   const handleSelectMiner = (githubId: string) => {
-    navigate(`/miners/details?githubId=${githubId}`, {
-      state: { backLabel: 'Back to Leaderboard' },
-    });
+    const path =
+      mode === 'discovery' ? '/discoveries/details' : '/miners/details';
+    const backLabel =
+      mode === 'discovery' ? 'Back to Discoveries' : 'Back to Leaderboard';
+    navigate(`${path}?githubId=${githubId}`, { state: { backLabel } });
   };
 
   // Normalize leaderboard miner data.
@@ -52,6 +81,36 @@ const TopMinersPage: React.FC = () => {
       totalClosedPrs: parseNumber(stat.totalClosedPrs),
     }));
   }, [allMinersStats]);
+
+  const discoveryStats = useMemo(() => {
+    if (!Array.isArray(allMinersStats)) return [];
+    return [...allMinersStats]
+      .map((stat) => ({
+        id: String(stat.id),
+        githubId: stat.githubId || '',
+        author: stat.githubUsername || undefined,
+        totalScore: Number(stat.issueDiscoveryScore) || 0,
+        baseTotalScore: Number(stat.baseTotalScore) || 0,
+        totalPRs:
+          (Number(stat.totalSolvedIssues) || 0) +
+          (Number(stat.totalClosedIssues) || 0),
+        linesChanged: Number(stat.totalNodesScored) || 0,
+        linesAdded: Number(stat.totalAdditions) || 0,
+        linesDeleted: Number(stat.totalDeletions) || 0,
+        hotkey: stat.hotkey || 'N/A',
+        uniqueReposCount: Number(stat.uniqueReposCount) || 0,
+        credibility: Number(stat.issueCredibility) || 0,
+        isEligible: stat.isIssueEligible ?? false,
+        usdPerDay: Number(stat.usdPerDay) || 0,
+        totalMergedPrs: Number(stat.totalSolvedIssues) || 0,
+        totalOpenPrs: Number(stat.totalOpenIssues) || 0,
+        totalClosedPrs: Number(stat.totalClosedIssues) || 0,
+      }))
+      .sort((a, b) => b.totalScore - a.totalScore)
+      .map((s, i) => ({ ...s, rank: i + 1 }));
+  }, [allMinersStats]);
+
+  const activeStats = mode === 'discovery' ? discoveryStats : minerStats;
 
   // Dashboard-like responsive logic
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -107,6 +166,29 @@ const TopMinersPage: React.FC = () => {
             },
           })}
         >
+          <Tabs
+            value={mode}
+            onChange={handleModeChange}
+            sx={{
+              minHeight: 40,
+              borderBottom: '1px solid rgba(255,255,255,0.1)',
+              '& .MuiTab-root': {
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.8rem',
+                textTransform: 'none',
+                minHeight: 40,
+                color: 'rgba(255,255,255,0.5)',
+                '&.Mui-selected': { color: '#fff' },
+              },
+              '& .MuiTabs-indicator': {
+                backgroundColor: '#fff',
+                height: 2,
+              },
+            }}
+          >
+            <Tab value="oss" label="OSS Contributions" />
+            <Tab value="discovery" label="Issue Discovery" />
+          </Tabs>
           <Typography
             sx={{
               fontFamily: '"JetBrains Mono", monospace',
@@ -115,15 +197,16 @@ const TopMinersPage: React.FC = () => {
               lineHeight: 1.6,
             }}
           >
-            Miners earn OSS contribution rewards by getting pull requests merged
-            into recognized repositories. Scored on code quality via AST token
-            analysis. Rewarded separately from issue discovery.
+            {mode === 'discovery'
+              ? 'Miners earn discovery rewards by filing quality issues that others solve via merged PRs. Rewarded separately from OSS contributions.'
+              : 'Miners earn OSS contribution rewards by getting pull requests merged into recognized repositories. Scored on code quality via AST token analysis. Rewarded separately from issue discovery.'}
           </Typography>
           <Box sx={{ width: '100%' }}>
             <TopMinersTable
-              miners={minerStats}
+              miners={activeStats}
               isLoading={isLoadingMinerStats}
               onSelectMiner={handleSelectMiner}
+              activityLabel={mode === 'discovery' ? 'Issues' : undefined}
             />
           </Box>
         </Box>
@@ -142,8 +225,9 @@ const TopMinersPage: React.FC = () => {
         >
           {/* Render extracted Sidebar Content here */}
           <LeaderboardSidebar
-            miners={minerStats}
+            miners={activeStats}
             onSelectMiner={handleSelectMiner}
+            variant={mode === 'discovery' ? 'discoveries' : undefined}
           />
         </Box>
       </Box>
