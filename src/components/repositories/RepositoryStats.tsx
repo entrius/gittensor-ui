@@ -8,6 +8,7 @@ import {
   useRepositoryConfig,
 } from '../../api';
 import { RANK_COLORS, STATUS_COLORS } from '../../theme';
+import { formatTokenAmount } from '../../utils/format';
 
 interface RepositoryStatsProps {
   repositoryFullName: string;
@@ -254,13 +255,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
                     fontSize: '13px',
                   }}
                 >
-                  {parseFloat(bountySummary.totalAvailable).toLocaleString(
-                    undefined,
-                    {
-                      maximumFractionDigits: 2,
-                    },
-                  )}{' '}
-                  α
+                  {formatTokenAmount(bountySummary.totalAvailable, 2)} α
                 </Typography>
               </Box>
             )}
@@ -289,13 +284,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
                     fontWeight: 500,
                   }}
                 >
-                  {parseFloat(bountySummary.totalPaidOut).toLocaleString(
-                    undefined,
-                    {
-                      maximumFractionDigits: 2,
-                    },
-                  )}{' '}
-                  α
+                  {formatTokenAmount(bountySummary.totalPaidOut, 2)} α
                 </Typography>
               </Box>
             )}
