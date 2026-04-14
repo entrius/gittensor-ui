@@ -482,13 +482,18 @@ const IssueStatsSection: React.FC<IssueStatsSectionProps> = ({
   const muiTheme = useTheme();
 
   return (
-    <Box sx={{ pt: 0.35, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+    <Box
+      sx={(theme) => ({
+        pt: 0.35,
+        borderTop: `1px solid ${theme.palette.border.light}`,
+      })}
+    >
       <Typography
         sx={{
           fontFamily: FONTS.mono,
           fontSize: '0.7rem',
           fontWeight: 700,
-          color: '#8b949e',
+          color: muiTheme.palette.status.open,
           minWidth: 28,
           textTransform: 'uppercase',
           mb: 0.35,
