@@ -29,6 +29,8 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
     : '';
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchContent = async () => {
       if (!filePath || isImage) {
         // Don't fetch text content for images or if no file selected
@@ -43,19 +45,23 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
         // Use raw.githubusercontent.com
         const response = await axios.get(rawUrl, {
           transformResponse: [(data) => data],
+          signal: controller.signal,
         }); // Force text
+        if (controller.signal.aborted) return;
         setContent(response.data);
       } catch (err) {
+        if (axios.isCancel(err) || controller.signal.aborted) return;
         console.error('Failed to fetch file content', err);
         setError(
           'Could not load file content. It might be binary or too large.',
         );
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
     fetchContent();
+    return () => controller.abort();
   }, [repositoryFullName, filePath, defaultBranch, isImage, rawUrl]);
 
   if (!filePath) {

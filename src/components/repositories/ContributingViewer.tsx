@@ -20,6 +20,8 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchContributing = async () => {
       setLoading(true);
       setError(null);
@@ -33,30 +35,34 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
 
       for (const branch of branches) {
         for (const path of paths) {
+          if (controller.signal.aborted) return;
           try {
             const response = await axios.get(
               `https://cdn.jsdelivr.net/gh/${repositoryFullName}@${branch}/${path}`,
+              { signal: controller.signal },
             );
+            if (controller.signal.aborted) return;
             if (response.status === 200 && response.data) {
               setContent(response.data);
               setDefaultBranch(branch);
               setLoading(false);
               return;
             }
-          } catch {
+          } catch (err) {
+            if (axios.isCancel(err) || controller.signal.aborted) return;
             // Continue to next combination
           }
         }
       }
 
+      if (controller.signal.aborted) return;
       // If we get here, nothing was found
       setError('No contributing guidelines found for this repository.');
       setLoading(false);
     };
 
-    if (repositoryFullName) {
-      fetchContributing();
-    }
+    if (repositoryFullName) fetchContributing();
+    return () => controller.abort();
   }, [repositoryFullName]);
 
   if (loading) {
