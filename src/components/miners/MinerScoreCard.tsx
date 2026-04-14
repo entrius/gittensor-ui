@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Card,
   Typography,
@@ -222,6 +222,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
   const { data: githubData } = useMinerGithubData(githubId);
   const { data: generalConfig } = useGeneralConfig();
   const { data: allMinersStats } = useAllMiners();
+  const [hotkeyCopied, setHotkeyCopied] = useState(false);
 
   const username = githubData?.login || prs?.[0]?.author || githubId;
 
@@ -420,16 +421,28 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             >
               <GitHubIcon sx={{ fontSize: '1rem' }} />@{username}
             </Typography>
-            <Typography
-              sx={{
-                color: (t) => alpha(t.palette.text.primary, 0.45),
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: { xs: '0.55rem', sm: '0.65rem' },
-                wordBreak: 'break-all',
-              }}
+            <Tooltip
+              title={hotkeyCopied ? 'Copied!' : 'Click to copy hotkey'}
+              placement="top"
             >
-              {minerStats.hotkey || ''}
-            </Typography>
+              <Typography
+                onClick={() => {
+                  if (!minerStats.hotkey) return;
+                  void navigator.clipboard.writeText(minerStats.hotkey);
+                  setHotkeyCopied(true);
+                  window.setTimeout(() => setHotkeyCopied(false), 1500);
+                }}
+                sx={{
+                  color: (t) => alpha(t.palette.text.primary, 0.45),
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: { xs: '0.55rem', sm: '0.65rem' },
+                  wordBreak: 'break-all',
+                  cursor: minerStats.hotkey ? 'pointer' : 'default',
+                }}
+              >
+                {minerStats.hotkey || ''}
+              </Typography>
+            </Tooltip>
           </Box>
 
           {/* Bio / about me */}
