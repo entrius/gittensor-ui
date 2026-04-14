@@ -28,16 +28,12 @@ import {
   useGeneralConfig,
   type MinerEvaluation,
 } from '../../api';
-import {
-  RANK_COLORS,
-  STATUS_COLORS,
-  CREDIBILITY_COLORS,
-  RISK_COLORS,
-} from '../../theme';
+import { RANK_COLORS, STATUS_COLORS, RISK_COLORS } from '../../theme';
 import {
   calculateDynamicOpenPrThreshold,
   parseNumber,
 } from '../../utils/ExplorerUtils';
+import { credibilityColor } from '../../utils/format';
 
 const formatTimeAgo = (date: Date): string => {
   const now = new Date();
@@ -53,14 +49,6 @@ const formatTimeAgo = (date: Date): string => {
   }
   if (diffDays === 1) return '1 day ago';
   return `${diffDays} days ago`;
-};
-
-const credibilityColor = (cred: number) => {
-  if (cred >= 0.9) return CREDIBILITY_COLORS.excellent;
-  if (cred >= 0.7) return CREDIBILITY_COLORS.good;
-  if (cred >= 0.5) return CREDIBILITY_COLORS.moderate;
-  if (cred >= 0.3) return CREDIBILITY_COLORS.low;
-  return CREDIBILITY_COLORS.poor;
 };
 
 const openPrColor = (open: number, threshold: number) => {
