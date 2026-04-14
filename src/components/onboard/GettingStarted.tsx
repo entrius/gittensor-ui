@@ -457,22 +457,23 @@ export const GettingStarted: React.FC = () => {
                   height: 48,
                   borderRadius: '50%',
                   bgcolor:
-                    activeStep === index
-                      ? index === steps.length - 1
-                        ? 'onboard.stepActiveGoldBg'
-                        : 'onboard.stepActiveBlueBg'
-                      : 'onboard.stepInactiveBg',
+                    (theme) =>
+                      activeStep === index
+                        ? index === steps.length - 1
+                          ? alpha(theme.palette.secondary.main, 0.15)
+                          : alpha(theme.palette.primary.main, 0.15)
+                        : theme.palette.background.default,
                   border: '2px solid',
                   borderColor: item.active
                     ? 'secondary.main'
                     : activeStep === index
                       ? 'primary.main'
-                      : 'onboard.borderMuted',
+                      : 'border.subtle',
                   color: item.active
                     ? 'secondary.main'
                     : activeStep === index
                       ? 'primary.main'
-                      : 'onboard.textMuted',
+                      : 'text.tertiary',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -480,9 +481,11 @@ export const GettingStarted: React.FC = () => {
                   fontWeight: 'bold',
                   fontSize: '1.1rem',
                   boxShadow: item.active
-                    ? 'onboard.glowGold'
+                    ? (theme) =>
+                        `0 0 20px ${alpha(theme.palette.secondary.main, 0.15)}`
                     : activeStep === index
-                      ? 'onboard.glowBlue'
+                      ? (theme) =>
+                          `0 0 15px ${alpha(theme.palette.primary.main, 0.2)}`
                       : 'none',
                   transition: 'all 0.2s ease',
                   flexShrink: 0,
