@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import axios from 'axios';
 import { STATUS_COLORS } from '../../theme';
+import { resolveRelativeUrl } from './MarkdownRenderers';
 
 interface ContributingViewerProps {
   repositoryFullName: string; // e.g., "opentensor/bittensor"
@@ -80,35 +81,6 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
       </Alert>
     );
   }
-
-  // Custom renderer for images to handle relative paths
-  const ImageRenderer = (props: any) => {
-    const { src, alt, ...rest } = props;
-    let finalSrc = src;
-
-    if (src && !src.startsWith('http') && !src.startsWith('//')) {
-      const cleanPath = src.startsWith('./')
-        ? src.slice(2)
-        : src.startsWith('/')
-          ? src.slice(1)
-          : src;
-      finalSrc = `https://cdn.jsdelivr.net/gh/${repositoryFullName}@${defaultBranch}/${cleanPath}`;
-    }
-
-    return (
-      <img
-        src={finalSrc}
-        alt={alt}
-        style={{
-          maxWidth: '100%',
-          height: 'auto',
-          borderRadius: '6px',
-          margin: '16px 0',
-        }}
-        {...rest}
-      />
-    );
-  };
 
   return (
     <Paper
@@ -204,7 +176,44 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
-        components={{ img: ImageRenderer }}
+        components={{
+          a: ({
+            href,
+            children,
+            ...rest
+          }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+            <a
+              href={resolveRelativeUrl(href, repositoryFullName, defaultBranch)}
+              target="_blank"
+              rel="noopener noreferrer"
+              {...rest}
+            >
+              {children}
+            </a>
+          ),
+          img: ({
+            src,
+            alt,
+            ...rest
+          }: React.ImgHTMLAttributes<HTMLImageElement>) => (
+            <img
+              src={resolveRelativeUrl(
+                src,
+                repositoryFullName,
+                defaultBranch,
+                'cdn',
+              )}
+              alt={alt}
+              style={{
+                maxWidth: '100%',
+                height: 'auto',
+                borderRadius: '6px',
+                margin: '16px 0',
+              }}
+              {...rest}
+            />
+          ),
+        }}
       >
         {content || ''}
       </ReactMarkdown>

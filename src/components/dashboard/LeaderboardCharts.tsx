@@ -12,13 +12,9 @@ import {
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ReactECharts from 'echarts-for-react';
 import { useAllPrs, useReposAndWeights } from '../../api';
+import { truncateText } from '../../utils';
 
 const CHART_DOT_COLOR = 'rgba(88, 166, 255, 0.9)';
-
-const truncateText = (text: string, maxLength: number): string => {
-  if (!text) return '';
-  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-};
 
 const LeaderboardCharts: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);

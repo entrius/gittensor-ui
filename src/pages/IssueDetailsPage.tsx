@@ -34,7 +34,7 @@ const IssueDetailsPage: React.FC = () => {
   // If no ID is provided, redirect to issues page
   if (!idParam) {
     if (typeof window !== 'undefined') {
-      navigate('/issues');
+      navigate('/bounties');
     }
     return null;
   }
@@ -75,7 +75,7 @@ const IssueDetailsPage: React.FC = () => {
           <Typography variant="h6" color="error">
             Issue not found
           </Typography>
-          <BackButton to="/issues" label="Back to Issues" />
+          <BackButton to="/bounties" label="Back to Bounties" />
         </Box>
       ) : (
         <Box
@@ -89,7 +89,7 @@ const IssueDetailsPage: React.FC = () => {
           }}
         >
           <Stack spacing={3}>
-            <BackButton to="/issues" label="Back to Issues" mb={0} />
+            <BackButton to="/bounties" label="Back to Bounties" mb={0} />
             <IssueHeaderCard issue={issue} />
 
             {/* Tabs */}

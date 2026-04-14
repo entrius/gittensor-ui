@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { TopMinersTable, LeaderboardSidebar, SEO } from '../components';
 import { useAllMiners } from '../api';
+import { parseNumber } from '../utils';
 import theme from '../theme';
 
 const TopMinersPage: React.FC = () => {
@@ -19,35 +20,38 @@ const TopMinersPage: React.FC = () => {
     });
   };
 
-  // Process miner stats for TopMinersTable
+  // Normalize leaderboard miner data.
   const minerStats = useMemo(() => {
     if (!Array.isArray(allMinersStats)) return [];
+
+    const rankById = new Map(
+      [...allMinersStats]
+        .sort((a, b) => Number(b.totalScore) - Number(a.totalScore))
+        .map((stat, index) => [String(stat.id), index + 1]),
+    );
+
     return allMinersStats.map((stat) => ({
+      id: String(stat.id),
       githubId: stat.githubId || '',
       author: stat.githubUsername || undefined,
-      totalScore: Number(stat.totalScore) || 0,
-      baseTotalScore: Number(stat.baseTotalScore) || 0,
-      totalPRs: Number(stat.totalPrs) || 0,
-      linesChanged: Number(stat.totalNodesScored) || 0,
-      linesAdded: Number(stat.totalAdditions) || 0,
-      linesDeleted: Number(stat.totalDeletions) || 0,
+      totalScore: parseNumber(stat.totalScore),
+      baseTotalScore: parseNumber(stat.baseTotalScore),
+      totalPRs: parseNumber(stat.totalPrs),
+      linesChanged: parseNumber(stat.totalNodesScored),
+      linesAdded: parseNumber(stat.totalAdditions),
+      linesDeleted: parseNumber(stat.totalDeletions),
       hotkey: stat.hotkey || 'N/A',
-      uniqueReposCount: Number(stat.uniqueReposCount) || 0,
-      credibility: Number(stat.credibility) || 0,
+      rank: rankById.get(String(stat.id)),
+      uniqueReposCount: parseNumber(stat.uniqueReposCount),
+      credibility: parseNumber(stat.credibility),
       isEligible: stat.isEligible ?? false,
-      usdPerDay: Number(stat.usdPerDay) || 0,
+      usdPerDay: parseNumber(stat.usdPerDay),
       // PR status counts for credibility donut
-      totalMergedPrs: Number(stat.totalMergedPrs) || 0,
-      totalOpenPrs: Number(stat.totalOpenPrs) || 0,
-      totalClosedPrs: Number(stat.totalClosedPrs) || 0,
+      totalMergedPrs: parseNumber(stat.totalMergedPrs),
+      totalOpenPrs: parseNumber(stat.totalOpenPrs),
+      totalClosedPrs: parseNumber(stat.totalClosedPrs),
     }));
   }, [allMinersStats]);
-
-  // Sort miners by total score
-  const sortedMinerStats = useMemo(
-    () => [...minerStats].sort((a, b) => b.totalScore - a.totalScore),
-    [minerStats],
-  );
 
   // Dashboard-like responsive logic
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -79,7 +83,7 @@ const TopMinersPage: React.FC = () => {
       >
         {/* Main Content Area */}
         <Box
-          sx={{
+          sx={(theme) => ({
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
@@ -95,13 +99,13 @@ const TopMinersPage: React.FC = () => {
               backgroundColor: 'transparent',
             },
             '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              backgroundColor: theme.palette.border.light,
               borderRadius: '4px',
               '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                backgroundColor: theme.palette.border.medium,
               },
             },
-          }}
+          })}
         >
           <Typography
             sx={{
@@ -117,7 +121,7 @@ const TopMinersPage: React.FC = () => {
           </Typography>
           <Box sx={{ width: '100%' }}>
             <TopMinersTable
-              miners={sortedMinerStats}
+              miners={minerStats}
               isLoading={isLoadingMinerStats}
               onSelectMiner={handleSelectMiner}
             />

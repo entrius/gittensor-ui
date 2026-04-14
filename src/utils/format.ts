@@ -30,6 +30,11 @@ export const formatTokenAmount = (
  * @param options.showZero - Whether to show "$0" for zero/negative values (default: false, returns null)
  * @returns Formatted string like "$5", "<$1", or null if value is invalid/zero
  */
+export const truncateText = (text: string, maxLength: number): string => {
+  if (!text) return '';
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+};
+
 export const formatUsdEstimate = (
   value: number | null | undefined,
   options?: { includeApproxPrefix?: boolean; showZero?: boolean },

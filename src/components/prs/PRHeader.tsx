@@ -3,11 +3,12 @@ import { Box, Typography, Avatar, Tooltip, alpha } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useNavigate } from 'react-router-dom';
 import { formatUsdEstimate } from '../../utils';
+import { type PullRequestDetails } from '../../api/models/Dashboard';
 import theme, { STATUS_COLORS } from '../../theme';
 interface PRHeaderProps {
   repository: string;
   pullRequestNumber: number;
-  prDetails: any; // Using any for now to avoid duplicating the full type definition, or import it if available
+  prDetails: PullRequestDetails;
 }
 
 const PRHeader: React.FC<PRHeaderProps> = ({

@@ -240,7 +240,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                     <Box
                       key={bounty.id}
                       onClick={() =>
-                        navigate(`/issues/details?id=${bounty.id}`, {
+                        navigate(`/bounties/details?id=${bounty.id}`, {
                           state: { backLabel: `Back to ${repositoryFullName}` },
                         })
                       }

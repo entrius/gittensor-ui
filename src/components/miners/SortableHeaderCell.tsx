@@ -7,6 +7,7 @@ interface SortableHeaderCellProps {
   field: RepoSortField;
   label: string;
   align?: 'left' | 'right';
+  width?: string;
   defaultDirection: SortOrder;
   activeField: RepoSortField;
   activeOrder: SortOrder;
@@ -18,6 +19,7 @@ const SortableHeaderCell: React.FC<SortableHeaderCellProps> = ({
   field,
   label,
   align,
+  width,
   defaultDirection,
   activeField,
   activeOrder,
@@ -28,7 +30,7 @@ const SortableHeaderCell: React.FC<SortableHeaderCellProps> = ({
   const direction = isActive ? activeOrder : defaultDirection;
 
   return (
-    <TableCell align={align} sx={cellStyle}>
+    <TableCell align={align} sx={{ ...cellStyle, ...(width ? { width } : {}) }}>
       <TableSortLabel
         active={isActive}
         direction={direction}

@@ -26,6 +26,7 @@ import {
   useAllMiners,
   useMinerGithubData,
   useGeneralConfig,
+  type MinerEvaluation,
 } from '../../api';
 import {
   RANK_COLORS,
@@ -226,7 +227,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
 
   const rankings = useMemo(() => {
     if (!allMinersStats || !minerStats) return null;
-    const rank = (_key: string, extract: (m: any) => number) =>
+    const rank = (_key: string, extract: (m: MinerEvaluation) => number) =>
       allMinersStats
         .slice()
         .sort((a, b) => extract(b) - extract(a))
@@ -340,7 +341,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
               {githubData?.name || username}
             </Typography>
             <Tooltip
-              title="Requires 5+ merged PRs with token score >= 5 and 90%+ credibility"
+              title="Requires 5+ merged PRs with token score >= 5 and 80%+ credibility"
               arrow
               placement="bottom"
               slotProps={tooltipSlotProps}
