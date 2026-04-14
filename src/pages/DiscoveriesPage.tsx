@@ -14,7 +14,7 @@ const DiscoveriesPage: React.FC = () => {
   const isLoadingMinerStats = allMinerStatsQuery?.isLoading;
 
   const handleSelectMiner = (githubId: string) => {
-    navigate(`/discoveries/details?githubId=${githubId}`, {
+    navigate(`/miners/details?githubId=${githubId}&mode=issues`, {
       state: { backLabel: 'Back to Discoveries' },
     });
   };
@@ -28,8 +28,10 @@ const DiscoveriesPage: React.FC = () => {
       author: stat.githubUsername || undefined,
       totalScore: Number(stat.issueDiscoveryScore) || 0,
       baseTotalScore: Number(stat.baseTotalScore) || 0,
-      totalPRs:
+      totalPRs: Number(stat.totalPrs) || 0,
+      totalIssues:
         (Number(stat.totalSolvedIssues) || 0) +
+        (Number(stat.totalOpenIssues) || 0) +
         (Number(stat.totalClosedIssues) || 0),
       linesChanged: Number(stat.totalNodesScored) || 0,
       linesAdded: Number(stat.totalAdditions) || 0,
@@ -39,10 +41,12 @@ const DiscoveriesPage: React.FC = () => {
       credibility: Number(stat.issueCredibility) || 0,
       isEligible: stat.isIssueEligible ?? false,
       usdPerDay: Number(stat.usdPerDay) || 0,
-      // Issue counts mapped to PR status fields
-      totalMergedPrs: Number(stat.totalSolvedIssues) || 0,
-      totalOpenPrs: Number(stat.totalOpenIssues) || 0,
-      totalClosedPrs: Number(stat.totalClosedIssues) || 0,
+      totalMergedPrs: Number(stat.totalMergedPrs) || 0,
+      totalOpenPrs: Number(stat.totalOpenPrs) || 0,
+      totalClosedPrs: Number(stat.totalClosedPrs) || 0,
+      totalSolvedIssues: Number(stat.totalSolvedIssues) || 0,
+      totalOpenIssues: Number(stat.totalOpenIssues) || 0,
+      totalClosedIssues: Number(stat.totalClosedIssues) || 0,
     }));
   }, [allMinersStats]);
 
@@ -122,7 +126,7 @@ const DiscoveriesPage: React.FC = () => {
               miners={sortedMinerStats}
               isLoading={isLoadingMinerStats}
               onSelectMiner={handleSelectMiner}
-              activityLabel="Issues"
+              variant="discoveries"
             />
           </Box>
         </Box>

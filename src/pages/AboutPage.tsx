@@ -174,7 +174,8 @@ export const AboutContent: React.FC = () => {
                     height: '100%',
                     borderRadius: 4,
                     background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    border: '1px solid',
+                    borderColor: 'border.subtle',
                   }}
                 >
                   <Box sx={{ color: 'secondary.main', mb: 2 }}>{card.icon}</Box>

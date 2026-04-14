@@ -8,10 +8,14 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useHistoricalTrend } from '../../api';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
 
-dayjs.extend(utc);
+const formatUtcYmd = (iso: string): string => {
+  const d = new Date(iso);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+};
 
 const CommitTrendChart: React.FC = () => {
   const theme = useTheme();
@@ -19,11 +23,9 @@ const CommitTrendChart: React.FC = () => {
 
   const { data } = useHistoricalTrend();
 
-  // Filter data to only include the last 10 days (using UTC)
+  const tenDaysAgoMs = Date.now() - 10 * 24 * 60 * 60 * 1000;
   const filteredData = Array.isArray(data)
-    ? data.filter((item) =>
-        dayjs.utc(item.date).isAfter(dayjs.utc().subtract(10, 'day')),
-      )
+    ? data.filter((item) => new Date(item.date).getTime() > tenDaysAgoMs)
     : [];
 
   const option = {
@@ -34,11 +36,7 @@ const CommitTrendChart: React.FC = () => {
       trigger: 'axis',
       formatter: (params: any) => {
         const data = params[0];
-        return `${dayjs
-          .utc(data.axisValue)
-          .format(
-            'YYYY-MM-DD',
-          )} UTC<br/>Lines Committed: ${data.value.toLocaleString()}`;
+        return `${formatUtcYmd(data.axisValue)} UTC<br/>Lines Committed: ${data.value.toLocaleString()}`;
       },
       backgroundColor: 'rgba(18, 18, 20, 0.95)',
       borderColor: 'rgba(255, 255, 255, 0.1)',
@@ -66,8 +64,8 @@ const CommitTrendChart: React.FC = () => {
         fontFamily: '"JetBrains Mono", monospace',
         fontSize: isMobile ? 10 : 11,
         formatter: (value: string) => {
-          const date = dayjs.utc(value);
-          return `${date.month() + 1}/${date.date()}`;
+          const date = new Date(value);
+          return `${date.getUTCMonth() + 1}/${date.getUTCDate()}`;
         },
         margin: isMobile ? 8 : 12,
       },

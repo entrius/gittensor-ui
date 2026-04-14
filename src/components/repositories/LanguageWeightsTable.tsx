@@ -116,7 +116,7 @@ const LanguageWeightsTable: React.FC = () => {
   const getChartOption = () => {
     const chartData = filteredAndSortedLanguages;
     const textColor = 'rgba(255, 255, 255, 0.85)';
-    const gridColor = 'rgba(255, 255, 255, 0.08)';
+    const gridColor = theme.palette.border.subtle;
 
     const xAxisData = chartData.map((item) => item.extension);
     const seriesData = chartData.map((item) => {

@@ -7,6 +7,7 @@ export interface MinerStats {
   totalScore: number;
   baseTotalScore: number;
   totalPRs: number;
+  totalIssues?: number;
   linesChanged: number;
   linesAdded: number;
   linesDeleted: number;
@@ -19,12 +20,18 @@ export interface MinerStats {
   totalMergedPrs?: number;
   totalOpenPrs?: number;
   totalClosedPrs?: number;
+  totalSolvedIssues?: number;
+  totalOpenIssues?: number;
+  totalClosedIssues?: number;
 }
+
+export type LeaderboardVariant = 'oss' | 'discoveries';
 
 export type SortOption =
   | 'totalScore'
   | 'usdPerDay'
   | 'totalPRs'
+  | 'totalIssues'
   | 'credibility';
 
 export const FONTS = {

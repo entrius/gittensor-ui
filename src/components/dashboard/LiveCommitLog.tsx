@@ -14,10 +14,31 @@ import {
 import { useNavigate } from 'react-router-dom';
 import theme from '../../theme';
 import { useInfiniteCommitLog, usePullRequestDetails } from '../../api';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
 
-dayjs.extend(utc);
+const MONTH_SHORT = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+const formatUtcTimestamp = (iso: string): string => {
+  const d = new Date(iso);
+  const month = MONTH_SHORT[d.getUTCMonth()];
+  const day = d.getUTCDate();
+  const hh = String(d.getUTCHours()).padStart(2, '0');
+  const mm = String(d.getUTCMinutes()).padStart(2, '0');
+  const ss = String(d.getUTCSeconds()).padStart(2, '0');
+  return `${month} ${day}, ${hh}:${mm}:${ss} UTC`;
+};
 
 interface CommitLogEntry {
   pullRequestNumber: number;
@@ -74,7 +95,7 @@ const CommitLogItem: React.FC<{
     entry.mergedAt ||
     entry.prCreatedAt;
   const timestamp = timestampRaw
-    ? dayjs(timestampRaw).utc().format('MMM D, HH:mm:ss UTC')
+    ? formatUtcTimestamp(timestampRaw)
     : 'Loading...';
 
   const content = (

@@ -17,16 +17,7 @@ import {
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { IssueSubmission } from '../../api/models/Issues';
 import { STATUS_COLORS } from '../../theme';
-
-const formatDate = (dateStr: string | null | undefined): string => {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
+import { formatDate } from '../../utils/format';
 
 const headerCellSx = {
   fontFamily: '"JetBrains Mono", monospace',
