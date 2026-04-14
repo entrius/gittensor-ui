@@ -155,7 +155,10 @@ const getInsightStyle = (type: InsightType) => {
   }
 };
 
-const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({ githubId, scoringDocsUrl }) => {
+const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
+  githubId,
+  scoringDocsUrl,
+}) => {
   const { data: minerStats } = useMinerStats(githubId);
   const { data: generalConfig } = useGeneralConfig();
 
@@ -287,7 +290,9 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({ githubId, scoring
         Learn more about scoring in the{' '}
         <Typography
           component="a"
-          href={scoringDocsUrl ?? 'https://docs.gittensor.io/oss-contributions.html'}
+          href={
+            scoringDocsUrl ?? 'https://docs.gittensor.io/oss-contributions.html'
+          }
           target="_blank"
           rel="noopener noreferrer"
           sx={{

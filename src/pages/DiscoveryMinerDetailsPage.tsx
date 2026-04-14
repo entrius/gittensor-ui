@@ -110,7 +110,10 @@ const DiscoveryMinerDetailsPage: React.FC = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {activeTab === 'overview' && (
               <>
-                <MinerInsightsCard githubId={githubId} scoringDocsUrl="https://docs.gittensor.io/issue-discovery.html" />
+                <MinerInsightsCard
+                  githubId={githubId}
+                  scoringDocsUrl="https://docs.gittensor.io/issue-discovery.html"
+                />
                 <MinerScoreBreakdown githubId={githubId} />
               </>
             )}
