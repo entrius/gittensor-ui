@@ -129,7 +129,7 @@ const RepositoryContributorsTable: React.FC<
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: '32px 1fr 48px 75px',
+          gridTemplateColumns: '32px minmax(0, 1fr) 48px 75px',
           gap: 1,
           px: 1.5,
           py: 1,
@@ -174,7 +174,7 @@ const RepositoryContributorsTable: React.FC<
               key={contributor.githubId}
               sx={{
                 display: 'grid',
-                gridTemplateColumns: '32px 1fr 48px 75px',
+                gridTemplateColumns: '32px minmax(0, 1fr) 48px 75px',
                 gap: 1,
                 px: 1.5,
                 py: 1,

@@ -522,10 +522,11 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'flex-start',
+                        gap: 1,
                         mb: 1,
                       }}
                     >
-                      <Box>
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
                         <Typography
                           variant="h4"
                           sx={{
@@ -544,14 +545,19 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                             color: STATUS_COLORS.open,
                             fontSize: '12px',
                             fontWeight: 600,
-                            whiteSpace: 'nowrap',
+                            lineHeight: 1.3,
                           }}
                         >
                           Good First Issues
                         </Typography>
                       </Box>
                       <LaunchIcon
-                        sx={{ fontSize: 16, color: STATUS_COLORS.open, mt: 1 }}
+                        sx={{
+                          fontSize: 16,
+                          color: STATUS_COLORS.open,
+                          mt: 1,
+                          flexShrink: 0,
+                        }}
                       />
                     </Box>
                     <Typography
@@ -593,10 +599,11 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'flex-start',
+                        gap: 1,
                         mb: 1,
                       }}
                     >
-                      <Box>
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
                         <Typography
                           variant="h4"
                           sx={{
@@ -613,14 +620,19 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                             color: STATUS_COLORS.open,
                             fontSize: '12px',
                             fontWeight: 600,
-                            whiteSpace: 'nowrap',
+                            lineHeight: 1.3,
                           }}
                         >
                           Help Wanted
                         </Typography>
                       </Box>
                       <LaunchIcon
-                        sx={{ fontSize: 16, color: STATUS_COLORS.open, mt: 1 }}
+                        sx={{
+                          fontSize: 16,
+                          color: STATUS_COLORS.open,
+                          mt: 1,
+                          flexShrink: 0,
+                        }}
                       />
                     </Box>
                     <Typography
