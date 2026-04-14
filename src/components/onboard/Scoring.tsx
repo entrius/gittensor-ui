@@ -21,22 +21,30 @@ export const Scoring: React.FC = () => (
       {[
         {
           title: 'Merge PRs',
-          desc: "Focus on merging code changes to high weighted repositories. Your score's main factor is determined by the weight of the repository.",
+          desc: 'Target high-weight repositories like Bitcoin, Ethereum, or PyTorch. Contribution scores decay over time — merge frequently and promptly. Requires at least 5 valid merged PRs to qualify.',
         },
         {
-          title: 'Solve Issues',
-          desc: "Link your PR to the issue it resolves (e.g. 'Closes #123'). Resolving older issues applies a higher bonus multiplier.",
+          title: 'Issue Multiplier',
+          desc: "Link your PR to the issue it resolves (e.g. 'Closes #123') for a 1.33× score boost — or 1.66× if the issue was opened by a project maintainer.",
         },
         {
           title: 'Code Quality',
-          desc: 'Write meaningful code contributions. Token-based scoring rewards structural code changes over simple text or config edits.',
+          desc: 'Write meaningful code. AST-based token scoring rewards structural changes (functions, classes, logic) over simple text, configs, or whitespace edits.',
         },
         {
           title: 'Credibility',
-          desc: 'Keep your merge rate high. A strong ratio of merged vs. closed PRs increases your credibility. You need at least 80% credibility to become eligible for rewards.',
+          desc: 'Keep your merge rate high. You need at least 80% credibility (merged / total, with one closed-PR mulligan) and 5 valid merged PRs to become eligible.',
+        },
+        {
+          title: 'Issue Discovery',
+          desc: 'Earn from a dedicated 30% emission pool by finding open issues that others later solve with a merged PR. Requires 7+ solved issues and 80% issue credibility to qualify.',
+        },
+        {
+          title: 'Pioneer Bonus',
+          desc: "Be the first quality contributor to a repository and earn a pioneer dividend — a percentage of every follower's score, up to doubling your own rewards.",
         },
       ].map((item, index) => (
-        <Grid item xs={12} md={3} key={index}>
+        <Grid item xs={12} sm={6} md={4} key={index}>
           <Box
             sx={{
               height: '100%',

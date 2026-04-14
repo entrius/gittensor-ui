@@ -326,9 +326,9 @@ uv pip install -e .`}</CodeBlock>
             color="text.secondary"
             sx={{ lineHeight: 1.7 }}
           >
-            You're all set! Open PRs to recognized repositories and your scores
-            are calculated when PRs are merged. No miner process needs to be
-            running — the validator scoring round runs every 2 hours.
+            You're all set! Start contributing to whitelisted repositories — no
+            miner process needs to run. Validators score your merged PRs
+            automatically every 2 hours.
           </Typography>
           <Box
             component="ul"
@@ -344,8 +344,12 @@ uv pip install -e .`}</CodeBlock>
               <strong>Repositories</strong> tab
             </li>
             <li>
-              Eligibility requires 5 merged PRs with token score &ge; 5, 80%
-              credibility, and a 180-day-old GitHub account
+              OSS eligibility: 5 valid merged PRs (token score &ge; 5) and 80%
+              credibility (merged / total, with one closed-PR mulligan)
+            </li>
+            <li>
+              Issue Discovery eligibility: 7+ solved issues and 80% issue
+              credibility
             </li>
             <li>
               See the <strong>Scoring</strong> tab for how rewards are
