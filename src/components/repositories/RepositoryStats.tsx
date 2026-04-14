@@ -288,11 +288,12 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
                     fontWeight: 500,
                   }}
                 >
-                  {(
-                    parseFloat(bountySummary.totalPaidOut) || 0
-                  ).toLocaleString(undefined, {
-                    maximumFractionDigits: 2,
-                  })}{' '}
+                  {(parseFloat(bountySummary.totalPaidOut) || 0).toLocaleString(
+                    undefined,
+                    {
+                      maximumFractionDigits: 2,
+                    },
+                  )}{' '}
                   α
                 </Typography>
               </Box>
