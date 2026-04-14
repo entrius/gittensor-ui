@@ -40,7 +40,11 @@ import ReactECharts from 'echarts-for-react';
 import { useSearchParams } from 'react-router-dom';
 import { truncateText } from '../../utils';
 import { RankIcon } from './RankIcon';
-import { getRepositoryOwnerAvatarBackground } from './types';
+import {
+  getRepositoryOwnerAvatarBackground,
+  headerCellStyle,
+  bodyCellStyle,
+} from './types';
 import {
   CHART_COLORS,
   STATUS_COLORS,
@@ -926,31 +930,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       />
     </Card>
   );
-};
-
-const headerCellStyle = {
-  backgroundColor: 'surface.tooltip',
-  backdropFilter: 'blur(8px)',
-  color: 'text.primary',
-  fontFamily: '"JetBrains Mono", monospace',
-  fontWeight: 500,
-  fontSize: '0.75rem',
-  borderBottom: '1px solid',
-  borderColor: 'border.light',
-  height: '48px',
-  py: 1,
-  boxSizing: 'border-box' as const,
-};
-
-const bodyCellStyle = {
-  color: 'text.primary',
-  fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: '1px solid',
-  borderColor: 'border.light',
-  fontSize: '0.75rem',
-  py: 0.75,
-  height: '52px',
-  boxSizing: 'border-box' as const,
 };
 
 export default TopRepositoriesTable;
