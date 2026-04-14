@@ -133,6 +133,10 @@ declare module '@mui/material/styles' {
       elevated: string;
       tooltip: string;
     };
+    sidebar: {
+      divider: string;
+      versionText: string;
+    };
   }
 
   interface PaletteOptions {
@@ -180,6 +184,10 @@ declare module '@mui/material/styles' {
       light: string;
       elevated: string;
       tooltip: string;
+    };
+    sidebar?: {
+      divider: string;
+      versionText: string;
     };
   }
 }
@@ -289,6 +297,10 @@ const theme = createTheme({
       light: 'rgba(255, 255, 255, 0.05)',
       elevated: '#161b22',
       tooltip: 'rgba(30, 30, 30, 0.95)',
+    },
+    sidebar: {
+      divider: '#3d3d3d',
+      versionText: '#888888',
     },
   },
   typography: {
