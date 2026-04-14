@@ -1,10 +1,11 @@
 import React from 'react';
-import { Box, Typography, Avatar, Paper, Link, Chip } from '@mui/material';
+import { Box, Avatar, Paper, Link } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { type IssueDetails } from '../../api/models/Issues';
+import { ConversationMetaRow } from '../common';
 import { STATUS_COLORS } from '../../theme';
 
 import 'github-markdown-css/github-markdown-dark.css';
@@ -161,76 +162,18 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                 zIndex: 1, // Ensure above the arrow pseudo-element's main body
               }}
             >
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  flexWrap: 'wrap',
+              <ConversationMetaRow
+                login={item.user.login}
+                htmlUrl={item.user.htmlUrl}
+                createdAt={item.createdAt}
+                authorAssociation={item.authorAssociation}
+                isDescription={item.isDescription}
+                colors={{
+                  fgDefault: colors.fg.default,
+                  fgMuted: colors.fg.muted,
+                  borderDefault: colors.border.default,
                 }}
-              >
-                <Link
-                  href={item.user.htmlUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  sx={{
-                    color: colors.fg.default,
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                    '&:hover': {
-                      textDecoration: 'underline',
-                      color: colors.accent.fg,
-                    },
-                  }}
-                >
-                  {item.user.login}
-                </Link>
-                <Typography
-                  component="span"
-                  sx={{ fontSize: 'inherit', color: 'inherit' }}
-                >
-                  commented
-                </Typography>
-                <Typography
-                  component="span"
-                  sx={{ fontSize: 'inherit', color: 'inherit' }}
-                >
-                  {new Date(item.createdAt).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </Typography>
-              </Box>
-
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {/* Author Association Badge */}
-                {item.authorAssociation &&
-                  item.authorAssociation !== 'NONE' && (
-                    <Chip
-                      variant="status"
-                      label={item.authorAssociation
-                        .toLowerCase()
-                        .replace('_', ' ')}
-                      sx={{
-                        color: colors.fg.muted,
-                        borderColor: colors.border.default,
-                        textTransform: 'capitalize',
-                      }}
-                    />
-                  )}
-                {/* Description Badge - Special styling */}
-                {item.isDescription && (
-                  <Chip
-                    variant="status"
-                    label="Description"
-                    sx={{
-                      color: STATUS_COLORS.info,
-                      borderColor: 'rgba(56, 139, 253, 0.4)',
-                    }}
-                  />
-                )}
-              </Box>
+              />
             </Box>
 
             {/* Markdown Content */}
