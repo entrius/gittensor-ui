@@ -26,7 +26,7 @@ const PRDetailsPage: React.FC = () => {
   // Call hook unconditionally (React rules of hooks)
   const { data: prDetails, isLoading } = usePullRequestDetails(
     repository || '',
-    pullRequestNumber ? parseInt(pullRequestNumber) : 0,
+    pullRequestNumber ? parseInt(pullRequestNumber, 10) : 0,
   );
 
   // If no repo or PR number is provided, redirect to miners page
@@ -102,7 +102,7 @@ const PRDetailsPage: React.FC = () => {
             {/* Header always visible */}
             <PRHeader
               repository={repository}
-              pullRequestNumber={parseInt(pullRequestNumber)}
+              pullRequestNumber={parseInt(pullRequestNumber, 10)}
               prDetails={prDetails}
             />
 
@@ -160,20 +160,20 @@ const PRDetailsPage: React.FC = () => {
               {tabValue === 0 && (
                 <PRDetailsCard
                   repository={repository}
-                  pullRequestNumber={parseInt(pullRequestNumber)}
+                  pullRequestNumber={parseInt(pullRequestNumber, 10)}
                   hideHeader={true}
                 />
               )}
               {tabValue === 1 && (
                 <PRFilesChanged
                   repository={repository}
-                  pullRequestNumber={parseInt(pullRequestNumber)}
+                  pullRequestNumber={parseInt(pullRequestNumber, 10)}
                 />
               )}
               {tabValue === 2 && (
                 <PRComments
                   repository={repository}
-                  pullRequestNumber={parseInt(pullRequestNumber)}
+                  pullRequestNumber={parseInt(pullRequestNumber, 10)}
                   prDetails={prDetails}
                 />
               )}

@@ -109,7 +109,7 @@ const CommitTrendChart: React.FC = () => {
         type: 'line',
         data: filteredData?.map((item) =>
           typeof item.linesCommitted === 'string'
-            ? parseInt(item.linesCommitted)
+            ? parseInt(item.linesCommitted, 10)
             : item.linesCommitted,
         ),
         smooth: true,
