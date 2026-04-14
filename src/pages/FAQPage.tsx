@@ -130,7 +130,7 @@ export const FAQContent: React.FC = () => (
           <>
             You must contribute to an incentivized repository listed in our
             master list. To become eligible for rewards, you need at least 5
-            merged PRs with a token score of 5 or higher, 75% credibility, and a
+            merged PRs with a token score of 5 or higher, 80% credibility, and a
             GitHub account that is at least 180 days old. Check the{' '}
             <a
               href="https://docs.gittensor.io/oss-contributions.html"
