@@ -63,6 +63,21 @@ export const scrollbarSx = {
   },
 } as const;
 
+/** Git-style contribution calendar levels (empty → most active) */
+export const CONTRIBUTION_HEATMAP_SCALE = [
+  '#161b22',
+  '#0e4429',
+  '#006d32',
+  '#26a641',
+  '#39d353',
+] as const;
+
+/** Known org avatars on GitHub that need a non-transparent backdrop */
+export const REPO_OWNER_AVATAR_BACKGROUNDS = {
+  opentensor: '#ffffff',
+  bitcoin: '#F7931A',
+} as const;
+
 export const TEXT_OPACITY = {
   primary: 1,
   secondary: 0.7,
