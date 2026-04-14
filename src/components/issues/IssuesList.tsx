@@ -18,7 +18,7 @@ import {
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueBounty } from '../../api/models/Issues';
 import { useStats } from '../../api';
-import { formatTokenAmount } from '../../utils/format';
+import { formatTokenAmount, formatDate } from '../../utils/format';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { STATUS_COLORS } from '../../theme';
 import BountyProgress from './BountyProgress';
@@ -32,18 +32,6 @@ interface IssuesListProps {
   onSelectIssue?: (id: number) => void;
 }
 
-/**
- * Format date for display
- */
-const formatDate = (dateStr: string | null | undefined): string => {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
 
 /**
  * Truncate wallet address for display
