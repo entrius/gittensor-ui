@@ -317,26 +317,20 @@ const RepositoryWeightsTable: React.FC = () => {
     <Box ref={containerRef}>
       <Box
         sx={{
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 2,
+          mb: 3,
         }}
       >
-        <Box sx={{ p: 2, pb: 1 }}>
+        <Box sx={{ flex: 1 }}>
           <Typography variant="body2" color="text.secondary">
             Contribute to any of these projects to gain score and earn emissions
           </Typography>
         </Box>
 
-        <Box
-          sx={{
-            px: 2,
-            pb: 2,
-            display: 'flex',
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            gap: 2,
-            flexWrap: 'wrap',
-          }}
-        >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
             <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
               <IconButton
@@ -440,7 +434,6 @@ const RepositoryWeightsTable: React.FC = () => {
             />
           </Box>
         </Box>
-      </Box>
 
       <Collapse in={showChart}>
         <Box
