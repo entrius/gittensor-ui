@@ -5,6 +5,8 @@ export { default as ExplorerFilterButton } from './ExplorerFilterButton';
 export { default as MinerActivity } from './MinerActivity';
 export { default as MinerFocusCard } from './MinerFocusCard';
 export { default as MinerInsightsCard } from './MinerInsightsCard';
+export { default as MinerIssueInsightsCard } from './MinerIssueInsightsCard';
+export { default as MinerIssueScoreBreakdown } from './MinerIssueScoreBreakdown';
 export { default as MinerPRsTable } from './MinerPRsTable';
 export { default as MinerRepositoriesTable } from './MinerRepositoriesTable';
 export { default as MinerScoreBreakdown } from './MinerScoreBreakdown';
