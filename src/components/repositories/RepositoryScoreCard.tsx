@@ -9,7 +9,7 @@ import {
   alpha,
 } from '@mui/material';
 import { useAllPrs } from '../../api';
-import { RANK_COLORS, STATUS_COLORS, BORDER_SUBTLE } from '../../theme';
+import { RANK_COLORS, STATUS_COLORS } from '../../theme';
 
 interface RepositoryScoreCardProps {
   repositoryFullName: string;
@@ -164,7 +164,8 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
         sx={{
           backgroundColor: 'rgba(255, 255, 255, 0.02)',
           borderRadius: '8px',
-          border: `1px solid ${BORDER_SUBTLE}`,
+          border: '1px solid',
+          borderColor: 'border.subtle',
           p: 4,
         }}
         elevation={0}

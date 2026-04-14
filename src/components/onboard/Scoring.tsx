@@ -1,7 +1,6 @@
 import React from 'react';
 import { Box, Typography, Button, Grid } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { BORDER_SUBTLE } from '../../theme';
 
 export const Scoring: React.FC = () => (
   <Box sx={{ maxWidth: 1000, mx: 'auto', px: { xs: 2, md: 4 }, py: 4 }}>
@@ -52,7 +51,8 @@ export const Scoring: React.FC = () => (
               p: 3,
               borderRadius: 4,
               background: 'rgba(255, 255, 255, 0.02)',
-              border: `1px solid ${BORDER_SUBTLE}`,
+              border: '1px solid',
+              borderColor: 'border.subtle',
               transition: 'transform 0.2s, border-color 0.2s',
               '&:hover': {
                 transform: 'translateY(-4px)',
@@ -93,7 +93,8 @@ export const Scoring: React.FC = () => (
         borderRadius: 4,
         background:
           'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(255,255,255,0.02) 100%)',
-        border: `1px solid ${BORDER_SUBTLE}`,
+        border: '1px solid',
+        borderColor: 'border.subtle',
       }}
     >
       <Typography variant="h5" fontWeight="bold" sx={{ mb: 2, color: '#fff' }}>

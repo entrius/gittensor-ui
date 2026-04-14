@@ -184,7 +184,7 @@ const RepositoryWeightsTable: React.FC = () => {
     const minWeight = weights.length > 0 ? Math.min(...weights) : 0;
 
     const textColor = 'rgba(255, 255, 255, 0.85)';
-    const gridColor = 'rgba(255, 255, 255, 0.08)';
+    const gridColor = theme.palette.border.subtle;
 
     const xAxisData = chartData.map((item) => item.name);
 

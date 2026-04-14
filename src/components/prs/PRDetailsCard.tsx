@@ -12,7 +12,7 @@ import {
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { usePullRequestDetails } from '../../api';
 import { useNavigate } from 'react-router-dom';
-import theme, { RANK_COLORS, STATUS_COLORS, BORDER_SUBTLE } from '../../theme';
+import theme, { RANK_COLORS, STATUS_COLORS } from '../../theme';
 
 interface PRDetailsCardProps {
   repository: string;
@@ -36,7 +36,8 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
         sx={{
           backgroundColor: 'rgba(255, 255, 255, 0.02)',
           borderRadius: '8px',
-          border: `1px solid ${BORDER_SUBTLE}`,
+          border: '1px solid',
+          borderColor: 'border.subtle',
           p: 4,
           textAlign: 'center',
         }}
@@ -53,7 +54,8 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
         sx={{
           backgroundColor: 'rgba(255, 255, 255, 0.02)',
           borderRadius: '8px',
-          border: `1px solid ${BORDER_SUBTLE}`,
+          border: '1px solid',
+          borderColor: 'border.subtle',
           p: 4,
         }}
       >
