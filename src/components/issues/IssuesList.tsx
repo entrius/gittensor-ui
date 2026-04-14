@@ -32,7 +32,6 @@ interface IssuesListProps {
   onSelectIssue?: (id: number) => void;
 }
 
-
 /**
  * Truncate wallet address for display
  */
