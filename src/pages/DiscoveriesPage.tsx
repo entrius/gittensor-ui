@@ -14,7 +14,7 @@ const DiscoveriesPage: React.FC = () => {
   const isLoadingMinerStats = allMinerStatsQuery?.isLoading;
 
   const handleSelectMiner = (githubId: string) => {
-    navigate(`/discoveries/details?githubId=${githubId}`, {
+    navigate(`/miners/details?githubId=${githubId}&mode=issues`, {
       state: { backLabel: 'Back to Discoveries' },
     });
   };
