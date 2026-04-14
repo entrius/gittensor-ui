@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -16,7 +16,7 @@ import {
   GitHub as GitHubIcon,
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMinerPRs, usePullRequestDetails, type CommitLog } from '../../api';
 import { STATUS_COLORS } from '../../theme';
 
@@ -514,9 +514,23 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
   githubId,
 }) => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
-  const [page, setPage] = useState(0);
   const PAGE_SIZE = 10;
+
+  const page = parseInt(searchParams.get('scorePage') || '0', 10);
+  const setPage = useCallback(
+    (updater: number | ((prev: number) => number)) => {
+      const next = typeof updater === 'function' ? updater(page) : updater;
+      setSearchParams((prev) => {
+        const p = new URLSearchParams(prev);
+        if (next === 0) p.delete('scorePage');
+        else p.set('scorePage', String(next));
+        return p;
+      });
+    },
+    [page, setSearchParams],
+  );
 
   const handleNavigateToPr = (repo: string, prNumber: number) => {
     navigate(`/miners/pr?repo=${encodeURIComponent(repo)}&number=${prNumber}`);
