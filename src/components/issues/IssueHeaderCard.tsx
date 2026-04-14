@@ -4,44 +4,8 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueDetails } from '../../api/models/Issues';
 import { useStats } from '../../api';
 import { formatTokenAmount } from '../../utils/format';
+import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { STATUS_COLORS } from '../../theme';
-
-const getStatusBadge = (
-  status: string,
-): { color: string; bgColor: string; text: string } => {
-  switch (status) {
-    case 'registered':
-      return {
-        color: STATUS_COLORS.warning,
-        bgColor: 'rgba(245, 158, 11, 0.15)',
-        text: 'Pending',
-      };
-    case 'active':
-      return {
-        color: STATUS_COLORS.info,
-        bgColor: 'rgba(88, 166, 255, 0.15)',
-        text: 'Available',
-      };
-    case 'completed':
-      return {
-        color: STATUS_COLORS.merged,
-        bgColor: 'rgba(63, 185, 80, 0.15)',
-        text: 'Completed',
-      };
-    case 'cancelled':
-      return {
-        color: STATUS_COLORS.error,
-        bgColor: 'rgba(239, 68, 68, 0.15)',
-        text: 'Cancelled',
-      };
-    default:
-      return {
-        color: STATUS_COLORS.open,
-        bgColor: 'rgba(139, 148, 158, 0.15)',
-        text: status,
-      };
-  }
-};
 
 const formatDate = (dateStr: string | null | undefined): string => {
   if (!dateStr) return '-';
@@ -58,7 +22,7 @@ interface IssueHeaderCardProps {
 }
 
 const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
-  const statusBadge = getStatusBadge(issue.status);
+  const statusBadge = getIssueStatusMeta(issue.status);
   const { data: dashStats } = useStats();
   const taoPrice = dashStats?.prices?.tao?.data?.price ?? 0;
   const alphaPrice = dashStats?.prices?.alpha?.data?.price ?? 0;
