@@ -12,7 +12,6 @@ import {
   TableRow,
   CircularProgress,
   Chip,
-  Button,
   Stack,
 } from '@mui/material';
 import { useRepositoryIssues, useRepoIssues } from '../../api';
@@ -22,6 +21,7 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { formatTokenAmount } from '../../utils/format';
 import { STATUS_COLORS, scrollbarSx } from '../../theme';
+import FilterButton from '../FilterButton';
 
 interface RepositoryIssuesTableProps {
   repositoryFullName: string;
@@ -61,46 +61,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         return dateB - dateA;
       }),
     [filteredIssues],
-  );
-
-  const FilterButton = ({
-    label,
-    value,
-    count,
-    color,
-  }: {
-    label: string;
-    value: typeof filter;
-    count?: number;
-    color: string;
-  }) => (
-    <Button
-      size="small"
-      onClick={() => setFilter(value)}
-      sx={{
-        color: filter === value ? 'text.primary' : 'rgba(255,255,255,0.5)',
-        backgroundColor:
-          filter === value ? 'rgba(255,255,255,0.1)' : 'transparent',
-        borderRadius: '6px',
-        px: 2,
-        minWidth: 'auto',
-        textTransform: 'none',
-        fontFamily: '"JetBrains Mono", monospace',
-        fontSize: '0.8rem',
-        border:
-          filter === value ? `1px solid ${color}` : '1px solid transparent',
-        '&:hover': {
-          backgroundColor: 'rgba(255,255,255,0.15)',
-        },
-      }}
-    >
-      {label}{' '}
-      {count !== undefined && (
-        <span style={{ opacity: 0.6, marginLeft: '6px', fontSize: '0.75rem' }}>
-          {count}
-        </span>
-      )}
-    </Button>
   );
 
   if (isLoading) {
@@ -384,21 +344,27 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
           <Stack direction="row" spacing={1}>
             <FilterButton
               label="All"
-              value="all"
+              isActive={filter === 'all'}
+              onClick={() => setFilter('all')}
               count={counts.total}
               color={STATUS_COLORS.open}
+              activeTextColor="text.primary"
             />
             <FilterButton
               label="Open"
-              value="open"
+              isActive={filter === 'open'}
+              onClick={() => setFilter('open')}
               count={counts.open}
               color={STATUS_COLORS.open}
+              activeTextColor="text.primary"
             />
             <FilterButton
               label="Closed"
-              value="closed"
+              isActive={filter === 'closed'}
+              onClick={() => setFilter('closed')}
               count={counts.closed}
               color={STATUS_COLORS.merged}
+              activeTextColor="text.primary"
             />
           </Stack>
         </Box>

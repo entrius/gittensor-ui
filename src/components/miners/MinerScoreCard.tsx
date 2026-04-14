@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ButtonBase,
   Card,
   Typography,
   Box,
@@ -199,6 +200,88 @@ const StatTile: React.FC<StatTileProps> = ({
     )}
   </Box>
 );
+
+const COPY_FEEDBACK_MS = 1500;
+
+const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
+  const [copied, setCopied] = useState(false);
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+      }
+    },
+    [],
+  );
+
+  if (!hotkey) return null;
+
+  const handleCopy = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('clipboard-unavailable');
+      }
+      await navigator.clipboard.writeText(hotkey);
+      setCopied(true);
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+      }
+      timerRef.current = window.setTimeout(() => {
+        setCopied(false);
+        timerRef.current = null;
+      }, COPY_FEEDBACK_MS);
+    } catch {
+      // The ss58 text remains selectable, so users can copy manually if
+      // the Clipboard API is unavailable (e.g. http:// or a restricted
+      // iframe).
+    }
+  };
+
+  return (
+    <ButtonBase
+      onClick={handleCopy}
+      aria-label={
+        copied ? 'Hotkey copied to clipboard' : 'Copy hotkey to clipboard'
+      }
+      aria-live="polite"
+      disableRipple
+      sx={{
+        display: 'block',
+        textAlign: 'left',
+        borderRadius: '4px',
+        color: (t) =>
+          copied
+            ? t.palette.status.success
+            : alpha(t.palette.text.primary, 0.45),
+        transition: 'color 0.15s ease',
+        '&:hover': {
+          color: (t) =>
+            copied
+              ? t.palette.status.success
+              : alpha(t.palette.text.primary, 0.8),
+        },
+        '&:focus-visible': {
+          outline: (t) => `2px solid ${t.palette.primary.main}`,
+          outlineOffset: '2px',
+        },
+      }}
+    >
+      <Typography
+        component="span"
+        sx={{
+          color: 'inherit',
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: { xs: '0.55rem', sm: '0.65rem' },
+          wordBreak: 'break-all',
+        }}
+      >
+        {copied ? '✓ Copied to clipboard' : hotkey}
+      </Typography>
+    </ButtonBase>
+  );
+};
 
 interface MinerScoreCardProps {
   githubId: string;
@@ -412,16 +495,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             >
               <GitHubIcon sx={{ fontSize: '1rem' }} />@{username}
             </Typography>
-            <Typography
-              sx={{
-                color: (t) => alpha(t.palette.text.primary, 0.45),
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: { xs: '0.55rem', sm: '0.65rem' },
-                wordBreak: 'break-all',
-              }}
-            >
-              {minerStats.hotkey || ''}
-            </Typography>
+            <CopyableHotkey hotkey={minerStats.hotkey || ''} />
           </Box>
 
           {/* Bio / about me */}

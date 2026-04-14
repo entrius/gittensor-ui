@@ -25,7 +25,7 @@ import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import theme, { scrollbarSx } from '../../theme';
 import { useRepoChanges } from '../../api';
-import dayjs from 'dayjs';
+import { format } from 'date-fns';
 
 type SortField =
   | 'repositoryFullName'
@@ -488,9 +488,10 @@ const RepositoriesTable: React.FC = () => {
                 {paginatedRepos.map((repo) => {
                   const isInactive =
                     repo.inactiveAt !== null && repo.inactiveAt !== undefined;
-                  const inactiveDate = isInactive
-                    ? dayjs(repo.inactiveAt).format('DD/MM/YY hh:mm a')
-                    : null;
+                  const inactiveDate =
+                    isInactive && repo.inactiveAt
+                      ? format(new Date(repo.inactiveAt), 'dd/MM/yy hh:mm aaa')
+                      : null;
 
                   return (
                     <Tooltip
