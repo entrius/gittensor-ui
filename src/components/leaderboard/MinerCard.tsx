@@ -487,7 +487,14 @@ const IssueStatsSection: React.FC<IssueStatsSectionProps> = ({
             >
               {label}
             </Typography>
-            <Typography sx={{ fontFamily: FONTS.mono, fontSize: '0.85rem', color, fontWeight: 600 }}>
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.85rem',
+                color,
+                fontWeight: 600,
+              }}
+            >
               {value}
             </Typography>
           </Box>
@@ -496,7 +503,9 @@ const IssueStatsSection: React.FC<IssueStatsSectionProps> = ({
           sx={(theme) => ({
             textAlign: 'right',
             borderLeft: `1px solid ${
-              isEligible ? theme.palette.border.light : theme.palette.border.subtle
+              isEligible
+                ? theme.palette.border.light
+                : theme.palette.border.subtle
             }`,
             pl: 1.5,
           })}
