@@ -119,7 +119,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
                 'Nov',
                 'Dec',
               ],
-              totalCount: `{{count}} contributions in the last ${totalDaysShown} days`,
+              totalCount: `{{count}} contributions in the last ${totalDaysShown} day(s)`,
               weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
             }}
             blockSize={11}

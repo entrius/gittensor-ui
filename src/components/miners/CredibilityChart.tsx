@@ -101,7 +101,7 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
           textAlign: 'center',
         }}
       >
-        PR Success Ratio
+        Credibility
       </Typography>
 
       <Box sx={{ height: '190px', width: '100%', mb: 0.75 }}>

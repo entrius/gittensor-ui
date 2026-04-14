@@ -1,6 +1,10 @@
 // Pull Request API hooks - uses /prs endpoints
 import { useApiQuery } from './ApiUtils';
-import { type CommitLog, type PullRequestDetails } from './models/Dashboard';
+import {
+  type CommitLog,
+  type PullRequestComment,
+  type PullRequestDetails,
+} from './models/Dashboard';
 
 /**
  * Helper to create /prs endpoint queries
@@ -54,7 +58,12 @@ export const usePullRequestDetails = (
  * @param number - Pull request number
  */
 export const usePullRequestComments = (repo: string, number: number) =>
-  usePrsQuery<any[]>('usePullRequestComments', '/comments', undefined, {
-    repo,
-    number,
-  });
+  usePrsQuery<PullRequestComment[]>(
+    'usePullRequestComments',
+    '/comments',
+    undefined,
+    {
+      repo,
+      number,
+    },
+  );

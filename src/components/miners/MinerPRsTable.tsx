@@ -26,13 +26,13 @@ import {
   NavigateNext as NextIcon,
 } from '@mui/icons-material';
 import { useMinerPRs, type CommitLog } from '../../api';
-import { useNavigate } from 'react-router-dom';
 import {
   getPrStatusCounts,
   isClosedUnmergedPr,
   isMergedPr,
   isOpenPr,
 } from '../../utils';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import { type MinerStatusFilter } from '../../utils/ExplorerUtils';
 
@@ -76,13 +76,27 @@ interface MinerPRsTableProps {
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<MinerStatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<PrSortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
-  const [page, setPage] = useState(0);
+
+  const page = parseInt(searchParams.get('prPage') || '0', 10);
+  const setPage = useCallback(
+    (updater: number | ((prev: number) => number)) => {
+      const next = typeof updater === 'function' ? updater(page) : updater;
+      setSearchParams((prev) => {
+        const p = new URLSearchParams(prev);
+        if (next === 0) p.delete('prPage');
+        else p.set('prPage', String(next));
+        return p;
+      });
+    },
+    [page, setSearchParams],
+  );
 
   const handleSort = useCallback(
     (field: PrSortField) => {
@@ -94,7 +108,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       }
       setPage(0);
     },
-    [sortField],
+    [sortField, setPage],
   );
 
   const filteredPRs = useMemo(() => {

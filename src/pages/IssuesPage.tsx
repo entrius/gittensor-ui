@@ -31,7 +31,7 @@ const IssuesPage: React.FC = () => {
   const historyIssuesQuery = useIssues('completed,cancelled');
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    navigate(`/issues/${TAB_SLUGS[newValue]}`, { replace: true });
+    navigate(`/bounties/${TAB_SLUGS[newValue]}`, { replace: true });
   };
 
   return (
@@ -98,7 +98,7 @@ const IssuesPage: React.FC = () => {
                 isLoading={activeIssuesQuery.isLoading}
                 listType="available"
                 onSelectIssue={(id) =>
-                  navigate(`/issues/details?id=${id}`, {
+                  navigate(`/bounties/details?id=${id}`, {
                     state: { backLabel: 'Back to Bounties' },
                   })
                 }
@@ -110,7 +110,7 @@ const IssuesPage: React.FC = () => {
                 isLoading={registeredIssuesQuery.isLoading}
                 listType="pending"
                 onSelectIssue={(id) =>
-                  navigate(`/issues/details?id=${id}`, {
+                  navigate(`/bounties/details?id=${id}`, {
                     state: { backLabel: 'Back to Bounties' },
                   })
                 }
@@ -122,7 +122,7 @@ const IssuesPage: React.FC = () => {
                 isLoading={historyIssuesQuery.isLoading}
                 listType="history"
                 onSelectIssue={(id) =>
-                  navigate(`/issues/details?id=${id}`, {
+                  navigate(`/bounties/details?id=${id}`, {
                     state: { backLabel: 'Back to Bounties' },
                   })
                 }
