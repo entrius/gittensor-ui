@@ -3,20 +3,8 @@ import { Grid, Skeleton, Box } from '@mui/material';
 import { IssuesStats } from '../../api/models/Issues';
 import { useStats } from '../../api';
 import KpiCard from '../dashboard/KpiCard';
-import { formatTokenAmount } from '../../utils/format';
+import { formatAlphaUsdEstimate, formatTokenAmount } from '../../utils/format';
 import { STATUS_COLORS } from '../../theme';
-
-const formatUsd = (
-  alphaAmount: string | undefined,
-  taoPrice: number,
-  alphaPrice: number,
-): string | undefined => {
-  if (!alphaAmount) return undefined;
-  const amount = parseFloat(alphaAmount);
-  if (isNaN(amount) || amount === 0) return undefined;
-  const usd = amount * alphaPrice * taoPrice;
-  return `~${usd.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`;
-};
 
 interface IssueStatsProps {
   stats?: IssuesStats;
@@ -76,7 +64,11 @@ const IssueStats: React.FC<IssueStatsProps> = ({
           value={`${formatTokenAmount(stats?.totalBountyPool)} ل`}
           subtitle={
             hasPrices
-              ? (formatUsd(stats?.totalBountyPool, taoPrice, alphaPrice) ??
+              ? (formatAlphaUsdEstimate(
+                  stats?.totalBountyPool,
+                  taoPrice,
+                  alphaPrice,
+                ) ??
                 'Total available')
               : 'Total available'
           }
@@ -88,7 +80,11 @@ const IssueStats: React.FC<IssueStatsProps> = ({
           value={`${formatTokenAmount(stats?.totalPayouts)} ل`}
           subtitle={
             hasPrices
-              ? (formatUsd(stats?.totalPayouts, taoPrice, alphaPrice) ??
+              ? (formatAlphaUsdEstimate(
+                  stats?.totalPayouts,
+                  taoPrice,
+                  alphaPrice,
+                ) ??
                 'Paid to solvers')
               : 'Paid to solvers'
           }

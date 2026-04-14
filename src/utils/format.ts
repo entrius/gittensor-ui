@@ -33,6 +33,23 @@ export const truncateText = (text: string, maxLength: number): string => {
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 };
 
+export const formatAlphaUsdEstimate = (
+  alphaAmount: string | number | null | undefined,
+  taoPrice: number,
+  alphaPrice: number,
+): string | null => {
+  if (taoPrice <= 0 || alphaPrice <= 0) return null;
+
+  const amount =
+    typeof alphaAmount === 'string' ? parseFloat(alphaAmount) : alphaAmount;
+  if (amount === null || amount === undefined || isNaN(amount) || amount === 0)
+    return null;
+
+  return formatUsdEstimate(amount * alphaPrice * taoPrice, {
+    includeApproxPrefix: true,
+  });
+};
+
 export const formatUsdEstimate = (
   value: number | null | undefined,
   options?: { includeApproxPrefix?: boolean; showZero?: boolean },
