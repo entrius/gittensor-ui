@@ -424,8 +424,8 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
               </Box>
 
               <Grid container spacing={2}>
-                {/* Stat: Open Issues */}
-                <Grid item xs={6} md={3}>
+                {/* Stat: Open Issues — 2×2 from md until lg so link cards have room; 4 across on lg+ */}
+                <Grid item xs={6} md={6} lg={3}>
                   <Box
                     sx={{
                       p: 2,
@@ -461,7 +461,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 </Grid>
 
                 {/* Stat: Forks */}
-                <Grid item xs={6} md={3}>
+                <Grid item xs={6} md={6} lg={3}>
                   <Box
                     sx={{
                       p: 2,
@@ -495,22 +495,26 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 </Grid>
 
                 {/* Action: Good First Issues */}
-                <Grid item xs={12} md={3}>
+                <Grid item xs={6} md={6} lg={3}>
                   <Box
                     component="a"
                     href={`https://github.com/${repositoryFullName}/issues?q=is%3Aissue+is%3Aopen+label%3A"good+first+issue"`}
                     target="_blank"
+                    rel="noopener noreferrer"
                     sx={{
                       p: 2,
                       borderRadius: 1,
                       bgcolor: 'rgba(255,255,255,0.03)',
                       border: '1px solid rgba(255,255,255,0.05)',
                       height: '100%',
+                      minWidth: 0,
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
                       textDecoration: 'none',
                       cursor: 'pointer',
+                      overflow: 'hidden',
+                      boxSizing: 'border-box',
                       transition: 'all 0.2s',
                       '&:hover': {
                         bgcolor: 'rgba(255,255,255,0.08)',
@@ -524,10 +528,12 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'flex-start',
+                        gap: 1,
                         mb: 1,
+                        minWidth: 0,
                       }}
                     >
-                      <Box>
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
                         <Typography
                           variant="h4"
                           sx={{
@@ -546,14 +552,20 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                             color: STATUS_COLORS.open,
                             fontSize: '12px',
                             fontWeight: 600,
-                            whiteSpace: 'nowrap',
+                            lineHeight: 1.25,
+                            wordBreak: 'break-word',
                           }}
                         >
                           Good First Issues
                         </Typography>
                       </Box>
                       <LaunchIcon
-                        sx={{ fontSize: 16, color: STATUS_COLORS.open, mt: 1 }}
+                        sx={{
+                          fontSize: 16,
+                          color: STATUS_COLORS.open,
+                          mt: 0.25,
+                          flexShrink: 0,
+                        }}
                       />
                     </Box>
                     <Typography
@@ -566,22 +578,26 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 </Grid>
 
                 {/* Action: Help Wanted */}
-                <Grid item xs={12} md={3}>
+                <Grid item xs={6} md={6} lg={3}>
                   <Box
                     component="a"
                     href={`https://github.com/${repositoryFullName}/issues?q=is%3Aissue+is%3Aopen+label%3A"help+wanted"`}
                     target="_blank"
+                    rel="noopener noreferrer"
                     sx={{
                       p: 2,
                       borderRadius: 1,
                       bgcolor: 'rgba(255,255,255,0.03)',
                       border: '1px solid rgba(255,255,255,0.05)',
                       height: '100%',
+                      minWidth: 0,
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
                       textDecoration: 'none',
                       cursor: 'pointer',
+                      overflow: 'hidden',
+                      boxSizing: 'border-box',
                       transition: 'all 0.2s',
                       '&:hover': {
                         bgcolor: 'rgba(255,255,255,0.08)',
@@ -595,10 +611,12 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'flex-start',
+                        gap: 1,
                         mb: 1,
+                        minWidth: 0,
                       }}
                     >
-                      <Box>
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
                         <Typography
                           variant="h4"
                           sx={{
@@ -615,14 +633,20 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                             color: STATUS_COLORS.open,
                             fontSize: '12px',
                             fontWeight: 600,
-                            whiteSpace: 'nowrap',
+                            lineHeight: 1.25,
+                            wordBreak: 'break-word',
                           }}
                         >
                           Help Wanted
                         </Typography>
                       </Box>
                       <LaunchIcon
-                        sx={{ fontSize: 16, color: STATUS_COLORS.open, mt: 1 }}
+                        sx={{
+                          fontSize: 16,
+                          color: STATUS_COLORS.open,
+                          mt: 0.25,
+                          flexShrink: 0,
+                        }}
                       />
                     </Box>
                     <Typography

@@ -19,6 +19,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueBounty } from '../../api/models/Issues';
 import { useStats } from '../../api';
 import { formatTokenAmount } from '../../utils/format';
+import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { STATUS_COLORS } from '../../theme';
 import BountyProgress from './BountyProgress';
 
@@ -30,46 +31,6 @@ interface IssuesListProps {
   listType: ListType;
   onSelectIssue?: (id: number) => void;
 }
-
-/**
- * Get status badge color and text
- */
-const getStatusBadge = (
-  status: IssueBounty['status'],
-): { color: string; bgColor: string; text: string } => {
-  switch (status) {
-    case 'registered':
-      return {
-        color: STATUS_COLORS.warning,
-        bgColor: 'rgba(245, 158, 11, 0.15)',
-        text: 'Pending',
-      };
-    case 'active':
-      return {
-        color: STATUS_COLORS.info,
-        bgColor: 'rgba(88, 166, 255, 0.15)',
-        text: 'Available',
-      };
-    case 'completed':
-      return {
-        color: STATUS_COLORS.merged,
-        bgColor: 'rgba(63, 185, 80, 0.15)',
-        text: 'Completed',
-      };
-    case 'cancelled':
-      return {
-        color: STATUS_COLORS.error,
-        bgColor: 'rgba(239, 68, 68, 0.15)',
-        text: 'Cancelled',
-      };
-    default:
-      return {
-        color: STATUS_COLORS.open,
-        bgColor: 'rgba(139, 148, 158, 0.15)',
-        text: status,
-      };
-  }
-};
 
 /**
  * Format date for display
@@ -264,7 +225,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
           </TableHead>
           <TableBody>
             {issues.map((issue) => {
-              const statusBadge = getStatusBadge(issue.status);
+              const statusBadge = getIssueStatusMeta(issue.status);
 
               return (
                 <TableRow

@@ -125,12 +125,15 @@ const RepositoryContributorsTable: React.FC<
         </Typography>
       </Box>
 
-      {/* Header Row */}
+      {/* Header Row — minmax(0,1fr) prevents the miner column from forcing PRS/SCORE off-alignment */}
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: '32px 1fr 48px 75px',
-          gap: 1,
+          gridTemplateColumns:
+            '32px minmax(0, 1fr) minmax(3rem, auto) minmax(4.5rem, auto)',
+          columnGap: 1,
+          rowGap: 0,
+          alignItems: 'center',
           px: 1.5,
           py: 1,
           borderBottom: '1px solid rgba(255,255,255,0.1)',
@@ -147,6 +150,7 @@ const RepositoryContributorsTable: React.FC<
             fontSize: '11px',
             color: 'text.secondary',
             textAlign: 'right',
+            fontVariantNumeric: 'tabular-nums',
           }}
         >
           PRS
@@ -156,6 +160,7 @@ const RepositoryContributorsTable: React.FC<
             fontSize: '11px',
             color: 'text.secondary',
             textAlign: 'right',
+            fontVariantNumeric: 'tabular-nums',
           }}
         >
           SCORE
@@ -174,12 +179,15 @@ const RepositoryContributorsTable: React.FC<
               key={contributor.githubId}
               sx={{
                 display: 'grid',
-                gridTemplateColumns: '32px 1fr 48px 75px',
-                gap: 1,
+                gridTemplateColumns:
+                  '32px minmax(0, 1fr) minmax(3rem, auto) minmax(4.5rem, auto)',
+                columnGap: 1,
+                rowGap: 0,
                 px: 1.5,
                 py: 1,
                 borderBottom: '1px solid rgba(255,255,255,0.05)',
                 alignItems: 'center',
+                minWidth: 0,
                 opacity: isInactive ? 0.5 : 1,
                 '&:hover': {
                   backgroundColor: 'rgba(255,255,255,0.04)',
@@ -274,6 +282,8 @@ const RepositoryContributorsTable: React.FC<
                   fontSize: '12px',
                   color: '#c9d1d9',
                   fontFamily: '"JetBrains Mono", monospace',
+                  fontVariantNumeric: 'tabular-nums',
+                  minWidth: 0,
                 }}
               >
                 {contributor.prs}
@@ -286,6 +296,8 @@ const RepositoryContributorsTable: React.FC<
                   fontSize: '12px',
                   color: '#c9d1d9',
                   fontFamily: '"JetBrains Mono", monospace',
+                  fontVariantNumeric: 'tabular-nums',
+                  minWidth: 0,
                 }}
               >
                 {contributor.score.toFixed(2)}

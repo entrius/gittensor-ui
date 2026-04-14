@@ -10,7 +10,8 @@ import {
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useMinerStats } from '../../api';
-import { CREDIBILITY_COLORS, RISK_COLORS } from '../../theme';
+import { RISK_COLORS } from '../../theme';
+import { credibilityColor } from '../../utils/format';
 
 const tooltipSlotProps = {
   tooltip: {
@@ -107,14 +108,6 @@ const StatTile: React.FC<StatTileProps> = ({
     )}
   </Box>
 );
-
-const credibilityColor = (cred: number) => {
-  if (cred >= 0.9) return CREDIBILITY_COLORS.excellent;
-  if (cred >= 0.7) return CREDIBILITY_COLORS.good;
-  if (cred >= 0.5) return CREDIBILITY_COLORS.moderate;
-  if (cred >= 0.3) return CREDIBILITY_COLORS.low;
-  return CREDIBILITY_COLORS.poor;
-};
 
 interface IssueDiscoveryScoreCardProps {
   githubId: string;
