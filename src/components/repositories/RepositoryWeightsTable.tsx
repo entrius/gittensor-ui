@@ -30,7 +30,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
 import { useReposAndWeights } from '../../api';
-import dayjs from 'dayjs';
+import { format } from 'date-fns';
 
 type SortField = 'owner' | 'name' | 'weight';
 type SortOrder = 'asc' | 'desc';
@@ -581,9 +581,10 @@ const RepositoryWeightsTable: React.FC = () => {
               {paginatedRepos.map((repo) => {
                 const isInactive =
                   repo.inactiveAt !== null && repo.inactiveAt !== undefined;
-                const inactiveDate = isInactive
-                  ? dayjs(repo.inactiveAt).format('DD/MM/YY hh:mm a')
-                  : null;
+                const inactiveDate =
+                  isInactive && repo.inactiveAt
+                    ? format(new Date(repo.inactiveAt), 'dd/MM/yy hh:mm aaa')
+                    : null;
 
                 return (
                   <Tooltip
