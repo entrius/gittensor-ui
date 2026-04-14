@@ -26,7 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
     { label: 'dashboard', path: '/dashboard' },
     { label: 'oss contributions', path: '/top-miners' },
     { label: 'discoveries', path: '/discoveries', badge: 'new' },
-    { label: 'bounties', path: '/issues' },
+    { label: 'bounties', path: '/bounties' },
     { label: 'repositories', path: '/repositories' },
     { label: 'onboard', path: '/onboard' },
   ];
