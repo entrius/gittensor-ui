@@ -225,6 +225,7 @@ const RepositoryDetailsPage: React.FC = () => {
                   startIcon={<GitHubIcon />}
                   href={`https://github.com/${repo}`}
                   target="_blank"
+                  rel="noopener noreferrer"
                   sx={{
                     borderColor: 'rgba(255,255,255,0.2)',
                     color: '#fff',
