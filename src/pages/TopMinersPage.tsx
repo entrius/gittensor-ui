@@ -130,7 +130,7 @@ const TopMinersPage: React.FC = () => {
 
         {/* Right Sidebar - Spacer to match Dashboard Live Activity */}
         <Box
-          sx={{
+          sx={(theme) => ({
             width: showSidebarRight ? sidebarWidth : '100%',
             height: showSidebarRight ? '100%' : 'auto',
             maxHeight: showSidebarRight ? '100%' : 'none', // Allow full height when stacked
@@ -138,7 +138,21 @@ const TopMinersPage: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             gap: 2, // Add gap for spacing when stacked
-          }}
+            overflow: showSidebarRight ? 'auto' : 'visible',
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: 'transparent',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: theme.palette.border.light,
+              borderRadius: '4px',
+              '&:hover': {
+                backgroundColor: theme.palette.border.medium,
+              },
+            },
+          })}
         >
           {/* Render extracted Sidebar Content here */}
           <LeaderboardSidebar

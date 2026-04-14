@@ -122,7 +122,7 @@ const AppLayout: React.FC = () => {
       <Box
         ref={mainRef}
         component="main"
-        sx={{
+        sx={(theme) => ({
           flexGrow: 1,
           maxWidth: '1920px', // Max content width for ultra-wide screens
           width: '100%',
@@ -133,7 +133,23 @@ const AppLayout: React.FC = () => {
           px: { xs: 1, sm: 2, md: 3 },
           pt: isMobile ? '64px' : 0, // Padding for mobile header
           alignItems: 'center',
-        }}
+          // Custom scrollbar to match app theme (WebKit + Firefox)
+          '&::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'transparent',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: theme.palette.border.light,
+            borderRadius: '4px',
+            '&:hover': {
+              backgroundColor: theme.palette.border.medium,
+            },
+          },
+          scrollbarWidth: 'thin',
+          scrollbarColor: `${theme.palette.border.light} transparent`,
+        })}
       >
         <Suspense fallback={<LoadingPage />}>
           {shouldShowGlobalSearch && (
