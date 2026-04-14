@@ -37,6 +37,7 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
 import { useSearchParams } from 'react-router-dom';
 import { RANK_COLORS } from '../../theme';
+import { truncateText } from '../../utils';
 
 interface RepoStats {
   repository: string;
@@ -62,12 +63,6 @@ interface TopRepositoriesTableProps {
   isLoading?: boolean;
   onSelectRepository: (repositoryFullName: string) => void;
 }
-
-// Utility function to truncate text
-const truncateText = (text: string, maxLength: number): string => {
-  if (!text) return '';
-  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-};
 
 const VALID_SORT_COLUMNS: SortColumn[] = [
   'rank',
