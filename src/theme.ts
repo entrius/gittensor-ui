@@ -46,6 +46,16 @@ export const CHART_COLORS = {
   closed: '#ef4444', // Red - closed without merge
 } as const;
 
+const ONBOARD_COLORS = {
+  stepInactiveBg: '#0b0b0b',
+  stepActiveBlueBg: 'rgba(29, 55, 252, 0.15)',
+  stepActiveGoldBg: 'rgba(255, 215, 0, 0.15)',
+  borderMuted: 'rgba(255,255,255,0.1)',
+  textMuted: 'rgba(255, 255, 255, 0.5)',
+  glowGold: '0 0 20px rgba(255, 215, 0, 0.15)',
+  glowBlue: '0 0 15px rgba(29, 55, 252, 0.2)',
+} as const;
+
 export const TEXT_OPACITY = {
   primary: 1,
   secondary: 0.7,
@@ -133,6 +143,15 @@ declare module '@mui/material/styles' {
       elevated: string;
       tooltip: string;
     };
+    onboard: {
+      stepInactiveBg: string;
+      stepActiveBlueBg: string;
+      stepActiveGoldBg: string;
+      borderMuted: string;
+      textMuted: string;
+      glowGold: string;
+      glowBlue: string;
+    };
   }
 
   interface PaletteOptions {
@@ -180,6 +199,15 @@ declare module '@mui/material/styles' {
       light: string;
       elevated: string;
       tooltip: string;
+    };
+    onboard?: {
+      stepInactiveBg: string;
+      stepActiveBlueBg: string;
+      stepActiveGoldBg: string;
+      borderMuted: string;
+      textMuted: string;
+      glowGold: string;
+      glowBlue: string;
     };
   }
 }
@@ -289,6 +317,15 @@ const theme = createTheme({
       light: 'rgba(255, 255, 255, 0.05)',
       elevated: '#161b22',
       tooltip: 'rgba(30, 30, 30, 0.95)',
+    },
+    onboard: {
+      stepInactiveBg: ONBOARD_COLORS.stepInactiveBg,
+      stepActiveBlueBg: ONBOARD_COLORS.stepActiveBlueBg,
+      stepActiveGoldBg: ONBOARD_COLORS.stepActiveGoldBg,
+      borderMuted: ONBOARD_COLORS.borderMuted,
+      textMuted: ONBOARD_COLORS.textMuted,
+      glowGold: ONBOARD_COLORS.glowGold,
+      glowBlue: ONBOARD_COLORS.glowBlue,
     },
   },
   typography: {
