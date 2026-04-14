@@ -5,11 +5,13 @@ import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS, STATUS_COLORS } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
+import { RowLink } from '../common';
 import { type MinerStats, type LeaderboardVariant, FONTS } from './types';
 
 interface MinerCardProps {
   miner: MinerStats;
-  onClick: () => void;
+  href: string;
+  linkState?: unknown;
   variant?: LeaderboardVariant;
 }
 
@@ -17,7 +19,8 @@ const INACTIVE_OPACITY = 0.24;
 
 export const MinerCard: React.FC<MinerCardProps> = ({
   miner,
-  onClick,
+  href,
+  linkState,
   variant = 'oss',
 }) => {
   const muiTheme = useTheme();
@@ -38,44 +41,44 @@ export const MinerCard: React.FC<MinerCardProps> = ({
   const isEligible = miner.isEligible ?? false;
 
   return (
-    <Card
-      onClick={onClick}
-      sx={(theme) => ({
-        p: 1,
-        backgroundColor: isEligible
-          ? theme.palette.background.default
-          : theme.palette.surface.subtle,
-        backdropFilter: 'blur(12px)',
-        border: '1px solid',
-        borderColor: isEligible
-          ? alpha(theme.palette.status.merged, 0.3)
-          : theme.palette.border.subtle,
-        borderRadius: 2,
-        cursor: 'pointer',
-        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
-        position: 'relative',
-        boxShadow: isEligible
-          ? `0 2px 8px ${alpha(theme.palette.background.default, 0.1)}`
-          : 'none',
-        '&:hover': {
+    <RowLink href={href} state={linkState} sx={{ height: '100%' }}>
+      <Card
+        sx={(theme) => ({
+          p: 1,
           backgroundColor: isEligible
-            ? theme.palette.surface.elevated
-            : theme.palette.surface.light,
+            ? theme.palette.background.default
+            : theme.palette.surface.subtle,
+          backdropFilter: 'blur(12px)',
+          border: '1px solid',
           borderColor: isEligible
-            ? alpha(theme.palette.status.merged, 0.5)
+            ? alpha(theme.palette.status.merged, 0.3)
             : theme.palette.border.subtle,
-          transform: isEligible ? 'translateY(-2px)' : 'none',
+          borderRadius: 2,
+          cursor: 'pointer',
+          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+          position: 'relative',
           boxShadow: isEligible
-            ? `0 8px 24px -6px ${alpha(theme.palette.background.default, 0.6)}`
+            ? `0 2px 8px ${alpha(theme.palette.background.default, 0.1)}`
             : 'none',
-        },
-      })}
-      elevation={0}
-    >
+          '&:hover': {
+            backgroundColor: isEligible
+              ? theme.palette.surface.elevated
+              : theme.palette.surface.light,
+            borderColor: isEligible
+              ? alpha(theme.palette.status.merged, 0.5)
+              : theme.palette.border.subtle,
+            transform: isEligible ? 'translateY(-2px)' : 'none',
+            boxShadow: isEligible
+              ? `0 8px 24px -6px ${alpha(theme.palette.background.default, 0.6)}`
+              : 'none',
+          },
+        })}
+        elevation={0}
+      >
       <Box
         sx={{
           display: 'flex',
@@ -310,12 +313,13 @@ export const MinerCard: React.FC<MinerCardProps> = ({
         </Box>
       </Box>
 
-      <MinerCardFooter
-        miner={miner}
-        variant={variant}
-        isEligible={isEligible}
-      />
-    </Card>
+        <MinerCardFooter
+          miner={miner}
+          variant={variant}
+          isEligible={isEligible}
+        />
+      </Card>
+    </RowLink>
   );
 };
 

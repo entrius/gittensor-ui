@@ -123,7 +123,10 @@ const TopMinersPage: React.FC = () => {
             <TopMinersTable
               miners={minerStats}
               isLoading={isLoadingMinerStats}
-              onSelectMiner={handleSelectMiner}
+              getHref={(m) =>
+                `/miners/details?githubId=${encodeURIComponent(m.githubId)}`
+              }
+              linkState={{ backLabel: 'Back to Leaderboard' }}
             />
           </Box>
         </Box>
