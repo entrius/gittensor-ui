@@ -454,7 +454,9 @@ export const GettingStarted: React.FC = () => {
                   borderRadius: '50%',
                   bgcolor:
                     activeStep === index
-                      ? 'rgba(29, 55, 252, 0.15)'
+                      ? index === steps.length - 1
+                        ? 'rgba(255, 215, 0, 0.15)'
+                        : 'rgba(29, 55, 252, 0.15)'
                       : '#0b0b0b',
                   border: '2px solid',
                   borderColor: item.active
