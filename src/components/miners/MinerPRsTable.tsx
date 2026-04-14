@@ -27,6 +27,12 @@ import {
 } from '@mui/icons-material';
 import { useMinerPRs, type CommitLog } from '../../api';
 import { useNavigate } from 'react-router-dom';
+import {
+  getPrStatusCounts,
+  isClosedUnmergedPr,
+  isMergedPr,
+  isOpenPr,
+} from '../../utils';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import { type MinerStatusFilter } from '../../utils/ExplorerUtils';
 
@@ -97,19 +103,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     if (selectedAuthor) {
       filtered = filtered.filter((pr) => pr.author === selectedAuthor);
     }
-    if (statusFilter === 'open') {
-      filtered = filtered.filter(
-        (pr) => pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
-      );
-    } else if (statusFilter === 'merged') {
-      filtered = filtered.filter(
-        (pr) => pr.mergedAt || pr.prState === 'MERGED',
-      );
-    } else if (statusFilter === 'closed') {
-      filtered = filtered.filter(
-        (pr) => pr.prState === 'CLOSED' && !pr.mergedAt,
-      );
-    }
+    if (statusFilter === 'open') filtered = filtered.filter(isOpenPr);
+    else if (statusFilter === 'merged') filtered = filtered.filter(isMergedPr);
+    else if (statusFilter === 'closed')
+      filtered = filtered.filter(isClosedUnmergedPr);
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -157,19 +154,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
 
   const statusCounts = useMemo(() => {
     if (!prs) return { all: 0, open: 0, merged: 0, closed: 0 };
-    return {
-      all: prs.length,
-      open: prs.filter(
-        (pr: CommitLog) =>
-          pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
-      ).length,
-      merged: prs.filter(
-        (pr: CommitLog) => pr.mergedAt || pr.prState === 'MERGED',
-      ).length,
-      closed: prs.filter(
-        (pr: CommitLog) => pr.prState === 'CLOSED' && !pr.mergedAt,
-      ).length,
-    };
+    return getPrStatusCounts(prs);
   }, [prs]);
 
   if (isLoading) {

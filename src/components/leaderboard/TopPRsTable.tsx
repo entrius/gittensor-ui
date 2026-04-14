@@ -33,7 +33,14 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
 import { type CommitLog } from '../../api/models/Dashboard';
-import { formatUsdEstimate, truncateText } from '../../utils';
+import {
+  formatUsdEstimate,
+  getPrStatusCounts,
+  isClosedUnmergedPr,
+  isMergedPr,
+  isOpenPr,
+  truncateText,
+} from '../../utils';
 import theme, { RANK_COLORS, STATUS_COLORS } from '../../theme';
 
 interface TopPRsTableProps {
@@ -72,19 +79,10 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
 
     // Apply status filter
     if (statusFilter !== 'all') {
-      if (statusFilter === 'merged') {
-        filtered = filtered.filter(
-          (pr) => pr.prState === 'MERGED' || !!pr.mergedAt,
-        );
-      } else if (statusFilter === 'open') {
-        filtered = filtered.filter(
-          (pr) => pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
-        );
-      } else if (statusFilter === 'closed') {
-        filtered = filtered.filter(
-          (pr) => pr.prState === 'CLOSED' && !pr.mergedAt,
-        );
-      }
+      if (statusFilter === 'merged') filtered = filtered.filter(isMergedPr);
+      else if (statusFilter === 'open') filtered = filtered.filter(isOpenPr);
+      else if (statusFilter === 'closed')
+        filtered = filtered.filter(isClosedUnmergedPr);
     }
 
     // Apply search filter
@@ -102,16 +100,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
   }, [rankedPRs, searchQuery, statusFilter]);
 
   const statusCounts = useMemo(
-    () => ({
-      all: rankedPRs.length,
-      open: rankedPRs.filter(
-        (pr) => pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
-      ).length,
-      merged: rankedPRs.filter((pr) => pr.prState === 'MERGED' || !!pr.mergedAt)
-        .length,
-      closed: rankedPRs.filter((pr) => pr.prState === 'CLOSED' && !pr.mergedAt)
-        .length,
-    }),
+    () => getPrStatusCounts(rankedPRs),
     [rankedPRs],
   );
 
