@@ -17,6 +17,13 @@ export interface IssueBounty {
   updatedAt: string;
   completedAt: string | null;
   title?: string;
+  discoveryBaseScore?: string;
+  discoveryEarnedScore?: string;
+  discoveryReviewQualityMultiplier?: string;
+  discoveryRepoWeightMultiplier?: string;
+  discoveryTimeDecayMultiplier?: string;
+  discoveryCredibilityMultiplier?: string;
+  discoveryOpenIssueSpamMultiplier?: string;
 }
 
 export interface IssuesStats {

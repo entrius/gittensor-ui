@@ -6,6 +6,8 @@ import {
   BackButton,
   MinerActivity,
   MinerInsightsCard,
+  MinerIssueInsightsCard,
+  MinerIssueScoreBreakdown,
   MinerPRsTable,
   MinerRepositoriesTable,
   MinerScoreBreakdown,
@@ -174,12 +176,18 @@ const MinerDetailsPage: React.FC = () => {
           </Box>
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {activeTab === 'overview' && (
-              <>
-                <MinerInsightsCard githubId={githubId} />
-                <MinerScoreBreakdown githubId={githubId} />
-              </>
-            )}
+            {activeTab === 'overview' &&
+              (viewMode === 'issues' ? (
+                <>
+                  <MinerIssueInsightsCard githubId={githubId} />
+                  <MinerIssueScoreBreakdown githubId={githubId} />
+                </>
+              ) : (
+                <>
+                  <MinerInsightsCard githubId={githubId} />
+                  <MinerScoreBreakdown githubId={githubId} />
+                </>
+              ))}
             {activeTab === 'activity' && <MinerActivity githubId={githubId} />}
             {activeTab === 'pull-requests' && (
               <MinerPRsTable githubId={githubId} />
