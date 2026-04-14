@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '@mui/material';
+import { Button, Box } from '@mui/material';
 
 interface FilterButtonProps {
   label: string;
@@ -16,14 +16,14 @@ const FilterButton: React.FC<FilterButtonProps> = ({
   onClick,
   count,
   color,
-  activeTextColor = '#fff',
+  activeTextColor = 'text.primary',
 }) => (
   <Button
     size="small"
     onClick={onClick}
     sx={{
-      color: isActive ? activeTextColor : 'rgba(255,255,255,0.5)',
-      backgroundColor: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
+      color: isActive ? activeTextColor : 'text.tertiary',
+      backgroundColor: isActive ? 'border.subtle' : 'transparent',
       borderRadius: '6px',
       px: 2,
       minWidth: 'auto',
@@ -32,15 +32,18 @@ const FilterButton: React.FC<FilterButtonProps> = ({
       fontSize: '0.8rem',
       border: isActive ? `1px solid ${color}` : '1px solid transparent',
       '&:hover': {
-        backgroundColor: 'rgba(255,255,255,0.15)',
+        backgroundColor: 'border.light',
       },
     }}
   >
     {label}{' '}
     {count !== undefined && (
-      <span style={{ opacity: 0.6, marginLeft: '6px', fontSize: '0.75rem' }}>
+      <Box
+        component="span"
+        sx={{ opacity: 0.6, ml: '6px', fontSize: '0.75rem' }}
+      >
         {count}
-      </span>
+      </Box>
     )}
   </Button>
 );
