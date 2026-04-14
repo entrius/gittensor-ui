@@ -28,11 +28,7 @@ import {
   useGeneralConfig,
   type MinerEvaluation,
 } from '../../api';
-import {
-  RANK_COLORS,
-  STATUS_COLORS,
-  RISK_COLORS,
-} from '../../theme';
+import { RANK_COLORS, STATUS_COLORS, RISK_COLORS } from '../../theme';
 import {
   calculateDynamicOpenPrThreshold,
   parseNumber,
@@ -54,7 +50,6 @@ const formatTimeAgo = (date: Date): string => {
   if (diffDays === 1) return '1 day ago';
   return `${diffDays} days ago`;
 };
-
 
 const openPrColor = (open: number, threshold: number) => {
   if (open >= threshold) return RISK_COLORS.exceeded;
