@@ -19,6 +19,7 @@ import {
 
 interface MinerInsightsCardProps {
   githubId: string;
+  viewMode?: 'prs' | 'issues';
 }
 
 type InsightType = 'warning' | 'tip' | 'achievement';
@@ -154,9 +155,17 @@ const getInsightStyle = (type: InsightType) => {
   }
 };
 
-const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({ githubId }) => {
+const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
+  githubId,
+  viewMode = 'prs',
+}) => {
   const { data: minerStats } = useMinerStats(githubId);
   const { data: generalConfig } = useGeneralConfig();
+
+  const docsUrl =
+    viewMode === 'issues'
+      ? 'https://docs.gittensor.io/issue-discovery.html'
+      : 'https://docs.gittensor.io/oss-contributions.html';
 
   const insights = useMemo(() => {
     if (!minerStats) return [];
@@ -286,7 +295,7 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({ githubId }) => {
         Learn more about scoring in the{' '}
         <Typography
           component="a"
-          href="https://docs.gittensor.io/oss-contributions.html"
+          href={docsUrl}
           target="_blank"
           rel="noopener noreferrer"
           sx={{
