@@ -129,6 +129,19 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
           p: 3,
           height: '100%',
           overflow: 'auto',
+          '&::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'transparent',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '4px',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            },
+          },
           '& img': { maxWidth: '100%' },
           '& pre': {
             backgroundColor: '#1e1e1e',
@@ -161,9 +174,25 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
       sx={{
         height: '100%',
         width: '100%',
-        overflow: 'auto',
+        overflow: 'hidden',
         backgroundColor: '#1e1e1e',
         fontSize: '14px',
+        '& pre': {
+          '&::-webkit-scrollbar': {
+            width: '8px',
+            height: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'transparent',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '4px',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            },
+          },
+        },
       }}
     >
       <SyntaxHighlighter
