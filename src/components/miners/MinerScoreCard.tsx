@@ -31,6 +31,7 @@ import {
 import { RANK_COLORS, STATUS_COLORS, RISK_COLORS } from '../../theme';
 import {
   calculateDynamicOpenPrThreshold,
+  calculateOpenIssueThreshold,
   parseNumber,
 } from '../../utils/ExplorerUtils';
 import { credibilityColor } from '../../utils/format';
@@ -613,13 +614,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           <Grid item xs={6} sm={4} md={2}>
             <StatTile
               label="Open Risk"
-              value={`${minerStats.totalOpenIssues || 0} / ${Math.min(5 + Math.floor(Number(minerStats.issueTokenScore || 0) / 300), 30)}`}
+              value={`${minerStats.totalOpenIssues || 0} / ${calculateOpenIssueThreshold(minerStats)}`}
               color={openPrColor(
-                Number(minerStats.totalOpenIssues || 0),
-                Math.min(
-                  5 + Math.floor(Number(minerStats.issueTokenScore || 0) / 300),
-                  30,
-                ),
+                parseNumber(minerStats.totalOpenIssues),
+                calculateOpenIssueThreshold(minerStats),
               )}
               tooltip="Open issues count toward spam detection. Exceeding the threshold triggers a full penalty on all discovery scores."
             />
