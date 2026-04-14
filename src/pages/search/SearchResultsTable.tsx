@@ -186,43 +186,43 @@ const SearchResultsTable = <T,>({
                     }
                   : undefined;
                 return (
-                <TableRow
-                  key={getRowKey(item)}
-                  {...linkProps}
-                  onClick={
-                    !href && onRowClick ? () => onRowClick(item) : undefined
-                  }
-                  sx={
-                    href
-                      ? searchLinkRowSx
-                      : onRowClick
-                        ? searchClickableRowSx
-                        : undefined
-                  }
-                >
-                  {columns.map((column) => {
-                    const customCellSx =
-                      typeof column.cellSx === 'function'
-                        ? column.cellSx(item)
-                        : column.cellSx;
+                  <TableRow
+                    key={getRowKey(item)}
+                    {...linkProps}
+                    onClick={
+                      !href && onRowClick ? () => onRowClick(item) : undefined
+                    }
+                    sx={
+                      href
+                        ? searchLinkRowSx
+                        : onRowClick
+                          ? searchClickableRowSx
+                          : undefined
+                    }
+                  >
+                    {columns.map((column) => {
+                      const customCellSx =
+                        typeof column.cellSx === 'function'
+                          ? column.cellSx(item)
+                          : column.cellSx;
 
-                    return (
-                      <TableCell
-                        key={column.key}
-                        align={column.align}
-                        sx={[
-                          searchBodyCellSx,
-                          ...(column.width !== undefined
-                            ? [{ width: column.width }]
-                            : []),
-                          ...(customCellSx ? [customCellSx] : []),
-                        ]}
-                      >
-                        {column.renderCell(item)}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
+                      return (
+                        <TableCell
+                          key={column.key}
+                          align={column.align}
+                          sx={[
+                            searchBodyCellSx,
+                            ...(column.width !== undefined
+                              ? [{ width: column.width }]
+                              : []),
+                            ...(customCellSx ? [customCellSx] : []),
+                          ]}
+                        >
+                          {column.renderCell(item)}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
                 );
               })}
             </TableBody>

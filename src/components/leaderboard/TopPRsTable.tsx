@@ -65,10 +65,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const linkState = backLabel ? { backLabel } : undefined;
-  const navigateTo = (
-    e: React.MouseEvent,
-    href: string,
-  ) => {
+  const navigateTo = (e: React.MouseEvent, href: string) => {
     e.preventDefault();
     e.stopPropagation();
     if (e.metaKey || e.ctrlKey || e.button === 1) {
