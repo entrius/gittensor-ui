@@ -514,7 +514,10 @@ const LeaderboardCharts: React.FC = () => {
               sx={{
                 fontFamily: 'JetBrains Mono',
                 fontSize: '0.8rem',
-                color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
+                color: alpha(
+                  theme.palette.common.white,
+                  TEXT_OPACITY.secondary,
+                ),
                 whiteSpace: 'nowrap',
               }}
             >

@@ -253,7 +253,10 @@ const RepositoriesTable: React.FC = () => {
                 <InputAdornment position="start">
                   <SearchIcon
                     sx={{
-                      color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+                      color: alpha(
+                        theme.palette.common.white,
+                        TEXT_OPACITY.muted,
+                      ),
                       fontSize: '1rem',
                     }}
                   />
@@ -270,7 +273,9 @@ const RepositoriesTable: React.FC = () => {
                 height: '36px',
                 borderRadius: 2,
                 '& fieldset': { borderColor: theme.palette.border.light },
-                '&:hover fieldset': { borderColor: theme.palette.border.medium },
+                '&:hover fieldset': {
+                  borderColor: theme.palette.border.medium,
+                },
                 '&.Mui-focused fieldset': { borderColor: 'primary.main' },
               },
             }}
@@ -297,7 +302,10 @@ const RepositoriesTable: React.FC = () => {
                 <TableRow>
                   <TableCell
                     sx={{
-                      backgroundColor: alpha(theme.palette.background.paper, 0.95),
+                      backgroundColor: alpha(
+                        theme.palette.background.paper,
+                        0.95,
+                      ),
                       backdropFilter: 'blur(8px)',
                       borderBottom: `1px solid ${theme.palette.border.light}`,
                       minWidth: isMobile ? 120 : 180,
@@ -332,7 +340,10 @@ const RepositoriesTable: React.FC = () => {
                     <TableCell
                       align="right"
                       sx={{
-                        backgroundColor: alpha(theme.palette.background.paper, 0.95),
+                        backgroundColor: alpha(
+                          theme.palette.background.paper,
+                          0.95,
+                        ),
                         backdropFilter: 'blur(8px)',
                         borderBottom: `1px solid ${theme.palette.border.light}`,
                         width: '12%',
@@ -364,7 +375,10 @@ const RepositoriesTable: React.FC = () => {
                     <TableCell
                       align="right"
                       sx={{
-                        backgroundColor: alpha(theme.palette.background.paper, 0.95),
+                        backgroundColor: alpha(
+                          theme.palette.background.paper,
+                          0.95,
+                        ),
                         backdropFilter: 'blur(8px)',
                         borderBottom: `1px solid ${theme.palette.border.light}`,
                         width: '15%',
@@ -398,7 +412,10 @@ const RepositoriesTable: React.FC = () => {
                     <TableCell
                       align="right"
                       sx={{
-                        backgroundColor: alpha(theme.palette.background.paper, 0.95),
+                        backgroundColor: alpha(
+                          theme.palette.background.paper,
+                          0.95,
+                        ),
                         backdropFilter: 'blur(8px)',
                         borderBottom: `1px solid ${theme.palette.border.light}`,
                         width: '15%',
@@ -431,7 +448,10 @@ const RepositoriesTable: React.FC = () => {
                   <TableCell
                     align="right"
                     sx={{
-                      backgroundColor: alpha(theme.palette.background.paper, 0.95),
+                      backgroundColor: alpha(
+                        theme.palette.background.paper,
+                        0.95,
+                      ),
                       backdropFilter: 'blur(8px)',
                       borderBottom: `1px solid ${theme.palette.border.light}`,
                       width: isMobile ? '25%' : '15%',
@@ -464,7 +484,10 @@ const RepositoriesTable: React.FC = () => {
                     <TableCell
                       align="right"
                       sx={{
-                        backgroundColor: alpha(theme.palette.background.paper, 0.95),
+                        backgroundColor: alpha(
+                          theme.palette.background.paper,
+                          0.95,
+                        ),
                         backdropFilter: 'blur(8px)',
                         borderBottom: `1px solid ${theme.palette.border.light}`,
                         width: '12%',
