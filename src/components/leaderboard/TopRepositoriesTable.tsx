@@ -30,6 +30,8 @@ import {
   Button,
   Switch,
   FormControlLabel,
+  type SxProps,
+  type Theme,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import BarChartIcon from '@mui/icons-material/BarChart';
@@ -407,7 +409,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     column: SortColumn;
     children: React.ReactNode;
     align?: 'left' | 'right';
-    sx?: any;
+    sx?: SxProps<Theme>;
   }) => (
     <TableCell
       align={align}

@@ -67,9 +67,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
           const nodes = buildFileTree(treeResponse.data.tree);
           setTree(nodes);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to load repository data', err);
-        if (err.response?.status === 403) {
+        if (axios.isAxiosError(err) && err.response?.status === 403) {
           setError('GitHub API rate limit exceeded. Please try again later.');
         } else {
           setError('Failed to load repository structure.');
