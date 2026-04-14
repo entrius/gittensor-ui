@@ -17,6 +17,12 @@ import {
 } from '@mui/material';
 import { useAllPrs } from '../../api';
 import { useNavigate } from 'react-router-dom';
+import {
+  getPrStatusCounts,
+  isClosedUnmergedPr,
+  isMergedPr,
+  isOpenPr,
+} from '../../utils';
 import theme from '../../theme';
 
 interface RepositoryPRsTableProps {
@@ -46,29 +52,15 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
 
   const counts = useMemo(() => {
     if (!allPRs) return { all: 0, open: 0, merged: 0, closed: 0 };
-    return {
-      all: allPRs.length,
-      open: allPRs.filter(
-        (pr) => pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
-      ).length,
-      merged: allPRs.filter((pr) => pr.prState === 'MERGED' || !!pr.mergedAt)
-        .length,
-      closed: allPRs.filter((pr) => pr.prState === 'CLOSED' && !pr.mergedAt)
-        .length,
-    };
+    return getPrStatusCounts(allPRs);
   }, [allPRs]);
 
   const filteredPRs = useMemo(() => {
     if (!allPRs) return [];
     if (filter === 'all') return allPRs;
-    if (filter === 'merged')
-      return allPRs.filter((pr) => pr.prState === 'MERGED' || !!pr.mergedAt);
-    if (filter === 'open')
-      return allPRs.filter(
-        (pr) => pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
-      );
-    if (filter === 'closed')
-      return allPRs.filter((pr) => pr.prState === 'CLOSED' && !pr.mergedAt);
+    if (filter === 'merged') return allPRs.filter(isMergedPr);
+    if (filter === 'open') return allPRs.filter(isOpenPr);
+    if (filter === 'closed') return allPRs.filter(isClosedUnmergedPr);
     return allPRs;
   }, [allPRs, filter]);
 

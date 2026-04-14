@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Alert,
@@ -60,11 +60,27 @@ function CustomTabPanel(props: TabPanelProps) {
   );
 }
 
+/** Synced to the `tab` query param so back navigation from PR details restores the active tab. */
+const REPO_TAB_KEYS = [
+  'readme',
+  'code',
+  'issues',
+  'pull-requests',
+  'contributing',
+  'repo-check',
+] as const;
+
+function tabIndexFromSearchParam(tab: string | null): number {
+  if (!tab) return 0;
+  const idx = REPO_TAB_KEYS.indexOf(tab as (typeof REPO_TAB_KEYS)[number]);
+  return idx >= 0 ? idx : 0;
+}
+
 const RepositoryDetailsPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const repo = searchParams.get('name');
-  const [tabValue, setTabValue] = useState(0);
+  const tabValue = tabIndexFromSearchParam(searchParams.get('tab'));
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
   const { data: bountySummary } = useRepoBountySummary(repo || '');
   const trackedRepo = repos?.find((r) => r.fullName === repo);
@@ -123,7 +139,20 @@ const RepositoryDetailsPage: React.FC = () => {
   }
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (!repo) return next;
+        next.set('name', repo);
+        if (newValue === 0) {
+          next.delete('tab');
+        } else {
+          next.set('tab', REPO_TAB_KEYS[newValue]);
+        }
+        return next;
+      },
+      { replace: true },
+    );
   };
 
   return (

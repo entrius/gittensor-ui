@@ -28,10 +28,94 @@ interface RepositoryCodeBrowserProps {
 
 interface CommitInfo {
   message: string;
-  author: string;
+  /** GitHub REST `User.login` — same handle as `https://github.com/{login}`. */
+  committerLogin: string;
   avatarUrl: string;
   date: string;
   sha: string;
+}
+
+/** GitHub user on a commit (`login` matches the profile URL path). */
+type GhCommitUser = {
+  id?: number;
+  login?: string;
+  avatar_url?: string;
+};
+
+/**
+ * Commits done via the GitHub UI use @web-flow as committer; the human is on `author`.
+ * Showing `web-flow` does not match github.com, which attributes the real user.
+ */
+const MECHANICAL_COMMITTER_LOGINS = new Set(['web-flow']);
+
+function isMechanicalCommitter(login: string | undefined): boolean {
+  if (!login) return false;
+  return MECHANICAL_COMMITTER_LOGINS.has(login.toLowerCase());
+}
+
+async function fetchCommitPayload(
+  repositoryFullName: string,
+  listCommit: {
+    sha: string;
+    commit: unknown;
+    author?: GhCommitUser | null;
+    committer?: GhCommitUser | null;
+  },
+) {
+  let c = listCommit;
+  if (!c.committer?.id && !c.committer?.login && c.sha) {
+    try {
+      const { data } = await axios.get(
+        `https://api.github.com/repos/${repositoryFullName}/commits/${c.sha}`,
+      );
+      c = data;
+    } catch {
+      // keep list payload
+    }
+  }
+  return c;
+}
+
+function resolveGithubCommitAttribution(
+  ghCommitter: GhCommitUser | null | undefined,
+  ghAuthor: GhCommitUser | null | undefined,
+  commit: {
+    committer?: { name?: string; email?: string; date?: string };
+    author?: { name?: string; date?: string };
+  },
+): { login: string; avatarUrl: string } {
+  if (isMechanicalCommitter(ghCommitter?.login) && ghAuthor?.login) {
+    return {
+      login: ghAuthor.login,
+      avatarUrl: ghAuthor.avatar_url || '',
+    };
+  }
+
+  if (ghCommitter?.login) {
+    return {
+      login: ghCommitter.login,
+      avatarUrl: ghCommitter.avatar_url || '',
+    };
+  }
+
+  if (ghAuthor?.login) {
+    return {
+      login: ghAuthor.login,
+      avatarUrl: ghAuthor.avatar_url || '',
+    };
+  }
+
+  if (ghCommitter?.id != null) {
+    return {
+      login: String(ghCommitter.id),
+      avatarUrl: ghCommitter.avatar_url || '',
+    };
+  }
+
+  return {
+    login: commit.committer?.name ?? commit.author?.name ?? '',
+    avatarUrl: '',
+  };
 }
 
 const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
@@ -104,14 +188,28 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
         );
 
         if (response.data && response.data.length > 0) {
-          const c = response.data[0];
+          const listCommit = response.data[0];
+          const c = await fetchCommitPayload(repositoryFullName, listCommit);
+          const commit = c.commit as {
+            message: string;
+            committer?: { name?: string; email?: string; date?: string };
+            author?: { date?: string };
+          };
+          const ghCommitter = c.committer as GhCommitUser | null | undefined;
+          const ghAuthor = c.author as GhCommitUser | null | undefined;
+          const { login: committerLogin, avatarUrl } =
+            resolveGithubCommitAttribution(ghCommitter, ghAuthor, commit);
+          const date =
+            isMechanicalCommitter(ghCommitter?.login) && ghAuthor?.login
+              ? commit.author?.date || commit.committer?.date || ''
+              : commit.committer?.date || commit.author?.date || '';
           setPathCommits((prev) => ({
             ...prev,
             [pathKey]: {
-              message: c.commit.message,
-              author: c.commit.author.name,
-              avatarUrl: c.author?.avatar_url || '',
-              date: c.commit.author.date,
+              message: commit.message,
+              committerLogin,
+              avatarUrl,
+              date,
               sha: c.sha.substring(0, 7),
             },
           }));
@@ -281,7 +379,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {currentCommit.author}
+                  {currentCommit.committerLogin}
                 </Typography>
                 <Typography
                   sx={{
