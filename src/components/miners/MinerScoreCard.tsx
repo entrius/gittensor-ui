@@ -214,9 +214,13 @@ const StatTile: React.FC<StatTileProps> = ({
 
 interface MinerScoreCardProps {
   githubId: string;
+  viewMode?: 'prs' | 'issues';
 }
 
-const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
+const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
+  githubId,
+  viewMode = 'prs',
+}) => {
   const { data: minerStats, isLoading, error } = useMinerStats(githubId);
   const { data: prs } = useMinerPRs(githubId);
   const { data: githubData } = useMinerGithubData(githubId);
@@ -515,72 +519,138 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
         </Box>
       </Box>
 
-      {/* Stat tiles */}
-      <Grid container spacing={1.5}>
-        <Grid item xs={6} sm={4} md={2}>
-          <StatTile
-            label="Score"
-            value={Number(minerStats.totalScore).toFixed(2)}
-            sub={
-              topPrScore != null
-                ? `Best PR: ${topPrScore.toFixed(2)}`
-                : undefined
-            }
-            rank={rankings?.score}
-          />
+      {viewMode === 'prs' ? (
+        <Grid container spacing={1.5}>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Score"
+              value={Number(minerStats.totalScore).toFixed(2)}
+              sub={
+                topPrScore != null
+                  ? `Best PR: ${topPrScore.toFixed(2)}`
+                  : undefined
+              }
+              rank={rankings?.score}
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Credibility"
+              value={`${(cred * 100).toFixed(1)}%`}
+              sub={`${minerStats.totalMergedPrs || 0} merged · ${minerStats.totalClosedPrs || 0} closed`}
+              color={credibilityColor(cred)}
+              tooltip="Ratio of merged PRs to total attempts (merged + closed). Higher credibility means a stronger multiplier on your scores."
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Token Score"
+              value={Number(minerStats.totalTokenScore || 0).toFixed(0)}
+              sub={`${Number(minerStats.totalNodesScored || 0).toLocaleString()} tokens`}
+              tooltip="Sum of token-level scores from merged PRs. Each scored code element (function, class, etc.) contributes to this."
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="PRs"
+              value={String(minerStats.totalPrs || 0)}
+              sub={`${Number((minerStats.totalAdditions ?? 0) + (minerStats.totalDeletions ?? 0)).toLocaleString()} lines`}
+              rank={rankings?.totalPrs}
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Open Risk"
+              value={`${openPrs} / ${openPrThreshold}`}
+              sub={
+                collateral > 0
+                  ? `Collateral: -${collateral.toFixed(2)}`
+                  : 'No collateral'
+              }
+              color={openPrColor(openPrs, openPrThreshold)}
+              tooltip={`Open PRs have collateral deducted from score. Exceeding ${openPrThreshold} triggers a full penalty. Threshold scales with token score (+1 per 300).`}
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Earnings"
+              value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
+              sub={`$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
+              color={
+                (minerStats.usdPerDay ?? 0) > 0
+                  ? STATUS_COLORS.success
+                  : undefined
+              }
+              tooltip="Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus."
+            />
+          </Grid>
         </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <StatTile
-            label="Credibility"
-            value={`${(cred * 100).toFixed(1)}%`}
-            sub={`${minerStats.totalMergedPrs || 0} merged · ${minerStats.totalClosedPrs || 0} closed`}
-            color={credibilityColor(cred)}
-            tooltip="Ratio of merged PRs to total attempts (merged + closed). Higher credibility means a stronger multiplier on your scores."
-          />
+      ) : (
+        <Grid container spacing={1.5}>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Score"
+              value={Number(minerStats.issueDiscoveryScore || 0).toFixed(2)}
+              tooltip="Aggregate score for issue discovery contributions."
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Credibility"
+              value={`${(Number(minerStats.issueCredibility || 0) * 100).toFixed(1)}%`}
+              sub={`${minerStats.totalSolvedIssues || 0} solved · ${minerStats.totalClosedIssues || 0} closed`}
+              color={credibilityColor(Number(minerStats.issueCredibility || 0))}
+              tooltip="Ratio of solved issues to total attempts. Higher credibility means a stronger multiplier on discovery scores."
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Token Score"
+              value={Number(minerStats.issueTokenScore || 0).toFixed(0)}
+              sub={`${minerStats.totalValidSolvedIssues || 0} valid (need 7)`}
+              tooltip="Sum of solving PR token scores across valid issues. Reflects code quality generated by discovered issues."
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Issues"
+              value={String(
+                (minerStats.totalSolvedIssues || 0) +
+                  (minerStats.totalOpenIssues || 0) +
+                  (minerStats.totalClosedIssues || 0),
+              )}
+              sub={`${minerStats.totalSolvedIssues || 0} solved · ${minerStats.totalOpenIssues || 0} open`}
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Open Risk"
+              value={`${minerStats.totalOpenIssues || 0} / ${Math.min(5 + Math.floor(Number(minerStats.issueTokenScore || 0) / 300), 30)}`}
+              color={openPrColor(
+                Number(minerStats.totalOpenIssues || 0),
+                Math.min(
+                  5 + Math.floor(Number(minerStats.issueTokenScore || 0) / 300),
+                  30,
+                ),
+              )}
+              tooltip="Open issues count toward spam detection. Exceeding the threshold triggers a full penalty on all discovery scores."
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Earnings"
+              value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
+              sub={`$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
+              color={
+                (minerStats.usdPerDay ?? 0) > 0
+                  ? STATUS_COLORS.success
+                  : undefined
+              }
+              tooltip="Estimated earnings from issue discovery based on current network incentive distribution."
+            />
+          </Grid>
         </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <StatTile
-            label="Token Score"
-            value={Number(minerStats.totalTokenScore || 0).toFixed(0)}
-            sub={`${Number(minerStats.totalNodesScored || 0).toLocaleString()} tokens`}
-            tooltip="Sum of token-level scores from merged PRs. Each scored code element (function, class, etc.) contributes to this."
-          />
-        </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <StatTile
-            label="PRs"
-            value={String(minerStats.totalPrs || 0)}
-            sub={`${Number((minerStats.totalAdditions ?? 0) + (minerStats.totalDeletions ?? 0)).toLocaleString()} lines`}
-            rank={rankings?.totalPrs}
-          />
-        </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <StatTile
-            label="Open Risk"
-            value={`${openPrs} / ${openPrThreshold}`}
-            sub={
-              collateral > 0
-                ? `Collateral: -${collateral.toFixed(2)}`
-                : 'No collateral'
-            }
-            color={openPrColor(openPrs, openPrThreshold)}
-            tooltip={`Open PRs have collateral deducted from score. Exceeding ${openPrThreshold} triggers a full penalty. Threshold scales with token score (+1 per 300).`}
-          />
-        </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <StatTile
-            label="Earnings"
-            value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
-            sub={`$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
-            color={
-              (minerStats.usdPerDay ?? 0) > 0
-                ? STATUS_COLORS.success
-                : undefined
-            }
-            tooltip="Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus."
-          />
-        </Grid>
-      </Grid>
+      )}
     </Card>
   );
 };
