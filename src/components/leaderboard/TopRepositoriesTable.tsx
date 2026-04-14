@@ -83,8 +83,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Read initial state from URL params, falling back to defaults
-  const urlRows = parseInt(searchParams.get('rows') || '', 10);
-  const urlPage = parseInt(searchParams.get('page') || '', 10);
+  const urlRows = parseInt(searchParams.get('rows') || '0', 10);
+  const urlPage = parseInt(searchParams.get('page') || '0', 10);
   const urlSort = searchParams.get('sort') as SortColumn;
   const urlDir = searchParams.get('dir') as SortDirection;
   const urlSearch = searchParams.get('search') || '';

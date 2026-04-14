@@ -599,7 +599,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                                 color: theme.palette.status.warningOrange,
                               }}
                             >
-                              {parseFloat(pr.collateralScore).toFixed(4)}
+                              {parseFloat(pr.collateralScore || '0').toFixed(4)}
                             </Typography>
                           ) : scoreTooltip ? (
                             <Tooltip
@@ -616,7 +616,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                                   cursor: 'pointer',
                                 }}
                               >
-                                {parseFloat(pr.score).toFixed(4)}
+                                {parseFloat(pr.score || '0').toFixed(4)}
                               </Typography>
                             </Tooltip>
                           ) : (
@@ -627,7 +627,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                                 fontWeight: 600,
                               }}
                             >
-                              {parseFloat(pr.score).toFixed(4)}
+                              {parseFloat(pr.score || '0').toFixed(4)}
                             </Typography>
                           )}
                           {!pr.mergedAt &&
