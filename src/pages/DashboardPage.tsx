@@ -60,10 +60,10 @@ const DashboardPage: React.FC = () => {
               backgroundColor: 'transparent',
             },
             '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              backgroundColor: 'border.light',
               borderRadius: '4px',
               '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                backgroundColor: 'border.medium',
               },
             },
           }}

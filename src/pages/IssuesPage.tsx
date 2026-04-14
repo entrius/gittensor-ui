@@ -60,7 +60,8 @@ const IssuesPage: React.FC = () => {
           {/* Tabs Navigation */}
           <Box
             sx={{
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+              borderBottom: '1px solid',
+              borderColor: 'border.light',
             }}
           >
             <Tabs
@@ -72,14 +73,14 @@ const IssuesPage: React.FC = () => {
                   fontSize: '0.85rem',
                   fontWeight: 600,
                   textTransform: 'none',
-                  color: 'rgba(255, 255, 255, 0.5)',
+                  color: 'text.secondary',
                   minHeight: 48,
                   '&.Mui-selected': {
-                    color: '#ffffff',
+                    color: 'text.primary',
                   },
                 },
                 '& .MuiTabs-indicator': {
-                  backgroundColor: '#ffffff',
+                  backgroundColor: 'text.primary',
                   height: 2,
                 },
               }}

@@ -33,7 +33,7 @@ const HighlightRow: React.FC<{
       cursor: 'pointer',
       transition: 'background 0.15s',
       mx: -1,
-      '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
+      '&:hover': { backgroundColor: 'surface.light' },
     }}
   >
     <Box
@@ -52,7 +52,8 @@ const HighlightRow: React.FC<{
           width: 24,
           height: 24,
           flexShrink: 0,
-          border: '1px solid rgba(255,255,255,0.1)',
+          border: '1px solid',
+          borderColor: 'border.light',
           backgroundColor: avatarBg,
         }}
       />
@@ -64,8 +65,8 @@ const HighlightRow: React.FC<{
 
 const getAvatarBg = (name: string) => {
   const owner = name.split('/')[0];
-  if (owner === 'opentensor') return '#ffffff';
-  if (owner === 'bitcoin') return '#F7931A';
+  if (owner === 'opentensor') return 'text.primary';
+  if (owner === 'bitcoin') return 'status.warningOrange';
   return 'transparent';
 };
 
@@ -77,12 +78,13 @@ const SectionHeader: React.FC<{ children: React.ReactNode }> = ({
       fontFamily: FONTS.mono,
       fontSize: '0.75rem',
       fontWeight: 600,
-      color: 'rgba(255,255,255,0.5)',
+      color: 'text.secondary',
       textTransform: 'uppercase',
       letterSpacing: '0.05em',
       mb: 1.5,
       pb: 1,
-      borderBottom: '1px solid rgba(255,255,255,0.05)',
+      borderBottom: '1px solid',
+      borderColor: 'border.subtle',
     }}
   >
     {children}
@@ -92,14 +94,15 @@ const SectionHeader: React.FC<{ children: React.ReactNode }> = ({
 const cardSx = {
   p: 2,
   borderRadius: 2,
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  backgroundColor: 'transparent',
+  border: '1px solid',
+  borderColor: 'border.light',
+  backgroundColor: 'surface.transparent',
   display: 'flex',
   flexDirection: 'column' as const,
   transition: 'all 0.2s',
   '&:hover': {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'surface.light',
+    borderColor: 'border.medium',
   },
 };
 
@@ -340,7 +343,7 @@ const RepositoriesPage: React.FC = () => {
                   {trendingRepos.length === 0 && !isLoading ? (
                     <Typography
                       sx={{
-                        color: 'rgba(255,255,255,0.3)',
+                        color: 'text.disabled',
                         fontSize: '0.8rem',
                         fontStyle: 'italic',
                         p: 1,
@@ -361,7 +364,7 @@ const RepositoriesPage: React.FC = () => {
                               sx={{
                                 fontFamily: FONTS.mono,
                                 fontSize: '0.82rem',
-                                color: 'rgba(255,255,255,0.9)',
+                                color: 'text.primary',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -377,9 +380,9 @@ const RepositoriesPage: React.FC = () => {
                               fontFamily: FONTS.mono,
                               fontSize: '0.75rem',
                               fontWeight: 600,
-                              color: '#51cf66',
+                              color: 'status.success',
                               flexShrink: 0,
-                              backgroundColor: 'rgba(81, 207, 102, 0.1)',
+                              backgroundColor: 'surface.light',
                               px: 0.75,
                               py: 0.25,
                               borderRadius: '4px',
@@ -405,7 +408,7 @@ const RepositoriesPage: React.FC = () => {
                   {topCollateralRepos.length === 0 && !isLoading ? (
                     <Typography
                       sx={{
-                        color: 'rgba(255,255,255,0.3)',
+                        color: 'text.disabled',
                         fontSize: '0.8rem',
                         fontStyle: 'italic',
                         p: 1,
@@ -426,7 +429,7 @@ const RepositoriesPage: React.FC = () => {
                               sx={{
                                 fontFamily: FONTS.mono,
                                 fontSize: '0.82rem',
-                                color: 'rgba(255,255,255,0.9)',
+                                color: 'text.primary',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -441,7 +444,7 @@ const RepositoriesPage: React.FC = () => {
                             sx={{
                               fontFamily: FONTS.mono,
                               fontSize: '0.72rem',
-                              color: 'rgba(255,255,255,0.7)',
+                              color: 'text.secondary',
                               flexShrink: 0,
                               whiteSpace: 'nowrap',
                             }}
@@ -467,7 +470,7 @@ const RepositoriesPage: React.FC = () => {
                   {recentPrs.length === 0 && !isLoading ? (
                     <Typography
                       sx={{
-                        color: 'rgba(255,255,255,0.3)',
+                        color: 'text.disabled',
                         fontSize: '0.8rem',
                         fontStyle: 'italic',
                         p: 1,
@@ -501,7 +504,7 @@ const RepositoriesPage: React.FC = () => {
                                 sx={{
                                   fontFamily: FONTS.mono,
                                   fontSize: '0.68rem',
-                                  color: 'rgba(255,255,255,0.45)',
+                                  color: 'text.tertiary',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
                                   whiteSpace: 'nowrap',
@@ -516,7 +519,7 @@ const RepositoriesPage: React.FC = () => {
                                 sx={{
                                   fontFamily: FONTS.mono,
                                   fontSize: '0.78rem',
-                                  color: 'rgba(255,255,255,0.9)',
+                                  color: 'text.primary',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
                                   whiteSpace: 'nowrap',
@@ -533,7 +536,7 @@ const RepositoriesPage: React.FC = () => {
                             sx={{
                               fontFamily: FONTS.mono,
                               fontSize: '0.68rem',
-                              color: 'rgba(255,255,255,0.35)',
+                              color: 'text.disabled',
                               flexShrink: 0,
                               whiteSpace: 'nowrap',
                               ml: 1,
@@ -555,8 +558,9 @@ const RepositoriesPage: React.FC = () => {
         <Card
           sx={{
             borderRadius: 3,
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            backgroundColor: 'transparent',
+            border: '1px solid',
+            borderColor: 'border.light',
+            backgroundColor: 'surface.transparent',
             overflow: 'hidden',
           }}
           elevation={0}

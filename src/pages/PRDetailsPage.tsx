@@ -107,7 +107,7 @@ const PRDetailsPage: React.FC = () => {
             />
 
             {/* Tabs */}
-            <Box sx={{ borderBottom: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+            <Box sx={{ borderBottom: 1, borderColor: 'border.light' }}>
               <Tabs
                 value={tabValue}
                 onChange={handleTabChange}
@@ -122,7 +122,7 @@ const PRDetailsPage: React.FC = () => {
                     minHeight: '48px',
                     fontSize: '14px',
                     '&.Mui-selected': {
-                      color: '#fff',
+                      color: 'text.primary',
                       fontWeight: 600,
                     },
                   },

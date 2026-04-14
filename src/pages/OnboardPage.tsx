@@ -65,7 +65,8 @@ const OnboardPage: React.FC = () => {
             maxWidth: 1200,
             width: '100%',
             mb: 4,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            borderBottom: '1px solid',
+            borderColor: 'border.light',
           }}
         >
           <Tabs
@@ -80,7 +81,7 @@ const OnboardPage: React.FC = () => {
                 textTransform: 'none',
                 fontWeight: 500,
                 fontSize: '1rem',
-                color: 'rgba(255, 255, 255, 0.6)',
+                color: 'text.secondary',
                 '&.Mui-selected': {
                   color: 'primary.main',
                 },
@@ -111,8 +112,9 @@ const OnboardPage: React.FC = () => {
               <Card
                 sx={{
                   borderRadius: 3,
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  backgroundColor: 'transparent',
+                  border: '1px solid',
+                  borderColor: 'border.light',
+                  backgroundColor: 'surface.transparent',
                   maxWidth: 1200,
                   width: '100%',
                 }}
@@ -136,8 +138,9 @@ const OnboardPage: React.FC = () => {
               <Card
                 sx={{
                   borderRadius: 3,
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  backgroundColor: 'transparent',
+                  border: '1px solid',
+                  borderColor: 'border.light',
+                  backgroundColor: 'surface.transparent',
                   maxWidth: 1200,
                   width: '100%',
                 }}

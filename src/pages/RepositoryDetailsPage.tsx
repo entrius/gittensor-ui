@@ -119,10 +119,11 @@ const RepositoryDetailsPage: React.FC = () => {
             severity="warning"
             sx={{
               mt: 2,
-              backgroundColor: 'rgba(245, 124, 0, 0.08)',
-              border: '1px solid rgba(255, 183, 77, 0.3)',
-              color: '#ffcc80',
-              '& .MuiAlert-icon': { color: '#ffb74d' },
+              backgroundColor: 'alert.warningBg',
+              border: '1px solid',
+              borderColor: 'alert.warningBorder',
+              color: 'alert.warningText',
+              '& .MuiAlert-icon': { color: 'status.warning' },
             }}
           >
             <Typography sx={{ fontWeight: 600, mb: 0.5 }}>
@@ -165,8 +166,9 @@ const RepositoryDetailsPage: React.FC = () => {
       {/* Header Section */}
       <Box
         sx={{
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
-          backgroundColor: 'rgba(0,0,0,0.2)',
+          borderBottom: '1px solid',
+          borderColor: 'border.light',
+          backgroundColor: 'surface.subtle',
         }}
       >
         <Container maxWidth="xl">
@@ -190,9 +192,9 @@ const RepositoryDetailsPage: React.FC = () => {
                       borderRadius: '4px',
                       backgroundColor:
                         owner === 'opentensor'
-                          ? '#ffffff'
+                          ? 'text.primary'
                           : owner === 'bitcoin'
-                            ? '#F7931A'
+                            ? 'status.warningOrange'
                             : 'transparent',
                     }}
                   />
@@ -201,7 +203,7 @@ const RepositoryDetailsPage: React.FC = () => {
                     sx={{
                       fontFamily: '"JetBrains Mono", monospace',
                       fontWeight: 600,
-                      color: '#fff',
+                      color: 'text.primary',
                     }}
                   >
                     {repo}
@@ -210,9 +212,9 @@ const RepositoryDetailsPage: React.FC = () => {
                   <Chip
                     label="Tracked"
                     sx={{
-                      backgroundColor: 'rgba(46, 125, 50, 0.15)',
-                      color: '#66bb6a',
-                      border: '1px solid rgba(102, 187, 106, 0.35)',
+                      backgroundColor: alpha(STATUS_COLORS.success, 0.15),
+                      color: 'status.success',
+                      border: `1px solid ${alpha(STATUS_COLORS.success, 0.35)}`,
                       fontSize: '0.75rem',
                       height: '24px',
                       fontWeight: 600,
@@ -226,9 +228,9 @@ const RepositoryDetailsPage: React.FC = () => {
                         <Chip
                           label={`Inactive since ${new Date(currentRepo.inactiveAt).toLocaleDateString()}`}
                           sx={{
-                            backgroundColor: 'rgba(211, 47, 47, 0.1)',
-                            color: '#ff5252',
-                            border: '1px solid rgba(255, 82, 82, 0.3)',
+                            backgroundColor: alpha(STATUS_COLORS.error, 0.1),
+                            color: 'status.error',
+                            border: `1px solid ${alpha(STATUS_COLORS.error, 0.3)}`,
                             fontSize: '0.75rem',
                             height: '24px',
                             fontWeight: 600,
@@ -255,8 +257,8 @@ const RepositoryDetailsPage: React.FC = () => {
                   href={`https://github.com/${repo}`}
                   target="_blank"
                   sx={{
-                    borderColor: 'rgba(255,255,255,0.2)',
-                    color: '#fff',
+                    borderColor: 'border.medium',
+                    color: 'text.primary',
                     '&:hover': { borderColor: 'primary.main' },
                   }}
                 >
@@ -279,7 +281,7 @@ const RepositoryDetailsPage: React.FC = () => {
                   minHeight: '48px',
                   fontSize: '14px',
                   '&.Mui-selected': {
-                    color: '#fff',
+                    color: 'text.primary',
                     fontWeight: 600,
                   },
                 },
