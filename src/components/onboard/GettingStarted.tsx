@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Box, Typography, Stack, Button, Tabs, Tab } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { alpha } from '@mui/material/styles';
 
 const MONO = '"JetBrains Mono", monospace';
 
@@ -63,7 +64,7 @@ const CodeBlock: React.FC<{
           sx={{
             fontFamily: MONO,
             fontSize: '0.7rem',
-            color: 'rgba(255,255,255,0.4)',
+            color: 'text.secondary',
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
             mb: 0.5,
@@ -75,8 +76,9 @@ const CodeBlock: React.FC<{
       <Box
         sx={{
           position: 'relative',
-          backgroundColor: 'rgba(0, 0, 0, 0.4)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          backgroundColor: (theme) =>
+            alpha(theme.palette.background.default, 0.4),
+          border: (theme) => `1px solid ${theme.palette.border.light}`,
           borderRadius: 2,
           p: 2,
           pr: 5,
@@ -88,7 +90,7 @@ const CodeBlock: React.FC<{
           sx={{
             fontFamily: MONO,
             fontSize: '0.8rem',
-            color: 'rgba(255, 255, 255, 0.85)',
+            color: 'text.primary',
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-all',
             m: 0,
@@ -104,9 +106,9 @@ const CodeBlock: React.FC<{
             top: 8,
             right: 8,
             cursor: 'pointer',
-            color: copied ? 'success.main' : 'rgba(255,255,255,0.3)',
+            color: copied ? 'success.main' : 'text.tertiary',
             '&:hover': {
-              color: copied ? 'success.main' : 'rgba(255,255,255,0.6)',
+              color: copied ? 'success.main' : 'text.secondary',
             },
             transition: 'color 0.2s',
           }}
@@ -215,14 +217,16 @@ const StepDetail: React.FC<{ step: number }> = ({ step }) => {
               mt: 2,
               p: 2,
               borderRadius: 2,
-              backgroundColor: 'rgba(245, 158, 11, 0.08)',
-              border: '1px solid rgba(245, 158, 11, 0.2)',
+              backgroundColor: (theme) =>
+                alpha(theme.palette.status.warning, 0.08),
+              border: (theme) =>
+                `1px solid ${alpha(theme.palette.status.warning, 0.2)}`,
             }}
           >
             <Typography
               variant="body2"
               sx={{
-                color: 'rgba(245, 158, 11, 0.9)',
+                color: 'status.warning',
                 fontSize: '0.8rem',
                 lineHeight: 1.6,
               }}
@@ -278,7 +282,7 @@ uv pip install -e .`}</CodeBlock>
           )}
           <Typography
             variant="body2"
-            sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', mt: 1 }}
+            sx={{ color: 'text.secondary', fontSize: '0.8rem', mt: 1 }}
           >
             If you omit --pat, the CLI checks the GITTENSOR_MINER_PAT
             environment variable, then prompts interactively.
@@ -310,7 +314,7 @@ uv pip install -e .`}</CodeBlock>
           )}
           <Typography
             variant="body2"
-            sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', mt: 1 }}
+            sx={{ color: 'text.secondary', fontSize: '0.8rem', mt: 1 }}
           >
             You should see a table showing which validators have your PAT stored
             and whether it's valid.
@@ -381,8 +385,8 @@ const NetworkTabs: React.FC<{
         fontSize: '0.75rem',
         fontFamily: MONO,
         textTransform: 'none',
-        color: 'rgba(255,255,255,0.4)',
-        '&.Mui-selected': { color: '#fff' },
+        color: 'text.secondary',
+        '&.Mui-selected': { color: 'text.primary' },
       },
       '& .MuiTabs-indicator': { backgroundColor: 'primary.main', height: 2 },
     }}
@@ -403,7 +407,7 @@ export const GettingStarted: React.FC = () => {
         sx={{
           mb: 6,
           fontFamily: MONO,
-          color: '#fff',
+          color: 'text.primary',
           textAlign: 'center',
         }}
       >
@@ -420,8 +424,8 @@ export const GettingStarted: React.FC = () => {
             left: '3%',
             right: '3%',
             height: 2,
-            background:
-              'linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.05) 100%)',
+            background: (theme) =>
+              `linear-gradient(90deg, ${theme.palette.border.subtle} 0%, ${theme.palette.border.medium} 50%, ${theme.palette.border.subtle} 100%)`,
             display: { xs: 'none', md: 'block' },
             zIndex: 0,
           }}
@@ -446,7 +450,7 @@ export const GettingStarted: React.FC = () => {
                 width: { xs: '100%', md: 'auto' },
                 cursor: 'pointer',
                 '&:hover .step-circle': {
-                  borderColor: 'rgba(255,255,255,0.3)',
+                  borderColor: 'border.medium',
                 },
               }}
             >
@@ -456,21 +460,23 @@ export const GettingStarted: React.FC = () => {
                   width: 48,
                   height: 48,
                   borderRadius: '50%',
-                  bgcolor:
+                  bgcolor: (theme) =>
                     activeStep === index
-                      ? 'rgba(29, 55, 252, 0.15)'
-                      : '#0b0b0b',
+                      ? index === steps.length - 1
+                        ? alpha(theme.palette.secondary.main, 0.15)
+                        : alpha(theme.palette.primary.main, 0.15)
+                      : theme.palette.background.default,
                   border: '2px solid',
                   borderColor: item.active
                     ? 'secondary.main'
                     : activeStep === index
                       ? 'primary.main'
-                      : 'rgba(255,255,255,0.1)',
+                      : 'border.subtle',
                   color: item.active
                     ? 'secondary.main'
                     : activeStep === index
                       ? 'primary.main'
-                      : 'rgba(255, 255, 255, 0.5)',
+                      : 'text.tertiary',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -478,9 +484,11 @@ export const GettingStarted: React.FC = () => {
                   fontWeight: 'bold',
                   fontSize: '1.1rem',
                   boxShadow: item.active
-                    ? '0 0 20px rgba(255, 215, 0, 0.15)'
+                    ? (theme) =>
+                        `0 0 20px ${alpha(theme.palette.secondary.main, 0.15)}`
                     : activeStep === index
-                      ? '0 0 15px rgba(29, 55, 252, 0.2)'
+                      ? (theme) =>
+                          `0 0 15px ${alpha(theme.palette.primary.main, 0.2)}`
                       : 'none',
                   transition: 'all 0.2s ease',
                   flexShrink: 0,
@@ -497,8 +505,8 @@ export const GettingStarted: React.FC = () => {
                     color: item.active
                       ? 'secondary.main'
                       : activeStep === index
-                        ? '#fff'
-                        : 'rgba(255,255,255,0.7)',
+                        ? 'text.primary'
+                        : 'text.secondary',
                     mb: 0.25,
                   }}
                 >
@@ -523,13 +531,12 @@ export const GettingStarted: React.FC = () => {
         </Stack>
       </Box>
 
-      {/* Step detail panel */}
       <Box
         sx={{
           p: { xs: 3, md: 4 },
           borderRadius: 3,
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          background: 'rgba(255, 255, 255, 0.02)',
+          border: (theme) => `1px solid ${theme.palette.border.light}`,
+          background: 'surface.subtle',
           mb: 6,
           minHeight: 200,
         }}
@@ -539,7 +546,7 @@ export const GettingStarted: React.FC = () => {
             fontFamily: MONO,
             fontWeight: 700,
             fontSize: '1.1rem',
-            color: '#fff',
+            color: 'text.primary',
             mb: 3,
           }}
         >
@@ -548,21 +555,20 @@ export const GettingStarted: React.FC = () => {
         <StepDetail step={steps[activeStep].step} />
       </Box>
 
-      {/* CTA */}
       <Box
         sx={{
           textAlign: 'center',
           p: 5,
           borderRadius: 4,
-          background:
-            'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(255,255,255,0.02) 100%)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          background: (theme) =>
+            `linear-gradient(180deg, ${alpha(theme.palette.background.default, 0)} 0%, ${theme.palette.surface.subtle} 100%)`,
+          border: (theme) => `1px solid ${theme.palette.border.light}`,
         }}
       >
         <Typography
           variant="h5"
           fontWeight="bold"
-          sx={{ mb: 2, color: '#fff' }}
+          sx={{ mb: 2, color: 'text.primary' }}
         >
           Full Documentation
         </Typography>
@@ -588,7 +594,8 @@ export const GettingStarted: React.FC = () => {
             fontSize: '1rem',
             fontWeight: 'bold',
             borderRadius: '50px',
-            boxShadow: '0 0 20px rgba(0, 0, 0, 0.2)',
+            boxShadow: (theme) =>
+              `0 0 20px ${alpha(theme.palette.background.default, 0.2)}`,
             textTransform: 'none',
           }}
         >
