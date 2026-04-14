@@ -122,7 +122,7 @@ const AppLayout: React.FC = () => {
       <Box
         ref={mainRef}
         component="main"
-        sx={(theme) => ({
+        sx={(t) => ({
           flexGrow: 1,
           maxWidth: '1920px', // Max content width for ultra-wide screens
           width: '100%',
@@ -141,14 +141,14 @@ const AppLayout: React.FC = () => {
             backgroundColor: 'transparent',
           },
           '&::-webkit-scrollbar-thumb': {
-            backgroundColor: theme.palette.border.light,
+            backgroundColor: t.palette.border.light,
             borderRadius: '4px',
             '&:hover': {
-              backgroundColor: theme.palette.border.medium,
+              backgroundColor: t.palette.border.medium,
             },
           },
           scrollbarWidth: 'thin',
-          scrollbarColor: `${theme.palette.border.light} transparent`,
+          scrollbarColor: `${t.palette.border.light} transparent`,
         })}
       >
         <Suspense fallback={<LoadingPage />}>

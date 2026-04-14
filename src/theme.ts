@@ -522,4 +522,22 @@ const theme = createTheme({
   },
 });
 
+export const getScrollbarStyles = (t: any) => ({
+  '&::-webkit-scrollbar': {
+    width: '8px',
+  },
+  '&::-webkit-scrollbar-track': {
+    backgroundColor: 'transparent',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: t.palette.border.light,
+    borderRadius: '4px',
+    '&:hover': {
+      backgroundColor: t.palette.border.medium,
+    },
+  },
+  scrollbarWidth: 'thin',
+  scrollbarColor: `${t.palette.border.light} transparent`,
+});
+
 export default theme;

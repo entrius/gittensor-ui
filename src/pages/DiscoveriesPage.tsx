@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { TopMinersTable, LeaderboardSidebar, SEO } from '../components';
 import { useAllMiners } from '../api';
-import theme from '../theme';
+import theme, { getScrollbarStyles } from '../theme';
 
 const DiscoveriesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -82,7 +82,7 @@ const DiscoveriesPage: React.FC = () => {
       >
         {/* Main Content Area */}
         <Box
-          sx={{
+          sx={(theme) => ({
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
@@ -91,20 +91,8 @@ const DiscoveriesPage: React.FC = () => {
             overflow: showSidebarRight ? 'auto' : 'visible',
             minWidth: 0,
             pr: showSidebarRight ? 1 : 0,
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '4px',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              },
-            },
-          }}
+            ...getScrollbarStyles(theme),
+          })}
         >
           <Typography
             sx={{
@@ -129,7 +117,7 @@ const DiscoveriesPage: React.FC = () => {
 
         {/* Right Sidebar */}
         <Box
-          sx={{
+          sx={(theme) => ({
             width: showSidebarRight ? sidebarWidth : '100%',
             height: showSidebarRight ? '100%' : 'auto',
             maxHeight: showSidebarRight ? '100%' : 'none',
@@ -137,7 +125,8 @@ const DiscoveriesPage: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             gap: 2,
-          }}
+            ...getScrollbarStyles(theme),
+          })}
         >
           <LeaderboardSidebar
             miners={minerStats}

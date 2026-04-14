@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Box, Stack, Typography, Avatar } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { SectionCard } from './SectionCard';
-import { STATUS_COLORS } from '../../theme';
+import { STATUS_COLORS, getScrollbarStyles } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { type MinerStats, FONTS } from './types';
 
@@ -54,7 +54,15 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
   );
 
   return (
-    <Stack spacing={2} sx={{ height: '100%', overflow: 'auto', pr: 1 }}>
+    <Stack
+      spacing={2}
+      sx={(theme) => ({
+        height: '100%',
+        overflow: 'auto',
+        pr: 1,
+        ...getScrollbarStyles(theme),
+      })}
+    >
       {/* CARD 1: Network Stats */}
       <SectionCard title="Network Stats" sx={{ flexShrink: 0 }}>
         <Box
