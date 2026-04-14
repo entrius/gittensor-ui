@@ -176,7 +176,7 @@ const MinerDetailsPage: React.FC = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {activeTab === 'overview' && (
               <>
-                <MinerInsightsCard githubId={githubId} />
+                <MinerInsightsCard githubId={githubId} viewMode={viewMode} />
                 <MinerScoreBreakdown githubId={githubId} />
               </>
             )}
