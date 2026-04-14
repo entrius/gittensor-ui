@@ -78,7 +78,8 @@ const CodeBlock: React.FC<{
           position: 'relative',
           backgroundColor: (theme) =>
             alpha(theme.palette.background.default, 0.4),
-          border: (theme) => `1px solid ${theme.palette.border.light}`,
+          border: '1px solid',
+          borderColor: 'border.subtle',
           borderRadius: 2,
           p: 2,
           pr: 5,
@@ -535,7 +536,8 @@ export const GettingStarted: React.FC = () => {
         sx={{
           p: { xs: 3, md: 4 },
           borderRadius: 3,
-          border: (theme) => `1px solid ${theme.palette.border.light}`,
+          border: '1px solid',
+          borderColor: 'border.subtle',
           background: 'surface.subtle',
           mb: 6,
           minHeight: 200,
@@ -562,7 +564,8 @@ export const GettingStarted: React.FC = () => {
           borderRadius: 4,
           background: (theme) =>
             `linear-gradient(180deg, ${alpha(theme.palette.background.default, 0)} 0%, ${theme.palette.surface.subtle} 100%)`,
-          border: (theme) => `1px solid ${theme.palette.border.light}`,
+          border: '1px solid',
+          borderColor: 'border.subtle',
         }}
       >
         <Typography

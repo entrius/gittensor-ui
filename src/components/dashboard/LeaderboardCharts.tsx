@@ -13,6 +13,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import ReactECharts from 'echarts-for-react';
 import { useAllPrs, useReposAndWeights } from '../../api';
 import { truncateText } from '../../utils';
+import theme from '../../theme';
 
 const CHART_DOT_COLOR = 'rgba(88, 166, 255, 0.9)';
 
@@ -178,7 +179,7 @@ const LeaderboardCharts: React.FC = () => {
           margin: 12,
         },
         axisLine: {
-          lineStyle: { color: 'rgba(255, 255, 255, 0.08)', width: 1 },
+          lineStyle: { color: theme.palette.border.subtle, width: 1 },
         },
         axisTick: { show: false },
       },
@@ -201,7 +202,7 @@ const LeaderboardCharts: React.FC = () => {
         },
         splitLine: {
           lineStyle: {
-            color: 'rgba(255, 255, 255, 0.08)',
+            color: theme.palette.border.subtle,
             type: 'dashed',
             opacity: 0.5,
           },
@@ -362,7 +363,7 @@ const LeaderboardCharts: React.FC = () => {
           margin: 12,
         },
         axisLine: {
-          lineStyle: { color: 'rgba(255, 255, 255, 0.08)', width: 1 },
+          lineStyle: { color: theme.palette.border.subtle, width: 1 },
         },
         axisTick: { show: false },
       },
@@ -385,7 +386,7 @@ const LeaderboardCharts: React.FC = () => {
         },
         splitLine: {
           lineStyle: {
-            color: 'rgba(255, 255, 255, 0.08)',
+            color: theme.palette.border.subtle,
             type: 'dashed',
             opacity: 0.5,
           },
