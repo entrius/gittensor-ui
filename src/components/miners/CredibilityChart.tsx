@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, alpha, useTheme } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
-import { CHART_COLORS } from '../../theme';
 
 interface CredibilityChartProps {
   merged: number;
@@ -16,22 +15,24 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
   closed,
   credibility,
 }) => {
+  const theme = useTheme();
+
   const chartOption = useMemo(
     () => ({
-      backgroundColor: 'transparent',
+      backgroundColor: theme.palette.surface.transparent,
       title: {
         text: `${(credibility * 100).toFixed(0)}%`,
         subtext: 'Credibility',
         left: 'center',
         top: '38%',
         textStyle: {
-          color: '#fff',
+          color: theme.palette.text.primary,
           fontSize: 28,
           fontWeight: 'bold',
           fontFamily: '"JetBrains Mono", monospace',
         },
         subtextStyle: {
-          color: 'rgba(255, 255, 255, 0.4)',
+          color: alpha(theme.palette.text.primary, 0.4),
           fontSize: 11,
           fontFamily: '"JetBrains Mono", monospace',
           fontWeight: 500,
@@ -40,11 +41,11 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
       tooltip: {
         trigger: 'item',
         formatter: '{b}: {c} ({d}%)',
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        borderColor: 'rgba(255, 255, 255, 0.15)',
+        backgroundColor: theme.palette.surface.tooltip,
+        borderColor: alpha(theme.palette.text.primary, 0.15),
         borderWidth: 1,
         textStyle: {
-          color: '#fff',
+          color: theme.palette.text.primary,
           fontFamily: '"JetBrains Mono", monospace',
         },
       },
@@ -56,7 +57,7 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
           avoidLabelOverlap: false,
           itemStyle: {
             borderRadius: 6,
-            borderColor: '#0d1117',
+            borderColor: theme.palette.background.paper,
             borderWidth: 3,
           },
           label: { show: false, position: 'center' },
@@ -66,23 +67,23 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
             {
               value: merged,
               name: 'Merged',
-              itemStyle: { color: CHART_COLORS.merged },
+              itemStyle: { color: theme.palette.chart.merged },
             },
             {
               value: open,
               name: 'Open',
-              itemStyle: { color: CHART_COLORS.open },
+              itemStyle: { color: theme.palette.chart.open },
             },
             {
               value: closed,
               name: 'Closed',
-              itemStyle: { color: CHART_COLORS.closed },
+              itemStyle: { color: theme.palette.chart.closed },
             },
           ],
         },
       ],
     }),
-    [merged, open, closed, credibility],
+    [closed, credibility, merged, open, theme],
   );
 
   return (
@@ -96,7 +97,7 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
       <Typography
         variant="monoSmall"
         sx={{
-          color: 'rgba(255, 255, 255, 0.4)',
+          color: alpha(theme.palette.text.primary, 0.4),
           mb: 0.75,
           textAlign: 'center',
         }}
@@ -121,9 +122,17 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
           flexWrap: 'wrap',
         }}
       >
-        <LegendItem label="Merged" value={merged} color={CHART_COLORS.merged} />
-        <LegendItem label="Open" value={open} color={CHART_COLORS.open} />
-        <LegendItem label="Closed" value={closed} color={CHART_COLORS.closed} />
+        <LegendItem
+          label="Merged"
+          value={merged}
+          color={theme.palette.chart.merged}
+        />
+        <LegendItem label="Open" value={open} color={theme.palette.chart.open} />
+        <LegendItem
+          label="Closed"
+          value={closed}
+          color={theme.palette.chart.closed}
+        />
       </Box>
     </Box>
   );
@@ -145,7 +154,7 @@ const LegendItem: React.FC<{ label: string; value: number; color: string }> = ({
     />
     <Typography
       sx={{
-        color: 'rgba(255, 255, 255, 0.6)',
+        color: (theme) => alpha(theme.palette.text.primary, 0.6),
         fontSize: '0.65rem',
         fontFamily: '"JetBrains Mono", monospace',
       }}

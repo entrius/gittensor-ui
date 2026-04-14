@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, alpha, useTheme } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
-import { STATUS_COLORS } from '../../theme';
 
 interface PerformanceRadarProps {
   credibility: number;
@@ -20,9 +19,11 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
   totalPRs,
   avgRepoWeight,
 }) => {
+  const theme = useTheme();
+
   const chartOption = useMemo(
     () => ({
-      backgroundColor: 'transparent',
+      backgroundColor: theme.palette.surface.transparent,
       radar: {
         indicator: [
           { name: 'Credibility', max: 100 },
@@ -37,19 +38,19 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
         shape: 'circle',
         splitNumber: 5,
         axisName: {
-          color: 'rgba(255, 255, 255, 0.6)',
+          color: alpha(theme.palette.text.primary, 0.6),
           fontFamily: '"JetBrains Mono", monospace',
           fontSize: 9,
           lineHeight: 12,
         },
         splitLine: {
           lineStyle: {
-            color: Array(5).fill('rgba(255, 255, 255, 0.05)'),
+            color: Array(5).fill(theme.palette.border.subtle),
           },
         },
         splitArea: { show: false },
         axisLine: {
-          lineStyle: { color: 'rgba(255, 255, 255, 0.1)' },
+          lineStyle: { color: theme.palette.border.light },
         },
       },
       series: [
@@ -57,10 +58,10 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
           type: 'radar',
           lineStyle: {
             width: 2,
-            color: STATUS_COLORS.merged,
+            color: theme.palette.chart.merged,
           },
           areaStyle: {
-            color: `${STATUS_COLORS.merged}33`,
+            color: alpha(theme.palette.chart.merged, 0.2),
           },
           data: [
             {
@@ -75,19 +76,20 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
               name: 'Miner Stats',
               symbol: 'circle',
               symbolSize: 4,
-              itemStyle: { color: STATUS_COLORS.merged },
+              itemStyle: { color: theme.palette.chart.merged },
             },
           ],
         },
       ],
     }),
     [
+      avgRepoWeight,
       credibility,
       complexity,
       issuesSolved,
-      uniqueRepos,
+      theme,
       totalPRs,
-      avgRepoWeight,
+      uniqueRepos,
     ],
   );
 
@@ -101,7 +103,11 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
     >
       <Typography
         variant="monoSmall"
-        sx={{ color: 'rgba(255, 255, 255, 0.4)', mb: 2, textAlign: 'center' }}
+        sx={{
+          color: alpha(theme.palette.text.primary, 0.4),
+          mb: 2,
+          textAlign: 'center',
+        }}
       >
         Performance Profile
       </Typography>

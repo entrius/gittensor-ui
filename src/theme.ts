@@ -121,6 +121,11 @@ declare module '@mui/material/styles' {
       additions: string;
       deletions: string;
     };
+    chart: {
+      merged: string;
+      open: string;
+      closed: string;
+    };
     border: {
       subtle: string;
       light: string;
@@ -168,6 +173,11 @@ declare module '@mui/material/styles' {
     diff?: {
       additions: string;
       deletions: string;
+    };
+    chart?: {
+      merged: string;
+      open: string;
+      closed: string;
     };
     border?: {
       subtle: string;
@@ -275,6 +285,12 @@ const theme = createTheme({
     diff: {
       additions: DIFF_COLORS.additions,
       deletions: DIFF_COLORS.deletions,
+    },
+    // Chart colors for pie/radar visualizations
+    chart: {
+      merged: CHART_COLORS.merged,
+      open: CHART_COLORS.open,
+      closed: CHART_COLORS.closed,
     },
     // Border colors
     border: {
