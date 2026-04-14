@@ -21,6 +21,11 @@ import { useStats } from '../../api';
 import { formatTokenAmount } from '../../utils/format';
 import { STATUS_COLORS } from '../../theme';
 import BountyProgress from './BountyProgress';
+import {
+  formatIssueDate,
+  formatIssueUsdEstimate,
+  getIssueStatusBadge,
+} from './issueFormatting';
 
 type ListType = 'available' | 'pending' | 'history';
 
@@ -30,59 +35,6 @@ interface IssuesListProps {
   listType: ListType;
   onSelectIssue?: (id: number) => void;
 }
-
-/**
- * Get status badge color and text
- */
-const getStatusBadge = (
-  status: IssueBounty['status'],
-): { color: string; bgColor: string; text: string } => {
-  switch (status) {
-    case 'registered':
-      return {
-        color: STATUS_COLORS.warning,
-        bgColor: 'rgba(245, 158, 11, 0.15)',
-        text: 'Pending',
-      };
-    case 'active':
-      return {
-        color: STATUS_COLORS.info,
-        bgColor: 'rgba(88, 166, 255, 0.15)',
-        text: 'Available',
-      };
-    case 'completed':
-      return {
-        color: STATUS_COLORS.merged,
-        bgColor: 'rgba(63, 185, 80, 0.15)',
-        text: 'Completed',
-      };
-    case 'cancelled':
-      return {
-        color: STATUS_COLORS.error,
-        bgColor: 'rgba(239, 68, 68, 0.15)',
-        text: 'Cancelled',
-      };
-    default:
-      return {
-        color: STATUS_COLORS.open,
-        bgColor: 'rgba(139, 148, 158, 0.15)',
-        text: status,
-      };
-  }
-};
-
-/**
- * Format date for display
- */
-const formatDate = (dateStr: string | null | undefined): string => {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
 
 /**
  * Truncate wallet address for display
@@ -103,13 +55,8 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const taoPrice = dashStats?.prices?.tao?.data?.price ?? 0;
   const alphaPrice = dashStats?.prices?.alpha?.data?.price ?? 0;
 
-  const toUsd = (alphaAmount: string): string | null => {
-    if (taoPrice <= 0 || alphaPrice <= 0) return null;
-    const amount = parseFloat(alphaAmount);
-    if (isNaN(amount) || amount === 0) return null;
-    const usd = amount * alphaPrice * taoPrice;
-    return `~${usd.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`;
-  };
+  const toUsd = (alphaAmount: string): string | null =>
+    formatIssueUsdEstimate(alphaAmount, taoPrice, alphaPrice);
   const headerCellSx = {
     fontFamily: '"JetBrains Mono", monospace',
     fontSize: '0.7rem',
@@ -264,7 +211,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
           </TableHead>
           <TableBody>
             {issues.map((issue) => {
-              const statusBadge = getStatusBadge(issue.status);
+              const statusBadge = getIssueStatusBadge(issue.status);
 
               return (
                 <TableRow
@@ -526,7 +473,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                             color: 'rgba(255, 255, 255, 0.6)',
                           }}
                         >
-                          {formatDate(issue.completedAt || issue.updatedAt)}
+                          {formatIssueDate(issue.completedAt || issue.updatedAt)}
                         </Typography>
                       </TableCell>
                     </>
