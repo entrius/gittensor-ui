@@ -15,11 +15,7 @@ interface MinerCardProps {
 
 const INACTIVE_OPACITY = 0.24;
 
-export const MinerCard: React.FC<MinerCardProps> = ({
-  miner,
-  onClick,
-  variant = 'oss',
-}) => {
+export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick, variant = 'oss' }) => {
   const muiTheme = useTheme();
   const isNumericId = (value?: string) => !value || /^\d+$/.test(value);
   const shouldFetch = !!miner.githubId && isNumericId(miner.author);
@@ -334,9 +330,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
         display: 'flex',
         flexDirection: 'column',
         gap: variant === 'discoveries' ? 0.75 : 0,
-        backgroundColor: isEligible
-          ? alpha(theme.palette.background.default, 0.2)
-          : theme.palette.surface.subtle,
+        backgroundColor: isEligible ? alpha(theme.palette.background.default, 0.2) : theme.palette.surface.subtle,
         opacity: isEligible ? 1 : 0.62,
         borderRadius: 1.5,
         p: 1,
@@ -366,35 +360,22 @@ const PrimaryStatsRow: React.FC<PrimaryStatsRowProps> = ({
   const muiTheme = useTheme();
 
   return (
-    <Box
-      sx={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr 1fr auto',
-        gap: 1,
-        alignItems: 'center',
-      }}
-    >
+    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 1, alignItems: 'center' }}>
       {[
         {
           label: 'Merged',
           value: miner.totalMergedPrs ?? 0,
-          color: isEligible
-            ? STATUS_COLORS.merged
-            : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
+          color: isEligible ? STATUS_COLORS.merged : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
         },
         {
           label: 'Open',
           value: miner.totalOpenPrs ?? 0,
-          color: isEligible
-            ? alpha(muiTheme.palette.text.primary, 0.84)
-            : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
+          color: isEligible ? alpha(muiTheme.palette.text.primary, 0.84) : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
         },
         {
           label: 'Closed',
           value: miner.totalClosedPrs ?? 0,
-          color: isEligible
-            ? muiTheme.palette.status.closed
-            : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
+          color: isEligible ? muiTheme.palette.status.closed : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
         },
       ].map(({ label, value, color }) => (
         <Box key={label}>
@@ -402,23 +383,14 @@ const PrimaryStatsRow: React.FC<PrimaryStatsRowProps> = ({
             sx={(theme) => ({
               fontFamily: FONTS.mono,
               fontSize: '0.6rem',
-              color: isEligible
-                ? theme.palette.status.open
-                : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
+              color: isEligible ? theme.palette.status.open : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
               textTransform: 'uppercase',
               mb: 0.2,
             })}
           >
             {label}
           </Typography>
-          <Typography
-            sx={{
-              fontFamily: FONTS.mono,
-              fontSize: '0.85rem',
-              color,
-              fontWeight: 600,
-            }}
-          >
+          <Typography sx={{ fontFamily: FONTS.mono, fontSize: '0.85rem', color, fontWeight: 600 }}>
             {value}
           </Typography>
         </Box>
@@ -436,9 +408,7 @@ const PrimaryStatsRow: React.FC<PrimaryStatsRowProps> = ({
           sx={(theme) => ({
             fontFamily: FONTS.mono,
             fontSize: '0.6rem',
-            color: isEligible
-              ? theme.palette.status.open
-              : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
+            color: isEligible ? theme.palette.status.open : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
             textTransform: 'uppercase',
             mb: 0.2,
           })}
@@ -477,18 +447,7 @@ const IssueStatsSection: React.FC<IssueStatsSectionProps> = ({
 
   return (
     <Box sx={{ pt: 0.35, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-      <Typography
-        sx={{
-          fontFamily: FONTS.mono,
-          fontSize: '0.7rem',
-          fontWeight: 700,
-          color: '#8b949e',
-          minWidth: 28,
-          textTransform: 'uppercase',
-          mb: 0.35,
-          letterSpacing: '0.04em',
-        }}
-      >
+      <Typography sx={{ fontFamily: FONTS.mono, fontSize: '0.7rem', fontWeight: 700, color: '#8b949e', minWidth: 28, textTransform: 'uppercase', mb: 0.35, letterSpacing: '0.04em' }}>
         Issues
       </Typography>
       <Box
@@ -521,23 +480,14 @@ const IssueStatsSection: React.FC<IssueStatsSectionProps> = ({
               sx={(theme) => ({
                 fontFamily: FONTS.mono,
                 fontSize: '0.6rem',
-                color: isEligible
-                  ? theme.palette.status.open
-                  : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
+                color: isEligible ? theme.palette.status.open : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
                 textTransform: 'uppercase',
                 mb: 0.2,
               })}
             >
               {label}
             </Typography>
-            <Typography
-              sx={{
-                fontFamily: FONTS.mono,
-                fontSize: '0.85rem',
-                color,
-                fontWeight: 600,
-              }}
-            >
+            <Typography sx={{ fontFamily: FONTS.mono, fontSize: '0.85rem', color, fontWeight: 600 }}>
               {value}
             </Typography>
           </Box>
@@ -555,9 +505,7 @@ const IssueStatsSection: React.FC<IssueStatsSectionProps> = ({
             sx={(theme) => ({
               fontFamily: FONTS.mono,
               fontSize: '0.6rem',
-              color: isEligible
-                ? theme.palette.status.open
-                : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
+              color: isEligible ? theme.palette.status.open : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
               textTransform: 'uppercase',
               mb: 0.2,
             })}
