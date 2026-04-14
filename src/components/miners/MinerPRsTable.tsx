@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Card,
   Typography,
@@ -26,7 +26,7 @@ import {
   NavigateNext as NextIcon,
 } from '@mui/icons-material';
 import { useMinerPRs, type CommitLog } from '../../api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import { type MinerStatusFilter } from '../../utils/ExplorerUtils';
 
@@ -76,7 +76,23 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<PrSortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
-  const [page, setPage] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [page, setPage] = useState(() => {
+    const p = parseInt(searchParams.get('prsPage') || '', 10);
+    return Number.isFinite(p) && p >= 0 ? p : 0;
+  });
+
+  useEffect(() => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (page > 0) next.set('prsPage', String(page));
+        else next.delete('prsPage');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [page, setSearchParams]);
 
   const handleSort = useCallback(
     (field: PrSortField) => {
