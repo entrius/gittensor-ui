@@ -46,6 +46,7 @@ const AppLayout: React.FC = () => {
         <AppBar
           position="fixed"
           sx={{
+            zIndex: 1300,
             backgroundColor: 'background.default',
             borderBottom: '1px solid',
             borderColor: 'divider',
