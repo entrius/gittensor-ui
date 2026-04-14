@@ -155,7 +155,9 @@ const FileItem: React.FC<{
   );
 };
 
-export const buildFileTree = (flatFiles: any[]): FileNode[] => {
+export const buildFileTree = (
+  flatFiles: { path: string; type: 'blob' | 'tree' }[],
+): FileNode[] => {
   const root: FileNode[] = [];
   const map: Record<string, FileNode> = {};
 

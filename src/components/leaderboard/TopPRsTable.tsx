@@ -33,8 +33,9 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
 import { type CommitLog } from '../../api/models/Dashboard';
-import { formatUsdEstimate } from '../../utils';
-import theme, { RANK_COLORS, STATUS_COLORS } from '../../theme';
+import { formatUsdEstimate, truncateText } from '../../utils';
+import { RankIcon } from './RankIcon';
+import theme, { STATUS_COLORS } from '../../theme';
 
 interface TopPRsTableProps {
   prs: CommitLog[];
@@ -43,12 +44,6 @@ interface TopPRsTableProps {
   onSelectMiner: (githubId: string) => void;
   onSelectRepository: (repositoryFullName: string) => void;
 }
-
-// Utility function to truncate text
-const truncateText = (text: string, maxLength: number): string => {
-  if (!text) return '';
-  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-};
 
 const TopPRsTable: React.FC<TopPRsTableProps> = ({
   prs,
@@ -734,7 +729,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                   }}
                 >
                   <TableCell sx={{ ...bodyCellStyle, width: '80px' }}>
-                    {getRankIcon(pr.rank || 0)}
+                    <RankIcon rank={pr.rank || 0} />
                   </TableCell>
                   <TableCell sx={{ ...bodyCellStyle, width: '40%' }}>
                     <Tooltip title={pr.pullRequestTitle || ''} placement="top">
@@ -1006,60 +1001,5 @@ const bodyCellStyle = {
   height: '52px',
   boxSizing: 'border-box' as const,
 };
-
-const getRankIcon = (rank: number) => (
-  <Box
-    sx={{
-      backgroundColor: '#000000',
-      borderRadius: '2px',
-      width: '22px',
-      height: '22px',
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0,
-      border: '1px solid',
-      borderColor:
-        rank === 1
-          ? alpha(RANK_COLORS.first, 0.4)
-          : rank === 2
-            ? alpha(RANK_COLORS.second, 0.4)
-            : rank === 3
-              ? alpha(RANK_COLORS.third, 0.4)
-              : 'rgba(255, 255, 255, 0.15)',
-      boxShadow:
-        rank === 1
-          ? `0 0 12px ${alpha(RANK_COLORS.first, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.first, 0.2)}`
-          : rank === 2
-            ? `0 0 12px ${alpha(RANK_COLORS.second, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.second, 0.2)}`
-            : rank === 3
-              ? `0 0 12px ${alpha(RANK_COLORS.third, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.third, 0.2)}`
-              : 'none',
-    }}
-  >
-    <Typography
-      component="span"
-      sx={{
-        color:
-          rank === 1
-            ? RANK_COLORS.first
-            : rank === 2
-              ? RANK_COLORS.second
-              : rank === 3
-                ? RANK_COLORS.third
-                : 'rgba(255, 255, 255, 0.6)',
-        fontFamily: '"JetBrains Mono", monospace',
-        fontSize: '0.65rem',
-        fontWeight: 600,
-        lineHeight: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      {rank}
-    </Typography>
-  </Box>
-);
 
 export default TopPRsTable;

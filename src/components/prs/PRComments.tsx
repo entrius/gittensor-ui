@@ -12,9 +12,21 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { usePullRequestComments } from '../../api';
-import { type PullRequestDetails } from '../../api/models/Dashboard';
+import {
+  type PullRequestComment,
+  type PullRequestDetails,
+} from '../../api/models/Dashboard';
 import { STATUS_COLORS } from '../../theme';
 import 'github-markdown-css/github-markdown-dark.css'; // Import standard GitHub Dark styles
+
+/** A comment or the PR description rendered in the conversation timeline. */
+type ConversationItem = Omit<
+  PullRequestComment,
+  'id' | 'updatedAt' | 'htmlUrl'
+> & {
+  id: number | string;
+  isDescription?: boolean;
+};
 
 interface PRCommentsProps {
   repository: string;
@@ -51,7 +63,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
     );
   }
 
-  const allItems = [
+  const allItems: ConversationItem[] = [
     {
       id: 'pr-description',
       user: {
@@ -102,7 +114,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
         position: 'relative',
       }}
     >
-      {allItems.map((item: any, index: number) => (
+      {allItems.map((item, index) => (
         <Box
           key={item.id}
           sx={{
