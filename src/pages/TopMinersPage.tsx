@@ -72,13 +72,13 @@ const TopMinersPage: React.FC = () => {
       <Box
         sx={{
           width: '100%',
-          height: showSidebarRight ? 'calc(100vh - 64px)' : 'auto',
+          height: 'auto',
           display: 'flex',
           flexDirection: showSidebarRight ? 'row' : 'column',
           gap: { xs: 2, sm: 2, md: 2.5, lg: 3 },
           py: { xs: 2, sm: 2, md: 2.5, lg: 3 },
           px: { xs: 2, sm: 2, md: 2.5, lg: 3 },
-          overflow: 'hidden',
+
         }}
       >
         {/* Main Content Area */}
@@ -89,22 +89,9 @@ const TopMinersPage: React.FC = () => {
             flexDirection: 'column',
             gap: { xs: 2, sm: 1.5 },
             minHeight: 0,
-            overflow: showSidebarRight ? 'auto' : 'visible',
+            overflow: 'visible',
             minWidth: 0,
             pr: showSidebarRight ? 1 : 0,
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: theme.palette.border.light,
-              borderRadius: '4px',
-              '&:hover': {
-                backgroundColor: theme.palette.border.medium,
-              },
-            },
           })}
         >
           <Typography

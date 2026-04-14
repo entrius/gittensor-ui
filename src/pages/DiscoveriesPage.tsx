@@ -71,13 +71,13 @@ const DiscoveriesPage: React.FC = () => {
       <Box
         sx={{
           width: '100%',
-          height: showSidebarRight ? 'calc(100vh - 64px)' : 'auto',
+          height: 'auto',
           display: 'flex',
           flexDirection: showSidebarRight ? 'row' : 'column',
           gap: { xs: 2, sm: 2, md: 2.5, lg: 3 },
           py: { xs: 2, sm: 2, md: 2.5, lg: 3 },
           px: { xs: 2, sm: 2, md: 2.5, lg: 3 },
-          overflow: 'hidden',
+
         }}
       >
         {/* Main Content Area */}
