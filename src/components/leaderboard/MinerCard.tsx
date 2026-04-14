@@ -5,16 +5,17 @@ import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS, STATUS_COLORS } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
-import { type MinerStats, FONTS } from './types';
+import { type MinerStats, type LeaderboardVariant, FONTS } from './types';
 
 interface MinerCardProps {
   miner: MinerStats;
   onClick: () => void;
+  variant?: LeaderboardVariant;
 }
 
 const INACTIVE_OPACITY = 0.24;
 
-export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
+export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick, variant = 'oss' }) => {
   const muiTheme = useTheme();
   const isNumericId = (value?: string) => !value || /^\d+$/.test(value);
   const shouldFetch = !!miner.githubId && isNumericId(miner.author);
@@ -305,42 +306,169 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
         </Box>
       </Box>
 
+      <MinerCardFooter miner={miner} variant={variant} isEligible={isEligible} />
+    </Card>
+  );
+};
+
+interface MinerCardFooterProps {
+  miner: MinerStats;
+  variant: LeaderboardVariant;
+  isEligible: boolean;
+}
+
+const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
+  miner,
+  variant,
+  isEligible,
+}) => {
+  const muiTheme = useTheme();
+
+  return (
+    <Box
+      sx={(theme) => ({
+        display: 'flex',
+        flexDirection: 'column',
+        gap: variant === 'discoveries' ? 0.75 : 0,
+        backgroundColor: isEligible
+          ? alpha(theme.palette.background.default, 0.2)
+          : theme.palette.surface.subtle,
+        opacity: isEligible ? 1 : 0.62,
+        borderRadius: 1.5,
+        p: 1,
+      })}
+    >
+      <PrimaryStatsRow miner={miner} isEligible={isEligible} />
+      {variant === 'discoveries' && (
+        <IssueStatsSection
+          miner={miner}
+          isEligible={isEligible}
+          textColor={alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY)}
+        />
+      )}
+    </Box>
+  );
+};
+
+interface PrimaryStatsRowProps {
+  miner: MinerStats;
+  isEligible: boolean;
+}
+
+const PrimaryStatsRow: React.FC<PrimaryStatsRowProps> = ({
+  miner,
+  isEligible,
+}) => {
+  const muiTheme = useTheme();
+
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 1, alignItems: 'center' }}>
+      {[
+        {
+          label: 'Merged',
+          value: miner.totalMergedPrs ?? 0,
+          color: isEligible
+            ? STATUS_COLORS.merged
+            : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
+        },
+        {
+          label: 'Open',
+          value: miner.totalOpenPrs ?? 0,
+          color: isEligible
+            ? alpha(muiTheme.palette.text.primary, 0.84)
+            : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
+        },
+        {
+          label: 'Closed',
+          value: miner.totalClosedPrs ?? 0,
+          color: isEligible
+            ? muiTheme.palette.status.closed
+            : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
+        },
+      ].map(({ label, value, color }) => (
+        <Box key={label}>
+          <Typography
+            sx={(theme) => ({
+              fontFamily: FONTS.mono,
+              fontSize: '0.6rem',
+              color: isEligible
+                ? theme.palette.status.open
+                : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
+              textTransform: 'uppercase',
+              mb: 0.2,
+            })}
+          >
+            {label}
+          </Typography>
+          <Typography sx={{ fontFamily: FONTS.mono, fontSize: '0.85rem', color, fontWeight: 600 }}>
+            {value}
+          </Typography>
+        </Box>
+      ))}
       <Box
         sx={(theme) => ({
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr 1fr auto',
-          gap: 1,
-          backgroundColor: isEligible
-            ? alpha(theme.palette.background.default, 0.2)
-            : theme.palette.surface.subtle,
-          opacity: isEligible ? 1 : 0.62,
-          borderRadius: 1.5,
-          p: 1,
-          alignItems: 'center',
+          textAlign: 'right',
+          borderLeft: `1px solid ${
+            isEligible ? theme.palette.border.light : theme.palette.border.subtle
+          }`,
+          pl: 1.5,
         })}
       >
+        <Typography
+          sx={(theme) => ({
+            fontFamily: FONTS.mono,
+            fontSize: '0.6rem',
+            color: isEligible
+              ? theme.palette.status.open
+              : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
+            textTransform: 'uppercase',
+            mb: 0.2,
+          })}
+        >
+          Score
+        </Typography>
+        <Typography
+          sx={{
+            fontFamily: FONTS.mono,
+            fontSize: '0.9rem',
+            color: isEligible
+              ? muiTheme.palette.text.primary
+              : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
+            fontWeight: 700,
+          }}
+        >
+          {Number(miner.totalScore).toFixed(2)}
+        </Typography>
+      </Box>
+    </Box>
+  );
+};
+
+interface IssueStatsSectionProps {
+  miner: MinerStats;
+  isEligible: boolean;
+  textColor: string;
+}
+
+const IssueStatsSection: React.FC<IssueStatsSectionProps> = ({
+  miner,
+  isEligible,
+  textColor,
+}) => {
+  const muiTheme = useTheme();
+
+  return (
+    <Box sx={{ pt: 0.35, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <Typography
+        sx={{ fontFamily: FONTS.mono, fontSize: '0.7rem', fontWeight: 700, color: '#8b949e', minWidth: 28, textTransform: 'uppercase', mb: 0.35, letterSpacing: '0.04em' }}
+      >
+        Issues
+      </Typography>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 1, alignItems: 'center' }}>
         {[
-          {
-            label: 'Merged',
-            value: miner.totalMergedPrs ?? 0,
-            color: isEligible
-              ? STATUS_COLORS.merged
-              : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
-          },
-          {
-            label: 'Open',
-            value: miner.totalOpenPrs ?? 0,
-            color: isEligible
-              ? alpha(muiTheme.palette.text.primary, 0.84)
-              : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
-          },
-          {
-            label: 'Closed',
-            value: miner.totalClosedPrs ?? 0,
-            color: isEligible
-              ? muiTheme.palette.status.closed
-              : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
-          },
+          { label: 'Solved', value: miner.totalSolvedIssues ?? 0, color: isEligible ? STATUS_COLORS.merged : textColor },
+          { label: 'Open', value: miner.totalOpenIssues ?? 0, color: isEligible ? alpha(muiTheme.palette.text.primary, 0.84) : textColor },
+          { label: 'Closed', value: miner.totalClosedIssues ?? 0, color: isEligible ? muiTheme.palette.status.closed : textColor },
         ].map(({ label, value, color }) => (
           <Box key={label}>
             <Typography
@@ -356,14 +484,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
             >
               {label}
             </Typography>
-            <Typography
-              sx={{
-                fontFamily: FONTS.mono,
-                fontSize: '0.85rem',
-                color,
-                fontWeight: 600,
-              }}
-            >
+            <Typography sx={{ fontFamily: FONTS.mono, fontSize: '0.85rem', color, fontWeight: 600 }}>
               {value}
             </Typography>
           </Box>
@@ -372,9 +493,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
           sx={(theme) => ({
             textAlign: 'right',
             borderLeft: `1px solid ${
-              isEligible
-                ? theme.palette.border.light
-                : theme.palette.border.subtle
+              isEligible ? theme.palette.border.light : theme.palette.border.subtle
             }`,
             pl: 1.5,
           })}
@@ -390,22 +509,22 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
               mb: 0.2,
             })}
           >
-            Score
+            Issues
           </Typography>
           <Typography
             sx={{
               fontFamily: FONTS.mono,
               fontSize: '0.9rem',
-              color: isEligible
-                ? muiTheme.palette.text.primary
-                : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
+              color: isEligible ? muiTheme.palette.text.primary : textColor,
               fontWeight: 700,
             }}
           >
-            {Number(miner.totalScore).toFixed(2)}
+            {(miner.totalSolvedIssues ?? 0) +
+              (miner.totalOpenIssues ?? 0) +
+              (miner.totalClosedIssues ?? 0)}
           </Typography>
         </Box>
       </Box>
-    </Card>
+    </Box>
   );
 };
