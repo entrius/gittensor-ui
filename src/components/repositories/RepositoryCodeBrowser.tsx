@@ -109,9 +109,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
             ...prev,
             [pathKey]: {
               message: c.commit.message,
-              author: c.commit.author.name,
+              author: c.author?.login || c.commit.author.name,
               avatarUrl: c.author?.avatar_url || '',
-              date: c.commit.author.date,
+              date: c.commit.committer?.date || c.commit.author.date,
               sha: c.sha.substring(0, 7),
             },
           }));
