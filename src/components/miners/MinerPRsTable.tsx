@@ -26,7 +26,7 @@ import {
   NavigateNext as NextIcon,
 } from '@mui/icons-material';
 import { useMinerPRs, type CommitLog } from '../../api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import { type MinerStatusFilter } from '../../utils/ExplorerUtils';
 
@@ -76,7 +76,24 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<PrSortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
-  const [page, setPage] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [page, setPage] = useState(() => {
+    const pageParam = parseInt(searchParams.get('prPage') || '0', 10);
+    return isNaN(pageParam) ? 0 : pageParam;
+  });
+
+  const updatePage = useCallback((newPage: number) => {
+    setPage(newPage);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (newPage > 0) {
+        next.set('prPage', String(newPage));
+      } else {
+        next.delete('prPage');
+      }
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
 
   const handleSort = useCallback(
     (field: PrSortField) => {
@@ -86,9 +103,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         setSortField(field);
         setSortDir('desc');
       }
-      setPage(0);
+      updatePage(0);
     },
-    [sortField],
+    [sortField, updatePage],
   );
 
   const filteredPRs = useMemo(() => {
@@ -248,7 +265,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 label={`Author: ${selectedAuthor}`}
                 onDelete={() => {
                   setSelectedAuthor(null);
-                  setPage(0);
+                  updatePage(0);
                 }}
               />
             )}
@@ -262,7 +279,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 selected={statusFilter === 'all'}
                 onClick={() => {
                   setStatusFilter('all');
-                  setPage(0);
+                  updatePage(0);
                 }}
               />
               <ExplorerFilterButton
@@ -272,7 +289,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 selected={statusFilter === 'open'}
                 onClick={() => {
                   setStatusFilter('open');
-                  setPage(0);
+                  updatePage(0);
                 }}
               />
               <ExplorerFilterButton
@@ -282,7 +299,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 selected={statusFilter === 'merged'}
                 onClick={() => {
                   setStatusFilter('merged');
-                  setPage(0);
+                  updatePage(0);
                 }}
               />
               <ExplorerFilterButton
@@ -292,7 +309,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 selected={statusFilter === 'closed'}
                 onClick={() => {
                   setStatusFilter('closed');
-                  setPage(0);
+                  updatePage(0);
                 }}
               />
             </Box>
@@ -306,7 +323,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery(e.target.value);
-            setPage(0);
+            updatePage(0);
           }}
           InputProps={{
             startAdornment: (
@@ -667,7 +684,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               }}
             >
               <Box
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                onClick={() => updatePage(Math.max(0, page - 1))}
                 sx={{
                   cursor: page > 0 ? 'pointer' : 'default',
                   opacity: page > 0 ? 1 : 0.3,
@@ -689,7 +706,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 {page + 1} / {totalPages}
               </Typography>
               <Box
-                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                onClick={() => updatePage(Math.min(totalPages - 1, page + 1))}
                 sx={{
                   cursor: page < totalPages - 1 ? 'pointer' : 'default',
                   opacity: page < totalPages - 1 ? 1 : 0.3,
