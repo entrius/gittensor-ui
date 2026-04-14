@@ -34,7 +34,14 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
 import { type CommitLog } from '../../api/models/Dashboard';
 import { formatUsdEstimate, truncateText } from '../../utils';
-import theme, { RANK_COLORS, STATUS_COLORS } from '../../theme';
+import theme, { STATUS_COLORS } from '../../theme';
+import { useTableControls } from '../../hooks/useTableControls';
+import { getPRChartOption } from './chartFormatters';
+import {
+  bodyCellStyle,
+  getRankIcon,
+  headerCellStyle,
+} from './tableSharedUtils';
 
 interface TopPRsTableProps {
   prs: CommitLog[];
@@ -51,15 +58,24 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
   onSelectMiner,
   onSelectRepository,
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const {
+    searchQuery,
+    setSearchQuery,
+    showChart,
+    setShowChart,
+    page,
+    setPage,
+    rowsPerPage,
+    setRowsPerPage,
+    useLogScale,
+    setUseLogScale,
+    handleChangePage,
+    handleChangeRowsPerPage,
+  } = useTableControls();
   const [showFilters, setShowFilters] = useState(false);
-  const [showChart, setShowChart] = useState(false);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'open' | 'closed' | 'merged'
   >('all');
-  const [useLogScale, setUseLogScale] = useState(true);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const rankedPRs = useMemo(
@@ -157,235 +173,14 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
     </Button>
   );
 
-  const getChartOption = () => {
-    const chartData = filteredPRs.slice(0, 50);
-    const textColor = 'rgba(255, 255, 255, 0.85)';
-    const gridColor = 'rgba(255, 255, 255, 0.08)';
-
-    const chartColor = theme.palette.primary.main;
-
-    const xAxisData = chartData.map(
-      (item) => `#${item?.pullRequestNumber || ''}`,
-    );
-
-    const stemData = chartData.map((item) => ({
-      value: Number(parseFloat(item?.score || '0')),
-      title: item?.pullRequestTitle || '',
-      author: item?.author || '',
-      repository: item?.repository || '',
-      prNumber: item?.pullRequestNumber || 0,
-      rank: item?.rank || 0,
-    }));
-
-    const dotData = stemData.map((item) => ({
-      value: item.value,
-      title: item.title,
-      author: item.author,
-      repository: item.repository,
-      prNumber: item.prNumber,
-      rank: item.rank,
-      itemStyle: {
-        color: chartColor,
-        shadowBlur: 10,
-        shadowColor: chartColor,
-      },
-    }));
-
-    return {
-      backgroundColor: 'transparent',
-      title: {
-        text: 'Pull Request Performance Ranking',
-        subtext: 'Individual PR scores ranked by performance',
-        left: 'center',
-        top: 20,
-        textStyle: {
-          color: '#ffffff',
-          fontFamily: 'JetBrains Mono',
-          fontSize: 18,
-          fontWeight: 600,
-        },
-        subtextStyle: {
-          color: 'rgba(255, 255, 255, 0.6)',
-          fontFamily: 'JetBrains Mono',
-          fontSize: 11,
-        },
-      },
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-          type: 'shadow',
-          shadowStyle: {
-            color: 'rgba(255, 255, 255, 0.05)',
-          },
-        },
-        backgroundColor: 'rgba(10, 10, 12, 0.98)',
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        borderWidth: 1,
-        textStyle: {
-          color: '#fff',
-          fontFamily: 'JetBrains Mono',
-          fontSize: 12,
-        },
-        padding: [14, 18],
-        formatter: (params: any) => {
-          const data = params[0]?.data || params[1]?.data;
-          if (!data) return '';
-
-          return `
-            <div style="font-family: 'JetBrains Mono', monospace;">
-              <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 8px;">
-                PR #${data.prNumber}
-              </div>
-              <div style="margin-bottom: 10px; color: rgba(255,255,255,0.85); font-size: 11px; max-width: 300px; white-space: normal; word-break: break-word; line-height: 1.4;">
-                ${data.title}
-              </div>
-              <div style="display: grid; gap: 6px; font-size: 11px;">
-                <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Rank:</span>
-                  <span style="color: #fff; font-weight: 600;">#${data.rank}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Score:</span>
-                  <span style="color: #fff; font-weight: 600;">${data.value.toFixed(4)}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Author:</span>
-                  <span style="color: #fff; font-weight: 600;">${data.author}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Repository:</span>
-                  <span style="color: #fff; font-weight: 600;">${data.repository.split('/')[1] || data.repository}</span>
-                </div>
-              </div>
-            </div>
-          `;
-        },
-      },
-      grid: {
-        left: '3%',
-        right: '3%',
-        bottom: '18%',
-        top: '18%',
-        containLabel: true,
-      },
-      dataZoom: [
-        {
-          type: 'inside',
-          start: 0,
-          end: 100,
-          zoomOnMouseWheel: true,
-          moveOnMouseMove: true,
-        },
-      ],
-      xAxis: {
-        type: 'category',
-        data: xAxisData,
-        axisLabel: {
-          color: textColor,
-          fontFamily: 'JetBrains Mono',
-          fontSize: 11,
-          interval: 0,
-          rotate: 45,
-          margin: 12,
-        },
-        axisLine: {
-          lineStyle: {
-            color: gridColor,
-            width: 1,
-          },
-        },
-        axisTick: {
-          show: false,
-        },
-      },
-      yAxis: {
-        type: useLogScale ? 'log' : 'value',
-        min: useLogScale ? 1 : 0,
-        logBase: 10,
-        name: 'PR Score',
-        nameTextStyle: {
-          color: textColor,
-          fontFamily: 'JetBrains Mono',
-          fontSize: 12,
-        },
-        axisLabel: {
-          color: textColor,
-          fontFamily: 'JetBrains Mono',
-          fontSize: 11,
-          formatter: (value: number) => {
-            // For small values in log scale, format appropriately
-            if (value < 0.01) return value.toExponential(1);
-            return value.toFixed(2);
-          },
-        },
-        splitLine: {
-          lineStyle: {
-            color: gridColor,
-            type: 'dashed',
-            opacity: 0.5,
-          },
-        },
-        axisLine: {
-          show: false,
-        },
-        axisTick: {
-          show: false,
-        },
-      },
-      series: [
-        {
-          name: 'Stems',
-          type: 'bar',
-          data: dotData.map((item) => ({
-            ...item,
-            itemStyle: {
-              color: chartColor,
-              opacity: 0.4,
-              borderRadius: [2, 2, 0, 0],
-            },
-          })),
-          barWidth: 2,
-          z: 1,
-          animationDuration: 1000,
-          animationEasing: 'cubicOut',
-          animationDelay: (idx: number) => idx * 30,
-        },
-        {
-          name: 'Dots',
-          type: 'scatter',
-          data: dotData,
-          symbolSize: 14,
-          z: 2,
-          emphasis: {
-            scale: 1.5,
-            itemStyle: {
-              shadowBlur: 20,
-              borderColor: '#fff',
-              borderWidth: 2,
-            },
-          },
-          animationDuration: 1000,
-          animationEasing: 'cubicOut',
-          animationDelay: (idx: number) => idx * 30 + 100,
-        },
-      ],
-    };
-  };
-
-  const handleChangePage = (_event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  useEffect(() => {
-    setPage(0);
-  }, [searchQuery]);
+  const chartOption = useMemo(
+    () =>
+      getPRChartOption({
+        prs: filteredPRs,
+        useLogScale,
+      }),
+    [filteredPRs, useLogScale],
+  );
 
   useEffect(() => {
     if (cardRef.current) {
@@ -651,7 +446,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         >
           {showChart && filteredPRs.length > 0 && (
             <ReactECharts
-              option={getChartOption()}
+              option={chartOption}
               style={{ height: '100%', width: '100%' }}
             />
           )}
@@ -977,83 +772,5 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
     </Card>
   );
 };
-
-const headerCellStyle = {
-  backgroundColor: 'rgba(18, 18, 20, 0.95)',
-  backdropFilter: 'blur(8px)',
-  color: '#ffffff',
-  fontFamily: '"JetBrains Mono", monospace',
-  fontWeight: 500,
-  fontSize: '0.75rem',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  height: '48px',
-  py: 1,
-  boxSizing: 'border-box' as const,
-};
-
-const bodyCellStyle = {
-  color: '#ffffff',
-  fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  fontSize: '0.75rem',
-  py: 0.75,
-  height: '52px',
-  boxSizing: 'border-box' as const,
-};
-
-const getRankIcon = (rank: number) => (
-  <Box
-    sx={{
-      backgroundColor: '#000000',
-      borderRadius: '2px',
-      width: '22px',
-      height: '22px',
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0,
-      border: '1px solid',
-      borderColor:
-        rank === 1
-          ? alpha(RANK_COLORS.first, 0.4)
-          : rank === 2
-            ? alpha(RANK_COLORS.second, 0.4)
-            : rank === 3
-              ? alpha(RANK_COLORS.third, 0.4)
-              : 'rgba(255, 255, 255, 0.15)',
-      boxShadow:
-        rank === 1
-          ? `0 0 12px ${alpha(RANK_COLORS.first, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.first, 0.2)}`
-          : rank === 2
-            ? `0 0 12px ${alpha(RANK_COLORS.second, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.second, 0.2)}`
-            : rank === 3
-              ? `0 0 12px ${alpha(RANK_COLORS.third, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.third, 0.2)}`
-              : 'none',
-    }}
-  >
-    <Typography
-      component="span"
-      sx={{
-        color:
-          rank === 1
-            ? RANK_COLORS.first
-            : rank === 2
-              ? RANK_COLORS.second
-              : rank === 3
-                ? RANK_COLORS.third
-                : 'rgba(255, 255, 255, 0.6)',
-        fontFamily: '"JetBrains Mono", monospace',
-        fontSize: '0.65rem',
-        fontWeight: 600,
-        lineHeight: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      {rank}
-    </Typography>
-  </Box>
-);
 
 export default TopPRsTable;
