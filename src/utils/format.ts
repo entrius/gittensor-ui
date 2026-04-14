@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import { CREDIBILITY_COLORS } from '../theme';
 
 /**
@@ -37,12 +38,7 @@ export const truncateText = (text: string, maxLength: number): string => {
 
 export const formatDate = (dateStr: string | null | undefined): string => {
   if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  return format(new Date(dateStr), 'MMM d, yyyy');
 };
 
 export const formatUsdEstimate = (
