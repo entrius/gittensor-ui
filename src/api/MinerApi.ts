@@ -1,5 +1,5 @@
 // Miner API hooks - uses /miners endpoints
-import { useApiQuery } from './ApiUtils';
+import { useApiQuery, useArrayApiQuery } from './ApiUtils';
 import {
   type GithubMinerData,
   type MinerEvaluation,
@@ -24,13 +24,28 @@ const useMinersQuery = <TResponse = void, TSelect = TResponse>(
     enabled,
   );
 
+const useMinersArrayQuery = <TItem = void>(
+  queryName: string,
+  url: string,
+  refetchInterval?: number,
+  queryParams?: Record<string, string | number | undefined>,
+  enabled?: boolean,
+) =>
+  useArrayApiQuery<TItem>(
+    queryName,
+    `/miners${url}`,
+    refetchInterval,
+    queryParams,
+    enabled,
+  );
+
 /**
  * Get all active miners with their pre-computed stats
  * Only includes miners currently registered on the subnet (in current_miners table)
  * Ideal for leaderboards
  */
 export const useAllMiners = () =>
-  useMinersQuery<MinerEvaluation[]>('useAllMiners', '');
+  useMinersArrayQuery<MinerEvaluation>('useAllMiners', '');
 
 // Shared cache key for the miners dataset.
 export const getAllMinersQueryKey = () =>
@@ -49,7 +64,7 @@ export const useMinerStats = (githubId: string) =>
  * @param enabled - Optional flag to enable/disable the query
  */
 export const useMinerPRs = (githubId: string, enabled?: boolean) =>
-  useMinersQuery<CommitLog[]>(
+  useMinersArrayQuery<CommitLog>(
     'useMinerPRs',
     `/${githubId}/prs`,
     undefined,

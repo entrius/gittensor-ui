@@ -1,7 +1,7 @@
 /**
  * Issues API - For issue bounties.
  */
-import { useApiQuery } from './ApiUtils';
+import { useApiQuery, useArrayApiQuery } from './ApiUtils';
 import {
   IssueBounty,
   IssueDetails,
@@ -17,7 +17,7 @@ export const useIssues = (status?: string, repository?: string) => {
   const params: Record<string, string> = {};
   if (status) params.status = status;
   if (repository) params.repository = repository;
-  return useApiQuery<IssueBounty[]>(
+  return useArrayApiQuery<IssueBounty>(
     'useIssues',
     '/issues',
     undefined,
@@ -37,7 +37,7 @@ export const getIssuesQueryKey = (status?: string, repository?: string) =>
  * Fetch all bounties for a specific repository.
  */
 export const useRepoIssues = (repoFullName: string) =>
-  useApiQuery<IssueBounty[]>(
+  useArrayApiQuery<IssueBounty>(
     'useRepoIssues',
     '/issues',
     undefined,
@@ -79,7 +79,7 @@ export const useIssueDetails = (id: number) =>
  * Fetch PR submissions for an issue.
  */
 export const useIssueSubmissions = (id: number) =>
-  useApiQuery<IssueSubmission[]>(
+  useArrayApiQuery<IssueSubmission>(
     'useIssueSubmissions',
     `/issues/${id}/submissions`,
     undefined,
