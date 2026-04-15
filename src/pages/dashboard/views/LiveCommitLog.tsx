@@ -56,11 +56,17 @@ interface CommitLogEntry {
 }
 
 type CommitStatus = 'merged' | 'open' | 'closed';
+type CommitStatusFilter = 'all' | CommitStatus;
 
 const COMMIT_STATUS_META: Record<
-  CommitStatus,
+  CommitStatusFilter,
   { filterLabel: string; badgeLabel: string; color: string }
 > = {
+  all: {
+    filterLabel: 'All',
+    badgeLabel: 'ALL',
+    color: theme.palette.text.secondary,
+  },
   merged: {
     filterLabel: 'Merged',
     badgeLabel: 'MERGED',
@@ -78,7 +84,12 @@ const COMMIT_STATUS_META: Record<
   },
 };
 
-const COMMIT_STATUS_FILTERS: CommitStatus[] = ['merged', 'open', 'closed'];
+const COMMIT_STATUS_FILTERS: CommitStatusFilter[] = [
+  'all',
+  'merged',
+  'open',
+  'closed',
+];
 
 const getCommitId = (entry: CommitLogEntry) =>
   `${entry.repository}-${entry.pullRequestNumber}`;
@@ -312,7 +323,7 @@ const LiveCommitLog: React.FC = () => {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteCommitLog({ refetchInterval: 10000 });
 
-  const [statusFilter, setStatusFilter] = useState<CommitStatus>('merged');
+  const [statusFilter, setStatusFilter] = useState<CommitStatusFilter>('all');
   const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
   const logContainerRef = useRef<HTMLDivElement>(null);
@@ -361,7 +372,10 @@ const LiveCommitLog: React.FC = () => {
   const visibleEntries = useMemo(
     () =>
       [...logEntries]
-        .filter((entry) => getCommitStatus(entry) === statusFilter)
+        .filter(
+          (entry) =>
+            statusFilter === 'all' || getCommitStatus(entry) === statusFilter,
+        )
         .sort((a, b) => getCommitTimestamp(b) - getCommitTimestamp(a)),
     [logEntries, statusFilter],
   );
