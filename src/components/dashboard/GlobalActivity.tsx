@@ -310,14 +310,22 @@ const GlobalActivity: React.FC = () => {
                   title="Eligible"
                   subtitle="Paid"
                   variant="primary"
-                  statLabels={{ merged: 'Solved', open: 'Open', closed: 'Closed' }}
+                  statLabels={{
+                    merged: 'Solved',
+                    open: 'Open',
+                    closed: 'Closed',
+                  }}
                 />
                 <PRStatusChart
                   stats={inactiveDiscoveryStats}
                   title="Ineligible"
                   subtitle="Unpaid"
                   variant="secondary"
-                  statLabels={{ merged: 'Solved', open: 'Open', closed: 'Closed' }}
+                  statLabels={{
+                    merged: 'Solved',
+                    open: 'Open',
+                    closed: 'Closed',
+                  }}
                 />
               </Box>
             </Card>
