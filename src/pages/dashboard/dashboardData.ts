@@ -140,10 +140,7 @@ const getUtcWeekStart = (timestamp: number) => {
   );
 };
 
-const formatTrendBucketLabel = (
-  timestamp: number,
-  range: TrendTimeRange,
-) => {
+const formatTrendBucketLabel = (timestamp: number, range: TrendTimeRange) => {
   if (range === '1d') {
     return new Intl.DateTimeFormat('en-US', {
       hour: 'numeric',
@@ -262,18 +259,9 @@ export const buildDashboardTrendData = (
     range,
     now,
   );
-  const mergedPrValues = bucketTimestamps(
-    mergedPrTimestamps,
-    buckets,
-  );
-  const openedPrValues = bucketTimestamps(
-    openedPrTimestamps,
-    buckets,
-  );
-  const openedIssueValues = bucketTimestamps(
-    openedIssueTimestamps,
-    buckets,
-  );
+  const mergedPrValues = bucketTimestamps(mergedPrTimestamps, buckets);
+  const openedPrValues = bucketTimestamps(openedPrTimestamps, buckets);
+  const openedIssueValues = bucketTimestamps(openedIssueTimestamps, buckets);
   const resolvedIssueValues = bucketTimestamps(
     resolvedIssueTimestamps,
     buckets,
@@ -397,10 +385,7 @@ export const buildDashboardOverview = (
   const previousIssueMetrics = previousWindow
     ? getIssueOverviewMetrics(issues, previousWindow)
     : null;
-  const getMetricDelta = (
-    currentValue: number,
-    previousValue?: number,
-  ) =>
+  const getMetricDelta = (currentValue: number, previousValue?: number) =>
     range === 'all' || previousValue === undefined
       ? '0%'
       : formatDelta(currentValue, previousValue);
@@ -418,7 +403,10 @@ export const buildDashboardOverview = (
         {
           label: 'Total',
           value: currentPrMetrics.total,
-          delta: getMetricDelta(currentPrMetrics.total, previousPrMetrics?.total),
+          delta: getMetricDelta(
+            currentPrMetrics.total,
+            previousPrMetrics?.total,
+          ),
         },
         {
           label: 'Merged',

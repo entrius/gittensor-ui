@@ -33,15 +33,6 @@ const KpiCard: React.FC<KpiCardProps> = ({
     : { py: isMobile ? 1.1 : 1.35 };
   const valueVariant = isLarge ? 'h2' : 'h4';
   const titleSize = isLarge ? (isMobile ? 14 : 16) : isMobile ? 12 : 14;
-  const cardSx: SxProps<Theme> = [
-    (muiTheme) => ({
-      borderRadius: 3,
-      border: `1px solid ${muiTheme.palette.border.light}`,
-      backgroundColor: 'transparent',
-      height: '100%',
-    }),
-    ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
-  ];
 
   const formattedValue =
     value !== undefined && value !== null

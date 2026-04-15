@@ -234,10 +234,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
                               <Typography
                                 sx={{
-                                  color: getMetricTone(
-                                    theme,
-                                    metric.label,
-                                  ),
+                                  color: getMetricTone(theme, metric.label),
                                   fontFamily: monoFontFamily,
                                   fontSize: { xs: '0.96rem', sm: '1.04rem' },
                                   fontWeight: 700,
