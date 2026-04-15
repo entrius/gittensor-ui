@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { TopMinersTable, LeaderboardSidebar, SEO } from '../components';
 import { useAllMiners } from '../api';
-import theme from '../theme';
+import theme, { scrollbarSx } from '../theme';
 import { parseNumber } from '../utils/ExplorerUtils';
 
 const DiscoveriesPage: React.FC = () => {
@@ -96,19 +96,7 @@ const DiscoveriesPage: React.FC = () => {
             overflow: showSidebarRight ? 'auto' : 'visible',
             minWidth: 0,
             pr: showSidebarRight ? 1 : 0,
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '4px',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              },
-            },
+            ...scrollbarSx,
           }}
         >
           <Typography

@@ -39,7 +39,7 @@ import ReactECharts from 'echarts-for-react';
 import { useSearchParams } from 'react-router-dom';
 import { truncateText } from '../../utils';
 import { RankIcon } from './RankIcon';
-import theme from '../../theme';
+import theme, { scrollbarSx } from '../../theme';
 
 interface RepoStats {
   repository: string;
@@ -653,19 +653,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       <TableContainer
         sx={{
           overflowY: 'auto',
-          '&::-webkit-scrollbar': {
-            width: '8px',
-          },
-          '&::-webkit-scrollbar-track': {
-            backgroundColor: 'transparent',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            borderRadius: '4px',
-            '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-            },
-          },
+          ...scrollbarSx,
         }}
       >
         <Table
