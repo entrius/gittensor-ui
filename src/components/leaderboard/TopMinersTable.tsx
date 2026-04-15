@@ -20,14 +20,16 @@ const MINERS_PAGE_SIZE = 60;
 interface TopMinersTableProps {
   miners: MinerStats[];
   isLoading?: boolean;
-  onSelectMiner: (githubId: string) => void;
+  getHref: (miner: MinerStats) => string;
+  linkState?: unknown;
   variant?: LeaderboardVariant;
 }
 
 const TopMinersTable: React.FC<TopMinersTableProps> = ({
   miners,
   isLoading,
-  onSelectMiner,
+  getHref,
+  linkState,
   variant = 'oss',
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -151,7 +153,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                 <MinerCard
                   miner={miner}
                   variant={variant}
-                  onClick={() => onSelectMiner(miner.githubId)}
+                  href={getHref(miner)}
+                  linkState={linkState}
                 />
               </Grid>
             ))}
