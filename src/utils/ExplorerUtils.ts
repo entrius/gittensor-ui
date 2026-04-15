@@ -42,6 +42,13 @@ export const calculateDynamicOpenPrThreshold = (
   return Math.min(baseThreshold + bonus, maxThreshold);
 };
 
+export const calculateOpenIssueThreshold = (
+  minerStats: MinerEvaluation,
+): number => {
+  const issueTokenScore = parseNumber(minerStats.issueTokenScore);
+  return Math.min(5 + Math.floor(issueTokenScore / 300), 30);
+};
+
 const isMinerEvaluationLike = (value: unknown): value is MinerEvaluation => {
   if (!value || typeof value !== 'object') return false;
   return 'githubId' in value;
