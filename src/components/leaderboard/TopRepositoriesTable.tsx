@@ -39,6 +39,7 @@ import ReactECharts from 'echarts-for-react';
 import { useSearchParams } from 'react-router-dom';
 import { truncateText } from '../../utils';
 import { RankIcon } from './RankIcon';
+import theme, { scrollbarSx } from '../../theme';
 
 interface RepoStats {
   repository: string;
@@ -184,7 +185,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const getChartOption = () => {
     const chartData = filteredRepositories.slice(0, 50); // Limit for performance
     const textColor = 'rgba(255, 255, 255, 0.85)';
-    const gridColor = 'rgba(255, 255, 255, 0.08)';
+    const gridColor = theme.palette.border.subtle;
 
     const barGradient = {
       type: 'linear',
@@ -652,19 +653,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       <TableContainer
         sx={{
           overflowY: 'auto',
-          '&::-webkit-scrollbar': {
-            width: '8px',
-          },
-          '&::-webkit-scrollbar-track': {
-            backgroundColor: 'transparent',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            borderRadius: '4px',
-            '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-            },
-          },
+          ...scrollbarSx,
         }}
       >
         <Table
@@ -723,7 +712,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     sx={{
                       cursor: 'pointer',
                       '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                        backgroundColor: 'border.subtle',
                       },
                       transition: 'all 0.2s',
                       opacity: repo.inactiveAt ? 0.5 : 1,

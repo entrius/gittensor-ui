@@ -25,7 +25,7 @@ import { Search, Check, Close } from '@mui/icons-material';
 import ReactECharts from 'echarts-for-react';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
-import theme from '../../theme';
+import theme, { scrollbarSx } from '../../theme';
 import { useLanguagesAndWeights } from '../../api';
 
 type SortField = 'extension' | 'weight' | 'language';
@@ -116,7 +116,7 @@ const LanguageWeightsTable: React.FC = () => {
   const getChartOption = () => {
     const chartData = filteredAndSortedLanguages;
     const textColor = 'rgba(255, 255, 255, 0.85)';
-    const gridColor = 'rgba(255, 255, 255, 0.08)';
+    const gridColor = theme.palette.border.subtle;
 
     const xAxisData = chartData.map((item) => item.extension);
     const seriesData = chartData.map((item) => {
@@ -354,19 +354,7 @@ const LanguageWeightsTable: React.FC = () => {
             backgroundColor: 'transparent',
             maxHeight: '800px',
             overflowY: 'auto',
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '4px',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              },
-            },
+            ...scrollbarSx,
           }}
         >
           <Table stickyHeader>

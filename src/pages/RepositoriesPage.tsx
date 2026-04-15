@@ -203,8 +203,9 @@ const RepositoriesPage: React.FC = () => {
       const prDate = pr.mergedAt;
       if (!pr?.repository || !prDate) return;
       const score = parseFloat(pr.score || '0');
+      const repoKey = pr.repository.toLowerCase();
 
-      const cur = repoScores.get(pr.repository) || {
+      const cur = repoScores.get(repoKey) || {
         recentScore: 0,
         priorScore: 0,
         recentPRs: 0,
@@ -216,18 +217,19 @@ const RepositoriesPage: React.FC = () => {
       } else {
         cur.priorScore += score;
       }
-      repoScores.set(pr.repository, cur);
+      repoScores.set(repoKey, cur);
     });
 
-    const repoMap = new Map(reposWithWeights.map((r) => [r.fullName, r]));
+    const repoMap = new Map(
+      reposWithWeights.map((r) => [r.fullName.toLowerCase(), r]),
+    );
 
     return Array.from(repoScores.entries())
       .filter(
-        ([name, s]) =>
-          repoMap.has(name) && s.recentScore > 0 && s.priorScore > 0,
+        ([key, s]) => repoMap.has(key) && s.recentScore > 0 && s.priorScore > 0,
       )
-      .map(([name, s]) => ({
-        name,
+      .map(([key, s]) => ({
+        name: repoMap.get(key)!.fullName,
         recentScore: s.recentScore,
         priorScore: s.priorScore,
         pctIncrease: (s.recentScore / s.priorScore) * 100,
@@ -241,7 +243,9 @@ const RepositoriesPage: React.FC = () => {
   const topCollateralRepos = useMemo(() => {
     if (!allPRs || !reposWithWeights) return [];
 
-    const repoMap = new Map(reposWithWeights.map((r) => [r.fullName, r]));
+    const repoMap = new Map(
+      reposWithWeights.map((r) => [r.fullName.toLowerCase(), r]),
+    );
 
     // Sum collateral from open PRs per repo
     const repoCollateral = new Map<
@@ -251,22 +255,23 @@ const RepositoriesPage: React.FC = () => {
 
     allPRs.forEach((pr: CommitLog) => {
       if (!pr?.repository || pr.prState !== 'OPEN') return;
-      if (!repoMap.has(pr.repository)) return;
+      const repoKey = pr.repository.toLowerCase();
+      if (!repoMap.has(repoKey)) return;
       const collateral = parseFloat(pr.collateralScore || '0');
       if (collateral <= 0) return;
 
-      const cur = repoCollateral.get(pr.repository) || {
+      const cur = repoCollateral.get(repoKey) || {
         totalCollateral: 0,
         openPRs: 0,
       };
       cur.totalCollateral += collateral;
       cur.openPRs += 1;
-      repoCollateral.set(pr.repository, cur);
+      repoCollateral.set(repoKey, cur);
     });
 
     return Array.from(repoCollateral.entries())
-      .map(([name, data]) => ({
-        name,
+      .map(([key, data]) => ({
+        name: repoMap.get(key)!.fullName,
         collateral: data.totalCollateral,
         openPRs: data.openPRs,
       }))
@@ -278,7 +283,9 @@ const RepositoriesPage: React.FC = () => {
   const recentPrs = useMemo(() => {
     if (!allPRs || !reposWithWeights) return [];
 
-    const repoMap = new Map(reposWithWeights.map((r) => [r.fullName, r]));
+    const repoMap = new Map(
+      reposWithWeights.map((r) => [r.fullName.toLowerCase(), r]),
+    );
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -288,7 +295,7 @@ const RepositoriesPage: React.FC = () => {
         (pr) =>
           pr.repository &&
           pr.mergedAt &&
-          repoMap.has(pr.repository) &&
+          repoMap.has(pr.repository.toLowerCase()) &&
           new Date(pr.mergedAt) >= today,
       )
       .sort((a, b) => {
@@ -297,10 +304,10 @@ const RepositoriesPage: React.FC = () => {
         if (scoreB !== scoreA) return scoreB - scoreA;
         // Tiebreak by repo weight
         const weightA = parseFloat(
-          String(repoMap.get(a.repository)?.weight || '0'),
+          String(repoMap.get(a.repository?.toLowerCase() ?? '')?.weight || '0'),
         );
         const weightB = parseFloat(
-          String(repoMap.get(b.repository)?.weight || '0'),
+          String(repoMap.get(b.repository?.toLowerCase() ?? '')?.weight || '0'),
         );
         return weightB - weightA;
       })

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { scrollbarSx } from '../../theme';
 import {
   Box,
   Table,
@@ -184,7 +185,7 @@ const RepositoryWeightsTable: React.FC = () => {
     const minWeight = weights.length > 0 ? Math.min(...weights) : 0;
 
     const textColor = 'rgba(255, 255, 255, 0.85)';
-    const gridColor = 'rgba(255, 255, 255, 0.08)';
+    const gridColor = theme.palette.border.subtle;
 
     const xAxisData = chartData.map((item) => item.name);
 
@@ -473,19 +474,7 @@ const RepositoryWeightsTable: React.FC = () => {
             backgroundColor: 'transparent',
             maxHeight: '800px',
             overflowY: 'auto',
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '4px',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              },
-            },
+            ...scrollbarSx,
           }}
         >
           <Table stickyHeader>
