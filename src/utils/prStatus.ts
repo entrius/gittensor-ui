@@ -18,3 +18,13 @@ export const getPrStatusCounts = <T extends PrStatusLike>(prs: T[]) => ({
   merged: prs.filter(isMergedPr).length,
   closed: prs.filter(isClosedUnmergedPr).length,
 });
+
+export const getPrStateColor = (
+  prState: string | null | undefined,
+  statusPalette: { closed: string; merged: string; open: string },
+): string =>
+  prState === 'CLOSED'
+    ? statusPalette.closed
+    : prState === 'MERGED'
+      ? statusPalette.merged
+      : statusPalette.open;

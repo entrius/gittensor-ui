@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Typography, Avatar, Tooltip, alpha } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useNavigate } from 'react-router-dom';
-import { formatUsdEstimate } from '../../utils';
+import { formatUsdEstimate, getPrStateColor } from '../../utils';
 import { type PullRequestDetails } from '../../api/models/Dashboard';
 import { STATUS_COLORS } from '../../theme';
 import { getRepositoryOwnerAvatarBackground } from '../leaderboard/types';
@@ -26,12 +26,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
   const earnedScore = parseFloat(prDetails.earnedScore || '0');
   const predictedUsdPerDay = prDetails.predictedUsdPerDay;
   const ownerAvatarBackground = getRepositoryOwnerAvatarBackground(owner);
-  const statusColor =
-    prDetails.prState === 'CLOSED'
-      ? STATUS_COLORS.closed
-      : prDetails.prState === 'MERGED'
-        ? STATUS_COLORS.merged
-        : STATUS_COLORS.open;
+  const statusColor = getPrStateColor(prDetails.prState, STATUS_COLORS);
 
   return (
     <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-start', gap: 2 }}>

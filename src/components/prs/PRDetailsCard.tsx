@@ -13,6 +13,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { usePullRequestDetails } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import theme, { RANK_COLORS, STATUS_COLORS } from '../../theme';
+import { getPrStateColor } from '../../utils';
 
 interface PRDetailsCardProps {
   repository: string;
@@ -213,12 +214,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                 #{pullRequestNumber}
               </Typography>
               {(() => {
-                const statusColor =
-                  prDetails.prState === 'CLOSED'
-                    ? theme.palette.status.closed
-                    : prDetails.prState === 'MERGED'
-                      ? theme.palette.status.merged
-                      : theme.palette.status.open;
+                const statusColor = getPrStateColor(
+                  prDetails.prState,
+                  theme.palette.status,
+                );
                 return (
                   <Box
                     sx={{
