@@ -7,10 +7,7 @@ import { AboutContent } from './AboutPage';
 
 import { GettingStarted } from '../components/onboard/GettingStarted';
 import { Scoring } from '../components/onboard/Scoring';
-import {
-  RepositoryWeightsTable,
-  LanguageWeightsTable,
-} from '../components/repositories';
+import { LanguageWeightsTable } from '../components/repositories';
 
 const OnboardPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -21,16 +18,14 @@ const OnboardPage: React.FC = () => {
     about: 0,
     'getting-started': 1,
     scoring: 2,
-    repositories: 3,
-    languages: 4,
+    languages: 3,
   };
 
   const indexToTabName: Record<number, string> = {
     0: 'about',
     1: 'getting-started',
     2: 'scoring',
-    3: 'repositories',
-    4: 'languages',
+    3: 'languages',
   };
 
   const activeTab =
@@ -90,7 +85,6 @@ const OnboardPage: React.FC = () => {
             <Tab label="About" />
             <Tab label="Getting Started" />
             <Tab label="Scoring" />
-            <Tab label="Repositories" />
             <Tab label="Languages" />
           </Tabs>
         </Box>
@@ -100,31 +94,6 @@ const OnboardPage: React.FC = () => {
           {activeTab === 1 && <GettingStarted />}
           {activeTab === 2 && <Scoring />}
           {activeTab === 3 && (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '100%',
-              }}
-            >
-              <Card
-                sx={{
-                  borderRadius: 3,
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  backgroundColor: 'transparent',
-                  maxWidth: 1200,
-                  width: '100%',
-                }}
-                elevation={0}
-              >
-                <CardContent>
-                  <RepositoryWeightsTable />
-                </CardContent>
-              </Card>
-            </Box>
-          )}
-          {activeTab === 4 && (
             <Box
               sx={{
                 display: 'flex',
