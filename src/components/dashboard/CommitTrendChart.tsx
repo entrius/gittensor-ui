@@ -38,8 +38,8 @@ const CommitTrendChart: React.FC = () => {
         const data = params[0];
         return `${formatUtcYmd(data.axisValue)} UTC<br/>Lines Committed: ${data.value.toLocaleString()}`;
       },
-      backgroundColor: 'rgba(18, 18, 20, 0.95)',
-      borderColor: 'rgba(255, 255, 255, 0.1)',
+      backgroundColor: theme.palette.surface.tooltip,
+      borderColor: theme.palette.border.light,
       borderWidth: 1,
       textStyle: {
         color: theme.palette.text.primary,
@@ -148,7 +148,7 @@ const CommitTrendChart: React.FC = () => {
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: `1px solid ${theme.palette.border.light}`,
         backgroundColor: 'transparent',
         height: '100%',
         display: 'flex',
