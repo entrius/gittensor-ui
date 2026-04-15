@@ -728,7 +728,7 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
         if (next === 0) p.delete('scorePage');
         else p.set('scorePage', String(next));
         return p;
-      });
+      }, { replace: true });
     },
     [page, setSearchParams],
   );

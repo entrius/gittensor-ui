@@ -101,7 +101,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         if (next === 0) p.delete('prPage');
         else p.set('prPage', String(next));
         return p;
-      });
+      }, { replace: true });
     },
     [page, setSearchParams],
   );
