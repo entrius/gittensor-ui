@@ -1,6 +1,3 @@
-export { default as CommitTrendChart } from './CommitTrendChart';
-export * from './CommitTrendChart';
-
 export { default as ContributionHeatmap } from './ContributionHeatmap';
 export * from './ContributionHeatmap';
 
