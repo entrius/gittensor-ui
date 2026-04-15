@@ -34,23 +34,7 @@ import {
   calculateDynamicOpenPrThreshold,
   parseNumber,
 } from '../../utils/ExplorerUtils';
-import { credibilityColor } from '../../utils/format';
-
-const formatTimeAgo = (date: Date): string => {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) {
-    const mins = diffMins % 60;
-    return mins > 0 ? `${diffHours}h ${mins}m ago` : `${diffHours}h ago`;
-  }
-  if (diffDays === 1) return '1 day ago';
-  return `${diffDays} days ago`;
-};
+import { credibilityColor, formatTimeAgo } from '../../utils/format';
 
 const openPrColor = (open: number, threshold: number) => {
   if (open >= threshold) return RISK_COLORS.exceeded;

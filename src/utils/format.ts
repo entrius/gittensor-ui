@@ -70,3 +70,19 @@ export const credibilityColor = (cred: number): string => {
   if (cred >= 0.3) return CREDIBILITY_COLORS.low;
   return CREDIBILITY_COLORS.poor;
 };
+
+export const formatTimeAgo = (date: Date): string => {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) {
+    const mins = diffMins % 60;
+    return mins > 0 ? `${diffHours}h ${mins}m ago` : `${diffHours}h ago`;
+  }
+  if (diffDays === 1) return '1 day ago';
+  return `${diffDays} days ago`;
+};
