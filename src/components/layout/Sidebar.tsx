@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  alpha,
   Box,
   Button,
   Stack,
@@ -54,18 +53,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
           py: 1,
         }}
       >
-        <Box
-          component="img"
+        <img
           src="/gt-logo.svg"
           alt="Gittensor"
-          sx={(theme) => ({
+          style={{
             height: '60px',
             width: 'auto',
-            filter: `brightness(0) invert(1) drop-shadow(0 0 8px ${alpha(
-              theme.palette.text.primary,
-              0.8,
-            )})`,
-          })}
+            filter:
+              'brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))',
+          }}
         />
       </ButtonBase>
 
@@ -124,7 +120,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
 
       {/* Footer */}
       <Box sx={{ mt: 2 }}>
-        <Divider sx={{ borderColor: 'sidebar.divider', mb: 2 }} />
+        <Divider sx={{ borderColor: 'border.medium', mb: 2 }} />
         <Stack direction="column" spacing={1} alignItems="center">
           <Stack
             direction="row"
@@ -152,7 +148,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               orientation="vertical"
               flexItem
               sx={{
-                borderColor: 'sidebar.divider',
+                borderColor: 'border.medium',
                 mx: 0.5,
                 height: '12px',
                 alignSelf: 'center',
@@ -177,7 +173,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               orientation="vertical"
               flexItem
               sx={{
-                borderColor: 'sidebar.divider',
+                borderColor: 'border.medium',
                 mx: 0.5,
                 height: '12px',
                 alignSelf: 'center',
@@ -202,7 +198,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               orientation="vertical"
               flexItem
               sx={{
-                borderColor: 'sidebar.divider',
+                borderColor: 'border.medium',
                 mx: 0.5,
                 height: '12px',
                 alignSelf: 'center',
@@ -228,7 +224,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
             variant="caption"
             sx={{
               fontSize: '0.6rem',
-              color: 'sidebar.versionText',
+              color: 'text.secondary',
             }}
           >
             © Gittensor 2026
