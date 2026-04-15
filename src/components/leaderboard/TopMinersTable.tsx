@@ -68,8 +68,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 
     const hasInvalidSort =
       rawSort != null && !allowedSortOptions.includes(rawSort as SortOption);
-    const hasInvalidEligible =
-      rawEligible != null && rawEligible !== 'true';
+    const hasInvalidEligible = rawEligible != null && rawEligible !== 'true';
 
     if (!hasInvalidSort && !hasInvalidEligible) {
       return;
@@ -90,24 +89,27 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     );
   }, [searchParams, variant]);
 
-  const handleSortChange = useCallback((nextSortOption: SortOption) => {
-    setSearchParams(
-      (previousParams) => {
-        const nextSearchParams = new URLSearchParams(previousParams);
+  const handleSortChange = useCallback(
+    (nextSortOption: SortOption) => {
+      setSearchParams(
+        (previousParams) => {
+          const nextSearchParams = new URLSearchParams(previousParams);
 
-        if (nextSortOption === 'totalScore') {
-          nextSearchParams.delete(SORT_QUERY_PARAM);
-        } else {
-          nextSearchParams.set(SORT_QUERY_PARAM, nextSortOption);
-        }
+          if (nextSortOption === 'totalScore') {
+            nextSearchParams.delete(SORT_QUERY_PARAM);
+          } else {
+            nextSearchParams.set(SORT_QUERY_PARAM, nextSortOption);
+          }
 
-        return nextSearchParams.toString() === previousParams.toString()
-          ? previousParams
-          : nextSearchParams;
-      },
-      { replace: true },
-    );
-  }, [setSearchParams]);
+          return nextSearchParams.toString() === previousParams.toString()
+            ? previousParams
+            : nextSearchParams;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   const handleToggleEligible = useCallback(() => {
     setSearchParams(
