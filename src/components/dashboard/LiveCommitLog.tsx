@@ -56,6 +56,45 @@ interface CommitLogEntry {
   isNew?: boolean;
 }
 
+type CommitStatus = 'merged' | 'open' | 'closed';
+
+const COMMIT_STATUS_META: Record<
+  CommitStatus,
+  { filterLabel: string; badgeLabel: string; color: string }
+> = {
+  merged: {
+    filterLabel: 'Merged',
+    badgeLabel: 'MERGED',
+    color: theme.palette.status.merged,
+  },
+  open: {
+    filterLabel: 'Open',
+    badgeLabel: 'OPEN',
+    color: theme.palette.status.open,
+  },
+  closed: {
+    filterLabel: 'Closed',
+    badgeLabel: 'CLOSED',
+    color: theme.palette.status.closed,
+  },
+};
+
+const COMMIT_STATUS_FILTERS: CommitStatus[] = ['merged', 'open', 'closed'];
+
+const getCommitId = (entry: CommitLogEntry) =>
+  `${entry.repository}-${entry.pullRequestNumber}-${entry.mergedAt || entry.prCreatedAt || entry.prState || 'OPEN'}`;
+
+const getCommitStatus = (entry: CommitLogEntry): CommitStatus => {
+  if (entry.mergedAt || entry.prState === 'MERGED') return 'merged';
+  if (entry.prState === 'CLOSED') return 'closed';
+  return 'open';
+};
+
+const getCommitTimestamp = (entry: CommitLogEntry) => {
+  const timestamp = entry.mergedAt || entry.prCreatedAt;
+  return timestamp ? new Date(timestamp).getTime() : 0;
+};
+
 const getScoreColor = (score: string) => {
   const scoreNum = parseFloat(score);
   if (isNaN(scoreNum)) return theme.palette.grey[500];
@@ -66,34 +105,31 @@ const getScoreColor = (score: string) => {
 
 const CommitLogItem: React.FC<{
   entry: CommitLogEntry;
+  status: CommitStatus;
   isNew: boolean;
   innerRef?: React.Ref<HTMLDivElement>;
-}> = ({ entry, isNew, innerRef }) => {
+}> = ({ entry, status, isNew, innerRef }) => {
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
-  // Hydrate with detailed data
   const { data: details } = usePullRequestDetails(
     entry.repository,
     entry.pullRequestNumber,
   );
 
-  // Derive status and timestamp from details if available, otherwise fallback
-  const isMerged = !!(details?.mergedAt || entry.mergedAt);
-  const isClosed = details?.prState === 'CLOSED' || entry.prState === 'CLOSED';
-
-  let status = { label: 'OPEN', color: theme.palette.status.neutral };
-  if (isMerged)
-    status = { label: 'MERGED', color: theme.palette.status.merged };
-  else if (isClosed)
-    status = { label: 'CLOSED', color: theme.palette.status.closed };
+  const statusMeta = COMMIT_STATUS_META[status];
 
   const timestampRaw =
-    details?.mergedAt ||
-    details?.prCreatedAt ||
-    entry.mergedAt ||
-    entry.prCreatedAt;
+    status === 'merged'
+      ? details?.mergedAt ||
+        entry.mergedAt ||
+        details?.prCreatedAt ||
+        entry.prCreatedAt
+      : details?.prCreatedAt ||
+        entry.prCreatedAt ||
+        details?.mergedAt ||
+        entry.mergedAt;
   const timestamp = timestampRaw
     ? formatUtcTimestamp(timestampRaw)
     : 'Loading...';
@@ -128,13 +164,13 @@ const CommitLogItem: React.FC<{
           left: 0,
           right: 0,
           bottom: 0,
-          background: `linear-gradient(90deg, ${alpha(status.color, 0.1)} 0%, transparent 100%)`,
+          background: `linear-gradient(90deg, ${alpha(statusMeta.color, 0.1)} 0%, transparent 100%)`,
           opacity: 0.5,
         },
         '&:hover': {
-          borderColor: status.color,
+          borderColor: statusMeta.color,
           transform: 'translateX(4px)',
-          boxShadow: `0 0 20px ${alpha(status.color, 0.1)}`,
+          boxShadow: `0 0 20px ${alpha(statusMeta.color, 0.1)}`,
           '&::before': { opacity: 0.8 },
         },
         '@keyframes slideIn': {
@@ -199,12 +235,12 @@ const CommitLogItem: React.FC<{
           >
             <Chip
               variant="status"
-              label={status.label}
+              label={statusMeta.badgeLabel}
               size="small"
               sx={{
-                color: status.color,
-                borderColor: alpha(status.color, 0.3),
-                backgroundColor: alpha(status.color, 0.1),
+                color: statusMeta.color,
+                borderColor: alpha(statusMeta.color, 0.3),
+                backgroundColor: alpha(statusMeta.color, 0.1),
               }}
             />
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
@@ -282,6 +318,7 @@ const LiveCommitLog: React.FC = () => {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteCommitLog({ refetchInterval: 10000 }); // Poll every 10 seconds
 
+  const [statusFilter, setStatusFilter] = useState<CommitStatus>('merged');
   const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
   const [_seenEntryIds, setSeenEntryIds] = useState<Set<string>>(new Set());
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
@@ -296,9 +333,6 @@ const LiveCommitLog: React.FC = () => {
 
   useEffect(() => {
     if (apiCommits.length === 0) return;
-
-    const getCommitId = (c: CommitLogEntry) =>
-      `${c.pullRequestNumber}-${c.mergedAt || c.prCreatedAt || c.prState || 'OPEN'}`;
 
     setSeenEntryIds((prevSeen) => {
       const newSeen = new Set(prevSeen);
@@ -341,6 +375,14 @@ const LiveCommitLog: React.FC = () => {
     });
   }, [apiCommits]);
 
+  const visibleEntries = useMemo(
+    () =>
+      [...logEntries]
+        .filter((entry) => getCommitStatus(entry) === statusFilter)
+        .sort((a, b) => getCommitTimestamp(b) - getCommitTimestamp(a)),
+    [logEntries, statusFilter],
+  );
+
   // Intersection observer for infinite scroll
   useEffect(() => {
     if (!loadMoreRef.current) return;
@@ -357,7 +399,7 @@ const LiveCommitLog: React.FC = () => {
     observer.observe(loadMoreRef.current);
 
     return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage, logEntries.length]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, visibleEntries]);
 
   return (
     <Card
@@ -382,7 +424,11 @@ const LiveCommitLog: React.FC = () => {
           minHeight: 0,
         }}
       >
-        <Stack spacing={0.5} sx={{ mb: isMobile ? 1 : 1.5, flexShrink: 0 }}>
+        <Stack
+          spacing={0.5}
+          useFlexGap
+          sx={{ mb: isMobile ? 1 : 1.5, flexShrink: 0 }}
+        >
           <Stack
             direction="row"
             alignItems="center"
@@ -412,6 +458,69 @@ const LiveCommitLog: React.FC = () => {
               }}
             />
           </Stack>
+          <Box
+            sx={{
+              mt: 0.5,
+              borderBottom: (t) => `1px solid ${t.palette.border.light}`,
+            }}
+          />
+          <Box
+            sx={(t) => ({
+              mt: 1,
+              mb: '1px',
+              display: 'inline-flex',
+              alignSelf: 'center',
+              gap: 0.5,
+              p: 0.5,
+              borderRadius: 2,
+              backgroundColor: t.palette.surface.light,
+            })}
+          >
+            {COMMIT_STATUS_FILTERS.map((filter) => {
+              const option = COMMIT_STATUS_META[filter];
+              const selected = statusFilter === filter;
+
+              return (
+                <Box
+                  key={filter}
+                  component="button"
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => setStatusFilter(filter)}
+                  sx={(t) => ({
+                    px: isMobile ? 1.35 : 1.6,
+                    height: isMobile ? 22 : 24,
+                    display: 'flex',
+                    alignItems: 'center',
+                    border: 0,
+                    borderRadius: 1.5,
+                    backgroundColor: selected
+                      ? alpha(t.palette.text.primary, 0.15)
+                      : 'transparent',
+                    color: selected
+                      ? t.palette.text.primary
+                      : alpha(option.color, 0.82),
+                    cursor: 'pointer',
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: isMobile ? '0.68rem' : '0.72rem',
+                    fontWeight: selected ? 600 : 500,
+                    lineHeight: 1,
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: alpha(t.palette.text.primary, 0.1),
+                      color: t.palette.text.primary,
+                    },
+                    '&:focus-visible': {
+                      outline: `1px solid ${option.color}`,
+                      outlineOffset: 1,
+                    },
+                  })}
+                >
+                  {option.filterLabel}
+                </Box>
+              );
+            })}
+          </Box>
         </Stack>
 
         {isLoading && logEntries.length === 0 ? (
@@ -425,7 +534,7 @@ const LiveCommitLog: React.FC = () => {
           >
             <CircularProgress />
           </Box>
-        ) : logEntries.length === 0 ? (
+        ) : visibleEntries.length === 0 ? (
           <Box
             sx={{
               display: 'flex',
@@ -435,7 +544,10 @@ const LiveCommitLog: React.FC = () => {
               color: 'text.secondary',
             }}
           >
-            <Typography variant="body2">Waiting for activity...</Typography>
+            <Typography variant="body2">
+              No {COMMIT_STATUS_META[statusFilter].filterLabel.toLowerCase()}{' '}
+              activity yet.
+            </Typography>
           </Box>
         ) : (
           <Box
@@ -455,36 +567,21 @@ const LiveCommitLog: React.FC = () => {
             }}
           >
             <Stack spacing={isMobile ? 1 : isTablet ? 1.25 : 1}>
-              {[...logEntries]
-                .sort((a, b) => {
-                  const dateA = a.mergedAt
-                    ? new Date(a.mergedAt).getTime()
-                    : a.prCreatedAt
-                      ? new Date(a.prCreatedAt).getTime()
-                      : 0;
-                  const dateB = b.mergedAt
-                    ? new Date(b.mergedAt).getTime()
-                    : b.prCreatedAt
-                      ? new Date(b.prCreatedAt).getTime()
-                      : 0;
-                  return dateB - dateA; // Newest first
-                })
-                .map((entry, index) => {
-                  const entryId = `${entry.pullRequestNumber}-${
-                    entry.mergedAt || entry.prCreatedAt || 'OPEN'
-                  }`;
-                  const isLastItem = index === logEntries.length - 1;
-                  const isNew = newEntryIds.has(entryId);
+              {visibleEntries.map((entry, index) => {
+                const entryId = getCommitId(entry);
+                const isLastItem = index === visibleEntries.length - 1;
+                const isNew = newEntryIds.has(entryId);
 
-                  return (
-                    <CommitLogItem
-                      key={entryId}
-                      entry={entry}
-                      isNew={isNew}
-                      innerRef={isLastItem ? loadMoreRef : null}
-                    />
-                  );
-                })}
+                return (
+                  <CommitLogItem
+                    key={entryId}
+                    entry={entry}
+                    status={getCommitStatus(entry)}
+                    isNew={isNew}
+                    innerRef={isLastItem ? loadMoreRef : null}
+                  />
+                );
+              })}
 
               {isFetchingNextPage && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
