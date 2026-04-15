@@ -158,8 +158,8 @@ const WatchlistPage: React.FC = () => {
                   color: (t) => alpha(t.palette.text.primary, 0.5),
                 }}
               >
-                Browse the leaderboard and star miners you want to track.
-                Pinned miners appear here across reloads and tabs.
+                Browse the leaderboard and star miners you want to track. Pinned
+                miners appear here across reloads and tabs.
               </Typography>
               <Button
                 component={RouterLink}

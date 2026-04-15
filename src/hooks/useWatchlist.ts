@@ -100,7 +100,9 @@ export const useWatchlist = (): UseWatchlist => {
   const toggle = useCallback((id: string) => {
     if (!id) return;
     setSnapshot(
-      snapshot.includes(id) ? snapshot.filter((x) => x !== id) : [...snapshot, id],
+      snapshot.includes(id)
+        ? snapshot.filter((x) => x !== id)
+        : [...snapshot, id],
     );
   }, []);
 
