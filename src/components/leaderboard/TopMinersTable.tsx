@@ -87,7 +87,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       },
       { replace: true },
     );
-  }, [searchParams, variant]);
+  }, [searchParams, setSearchParams, variant]);
 
   const handleSortChange = useCallback(
     (nextSortOption: SortOption) => {
