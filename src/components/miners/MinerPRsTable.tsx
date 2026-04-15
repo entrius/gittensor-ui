@@ -96,12 +96,15 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const setPage = useCallback(
     (updater: number | ((prev: number) => number)) => {
       const next = typeof updater === 'function' ? updater(page) : updater;
-      setSearchParams((prev) => {
-        const p = new URLSearchParams(prev);
-        if (next === 0) p.delete('prPage');
-        else p.set('prPage', String(next));
-        return p;
-      }, { replace: true });
+      setSearchParams(
+        (prev) => {
+          const p = new URLSearchParams(prev);
+          if (next === 0) p.delete('prPage');
+          else p.set('prPage', String(next));
+          return p;
+        },
+        { replace: true },
+      );
     },
     [page, setSearchParams],
   );
