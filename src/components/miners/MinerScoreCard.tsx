@@ -542,6 +542,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                       : `https://${githubData.blog}`
                   }
                   target="_blank"
+                  rel="noopener noreferrer"
                   icon={<WebsiteIcon />}
                   label="Website"
                   clickable

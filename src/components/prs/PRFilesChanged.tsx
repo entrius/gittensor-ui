@@ -1082,6 +1082,7 @@ const PRFileDiffViewer: React.FC<{
           component="a"
           href={file.blob_url}
           target="_blank"
+          rel="noopener noreferrer"
           sx={{
             color: STATUS_COLORS.info,
             fontSize: '0.85rem',
