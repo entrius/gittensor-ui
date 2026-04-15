@@ -43,7 +43,8 @@ const LeaderboardCharts: React.FC = () => {
     const statsMap = new Map();
     allPRs.forEach((pr) => {
       if (!pr || !pr.repository) return;
-      const current = statsMap.get(pr.repository) || {
+      const repoKey = pr.repository.toLowerCase();
+      const current = statsMap.get(repoKey) || {
         repository: pr.repository,
         totalScore: 0,
         totalPRs: 0,
@@ -53,12 +54,13 @@ const LeaderboardCharts: React.FC = () => {
       current.totalScore += parseFloat(pr.score || '0');
       current.totalPRs += 1;
       if (pr.author) current.uniqueMiners.add(pr.author);
-      statsMap.set(pr.repository, current);
+      statsMap.set(repoKey, current);
     });
 
-    statsMap.forEach((stats, repoName) => {
-      const repoData = repos.find((r) => r.fullName === repoName);
+    statsMap.forEach((stats, repoKey) => {
+      const repoData = repos.find((r) => r.fullName.toLowerCase() === repoKey);
       if (repoData) {
+        stats.repository = repoData.fullName;
         stats.weight = repoData.weight
           ? parseFloat(String(repoData.weight))
           : 0;
