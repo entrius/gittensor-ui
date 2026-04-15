@@ -5,6 +5,7 @@ import { Page } from '../components/layout';
 import { TopMinersTable, LeaderboardSidebar, SEO } from '../components';
 import { useAllMiners } from '../api';
 import theme, { scrollbarSx } from '../theme';
+import { parseNumber } from '../utils/ExplorerUtils';
 
 const DiscoveriesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -26,27 +27,27 @@ const DiscoveriesPage: React.FC = () => {
       id: String(stat.id),
       githubId: stat.githubId || '',
       author: stat.githubUsername || undefined,
-      totalScore: Number(stat.issueDiscoveryScore) || 0,
-      baseTotalScore: Number(stat.baseTotalScore) || 0,
-      totalPRs: Number(stat.totalPrs) || 0,
+      totalScore: parseNumber(stat.issueDiscoveryScore),
+      baseTotalScore: parseNumber(stat.baseTotalScore),
+      totalPRs: parseNumber(stat.totalPrs),
       totalIssues:
-        (Number(stat.totalSolvedIssues) || 0) +
-        (Number(stat.totalOpenIssues) || 0) +
-        (Number(stat.totalClosedIssues) || 0),
-      linesChanged: Number(stat.totalNodesScored) || 0,
-      linesAdded: Number(stat.totalAdditions) || 0,
-      linesDeleted: Number(stat.totalDeletions) || 0,
+        parseNumber(stat.totalSolvedIssues) +
+        parseNumber(stat.totalOpenIssues) +
+        parseNumber(stat.totalClosedIssues),
+      linesChanged: parseNumber(stat.totalNodesScored),
+      linesAdded: parseNumber(stat.totalAdditions),
+      linesDeleted: parseNumber(stat.totalDeletions),
       hotkey: stat.hotkey || 'N/A',
-      uniqueReposCount: Number(stat.uniqueReposCount) || 0,
-      credibility: Number(stat.issueCredibility) || 0,
+      uniqueReposCount: parseNumber(stat.uniqueReposCount),
+      credibility: parseNumber(stat.issueCredibility),
       isEligible: stat.isIssueEligible ?? false,
-      usdPerDay: Number(stat.usdPerDay) || 0,
-      totalMergedPrs: Number(stat.totalMergedPrs) || 0,
-      totalOpenPrs: Number(stat.totalOpenPrs) || 0,
-      totalClosedPrs: Number(stat.totalClosedPrs) || 0,
-      totalSolvedIssues: Number(stat.totalSolvedIssues) || 0,
-      totalOpenIssues: Number(stat.totalOpenIssues) || 0,
-      totalClosedIssues: Number(stat.totalClosedIssues) || 0,
+      usdPerDay: parseNumber(stat.usdPerDay),
+      totalMergedPrs: parseNumber(stat.totalMergedPrs),
+      totalOpenPrs: parseNumber(stat.totalOpenPrs),
+      totalClosedPrs: parseNumber(stat.totalClosedPrs),
+      totalSolvedIssues: parseNumber(stat.totalSolvedIssues),
+      totalOpenIssues: parseNumber(stat.totalOpenIssues),
+      totalClosedIssues: parseNumber(stat.totalClosedIssues),
     }));
   }, [allMinersStats]);
 
