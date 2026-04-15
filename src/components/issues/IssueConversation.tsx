@@ -336,9 +336,7 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
               }}
             >
               <div className="markdown-body" style={{ fontSize: '14px' }}>
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                >
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {item.body}
                 </ReactMarkdown>
               </div>

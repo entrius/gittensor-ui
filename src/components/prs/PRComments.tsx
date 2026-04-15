@@ -372,9 +372,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
               }}
             >
               <div className="markdown-body" style={{ fontSize: '14px' }}>
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                >
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {item.body}
                 </ReactMarkdown>
               </div>
