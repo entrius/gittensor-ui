@@ -180,7 +180,9 @@ const MinerDetailsPage: React.FC = () => {
             {activeTab === 'overview' && (
               <>
                 <MinerInsightsCard githubId={githubId} viewMode={viewMode} />
-                <MinerScoreBreakdown githubId={githubId} />
+                {viewMode === 'prs' && (
+                  <MinerScoreBreakdown githubId={githubId} />
+                )}
               </>
             )}
 
