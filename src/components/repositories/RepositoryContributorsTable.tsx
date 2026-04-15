@@ -1,10 +1,18 @@
 import React, { useMemo, useState } from 'react';
-import { Box, Typography, CircularProgress, Avatar } from '@mui/material';
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Avatar,
+  alpha,
+  useTheme,
+} from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useAllPrs, useAllMiners } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import { STATUS_COLORS } from '../../theme';
+import { isMergedPr } from '../../utils/prStatus';
 
 interface RepositoryContributorsTableProps {
   repositoryFullName: string;
@@ -13,6 +21,7 @@ interface RepositoryContributorsTableProps {
 const RepositoryContributorsTable: React.FC<
   RepositoryContributorsTableProps
 > = ({ repositoryFullName }) => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { data: allPRs, isLoading } = useAllPrs();
   const { data: allMinersStats } = useAllMiners();
@@ -45,7 +54,7 @@ const RepositoryContributorsTable: React.FC<
       (pr) =>
         pr.repository.toLowerCase() === repositoryFullName.toLowerCase() &&
         pr.githubId &&
-        pr.prState === 'MERGED',
+        isMergedPr(pr),
     );
 
     const contributorsMap = new Map<
@@ -136,7 +145,7 @@ const RepositoryContributorsTable: React.FC<
           alignItems: 'center',
           px: 1.5,
           py: 1,
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          borderBottom: `1px solid ${theme.palette.border.light}`,
         }}
       >
         <Typography sx={{ fontSize: '11px', color: 'text.secondary' }}>
@@ -185,12 +194,12 @@ const RepositoryContributorsTable: React.FC<
                 rowGap: 0,
                 px: 1.5,
                 py: 1,
-                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                borderBottom: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
                 alignItems: 'center',
                 minWidth: 0,
                 opacity: isInactive ? 0.5 : 1,
                 '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.04)',
+                  backgroundColor: alpha(theme.palette.common.white, 0.04),
                   opacity: 1,
                 },
                 transition: 'all 0.1s',
@@ -201,7 +210,7 @@ const RepositoryContributorsTable: React.FC<
                 sx={{
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '12px',
-                  color: index < 3 ? '#fff' : STATUS_COLORS.open,
+                  color: index < 3 ? 'text.primary' : STATUS_COLORS.open,
                   fontWeight: index < 3 ? 600 : 400,
                 }}
               >
@@ -232,7 +241,7 @@ const RepositoryContributorsTable: React.FC<
                   sx={{
                     width: 20,
                     height: 20,
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    border: `1px solid ${theme.palette.border.light}`,
                   }}
                 />
                 <Box
@@ -247,7 +256,7 @@ const RepositoryContributorsTable: React.FC<
                     sx={{
                       fontSize: '13px',
                       fontWeight: 500,
-                      color: '#c9d1d9',
+                      color: 'text.primary',
                       fontFamily:
                         '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
                       whiteSpace: 'nowrap',
@@ -280,7 +289,7 @@ const RepositoryContributorsTable: React.FC<
                 sx={{
                   textAlign: 'right',
                   fontSize: '12px',
-                  color: '#c9d1d9',
+                  color: 'text.primary',
                   fontFamily: '"JetBrains Mono", monospace',
                   fontVariantNumeric: 'tabular-nums',
                   minWidth: 0,
@@ -294,7 +303,7 @@ const RepositoryContributorsTable: React.FC<
                 sx={{
                   textAlign: 'right',
                   fontSize: '12px',
-                  color: '#c9d1d9',
+                  color: 'text.primary',
                   fontFamily: '"JetBrains Mono", monospace',
                   fontVariantNumeric: 'tabular-nums',
                   minWidth: 0,
@@ -320,8 +329,8 @@ const RepositoryContributorsTable: React.FC<
               color: STATUS_COLORS.open,
               fontSize: '12px',
               '&:hover': {
-                color: '#fff',
-                backgroundColor: 'rgba(255,255,255,0.02)',
+                color: 'text.primary',
+                backgroundColor: 'surface.subtle',
               },
               transition: 'all 0.1s',
             }}
