@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Box, Paper, CircularProgress, Alert } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
 import axios from 'axios';
 import { STATUS_COLORS } from '../../theme';
 import { resolveRelativeUrl } from './MarkdownRenderers';
@@ -175,7 +174,6 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
         components={{
           a: ({
             href,

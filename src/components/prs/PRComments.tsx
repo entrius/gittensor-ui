@@ -10,7 +10,6 @@ import {
 } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
 import { usePullRequestComments } from '../../api';
 import {
   type PullRequestComment,
@@ -375,7 +374,6 @@ const PRComments: React.FC<PRCommentsProps> = ({
               <div className="markdown-body" style={{ fontSize: '14px' }}>
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeRaw]}
                 >
                   {item.body}
                 </ReactMarkdown>
