@@ -268,13 +268,13 @@ const GlobalActivity: React.FC = () => {
               >
                 <PRStatusChart
                   stats={activeStats}
-                  title="Active"
+                  title="Eligible"
                   subtitle="Paid"
                   variant="primary"
                 />
                 <PRStatusChart
                   stats={inactiveStats}
-                  title="Unranked"
+                  title="Ineligible"
                   subtitle="Unpaid"
                   variant="secondary"
                 />
