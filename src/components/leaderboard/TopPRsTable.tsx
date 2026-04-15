@@ -32,6 +32,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
 import { type CommitLog } from '../../api/models/Dashboard';
+import { getRepositoryOwnerAvatarBackground } from './types';
 import {
   formatUsdEstimate,
   getPrStatusCounts,
@@ -41,7 +42,7 @@ import {
   truncateText,
 } from '../../utils';
 import { RankIcon } from './RankIcon';
-import theme, { STATUS_COLORS, scrollbarSx } from '../../theme';
+import { STATUS_COLORS, UI_COLORS, scrollbarSx } from '../../theme';
 import FilterButton from '../FilterButton';
 import { LinkBox, LinkTableRow } from '../common/linkBehavior';
 
@@ -340,10 +341,17 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
 
   const getChartOption = () => {
     const chartData = filteredPRs.slice(0, 50);
-    const textColor = 'rgba(255, 255, 255, 0.85)';
-    const gridColor = theme.palette.border.subtle;
 
-    const chartColor = theme.palette.primary.main;
+    const white = UI_COLORS.white;
+    const borderSubtle = alpha(white, 0.08);
+    const borderMedium = alpha(white, 0.2);
+    const surfaceLight = alpha(white, 0.05);
+    const textColor = alpha(white, 0.85);
+    const tooltipBorderColor = alpha(white, 0.15);
+    const tooltipLabelColor = alpha(white, 0.65);
+    const primaryColor = UI_COLORS.white;
+
+    const chartColor = UI_COLORS.primary;
 
     const xAxisData = chartData.map(
       (item) => `#${item?.pullRequestNumber || ''}`,
@@ -380,13 +388,13 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         left: 'center',
         top: 20,
         textStyle: {
-          color: '#ffffff',
+          color: primaryColor,
           fontFamily: 'JetBrains Mono',
           fontSize: 18,
           fontWeight: 600,
         },
         subtextStyle: {
-          color: 'rgba(255, 255, 255, 0.6)',
+          color: alpha(white, 0.6),
           fontFamily: 'JetBrains Mono',
           fontSize: 11,
         },
@@ -396,14 +404,14 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         axisPointer: {
           type: 'shadow',
           shadowStyle: {
-            color: 'rgba(255, 255, 255, 0.05)',
+            color: surfaceLight,
           },
         },
-        backgroundColor: 'rgba(10, 10, 12, 0.98)',
-        borderColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: UI_COLORS.surfaceTooltip,
+        borderColor: borderMedium,
         borderWidth: 1,
         textStyle: {
-          color: '#fff',
+          color: primaryColor,
           fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
@@ -414,28 +422,28 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
 
           return `
             <div style="font-family: 'JetBrains Mono', monospace;">
-              <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 8px;">
+              <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid ${tooltipBorderColor}; padding-bottom: 8px;">
                 PR #${data.prNumber}
               </div>
-              <div style="margin-bottom: 10px; color: rgba(255,255,255,0.85); font-size: 11px; max-width: 300px; white-space: normal; word-break: break-word; line-height: 1.4;">
+              <div style="margin-bottom: 10px; color: ${textColor}; font-size: 11px; max-width: 300px; white-space: normal; word-break: break-word; line-height: 1.4;">
                 ${data.title}
               </div>
               <div style="display: grid; gap: 6px; font-size: 11px;">
                 <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Rank:</span>
-                  <span style="color: #fff; font-weight: 600;">#${data.rank}</span>
+                  <span style="color: ${tooltipLabelColor};">Rank:</span>
+                  <span style="color: ${primaryColor}; font-weight: 600;">#${data.rank}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Score:</span>
-                  <span style="color: #fff; font-weight: 600;">${data.value.toFixed(4)}</span>
+                  <span style="color: ${tooltipLabelColor};">Score:</span>
+                  <span style="color: ${primaryColor}; font-weight: 600;">${data.value.toFixed(4)}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Author:</span>
-                  <span style="color: #fff; font-weight: 600;">${data.author}</span>
+                  <span style="color: ${tooltipLabelColor};">Author:</span>
+                  <span style="color: ${primaryColor}; font-weight: 600;">${data.author}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Repository:</span>
-                  <span style="color: #fff; font-weight: 600;">${data.repository.split('/')[1] || data.repository}</span>
+                  <span style="color: ${tooltipLabelColor};">Repository:</span>
+                  <span style="color: ${primaryColor}; font-weight: 600;">${data.repository.split('/')[1] || data.repository}</span>
                 </div>
               </div>
             </div>
@@ -471,7 +479,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         },
         axisLine: {
           lineStyle: {
-            color: gridColor,
+            color: borderSubtle,
             width: 1,
           },
         },
@@ -501,7 +509,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         },
         splitLine: {
           lineStyle: {
-            color: gridColor,
+            color: borderSubtle,
             type: 'dashed',
             opacity: 0.5,
           },
@@ -541,7 +549,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
             scale: 1.5,
             itemStyle: {
               shadowBlur: 20,
-              borderColor: '#fff',
+              borderColor: white,
               borderWidth: 2,
             },
           },
@@ -587,7 +595,8 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
       ref={cardRef}
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: '1px solid',
+        borderColor: 'border.light',
         backgroundColor: 'transparent',
         overflow: 'hidden',
         display: 'flex',
@@ -602,13 +611,14 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 2,
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          borderBottom: '1px solid',
+          borderColor: 'border.light',
         }}
       >
         <Typography
           variant="h6"
           sx={{
-            color: '#ffffff',
+            color: 'text.primary',
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '1.1rem',
             fontWeight: 500,
@@ -626,13 +636,14 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
               onClick={() => setShowFilters(!showFilters)}
               size="small"
               sx={{
-                color: showFilters ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: showFilters ? 'text.primary' : 'text.tertiary',
+                border: '1px solid',
+                borderColor: 'border.light',
                 borderRadius: 2,
                 padding: '6px',
                 '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                  backgroundColor: 'surface.light',
+                  borderColor: 'border.medium',
                 },
               }}
             >
@@ -645,13 +656,14 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
               onClick={() => setShowChart(!showChart)}
               size="small"
               sx={{
-                color: showChart ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: showChart ? 'text.primary' : 'text.tertiary',
+                border: '1px solid',
+                borderColor: 'border.light',
                 borderRadius: 2,
                 padding: '6px',
                 '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                  backgroundColor: 'surface.light',
+                  borderColor: 'border.medium',
                 },
               }}
             >
@@ -672,10 +684,10 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                   size="small"
                   sx={{
                     '& .MuiSwitch-switchBase.Mui-checked': {
-                      color: '#primary.main',
+                      color: 'primary.main',
                     },
                     '& .MuiSwitch-track': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                      backgroundColor: 'border.medium',
                     },
                   }}
                 />
@@ -686,7 +698,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                   sx={{
                     fontFamily: 'JetBrains Mono',
                     fontSize: '0.8rem',
-                    color: 'rgba(255, 255, 255, 0.7)',
+                    color: 'text.secondary',
                   }}
                 >
                   Log Scale
@@ -700,7 +712,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
               <Typography
                 variant="body2"
                 sx={{
-                  color: 'rgba(255, 255, 255, 0.7)',
+                  color: 'text.secondary',
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.8rem',
                 }}
@@ -714,16 +726,16 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                   setPage(0);
                 }}
                 sx={{
-                  color: '#ffffff',
+                  color: 'text.primary',
                   fontFamily: '"JetBrains Mono", monospace',
-                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  backgroundColor: 'background.default',
                   fontSize: '0.8rem',
                   height: '36px',
                   borderRadius: 2,
                   minWidth: '80px',
-                  '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                  '& fieldset': { borderColor: 'border.light' },
                   '&:hover fieldset': {
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    borderColor: 'border.medium',
                   },
                   '&.Mui-focused fieldset': { borderColor: 'primary.main' },
                   '& .MuiSelect-select': { py: 0.75 },
@@ -745,7 +757,10 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
               startAdornment: (
                 <InputAdornment position="start">
                   <SearchIcon
-                    sx={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '1rem' }}
+                    sx={{
+                      color: 'text.tertiary',
+                      fontSize: '1rem',
+                    }}
                   />
                 </InputAdornment>
               ),
@@ -753,14 +768,14 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
             sx={{
               width: '200px',
               '& .MuiOutlinedInput-root': {
-                color: '#ffffff',
+                color: 'text.primary',
                 fontFamily: '"JetBrains Mono", monospace',
-                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                backgroundColor: 'background.default',
                 fontSize: '0.8rem',
                 height: '36px',
                 borderRadius: 2,
-                '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
-                '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
+                '& fieldset': { borderColor: 'border.light' },
+                '&:hover fieldset': { borderColor: 'border.medium' },
                 '&.Mui-focused fieldset': { borderColor: 'primary.main' },
               },
             }}
@@ -772,8 +787,9 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         <Box
           sx={{
             p: 2,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-            backgroundColor: 'rgba(255, 255, 255, 0.02)',
+            borderBottom: '1px solid',
+            borderColor: 'border.light',
+            backgroundColor: 'surface.subtle',
             display: 'flex',
             gap: 4,
             flexWrap: 'wrap',
@@ -783,7 +799,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
             <Typography
               variant="caption"
               sx={{
-                color: 'rgba(255,255,255,0.5)',
+                color: 'text.tertiary',
                 display: 'block',
                 mb: 1,
                 fontFamily: '"JetBrains Mono", monospace',
@@ -797,28 +813,28 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                 isActive={statusFilter === 'all'}
                 onClick={() => setStatusFilter('all')}
                 count={statusCounts.all}
-                color={theme.palette.status.neutral}
+                color={STATUS_COLORS.neutral}
               />
               <FilterButton
                 label="Open"
                 isActive={statusFilter === 'open'}
                 onClick={() => setStatusFilter('open')}
                 count={statusCounts.open}
-                color={theme.palette.status.open}
+                color={STATUS_COLORS.open}
               />
               <FilterButton
                 label="Merged"
                 isActive={statusFilter === 'merged'}
                 onClick={() => setStatusFilter('merged')}
                 count={statusCounts.merged}
-                color={theme.palette.status.merged}
+                color={STATUS_COLORS.merged}
               />
               <FilterButton
                 label="Closed"
                 isActive={statusFilter === 'closed'}
                 onClick={() => setStatusFilter('closed')}
                 count={statusCounts.closed}
-                color={theme.palette.status.closed}
+                color={STATUS_COLORS.closed}
               />
             </Stack>
           </Box>
@@ -829,9 +845,10 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         <Box
           sx={{
             p: 2,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            borderBottom: '1px solid',
+            borderColor: 'border.light',
             height: '600px',
-            backgroundColor: 'rgba(0,0,0,0.2)',
+            backgroundColor: 'surface.subtle',
           }}
         >
           {showChart && filteredPRs.length > 0 && (
@@ -895,7 +912,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                     cursor: 'pointer',
                     display: 'table-row',
                     '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      backgroundColor: 'surface.light',
                     },
                     transition: 'all 0.2s',
                   }}
@@ -922,8 +939,9 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         showFirstButton
         showLastButton
         sx={{
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          color: 'rgba(255, 255, 255, 0.7)',
+          borderTop: '1px solid',
+          borderColor: 'border.light',
+          color: 'text.secondary',
           '.MuiTablePagination-displayedRows': {
             fontFamily: '"JetBrains Mono", monospace',
           },
@@ -934,22 +952,24 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
 };
 
 const headerCellStyle = {
-  backgroundColor: 'rgba(18, 18, 20, 0.95)',
+  backgroundColor: 'surface.tooltip',
   backdropFilter: 'blur(8px)',
-  color: '#ffffff',
+  color: 'text.primary',
   fontFamily: '"JetBrains Mono", monospace',
   fontWeight: 500,
   fontSize: '0.75rem',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  borderBottom: '1px solid',
+  borderColor: 'border.light',
   height: '48px',
   py: 1,
   boxSizing: 'border-box' as const,
 };
 
 const bodyCellStyle = {
-  color: '#ffffff',
+  color: 'text.primary',
   fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  borderBottom: '1px solid',
+  borderColor: 'border.light',
   fontSize: '0.75rem',
   py: 0.75,
   height: '52px',
