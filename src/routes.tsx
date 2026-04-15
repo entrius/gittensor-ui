@@ -11,7 +11,9 @@ export type AppRoute = Omit<PathRouteProps, 'path'> & {
 const HomePage = React.lazy(() => import('./pages/HomePage'));
 const AboutPage = React.lazy(() => import('./pages/AboutPage'));
 const FAQPage = React.lazy(() => import('./pages/FAQPage'));
-const DashboardPage = React.lazy(() => import('./pages/DashboardPage'));
+const DashboardPage = React.lazy(
+  () => import('./pages/dashboard/DashboardPage'),
+);
 const IssuesPage = React.lazy(() => import('./pages/IssuesPage'));
 const SearchPage = React.lazy(() => import('./pages/search/SearchPage'));
 const IssueDetailsPage = React.lazy(() => import('./pages/IssueDetailsPage'));

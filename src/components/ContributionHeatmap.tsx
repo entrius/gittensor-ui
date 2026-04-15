@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Card, Typography, Tooltip, alpha, useTheme } from '@mui/material';
 import { ActivityCalendar } from 'react-activity-calendar';
-import { CONTRIBUTION_HEATMAP_SCALE, TEXT_OPACITY } from '../../theme';
+import { CONTRIBUTION_HEATMAP_SCALE, TEXT_OPACITY } from '../theme';
 
 interface ContributionData {
   date: string;
