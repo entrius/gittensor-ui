@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { type Theme } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
+import { scrollbarSx } from '../../theme';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CloseIcon from '@mui/icons-material/Close';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
@@ -612,16 +613,7 @@ const GlobalSearchBar: React.FC = () => {
             backgroundColor: theme.palette.background.default,
             maxHeight: 'min(420px, calc(100vh - 96px))',
             overflowY: 'auto',
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: theme.palette.border.light,
-              borderRadius: 1,
-            },
+            ...scrollbarSx,
           })}
         >
           {isLoading && (

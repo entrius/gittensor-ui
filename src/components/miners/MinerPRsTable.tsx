@@ -26,6 +26,7 @@ import {
   NavigateNext as NextIcon,
 } from '@mui/icons-material';
 import { useMinerPRs, type CommitLog } from '../../api';
+import { scrollbarSx } from '../../theme';
 import {
   getPrStatusCounts,
   isClosedUnmergedPr,
@@ -376,16 +377,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             sx={{
               overflowY: 'auto',
               overflowX: 'auto',
-              '&::-webkit-scrollbar': {
-                width: { xs: '6px', sm: '8px' },
-                height: { xs: '6px', sm: '8px' },
-              },
-              '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: 'border.light',
-                borderRadius: '4px',
-                '&:hover': { backgroundColor: 'border.medium' },
-              },
+              ...scrollbarSx,
             }}
           >
             <Table

@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import { type SxProps, type Theme } from '@mui/material/styles';
 import { type SystemStyleObject } from '@mui/system';
+import { scrollbarSx } from '../../theme';
 
 export type SearchResultsTableColumn<T> = {
   key: string;
@@ -75,19 +76,10 @@ const searchTableCardSx = (theme: Theme) => ({
   overflow: 'hidden',
 });
 
-const searchTableContainerSx = (theme: Theme) => ({
+const searchTableContainerSx = {
   overflowX: 'auto',
-  '&::-webkit-scrollbar': {
-    height: 8,
-  },
-  '&::-webkit-scrollbar-track': {
-    backgroundColor: theme.palette.surface.subtle,
-  },
-  '&::-webkit-scrollbar-thumb': {
-    backgroundColor: theme.palette.border.light,
-    borderRadius: 1,
-  },
-});
+  ...scrollbarSx,
+};
 
 const searchTableSx = {
   tableLayout: 'fixed',
