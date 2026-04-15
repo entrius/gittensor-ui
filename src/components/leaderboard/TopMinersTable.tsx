@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Typography, CircularProgress, Grid } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
+import { useSearchParams } from 'react-router-dom';
 import { SectionCard } from './SectionCard';
 import { MinerCard } from './MinerCard';
 import { SearchInput } from '../common/SearchInput';
@@ -16,6 +17,8 @@ import {
 export type { MinerStats } from './types';
 
 const MINERS_PAGE_SIZE = 60;
+const SORT_QUERY_PARAM = 'sort';
+const ELIGIBLE_QUERY_PARAM = 'eligible';
 
 interface TopMinersTableProps {
   miners: MinerStats[];
@@ -25,6 +28,23 @@ interface TopMinersTableProps {
   variant?: LeaderboardVariant;
 }
 
+const getAllowedSortOptions = (variant: LeaderboardVariant): SortOption[] =>
+  variant === 'discoveries'
+    ? ['totalScore', 'usdPerDay', 'totalPRs', 'totalIssues', 'credibility']
+    : ['totalScore', 'usdPerDay', 'totalPRs', 'credibility'];
+
+const getSortOptionFromQuery = (
+  value: string | null,
+  variant: LeaderboardVariant,
+): SortOption => {
+  if (!value) return 'totalScore';
+
+  const allowedOptions = getAllowedSortOptions(variant);
+  return allowedOptions.includes(value as SortOption)
+    ? (value as SortOption)
+    : 'totalScore';
+};
+
 const TopMinersTable: React.FC<TopMinersTableProps> = ({
   miners,
   isLoading,
@@ -32,10 +52,54 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   linkState,
   variant = 'oss',
 }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortOption, setSortOption] = useState<SortOption>('totalScore');
-  const [showEligibleOnly, setShowEligibleOnly] = useState(false);
+  const [sortOption, setSortOption] = useState<SortOption>(() =>
+    getSortOptionFromQuery(searchParams.get(SORT_QUERY_PARAM), variant),
+  );
+  const [showEligibleOnly, setShowEligibleOnly] = useState(
+    () => searchParams.get(ELIGIBLE_QUERY_PARAM) === 'true',
+  );
   const [visibleCount, setVisibleCount] = useState(MINERS_PAGE_SIZE);
+
+  useEffect(() => {
+    const sortFromQuery = getSortOptionFromQuery(
+      searchParams.get(SORT_QUERY_PARAM),
+      variant,
+    );
+    const eligibleFromQuery =
+      searchParams.get(ELIGIBLE_QUERY_PARAM) === 'true';
+
+    setSortOption((prev) => (prev === sortFromQuery ? prev : sortFromQuery));
+    setShowEligibleOnly((prev) =>
+      prev === eligibleFromQuery ? prev : eligibleFromQuery,
+    );
+  }, [searchParams, variant]);
+
+  useEffect(() => {
+    setSearchParams(
+      (previousParams) => {
+        const nextSearchParams = new URLSearchParams(previousParams);
+
+        if (sortOption === 'totalScore') {
+          nextSearchParams.delete(SORT_QUERY_PARAM);
+        } else {
+          nextSearchParams.set(SORT_QUERY_PARAM, sortOption);
+        }
+
+        if (showEligibleOnly) {
+          nextSearchParams.set(ELIGIBLE_QUERY_PARAM, 'true');
+        } else {
+          nextSearchParams.delete(ELIGIBLE_QUERY_PARAM);
+        }
+
+        return nextSearchParams.toString() === previousParams.toString()
+          ? previousParams
+          : nextSearchParams;
+      },
+      { replace: true },
+    );
+  }, [setSearchParams, showEligibleOnly, sortOption]);
 
   // Helper to sort a list of miners
   const sortMinersList = (list: MinerStats[], option: SortOption) =>
