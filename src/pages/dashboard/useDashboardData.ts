@@ -20,7 +20,7 @@ import {
   buildDashboardOverview,
   buildDashboardTrendData,
   buildFeaturedContributors,
-  type PresetTimeRange,
+  type TrendTimeRange,
 } from './dashboardData';
 
 type DashboardDatasets = {
@@ -29,7 +29,7 @@ type DashboardDatasets = {
   issues: DatasetState<IssueBounty>;
 };
 
-export const useDashboardData = (range: PresetTimeRange) => {
+export const useDashboardData = (range: TrendTimeRange) => {
   const prsQuery = useAllPrs();
   const minersQuery = useAllMiners();
   const issuesQuery = useIssues();
@@ -53,14 +53,12 @@ export const useDashboardData = (range: PresetTimeRange) => {
   };
 
   const overview = useMemo(
-    () =>
-      buildDashboardOverview(datasets.prs.data, datasets.issues.data, range),
+    () => buildDashboardOverview(datasets.prs.data, datasets.issues.data, range),
     [datasets.issues.data, datasets.prs.data, range],
   );
 
-  const trendSeries = useMemo(
-    () =>
-      buildDashboardTrendData(datasets.prs.data, datasets.issues.data, range),
+  const trendData = useMemo(
+    () => buildDashboardTrendData(datasets.prs.data, datasets.issues.data, range),
     [datasets.issues.data, datasets.prs.data, range],
   );
 
@@ -78,7 +76,8 @@ export const useDashboardData = (range: PresetTimeRange) => {
     datasets,
     kpis,
     overview,
-    trendSeries,
+    trendLabels: trendData.labels,
+    trendSeries: trendData.series,
     featuredContributors,
     isLoading:
       datasets.prs.isLoading ||

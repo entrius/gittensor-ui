@@ -16,6 +16,7 @@ import {
 } from '../../utils';
 
 export type PresetTimeRange = '1d' | '7d' | '35d';
+export type TrendTimeRange = PresetTimeRange | 'all';
 export type TrendSeriesKey =
   | 'mergedPrs'
   | 'issuesResolved'
@@ -63,6 +64,8 @@ export interface DashboardFeaturedContributor {
 
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
+const WEEK_MS = 7 * DAY_MS;
+const GITTENSOR_START_MS = Date.UTC(2025, 11, 1, 0, 0, 0);
 
 const RANGE_CONFIG: Record<
   PresetTimeRange,
@@ -98,18 +101,26 @@ const isWithinWindow = (timestamp: number | null, window: WindowBounds) =>
 export const getRangeConfig = (range: PresetTimeRange) => RANGE_CONFIG[range];
 
 export const getWindowBounds = (
-  range: PresetTimeRange,
+  range: TrendTimeRange,
   now = new Date(),
 ): WindowBounds => {
+  if (range === 'all') {
+    return { startMs: GITTENSOR_START_MS, endMs: now.getTime() };
+  }
+
   const { windowMs } = getRangeConfig(range);
   const endMs = now.getTime();
   return { startMs: endMs - windowMs, endMs };
 };
 
 export const getPreviousWindowBounds = (
-  range: PresetTimeRange,
+  range: TrendTimeRange,
   now = new Date(),
-): WindowBounds => {
+): WindowBounds | null => {
+  if (range === 'all') {
+    return null;
+  }
+
   const current = getWindowBounds(range, now);
   const { windowMs } = getRangeConfig(range);
   return {
@@ -118,24 +129,95 @@ export const getPreviousWindowBounds = (
   };
 };
 
+const getUtcWeekStart = (timestamp: number) => {
+  const date = new Date(timestamp);
+  const dayOfWeek = date.getUTCDay();
+  const diffToMonday = (dayOfWeek + 6) % 7;
+  return Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate() - diffToMonday,
+  );
+};
+
+const formatTrendBucketLabel = (
+  timestamp: number,
+  range: TrendTimeRange,
+) => {
+  if (range === '1d') {
+    return new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(new Date(timestamp));
+  }
+
+  if (range === 'all') {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+    }).format(new Date(timestamp));
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(timestamp));
+};
+
+const buildTrendBuckets = (
+  timestamps: Array<number | null>,
+  range: TrendTimeRange,
+  now = new Date(),
+): Array<{ startMs: number; endMs: number; label: string }> => {
+  if (range !== 'all') {
+    const { points, bucketMs, windowMs } = getRangeConfig(range);
+    const startMs = now.getTime() - windowMs;
+
+    return Array.from({ length: points }, (_, index) => {
+      const bucketStart = startMs + index * bucketMs;
+      return {
+        startMs: bucketStart,
+        endMs: bucketStart + bucketMs,
+        label: formatTrendBucketLabel(bucketStart, range),
+      };
+    });
+  }
+
+  const firstWeekStart = getUtcWeekStart(GITTENSOR_START_MS);
+  const currentWeekStart = getUtcWeekStart(now.getTime());
+  const endExclusive = currentWeekStart + WEEK_MS;
+  const buckets: Array<{ startMs: number; endMs: number; label: string }> = [];
+
+  for (
+    let bucketStart = firstWeekStart;
+    bucketStart < endExclusive;
+    bucketStart += WEEK_MS
+  ) {
+    buckets.push({
+      startMs: bucketStart,
+      endMs: bucketStart + WEEK_MS,
+      label: formatTrendBucketLabel(bucketStart, range),
+    });
+  }
+
+  return buckets;
+};
+
 const bucketTimestamps = (
   timestamps: Array<number | null>,
-  range: PresetTimeRange,
-  now = new Date(),
+  buckets: Array<{ startMs: number; endMs: number; label: string }>,
 ) => {
-  const { points, bucketMs } = getRangeConfig(range);
-  const current = getWindowBounds(range, now);
-  const values = Array.from({ length: points }, () => 0);
+  const values = Array.from({ length: buckets.length }, () => 0);
 
   timestamps.forEach((timestamp) => {
-    if (timestamp === null || !isWithinWindow(timestamp, current)) return;
+    if (timestamp === null) return;
 
-    const index = Math.min(
-      Math.floor((timestamp - current.startMs) / bucketMs),
-      points - 1,
-    );
-    if (index >= 0) {
-      values[index] += 1;
+    for (let index = 0; index < buckets.length; index += 1) {
+      const bucket = buckets[index];
+      if (timestamp >= bucket.startMs && timestamp < bucket.endMs) {
+        values[index] += 1;
+        break;
+      }
     }
   });
 
@@ -159,43 +241,58 @@ const formatDelta = (
 export const buildDashboardTrendData = (
   prs: CommitLog[],
   issues: IssueBounty[],
-  range: PresetTimeRange,
+  range: TrendTimeRange,
   now = new Date(),
-): DashboardTrendSeries[] => {
-  const mergedPrValues = bucketTimestamps(
-    prs.map((pr) => toTimestamp(pr.mergedAt)),
+): { labels: string[]; series: DashboardTrendSeries[] } => {
+  const mergedPrTimestamps = prs.map((pr) => toTimestamp(pr.mergedAt));
+  const openedPrTimestamps = prs.map((pr) => toTimestamp(pr.prCreatedAt));
+  const openedIssueTimestamps = issues.map((issue) =>
+    toTimestamp(issue.createdAt),
+  );
+  const resolvedIssueTimestamps = issues
+    .filter((issue) => issue.status === 'completed')
+    .map((issue) => toTimestamp(issue.completedAt));
+  const buckets = buildTrendBuckets(
+    [
+      ...mergedPrTimestamps,
+      ...openedPrTimestamps,
+      ...openedIssueTimestamps,
+      ...resolvedIssueTimestamps,
+    ],
     range,
     now,
+  );
+  const mergedPrValues = bucketTimestamps(
+    mergedPrTimestamps,
+    buckets,
   );
   const openedPrValues = bucketTimestamps(
-    prs.map((pr) => toTimestamp(pr.prCreatedAt)),
-    range,
-    now,
+    openedPrTimestamps,
+    buckets,
   );
   const openedIssueValues = bucketTimestamps(
-    issues.map((issue) => toTimestamp(issue.createdAt)),
-    range,
-    now,
+    openedIssueTimestamps,
+    buckets,
   );
   const resolvedIssueValues = bucketTimestamps(
-    issues
-      .filter((issue) => issue.status === 'completed')
-      .map((issue) => toTimestamp(issue.completedAt)),
-    range,
-    now,
+    resolvedIssueTimestamps,
+    buckets,
   );
 
-  return TREND_SERIES_KEYS.map((key) => ({
-    key,
-    values:
-      key === 'mergedPrs'
-        ? mergedPrValues
-        : key === 'prsOpened'
-          ? openedPrValues
-          : key === 'issuesResolved'
-            ? resolvedIssueValues
-            : openedIssueValues,
-  }));
+  return {
+    labels: buckets.map((bucket) => bucket.label),
+    series: TREND_SERIES_KEYS.map((key) => ({
+      key,
+      values:
+        key === 'mergedPrs'
+          ? mergedPrValues
+          : key === 'prsOpened'
+            ? openedPrValues
+            : key === 'issuesResolved'
+              ? resolvedIssueValues
+              : openedIssueValues,
+    })),
+  };
 };
 
 const getPrOverviewMetrics = (prs: CommitLog[], window: WindowBounds) => {
@@ -204,7 +301,6 @@ const getPrOverviewMetrics = (prs: CommitLog[], window: WindowBounds) => {
     merged: 0,
     open: 0,
     closed: 0,
-    uniqueRepositories: new Set<string>(),
   };
 
   prs.forEach((pr) => {
@@ -213,25 +309,19 @@ const getPrOverviewMetrics = (prs: CommitLog[], window: WindowBounds) => {
     const mergedInWindow = isWithinWindow(toTimestamp(pr.mergedAt), window);
     const closedInWindow = isWithinWindow(toTimestamp(pr.closedAt), window);
 
-    let shouldCount = false;
-
-    if (normalizedState === 'Merged' && mergedInWindow) {
-      statusCounts.merged += 1;
-      shouldCount = true;
-    } else if (normalizedState === 'Open' && createdInWindow) {
+    if (createdInWindow) {
       statusCounts.open += 1;
-      shouldCount = true;
-    } else if (normalizedState === 'Closed' && closedInWindow) {
-      statusCounts.closed += 1;
-      shouldCount = true;
+      statusCounts.total += 1;
     }
 
-    if (!shouldCount) return;
+    if (mergedInWindow) {
+      statusCounts.merged += 1;
+      statusCounts.total += 1;
+    }
 
-    statusCounts.total += 1;
-
-    if (pr.repository) {
-      statusCounts.uniqueRepositories.add(pr.repository);
+    if (normalizedState === 'Closed' && closedInWindow) {
+      statusCounts.closed += 1;
+      statusCounts.total += 1;
     }
   });
 
@@ -240,7 +330,6 @@ const getPrOverviewMetrics = (prs: CommitLog[], window: WindowBounds) => {
     merged: statusCounts.merged,
     open: statusCounts.open,
     closed: statusCounts.closed,
-    uniqueRepositories: statusCounts.uniqueRepositories.size,
   };
 };
 
@@ -253,7 +342,6 @@ const getIssueOverviewMetrics = (
     solved: 0,
     open: 0,
     closed: 0,
-    uniqueRepositories: new Set<string>(),
   };
 
   issues.forEach((issue) => {
@@ -268,25 +356,19 @@ const getIssueOverviewMetrics = (
     );
     const closedInWindow = isWithinWindow(toTimestamp(issue.closedAt), window);
 
-    let shouldCount = false;
+    if (createdInWindow) {
+      statusCounts.open += 1;
+      statusCounts.total += 1;
+    }
 
     if (normalizedStatus === 'Solved' && solvedInWindow) {
       statusCounts.solved += 1;
-      shouldCount = true;
-    } else if (normalizedStatus === 'Open' && createdInWindow) {
-      statusCounts.open += 1;
-      shouldCount = true;
-    } else if (normalizedStatus === 'Closed' && closedInWindow) {
-      statusCounts.closed += 1;
-      shouldCount = true;
+      statusCounts.total += 1;
     }
 
-    if (!shouldCount) return;
-
-    statusCounts.total += 1;
-
-    if (issue.repositoryFullName) {
-      statusCounts.uniqueRepositories.add(issue.repositoryFullName);
+    if (normalizedStatus === 'Closed' && closedInWindow) {
+      statusCounts.closed += 1;
+      statusCounts.total += 1;
     }
   });
 
@@ -295,23 +377,33 @@ const getIssueOverviewMetrics = (
     solved: statusCounts.solved,
     open: statusCounts.open,
     closed: statusCounts.closed,
-    uniqueRepositories: statusCounts.uniqueRepositories.size,
   };
 };
 
 export const buildDashboardOverview = (
   prs: CommitLog[],
   issues: IssueBounty[],
-  range: PresetTimeRange,
+  range: TrendTimeRange,
   now = new Date(),
 ): DashboardOverviewSection[] => {
   const currentWindow = getWindowBounds(range, now);
   const previousWindow = getPreviousWindowBounds(range, now);
 
   const currentPrMetrics = getPrOverviewMetrics(prs, currentWindow);
-  const previousPrMetrics = getPrOverviewMetrics(prs, previousWindow);
+  const previousPrMetrics = previousWindow
+    ? getPrOverviewMetrics(prs, previousWindow)
+    : null;
   const currentIssueMetrics = getIssueOverviewMetrics(issues, currentWindow);
-  const previousIssueMetrics = getIssueOverviewMetrics(issues, previousWindow);
+  const previousIssueMetrics = previousWindow
+    ? getIssueOverviewMetrics(issues, previousWindow)
+    : null;
+  const getMetricDelta = (
+    currentValue: number,
+    previousValue?: number,
+  ) =>
+    range === 'all' || previousValue === undefined
+      ? '0%'
+      : formatDelta(currentValue, previousValue);
 
   return [
     {
@@ -326,29 +418,27 @@ export const buildDashboardOverview = (
         {
           label: 'Total',
           value: currentPrMetrics.total,
-          delta: formatDelta(currentPrMetrics.total, previousPrMetrics.total),
+          delta: getMetricDelta(currentPrMetrics.total, previousPrMetrics?.total),
         },
         {
           label: 'Merged',
           value: currentPrMetrics.merged,
-          delta: formatDelta(currentPrMetrics.merged, previousPrMetrics.merged),
+          delta: getMetricDelta(
+            currentPrMetrics.merged,
+            previousPrMetrics?.merged,
+          ),
         },
         {
           label: 'Open',
           value: currentPrMetrics.open,
-          delta: formatDelta(currentPrMetrics.open, previousPrMetrics.open),
+          delta: getMetricDelta(currentPrMetrics.open, previousPrMetrics?.open),
         },
         {
           label: 'Closed',
           value: currentPrMetrics.closed,
-          delta: formatDelta(currentPrMetrics.closed, previousPrMetrics.closed),
-        },
-        {
-          label: 'Unique Repositories',
-          value: currentPrMetrics.uniqueRepositories,
-          delta: formatDelta(
-            currentPrMetrics.uniqueRepositories,
-            previousPrMetrics.uniqueRepositories,
+          delta: getMetricDelta(
+            currentPrMetrics.closed,
+            previousPrMetrics?.closed,
           ),
         },
       ],
@@ -365,41 +455,33 @@ export const buildDashboardOverview = (
         {
           label: 'Total',
           value: currentIssueMetrics.total,
-          delta: formatDelta(
+          delta: getMetricDelta(
             currentIssueMetrics.total,
-            previousIssueMetrics.total,
+            previousIssueMetrics?.total,
           ),
         },
         {
           label: 'Solved',
           value: currentIssueMetrics.solved,
-          delta: formatDelta(
+          delta: getMetricDelta(
             currentIssueMetrics.solved,
-            previousIssueMetrics.solved,
+            previousIssueMetrics?.solved,
           ),
         },
         {
           label: 'Open',
           value: currentIssueMetrics.open,
-          delta: formatDelta(
+          delta: getMetricDelta(
             currentIssueMetrics.open,
-            previousIssueMetrics.open,
+            previousIssueMetrics?.open,
           ),
         },
         {
           label: 'Closed',
           value: currentIssueMetrics.closed,
-          delta: formatDelta(
+          delta: getMetricDelta(
             currentIssueMetrics.closed,
-            previousIssueMetrics.closed,
-          ),
-        },
-        {
-          label: 'Unique Repositories',
-          value: currentIssueMetrics.uniqueRepositories,
-          delta: formatDelta(
-            currentIssueMetrics.uniqueRepositories,
-            previousIssueMetrics.uniqueRepositories,
+            previousIssueMetrics?.closed,
           ),
         },
       ],
@@ -410,7 +492,7 @@ export const buildDashboardOverview = (
 export const buildDashboardKpis = (
   prs: CommitLog[],
   issues: IssueBounty[],
-  range: PresetTimeRange,
+  range: TrendTimeRange,
   now = new Date(),
 ): DashboardKpi[] => {
   const window = getWindowBounds(range, now);

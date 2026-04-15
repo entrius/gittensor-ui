@@ -4,22 +4,24 @@ import {
   type DashboardKpi,
   type DashboardOverviewSection,
   type DashboardTrendSeries,
-  type PresetTimeRange,
+  type TrendTimeRange,
 } from '../dashboardData';
 import ContributionTrends from './ContributionTrends';
 import DashboardOverview from './DashboardOverview';
 
 interface ActiveNetworkProps {
-  range: PresetTimeRange;
+  range: TrendTimeRange;
+  trendLabels: string[];
   trendSeries: DashboardTrendSeries[];
   sections: DashboardOverviewSection[];
   kpis: DashboardKpi[];
   isLoading?: boolean;
-  onRangeChange: (range: PresetTimeRange) => void;
+  onRangeChange: (range: TrendTimeRange) => void;
 }
 
 const ActiveNetwork: React.FC<ActiveNetworkProps> = ({
   range,
+  trendLabels,
   trendSeries,
   sections,
   kpis,
@@ -38,6 +40,7 @@ const ActiveNetwork: React.FC<ActiveNetworkProps> = ({
     >
       <ContributionTrends
         range={range}
+        labels={trendLabels}
         series={trendSeries}
         isLoading={isLoading}
         onRangeChange={onRangeChange}

@@ -6,11 +6,11 @@ import KpiCard from '../../../components/KpiCard';
 import {
   type DashboardKpi,
   type DashboardOverviewSection,
-  type PresetTimeRange,
+  type TrendTimeRange,
 } from '../dashboardData';
 
 interface DashboardOverviewProps {
-  range: PresetTimeRange;
+  range: TrendTimeRange;
   sections: DashboardOverviewSection[];
   kpis: DashboardKpi[];
 }
@@ -24,16 +24,11 @@ const getSegmentColor = (theme: Theme, label: string): string => {
   return theme.palette.status.open;
 };
 
-const getMetricTone = (theme: Theme, sectionTitle: string, label: string) => {
+const getMetricTone = (theme: Theme, label: string) => {
   if (label === 'Total') return theme.palette.text.primary;
   if (isResolvedMetric(label)) return theme.palette.status.merged;
   if (label === 'Open') return theme.palette.status.open;
   if (label === 'Closed') return theme.palette.status.closed;
-  if (label === 'Unique Repositories') {
-    return sectionTitle === 'OSS Contributions'
-      ? theme.palette.status.info
-      : theme.palette.status.warning;
-  }
   return theme.palette.text.primary;
 };
 
@@ -136,6 +131,10 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 }) => {
   const theme = useTheme();
   const monoFontFamily = theme.typography.mono.fontFamily;
+  const rangeDescription =
+    range === 'all'
+      ? 'All-time totals'
+      : `Deltas vs previous ${range.toUpperCase()} window`;
 
   return (
     <>
@@ -184,7 +183,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                             letterSpacing: '0.02em',
                           }}
                         >
-                          {`Deltas vs previous ${range.toUpperCase()} window`}
+                          {rangeDescription}
                         </Typography>
                       </Box>
 
@@ -237,7 +236,6 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                                 sx={{
                                   color: getMetricTone(
                                     theme,
-                                    section.title,
                                     metric.label,
                                   ),
                                   fontFamily: monoFontFamily,

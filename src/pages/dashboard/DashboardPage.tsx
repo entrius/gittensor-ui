@@ -3,7 +3,7 @@ import { Box, useMediaQuery } from '@mui/material';
 import { Page } from '../../components/layout';
 import { SEO } from '../../components';
 import theme from '../../theme';
-import { type PresetTimeRange } from './dashboardData';
+import { type TrendTimeRange } from './dashboardData';
 import useDashboardData from './useDashboardData';
 import ActiveNetwork from './views/ActiveNetwork';
 import DashboardTopContributors from './views/DashboardTopContributors';
@@ -15,9 +15,15 @@ const DashboardFeaturePage: React.FC = () => {
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
   const showSidebarRight = useMediaQuery(theme.breakpoints.up('xl'));
 
-  const [range, setRange] = useState<PresetTimeRange>('35d');
-  const { kpis, overview, trendSeries, featuredContributors, isLoading } =
-    useDashboardData(range);
+  const [range, setRange] = useState<TrendTimeRange>('35d');
+  const {
+    kpis,
+    overview,
+    trendLabels,
+    trendSeries,
+    featuredContributors,
+    isLoading,
+  } = useDashboardData(range);
 
   const sidebarWidth =
     isMobile || isTablet ? '100%' : isLargeScreen ? '340px' : '300px';
@@ -75,6 +81,7 @@ const DashboardFeaturePage: React.FC = () => {
           >
             <ActiveNetwork
               range={range}
+              trendLabels={trendLabels}
               trendSeries={trendSeries}
               sections={overview}
               kpis={kpis}

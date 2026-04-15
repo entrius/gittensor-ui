@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import {
   Box,
+  Card,
+  CardContent,
   CircularProgress,
   Stack,
   ToggleButton,
@@ -11,16 +13,16 @@ import { alpha, type Theme, useTheme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
 import {
   type DashboardTrendSeries,
-  getRangeConfig,
-  type PresetTimeRange,
   type TrendSeriesKey,
+  type TrendTimeRange,
 } from '../dashboardData';
 
 interface ContributionTrendsProps {
-  range: PresetTimeRange;
+  range: TrendTimeRange;
+  labels: string[];
   series: DashboardTrendSeries[];
   isLoading?: boolean;
-  onRangeChange: (range: PresetTimeRange) => void;
+  onRangeChange: (range: TrendTimeRange) => void;
 }
 
 const TREND_SERIES_PRESENTATION: Record<
@@ -69,31 +71,9 @@ const getTrendSeriesColor = (theme: Theme, seriesKey: TrendSeriesKey) =>
     TREND_SERIES_PRESENTATION[seriesKey].colorOpacity,
   );
 
-const formatBucketLabel = (timestamp: number, range: PresetTimeRange) => {
-  if (range === '1d') {
-    return new Intl.DateTimeFormat('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-    }).format(new Date(timestamp));
-  }
-
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date(timestamp));
-};
-
-const buildBucketLabels = (range: PresetTimeRange, now = new Date()) => {
-  const { points, bucketMs, windowMs } = getRangeConfig(range);
-  const startMs = now.getTime() - windowMs;
-
-  return Array.from({ length: points }, (_, index) =>
-    formatBucketLabel(startMs + index * bucketMs, range),
-  );
-};
-
 const ContributionTrends: React.FC<ContributionTrendsProps> = ({
   range,
+  labels,
   series,
   isLoading = false,
   onRangeChange,
@@ -105,7 +85,6 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
     () => series.filter((entry) => !hiddenSeries.includes(entry.key)),
     [series, hiddenSeries],
   );
-  const labels = useMemo(() => buildBucketLabels(range), [range]);
 
   const chartOption = useMemo(() => {
     const labelInterval = range === '35d' ? 6 : range === '7d' ? 0 : 'auto';
@@ -271,7 +250,7 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
           value={range}
           onChange={(
             _event: React.MouseEvent<HTMLElement>,
-            nextRange: PresetTimeRange | null,
+            nextRange: TrendTimeRange | null,
           ) => {
             if (nextRange) onRangeChange(nextRange);
           }}
@@ -307,118 +286,135 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
           <ToggleButton value="1d">1D</ToggleButton>
           <ToggleButton value="7d">7D</ToggleButton>
           <ToggleButton value="35d">35D</ToggleButton>
+          <ToggleButton value="all">All</ToggleButton>
         </ToggleButtonGroup>
       </Stack>
 
-      <Stack
-        direction="row"
-        spacing={0.8}
-        useFlexGap
-        flexWrap="wrap"
-        sx={{ mb: 1.1 }}
-      >
-        {series.map((entry) => {
-          const isHidden = hiddenSeries.includes(entry.key);
-          const presentation = TREND_SERIES_PRESENTATION[entry.key];
-          const seriesColor = getTrendSeriesColor(theme, entry.key);
-
-          return (
-            <Stack
-              key={entry.key}
-              direction="row"
-              spacing={0.6}
-              alignItems="center"
-              onClick={() => handleToggleSeries(entry.key)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  handleToggleSeries(entry.key);
-                }
-              }}
-              role="button"
-              tabIndex={0}
-              sx={{
-                px: 0.95,
-                py: 0.48,
-                borderRadius: 999,
-                border: isHidden
-                  ? `1px solid ${theme.palette.border.subtle}`
-                  : `1px solid ${theme.palette.border.light}`,
-                backgroundColor: isHidden
-                  ? 'transparent'
-                  : theme.palette.surface.subtle,
-                cursor: 'pointer',
-                opacity: isHidden ? 0.55 : 1,
-                transition:
-                  'opacity 0.18s ease, border-color 0.18s ease, background-color 0.18s ease',
-                '&:hover': {
-                  borderColor: alpha(theme.palette.text.primary, 0.14),
-                  backgroundColor: alpha(theme.palette.text.primary, 0.03),
-                },
-                '&:focus-visible': {
-                  outline: `2px solid ${alpha(theme.palette.diff.additions, 0.38)}`,
-                  outlineOffset: '2px',
-                },
-              }}
-            >
-              <Box
-                sx={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: '50%',
-                  backgroundColor: seriesColor,
-                  boxShadow: `0 0 0 1px ${seriesColor}`,
-                  opacity: isHidden ? 0.35 : presentation.lineOpacity,
-                }}
-              />
-              <Typography
-                sx={{
-                  color: isHidden
-                    ? alpha(theme.palette.text.primary, 0.46)
-                    : alpha(theme.palette.text.primary, 0.72),
-                  fontFamily: theme.typography.mono.fontFamily,
-                  fontSize: '0.72rem',
-                  lineHeight: 1,
-                }}
-              >
-                {presentation.label}
-              </Typography>
-            </Stack>
-          );
-        })}
-      </Stack>
-
-      <Box
+      <Card
+        elevation={0}
         sx={{
-          width: '100%',
-          height: 280,
-          '& > div': {
-            width: '100%',
-            height: '100%',
-          },
+          borderRadius: 3,
+          border: `1px solid ${theme.palette.border.light}`,
+          backgroundColor: 'transparent',
         }}
       >
-        {isLoading ? (
+        <CardContent
+          sx={{
+            p: { xs: 1.35, sm: 1.5 },
+            '&:last-child': { pb: { xs: 1.35, sm: 1.5 } },
+          }}
+        >
+          <Stack
+            direction="row"
+            spacing={0.8}
+            useFlexGap
+            flexWrap="wrap"
+            sx={{ mb: 1.1 }}
+          >
+            {series.map((entry) => {
+              const isHidden = hiddenSeries.includes(entry.key);
+              const presentation = TREND_SERIES_PRESENTATION[entry.key];
+              const seriesColor = getTrendSeriesColor(theme, entry.key);
+
+              return (
+                <Stack
+                  key={entry.key}
+                  direction="row"
+                  spacing={0.6}
+                  alignItems="center"
+                  onClick={() => handleToggleSeries(entry.key)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      handleToggleSeries(entry.key);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  sx={{
+                    px: 0.95,
+                    py: 0.48,
+                    borderRadius: 999,
+                    border: isHidden
+                      ? `1px solid ${theme.palette.border.subtle}`
+                      : `1px solid ${theme.palette.border.light}`,
+                    backgroundColor: isHidden
+                      ? 'transparent'
+                      : theme.palette.surface.subtle,
+                    cursor: 'pointer',
+                    opacity: isHidden ? 0.55 : 1,
+                    transition:
+                      'opacity 0.18s ease, border-color 0.18s ease, background-color 0.18s ease',
+                    '&:hover': {
+                      borderColor: alpha(theme.palette.text.primary, 0.14),
+                      backgroundColor: alpha(theme.palette.text.primary, 0.03),
+                    },
+                    '&:focus-visible': {
+                      outline: `2px solid ${alpha(theme.palette.diff.additions, 0.38)}`,
+                      outlineOffset: '2px',
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      backgroundColor: seriesColor,
+                      boxShadow: `0 0 0 1px ${seriesColor}`,
+                      opacity: isHidden ? 0.35 : presentation.lineOpacity,
+                    }}
+                  />
+                  <Typography
+                    sx={{
+                      color: isHidden
+                        ? alpha(theme.palette.text.primary, 0.46)
+                        : alpha(theme.palette.text.primary, 0.72),
+                      fontFamily: theme.typography.mono.fontFamily,
+                      fontSize: '0.72rem',
+                      lineHeight: 1,
+                    }}
+                  >
+                    {presentation.label}
+                  </Typography>
+                </Stack>
+              );
+            })}
+          </Stack>
+
           <Box
             sx={{
               width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              height: 280,
+              '& > div': {
+                width: '100%',
+                height: '100%',
+              },
             }}
           >
-            <CircularProgress size={28} />
+            {isLoading ? (
+              <Box
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <CircularProgress size={28} />
+              </Box>
+            ) : (
+              <ReactECharts
+                option={chartOption}
+                notMerge={true}
+                style={{ width: '100%', height: '100%' }}
+                opts={{ renderer: 'svg' }}
+              />
+            )}
           </Box>
-        ) : (
-          <ReactECharts
-            option={chartOption}
-            notMerge={true}
-            style={{ width: '100%', height: '100%' }}
-            opts={{ renderer: 'svg' }}
-          />
-        )}
-      </Box>
+        </CardContent>
+      </Card>
     </Box>
   );
 };
