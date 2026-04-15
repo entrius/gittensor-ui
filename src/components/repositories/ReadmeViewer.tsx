@@ -18,6 +18,8 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchReadme = async () => {
       setLoading(true);
       setError(null);
@@ -26,28 +28,33 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
         try {
           const response = await axios.get(
             `https://cdn.jsdelivr.net/gh/${repositoryFullName}@main/README.md`,
+            { signal: controller.signal },
           );
+          if (controller.signal.aborted) return;
           setContent(response.data);
           setDefaultBranch('main');
-        } catch {
+        } catch (err) {
+          if (axios.isCancel(err) || controller.signal.aborted) return;
           // Fallback to 'master' branch
           const response = await axios.get(
             `https://cdn.jsdelivr.net/gh/${repositoryFullName}@master/README.md`,
+            { signal: controller.signal },
           );
+          if (controller.signal.aborted) return;
           setContent(response.data);
           setDefaultBranch('master');
         }
       } catch (err) {
+        if (axios.isCancel(err) || controller.signal.aborted) return;
         console.error('Failed to fetch README', err);
         setError('Could not load README.md');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
-    if (repositoryFullName) {
-      fetchReadme();
-    }
+    if (repositoryFullName) fetchReadme();
+    return () => controller.abort();
   }, [repositoryFullName]);
 
   if (loading) {
