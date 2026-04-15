@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Typography, CircularProgress, Grid } from '@mui/material';
-import { alpha, type Theme } from '@mui/material/styles';
+import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import { useSearchParams } from 'react-router-dom';
 import { SectionCard } from './SectionCard';
 import { MinerCard } from './MinerCard';
 import { SearchInput } from '../common/SearchInput';
+import FilterButton from '../FilterButton';
 import { STATUS_COLORS } from '../../theme';
 import {
   type MinerStats,
@@ -52,6 +53,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   linkState,
   variant = 'oss',
 }) => {
+  const theme = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const sortParamValue = searchParams.get(SORT_QUERY_PARAM);
@@ -193,6 +195,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
               label="Eligible"
               isActive={showEligibleOnly}
               onClick={handleToggleEligible}
+              color={theme.palette.status.merged}
             />
           </Box>
         }
@@ -355,55 +358,6 @@ const SortButtons: React.FC<SortButtonsProps> = ({
         </Typography>
       </Box>
     ))}
-  </Box>
-);
-
-interface FilterButtonProps {
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
-}
-
-const FilterButton: React.FC<FilterButtonProps> = ({
-  label,
-  isActive,
-  onClick,
-}) => (
-  <Box
-    onClick={onClick}
-    sx={(theme) => ({
-      px: 1.5,
-      height: 32,
-      display: 'flex',
-      alignItems: 'center',
-      borderRadius: 2,
-      cursor: 'pointer',
-      backgroundColor: isActive
-        ? alpha(theme.palette.status.merged, 0.16)
-        : 'transparent',
-      color: isActive ? theme.palette.text.primary : STATUS_COLORS.open,
-      border: '1px solid',
-      borderColor: isActive
-        ? alpha(theme.palette.status.merged, 0.4)
-        : 'transparent',
-      transition: 'all 0.2s',
-      '&:hover': {
-        backgroundColor: isActive
-          ? alpha(theme.palette.status.merged, 0.2)
-          : theme.palette.surface.light,
-        color: theme.palette.text.primary,
-      },
-    })}
-  >
-    <Typography
-      sx={{
-        fontFamily: FONTS.mono,
-        fontSize: '0.75rem',
-        fontWeight: 600,
-      }}
-    >
-      {label}
-    </Typography>
   </Box>
 );
 

@@ -13,6 +13,8 @@ import {
   CircularProgress,
   Chip,
   Stack,
+  alpha,
+  useTheme,
 } from '@mui/material';
 import { useRepositoryIssues, useRepoIssues } from '../../api';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -20,7 +22,13 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { formatTokenAmount } from '../../utils/format';
-import { STATUS_COLORS, scrollbarSx } from '../../theme';
+import {
+  STATUS_COLORS,
+  TEXT_OPACITY,
+  scrollbarSx,
+  headerCellStyle,
+  bodyCellStyle,
+} from '../../theme';
 import FilterButton from '../FilterButton';
 
 interface RepositoryIssuesTableProps {
@@ -30,6 +38,7 @@ interface RepositoryIssuesTableProps {
 const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   repositoryFullName,
 }) => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { data: issues, isLoading } = useRepositoryIssues(repositoryFullName);
   const { data: bounties } = useRepoIssues(repositoryFullName);
@@ -68,7 +77,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       <Card
         sx={{
           borderRadius: 3,
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: `1px solid ${theme.palette.border.light}`,
           backgroundColor: 'transparent',
           p: 4,
           textAlign: 'center',
@@ -101,32 +110,32 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
             switch (status) {
               case 'active':
                 return {
-                  bg: 'rgba(88, 166, 255, 0.15)',
-                  border: 'rgba(88, 166, 255, 0.4)',
+                  bg: alpha(STATUS_COLORS.info, 0.15),
+                  border: alpha(STATUS_COLORS.info, 0.4),
                   text: STATUS_COLORS.info,
                 };
               case 'completed':
                 return {
-                  bg: 'rgba(63, 185, 80, 0.15)',
-                  border: 'rgba(63, 185, 80, 0.4)',
+                  bg: alpha(STATUS_COLORS.merged, 0.15),
+                  border: alpha(STATUS_COLORS.merged, 0.4),
                   text: STATUS_COLORS.merged,
                 };
               case 'registered':
                 return {
-                  bg: 'rgba(245, 158, 11, 0.15)',
-                  border: 'rgba(245, 158, 11, 0.4)',
+                  bg: alpha(STATUS_COLORS.warning, 0.15),
+                  border: alpha(STATUS_COLORS.warning, 0.4),
                   text: STATUS_COLORS.warning,
                 };
               case 'cancelled':
                 return {
-                  bg: 'rgba(239, 68, 68, 0.15)',
-                  border: 'rgba(239, 68, 68, 0.4)',
+                  bg: alpha(STATUS_COLORS.error, 0.15),
+                  border: alpha(STATUS_COLORS.error, 0.4),
                   text: STATUS_COLORS.error,
                 };
               default:
                 return {
-                  bg: 'rgba(139, 148, 158, 0.15)',
-                  border: 'rgba(139, 148, 158, 0.4)',
+                  bg: alpha(STATUS_COLORS.neutral, 0.15),
+                  border: alpha(STATUS_COLORS.neutral, 0.4),
                   text: STATUS_COLORS.open,
                 };
             }
@@ -154,16 +163,16 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
               case 'completed':
                 return STATUS_COLORS.merged;
               case 'cancelled':
-                return 'rgba(255, 255, 255, 0.4)';
+                return alpha(theme.palette.common.white, TEXT_OPACITY.muted);
               default:
-                return 'rgba(255, 255, 255, 0.6)';
+                return alpha(theme.palette.common.white, 0.6);
             }
           };
           return (
             <Card
               sx={{
                 borderRadius: 3,
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                border: `1px solid ${theme.palette.border.light}`,
                 backgroundColor: 'transparent',
                 p: 0,
                 overflow: 'hidden',
@@ -173,7 +182,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
               <Box
                 sx={{
                   p: 3,
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderBottom: `1px solid ${theme.palette.border.light}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -210,13 +219,13 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                         justifyContent: 'space-between',
                         p: 2,
                         borderRadius: 2,
-                        border: '1px solid rgba(255, 255, 255, 0.06)',
-                        backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                        border: `1px solid ${alpha(theme.palette.common.white, 0.06)}`,
+                        backgroundColor: 'surface.subtle',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
                         '&:hover': {
-                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                          borderColor: 'rgba(255, 255, 255, 0.15)',
+                          backgroundColor: 'surface.light',
+                          borderColor: alpha(theme.palette.common.white, 0.15),
                           transform: 'translateX(2px)',
                         },
                       }}
@@ -255,7 +264,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                         </Typography>
                         <Typography
                           sx={{
-                            color: 'rgba(255, 255, 255, 0.85)',
+                            color: 'text.primary',
                             fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.85rem',
                             overflow: 'hidden',
@@ -292,7 +301,10 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                         </Typography>
                         <ArrowForwardIcon
                           sx={{
-                            color: 'rgba(255, 255, 255, 0.2)',
+                            color: alpha(
+                              theme.palette.common.white,
+                              TEXT_OPACITY.ghost,
+                            ),
                             fontSize: 16,
                           }}
                         />
@@ -309,7 +321,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       <Card
         sx={{
           borderRadius: 3,
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: `1px solid ${theme.palette.border.light}`,
           backgroundColor: 'transparent',
           p: 0,
           display: 'flex',
@@ -321,7 +333,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         <Box
           sx={{
             p: 3,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            borderBottom: `1px solid ${theme.palette.border.light}`,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -373,7 +385,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
           <Box sx={{ p: 4, textAlign: 'center' }}>
             <Typography
               sx={{
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.9rem',
               }}
@@ -413,7 +425,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                       sx={{
                         cursor: 'pointer',
                         '&:hover': {
-                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          backgroundColor: 'surface.light',
                         },
                         transition: 'background-color 0.2s',
                       }}
@@ -489,7 +501,14 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                             #{issue.prNumber}
                           </a>
                         ) : (
-                          <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>
+                          <span
+                            style={{
+                              color: alpha(
+                                theme.palette.common.white,
+                                TEXT_OPACITY.faint,
+                              ),
+                            }}
+                          >
                             -
                           </span>
                         )}
@@ -514,25 +533,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       </Card>
     </Box>
   );
-};
-
-const headerCellStyle = {
-  backgroundColor: 'rgba(18, 18, 20, 0.95)',
-  backdropFilter: 'blur(8px)',
-  color: 'rgba(255, 255, 255, 0.7)',
-  fontFamily: '"JetBrains Mono", monospace',
-  fontWeight: 500,
-  fontSize: '0.75rem',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.5px',
-};
-
-const bodyCellStyle = {
-  color: 'text.primary',
-  fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  fontSize: '0.85rem',
 };
 
 export default RepositoryIssuesTable;

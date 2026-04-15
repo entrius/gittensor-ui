@@ -723,12 +723,15 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
   const setPage = useCallback(
     (updater: number | ((prev: number) => number)) => {
       const next = typeof updater === 'function' ? updater(page) : updater;
-      setSearchParams((prev) => {
-        const p = new URLSearchParams(prev);
-        if (next === 0) p.delete('scorePage');
-        else p.set('scorePage', String(next));
-        return p;
-      });
+      setSearchParams(
+        (prev) => {
+          const p = new URLSearchParams(prev);
+          if (next === 0) p.delete('scorePage');
+          else p.set('scorePage', String(next));
+          return p;
+        },
+        { replace: true },
+      );
     },
     [page, setSearchParams],
   );

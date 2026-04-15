@@ -40,7 +40,7 @@ const getDeltaColor = (theme: Theme, delta: string): string => {
 
 const buildStatusChartOption = (
   theme: Theme,
-  total: string,
+  centerLabel: string,
   segments: DashboardOverviewSection['chartSegments'],
 ): Record<string, unknown> => {
   const totalValue = segments.reduce((sum, segment) => sum + segment.value, 0);
@@ -49,7 +49,7 @@ const buildStatusChartOption = (
   return {
     backgroundColor: 'transparent',
     title: {
-      text: total,
+      text: centerLabel,
       left: 'center',
       top: '34%',
       textStyle: {
@@ -270,7 +270,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                           <ReactECharts
                             option={buildStatusChartOption(
                               theme,
-                              section.chartTotal,
+                              section.chartCenterLabel,
                               section.chartSegments,
                             )}
                             style={{ width: '100%', height: '100%' }}

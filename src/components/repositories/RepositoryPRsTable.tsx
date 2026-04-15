@@ -14,6 +14,8 @@ import {
   Avatar,
   Chip,
   Stack,
+  alpha,
+  useTheme,
 } from '@mui/material';
 
 type PrSortField =
@@ -28,7 +30,12 @@ type PrSortField =
 type SortOrder = 'asc' | 'desc';
 import { useAllPrs } from '../../api';
 import { useNavigate } from 'react-router-dom';
-import theme, { scrollbarSx } from '../../theme';
+import {
+  TEXT_OPACITY,
+  scrollbarSx,
+  headerCellStyle,
+  bodyCellStyle,
+} from '../../theme';
 import {
   getPrStatusCounts,
   isClosedUnmergedPr,
@@ -46,6 +53,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   repositoryFullName,
   state = 'all',
 }) => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const [filter, setFilter] = useState<'all' | 'open' | 'closed' | 'merged'>(
     state,
@@ -134,7 +142,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       <Card
         sx={{
           borderRadius: 3,
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: `1px solid ${theme.palette.border.light}`,
           backgroundColor: 'transparent',
           p: 4,
           textAlign: 'center',
@@ -144,7 +152,10 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
           <Typography
             variant="h6"
-            sx={{ color: '#fff', fontFamily: '"JetBrains Mono", monospace' }}
+            sx={{
+              color: 'text.primary',
+              fontFamily: '"JetBrains Mono", monospace',
+            }}
           >
             Pull Requests
           </Typography>
@@ -188,7 +199,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: `1px solid ${theme.palette.border.light}`,
         backgroundColor: 'transparent',
         p: 0,
         display: 'flex',
@@ -200,7 +211,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       <Box
         sx={{
           p: 3,
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          borderBottom: `1px solid ${theme.palette.border.light}`,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -211,7 +222,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         <Typography
           variant="h6"
           sx={{
-            color: '#ffffff',
+            color: 'text.primary',
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '1.1rem',
             fontWeight: 500,
@@ -256,7 +267,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         <Box sx={{ p: 4, textAlign: 'center' }}>
           <Typography
             sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
+              color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
             }}
@@ -366,7 +377,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                   sx={{
                     cursor: 'pointer',
                     '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      backgroundColor: 'surface.light',
                     },
                     transition: 'background-color 0.2s',
                   }}
@@ -377,7 +388,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
-                        color: '#ffffff',
+                        color: theme.palette.text.primary,
                         textDecoration: 'none',
                         fontWeight: 500,
                       }}
@@ -484,25 +495,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       )}
     </Card>
   );
-};
-
-const headerCellStyle = {
-  backgroundColor: 'rgba(18, 18, 20, 0.95)',
-  backdropFilter: 'blur(8px)',
-  color: 'rgba(255, 255, 255, 0.7)',
-  fontFamily: '"JetBrains Mono", monospace',
-  fontWeight: 500,
-  fontSize: '0.75rem',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.5px',
-};
-
-const bodyCellStyle = {
-  color: '#ffffff',
-  fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  fontSize: '0.85rem',
 };
 
 export default RepositoryPRsTable;

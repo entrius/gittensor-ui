@@ -41,7 +41,7 @@ const OnboardPage: React.FC = () => {
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     const newParams = new URLSearchParams(searchParams);
     newParams.set('tab', indexToTabName[newValue]);
-    setSearchParams(newParams);
+    setSearchParams(newParams, { replace: true });
   };
 
   return (

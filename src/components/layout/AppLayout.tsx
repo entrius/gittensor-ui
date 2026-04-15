@@ -12,6 +12,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { LoadingPage } from '../../pages';
 import useOnNavigate from '../../hooks/useOnNavigate';
 import { Sidebar } from '..';
+import ErrorBoundary from '../ErrorBoundary';
 import GlobalSearchBar from './GlobalSearchBar';
 import theme from '../../theme';
 import { getRouteForPathname } from '../../routes';
@@ -152,7 +153,9 @@ const AppLayout: React.FC = () => {
               <GlobalSearchBar />
             </Box>
           )}
-          <Outlet />
+          <ErrorBoundary variant="inline" resetKey={location.pathname}>
+            <Outlet />
+          </ErrorBoundary>
         </Suspense>
       </Box>
     </Box>
