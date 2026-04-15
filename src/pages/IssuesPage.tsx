@@ -59,30 +59,31 @@ const IssuesPage: React.FC = () => {
 
           {/* Tabs Navigation */}
           <Box
-            sx={{
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-            }}
+            sx={(theme) => ({
+              borderBottom: '1px solid',
+              borderColor: theme.palette.border.light,
+            })}
           >
             <Tabs
               value={tabIndex}
               onChange={handleTabChange}
-              sx={{
+              sx={(theme) => ({
                 '& .MuiTab-root': {
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.85rem',
                   fontWeight: 600,
                   textTransform: 'none',
-                  color: 'rgba(255, 255, 255, 0.5)',
+                  color: theme.palette.text.secondary,
                   minHeight: 48,
                   '&.Mui-selected': {
-                    color: '#ffffff',
+                    color: theme.palette.text.primary,
                   },
                 },
                 '& .MuiTabs-indicator': {
-                  backgroundColor: '#ffffff',
+                  backgroundColor: theme.palette.text.primary,
                   height: 2,
                 },
-              }}
+              })}
             >
               <Tab label="Available Issues" />
               <Tab label="Pending Issues" />
