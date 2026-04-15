@@ -8,7 +8,7 @@
  */
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Box, Tabs, Tab, Stack } from '@mui/material';
+import { Box, Tabs, Tab, Stack, Typography, alpha } from '@mui/material';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { IssueStats, IssuesList } from '../components/issues';
@@ -59,35 +59,62 @@ const IssuesPage: React.FC = () => {
 
           {/* Tabs Navigation */}
           <Box
-            sx={{
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-            }}
+            sx={(theme) => ({
+              borderBottom: '1px solid',
+              borderColor: theme.palette.border.light,
+            })}
           >
             <Tabs
               value={tabIndex}
               onChange={handleTabChange}
-              sx={{
+              sx={(theme) => ({
                 '& .MuiTab-root': {
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.85rem',
                   fontWeight: 600,
                   textTransform: 'none',
-                  color: 'rgba(255, 255, 255, 0.5)',
+                  color: theme.palette.text.secondary,
                   minHeight: 48,
                   '&.Mui-selected': {
-                    color: '#ffffff',
+                    color: theme.palette.text.primary,
                   },
                 },
                 '& .MuiTabs-indicator': {
-                  backgroundColor: '#ffffff',
+                  backgroundColor: theme.palette.text.primary,
                   height: 2,
                 },
-              }}
+              })}
             >
               <Tab label="Available Issues" />
               <Tab label="Pending Issues" />
               <Tab label="History" />
             </Tabs>
+
+            <Typography
+              sx={{
+                fontSize: '0.72rem',
+                fontFamily: '"JetBrains Mono", monospace',
+                color: (t) => alpha(t.palette.text.primary, 0.35),
+                pr: 1,
+              }}
+            >
+              Learn more about bounties in the{' '}
+              <Typography
+                component="a"
+                href="https://docs.gittensor.io/issue-bounties.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  color: 'primary.main',
+                  fontSize: 'inherit',
+                  fontFamily: 'inherit',
+                  textDecoration: 'none',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                docs
+              </Typography>
+            </Typography>
           </Box>
 
           {/* Tab Content */}

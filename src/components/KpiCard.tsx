@@ -6,6 +6,7 @@ import {
   type SxProps,
   type Theme,
   useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import theme from '../theme';
 
@@ -24,6 +25,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
   variant = 'medium',
   sx,
 }) => {
+  const muiTheme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isLarge = variant === 'large';
   const padding = isLarge
@@ -52,7 +54,16 @@ const KpiCard: React.FC<KpiCardProps> = ({
       : undefined;
 
   return (
-    <Card sx={cardSx} elevation={0}>
+    <Card
+      sx={{
+        borderRadius: 3,
+        border: `1px solid ${muiTheme.palette.border.light}`,
+        backgroundColor: 'transparent',
+        height: '100%',
+        ...sx,
+      }}
+      elevation={0}
+    >
       <CardContent
         sx={{
           textAlign: 'center',

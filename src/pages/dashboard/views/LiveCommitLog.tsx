@@ -12,8 +12,8 @@ import {
   Chip,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import theme from '../../../theme';
 import { useInfiniteCommitLog, usePullRequestDetails } from '../../../api';
+import theme, { REPO_OWNER_AVATAR_BACKGROUNDS } from '../../../theme';
 
 const MONTH_SHORT = [
   'Jan',
@@ -58,10 +58,10 @@ interface CommitLogEntry {
 
 const getScoreColor = (score: string) => {
   const scoreNum = parseFloat(score);
-  if (isNaN(scoreNum)) return theme.palette.grey[500];
-  if (scoreNum >= 10) return '#ffffff';
-  if (scoreNum >= 5) return '#b0b0b0';
-  return '#7d7d7d';
+  if (isNaN(scoreNum)) return theme.palette.text.secondary;
+  if (scoreNum >= 10) return theme.palette.text.primary;
+  if (scoreNum >= 5) return alpha(theme.palette.common.white, 0.69);
+  return theme.palette.text.secondary;
 };
 
 const CommitLogItem: React.FC<{
@@ -111,8 +111,8 @@ const CommitLogItem: React.FC<{
         border: '1px solid',
         borderColor: isNew
           ? theme.palette.secondary.main
-          : 'rgba(255, 255, 255, 0.1)',
-        backgroundColor: 'rgba(255,255,255,0.02)',
+          : theme.palette.border.light,
+        backgroundColor: theme.palette.surface.subtle,
         backdropFilter: 'blur(8px)',
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         animation: isNew ? 'slideIn 0.5s ease-out' : undefined,
@@ -156,13 +156,13 @@ const CommitLogItem: React.FC<{
               sx={{
                 width: 16,
                 height: 16,
-                border: '1px solid rgba(255,255,255,0.2)',
+                border: `1px solid ${theme.palette.border.medium}`,
                 backgroundColor:
                   entry.repository.split('/')[0] === 'opentensor'
-                    ? '#ffffff'
+                    ? REPO_OWNER_AVATAR_BACKGROUNDS.opentensor
                     : entry.repository.split('/')[0] === 'bitcoin'
-                      ? '#F7931A'
-                      : 'transparent',
+                      ? REPO_OWNER_AVATAR_BACKGROUNDS.bitcoin
+                      : theme.palette.surface.transparent,
               }}
             />
             <Typography
@@ -209,7 +209,7 @@ const CommitLogItem: React.FC<{
           </Stack>
           <Typography
             sx={{
-              color: '#fff',
+              color: 'text.primary',
               fontSize: '0.9rem',
               fontWeight: 500,
               lineHeight: 1.4,
@@ -227,7 +227,10 @@ const CommitLogItem: React.FC<{
           direction="row"
           justifyContent="space-between"
           alignItems="center"
-          sx={{ pt: 1, borderTop: '1px solid rgba(255,255,255,0.05)' }}
+          sx={{
+            pt: 1,
+            borderTop: `1px solid ${theme.palette.border.subtle}`,
+          }}
         >
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             by {entry.author}
@@ -348,7 +351,7 @@ const LiveCommitLog: React.FC = () => {
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: `1px solid ${theme.palette.border.light}`,
         backgroundColor: 'transparent',
         height: '100%',
         display: 'flex',
@@ -433,9 +436,9 @@ const LiveCommitLog: React.FC = () => {
               '&::-webkit-scrollbar': { width: '6px' },
               '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
               '&::-webkit-scrollbar-thumb': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                backgroundColor: theme.palette.border.light,
                 borderRadius: '3px',
-                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+                '&:hover': { backgroundColor: theme.palette.border.medium },
               },
             }}
           >

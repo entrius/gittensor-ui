@@ -16,13 +16,13 @@ import {
 } from '@mui/material';
 import { useAllPrs } from '../../api';
 import { useNavigate } from 'react-router-dom';
+import theme, { scrollbarSx } from '../../theme';
 import {
   getPrStatusCounts,
   isClosedUnmergedPr,
   isMergedPr,
   isOpenPr,
 } from '../../utils';
-import theme from '../../theme';
 import FilterButton from '../FilterButton';
 
 interface RepositoryPRsTableProps {
@@ -212,20 +212,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           sx={{
             maxHeight: '500px',
             overflow: 'auto',
-            '&::-webkit-scrollbar': {
-              width: '8px',
-              height: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '4px',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              },
-            },
+            ...scrollbarSx,
           }}
         >
           <Table stickyHeader>
@@ -250,9 +237,9 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortedPRs.map((pr, index) => (
+              {sortedPRs.map((pr) => (
                 <TableRow
-                  key={`${pr.pullRequestNumber}-${index}`}
+                  key={`${pr.repository}-${pr.pullRequestNumber}`}
                   onClick={() => {
                     navigate(
                       `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,

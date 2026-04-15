@@ -145,7 +145,7 @@ const AppLayout: React.FC = () => {
                 px: { xs: 1, md: 0 },
                 position: 'sticky',
                 top: 0,
-                zIndex: 1200,
+                zIndex: 500,
                 backgroundColor: 'background.default',
               }}
             >

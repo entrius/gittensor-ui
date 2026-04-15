@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { scrollbarSx } from '../../theme';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import axios from 'axios';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -129,6 +130,7 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
           p: 3,
           height: '100%',
           overflow: 'auto',
+          ...scrollbarSx,
           '& img': { maxWidth: '100%' },
           '& pre': {
             backgroundColor: '#1e1e1e',
@@ -161,9 +163,12 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
       sx={{
         height: '100%',
         width: '100%',
-        overflow: 'auto',
+        overflow: 'hidden',
         backgroundColor: '#1e1e1e',
         fontSize: '14px',
+        '& pre': {
+          ...scrollbarSx,
+        },
       }}
     >
       <SyntaxHighlighter
