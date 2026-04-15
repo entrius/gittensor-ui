@@ -59,7 +59,9 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
   const registeredRepos = useMemo(
     () =>
       new Set(
-        (reposQuery.data || []).map((repo) => repo.fullName.toLowerCase().trim()),
+        (reposQuery.data || []).map((repo) =>
+          repo.fullName.toLowerCase().trim(),
+        ),
       ),
     [reposQuery.data],
   );
@@ -163,8 +165,7 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
               }}
             >
               ({visibleIssues.length}
-              {hasFilters ? ` of ${authoredIssues.length}` : ''}
-              )
+              {hasFilters ? ` of ${authoredIssues.length}` : ''})
             </Typography>
           </Box>
 
@@ -308,7 +309,11 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
                   <TableRow
                     key={`${issue.repositoryFullName}-${issue.issueNumber}`}
                     onClick={() =>
-                      window.open(issue.htmlUrl, '_blank', 'noopener,noreferrer')
+                      window.open(
+                        issue.htmlUrl,
+                        '_blank',
+                        'noopener,noreferrer',
+                      )
                     }
                     sx={{
                       cursor: 'pointer',
@@ -419,7 +424,9 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
                         color: (t) => alpha(t.palette.text.primary, 0.7),
                       }}
                     >
-                      {new Date(issue.updatedAt || issue.createdAt).toLocaleDateString()}
+                      {new Date(
+                        issue.updatedAt || issue.createdAt,
+                      ).toLocaleDateString()}
                     </TableCell>
                   </TableRow>
                 );

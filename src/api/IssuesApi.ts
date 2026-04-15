@@ -43,9 +43,7 @@ const mapGitHubIssue = (issue: {
   updatedAt: issue.updated_at,
   closedAt: issue.closed_at,
   commentsCount: issue.comments ?? 0,
-  labels: (issue.labels || [])
-    .map((label) => label.name || '')
-    .filter(Boolean),
+  labels: (issue.labels || []).map((label) => label.name || '').filter(Boolean),
 });
 
 /**
@@ -122,7 +120,11 @@ export const useIssueDetailsByIds = (ids: number[]) => {
 
   return useQueries({
     queries: ids.map((id) => ({
-      queryKey: ['useIssueDetails', `/issues/${id}/details`, undefined] as const,
+      queryKey: [
+        'useIssueDetails',
+        `/issues/${id}/details`,
+        undefined,
+      ] as const,
       queryFn: async (): Promise<IssueDetails> => {
         const requestUrl = baseUrl
           ? `${baseUrl}/issues/${id}/details`
@@ -141,10 +143,7 @@ export const useIssueDetailsByIds = (ids: number[]) => {
  * Fetch GitHub issues authored by a specific user.
  * Discovery mode needs the original GitHub issue stream, not only bounty rows.
  */
-export const useGitHubIssuesByAuthor = (
-  authorLogin: string,
-  enabled = true,
-) =>
+export const useGitHubIssuesByAuthor = (authorLogin: string, enabled = true) =>
   useQuery<GitHubIssue[]>({
     queryKey: ['useGitHubIssuesByAuthor', authorLogin],
     queryFn: async () => {

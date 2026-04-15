@@ -186,19 +186,14 @@ const MinerDetailsPage: React.FC = () => {
                 )}
               </>
             )}
-
             {activeTab === 'activity' && (
               <MinerActivity githubId={githubId} viewMode={viewMode} />
             )}
             {activeTab === 'pull-requests' && (
-              viewMode === 'issues' ? (
-                <MinerIssuesTable githubId={githubId} />
-              ) : (
-                <MinerPRsTable githubId={githubId} />
-              )
+              <MinerPRsTable githubId={githubId} />
             )}
             {activeTab === 'issues' && (
-              <MinerScoreBreakdown githubId={githubId} viewMode="issues" />
+              <MinerIssuesTable githubId={githubId} />
             )}
             {activeTab === 'repositories' && (
               <MinerRepositoriesTable githubId={githubId} />
