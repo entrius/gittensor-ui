@@ -486,6 +486,14 @@ const RepositoryWeightsTable: React.FC = () => {
                 backgroundColor: 'rgba(255, 255, 255, 0.2)',
               },
             },
+            '&::-webkit-scrollbar-button': {
+              display: 'none',
+              height: 0,
+              width: 0,
+            },
+            '&::-webkit-scrollbar-corner': {
+              backgroundColor: 'transparent',
+            },
           }}
         >
           <Table stickyHeader>
