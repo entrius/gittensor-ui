@@ -6,6 +6,7 @@ import {
   BackButton,
   MinerActivity,
   MinerInsightsCard,
+  MinerIssuesTable,
   MinerPRsTable,
   MinerRepositoriesTable,
   MinerScoreBreakdown,
@@ -190,7 +191,11 @@ const MinerDetailsPage: React.FC = () => {
               <MinerActivity githubId={githubId} viewMode={viewMode} />
             )}
             {activeTab === 'pull-requests' && (
-              <MinerPRsTable githubId={githubId} />
+              viewMode === 'issues' ? (
+                <MinerIssuesTable githubId={githubId} />
+              ) : (
+                <MinerPRsTable githubId={githubId} />
+              )
             )}
             {activeTab === 'issues' && (
               <MinerScoreBreakdown githubId={githubId} viewMode="issues" />

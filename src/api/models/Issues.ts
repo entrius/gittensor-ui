@@ -57,3 +57,18 @@ export interface IssueSubmission {
   hotkey: string | null;
   isWinner: boolean;
 }
+
+export interface GitHubIssue {
+  repositoryFullName: string;
+  issueNumber: number;
+  title: string;
+  body: string | null;
+  state: 'open' | 'closed';
+  htmlUrl: string;
+  authorLogin: string | null;
+  createdAt: string;
+  updatedAt: string;
+  closedAt: string | null;
+  commentsCount: number;
+  labels: string[];
+}
