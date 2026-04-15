@@ -1,5 +1,13 @@
 import React, { useMemo } from 'react';
-import { Box, Card, Typography, Grid, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Card,
+  Typography,
+  Grid,
+  CircularProgress,
+  alpha,
+  useTheme,
+} from '@mui/material';
 import { subDays, format } from 'date-fns';
 import ReactECharts from 'echarts-for-react';
 import {
@@ -30,37 +38,41 @@ const LegendItem: React.FC<{ label: string; value: number; color: string }> = ({
   label,
   value,
   color,
-}) => (
-  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-    <Box
-      sx={{
-        width: 6,
-        height: 6,
-        borderRadius: '50%',
-        backgroundColor: color,
-      }}
-    />
-    <Typography
-      sx={{
-        color: `rgba(255, 255, 255, ${TEXT_OPACITY.tertiary})`,
-        fontSize: '0.65rem',
-        fontFamily: '"JetBrains Mono", monospace',
-      }}
-    >
-      {label}
-    </Typography>
-    <Typography
-      sx={{
-        color,
-        fontSize: '0.75rem',
-        fontFamily: '"JetBrains Mono", monospace',
-        fontWeight: 700,
-      }}
-    >
-      {value}
-    </Typography>
-  </Box>
-);
+}) => {
+  const theme = useTheme();
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+      <Box
+        sx={{
+          width: 6,
+          height: 6,
+          borderRadius: '50%',
+          backgroundColor: color,
+        }}
+      />
+      <Typography
+        sx={{
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+          fontSize: '0.65rem',
+          fontFamily: '"JetBrains Mono", monospace',
+        }}
+      >
+        {label}
+      </Typography>
+      <Typography
+        sx={{
+          color,
+          fontSize: '0.75rem',
+          fontFamily: '"JetBrains Mono", monospace',
+          fontWeight: 700,
+        }}
+      >
+        {value}
+      </Typography>
+    </Box>
+  );
+};
 
 const IssueCredibilityChart: React.FC<{
   solved: number;
@@ -68,6 +80,8 @@ const IssueCredibilityChart: React.FC<{
   closed: number;
   credibility: number;
 }> = ({ solved, open, closed, credibility }) => {
+  const theme = useTheme();
+
   const chartOption = useMemo(
     () => ({
       backgroundColor: 'transparent',
@@ -77,13 +91,13 @@ const IssueCredibilityChart: React.FC<{
         left: 'center',
         top: '38%',
         textStyle: {
-          color: `rgba(255, 255, 255, ${TEXT_OPACITY.primary})`,
+          color: theme.palette.text.primary,
           fontSize: 28,
           fontWeight: 'bold',
           fontFamily: '"JetBrains Mono", monospace',
         },
         subtextStyle: {
-          color: `rgba(255, 255, 255, ${TEXT_OPACITY.muted})`,
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
           fontSize: 11,
           fontFamily: '"JetBrains Mono", monospace',
           fontWeight: 500,
@@ -92,11 +106,11 @@ const IssueCredibilityChart: React.FC<{
       tooltip: {
         trigger: 'item',
         formatter: '{b}: {c} ({d}%)',
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        borderColor: `rgba(255, 255, 255, ${TEXT_OPACITY.ghost})`,
+        backgroundColor: alpha(theme.palette.common.black, 0.9),
+        borderColor: alpha(theme.palette.common.white, TEXT_OPACITY.ghost),
         borderWidth: 1,
         textStyle: {
-          color: `rgba(255, 255, 255, ${TEXT_OPACITY.primary})`,
+          color: theme.palette.text.primary,
           fontFamily: '"JetBrains Mono", monospace',
         },
       },
@@ -134,7 +148,7 @@ const IssueCredibilityChart: React.FC<{
         },
       ],
     }),
-    [solved, open, closed, credibility],
+    [solved, open, closed, credibility, theme],
   );
 
   return (
@@ -148,7 +162,7 @@ const IssueCredibilityChart: React.FC<{
       <Typography
         variant="monoSmall"
         sx={{
-          color: `rgba(255, 255, 255, ${TEXT_OPACITY.muted})`,
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
           mb: 0.75,
           textAlign: 'center',
         }}
@@ -187,6 +201,8 @@ const IssuePerformanceRadar: React.FC<{
   volume: number;
   tokenScore: number;
 }> = ({ credibility, solvedRatio, validRatio, volume, tokenScore }) => {
+  const theme = useTheme();
+
   const chartOption = useMemo(
     () => ({
       backgroundColor: 'transparent',
@@ -203,7 +219,7 @@ const IssuePerformanceRadar: React.FC<{
         shape: 'circle',
         splitNumber: 5,
         axisName: {
-          color: `rgba(255, 255, 255, ${TEXT_OPACITY.tertiary})`,
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
           fontFamily: '"JetBrains Mono", monospace',
           fontSize: 9,
           lineHeight: 12,
@@ -211,14 +227,14 @@ const IssuePerformanceRadar: React.FC<{
         splitLine: {
           lineStyle: {
             color: Array(5).fill(
-              `rgba(255, 255, 255, ${TEXT_OPACITY.ghost * 0.25})`,
+              alpha(theme.palette.common.white, TEXT_OPACITY.ghost * 0.25),
             ),
           },
         },
         splitArea: { show: false },
         axisLine: {
           lineStyle: {
-            color: `rgba(255, 255, 255, ${TEXT_OPACITY.ghost * 0.5})`,
+            color: alpha(theme.palette.common.white, TEXT_OPACITY.ghost * 0.5),
           },
         },
       },
@@ -244,7 +260,7 @@ const IssuePerformanceRadar: React.FC<{
         },
       ],
     }),
-    [credibility, solvedRatio, validRatio, volume, tokenScore],
+    [credibility, solvedRatio, validRatio, volume, tokenScore, theme],
   );
 
   return (
@@ -258,7 +274,7 @@ const IssuePerformanceRadar: React.FC<{
       <Typography
         variant="monoSmall"
         sx={{
-          color: `rgba(255, 255, 255, ${TEXT_OPACITY.muted})`,
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
           mb: 2,
           textAlign: 'center',
         }}
