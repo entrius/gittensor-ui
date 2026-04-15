@@ -44,8 +44,6 @@ const MinerDetailsPage: React.FC = () => {
   const viewMode: ViewMode = modeParam === 'issues' ? 'issues' : 'prs';
   const tabs = viewMode === 'issues' ? ISSUE_TABS : PR_TABS;
 
-  const tabs = viewMode === 'issues' ? ISSUE_TABS : PR_TABS;
-
   const tabParam = searchParams.get('tab');
   const activeTab: MinerDetailsTab =
     tabParam && (tabs as readonly string[]).includes(tabParam)
