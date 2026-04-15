@@ -124,10 +124,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           );
         case 'score':
         default:
-          return cmpNum(
-            parseFloat(a.score || '0'),
-            parseFloat(b.score || '0'),
-          );
+          return cmpNum(parseFloat(a.score || '0'), parseFloat(b.score || '0'));
       }
     });
   }, [filteredPRs, sortField, sortOrder]);
