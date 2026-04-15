@@ -189,9 +189,7 @@ const MinerDetailsPage: React.FC = () => {
             {activeTab === 'pull-requests' && (
               <MinerPRsTable githubId={githubId} />
             )}
-            {activeTab === 'issues' && (
-              <MinerIssuesTable githubId={githubId} />
-            )}
+            {activeTab === 'issues' && <MinerIssuesTable githubId={githubId} />}
             {activeTab === 'repositories' && (
               <MinerRepositoriesTable githubId={githubId} />
             )}
