@@ -32,7 +32,6 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
 import { type CommitLog } from '../../api/models/Dashboard';
-import { getRepositoryOwnerAvatarBackground } from './types';
 import {
   formatUsdEstimate,
   getPrStatusCounts,
@@ -42,7 +41,7 @@ import {
   truncateText,
 } from '../../utils';
 import { RankIcon } from './RankIcon';
-import { STATUS_COLORS, UI_COLORS, scrollbarSx } from '../../theme';
+import theme, { STATUS_COLORS, UI_COLORS, scrollbarSx } from '../../theme';
 import FilterButton from '../FilterButton';
 import { LinkBox, LinkTableRow } from '../common/linkBehavior';
 
