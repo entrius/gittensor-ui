@@ -164,7 +164,11 @@ export const Scoring: React.FC = () => {
           borderColor: 'border.subtle',
         }}
       >
-        <Typography variant="h5" fontWeight="bold" sx={{ mb: 2, color: '#fff' }}>
+        <Typography
+          variant="h5"
+          fontWeight="bold"
+          sx={{ mb: 2, color: '#fff' }}
+        >
           Dive Deeper
         </Typography>
         <Typography
