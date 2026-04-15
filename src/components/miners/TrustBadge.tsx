@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Chip } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
@@ -68,9 +69,9 @@ export const getRiskAssessment = (
   if (credibility >= 0.5) {
     return {
       level: 'medium',
-      color: '#9ca3af',
-      bgColor: 'rgba(156, 163, 175, 0.1)',
-      border: '1px solid rgba(156, 163, 175, 0.25)',
+      color: STATUS_COLORS.neutral,
+      bgColor: alpha(STATUS_COLORS.neutral, 0.1),
+      border: `1px solid ${alpha(STATUS_COLORS.neutral, 0.25)}`,
       icon: <WarningAmberIcon sx={ICON_SIZE} />,
       message: 'Moderate Trust - Standard Code Review',
     };
