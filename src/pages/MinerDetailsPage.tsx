@@ -42,6 +42,7 @@ const MinerDetailsPage: React.FC = () => {
 
   const modeParam = searchParams.get('mode');
   const viewMode: ViewMode = modeParam === 'issues' ? 'issues' : 'prs';
+  const tabs = viewMode === 'issues' ? ISSUE_TABS : PR_TABS;
 
   const tabs = viewMode === 'issues' ? ISSUE_TABS : PR_TABS;
 
@@ -186,9 +187,7 @@ const MinerDetailsPage: React.FC = () => {
                 )}
               </>
             )}
-            {activeTab === 'activity' && (
-              <MinerActivity githubId={githubId} viewMode={viewMode} />
-            )}
+            {activeTab === 'activity' && <MinerActivity githubId={githubId} />}
             {activeTab === 'pull-requests' && (
               <MinerPRsTable githubId={githubId} />
             )}
