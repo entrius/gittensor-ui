@@ -18,8 +18,6 @@ import {
   parseNumber,
 } from '../../utils/ExplorerUtils';
 
-type ViewMode = 'prs' | 'issues';
-
 interface MinerInsightsCardProps {
   githubId: string;
   viewMode?: 'prs' | 'issues';
@@ -274,20 +272,16 @@ const getInsightStyle = (type: InsightType) => {
   }
 };
 
-const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
-  githubId,
-  viewMode = 'prs',
-}) => {
-  const { data: minerStats } = useMinerStats(githubId);
-  const { data: generalConfig } = useGeneralConfig();
+const assembleIssueInsights = (minerStats: MinerEvaluation): InsightItem[] => {
+  const assembled: InsightItem[] = [];
 
-  const docsUrl =
-    viewMode === 'issues'
-      ? 'https://docs.gittensor.io/issue-discovery.html'
-      : 'https://docs.gittensor.io/oss-contributions.html';
+  const openIssueInsight = getOpenIssueRiskInsight(minerStats);
+  if (openIssueInsight) assembled.push(openIssueInsight);
 
-  const insights = useMemo(() => {
-    if (!minerStats) return [];
+  const eligibilityInsight = getIssueEligibilityInsight(minerStats);
+  if (eligibilityInsight) assembled.push(eligibilityInsight);
+
+  assembled.push(getIssueCredibilityInsight(minerStats));
 
   const solvedInsight = getIssueSolvedInsight(minerStats);
   if (solvedInsight) assembled.push(solvedInsight);
@@ -323,6 +317,10 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
   const { data: generalConfig } = useGeneralConfig();
 
   const isIssueMode = viewMode === 'issues';
+
+  const docsUrl = isIssueMode
+    ? 'https://docs.gittensor.io/issue-discovery.html'
+    : 'https://docs.gittensor.io/oss-contributions.html';
 
   const insights = useMemo(() => {
     if (!minerStats) return [];
