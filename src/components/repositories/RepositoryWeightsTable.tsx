@@ -316,11 +316,7 @@ const RepositoryWeightsTable: React.FC = () => {
 
   return (
     <Box ref={containerRef}>
-      <Box
-        sx={{
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        }}
-      >
+      <Box sx={{ mb: 3 }}>
         <Box sx={{ p: 2, pb: 1 }}>
           <Typography variant="body2" color="text.secondary">
             Contribute to any of these projects to gain score and earn emissions
