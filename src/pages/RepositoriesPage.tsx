@@ -282,32 +282,29 @@ const RepositoriesPage: React.FC = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    const repoWeight = (repository: string) =>
+      parseFloat(String(repoMap.get(repository.toLowerCase())?.weight || '0'));
+
     return allPRs
       .filter(
-        (pr) =>
-          pr.repository &&
-          pr.mergedAt &&
+        (pr): pr is CommitLog & { repository: string; mergedAt: string } =>
+          !!pr.repository &&
+          !!pr.mergedAt &&
           repoMap.has(pr.repository.toLowerCase()) &&
           new Date(pr.mergedAt) >= today,
       )
       .sort((a, b) => {
-        const scoreA = parseFloat(a.score || '0');
-        const scoreB = parseFloat(b.score || '0');
-        if (scoreB !== scoreA) return scoreB - scoreA;
-        // Tiebreak by repo weight
-        const weightA = parseFloat(
-          String(repoMap.get(a.repository?.toLowerCase() ?? '')?.weight || '0'),
-        );
-        const weightB = parseFloat(
-          String(repoMap.get(b.repository?.toLowerCase() ?? '')?.weight || '0'),
-        );
-        return weightB - weightA;
+        const scoreDelta =
+          parseFloat(b.score || '0') - parseFloat(a.score || '0');
+        return scoreDelta !== 0
+          ? scoreDelta
+          : repoWeight(b.repository) - repoWeight(a.repository);
       })
       .slice(0, 5)
       .map((pr) => ({
         name: pr.repository,
         title: pr.pullRequestTitle,
-        createdAt: new Date(pr.mergedAt || new Date()),
+        createdAt: new Date(pr.mergedAt),
         number: pr.pullRequestNumber,
       }));
   }, [allPRs, reposWithWeights]);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { Box, Tabs, Tab, CircularProgress, Typography } from '@mui/material';
 import { Page } from '../components/layout';
 import {
@@ -18,24 +18,19 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 
 const PRDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const repository = searchParams.get('repo');
   const pullRequestNumber = searchParams.get('number');
+  const hasParams = !!repository && !!pullRequestNumber;
   const [tabValue, setTabValue] = useState(0);
 
-  // Call hook unconditionally (React rules of hooks)
+  // Call hook unconditionally (React rules of hooks); skip the request when params are missing.
   const { data: prDetails, isLoading } = usePullRequestDetails(
-    repository || '',
-    pullRequestNumber ? parseInt(pullRequestNumber) : 0,
+    repository ?? '',
+    pullRequestNumber ? parseInt(pullRequestNumber, 10) : 0,
+    hasParams,
   );
 
-  // If no repo or PR number is provided, redirect to miners page
-  if (!repository || !pullRequestNumber) {
-    if (typeof window !== 'undefined') {
-      navigate('/miners?tab=prs');
-    }
-    return null;
-  }
+  if (!hasParams) return <Navigate to="/miners?tab=prs" replace />;
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -14,6 +14,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import theme from '../../theme';
 import { useInfiniteCommitLog, usePullRequestDetails } from '../../api';
+import { useCommitLogStream } from './useCommitLogStream';
 
 const MONTH_SHORT = [
   'Jan',
@@ -282,9 +283,6 @@ const LiveCommitLog: React.FC = () => {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteCommitLog({ refetchInterval: 10000 }); // Poll every 10 seconds
 
-  const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
-  const [_seenEntryIds, setSeenEntryIds] = useState<Set<string>>(new Set());
-  const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
   const logContainerRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -294,56 +292,12 @@ const LiveCommitLog: React.FC = () => {
     [data],
   );
 
-  useEffect(() => {
-    if (apiCommits.length === 0) return;
-
-    const getCommitId = (c: CommitLogEntry) =>
-      `${c.pullRequestNumber}-${c.mergedAt || c.prCreatedAt || c.prState || 'OPEN'}`;
-
-    setSeenEntryIds((prevSeen) => {
-      const newSeen = new Set(prevSeen);
-      const novelItems: CommitLogEntry[] = [];
-
-      apiCommits.forEach((c) => {
-        const id = getCommitId(c);
-        if (!newSeen.has(id)) {
-          novelItems.push(c);
-          newSeen.add(id);
-        }
-      });
-
-      if (novelItems.length === 0) return prevSeen;
-
-      // Check if we should prepend or append
-      // If the *first* item in the incoming API list was one of the novel items, assume it's new data (Prepend)
-      // Otherwise append.
-      const firstApiId = getCommitId(apiCommits[0]);
-      const isHeadUpdate = novelItems.some(
-        (c) => getCommitId(c) === firstApiId,
-      );
-
-      setLogEntries((prevLog) => {
-        if (prevLog.length === 0) return apiCommits; // Initial fill
-
-        if (isHeadUpdate) {
-          // Newest items first
-          // Mark for animation
-          const ids = new Set(novelItems.map(getCommitId));
-          setNewEntryIds(ids);
-          setTimeout(() => setNewEntryIds(new Set()), 2000);
-          return [...novelItems, ...prevLog];
-        } else {
-          return [...prevLog, ...novelItems];
-        }
-      });
-
-      return newSeen;
-    });
-  }, [apiCommits]);
+  const { logEntries, newEntryIds } = useCommitLogStream(apiCommits);
 
   // Intersection observer for infinite scroll
   useEffect(() => {
-    if (!loadMoreRef.current) return;
+    const node = loadMoreRef.current;
+    if (!node) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -354,10 +308,10 @@ const LiveCommitLog: React.FC = () => {
       { threshold: 0.1 },
     );
 
-    observer.observe(loadMoreRef.current);
+    observer.observe(node);
 
     return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage, logEntries.length]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <Card

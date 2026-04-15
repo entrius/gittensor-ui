@@ -64,12 +64,12 @@ export const useInfiniteCommitLog = (options?: {
 }) => {
   const baseUrl = import.meta.env.VITE_REACT_APP_BASE_URL;
   const limit = 15;
+  const url = '/dash/commits';
+  const requestUrl = baseUrl ? `${baseUrl}${url}` : url;
 
   return useInfiniteQuery({
-    queryKey: ['useInfiniteCommitLog'],
+    queryKey: ['useInfiniteCommitLog', requestUrl, limit],
     queryFn: async ({ pageParam }: { pageParam: number }) => {
-      const url = '/dash/commits';
-      const requestUrl = baseUrl ? `${baseUrl}${url}` : url;
       const { data } = await axios.get<CommitLog[]>(requestUrl, {
         params: { page: pageParam, limit },
       });
