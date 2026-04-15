@@ -11,6 +11,7 @@ import {
 } from '../components';
 import theme, { scrollbarSx } from '../theme';
 import { useStats } from '../api';
+import CommitTrendChart from '../components/dashboard/CommitTrendChart';
 
 const DashboardPage: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -61,43 +62,7 @@ const DashboardPage: React.FC = () => {
             <GlobalActivity />
           </Box>
 
-          {/* Charts and Table Section */}
-          <Box
-            sx={{
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 1.5,
-              minHeight: isMobile ? '600px' : 0,
-              flexShrink: 0,
-            }}
-          >
-            {/* Leaderboard Charts */}
-            <Box
-              sx={{
-                width: '100%',
-                height: isMobile ? '500px' : '550px',
-                flexShrink: 0,
-                minHeight: isMobile ? '500px' : '550px',
-              }}
-            >
-              <LeaderboardCharts />
-            </Box>
-
-            {/* Table */}
-            <Box
-              sx={{
-                width: '100%',
-                minHeight: isMobile ? '400px' : 0,
-                height: isMobile ? '400px' : 'auto',
-                overflow: 'hidden',
-              }}
-            >
-              <RepositoriesTable />
-            </Box>
-          </Box>
-
-          {/* KPI Cards - Moved Below Charts */}
+          {/* KPI Cards - Summary Stats (Above-the-fold) */}
           <Grid container spacing={{ xs: 1.5, md: 2 }} sx={{ flexShrink: 0 }}>
             <Grid item xs={12} sm={6} md={6} lg={6} xl={3}>
               <KpiCard
@@ -118,9 +83,9 @@ const DashboardPage: React.FC = () => {
 
             <Grid item xs={12} sm={6} md={6} lg={6} xl={3}>
               <KpiCard
-                title="Total Lines Committed"
+                title="Lines Changed"
                 value={stats?.totalLinesChanged}
-                subtitle="Cumulative code contributions"
+                subtitle="Cumulative diff volume"
                 sx={{ height: '100%' }}
               />
             </Grid>
@@ -133,6 +98,57 @@ const DashboardPage: React.FC = () => {
               />
             </Grid>
           </Grid>
+
+          {/* Charts and Table Section */}
+          <Box
+            sx={{
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1.5,
+              minHeight: isMobile ? '600px' : 0,
+              flexShrink: 0,
+            }}
+          >
+            {/* Leaderboard + Trend (Denser layout on large screens) */}
+            <Grid container spacing={{ xs: 1.5, md: 2 }} sx={{ width: '100%' }}>
+              <Grid item xs={12} lg={7}>
+                <Box
+                  sx={{
+                    width: '100%',
+                    height: isMobile ? '500px' : '550px',
+                    flexShrink: 0,
+                    minHeight: isMobile ? '500px' : '550px',
+                  }}
+                >
+                  <LeaderboardCharts />
+                </Box>
+              </Grid>
+              <Grid item xs={12} lg={5}>
+                <Box
+                  sx={{
+                    width: '100%',
+                    height: isMobile ? '320px' : '550px',
+                    minHeight: isMobile ? '320px' : '550px',
+                  }}
+                >
+                  <CommitTrendChart />
+                </Box>
+              </Grid>
+            </Grid>
+
+            {/* Table */}
+            <Box
+              sx={{
+                width: '100%',
+                minHeight: isMobile ? '400px' : 0,
+                height: isMobile ? '400px' : 'auto',
+                overflow: 'hidden',
+              }}
+            >
+              <RepositoriesTable />
+            </Box>
+          </Box>
         </Box>
 
         {/* Right Sidebar - Live Commit Log */}
