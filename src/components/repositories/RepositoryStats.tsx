@@ -9,6 +9,7 @@ import {
 } from '../../api';
 import { RANK_COLORS, STATUS_COLORS } from '../../theme';
 import { formatTokenAmount } from '../../utils/format';
+import { isMergedPr } from '../../utils/prStatus';
 
 interface RepositoryStatsProps {
   repositoryFullName: string;
@@ -38,7 +39,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
     const repoPRs = allPRs.filter(
       (pr) =>
         pr.repository.toLowerCase() === repositoryFullName.toLowerCase() &&
-        pr.prState === 'MERGED',
+        isMergedPr(pr),
     );
     const totalScore = repoPRs.reduce(
       (acc, pr) => acc + parseFloat(pr.score || '0'),

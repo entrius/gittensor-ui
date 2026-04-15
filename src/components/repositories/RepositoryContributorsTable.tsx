@@ -5,6 +5,7 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useAllPrs, useAllMiners } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import { STATUS_COLORS } from '../../theme';
+import { isMergedPr } from '../../utils/prStatus';
 
 interface RepositoryContributorsTableProps {
   repositoryFullName: string;
@@ -45,7 +46,7 @@ const RepositoryContributorsTable: React.FC<
       (pr) =>
         pr.repository.toLowerCase() === repositoryFullName.toLowerCase() &&
         pr.githubId &&
-        pr.prState === 'MERGED',
+        isMergedPr(pr),
     );
 
     const contributorsMap = new Map<
