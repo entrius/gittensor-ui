@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Box, Typography, Button, Grid, Tabs, Tab } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
-type ScoringCategory = 'oss' | 'discovery' | 'bonus';
+type ScoringCategory = 'oss' | 'discovery';
 
 interface ScoringCard {
   title: string;
@@ -36,11 +36,6 @@ const SCORING_CARDS: ScoringCard[] = [
     title: 'Issue Discovery',
     desc: 'Earn from a dedicated 30% emission pool by finding open issues that others later solve with a merged PR. Requires 7+ solved issues and 80% issue credibility to qualify.',
   },
-  {
-    category: 'bonus',
-    title: 'Pioneer Bonus',
-    desc: "Be the first quality contributor to a repository and earn a pioneer dividend — a percentage of every follower's score, up to doubling your own rewards.",
-  },
 ];
 
 const CATEGORIES: {
@@ -57,11 +52,6 @@ const CATEGORIES: {
     value: 'discovery',
     label: 'Issue Discovery',
     docsUrl: 'https://docs.gittensor.io/issue-discovery.html',
-  },
-  {
-    value: 'bonus',
-    label: 'Bonus',
-    docsUrl: 'https://docs.gittensor.io/oss-contributions.html',
   },
 ];
 
