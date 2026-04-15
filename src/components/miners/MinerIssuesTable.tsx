@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   useGitHubIssuesByAuthor,
   useMinerGithubData,
+  useReposAndWeights,
   useMinerStats,
 } from '../../api';
 import {
@@ -28,8 +29,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { STATUS_COLORS } from '../../theme';
 import ExplorerFilterButton from './ExplorerFilterButton';
 
-const ISSUE_TABS = ['open', 'closed', 'all'] as const;
-type IssueTab = (typeof ISSUE_TABS)[number];
+type IssueTab = 'open' | 'closed' | 'all';
 
 interface MinerIssuesTableProps {
   githubId: string;
@@ -42,6 +42,7 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
 
   const minerStatsQuery = useMinerStats(githubId);
   const githubDataQuery = useMinerGithubData(githubId, true);
+  const reposQuery = useReposAndWeights();
 
   const minerLogin = useMemo(
     () =>
@@ -55,15 +56,25 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
 
   const issuesQuery = useGitHubIssuesByAuthor(minerLogin, !!minerLogin);
 
-  const authoredIssues = useMemo(
+  const registeredRepos = useMemo(
     () =>
-      (issuesQuery.data || []).sort(
-        (a, b) =>
-          new Date(b.updatedAt || b.createdAt).getTime() -
-          new Date(a.updatedAt || a.createdAt).getTime(),
+      new Set(
+        (reposQuery.data || []).map((repo) => repo.fullName.toLowerCase().trim()),
       ),
-    [issuesQuery.data],
+    [reposQuery.data],
   );
+
+  const authoredIssues = useMemo(() => {
+    const registeredRepoIssues = (issuesQuery.data || []).filter((issue) =>
+      registeredRepos.has(issue.repositoryFullName.toLowerCase().trim()),
+    );
+
+    return registeredRepoIssues.sort(
+      (a, b) =>
+        new Date(b.updatedAt || b.createdAt).getTime() -
+        new Date(a.updatedAt || a.createdAt).getTime(),
+    );
+  }, [issuesQuery.data, registeredRepos]);
 
   const issuesByTab = useMemo(() => {
     const openIssues = authoredIssues.filter((issue) => issue.state === 'open');
@@ -79,7 +90,10 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
   }, [authoredIssues]);
 
   const isLoading =
-    minerStatsQuery.isLoading || githubDataQuery.isLoading || issuesQuery.isLoading;
+    minerStatsQuery.isLoading ||
+    githubDataQuery.isLoading ||
+    issuesQuery.isLoading ||
+    reposQuery.isLoading;
 
   useEffect(() => {
     setActiveTab('all');
