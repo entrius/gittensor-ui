@@ -91,8 +91,8 @@ const HomePage: React.FC = () => {
               <Stack alignItems="center" gap={{ xs: 1, sm: 1.5 }}>
                 <Typography
                   variant="body2"
-                  color="text.secondary"
                   sx={{
+                    color: (theme) => theme.palette.text.secondary,
                     fontSize: { xs: '0.7rem', sm: '0.75rem' },
                     textTransform: 'uppercase',
                     letterSpacing: '0.15em',
@@ -103,9 +103,9 @@ const HomePage: React.FC = () => {
                 </Typography>
                 <Typography
                   variant="h2"
-                  color="text.primary"
                   fontWeight="600"
                   sx={{
+                    color: (theme) => theme.palette.text.primary,
                     fontFamily: '"JetBrains Mono", monospace',
                     fontSize: { xs: '2rem', sm: '2.75rem', md: '3.5rem' },
                     letterSpacing: '-0.02em',
@@ -119,8 +119,8 @@ const HomePage: React.FC = () => {
                 </Typography>
                 <Typography
                   variant="body2"
-                  color="text.tertiary"
                   sx={{
+                    color: (theme) => theme.palette.text.tertiary,
                     fontSize: { xs: '0.75rem', sm: '0.85rem' },
                     textAlign: 'center',
                     maxWidth: '400px',

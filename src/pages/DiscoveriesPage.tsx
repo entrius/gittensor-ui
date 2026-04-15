@@ -102,10 +102,10 @@ const DiscoveriesPage: React.FC = () => {
               backgroundColor: 'transparent',
             },
             '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'border.light',
+              backgroundColor: theme.palette.border.light,
               borderRadius: '4px',
               '&:hover': {
-                backgroundColor: 'border.medium',
+                backgroundColor: theme.palette.border.medium,
               },
             },
           }}

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 
 import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
+import { alpha, type Theme } from '@mui/material/styles';
 
 import { useNavigate } from 'react-router-dom';
 import { Page } from '../components/layout';
@@ -16,13 +17,13 @@ const ROW_HEIGHT = 40; // px – keeps every row exactly the same across cards
 const HighlightRow: React.FC<{
   onClick: () => void;
   avatar: string;
-  avatarBg?: string;
+  avatarBg?: (theme: Theme) => string;
   label: React.ReactNode;
   right: React.ReactNode;
-}> = ({ onClick, avatar, avatarBg = 'transparent', label, right }) => (
+}> = ({ onClick, avatar, avatarBg, label, right }) => (
   <Box
     onClick={onClick}
-    sx={{
+    sx={(theme) => ({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -33,8 +34,8 @@ const HighlightRow: React.FC<{
       cursor: 'pointer',
       transition: 'background 0.15s',
       mx: -1,
-      '&:hover': { backgroundColor: 'surface.light' },
-    }}
+      '&:hover': { backgroundColor: theme.palette.surface.light },
+    })}
   >
     <Box
       sx={{
@@ -48,14 +49,16 @@ const HighlightRow: React.FC<{
     >
       <Avatar
         src={avatar}
-        sx={{
+        sx={(theme) => ({
           width: 24,
           height: 24,
           flexShrink: 0,
           border: '1px solid',
-          borderColor: 'border.light',
-          backgroundColor: avatarBg,
-        }}
+          borderColor: theme.palette.border.light,
+          backgroundColor: avatarBg
+            ? avatarBg(theme)
+            : theme.palette.surface.transparent,
+        })}
       />
       {label}
     </Box>
@@ -65,46 +68,48 @@ const HighlightRow: React.FC<{
 
 const getAvatarBg = (name: string) => {
   const owner = name.split('/')[0];
-  if (owner === 'opentensor') return 'text.primary';
-  if (owner === 'bitcoin') return 'status.warningOrange';
-  return 'transparent';
+  if (owner === 'opentensor')
+    return (theme: Theme) => theme.palette.text.primary;
+  if (owner === 'bitcoin')
+    return (theme: Theme) => theme.palette.status.warningOrange;
+  return (theme: Theme) => theme.palette.surface.transparent;
 };
 
 const SectionHeader: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => (
   <Typography
-    sx={{
+    sx={(theme) => ({
       fontFamily: FONTS.mono,
       fontSize: '0.75rem',
       fontWeight: 600,
-      color: 'text.secondary',
+      color: theme.palette.text.secondary,
       textTransform: 'uppercase',
       letterSpacing: '0.05em',
       mb: 1.5,
       pb: 1,
       borderBottom: '1px solid',
-      borderColor: 'border.subtle',
-    }}
+      borderColor: theme.palette.border.subtle,
+    })}
   >
     {children}
   </Typography>
 );
 
-const cardSx = {
+const cardSx = (theme: Theme) => ({
   p: 2,
   borderRadius: 2,
   border: '1px solid',
-  borderColor: 'border.light',
-  backgroundColor: 'surface.transparent',
+  borderColor: theme.palette.border.light,
+  backgroundColor: theme.palette.surface.transparent,
   display: 'flex',
   flexDirection: 'column' as const,
   transition: 'all 0.2s',
   '&:hover': {
-    backgroundColor: 'surface.light',
-    borderColor: 'border.medium',
+    backgroundColor: theme.palette.surface.light,
+    borderColor: theme.palette.border.medium,
   },
-};
+});
 
 // ── Page ────────────────────────────────────────────────────────────────────
 const RepositoriesPage: React.FC = () => {
@@ -342,12 +347,12 @@ const RepositoriesPage: React.FC = () => {
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                   {trendingRepos.length === 0 && !isLoading ? (
                     <Typography
-                      sx={{
-                        color: 'text.disabled',
+                      sx={(theme) => ({
+                        color: alpha(theme.palette.text.primary, 0.3),
                         fontSize: '0.8rem',
                         fontStyle: 'italic',
                         p: 1,
-                      }}
+                      })}
                     >
                       No data available
                     </Typography>
@@ -376,17 +381,20 @@ const RepositoriesPage: React.FC = () => {
                         }
                         right={
                           <Typography
-                            sx={{
+                            sx={(theme) => ({
                               fontFamily: FONTS.mono,
                               fontSize: '0.75rem',
                               fontWeight: 600,
-                              color: 'status.success',
+                              color: theme.palette.status.success,
                               flexShrink: 0,
-                              backgroundColor: 'surface.light',
+                              backgroundColor: alpha(
+                                theme.palette.status.success,
+                                0.1,
+                              ),
                               px: 0.75,
                               py: 0.25,
                               borderRadius: '4px',
-                            }}
+                            })}
                           >
                             +{repo.pctIncrease.toFixed(0)}%
                           </Typography>
@@ -407,12 +415,12 @@ const RepositoriesPage: React.FC = () => {
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                   {topCollateralRepos.length === 0 && !isLoading ? (
                     <Typography
-                      sx={{
-                        color: 'text.disabled',
+                      sx={(theme) => ({
+                        color: alpha(theme.palette.text.primary, 0.3),
                         fontSize: '0.8rem',
                         fontStyle: 'italic',
                         p: 1,
-                      }}
+                      })}
                     >
                       No collateral data available
                     </Typography>
@@ -469,12 +477,12 @@ const RepositoriesPage: React.FC = () => {
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                   {recentPrs.length === 0 && !isLoading ? (
                     <Typography
-                      sx={{
-                        color: 'text.disabled',
+                      sx={(theme) => ({
+                        color: alpha(theme.palette.text.primary, 0.3),
                         fontSize: '0.8rem',
                         fontStyle: 'italic',
                         p: 1,
-                      }}
+                      })}
                     >
                       No data available
                     </Typography>
@@ -533,14 +541,14 @@ const RepositoriesPage: React.FC = () => {
                         }
                         right={
                           <Typography
-                            sx={{
+                            sx={(theme) => ({
                               fontFamily: FONTS.mono,
                               fontSize: '0.68rem',
-                              color: 'text.disabled',
+                              color: alpha(theme.palette.text.primary, 0.35),
                               flexShrink: 0,
                               whiteSpace: 'nowrap',
                               ml: 1,
-                            }}
+                            })}
                           >
                             {formatRelativeTime(pr.createdAt)}
                           </Typography>
@@ -556,13 +564,13 @@ const RepositoriesPage: React.FC = () => {
 
         {/* ── Main Table ────────────────────────────────────────────── */}
         <Card
-          sx={{
+          sx={(theme) => ({
             borderRadius: 3,
             border: '1px solid',
-            borderColor: 'border.light',
-            backgroundColor: 'surface.transparent',
+            borderColor: theme.palette.border.light,
+            backgroundColor: theme.palette.surface.transparent,
             overflow: 'hidden',
-          }}
+          })}
           elevation={0}
         >
           <TopRepositoriesTable

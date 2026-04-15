@@ -61,13 +61,13 @@ const OnboardPage: React.FC = () => {
         }}
       >
         <Box
-          sx={{
+          sx={(theme) => ({
             maxWidth: 1200,
             width: '100%',
             mb: 4,
             borderBottom: '1px solid',
-            borderColor: 'border.light',
-          }}
+            borderColor: theme.palette.border.light,
+          })}
         >
           <Tabs
             value={activeTab}
@@ -75,18 +75,18 @@ const OnboardPage: React.FC = () => {
             variant="scrollable"
             scrollButtons="auto"
             allowScrollButtonsMobile
-            sx={{
+            sx={(theme) => ({
               px: 2,
               '& .MuiTab-root': {
                 textTransform: 'none',
                 fontWeight: 500,
                 fontSize: '1rem',
-                color: 'text.secondary',
+                color: theme.palette.text.secondary,
                 '&.Mui-selected': {
-                  color: 'primary.main',
+                  color: theme.palette.primary.main,
                 },
               },
-            }}
+            })}
           >
             <Tab label="About" />
             <Tab label="Getting Started" />
@@ -110,14 +110,14 @@ const OnboardPage: React.FC = () => {
               }}
             >
               <Card
-                sx={{
+                sx={(theme) => ({
                   borderRadius: 3,
                   border: '1px solid',
-                  borderColor: 'border.light',
-                  backgroundColor: 'surface.transparent',
+                  borderColor: theme.palette.border.light,
+                  backgroundColor: theme.palette.surface.transparent,
                   maxWidth: 1200,
                   width: '100%',
-                }}
+                })}
                 elevation={0}
               >
                 <CardContent>
@@ -136,14 +136,14 @@ const OnboardPage: React.FC = () => {
               }}
             >
               <Card
-                sx={{
+                sx={(theme) => ({
                   borderRadius: 3,
                   border: '1px solid',
-                  borderColor: 'border.light',
-                  backgroundColor: 'surface.transparent',
+                  borderColor: theme.palette.border.light,
+                  backgroundColor: theme.palette.surface.transparent,
                   maxWidth: 1200,
                   width: '100%',
-                }}
+                })}
                 elevation={0}
               >
                 <CardContent>

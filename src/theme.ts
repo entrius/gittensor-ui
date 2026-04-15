@@ -133,11 +133,6 @@ declare module '@mui/material/styles' {
       elevated: string;
       tooltip: string;
     };
-    alert: {
-      warningBg: string;
-      warningBorder: string;
-      warningText: string;
-    };
   }
 
   interface PaletteOptions {
@@ -185,11 +180,6 @@ declare module '@mui/material/styles' {
       light: string;
       elevated: string;
       tooltip: string;
-    };
-    alert?: {
-      warningBg: string;
-      warningBorder: string;
-      warningText: string;
     };
   }
 }
@@ -299,11 +289,6 @@ const theme = createTheme({
       light: 'rgba(255, 255, 255, 0.05)',
       elevated: '#161b22',
       tooltip: 'rgba(30, 30, 30, 0.95)',
-    },
-    alert: {
-      warningBg: 'rgba(245, 124, 0, 0.08)',
-      warningBorder: 'rgba(255, 183, 77, 0.3)',
-      warningText: '#ffcc80',
     },
   },
   typography: {

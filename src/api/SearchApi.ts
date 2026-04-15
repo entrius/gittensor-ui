@@ -28,6 +28,8 @@ type SearchDatasets = {
   issues: DatasetState<IssueBounty>;
 };
 
+const asArray = <T>(value: unknown): T[] => (Array.isArray(value) ? value : []);
+
 const isDatasetLoading = <T>(
   shouldFetch: boolean,
   cachedData: T[] | undefined,
@@ -48,11 +50,18 @@ const useCachedSearchDataset = <T>(
     shouldFetch && cachedData === undefined,
   );
 
+  const normalizedCachedData = asArray<T>(cachedData);
+  const normalizedQueryData = asArray<T>(datasetQuery.data);
+
   return {
-    data: datasetQuery.data ?? cachedData ?? [],
+    data:
+      normalizedQueryData.length > 0 ||
+      (datasetQuery.data !== undefined && Array.isArray(datasetQuery.data))
+        ? normalizedQueryData
+        : normalizedCachedData,
     isLoading: isDatasetLoading(
       shouldFetch,
-      cachedData,
+      normalizedCachedData.length > 0 ? normalizedCachedData : undefined,
       datasetQuery.isLoading,
     ),
     isError: datasetQuery.isError,

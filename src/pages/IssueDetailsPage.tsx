@@ -93,12 +93,17 @@ const IssueDetailsPage: React.FC = () => {
             <IssueHeaderCard issue={issue} />
 
             {/* Tabs */}
-            <Box sx={{ borderBottom: 1, borderColor: 'border.light' }}>
+            <Box
+              sx={(theme) => ({
+                borderBottom: 1,
+                borderColor: theme.palette.border.light,
+              })}
+            >
               <Tabs
                 value={tabValue}
                 onChange={handleTabChange}
                 aria-label="issue details tabs"
-                sx={{
+                sx={(theme) => ({
                   '& .MuiTab-root': {
                     color: STATUS_COLORS.open,
                     fontFamily:
@@ -108,16 +113,16 @@ const IssueDetailsPage: React.FC = () => {
                     minHeight: '48px',
                     fontSize: '14px',
                     '&.Mui-selected': {
-                      color: 'text.primary',
+                      color: theme.palette.text.primary,
                       fontWeight: 600,
                     },
                   },
                   '& .MuiTabs-indicator': {
-                    backgroundColor: 'primary.main',
+                    backgroundColor: theme.palette.primary.main,
                     height: '3px',
                     borderRadius: '3px 3px 0 0',
                   },
-                }}
+                })}
               >
                 <Tab
                   label="Issue"
