@@ -9,3 +9,5 @@ export { default as FAQ } from './FAQ';
 export { default as BackButton } from './BackButton';
 export { SEO } from './SEO';
 export { default as FilterButton } from './FilterButton';
+export { default as ErrorBoundary } from './ErrorBoundary';
+export { default as ErrorFallback } from './ErrorFallback';
