@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -12,12 +12,16 @@ import {
   Link,
   Breadcrumbs,
   Avatar,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import axios from 'axios';
 import { STATUS_COLORS } from '../../theme';
 import { formatDistanceToNow } from 'date-fns';
 import FolderIcon from '@mui/icons-material/Folder';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import DownloadIcon from '@mui/icons-material/Download';
 // import TextSnippetIcon from "@mui/icons-material/TextSnippet"; // Unused
 import CodeViewer from './CodeViewer';
 import { buildFileTree, type FileNode } from './FileExplorer';
@@ -132,6 +136,16 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
     {},
   );
   const [loadingCommit, setLoadingCommit] = useState(false);
+  const [copyTooltipTitle, setCopyTooltipTitle] = useState('Copy');
+  const copyTooltipResetTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTooltipResetTimer.current) {
+        window.clearTimeout(copyTooltipResetTimer.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const fetchRepoData = async () => {
@@ -269,7 +283,27 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
   const breadcrumbs = currentPath ? currentPath.split('/') : [];
   const currentCommit = pathCommits[currentPath || 'root'];
 
-  const isFile = currentNode && currentNode.type === 'blob';
+  const isFile = currentNode?.type === 'blob';
+  const encodedFilePath = currentPath
+    ? currentPath
+        .split('/')
+        .map((segment) => encodeURIComponent(segment))
+        .join('/')
+    : '';
+  const rawFileUrl =
+    isFile && encodedFilePath
+      ? `https://cdn.jsdelivr.net/gh/${repositoryFullName}@${defaultBranch}/${encodedFilePath}`
+      : '';
+  const fileExtension = currentPath?.split('.').pop()?.toLowerCase() ?? '';
+  const isImageFile = [
+    'png',
+    'jpg',
+    'jpeg',
+    'gif',
+    'svg',
+    'webp',
+    'ico',
+  ].includes(fileExtension);
   const directoryChildren =
     !isFile && currentNode ? currentNode.children || [] : [];
 
@@ -278,6 +312,100 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
     if (a.type === b.type) return a.name.localeCompare(b.name);
     return a.type === 'tree' ? -1 : 1;
   });
+
+  const showCopiedTooltip = () => {
+    setCopyTooltipTitle('Copied');
+    if (copyTooltipResetTimer.current) {
+      window.clearTimeout(copyTooltipResetTimer.current);
+    }
+    copyTooltipResetTimer.current = window.setTimeout(() => {
+      setCopyTooltipTitle('Copy');
+      copyTooltipResetTimer.current = null;
+    }, 1200);
+  };
+
+  const blobToDataUrl = (blob: Blob) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(String(reader.result ?? ''));
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+
+  const handleCopyFileContent = async () => {
+    if (!rawFileUrl) return;
+    try {
+      if (isImageFile) {
+        const response = await axios.get<Blob>(rawFileUrl, {
+          responseType: 'blob',
+        });
+        const imageBlob = response.data;
+
+        if (
+          navigator.clipboard?.write &&
+          typeof window.ClipboardItem !== 'undefined'
+        ) {
+          const mimeType = imageBlob.type || `image/${fileExtension || 'png'}`;
+          await navigator.clipboard.write([
+            new window.ClipboardItem({ [mimeType]: imageBlob }),
+          ]);
+        } else {
+          // Fallback to Data URL string when binary clipboard is unavailable.
+          const dataUrl = await blobToDataUrl(imageBlob);
+          await navigator.clipboard.writeText(dataUrl);
+        }
+      } else {
+        const response = await axios.get<string>(rawFileUrl, {
+          transformResponse: [(data) => data],
+        });
+        await navigator.clipboard.writeText(response.data);
+      }
+      showCopiedTooltip();
+    } catch (err) {
+      try {
+        // Fallback for environments where clipboard API is unavailable.
+        const fallbackText = isImageFile
+          ? rawFileUrl
+          : (
+              await axios.get<string>(rawFileUrl, {
+                transformResponse: [(data) => data],
+              })
+            ).data;
+        const textarea = document.createElement('textarea');
+        textarea.value = fallbackText;
+        textarea.setAttribute('readonly', 'true');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showCopiedTooltip();
+      } catch (fallbackErr) {
+        console.error('Failed to copy file content', fallbackErr ?? err);
+      }
+    }
+  };
+
+  const handleDownloadFile = async () => {
+    if (!rawFileUrl || !currentPath) return;
+    try {
+      const filename = currentPath.split('/').pop() || 'download';
+      const response = await axios.get<Blob>(rawFileUrl, {
+        responseType: 'blob',
+      });
+      const objectUrl = URL.createObjectURL(response.data);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      console.error('Failed to download file', err);
+    }
+  };
 
   return (
     <Box>
@@ -332,6 +460,30 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
             );
           })}
         </Breadcrumbs>
+        {isFile && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            {!isImageFile && (
+              <Tooltip title={copyTooltipTitle}>
+                <IconButton
+                  size="small"
+                  onClick={handleCopyFileContent}
+                  sx={{ color: STATUS_COLORS.open }}
+                >
+                  <ContentCopyIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            <Tooltip title="Download file">
+              <IconButton
+                size="small"
+                onClick={handleDownloadFile}
+                sx={{ color: STATUS_COLORS.open }}
+              >
+                <DownloadIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        )}
       </Box>
 
       {/* Latest Commit Header (GitHub style blue/gray bar) */}
