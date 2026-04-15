@@ -231,9 +231,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     };
     const metric = chartMetric[sortColumn] ?? chartMetric.totalScore;
     const effectiveLogScale =
-      useLogScale &&
-      sortColumn !== 'totalPRs' &&
-      sortColumn !== 'contributors';
+      useLogScale && sortColumn !== 'totalPRs' && sortColumn !== 'contributors';
 
     const barGradient = {
       type: 'linear',
@@ -720,7 +718,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               <SortableHeader
                 column="weight"
                 align="right"
-                sx={{ width: '12%' }}
+                sx={{ width: '22%' }}
               >
                 Weight
               </SortableHeader>
@@ -728,7 +726,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 column="totalScore"
                 align="right"
                 sx={{
-                  width: '18%',
+                  width: '13%',
                 }}
               >
                 Total Score
@@ -736,7 +734,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               <SortableHeader
                 column="totalPRs"
                 align="right"
-                sx={{ width: '15%' }}
+                sx={{ width: '10%' }}
               >
                 PRs
               </SortableHeader>
@@ -824,7 +822,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     </TableCell>
                     <TableCell
                       align="right"
-                      sx={{ ...bodyCellStyle, width: '12%' }}
+                      sx={{ ...bodyCellStyle, width: '22%' }}
                     >
                       <Box
                         sx={{
@@ -847,8 +845,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                         <Box
                           sx={{
                             width: '100%',
-                            maxWidth: 80,
-                            height: 3,
+                            maxWidth: 180,
+                            height: 4,
                             borderRadius: 2,
                             backgroundColor: 'rgba(255, 255, 255, 0.08)',
                             overflow: 'hidden',
@@ -856,10 +854,16 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                         >
                           <Box
                             sx={{
+                              '@keyframes weightBarFill': {
+                                from: { width: 0 },
+                                to: {
+                                  width: `${Math.min(100, Math.max(0, (repo.weight ?? 0) * 100))}%`,
+                                },
+                              },
                               width: `${Math.min(100, Math.max(0, (repo.weight ?? 0) * 100))}%`,
                               height: '100%',
-                              backgroundColor: 'rgba(255, 255, 255, 0.45)',
-                              transition: 'width 0.2s ease',
+                              backgroundColor: 'rgba(255, 255, 255, 0.55)',
+                              animation: 'weightBarFill 0.7s ease-out',
                             }}
                           />
                         </Box>
@@ -867,7 +871,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     </TableCell>
                     <TableCell
                       align="right"
-                      sx={{ ...bodyCellStyle, width: '18%' }}
+                      sx={{ ...bodyCellStyle, width: '13%' }}
                     >
                       <Typography
                         sx={{
@@ -887,7 +891,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     </TableCell>
                     <TableCell
                       align="right"
-                      sx={{ ...bodyCellStyle, width: '15%' }}
+                      sx={{ ...bodyCellStyle, width: '10%' }}
                     >
                       <Typography
                         sx={{
