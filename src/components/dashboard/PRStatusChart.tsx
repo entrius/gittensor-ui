@@ -125,7 +125,7 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
           textAlign: 'center',
           mb: 1,
           whiteSpace: 'nowrap',
-          overflow: 'hidden', 
+          overflow: 'hidden',
         }}
       >
         {title}{' '}
