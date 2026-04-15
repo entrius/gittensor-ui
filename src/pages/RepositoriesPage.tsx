@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 
 import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
+import { alpha, type Theme } from '@mui/material/styles';
 
 import { LinkBox } from '../components/common/linkBehavior';
 import { Page } from '../components/layout';
@@ -17,7 +18,7 @@ const HighlightRow: React.FC<{
   href: string;
   linkState?: Record<string, unknown>;
   avatar: string;
-  avatarBg?: string;
+  avatarBg?: (theme: Theme) => string;
   label: React.ReactNode;
   right: React.ReactNode;
 }> = ({ href, linkState, avatar, avatarBg = 'transparent', label, right }) => {
@@ -68,44 +69,48 @@ const HighlightRow: React.FC<{
 
 const getAvatarBg = (name: string) => {
   const owner = name.split('/')[0];
-  if (owner === 'opentensor') return '#ffffff';
-  if (owner === 'bitcoin') return '#F7931A';
-  return 'transparent';
+  if (owner === 'opentensor')
+    return (theme: Theme) => theme.palette.text.primary;
+  if (owner === 'bitcoin')
+    return (theme: Theme) => theme.palette.status.warningOrange;
+  return (theme: Theme) => theme.palette.surface.transparent;
 };
 
 const SectionHeader: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => (
   <Typography
-    sx={{
+    sx={(theme) => ({
       fontFamily: FONTS.mono,
       fontSize: '0.75rem',
       fontWeight: 600,
-      color: 'rgba(255,255,255,0.5)',
+      color: theme.palette.text.secondary,
       textTransform: 'uppercase',
       letterSpacing: '0.05em',
       mb: 1.5,
       pb: 1,
-      borderBottom: '1px solid rgba(255,255,255,0.05)',
-    }}
+      borderBottom: '1px solid',
+      borderColor: theme.palette.border.subtle,
+    })}
   >
     {children}
   </Typography>
 );
 
-const cardSx = {
+const cardSx = (theme: Theme) => ({
   p: 2,
   borderRadius: 2,
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  backgroundColor: 'transparent',
+  border: '1px solid',
+  borderColor: theme.palette.border.light,
+  backgroundColor: theme.palette.surface.transparent,
   display: 'flex',
   flexDirection: 'column' as const,
   transition: 'all 0.2s',
   '&:hover': {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: theme.palette.surface.light,
+    borderColor: theme.palette.border.medium,
   },
-};
+});
 
 // ── Page ────────────────────────────────────────────────────────────────────
 const REPO_LINK_STATE = { backLabel: 'Back to Repositories' } as const;
@@ -347,12 +352,12 @@ const RepositoriesPage: React.FC = () => {
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                   {trendingRepos.length === 0 && !isLoading ? (
                     <Typography
-                      sx={{
-                        color: 'rgba(255,255,255,0.3)',
+                      sx={(theme) => ({
+                        color: alpha(theme.palette.text.primary, 0.3),
                         fontSize: '0.8rem',
                         fontStyle: 'italic',
                         p: 1,
-                      }}
+                      })}
                     >
                       No data available
                     </Typography>
@@ -370,7 +375,7 @@ const RepositoriesPage: React.FC = () => {
                               sx={{
                                 fontFamily: FONTS.mono,
                                 fontSize: '0.82rem',
-                                color: 'rgba(255,255,255,0.9)',
+                                color: 'text.primary',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -382,17 +387,20 @@ const RepositoriesPage: React.FC = () => {
                         }
                         right={
                           <Typography
-                            sx={{
+                            sx={(theme) => ({
                               fontFamily: FONTS.mono,
                               fontSize: '0.75rem',
                               fontWeight: 600,
-                              color: '#51cf66',
+                              color: theme.palette.status.success,
                               flexShrink: 0,
-                              backgroundColor: 'rgba(81, 207, 102, 0.1)',
+                              backgroundColor: alpha(
+                                theme.palette.status.success,
+                                0.1,
+                              ),
                               px: 0.75,
                               py: 0.25,
                               borderRadius: '4px',
-                            }}
+                            })}
                           >
                             +{repo.pctIncrease.toFixed(0)}%
                           </Typography>
@@ -413,12 +421,12 @@ const RepositoriesPage: React.FC = () => {
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                   {topCollateralRepos.length === 0 && !isLoading ? (
                     <Typography
-                      sx={{
-                        color: 'rgba(255,255,255,0.3)',
+                      sx={(theme) => ({
+                        color: alpha(theme.palette.text.primary, 0.3),
                         fontSize: '0.8rem',
                         fontStyle: 'italic',
                         p: 1,
-                      }}
+                      })}
                     >
                       No collateral data available
                     </Typography>
@@ -436,7 +444,7 @@ const RepositoriesPage: React.FC = () => {
                               sx={{
                                 fontFamily: FONTS.mono,
                                 fontSize: '0.82rem',
-                                color: 'rgba(255,255,255,0.9)',
+                                color: 'text.primary',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -451,7 +459,7 @@ const RepositoriesPage: React.FC = () => {
                             sx={{
                               fontFamily: FONTS.mono,
                               fontSize: '0.72rem',
-                              color: 'rgba(255,255,255,0.7)',
+                              color: 'text.secondary',
                               flexShrink: 0,
                               whiteSpace: 'nowrap',
                             }}
@@ -476,12 +484,12 @@ const RepositoriesPage: React.FC = () => {
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                   {recentPrs.length === 0 && !isLoading ? (
                     <Typography
-                      sx={{
-                        color: 'rgba(255,255,255,0.3)',
+                      sx={(theme) => ({
+                        color: alpha(theme.palette.text.primary, 0.3),
                         fontSize: '0.8rem',
                         fontStyle: 'italic',
                         p: 1,
-                      }}
+                      })}
                     >
                       No data available
                     </Typography>
@@ -507,7 +515,7 @@ const RepositoriesPage: React.FC = () => {
                                 sx={{
                                   fontFamily: FONTS.mono,
                                   fontSize: '0.68rem',
-                                  color: 'rgba(255,255,255,0.45)',
+                                  color: 'text.tertiary',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
                                   whiteSpace: 'nowrap',
@@ -522,7 +530,7 @@ const RepositoriesPage: React.FC = () => {
                                 sx={{
                                   fontFamily: FONTS.mono,
                                   fontSize: '0.78rem',
-                                  color: 'rgba(255,255,255,0.9)',
+                                  color: 'text.primary',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
                                   whiteSpace: 'nowrap',
@@ -536,14 +544,14 @@ const RepositoriesPage: React.FC = () => {
                         }
                         right={
                           <Typography
-                            sx={{
+                            sx={(theme) => ({
                               fontFamily: FONTS.mono,
                               fontSize: '0.68rem',
-                              color: 'rgba(255,255,255,0.35)',
+                              color: alpha(theme.palette.text.primary, 0.35),
                               flexShrink: 0,
                               whiteSpace: 'nowrap',
                               ml: 1,
-                            }}
+                            })}
                           >
                             {formatRelativeTime(pr.createdAt)}
                           </Typography>
@@ -559,12 +567,13 @@ const RepositoriesPage: React.FC = () => {
 
         {/* ── Main Table ────────────────────────────────────────────── */}
         <Card
-          sx={{
+          sx={(theme) => ({
             borderRadius: 3,
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            backgroundColor: 'transparent',
+            border: '1px solid',
+            borderColor: theme.palette.border.light,
+            backgroundColor: theme.palette.surface.transparent,
             overflow: 'hidden',
-          }}
+          })}
           elevation={0}
         >
           <TopRepositoriesTable

@@ -90,7 +90,12 @@ export const MinerCard: React.FC<MinerCardProps> = ({
         }}
       >
         <Box
-          sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            minWidth: 0,
+          }}
         >
           <Avatar
             src={avatarSrc}
