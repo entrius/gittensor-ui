@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Typography, CircularProgress, Grid } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
 import { useSearchParams } from 'react-router-dom';
@@ -54,43 +54,51 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortOption, setSortOption] = useState<SortOption>(() =>
-    getSortOptionFromQuery(searchParams.get(SORT_QUERY_PARAM), variant),
+  const sortOption = useMemo(
+    () => getSortOptionFromQuery(searchParams.get(SORT_QUERY_PARAM), variant),
+    [searchParams, variant],
   );
-  const [showEligibleOnly, setShowEligibleOnly] = useState(
-    () => searchParams.get(ELIGIBLE_QUERY_PARAM) === 'true',
-  );
+  const showEligibleOnly = searchParams.get(ELIGIBLE_QUERY_PARAM) === 'true';
   const [visibleCount, setVisibleCount] = useState(MINERS_PAGE_SIZE);
 
   useEffect(() => {
-    const sortFromQuery = getSortOptionFromQuery(
-      searchParams.get(SORT_QUERY_PARAM),
-      variant,
-    );
-    const eligibleFromQuery =
-      searchParams.get(ELIGIBLE_QUERY_PARAM) === 'true';
+    const rawSort = searchParams.get(SORT_QUERY_PARAM);
+    const rawEligible = searchParams.get(ELIGIBLE_QUERY_PARAM);
+    const allowedSortOptions = getAllowedSortOptions(variant);
 
-    setSortOption((prev) => (prev === sortFromQuery ? prev : sortFromQuery));
-    setShowEligibleOnly((prev) =>
-      prev === eligibleFromQuery ? prev : eligibleFromQuery,
+    const hasInvalidSort =
+      rawSort != null && !allowedSortOptions.includes(rawSort as SortOption);
+    const hasInvalidEligible =
+      rawEligible != null && rawEligible !== 'true';
+
+    if (!hasInvalidSort && !hasInvalidEligible) {
+      return;
+    }
+
+    setSearchParams(
+      (previousParams) => {
+        const nextSearchParams = new URLSearchParams(previousParams);
+        if (hasInvalidSort) {
+          nextSearchParams.delete(SORT_QUERY_PARAM);
+        }
+        if (hasInvalidEligible) {
+          nextSearchParams.delete(ELIGIBLE_QUERY_PARAM);
+        }
+        return nextSearchParams;
+      },
+      { replace: true },
     );
   }, [searchParams, variant]);
 
-  useEffect(() => {
+  const handleSortChange = useCallback((nextSortOption: SortOption) => {
     setSearchParams(
       (previousParams) => {
         const nextSearchParams = new URLSearchParams(previousParams);
 
-        if (sortOption === 'totalScore') {
+        if (nextSortOption === 'totalScore') {
           nextSearchParams.delete(SORT_QUERY_PARAM);
         } else {
-          nextSearchParams.set(SORT_QUERY_PARAM, sortOption);
-        }
-
-        if (showEligibleOnly) {
-          nextSearchParams.set(ELIGIBLE_QUERY_PARAM, 'true');
-        } else {
-          nextSearchParams.delete(ELIGIBLE_QUERY_PARAM);
+          nextSearchParams.set(SORT_QUERY_PARAM, nextSortOption);
         }
 
         return nextSearchParams.toString() === previousParams.toString()
@@ -99,7 +107,28 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       },
       { replace: true },
     );
-  }, [setSearchParams, showEligibleOnly, sortOption]);
+  }, [setSearchParams]);
+
+  const handleToggleEligible = useCallback(() => {
+    setSearchParams(
+      (previousParams) => {
+        const nextSearchParams = new URLSearchParams(previousParams);
+        const isEligibleEnabled =
+          nextSearchParams.get(ELIGIBLE_QUERY_PARAM) === 'true';
+
+        if (isEligibleEnabled) {
+          nextSearchParams.delete(ELIGIBLE_QUERY_PARAM);
+        } else {
+          nextSearchParams.set(ELIGIBLE_QUERY_PARAM, 'true');
+        }
+
+        return nextSearchParams.toString() === previousParams.toString()
+          ? previousParams
+          : nextSearchParams;
+      },
+      { replace: true },
+    );
+  }, [setSearchParams]);
 
   // Helper to sort a list of miners
   const sortMinersList = (list: MinerStats[], option: SortOption) =>
@@ -182,13 +211,13 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           >
             <SortButtons
               sortOption={sortOption}
-              onSortChange={setSortOption}
+              onSortChange={handleSortChange}
               variant={variant}
             />
             <FilterButton
               label="Eligible"
               isActive={showEligibleOnly}
-              onClick={() => setShowEligibleOnly((prev) => !prev)}
+              onClick={handleToggleEligible}
             />
           </Box>
         }
