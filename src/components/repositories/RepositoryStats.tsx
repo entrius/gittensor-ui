@@ -8,7 +8,6 @@ import {
   useRepositoryConfig,
 } from '../../api';
 import { RANK_COLORS, STATUS_COLORS } from '../../theme';
-import { formatTokenAmount } from '../../utils/format';
 
 interface RepositoryStatsProps {
   repositoryFullName: string;
