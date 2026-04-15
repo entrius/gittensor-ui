@@ -23,8 +23,9 @@ export const SectionCard: React.FC<{
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        backgroundColor: '#000000',
+        border: '1px solid',
+        borderColor: 'border.light',
+        backgroundColor: 'background.default',
         display: 'flex',
         flexDirection: 'column',
         ...sx,

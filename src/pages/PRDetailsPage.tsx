@@ -107,12 +107,17 @@ const PRDetailsPage: React.FC = () => {
             />
 
             {/* Tabs */}
-            <Box sx={{ borderBottom: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+            <Box
+              sx={(theme) => ({
+                borderBottom: 1,
+                borderColor: theme.palette.border.light,
+              })}
+            >
               <Tabs
                 value={tabValue}
                 onChange={handleTabChange}
                 aria-label="pr details tabs"
-                sx={{
+                sx={(theme) => ({
                   '& .MuiTab-root': {
                     color: STATUS_COLORS.open,
                     fontFamily:
@@ -122,16 +127,16 @@ const PRDetailsPage: React.FC = () => {
                     minHeight: '48px',
                     fontSize: '14px',
                     '&.Mui-selected': {
-                      color: '#fff',
+                      color: theme.palette.text.primary,
                       fontWeight: 600,
                     },
                   },
                   '& .MuiTabs-indicator': {
-                    backgroundColor: 'primary.main',
+                    backgroundColor: theme.palette.primary.main,
                     height: '3px',
                     borderRadius: '3px 3px 0 0',
                   },
-                }}
+                })}
               >
                 <Tab
                   label="Overview"
