@@ -35,6 +35,7 @@ import {
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import { type MinerStatusFilter } from '../../utils/ExplorerUtils';
+import { headerCellStyle, bodyCellStyle } from '../../theme';
 
 type PrSortField = 'number' | 'repository' | 'score' | 'lines' | 'date';
 type SortDir = 'asc' | 'desc';
@@ -765,33 +766,6 @@ const sortLabelSx = {
   '& .MuiTableSortLabel-icon': {
     color: (t: Theme) => `${alpha(t.palette.text.primary, 0.4)} !important`,
   },
-};
-
-const headerCellStyle = {
-  backgroundColor: 'surface.elevated',
-  backdropFilter: 'blur(8px)',
-  color: (t: Theme) => alpha(t.palette.text.primary, 0.7),
-  fontFamily: '"JetBrains Mono", monospace',
-  fontWeight: 500,
-  fontSize: { xs: '0.65rem', sm: '0.75rem' },
-  borderBottom: '1px solid',
-  borderColor: 'border.light',
-  height: { xs: '48px', sm: '56px' },
-  py: { xs: 1, sm: 1.5 },
-  px: { xs: 0.5, sm: 2 },
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.5px',
-};
-
-const bodyCellStyle = {
-  color: 'text.primary',
-  fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: '1px solid',
-  borderColor: 'border.light',
-  fontSize: '0.85rem',
-  py: { xs: 0.75, sm: 1 },
-  px: { xs: 0.5, sm: 2 },
-  height: { xs: '52px', sm: '60px' },
 };
 
 export default MinerPRsTable;

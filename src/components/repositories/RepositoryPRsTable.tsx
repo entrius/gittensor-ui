@@ -30,7 +30,12 @@ type PrSortField =
 type SortOrder = 'asc' | 'desc';
 import { useAllPrs } from '../../api';
 import { useNavigate } from 'react-router-dom';
-import { TEXT_OPACITY, scrollbarSx } from '../../theme';
+import {
+  TEXT_OPACITY,
+  scrollbarSx,
+  headerCellStyle,
+  bodyCellStyle,
+} from '../../theme';
 import {
   getPrStatusCounts,
   isClosedUnmergedPr,
@@ -490,27 +495,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       )}
     </Card>
   );
-};
-
-const headerCellStyle = {
-  backgroundColor: 'surface.tooltip',
-  backdropFilter: 'blur(8px)',
-  color: 'text.secondary',
-  fontFamily: '"JetBrains Mono", monospace',
-  fontWeight: 500,
-  fontSize: '0.75rem',
-  borderBottom: '1px solid',
-  borderColor: 'border.light',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.5px',
-};
-
-const bodyCellStyle = {
-  color: 'text.primary',
-  fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: '1px solid',
-  borderColor: 'border.light',
-  fontSize: '0.85rem',
 };
 
 export default RepositoryPRsTable;

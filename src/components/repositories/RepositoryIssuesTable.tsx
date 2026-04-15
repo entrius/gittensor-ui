@@ -22,7 +22,13 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { formatTokenAmount } from '../../utils/format';
-import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
+import {
+  STATUS_COLORS,
+  TEXT_OPACITY,
+  scrollbarSx,
+  headerCellStyle,
+  bodyCellStyle,
+} from '../../theme';
 import FilterButton from '../FilterButton';
 
 interface RepositoryIssuesTableProps {
@@ -527,27 +533,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       </Card>
     </Box>
   );
-};
-
-const headerCellStyle = {
-  backgroundColor: 'surface.tooltip',
-  backdropFilter: 'blur(8px)',
-  color: 'text.secondary',
-  fontFamily: '"JetBrains Mono", monospace',
-  fontWeight: 500,
-  fontSize: '0.75rem',
-  borderBottom: '1px solid',
-  borderColor: 'border.light',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.5px',
-};
-
-const bodyCellStyle = {
-  color: 'text.primary',
-  fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: '1px solid',
-  borderColor: 'border.light',
-  fontSize: '0.85rem',
 };
 
 export default RepositoryIssuesTable;
