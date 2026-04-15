@@ -53,6 +53,42 @@ import {
   scrollbarSx,
 } from '../../theme';
 
+const AnimatedWeightBar: React.FC<{ weight: number; maxWeight: number }> = ({
+  weight,
+  maxWeight,
+}) => {
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setWidth((weight / maxWeight) * 100);
+    }, 50);
+    return () => clearTimeout(t);
+  }, [weight, maxWeight]);
+
+  return (
+    <Box
+      sx={{
+        width: '100%',
+        height: '4px',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: '2px',
+        overflow: 'hidden',
+      }}
+    >
+      <Box
+        sx={{
+          width: `${width}%`,
+          height: '100%',
+          background:
+            'linear-gradient(90deg, rgba(139, 148, 158, 0.8), rgba(100, 108, 118, 0.4))',
+          borderRadius: '2px',
+          transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      />
+    </Box>
+  );
+};
+
 interface RepoStats {
   repository: string;
   totalScore: number;
@@ -194,8 +230,18 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     return filtered;
   }, [rankedRepositories, searchQuery]);
 
+  const maxWeight = useMemo(() => {
+    const weights = filteredRepositories
+      .map((r) => r.weight || 0)
+      .filter((w) => !Number.isNaN(w));
+    return weights.length > 0 ? Math.max(1, Math.max(...weights)) : 1;
+  }, [filteredRepositories]);
+
   const getChartOption = () => {
-    const chartData = filteredRepositories.slice(0, 50); // Limit for performance
+    const chartData = filteredRepositories.slice(
+      page * rowsPerPage,
+      page * rowsPerPage + rowsPerPage,
+    );
     const white = UI_COLORS.white;
     const borderSubtle = alpha(white, 0.08);
     const borderLight = alpha(white, 0.1);
@@ -465,47 +511,56 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const SortableHeader = ({
     column,
     children,
-    align = 'left',
+    align = 'center',
     sx = {},
   }: {
     column: SortColumn;
     children: React.ReactNode;
-    align?: 'left' | 'right';
+    align?: 'left' | 'right' | 'center';
     sx?: SxProps<Theme>;
-  }) => (
-    <TableCell
-      align={align}
-      sx={{
-        ...headerCellStyle,
-        ...(sx || {}),
-        cursor: 'pointer',
-        userSelect: 'none',
-        '&:hover': {
-          backgroundColor: 'surface.light',
-        },
-      }}
-      onClick={() => handleSort(column)}
-    >
-      <Box
+  }) => {
+    const justify =
+      align === 'right'
+        ? 'flex-end'
+        : align === 'center'
+          ? 'center'
+          : 'flex-start';
+
+    return (
+      <TableCell
+        align={align}
         sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
-          gap: 0.5,
+          ...headerCellStyle,
+          ...(sx || {}),
+          cursor: 'pointer',
+          userSelect: 'none',
+          '&:hover': {
+            backgroundColor: 'surface.light',
+          },
         }}
+        onClick={() => handleSort(column)}
       >
-        {children}
-        {sortColumn === column && (
-          <Typography
-            component="span"
-            sx={{ fontSize: '0.7rem', opacity: 0.7 }}
-          >
-            {sortDirection === 'asc' ? '▲' : '▼'}
-          </Typography>
-        )}
-      </Box>
-    </TableCell>
-  );
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: justify,
+            gap: 0.5,
+          }}
+        >
+          {children}
+          {sortColumn === column && (
+            <Typography
+              component="span"
+              sx={{ fontSize: '0.7rem', opacity: 0.7 }}
+            >
+              {sortDirection === 'asc' ? '▲' : '▼'}
+            </Typography>
+          )}
+        </Box>
+      </TableCell>
+    );
+  };
 
   useEffect(() => {
     if (isInitialMount.current) {
@@ -728,40 +783,25 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         >
           <TableHead>
             <TableRow>
-              <TableCell sx={{ ...headerCellStyle, width: '60px' }}>
+              <TableCell
+                align="center"
+                sx={{ ...headerCellStyle, width: '60px' }}
+              >
                 Rank
               </TableCell>
               <SortableHeader column="repository" sx={{ width: '35%' }}>
                 Repository
               </SortableHeader>
-              <SortableHeader
-                column="weight"
-                align="right"
-                sx={{ width: '22%' }}
-              >
+              <SortableHeader column="weight" sx={{ width: '22%' }}>
                 Weight
               </SortableHeader>
-              <SortableHeader
-                column="totalScore"
-                align="right"
-                sx={{
-                  width: '13%',
-                }}
-              >
+              <SortableHeader column="totalScore" sx={{ width: '13%' }}>
                 Total Score
               </SortableHeader>
-              <SortableHeader
-                column="totalPRs"
-                align="right"
-                sx={{ width: '10%' }}
-              >
+              <SortableHeader column="totalPRs" sx={{ width: '10%' }}>
                 PRs
               </SortableHeader>
-              <SortableHeader
-                column="contributors"
-                align="right"
-                sx={{ width: '15%' }}
-              >
+              <SortableHeader column="contributors" sx={{ width: '15%' }}>
                 Contributors
               </SortableHeader>
             </TableRow>
@@ -842,10 +882,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     >
                       <Box
                         sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          color: 'text.primary',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-end',
+                          gap: 0.75,
                         }}
                       >
                         <Typography
@@ -853,36 +893,15 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                             fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.75rem',
                             fontWeight: 600,
-                            color: '#ffffff',
+                            color: 'text.primary',
                           }}
                         >
                           {repo.weight.toFixed(2)}
                         </Typography>
-                        <Box
-                          sx={{
-                            width: '100%',
-                            maxWidth: 180,
-                            height: 4,
-                            borderRadius: 2,
-                            backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              '@keyframes weightBarFill': {
-                                from: { width: 0 },
-                                to: {
-                                  width: `${Math.min(100, Math.max(0, (repo.weight ?? 0) * 100))}%`,
-                                },
-                              },
-                              width: `${Math.min(100, Math.max(0, (repo.weight ?? 0) * 100))}%`,
-                              height: '100%',
-                              backgroundColor: 'rgba(255, 255, 255, 0.55)',
-                              animation: 'weightBarFill 0.7s ease-out',
-                            }}
-                          />
-                        </Box>
+                        <AnimatedWeightBar
+                          weight={repo.weight ?? 0}
+                          maxWeight={maxWeight}
+                        />
                       </Box>
                     </TableCell>
                     <TableCell
