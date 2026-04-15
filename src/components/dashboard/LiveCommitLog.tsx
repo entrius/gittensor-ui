@@ -13,8 +13,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import theme, { REPO_OWNER_AVATAR_BACKGROUNDS } from '../../theme';
-import { useInfiniteCommitLog } from '../../api';
-import { isClosedUnmergedPr, isMergedPr } from '../../utils/prStatus';
+import { useInfiniteCommitLog, usePullRequestDetails } from '../../api';
 
 const MONTH_SHORT = [
   'Jan',
@@ -85,21 +84,13 @@ const getCommitId = (entry: CommitLogEntry) =>
   `${entry.repository}-${entry.pullRequestNumber}`;
 
 const getCommitStatus = (entry: CommitLogEntry): CommitStatus => {
-  if (isMergedPr(entry)) return 'merged';
-  if (isClosedUnmergedPr(entry)) return 'closed';
+  if (entry.mergedAt || entry.prState === 'MERGED') return 'merged';
+  if (entry.prState === 'CLOSED') return 'closed';
   return 'open';
 };
 
-const getCommitTimestampIso = (
-  entry: CommitLogEntry,
-  status = getCommitStatus(entry),
-) =>
-  status === 'merged'
-    ? entry.mergedAt || entry.prCreatedAt
-    : entry.prCreatedAt || entry.mergedAt;
-
 const getCommitTimestamp = (entry: CommitLogEntry) => {
-  const timestamp = getCommitTimestampIso(entry);
+  const timestamp = entry.mergedAt || entry.prCreatedAt;
   return timestamp ? new Date(timestamp).getTime() : 0;
 };
 
@@ -113,15 +104,30 @@ const getScoreColor = (score: string) => {
 
 const CommitLogItem: React.FC<{
   entry: CommitLogEntry;
-  status: CommitStatus;
   isNew: boolean;
-}> = ({ entry, status, isNew }) => {
+}> = ({ entry, isNew }) => {
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
-  const statusMeta = COMMIT_STATUS_META[status];
-  const timestampRaw = getCommitTimestampIso(entry, status);
+  const { data: details } = usePullRequestDetails(
+    entry.repository,
+    entry.pullRequestNumber,
+  );
+
+  const isMerged = !!(details?.mergedAt || entry.mergedAt);
+  const isClosed = details?.prState === 'CLOSED' || entry.prState === 'CLOSED';
+
+  let status = { label: 'OPEN', color: theme.palette.status.neutral };
+  if (isMerged)
+    status = { label: 'MERGED', color: theme.palette.status.merged };
+  else if (isClosed)
+    status = { label: 'CLOSED', color: theme.palette.status.closed };
+  const timestampRaw =
+    details?.mergedAt ||
+    details?.prCreatedAt ||
+    entry.mergedAt ||
+    entry.prCreatedAt;
   const timestamp = timestampRaw
     ? formatUtcTimestamp(timestampRaw)
     : 'Loading...';
@@ -155,13 +161,13 @@ const CommitLogItem: React.FC<{
           left: 0,
           right: 0,
           bottom: 0,
-          background: `linear-gradient(90deg, ${alpha(statusMeta.color, 0.1)} 0%, transparent 100%)`,
+          background: `linear-gradient(90deg, ${alpha(status.color, 0.1)} 0%, transparent 100%)`,
           opacity: 0.5,
         },
         '&:hover': {
-          borderColor: statusMeta.color,
+          borderColor: status.color,
           transform: 'translateX(4px)',
-          boxShadow: `0 0 20px ${alpha(statusMeta.color, 0.1)}`,
+          boxShadow: `0 0 20px ${alpha(status.color, 0.1)}`,
           '&::before': { opacity: 0.8 },
         },
         '@keyframes slideIn': {
@@ -226,12 +232,12 @@ const CommitLogItem: React.FC<{
           >
             <Chip
               variant="status"
-              label={statusMeta.badgeLabel}
+              label={status.label}
               size="small"
               sx={{
-                color: statusMeta.color,
-                borderColor: alpha(statusMeta.color, 0.3),
-                backgroundColor: alpha(statusMeta.color, 0.1),
+                color: status.color,
+                borderColor: alpha(status.color, 0.3),
+                backgroundColor: alpha(status.color, 0.1),
               }}
             />
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
@@ -313,72 +319,61 @@ const LiveCommitLog: React.FC = () => {
     useInfiniteCommitLog({ refetchInterval: 10000 }); // Poll every 10 seconds
 
   const [statusFilter, setStatusFilter] = useState<CommitStatus>('merged');
+  const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
   const logContainerRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  const previousEntryIdsRef = useRef<Set<string>>(new Set());
-  const newEntryTimeoutRef = useRef<number | null>(null);
 
-  // Flatten and dedupe loaded pages so refetches do not render the same PR twice
+  // Flatten all pages into a single array from API (memoized to avoid infinite effect loops)
   const apiCommits = useMemo<CommitLogEntry[]>(
-    () => {
-      const seen = new Set<string>();
-
-      return (data?.pages.flat() ?? []).filter((entry) => {
-        const id = getCommitId(entry);
-        if (seen.has(id)) return false;
-        seen.add(id);
-        return true;
-      });
-    },
+    () => data?.pages.flat() ?? [],
     [data],
   );
 
   useEffect(() => {
-    const previousIds = previousEntryIdsRef.current;
-    const nextIds = apiCommits.map(getCommitId);
-    const nextIdSet = new Set(nextIds);
+    if (apiCommits.length === 0) return;
 
-    if (previousIds.size > 0) {
-      const novelIds = nextIds.filter((id) => !previousIds.has(id));
-      const isHeadUpdate =
-        novelIds.length > 0 && novelIds.includes(nextIds[0]);
+    setLogEntries((prevLog) => {
+      const previousIds = new Set(prevLog.map(getCommitId));
+      const latestById = new Map(
+        apiCommits.map((entry) => [getCommitId(entry), entry]),
+      );
+
+      if (prevLog.length === 0) return apiCommits;
+
+      const updatedLog = prevLog.map(
+        (entry) => latestById.get(getCommitId(entry)) ?? entry,
+      );
+      const novelItems = apiCommits.filter(
+        (entry) => !previousIds.has(getCommitId(entry)),
+      );
+
+      if (novelItems.length === 0) return updatedLog;
+
+      const firstApiId = getCommitId(apiCommits[0]);
+      const isHeadUpdate = novelItems.some(
+        (entry) => getCommitId(entry) === firstApiId,
+      );
 
       if (isHeadUpdate) {
-        setNewEntryIds(new Set(novelIds));
-
-        if (newEntryTimeoutRef.current !== null) {
-          window.clearTimeout(newEntryTimeoutRef.current);
-        }
-
-        newEntryTimeoutRef.current = window.setTimeout(() => {
-          setNewEntryIds(new Set());
-          newEntryTimeoutRef.current = null;
-        }, 2000);
+        setNewEntryIds(new Set(novelItems.map(getCommitId)));
+        setTimeout(() => setNewEntryIds(new Set()), 2000);
+        return [...novelItems, ...updatedLog];
       }
-    }
 
-    previousEntryIdsRef.current = nextIdSet;
+      return [...updatedLog, ...novelItems];
+    });
   }, [apiCommits]);
-
-  useEffect(
-    () => () => {
-      if (newEntryTimeoutRef.current !== null) {
-        window.clearTimeout(newEntryTimeoutRef.current);
-      }
-    },
-    [],
-  );
 
   const visibleEntries = useMemo(
     () =>
-      [...apiCommits]
+      [...logEntries]
         .filter((entry) => getCommitStatus(entry) === statusFilter)
         .sort((a, b) => getCommitTimestamp(b) - getCommitTimestamp(a)),
-    [apiCommits, statusFilter],
+    [logEntries, statusFilter],
   );
 
-  const hasAnyEntries = apiCommits.length > 0;
+  const hasAnyEntries = logEntries.length > 0;
   const showInitialLoading = isLoading && !hasAnyEntries;
   const showWaitingForActivity = !showInitialLoading && !hasAnyEntries;
   const showFilteredEmptyState = hasAnyEntries && visibleEntries.length === 0;
@@ -408,7 +403,6 @@ const LiveCommitLog: React.FC = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    showInitialLoading,
     visibleEntries.length,
   ]);
 
@@ -599,7 +593,6 @@ const LiveCommitLog: React.FC = () => {
                     <CommitLogItem
                       key={entryId}
                       entry={entry}
-                      status={getCommitStatus(entry)}
                       isNew={isNew}
                     />
                   );
