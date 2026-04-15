@@ -41,7 +41,7 @@ export interface DashboardOverviewSection {
     label: string;
     value: number;
   }>;
-  chartTotal: string;
+  chartCenterLabel: string;
 }
 
 export interface DashboardKpi {
@@ -368,6 +368,11 @@ const getIssueOverviewMetrics = (
   };
 };
 
+const formatCenterPercent = (resolved: number, total: number) => {
+  if (total <= 0) return '0%';
+  return `${((resolved / total) * 100).toFixed(1)}%`;
+};
+
 export const buildDashboardOverview = (
   prs: CommitLog[],
   issues: IssueBounty[],
@@ -398,7 +403,10 @@ export const buildDashboardOverview = (
         { label: 'Open', value: currentPrMetrics.open },
         { label: 'Closed', value: currentPrMetrics.closed },
       ],
-      chartTotal: currentPrMetrics.total.toLocaleString(),
+      chartCenterLabel: formatCenterPercent(
+        currentPrMetrics.merged,
+        currentPrMetrics.total,
+      ),
       metrics: [
         {
           label: 'Total',
@@ -438,7 +446,10 @@ export const buildDashboardOverview = (
         { label: 'Open', value: currentIssueMetrics.open },
         { label: 'Closed', value: currentIssueMetrics.closed },
       ],
-      chartTotal: currentIssueMetrics.total.toLocaleString(),
+      chartCenterLabel: formatCenterPercent(
+        currentIssueMetrics.solved,
+        currentIssueMetrics.total,
+      ),
       metrics: [
         {
           label: 'Total',
