@@ -164,7 +164,8 @@ const RepositoryScoreCard: React.FC<RepositoryScoreCardProps> = ({
         sx={{
           backgroundColor: 'rgba(255, 255, 255, 0.02)',
           borderRadius: '8px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid',
+          borderColor: 'border.subtle',
           p: 4,
         }}
         elevation={0}

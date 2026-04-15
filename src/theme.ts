@@ -46,6 +46,38 @@ export const CHART_COLORS = {
   closed: '#ef4444', // Red - closed without merge
 } as const;
 
+export const scrollbarSx = {
+  '&::-webkit-scrollbar': {
+    width: '8px',
+    height: '8px',
+  },
+  '&::-webkit-scrollbar-track': {
+    backgroundColor: 'transparent',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: '4px',
+    '&:hover': {
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    },
+  },
+} as const;
+
+/** Git-style contribution calendar levels (empty → most active) */
+export const CONTRIBUTION_HEATMAP_SCALE = [
+  '#161b22',
+  '#0e4429',
+  '#006d32',
+  '#26a641',
+  '#39d353',
+] as const;
+
+/** Known org avatars on GitHub that need a non-transparent backdrop */
+export const REPO_OWNER_AVATAR_BACKGROUNDS = {
+  opentensor: '#ffffff',
+  bitcoin: '#F7931A',
+} as const;
+
 export const TEXT_OPACITY = {
   primary: 1,
   secondary: 0.7,
@@ -278,7 +310,7 @@ const theme = createTheme({
     },
     // Border colors
     border: {
-      subtle: 'rgba(255, 255, 255, 0.05)',
+      subtle: 'rgba(255, 255, 255, 0.08)',
       light: 'rgba(255, 255, 255, 0.1)',
       medium: 'rgba(255, 255, 255, 0.2)',
     },

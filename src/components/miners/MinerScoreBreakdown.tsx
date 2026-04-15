@@ -2,6 +2,7 @@ import React, { useMemo, useState, useCallback } from 'react';
 import {
   Box,
   Card,
+  Grid,
   Typography,
   Tooltip,
   Stack,
@@ -17,11 +18,24 @@ import {
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useMinerPRs, usePullRequestDetails, type CommitLog } from '../../api';
+import {
+  useMinerStats,
+  useMinerPRs,
+  usePullRequestDetails,
+  type CommitLog,
+} from '../../api';
 import { STATUS_COLORS } from '../../theme';
+import {
+  parseNumber,
+  calculateOpenIssueThreshold,
+} from '../../utils/ExplorerUtils';
+import { credibilityColor } from '../../utils/format';
+
+type ViewMode = 'prs' | 'issues';
 
 interface MinerScoreBreakdownProps {
   githubId: string;
+  viewMode?: ViewMode;
 }
 
 const tooltipSlotProps = {
@@ -510,9 +524,196 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
   );
 };
 
-const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
-  githubId,
-}) => {
+// ---------------------------------------------------------------------------
+// Issue-mode breakdown sub-components
+// ---------------------------------------------------------------------------
+
+const MetricRow: React.FC<{
+  label: string;
+  value: string;
+  color?: string;
+  sub?: string;
+}> = ({ label, value, color, sub }) => (
+  <Box
+    sx={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      py: 1.2,
+      borderBottom: '1px solid',
+      borderColor: (t) => alpha(t.palette.text.primary, 0.06),
+    }}
+  >
+    <Box>
+      <Typography
+        sx={{
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: '0.82rem',
+          color: 'text.primary',
+        }}
+      >
+        {label}
+      </Typography>
+      {sub && (
+        <Typography
+          sx={{
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.7rem',
+            color: (t) => alpha(t.palette.text.primary, 0.4),
+            mt: 0.25,
+          }}
+        >
+          {sub}
+        </Typography>
+      )}
+    </Box>
+    <Typography
+      sx={{
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: '0.95rem',
+        fontWeight: 600,
+        color: color || 'text.primary',
+      }}
+    >
+      {value}
+    </Typography>
+  </Box>
+);
+
+const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
+  const { data: minerStats } = useMinerStats(githubId);
+
+  if (!minerStats) return null;
+
+  const discoveryScore = parseNumber(minerStats.issueDiscoveryScore);
+  const issueCred = parseNumber(minerStats.issueCredibility);
+  const issueTokenScore = parseNumber(minerStats.issueTokenScore);
+  const solved = parseNumber(minerStats.totalSolvedIssues);
+  const validSolved = parseNumber(minerStats.totalValidSolvedIssues);
+  const closedIssues = parseNumber(minerStats.totalClosedIssues);
+  const openIssues = parseNumber(minerStats.totalOpenIssues);
+  const isEligible = minerStats.isIssueEligible ?? false;
+  const openThreshold = calculateOpenIssueThreshold(minerStats);
+
+  const hasAnyData = solved > 0 || openIssues > 0 || closedIssues > 0;
+
+  return (
+    <Card
+      sx={{
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'border.light',
+        backgroundColor: 'transparent',
+        p: 3,
+      }}
+      elevation={0}
+    >
+      <Typography
+        sx={{
+          color: 'text.primary',
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: '1.1rem',
+          fontWeight: 600,
+          mb: 0.8,
+        }}
+      >
+        Issue Discovery Breakdown
+      </Typography>
+      <Typography
+        sx={{
+          color: (t) => alpha(t.palette.text.primary, 0.55),
+          fontSize: '0.85rem',
+          mb: 2,
+        }}
+      >
+        Aggregate issue discovery stats from existing evaluations.
+      </Typography>
+
+      {!hasAnyData ? (
+        <Box
+          sx={{
+            py: 4,
+            textAlign: 'center',
+            borderRadius: 2,
+            backgroundColor: (t) => alpha(t.palette.text.primary, 0.03),
+          }}
+        >
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.85rem',
+              color: (t) => alpha(t.palette.text.primary, 0.4),
+            }}
+          >
+            No issue discovery data yet
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.75rem',
+              color: (t) => alpha(t.palette.text.primary, 0.3),
+              mt: 0.5,
+            }}
+          >
+            Start discovering issues to see your breakdown here
+          </Typography>
+        </Box>
+      ) : (
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <MetricRow
+              label="Discovery Score"
+              value={discoveryScore.toFixed(2)}
+            />
+            <MetricRow
+              label="Issue Token Score"
+              value={issueTokenScore.toFixed(0)}
+              sub="Sum of solving PR token scores"
+            />
+            <MetricRow
+              label="Issue Credibility"
+              value={`${(issueCred * 100).toFixed(1)}%`}
+              color={credibilityColor(issueCred)}
+              sub="Solved / (solved + closed)"
+            />
+            <MetricRow
+              label="Eligibility"
+              value={isEligible ? 'Eligible' : 'Ineligible'}
+              color={isEligible ? STATUS_COLORS.success : STATUS_COLORS.neutral}
+              sub="Requires 7 valid solved issues"
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <MetricRow
+              label="Total Solved"
+              value={String(solved)}
+              sub={`${validSolved} valid (token score \u2265 5)`}
+            />
+            <MetricRow
+              label="Closed Issues"
+              value={String(closedIssues)}
+              sub="Discovered issues closed without solve"
+            />
+            <MetricRow
+              label="Open Issues"
+              value={String(openIssues)}
+              color={
+                openIssues >= openThreshold ? STATUS_COLORS.error : undefined
+              }
+              sub={`Threshold: ${openThreshold}`}
+            />
+          </Grid>
+        </Grid>
+      )}
+    </Card>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// PR-mode breakdown
+// ---------------------------------------------------------------------------
+
+const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
@@ -654,6 +855,20 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
       )}
     </Card>
   );
+};
+
+// ---------------------------------------------------------------------------
+// Main component — dispatches to PR or Issue view
+// ---------------------------------------------------------------------------
+
+const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
+  githubId,
+  viewMode = 'prs',
+}) => {
+  if (viewMode === 'issues') {
+    return <IssueBreakdownView githubId={githubId} />;
+  }
+  return <PrBreakdownView githubId={githubId} />;
 };
 
 export default MinerScoreBreakdown;

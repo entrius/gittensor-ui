@@ -6,16 +6,19 @@ import {
   Grid,
   CircularProgress,
   Chip,
+  alpha,
+  useTheme,
 } from '@mui/material';
 import PublicIcon from '@mui/icons-material/Public';
 import CodeOffIcon from '@mui/icons-material/CodeOff';
 import { subDays, format } from 'date-fns';
 import { useAllMiners, useAllPrs } from '../../api';
-import { STATUS_COLORS } from '../../theme';
+import { TEXT_OPACITY } from '../../theme';
 import ContributionHeatmap from './ContributionHeatmap';
 import PRStatusChart from './PRStatusChart';
 
 const GlobalActivity: React.FC = () => {
+  const theme = useTheme();
   const { data: allMinerStats, isLoading: isLoadingStats } = useAllMiners();
   const { data: allPrs, isLoading: isLoadingPRs } = useAllPrs();
 
@@ -157,9 +160,9 @@ const GlobalActivity: React.FC = () => {
           icon={<PublicIcon />}
           label="Active Network - Continuous Development"
           sx={{
-            color: STATUS_COLORS.success,
-            borderColor: `${STATUS_COLORS.success}4d`,
-            '& .MuiChip-icon': { color: STATUS_COLORS.success },
+            color: theme.palette.status.success,
+            borderColor: alpha(theme.palette.status.success, 0.3),
+            '& .MuiChip-icon': { color: theme.palette.status.success },
           }}
         />
       </Box>
@@ -175,11 +178,15 @@ const GlobalActivity: React.FC = () => {
           }}
         >
           <CodeOffIcon
-            sx={{ fontSize: 48, color: 'rgba(255, 255, 255, 0.2)', mb: 2 }}
+            sx={{
+              fontSize: 48,
+              color: alpha(theme.palette.common.white, TEXT_OPACITY.ghost),
+              mb: 2,
+            }}
           />
           <Typography
             sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
+              color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
               textAlign: 'center',

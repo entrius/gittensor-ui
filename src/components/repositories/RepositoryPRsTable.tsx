@@ -13,17 +13,17 @@ import {
   Avatar,
   Chip,
   Stack,
-  Button,
 } from '@mui/material';
 import { useAllPrs } from '../../api';
 import { useNavigate } from 'react-router-dom';
+import theme, { scrollbarSx } from '../../theme';
 import {
   getPrStatusCounts,
   isClosedUnmergedPr,
   isMergedPr,
   isOpenPr,
 } from '../../utils';
-import theme from '../../theme';
+import FilterButton from '../FilterButton';
 
 interface RepositoryPRsTableProps {
   repositoryFullName: string;
@@ -72,46 +72,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     [filteredPRs],
   );
 
-  const FilterButton = ({
-    label,
-    value,
-    count,
-    color,
-  }: {
-    label: string;
-    value: typeof filter;
-    count?: number;
-    color: string;
-  }) => (
-    <Button
-      size="small"
-      onClick={() => setFilter(value)}
-      sx={{
-        color: filter === value ? '#fff' : 'rgba(255,255,255,0.5)',
-        backgroundColor:
-          filter === value ? 'rgba(255,255,255,0.1)' : 'transparent',
-        borderRadius: '6px',
-        px: 2,
-        minWidth: 'auto',
-        textTransform: 'none',
-        fontFamily: '"JetBrains Mono", monospace',
-        fontSize: '0.8rem',
-        border:
-          filter === value ? `1px solid ${color}` : '1px solid transparent',
-        '&:hover': {
-          backgroundColor: 'rgba(255,255,255,0.15)',
-        },
-      }}
-    >
-      {label}{' '}
-      {count !== undefined && (
-        <span style={{ opacity: 0.6, marginLeft: '6px', fontSize: '0.75rem' }}>
-          {count}
-        </span>
-      )}
-    </Button>
-  );
-
   if (isLoading) {
     return (
       <Card
@@ -134,25 +94,29 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           <Stack direction="row" spacing={1}>
             <FilterButton
               label="All"
-              value="all"
+              isActive={filter === 'all'}
+              onClick={() => setFilter('all')}
               count={counts.all}
               color={theme.palette.status.neutral}
             />
             <FilterButton
               label="Open"
-              value="open"
+              isActive={filter === 'open'}
+              onClick={() => setFilter('open')}
               count={counts.open}
               color={theme.palette.status.open}
             />
             <FilterButton
               label="Merged"
-              value="merged"
+              isActive={filter === 'merged'}
+              onClick={() => setFilter('merged')}
               count={counts.merged}
               color={theme.palette.status.merged}
             />
             <FilterButton
               label="Closed"
-              value="closed"
+              isActive={filter === 'closed'}
+              onClick={() => setFilter('closed')}
               count={counts.closed}
               color={theme.palette.status.closed}
             />
@@ -202,25 +166,29 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         <Stack direction="row" spacing={1}>
           <FilterButton
             label="All"
-            value="all"
+            isActive={filter === 'all'}
+            onClick={() => setFilter('all')}
             count={counts.all}
             color={theme.palette.status.neutral}
           />
           <FilterButton
             label="Open"
-            value="open"
+            isActive={filter === 'open'}
+            onClick={() => setFilter('open')}
             count={counts.open}
             color={theme.palette.status.open}
           />
           <FilterButton
             label="Merged"
-            value="merged"
+            isActive={filter === 'merged'}
+            onClick={() => setFilter('merged')}
             count={counts.merged}
             color={theme.palette.status.merged}
           />
           <FilterButton
             label="Closed"
-            value="closed"
+            isActive={filter === 'closed'}
+            onClick={() => setFilter('closed')}
             count={counts.closed}
             color={theme.palette.status.closed}
           />
@@ -244,20 +212,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           sx={{
             maxHeight: '500px',
             overflow: 'auto',
-            '&::-webkit-scrollbar': {
-              width: '8px',
-              height: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '4px',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              },
-            },
+            ...scrollbarSx,
           }}
         >
           <Table stickyHeader>
@@ -282,9 +237,9 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortedPRs.map((pr, index) => (
+              {sortedPRs.map((pr) => (
                 <TableRow
-                  key={`${pr.pullRequestNumber}-${index}`}
+                  key={`${pr.repository}-${pr.pullRequestNumber}`}
                   onClick={() => {
                     navigate(
                       `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,

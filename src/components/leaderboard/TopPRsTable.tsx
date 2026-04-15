@@ -20,7 +20,6 @@ import {
   Select,
   MenuItem,
   FormControl,
-  Button,
   Stack,
   Chip,
   Switch,
@@ -42,7 +41,8 @@ import {
   truncateText,
 } from '../../utils';
 import { RankIcon } from './RankIcon';
-import theme, { STATUS_COLORS } from '../../theme';
+import theme, { STATUS_COLORS, scrollbarSx } from '../../theme';
+import FilterButton from '../FilterButton';
 
 interface TopPRsTableProps {
   prs: CommitLog[];
@@ -102,52 +102,10 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
 
   const statusCounts = useMemo(() => getPrStatusCounts(rankedPRs), [rankedPRs]);
 
-  const FilterButton = ({
-    label,
-    value,
-    count,
-    color,
-  }: {
-    label: string;
-    value: typeof statusFilter;
-    count?: number;
-    color: string;
-  }) => (
-    <Button
-      size="small"
-      onClick={() => setStatusFilter(value)}
-      sx={{
-        color: statusFilter === value ? '#fff' : 'rgba(255,255,255,0.5)',
-        backgroundColor:
-          statusFilter === value ? 'rgba(255,255,255,0.1)' : 'transparent',
-        borderRadius: '6px',
-        px: 2,
-        minWidth: 'auto',
-        textTransform: 'none',
-        fontFamily: '"JetBrains Mono", monospace',
-        fontSize: '0.8rem',
-        border:
-          statusFilter === value
-            ? `1px solid ${color}`
-            : '1px solid transparent',
-        '&:hover': {
-          backgroundColor: 'rgba(255,255,255,0.15)',
-        },
-      }}
-    >
-      {label}{' '}
-      {count !== undefined && (
-        <span style={{ opacity: 0.6, marginLeft: '6px', fontSize: '0.75rem' }}>
-          {count}
-        </span>
-      )}
-    </Button>
-  );
-
   const getChartOption = () => {
     const chartData = filteredPRs.slice(0, 50);
     const textColor = 'rgba(255, 255, 255, 0.85)';
-    const gridColor = 'rgba(255, 255, 255, 0.08)';
+    const gridColor = theme.palette.border.subtle;
 
     const chartColor = theme.palette.primary.main;
 
@@ -600,25 +558,29 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
             <Stack direction="row" spacing={1}>
               <FilterButton
                 label="All"
-                value="all"
+                isActive={statusFilter === 'all'}
+                onClick={() => setStatusFilter('all')}
                 count={statusCounts.all}
                 color={theme.palette.status.neutral}
               />
               <FilterButton
                 label="Open"
-                value="open"
+                isActive={statusFilter === 'open'}
+                onClick={() => setStatusFilter('open')}
                 count={statusCounts.open}
                 color={theme.palette.status.open}
               />
               <FilterButton
                 label="Merged"
-                value="merged"
+                isActive={statusFilter === 'merged'}
+                onClick={() => setStatusFilter('merged')}
                 count={statusCounts.merged}
                 color={theme.palette.status.merged}
               />
               <FilterButton
                 label="Closed"
-                value="closed"
+                isActive={statusFilter === 'closed'}
+                onClick={() => setStatusFilter('closed')}
                 count={statusCounts.closed}
                 color={theme.palette.status.closed}
               />
@@ -648,19 +610,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
       <TableContainer
         sx={{
           overflowY: 'auto',
-          '&::-webkit-scrollbar': {
-            width: '8px',
-          },
-          '&::-webkit-scrollbar-track': {
-            backgroundColor: 'transparent',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            borderRadius: '4px',
-            '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-            },
-          },
+          ...scrollbarSx,
         }}
       >
         <Table
@@ -903,7 +853,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                                   fontFamily: '"JetBrains Mono", monospace',
                                   padding: '8px 12px',
                                   borderRadius: '6px',
-                                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                                  border: `1px solid ${theme.palette.border.subtle}`,
                                   boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
                                 },
                               },

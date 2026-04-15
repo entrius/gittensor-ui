@@ -83,7 +83,9 @@ const RepositoryDetailsPage: React.FC = () => {
   const tabValue = tabIndexFromSearchParam(searchParams.get('tab'));
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
   const { data: bountySummary } = useRepoBountySummary(repo || '');
-  const trackedRepo = repos?.find((r) => r.fullName === repo);
+  const trackedRepo = repos?.find(
+    (r) => r.fullName.toLowerCase() === (repo ?? '').toLowerCase(),
+  );
   const isTrackedRepository = Boolean(trackedRepo);
 
   const owner = repo ? repo.split('/')[0] : '';
@@ -254,6 +256,7 @@ const RepositoryDetailsPage: React.FC = () => {
                   startIcon={<GitHubIcon />}
                   href={`https://github.com/${repo}`}
                   target="_blank"
+                  rel="noopener noreferrer"
                   sx={{
                     borderColor: 'rgba(255,255,255,0.2)',
                     color: '#fff',

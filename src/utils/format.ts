@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import { CREDIBILITY_COLORS } from '../theme';
 
 /**
@@ -33,6 +34,11 @@ export const formatTokenAmount = (
 export const truncateText = (text: string, maxLength: number): string => {
   if (!text) return '';
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+};
+
+export const formatDate = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return '-';
+  return format(new Date(dateStr), 'MMM d, yyyy');
 };
 
 export const formatUsdEstimate = (
