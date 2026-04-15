@@ -54,7 +54,7 @@ const MinerDetailsPage: React.FC = () => {
     const p = new URLSearchParams(searchParams);
     p.set('mode', mode);
     p.set('tab', 'overview');
-    setSearchParams(p);
+    setSearchParams(p, { replace: true });
   };
 
   const handleTabChange = (
@@ -63,7 +63,7 @@ const MinerDetailsPage: React.FC = () => {
   ) => {
     const p = new URLSearchParams(searchParams);
     p.set('tab', newValue);
-    setSearchParams(p);
+    setSearchParams(p, { replace: true });
   };
 
   if (!githubId) {
