@@ -12,8 +12,8 @@ import {
   Chip,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import theme, { REPO_OWNER_AVATAR_BACKGROUNDS } from '../../theme';
-import { useInfiniteCommitLog, usePullRequestDetails } from '../../api';
+import { useInfiniteCommitLog, usePullRequestDetails } from '../../../api';
+import theme, { REPO_OWNER_AVATAR_BACKGROUNDS } from '../../../theme';
 
 const MONTH_SHORT = [
   'Jan',
@@ -132,7 +132,7 @@ const CommitLogItem: React.FC<{
     ? formatUtcTimestamp(timestampRaw)
     : 'Loading...';
 
-  const content = (
+  return (
     <Box
       onClick={() =>
         navigate(
@@ -180,7 +180,6 @@ const CommitLogItem: React.FC<{
         spacing={isMobile ? 0.5 : isTablet ? 1 : 0.5}
         sx={{ position: 'relative', zIndex: 1 }}
       >
-        {/* Top Row: Repo & ID */}
         <Stack
           direction="row"
           justifyContent="space-between"
@@ -222,7 +221,6 @@ const CommitLogItem: React.FC<{
           </Typography>
         </Stack>
 
-        {/* Middle Row: Action & Title */}
         <Box>
           <Stack
             direction="row"
@@ -260,7 +258,6 @@ const CommitLogItem: React.FC<{
           </Typography>
         </Box>
 
-        {/* Bottom Row: Author & Stats */}
         <Stack
           direction="row"
           justifyContent="space-between"
@@ -306,17 +303,14 @@ const CommitLogItem: React.FC<{
       </Stack>
     </Box>
   );
-
-  return content;
 };
 
 const LiveCommitLog: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
-  // Using infinite query for pagination
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteCommitLog({ refetchInterval: 10000 }); // Poll every 10 seconds
+    useInfiniteCommitLog({ refetchInterval: 10000 });
 
   const [statusFilter, setStatusFilter] = useState<CommitStatus>('merged');
   const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
@@ -324,7 +318,6 @@ const LiveCommitLog: React.FC = () => {
   const logContainerRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // Flatten all pages into a single array from API (memoized to avoid infinite effect loops)
   const apiCommits = useMemo<CommitLogEntry[]>(
     () => data?.pages.flat() ?? [],
     [data],

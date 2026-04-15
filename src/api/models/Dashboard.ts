@@ -76,6 +76,7 @@ export type CommitLog = {
   commitCount: number;
   repository: string;
   mergedAt: string | null;
+  closedAt: string | null;
   prCreatedAt: string;
   prState: string;
   collateralScore?: string;

@@ -18,11 +18,9 @@ import {
   parseNumber,
 } from '../../utils/ExplorerUtils';
 
-type ViewMode = 'prs' | 'issues';
-
 interface MinerInsightsCardProps {
   githubId: string;
-  viewMode?: ViewMode;
+  viewMode?: 'prs' | 'issues';
 }
 
 type InsightType = 'warning' | 'tip' | 'achievement';
@@ -320,6 +318,10 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
 
   const isIssueMode = viewMode === 'issues';
 
+  const docsUrl = isIssueMode
+    ? 'https://docs.gittensor.io/issue-discovery.html'
+    : 'https://docs.gittensor.io/oss-contributions.html';
+
   const insights = useMemo(() => {
     if (!minerStats) return [];
 
@@ -437,11 +439,7 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
         Learn more about scoring in the{' '}
         <Typography
           component="a"
-          href={
-            isIssueMode
-              ? 'https://docs.gittensor.io/issue-discovery.html'
-              : 'https://docs.gittensor.io/oss-contributions.html'
-          }
+          href={docsUrl}
           target="_blank"
           rel="noopener noreferrer"
           sx={{

@@ -8,9 +8,9 @@ import {
   useReposAndWeights,
   useAllMiners,
 } from '../../api';
+import ContributionHeatmap from '../ContributionHeatmap';
 import { CHART_COLORS, STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { parseNumber } from '../../utils/ExplorerUtils';
-import { ContributionHeatmap } from '../dashboard';
 import TrustBadge from './TrustBadge';
 import CredibilityChart from './CredibilityChart';
 import PerformanceRadar from './PerformanceRadar';

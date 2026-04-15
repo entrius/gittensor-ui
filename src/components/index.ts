@@ -1,10 +1,12 @@
-export * from './dashboard';
 export * from './layout';
 export * from './miners';
 export * from './repositories';
 export * from './prs';
 export * from './leaderboard';
 export * from './common';
+export { default as ContributionHeatmap } from './ContributionHeatmap';
+export { default as KpiCard } from './KpiCard';
+export * from './KpiCard';
 export { default as FAQ } from './FAQ';
 export { default as BackButton } from './BackButton';
 export { SEO } from './SEO';

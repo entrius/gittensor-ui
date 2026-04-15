@@ -114,7 +114,10 @@ const DiscoveriesPage: React.FC = () => {
             <TopMinersTable
               miners={sortedMinerStats}
               isLoading={isLoadingMinerStats}
-              onSelectMiner={handleSelectMiner}
+              getHref={(m) =>
+                `/miners/details?githubId=${encodeURIComponent(m.githubId)}&mode=issues`
+              }
+              linkState={{ backLabel: 'Back to Discoveries' }}
               variant="discoveries"
             />
           </Box>
