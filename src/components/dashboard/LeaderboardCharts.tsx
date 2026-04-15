@@ -8,16 +8,19 @@ import {
   Switch,
   Typography,
   CircularProgress,
+  alpha,
+  useTheme,
 } from '@mui/material';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ReactECharts from 'echarts-for-react';
 import { useAllPrs, useReposAndWeights } from '../../api';
 import { truncateText } from '../../utils';
-import theme from '../../theme';
-
-const CHART_DOT_COLOR = 'rgba(88, 166, 255, 0.9)';
+import { REPO_OWNER_AVATAR_BACKGROUNDS, TEXT_OPACITY } from '../../theme';
 
 const LeaderboardCharts: React.FC = () => {
+  const theme = useTheme();
+  const chartAccent = alpha(theme.palette.status.info, 0.9);
+  const axisLabelStrong = alpha(theme.palette.common.white, 0.85);
   const [activeTab, setActiveTab] = useState(0);
   const [useLogScale, setUseLogScale] = useState(true);
 
@@ -43,7 +46,8 @@ const LeaderboardCharts: React.FC = () => {
     const statsMap = new Map();
     allPRs.forEach((pr) => {
       if (!pr || !pr.repository) return;
-      const current = statsMap.get(pr.repository) || {
+      const repoKey = pr.repository.toLowerCase();
+      const current = statsMap.get(repoKey) || {
         repository: pr.repository,
         totalScore: 0,
         totalPRs: 0,
@@ -53,12 +57,13 @@ const LeaderboardCharts: React.FC = () => {
       current.totalScore += parseFloat(pr.score || '0');
       current.totalPRs += 1;
       if (pr.author) current.uniqueMiners.add(pr.author);
-      statsMap.set(pr.repository, current);
+      statsMap.set(repoKey, current);
     });
 
-    statsMap.forEach((stats, repoName) => {
-      const repoData = repos.find((r) => r.fullName === repoName);
+    statsMap.forEach((stats, repoKey) => {
+      const repoData = repos.find((r) => r.fullName.toLowerCase() === repoKey);
       if (repoData) {
+        stats.repository = repoData.fullName;
         stats.weight = repoData.weight
           ? parseFloat(String(repoData.weight))
           : 0;
@@ -87,9 +92,9 @@ const LeaderboardCharts: React.FC = () => {
       prNumber: item?.pullRequestNumber || 0,
       rank: item?.rank || 0,
       itemStyle: {
-        color: CHART_DOT_COLOR,
+        color: chartAccent,
         shadowBlur: 10,
-        shadowColor: CHART_DOT_COLOR,
+        shadowColor: chartAccent,
       },
     }));
 
@@ -101,13 +106,13 @@ const LeaderboardCharts: React.FC = () => {
         left: 'center',
         top: 20,
         textStyle: {
-          color: '#ffffff',
+          color: theme.palette.text.primary,
           fontFamily: 'JetBrains Mono',
           fontSize: 18,
           fontWeight: 600,
         },
         subtextStyle: {
-          color: 'rgba(255, 255, 255, 0.6)',
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
           fontFamily: 'JetBrains Mono',
           fontSize: 11,
         },
@@ -116,13 +121,15 @@ const LeaderboardCharts: React.FC = () => {
         trigger: 'axis',
         axisPointer: {
           type: 'shadow',
-          shadowStyle: { color: 'rgba(255, 255, 255, 0.05)' },
+          shadowStyle: {
+            color: alpha(theme.palette.common.white, TEXT_OPACITY.faint),
+          },
         },
-        backgroundColor: 'rgba(10, 10, 12, 0.98)',
-        borderColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: alpha(theme.palette.background.default, 0.98),
+        borderColor: theme.palette.border.medium,
         borderWidth: 1,
         textStyle: {
-          color: '#fff',
+          color: theme.palette.text.primary,
           fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
@@ -132,28 +139,28 @@ const LeaderboardCharts: React.FC = () => {
           if (!data) return '';
           return `
             <div style="font-family: 'JetBrains Mono', monospace;">
-              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.15);">
-                <img src="https://avatars.githubusercontent.com/${data.author}" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid ${CHART_DOT_COLOR};" />
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid ${theme.palette.border.light};">
+                <img src="https://avatars.githubusercontent.com/${data.author}" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid ${chartAccent};" />
                 <div>
-                  <div style="font-weight: 700; font-size: 14px; color: #fff;">PR #${data.prNumber}</div>
-                  <div style="font-size: 11px; color: rgba(255,255,255,0.6);">${data.author}</div>
+                  <div style="font-weight: 700; font-size: 14px; color: ${theme.palette.text.primary};">PR #${data.prNumber}</div>
+                  <div style="font-size: 11px; color: ${alpha(theme.palette.common.white, TEXT_OPACITY.secondary)};">${data.author}</div>
                 </div>
               </div>
-              <div style="margin-bottom: 10px; color: rgba(255,255,255,0.85); font-size: 11px; max-width: 300px; white-space: normal; word-break: break-word; line-height: 1.4;">
+              <div style="margin-bottom: 10px; color: ${alpha(theme.palette.common.white, 0.85)}; font-size: 11px; max-width: 300px; white-space: normal; word-break: break-word; line-height: 1.4;">
                 ${data.title}
               </div>
               <div style="display: grid; gap: 6px; font-size: 11px;">
                 <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Rank:</span>
-                  <span style="color: #fff; font-weight: 600;">#${data.rank}</span>
+                  <span style="color: ${alpha(theme.palette.common.white, 0.65)};">Rank:</span>
+                  <span style="color: ${theme.palette.text.primary}; font-weight: 600;">#${data.rank}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Score:</span>
-                  <span style="color: #fff; font-weight: 600;">${data.value.toFixed(4)}</span>
+                  <span style="color: ${alpha(theme.palette.common.white, 0.65)};">Score:</span>
+                  <span style="color: ${theme.palette.text.primary}; font-weight: 600;">${data.value.toFixed(4)}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Repository:</span>
-                  <span style="color: #fff; font-weight: 600;">${data.repository}</span>
+                  <span style="color: ${alpha(theme.palette.common.white, 0.65)};">Repository:</span>
+                  <span style="color: ${theme.palette.text.primary}; font-weight: 600;">${data.repository}</span>
                 </div>
               </div>
             </div>
@@ -171,7 +178,7 @@ const LeaderboardCharts: React.FC = () => {
         type: 'category',
         data: xAxisData,
         axisLabel: {
-          color: 'rgba(255, 255, 255, 0.85)',
+          color: axisLabelStrong,
           fontFamily: 'JetBrains Mono',
           fontSize: 11,
           interval: 0,
@@ -189,12 +196,12 @@ const LeaderboardCharts: React.FC = () => {
         logBase: 10,
         name: 'PR Score',
         nameTextStyle: {
-          color: 'rgba(255, 255, 255, 0.85)',
+          color: axisLabelStrong,
           fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
         axisLabel: {
-          color: 'rgba(255, 255, 255, 0.85)',
+          color: axisLabelStrong,
           fontFamily: 'JetBrains Mono',
           fontSize: 11,
           formatter: (value: number) =>
@@ -217,7 +224,7 @@ const LeaderboardCharts: React.FC = () => {
           data: dotData.map((item) => ({
             ...item,
             itemStyle: {
-              color: CHART_DOT_COLOR,
+              color: chartAccent,
               opacity: 0.4,
               borderRadius: [2, 2, 0, 0],
             },
@@ -236,7 +243,11 @@ const LeaderboardCharts: React.FC = () => {
           z: 2,
           emphasis: {
             scale: 1.5,
-            itemStyle: { shadowBlur: 20, borderColor: '#fff', borderWidth: 2 },
+            itemStyle: {
+              shadowBlur: 20,
+              borderColor: theme.palette.common.white,
+              borderWidth: 2,
+            },
           },
           animationDuration: 1000,
           animationEasing: 'cubicOut',
@@ -262,9 +273,9 @@ const LeaderboardCharts: React.FC = () => {
       weight: item.weight,
       rank: item.rank,
       itemStyle: {
-        color: CHART_DOT_COLOR,
+        color: chartAccent,
         shadowBlur: 10,
-        shadowColor: CHART_DOT_COLOR,
+        shadowColor: chartAccent,
       },
     }));
 
@@ -276,13 +287,13 @@ const LeaderboardCharts: React.FC = () => {
         left: 'center',
         top: 20,
         textStyle: {
-          color: '#ffffff',
+          color: theme.palette.text.primary,
           fontFamily: 'JetBrains Mono',
           fontSize: 18,
           fontWeight: 600,
         },
         subtextStyle: {
-          color: 'rgba(255, 255, 255, 0.6)',
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
           fontFamily: 'JetBrains Mono',
           fontSize: 11,
         },
@@ -291,13 +302,15 @@ const LeaderboardCharts: React.FC = () => {
         trigger: 'axis',
         axisPointer: {
           type: 'shadow',
-          shadowStyle: { color: 'rgba(255, 255, 255, 0.05)' },
+          shadowStyle: {
+            color: alpha(theme.palette.common.white, TEXT_OPACITY.faint),
+          },
         },
-        backgroundColor: 'rgba(10, 10, 12, 0.98)',
-        borderColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: alpha(theme.palette.background.default, 0.98),
+        borderColor: theme.palette.border.medium,
         borderWidth: 1,
         textStyle: {
-          color: '#fff',
+          color: theme.palette.text.primary,
           fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
@@ -309,35 +322,35 @@ const LeaderboardCharts: React.FC = () => {
           const repoName = data.repository.split('/')[1] || data.repository;
           const avatarBg =
             repoOwner === 'opentensor'
-              ? '#ffffff'
+              ? REPO_OWNER_AVATAR_BACKGROUNDS.opentensor
               : repoOwner === 'bitcoin'
-                ? '#F7931A'
-                : 'transparent';
+                ? REPO_OWNER_AVATAR_BACKGROUNDS.bitcoin
+                : theme.palette.surface.transparent;
           return `
             <div style="font-family: 'JetBrains Mono', monospace;">
-              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.15);">
-                <img src="https://avatars.githubusercontent.com/${repoOwner}" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid ${CHART_DOT_COLOR}; background-color: ${avatarBg};" onerror="this.style.display='none'" />
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid ${theme.palette.border.light};">
+                <img src="https://avatars.githubusercontent.com/${repoOwner}" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid ${chartAccent}; background-color: ${avatarBg};" onerror="this.style.display='none'" />
                 <div>
-                  <div style="font-weight: 700; font-size: 14px; color: #fff;">${repoName}</div>
-                  <div style="font-size: 11px; color: rgba(255,255,255,0.6);">${repoOwner}</div>
+                  <div style="font-weight: 700; font-size: 14px; color: ${theme.palette.text.primary};">${repoName}</div>
+                  <div style="font-size: 11px; color: ${alpha(theme.palette.common.white, TEXT_OPACITY.secondary)};">${repoOwner}</div>
                 </div>
               </div>
               <div style="display: grid; gap: 6px; font-size: 11px;">
                 <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Rank:</span>
-                  <span style="color: #fff; font-weight: 600;">#${data.rank}</span>
+                  <span style="color: ${alpha(theme.palette.common.white, 0.65)};">Rank:</span>
+                  <span style="color: ${theme.palette.text.primary}; font-weight: 600;">#${data.rank}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Total Score:</span>
-                  <span style="color: #fff; font-weight: 600;">${data.value.toFixed(2)}</span>
+                  <span style="color: ${alpha(theme.palette.common.white, 0.65)};">Total Score:</span>
+                  <span style="color: ${theme.palette.text.primary}; font-weight: 600;">${data.value.toFixed(2)}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Total PRs:</span>
-                  <span style="color: #fff; font-weight: 600;">${data.totalPRs}</span>
+                  <span style="color: ${alpha(theme.palette.common.white, 0.65)};">Total PRs:</span>
+                  <span style="color: ${theme.palette.text.primary}; font-weight: 600;">${data.totalPRs}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; gap: 20px;">
-                  <span style="color: rgba(255,255,255,0.65);">Contributors:</span>
-                  <span style="color: #fff; font-weight: 600;">${data.uniqueMiners}</span>
+                  <span style="color: ${alpha(theme.palette.common.white, 0.65)};">Contributors:</span>
+                  <span style="color: ${theme.palette.text.primary}; font-weight: 600;">${data.uniqueMiners}</span>
                 </div>
               </div>
             </div>
@@ -355,7 +368,7 @@ const LeaderboardCharts: React.FC = () => {
         type: 'category',
         data: xAxisData,
         axisLabel: {
-          color: 'rgba(255, 255, 255, 0.85)',
+          color: axisLabelStrong,
           fontFamily: 'JetBrains Mono',
           fontSize: 11,
           interval: 0,
@@ -373,12 +386,12 @@ const LeaderboardCharts: React.FC = () => {
         logBase: 10,
         name: 'Total Score',
         nameTextStyle: {
-          color: 'rgba(255, 255, 255, 0.85)',
+          color: axisLabelStrong,
           fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
         axisLabel: {
-          color: 'rgba(255, 255, 255, 0.85)',
+          color: axisLabelStrong,
           fontFamily: 'JetBrains Mono',
           fontSize: 11,
           formatter: (value: number) =>
@@ -401,7 +414,7 @@ const LeaderboardCharts: React.FC = () => {
           data: dotData.map((item) => ({
             ...item,
             itemStyle: {
-              color: CHART_DOT_COLOR,
+              color: chartAccent,
               opacity: 0.4,
               borderRadius: [2, 2, 0, 0],
             },
@@ -420,7 +433,11 @@ const LeaderboardCharts: React.FC = () => {
           z: 2,
           emphasis: {
             scale: 1.5,
-            itemStyle: { shadowBlur: 20, borderColor: '#fff', borderWidth: 2 },
+            itemStyle: {
+              shadowBlur: 20,
+              borderColor: theme.palette.common.white,
+              borderWidth: 2,
+            },
           },
           animationDuration: 1000,
           animationEasing: 'cubicOut',
@@ -434,7 +451,7 @@ const LeaderboardCharts: React.FC = () => {
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: `1px solid ${theme.palette.border.light}`,
         backgroundColor: 'transparent',
         overflow: 'hidden',
         height: '100%',
@@ -445,7 +462,7 @@ const LeaderboardCharts: React.FC = () => {
     >
       <Box
         sx={{
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          borderBottom: `1px solid ${theme.palette.border.light}`,
           display: 'flex',
           flexDirection: { xs: 'column', lg: 'row' },
           justifyContent: 'space-between',
@@ -460,14 +477,14 @@ const LeaderboardCharts: React.FC = () => {
           sx={{
             minHeight: 'auto',
             '& .MuiTab-root': {
-              color: 'rgba(255, 255, 255, 0.6)',
+              color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.85rem',
               fontWeight: 500,
               textTransform: 'none',
               minHeight: 'auto',
               py: 1,
-              '&.Mui-selected': { color: '#fff' },
+              '&.Mui-selected': { color: theme.palette.text.primary },
             },
             '& .MuiTabs-indicator': { backgroundColor: 'primary.main' },
           }}
@@ -486,7 +503,7 @@ const LeaderboardCharts: React.FC = () => {
                   color: 'primary.main',
                 },
                 '& .MuiSwitch-track': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                  backgroundColor: alpha(theme.palette.common.white, 0.3),
                 },
               }}
             />
@@ -497,7 +514,10 @@ const LeaderboardCharts: React.FC = () => {
               sx={{
                 fontFamily: 'JetBrains Mono',
                 fontSize: '0.8rem',
-                color: 'rgba(255, 255, 255, 0.7)',
+                color: alpha(
+                  theme.palette.common.white,
+                  TEXT_OPACITY.secondary,
+                ),
                 whiteSpace: 'nowrap',
               }}
             >
@@ -507,7 +527,13 @@ const LeaderboardCharts: React.FC = () => {
           sx={{ ml: 'auto' }}
         />
       </Box>
-      <Box sx={{ flex: 1, p: 2, backgroundColor: 'rgba(0,0,0,0.2)' }}>
+      <Box
+        sx={{
+          flex: 1,
+          p: 2,
+          backgroundColor: alpha(theme.palette.common.black, 0.2),
+        }}
+      >
         {isLoading ? (
           <Box
             sx={{
@@ -532,13 +558,13 @@ const LeaderboardCharts: React.FC = () => {
             <BarChartIcon
               sx={{
                 fontSize: 48,
-                color: 'rgba(255, 255, 255, 0.2)',
+                color: alpha(theme.palette.common.white, TEXT_OPACITY.ghost),
                 mb: 2,
               }}
             />
             <Typography
               sx={{
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.9rem',
               }}
@@ -547,7 +573,7 @@ const LeaderboardCharts: React.FC = () => {
             </Typography>
             <Typography
               sx={{
-                color: 'rgba(255, 255, 255, 0.3)',
+                color: alpha(theme.palette.common.white, TEXT_OPACITY.faint),
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.75rem',
                 mt: 0.5,
