@@ -331,11 +331,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
       p: 1,
     })}
   >
-    <PrimaryStatsRow
-      miner={miner}
-      isEligible={isEligible}
-      variant={variant}
-    />
+    <PrimaryStatsRow miner={miner} isEligible={isEligible} variant={variant} />
   </Box>
 );
 
@@ -477,4 +473,3 @@ const PrimaryStatsRow: React.FC<PrimaryStatsRowProps> = ({
     </Box>
   );
 };
-
