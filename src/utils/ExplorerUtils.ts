@@ -5,6 +5,7 @@ import {
   type Repository,
   type RepositoryPrScoring,
 } from '../api';
+import { isMergedPr } from './prStatus';
 
 export const getGithubAvatarSrc = (username?: string | null) => {
   if (username) {
@@ -225,7 +226,7 @@ export const aggregatePRsByRepository = (
     };
     existing.prs += 1;
     existing.score += parseFloat(pr.score || '0');
-    if (pr.prState === 'MERGED') {
+    if (isMergedPr(pr)) {
       existing.tokenScore += parseFloat(String(pr.tokenScore ?? '0'));
     }
     statsMap.set(pr.repository, existing);
