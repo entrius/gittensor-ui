@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Box, Paper, CircularProgress, Alert } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import axios from 'axios';
 import { STATUS_COLORS } from '../../theme';
 import { resolveRelativeUrl } from './MarkdownRenderers';
+import { useAbortableEffect } from '../../hooks/useAbortableEffect';
+import { fetchFirstMarkdown } from './jsdelivrFetch';
 
 interface ContributingViewerProps {
   repositoryFullName: string; // e.g., "opentensor/bittensor"
@@ -19,45 +20,28 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchContributing = async () => {
+  useAbortableEffect(
+    async (signal) => {
+      if (!repositoryFullName) return;
       setLoading(true);
       setError(null);
-
-      const branches = ['main', 'master'];
-      const paths = [
-        'CONTRIBUTING.md',
-        '.github/CONTRIBUTING.md',
-        'docs/CONTRIBUTING.md',
-      ];
-
-      for (const branch of branches) {
-        for (const path of paths) {
-          try {
-            const response = await axios.get(
-              `https://cdn.jsdelivr.net/gh/${repositoryFullName}@${branch}/${path}`,
-            );
-            if (response.status === 200 && response.data) {
-              setContent(response.data);
-              setDefaultBranch(branch);
-              setLoading(false);
-              return;
-            }
-          } catch {
-            // Continue to next combination
-          }
-        }
+      const result = await fetchFirstMarkdown(
+        repositoryFullName,
+        ['main', 'master'],
+        ['CONTRIBUTING.md', '.github/CONTRIBUTING.md', 'docs/CONTRIBUTING.md'],
+        signal,
+      );
+      if (signal.aborted) return;
+      if (result) {
+        setContent(result.content);
+        setDefaultBranch(result.branch);
+      } else {
+        setError('No contributing guidelines found for this repository.');
       }
-
-      // If we get here, nothing was found
-      setError('No contributing guidelines found for this repository.');
       setLoading(false);
-    };
-
-    if (repositoryFullName) {
-      fetchContributing();
-    }
-  }, [repositoryFullName]);
+    },
+    [repositoryFullName],
+  );
 
   if (loading) {
     return (

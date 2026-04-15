@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Box, CircularProgress, Alert, Paper } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import axios from 'axios';
 import { STATUS_COLORS } from '../../theme';
 import { resolveRelativeUrl } from './MarkdownRenderers';
+import { useAbortableEffect } from '../../hooks/useAbortableEffect';
+import { fetchFirstMarkdown } from './jsdelivrFetch';
 
 interface ReadmeViewerProps {
   repositoryFullName: string; // e.g., "opentensor/bittensor"
@@ -17,38 +18,28 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchReadme = async () => {
+  useAbortableEffect(
+    async (signal) => {
+      if (!repositoryFullName) return;
       setLoading(true);
       setError(null);
-      try {
-        // Try 'main' branch first
-        try {
-          const response = await axios.get(
-            `https://cdn.jsdelivr.net/gh/${repositoryFullName}@main/README.md`,
-          );
-          setContent(response.data);
-          setDefaultBranch('main');
-        } catch {
-          // Fallback to 'master' branch
-          const response = await axios.get(
-            `https://cdn.jsdelivr.net/gh/${repositoryFullName}@master/README.md`,
-          );
-          setContent(response.data);
-          setDefaultBranch('master');
-        }
-      } catch (err) {
-        console.error('Failed to fetch README', err);
+      const result = await fetchFirstMarkdown(
+        repositoryFullName,
+        ['main', 'master'],
+        ['README.md'],
+        signal,
+      );
+      if (signal.aborted) return;
+      if (result) {
+        setContent(result.content);
+        setDefaultBranch(result.branch);
+      } else {
         setError('Could not load README.md');
-      } finally {
-        setLoading(false);
       }
-    };
-
-    if (repositoryFullName) {
-      fetchReadme();
-    }
-  }, [repositoryFullName]);
+      setLoading(false);
+    },
+    [repositoryFullName],
+  );
 
   if (loading) {
     return (

@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { scrollbarSx } from '../../theme';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import axios from 'axios';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import ReactMarkdown from 'react-markdown';
+import {
+  isAbortError,
+  useAbortableEffect,
+} from '../../hooks/useAbortableEffect';
 
 interface CodeViewerProps {
   repositoryFullName: string;
@@ -29,8 +33,8 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
     ? `https://cdn.jsdelivr.net/gh/${repositoryFullName}@${defaultBranch}/${filePath}`
     : '';
 
-  useEffect(() => {
-    const fetchContent = async () => {
+  useAbortableEffect(
+    async (signal) => {
       if (!filePath || isImage) {
         // Don't fetch text content for images or if no file selected
         setContent(null);
@@ -41,23 +45,24 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
       setLoading(true);
       setError(null);
       try {
-        // Use raw.githubusercontent.com
-        const response = await axios.get(rawUrl, {
-          transformResponse: [(data) => data],
-        }); // Force text
+        const response = await axios.get<string>(rawUrl, {
+          transformResponse: [(data) => data], // Force text
+          signal,
+        });
+        if (signal.aborted) return;
         setContent(response.data);
       } catch (err) {
+        if (isAbortError(err)) return;
         console.error('Failed to fetch file content', err);
         setError(
           'Could not load file content. It might be binary or too large.',
         );
       } finally {
-        setLoading(false);
+        if (!signal.aborted) setLoading(false);
       }
-    };
-
-    fetchContent();
-  }, [repositoryFullName, filePath, defaultBranch, isImage, rawUrl]);
+    },
+    [filePath, isImage, rawUrl],
+  );
 
   if (!filePath) {
     return (
