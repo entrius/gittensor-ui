@@ -1,4 +1,4 @@
-import { RANK_COLORS } from '../../theme';
+import { RANK_COLORS, STATUS_COLORS } from '../../theme';
 
 export interface MinerStats {
   id: string;
@@ -42,5 +42,11 @@ export const getRankColors = (rank: number) => {
   if (rank === 1) return { color: RANK_COLORS.first, icon: '🥇' };
   if (rank === 2) return { color: RANK_COLORS.second, icon: '🥈' };
   if (rank === 3) return { color: RANK_COLORS.third, icon: '🥉' };
-  return { color: 'rgba(255, 255, 255, 0.6)', icon: null };
+  return { color: STATUS_COLORS.open, icon: null };
+};
+
+export const getRepositoryOwnerAvatarBackground = (owner: string) => {
+  if (owner === 'opentensor') return 'common.white';
+  if (owner === 'bitcoin') return '#F7931A';
+  return 'transparent';
 };
