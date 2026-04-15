@@ -131,6 +131,45 @@ const GlobalActivity: React.FC = () => {
     };
   }, [allMinerStats]);
 
+  // Calculate Active/Inactive Discovery Stats
+  const { activeDiscoveryStats, inactiveDiscoveryStats } = useMemo(() => {
+    const defaultStats = { merged: 0, open: 0, closed: 0 };
+
+    if (!Array.isArray(allMinerStats)) {
+      return {
+        activeDiscoveryStats: { ...defaultStats, credibility: 0 },
+        inactiveDiscoveryStats: { ...defaultStats, credibility: 0 },
+      };
+    }
+
+    const active = { ...defaultStats };
+    const inactive = { ...defaultStats };
+
+    allMinerStats.forEach((m) => {
+      const target = m.isIssueEligible ? active : inactive;
+      target.merged += m.totalSolvedIssues || 0;
+      target.open += m.totalOpenIssues || 0;
+      target.closed += m.totalClosedIssues || 0;
+    });
+
+    return {
+      activeDiscoveryStats: {
+        ...active,
+        credibility:
+          active.merged + active.closed > 0
+            ? active.merged / (active.merged + active.closed)
+            : 0,
+      },
+      inactiveDiscoveryStats: {
+        ...inactive,
+        credibility:
+          inactive.merged + inactive.closed > 0
+            ? inactive.merged / (inactive.merged + inactive.closed)
+            : 0,
+      },
+    };
+  }, [allMinerStats]);
+
   if (isLoadingPRs || isLoadingStats) {
     return (
       <Card sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
@@ -238,6 +277,47 @@ const GlobalActivity: React.FC = () => {
                   title="Unranked"
                   subtitle="Unpaid"
                   variant="secondary"
+                />
+              </Box>
+            </Card>
+          </Grid>
+
+          {/* Issue Discoveries Stats */}
+          <Grid item xs={12}>
+            <Card
+              sx={{
+                p: { xs: 1.5, sm: 3 },
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'visible',
+              }}
+            >
+              <Typography
+                variant="sectionTitle"
+                sx={{ mb: 2, fontSize: '0.95rem' }}
+              >
+                Issue Discoveries
+              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  gap: { xs: 1, sm: 3, lg: 1.5, xl: 3 },
+                }}
+              >
+                <PRStatusChart
+                  stats={activeDiscoveryStats}
+                  title="Eligible"
+                  subtitle="Paid"
+                  variant="primary"
+                  statLabels={{ merged: 'Solved', open: 'Open', closed: 'Closed' }}
+                />
+                <PRStatusChart
+                  stats={inactiveDiscoveryStats}
+                  title="Ineligible"
+                  subtitle="Unpaid"
+                  variant="secondary"
+                  statLabels={{ merged: 'Solved', open: 'Open', closed: 'Closed' }}
                 />
               </Box>
             </Card>

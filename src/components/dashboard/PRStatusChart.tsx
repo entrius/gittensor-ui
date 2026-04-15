@@ -15,6 +15,7 @@ interface PRStatusChartProps {
   title: string;
   subtitle?: string;
   variant?: 'primary' | 'secondary';
+  statLabels?: { merged: string; open: string; closed: string };
 }
 
 const PRStatusChart: React.FC<PRStatusChartProps> = ({
@@ -22,6 +23,7 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
   title,
   subtitle,
   variant = 'primary',
+  statLabels = { merged: 'Merged', open: 'Open', closed: 'Closed' },
 }) => {
   const theme = useTheme();
   const { merged, open, closed, credibility } = stats;
@@ -74,7 +76,7 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
           data: [
             {
               value: merged,
-              name: 'Merged',
+              name: statLabels.merged,
               itemStyle: {
                 color: CHART_COLORS.merged,
                 opacity: isPrimary ? 1 : 0.7,
@@ -82,7 +84,7 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
             },
             {
               value: open,
-              name: 'Open',
+              name: statLabels.open,
               itemStyle: {
                 color: CHART_COLORS.open,
                 opacity: isPrimary ? 1 : 0.7,
@@ -90,7 +92,7 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
             },
             {
               value: closed,
-              name: 'Closed',
+              name: statLabels.closed,
               itemStyle: {
                 color: CHART_COLORS.closed,
                 opacity: isPrimary ? 1 : 0.7,
@@ -100,7 +102,7 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
         },
       ],
     }),
-    [merged, open, closed, credibilityPercent, isPrimary, theme],
+    [merged, open, closed, credibilityPercent, isPrimary, theme, statLabels],
   );
 
   return (
@@ -170,9 +172,9 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
           justifyContent: 'center',
         }}
       >
-        <StatItem label="Merged" value={merged} />
-        <StatItem label="Open" value={open} />
-        <StatItem label="Closed" value={closed} />
+        <StatItem label={statLabels.merged} value={merged} />
+        <StatItem label={statLabels.open} value={open} />
+        <StatItem label={statLabels.closed} value={closed} />
       </Box>
     </Box>
   );
