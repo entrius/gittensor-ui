@@ -232,7 +232,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                 </TableCell>
                 <TableCell sx={headerCellStyle}>Status</TableCell>
                 <TableCell align="right" sx={headerCellStyle}>
-                  Merged
+                  Date
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -316,15 +316,34 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                     </Box>
                   </TableCell>
                   <TableCell align="right" sx={bodyCellStyle}>
-                    <Typography
-                      sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {parseFloat(pr.score || '0').toFixed(4)}
-                    </Typography>
+                    {(() => {
+                      const isOpen =
+                        (pr.prState?.toUpperCase() ||
+                          (pr.mergedAt ? 'MERGED' : 'OPEN')) === 'OPEN';
+                      const collateral = parseFloat(pr.collateralScore || '0');
+                      const showCollateral = isOpen && collateral > 0;
+                      return (
+                        <Typography
+                          sx={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: showCollateral
+                              ? theme.palette.status.open
+                              : 'text.primary',
+                          }}
+                          title={
+                            showCollateral
+                              ? 'Collateral score applied while this PR is open'
+                              : undefined
+                          }
+                        >
+                          {showCollateral
+                            ? `-${collateral.toFixed(4)}`
+                            : parseFloat(pr.score || '0').toFixed(4)}
+                        </Typography>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell sx={bodyCellStyle}>
                     {(() => {
@@ -355,9 +374,9 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                     })()}
                   </TableCell>
                   <TableCell align="right" sx={bodyCellStyle}>
-                    {pr.mergedAt
-                      ? new Date(pr.mergedAt).toLocaleDateString()
-                      : '-'}
+                    {new Date(
+                      pr.mergedAt || pr.prCreatedAt,
+                    ).toLocaleDateString()}
                   </TableCell>
                 </TableRow>
               ))}
