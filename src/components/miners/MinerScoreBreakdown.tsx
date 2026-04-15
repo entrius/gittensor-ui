@@ -19,7 +19,12 @@ import {
 } from '@mui/icons-material';
 import { useSearchParams } from 'react-router-dom';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
-import { useMinerStats, useMinerPRs, usePullRequestDetails, type CommitLog } from '../../api';
+import {
+  useMinerStats,
+  useMinerPRs,
+  usePullRequestDetails,
+  type CommitLog,
+} from '../../api';
 import { STATUS_COLORS } from '../../theme';
 import {
   parseNumber,
