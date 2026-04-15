@@ -399,12 +399,7 @@ const LiveCommitLog: React.FC = () => {
     observer.observe(loadMoreElement);
 
     return () => observer.disconnect();
-  }, [
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    visibleEntries.length,
-  ]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, visibleEntries.length]);
 
   return (
     <Card
@@ -579,7 +574,8 @@ const LiveCommitLog: React.FC = () => {
                 }}
               >
                 <Typography variant="body2">
-                  No {COMMIT_STATUS_META[statusFilter].filterLabel.toLowerCase()}{' '}
+                  No{' '}
+                  {COMMIT_STATUS_META[statusFilter].filterLabel.toLowerCase()}{' '}
                   activity yet.
                 </Typography>
               </Box>
@@ -590,11 +586,7 @@ const LiveCommitLog: React.FC = () => {
                   const isNew = newEntryIds.has(entryId);
 
                   return (
-                    <CommitLogItem
-                      key={entryId}
-                      entry={entry}
-                      isNew={isNew}
-                    />
+                    <CommitLogItem key={entryId} entry={entry} isNew={isNew} />
                   );
                 })}
               </Stack>
