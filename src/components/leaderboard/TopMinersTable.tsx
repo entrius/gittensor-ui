@@ -54,40 +54,13 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
+  const sortParamValue = searchParams.get(SORT_QUERY_PARAM);
   const sortOption = useMemo(
-    () => getSortOptionFromQuery(searchParams.get(SORT_QUERY_PARAM), variant),
-    [searchParams, variant],
+    () => getSortOptionFromQuery(sortParamValue, variant),
+    [sortParamValue, variant],
   );
   const showEligibleOnly = searchParams.get(ELIGIBLE_QUERY_PARAM) === 'true';
   const [visibleCount, setVisibleCount] = useState(MINERS_PAGE_SIZE);
-
-  useEffect(() => {
-    const rawSort = searchParams.get(SORT_QUERY_PARAM);
-    const rawEligible = searchParams.get(ELIGIBLE_QUERY_PARAM);
-    const allowedSortOptions = getAllowedSortOptions(variant);
-
-    const hasInvalidSort =
-      rawSort != null && !allowedSortOptions.includes(rawSort as SortOption);
-    const hasInvalidEligible = rawEligible != null && rawEligible !== 'true';
-
-    if (!hasInvalidSort && !hasInvalidEligible) {
-      return;
-    }
-
-    setSearchParams(
-      (previousParams) => {
-        const nextSearchParams = new URLSearchParams(previousParams);
-        if (hasInvalidSort) {
-          nextSearchParams.delete(SORT_QUERY_PARAM);
-        }
-        if (hasInvalidEligible) {
-          nextSearchParams.delete(ELIGIBLE_QUERY_PARAM);
-        }
-        return nextSearchParams;
-      },
-      { replace: true },
-    );
-  }, [searchParams, setSearchParams, variant]);
 
   const handleSortChange = useCallback(
     (nextSortOption: SortOption) => {
