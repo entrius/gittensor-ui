@@ -22,6 +22,7 @@ import { formatTokenAmount, formatDate } from '../../utils/format';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { STATUS_COLORS } from '../../theme';
 import BountyProgress from './BountyProgress';
+import { LinkTableRow } from '../common/linkBehavior';
 
 type ListType = 'available' | 'pending' | 'history';
 
@@ -29,7 +30,8 @@ interface IssuesListProps {
   issues: IssueBounty[];
   isLoading?: boolean;
   listType: ListType;
-  onSelectIssue?: (id: number) => void;
+  getIssueHref?: (id: number) => string;
+  linkState?: Record<string, unknown>;
 }
 
 /**
@@ -45,7 +47,8 @@ const IssuesList: React.FC<IssuesListProps> = ({
   issues,
   isLoading = false,
   listType,
-  onSelectIssue,
+  getIssueHref,
+  linkState,
 }) => {
   const { data: dashStats } = useStats();
   const taoPrice = dashStats?.prices?.tao?.data?.price ?? 0;
@@ -213,19 +216,16 @@ const IssuesList: React.FC<IssuesListProps> = ({
           <TableBody>
             {issues.map((issue) => {
               const statusBadge = getIssueStatusMeta(issue.status);
-
-              return (
-                <TableRow
-                  key={issue.id}
-                  onClick={() => onSelectIssue?.(issue.id)}
-                  sx={{
-                    cursor: onSelectIssue ? 'pointer' : 'default',
-                    transition: 'background-color 0.2s',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                    },
-                  }}
-                >
+              const href = getIssueHref?.(issue.id);
+              const rowSx = {
+                cursor: href ? 'pointer' : 'default',
+                transition: 'background-color 0.2s',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                },
+              };
+              const cells = (
+                <>
                   {/* Common columns */}
                   <TableCell sx={bodyCellSx}>
                     <Typography
@@ -479,6 +479,21 @@ const IssuesList: React.FC<IssuesListProps> = ({
                       </TableCell>
                     </>
                   )}
+                </>
+              );
+
+              return href ? (
+                <LinkTableRow
+                  key={issue.id}
+                  href={href}
+                  linkState={linkState}
+                  sx={rowSx}
+                >
+                  {cells}
+                </LinkTableRow>
+              ) : (
+                <TableRow key={issue.id} sx={rowSx}>
+                  {cells}
                 </TableRow>
               );
             })}

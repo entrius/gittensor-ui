@@ -16,7 +16,8 @@ import {
   GitHub as GitHubIcon,
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import { useMinerPRs, usePullRequestDetails, type CommitLog } from '../../api';
 import { STATUS_COLORS } from '../../theme';
 
@@ -115,11 +116,13 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
 
 interface PrScoreRowProps {
   pr: CommitLog;
-  onNavigateToPr: (repo: string, prNumber: number) => void;
 }
 
-const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
+const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr }) => {
   const [expanded, setExpanded] = useState(false);
+  const prLinkProps = useLinkBehavior<HTMLAnchorElement>(
+    `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
+  );
 
   // Fetch full PR details (with all multipliers) — cached by React Query
   const { data: prDetails } = usePullRequestDetails(
@@ -462,11 +465,14 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
             <Button
               size="small"
               startIcon={<OpenInNewIcon sx={{ fontSize: '0.85rem' }} />}
+              component="a"
+              {...prLinkProps}
               onClick={(e) => {
                 e.stopPropagation();
-                onNavigateToPr(pr.repository, pr.pullRequestNumber);
+                prLinkProps.onClick(e);
               }}
               sx={{
+                ...linkResetSx,
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.65rem',
                 textTransform: 'none',
@@ -513,7 +519,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
 const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
   githubId,
 }) => {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const PAGE_SIZE = 10;
@@ -531,10 +536,6 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
     },
     [page, setSearchParams],
   );
-
-  const handleNavigateToPr = (repo: string, prNumber: number) => {
-    navigate(`/miners/pr?repo=${encodeURIComponent(repo)}&number=${prNumber}`);
-  };
 
   const sortedPrs = useMemo(() => {
     if (!prs) return [];
@@ -590,7 +591,6 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
           <PrScoreRow
             key={`${pr.repository}-${pr.pullRequestNumber}-${i}`}
             pr={pr}
-            onNavigateToPr={handleNavigateToPr}
           />
         ))}
       </Box>

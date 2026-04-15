@@ -11,7 +11,7 @@ import {
   Avatar,
   Chip,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { LinkBox } from '../common/linkBehavior';
 import theme from '../../theme';
 import { useInfiniteCommitLog, usePullRequestDetails } from '../../api';
 
@@ -67,12 +67,10 @@ const getScoreColor = (score: string) => {
 const CommitLogItem: React.FC<{
   entry: CommitLogEntry;
   isNew: boolean;
-  innerRef?: React.Ref<HTMLDivElement>;
+  innerRef?: React.Ref<HTMLAnchorElement>;
 }> = ({ entry, isNew, innerRef }) => {
-  const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
-
   // Hydrate with detailed data
   const { data: details } = usePullRequestDetails(
     entry.repository,
@@ -99,14 +97,10 @@ const CommitLogItem: React.FC<{
     : 'Loading...';
 
   const content = (
-    <Box
+    <LinkBox
+      href={`/miners/pr?repo=${entry.repository}&number=${entry.pullRequestNumber}`}
+      linkState={{ backLabel: 'Back to Dashboard' }}
       ref={innerRef}
-      onClick={() =>
-        navigate(
-          `/miners/pr?repo=${entry.repository}&number=${entry.pullRequestNumber}`,
-          { state: { backLabel: 'Back to Dashboard' } },
-        )
-      }
       sx={{
         p: isMobile ? 0.75 : isTablet ? 1.25 : 1,
         borderRadius: 3,
@@ -268,7 +262,7 @@ const CommitLogItem: React.FC<{
           </Stack>
         </Stack>
       </Stack>
-    </Box>
+    </LinkBox>
   );
 
   return content;
@@ -286,7 +280,7 @@ const LiveCommitLog: React.FC = () => {
   const [_seenEntryIds, setSeenEntryIds] = useState<Set<string>>(new Set());
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
   const logContainerRef = useRef<HTMLDivElement>(null);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLAnchorElement>(null);
 
   // Flatten all pages into a single array from API (memoized to avoid infinite effect loops)
   const apiCommits = useMemo<CommitLogEntry[]>(

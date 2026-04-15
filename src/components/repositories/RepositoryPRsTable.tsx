@@ -15,7 +15,7 @@ import {
   Stack,
 } from '@mui/material';
 import { useAllPrs } from '../../api';
-import { useNavigate } from 'react-router-dom';
+import { LinkTableRow } from '../common/linkBehavior';
 import theme, { scrollbarSx } from '../../theme';
 import {
   getPrStatusCounts,
@@ -34,7 +34,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   repositoryFullName,
   state = 'all',
 }) => {
-  const navigate = useNavigate();
   const [filter, setFilter] = useState<'all' | 'open' | 'closed' | 'merged'>(
     state,
   );
@@ -238,14 +237,10 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
             </TableHead>
             <TableBody>
               {sortedPRs.map((pr) => (
-                <TableRow
+                <LinkTableRow
                   key={`${pr.repository}-${pr.pullRequestNumber}`}
-                  onClick={() => {
-                    navigate(
-                      `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
-                      { state: { backLabel: `Back to ${repositoryFullName}` } },
-                    );
-                  }}
+                  href={`/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`}
+                  linkState={{ backLabel: `Back to ${repositoryFullName}` }}
                   sx={{
                     cursor: 'pointer',
                     '&:hover': {
@@ -359,7 +354,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                       ? new Date(pr.mergedAt).toLocaleDateString()
                       : '-'}
                   </TableCell>
-                </TableRow>
+                </LinkTableRow>
               ))}
             </TableBody>
           </Table>

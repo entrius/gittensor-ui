@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { usePullRequestDetails } from '../../api';
-import { useNavigate } from 'react-router-dom';
+import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import theme, { RANK_COLORS, STATUS_COLORS } from '../../theme';
 
 interface PRDetailsCardProps {
@@ -25,10 +25,18 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   pullRequestNumber,
   hideHeader = false,
 }) => {
-  const navigate = useNavigate();
   // Fetch detailed PR data directly
   const { data: prDetails, isLoading: isDetailsLoading } =
     usePullRequestDetails(repository, pullRequestNumber);
+
+  const repoLinkProps = useLinkBehavior<HTMLAnchorElement>(
+    `/miners/repository?name=${encodeURIComponent(repository)}`,
+    { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
+  );
+  const authorLinkProps = useLinkBehavior<HTMLAnchorElement>(
+    `/miners/details?githubId=${prDetails?.githubId ?? ''}`,
+    { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
+  );
 
   if (isDetailsLoading) {
     return (
@@ -167,13 +175,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
       {!hideHeader && (
         <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box
-            onClick={() =>
-              navigate(
-                `/miners/repository?name=${encodeURIComponent(repository)}`,
-                { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
-              )
-            }
+            component="a"
+            {...repoLinkProps}
             sx={{
+              ...linkResetSx,
               cursor: 'pointer',
               transition: 'transform 0.2s',
               '&:hover': {
@@ -257,15 +262,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography
-                onClick={() =>
-                  navigate(
-                    `/miners/repository?name=${encodeURIComponent(repository)}`,
-                    {
-                      state: { backLabel: `Back to PR #${pullRequestNumber}` },
-                    },
-                  )
-                }
+                component="a"
+                {...repoLinkProps}
                 sx={{
+                  ...linkResetSx,
                   color: 'rgba(255, 255, 255, 0.5)',
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.85rem',
@@ -569,12 +569,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               Author
             </Typography>
             <Box
-              onClick={() =>
-                navigate(`/miners/details?githubId=${prDetails.githubId}`, {
-                  state: { backLabel: `Back to PR #${pullRequestNumber}` },
-                })
-              }
+              component="a"
+              {...authorLinkProps}
               sx={{
+                ...linkResetSx,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1.5,

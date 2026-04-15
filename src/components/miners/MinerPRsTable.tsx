@@ -32,7 +32,8 @@ import {
   isMergedPr,
   isOpenPr,
 } from '../../utils';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { LinkTableRow } from '../common/linkBehavior';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import { type MinerStatusFilter } from '../../utils/ExplorerUtils';
 
@@ -75,7 +76,6 @@ interface MinerPRsTableProps {
 
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const theme = useTheme();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
@@ -455,17 +455,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 {pagedPRs.map((pr, index) => {
                   const scoreTooltip = getScoreTooltip(pr);
                   return (
-                    <TableRow
+                    <LinkTableRow
                       key={`${pr.repository}-${pr.pullRequestNumber}-${index}`}
-                      onClick={() => {
-                        navigate(
-                          `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
-                          {
-                            state: {
-                              backLabel: `Back to ${prs?.[0]?.author || githubId}`,
-                            },
-                          },
-                        );
+                      href={`/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`}
+                      linkState={{
+                        backLabel: `Back to ${prs?.[0]?.author || githubId}`,
                       }}
                       sx={{
                         cursor: 'pointer',
@@ -653,7 +647,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                             ? 'Closed'
                             : 'Open'}
                       </TableCell>
-                    </TableRow>
+                    </LinkTableRow>
                   );
                 })}
               </TableBody>

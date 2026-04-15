@@ -5,11 +5,13 @@ import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS, STATUS_COLORS } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
+import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import { type MinerStats, type LeaderboardVariant, FONTS } from './types';
 
 interface MinerCardProps {
   miner: MinerStats;
-  onClick: () => void;
+  href: string;
+  linkState?: Record<string, unknown>;
   variant?: LeaderboardVariant;
 }
 
@@ -17,10 +19,12 @@ const INACTIVE_OPACITY = 0.24;
 
 export const MinerCard: React.FC<MinerCardProps> = ({
   miner,
-  onClick,
+  href,
+  linkState,
   variant = 'oss',
 }) => {
   const muiTheme = useTheme();
+  const linkProps = useLinkBehavior(href, { state: linkState });
   const isNumericId = (value?: string) => !value || /^\d+$/.test(value);
   const shouldFetch = !!miner.githubId && isNumericId(miner.author);
   const { data: githubData } = useMinerGithubData(miner.githubId, shouldFetch);
@@ -39,8 +43,10 @@ export const MinerCard: React.FC<MinerCardProps> = ({
 
   return (
     <Card
-      onClick={onClick}
+      component="a"
+      {...linkProps}
       sx={(theme) => ({
+        ...linkResetSx,
         p: 1,
         backgroundColor: isEligible
           ? theme.palette.background.default

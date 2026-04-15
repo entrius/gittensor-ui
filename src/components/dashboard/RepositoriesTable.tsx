@@ -21,7 +21,7 @@ import {
   InputAdornment,
   Avatar,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { LinkBox } from '../common/linkBehavior';
 import SearchIcon from '@mui/icons-material/Search';
 import theme, { scrollbarSx } from '../../theme';
 import { useRepoChanges } from '../../api';
@@ -37,7 +37,6 @@ type SortField =
 type SortOrder = 'asc' | 'desc';
 
 const RepositoriesTable: React.FC = () => {
-  const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isMedium = useMediaQuery(theme.breakpoints.down('md'));
   const isLarge = useMediaQuery(theme.breakpoints.down('lg'));
@@ -552,16 +551,12 @@ const RepositoriesTable: React.FC = () => {
                                       : 'transparent',
                               }}
                             />
-                            <Typography
-                              variant="body2"
-                              fontWeight="medium"
-                              onClick={() =>
-                                navigate(
-                                  `/miners/repository?name=${repo.repositoryFullName}`,
-                                  { state: { backLabel: 'Back to Dashboard' } },
-                                )
-                              }
+                            <LinkBox
+                              href={`/miners/repository?name=${repo.repositoryFullName}`}
+                              linkState={{ backLabel: 'Back to Dashboard' }}
                               sx={{
+                                ...theme.typography.body2,
+                                fontWeight: 500,
                                 color: isInactive
                                   ? 'error.dark'
                                   : 'text.primary',
@@ -577,7 +572,7 @@ const RepositoriesTable: React.FC = () => {
                               }}
                             >
                               {repo.repositoryFullName}
-                            </Typography>
+                            </LinkBox>
                           </Box>
                         </TableCell>
                         {!isMobile && (
