@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Box, Paper, CircularProgress, Alert } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -6,64 +6,50 @@ import rehypeRaw from 'rehype-raw';
 import axios from 'axios';
 import { STATUS_COLORS } from '../../theme';
 import { resolveRelativeUrl } from './MarkdownRenderers';
+import { useAbortableFetch } from '../../hooks/useAbortableFetch';
 
 interface ContributingViewerProps {
   repositoryFullName: string; // e.g., "opentensor/bittensor"
 }
 
+type ContributingData = { content: string; branch: string };
+
+const BRANCHES = ['main', 'master'];
+const PATHS = [
+  'CONTRIBUTING.md',
+  '.github/CONTRIBUTING.md',
+  'docs/CONTRIBUTING.md',
+];
+
 const ContributingViewer: React.FC<ContributingViewerProps> = ({
   repositoryFullName,
 }) => {
-  const [content, setContent] = useState<string | null>(null);
-  const [defaultBranch, setDefaultBranch] = useState<string>('main');
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const fetchContributing = async () => {
-      setLoading(true);
-      setError(null);
-
-      const branches = ['main', 'master'];
-      const paths = [
-        'CONTRIBUTING.md',
-        '.github/CONTRIBUTING.md',
-        'docs/CONTRIBUTING.md',
-      ];
-
-      for (const branch of branches) {
-        for (const path of paths) {
-          if (controller.signal.aborted) return;
+  const { data, loading, error } = useAbortableFetch<ContributingData>(
+    async (signal) => {
+      for (const branch of BRANCHES) {
+        for (const path of PATHS) {
           try {
             const response = await axios.get(
               `https://cdn.jsdelivr.net/gh/${repositoryFullName}@${branch}/${path}`,
-              { signal: controller.signal },
+              { signal },
             );
-            if (controller.signal.aborted) return;
             if (response.status === 200 && response.data) {
-              setContent(response.data);
-              setDefaultBranch(branch);
-              setLoading(false);
-              return;
+              return { content: response.data, branch };
             }
           } catch (err) {
-            if (axios.isCancel(err) || controller.signal.aborted) return;
+            if (axios.isCancel(err)) throw err;
             // Continue to next combination
           }
         }
       }
+      throw new Error('No contributing guidelines found for this repository.');
+    },
+    [repositoryFullName],
+    { enabled: !!repositoryFullName },
+  );
 
-      if (controller.signal.aborted) return;
-      // If we get here, nothing was found
-      setError('No contributing guidelines found for this repository.');
-      setLoading(false);
-    };
-
-    if (repositoryFullName) fetchContributing();
-    return () => controller.abort();
-  }, [repositoryFullName]);
+  const content = data?.content ?? null;
+  const defaultBranch = data?.branch ?? 'main';
 
   if (loading) {
     return (
@@ -83,7 +69,7 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
           border: '1px solid rgba(2, 136, 209, 0.2)',
         }}
       >
-        {error}
+        {error.message}
       </Alert>
     );
   }
