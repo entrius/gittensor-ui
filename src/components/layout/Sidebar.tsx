@@ -70,7 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
 
       {/* Footer */}
       <Box sx={{ mt: 2 }}>
-        <Divider sx={{ borderColor: '#3d3d3d', mb: 2 }} />
+        <Divider sx={{ borderColor: 'border.medium', mb: 2 }} />
         <Stack direction="column" spacing={1} alignItems="center">
           <Stack
             direction="row"
@@ -80,13 +80,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
             justifyContent="center"
           >
             <Typography
-              color="#ffffff"
               variant="caption"
               component="a"
               href="https://docs.gittensor.io"
               target="_blank"
               rel="noopener noreferrer"
               sx={{
+                color: 'text.primary',
                 fontSize: '0.65rem',
                 textDecoration: 'none',
                 '&:hover': { textDecoration: 'underline' },
@@ -98,20 +98,20 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               orientation="vertical"
               flexItem
               sx={{
-                borderColor: '#3d3d3d',
+                borderColor: 'border.medium',
                 mx: 0.5,
                 height: '12px',
                 alignSelf: 'center',
               }}
             />
             <Typography
-              color="#ffffff"
               variant="caption"
               component="a"
               href="https://docs.learnbittensor.org/resources/community-links"
               target="_blank"
               rel="noopener noreferrer"
               sx={{
+                color: 'text.primary',
                 fontSize: '0.65rem',
                 textDecoration: 'none',
                 '&:hover': { textDecoration: 'underline' },
@@ -123,20 +123,20 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               orientation="vertical"
               flexItem
               sx={{
-                borderColor: '#3d3d3d',
+                borderColor: 'border.medium',
                 mx: 0.5,
                 height: '12px',
                 alignSelf: 'center',
               }}
             />
             <Typography
-              color="#ffffff"
               variant="caption"
               component="a"
               href="https://github.com/entrius/gittensor"
               target="_blank"
               rel="noopener noreferrer"
               sx={{
+                color: 'text.primary',
                 fontSize: '0.65rem',
                 textDecoration: 'none',
                 '&:hover': { textDecoration: 'underline' },
@@ -148,20 +148,20 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               orientation="vertical"
               flexItem
               sx={{
-                borderColor: '#3d3d3d',
+                borderColor: 'border.medium',
                 mx: 0.5,
                 height: '12px',
                 alignSelf: 'center',
               }}
             />
             <Typography
-              color="#ffffff"
               variant="caption"
               component="a"
               href="https://x.com/gittensor_io"
               target="_blank"
               rel="noopener noreferrer"
               sx={{
+                color: 'text.primary',
                 fontSize: '0.65rem',
                 textDecoration: 'none',
                 '&:hover': { textDecoration: 'underline' },
@@ -174,7 +174,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
             variant="caption"
             sx={{
               fontSize: '0.6rem',
-              color: '#888888',
+              color: 'text.secondary',
             }}
           >
             © Gittensor 2026
