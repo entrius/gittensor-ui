@@ -1,5 +1,5 @@
 // Repository API hooks - uses /repos endpoints
-import { useApiQuery, useArrayApiQuery } from './ApiUtils';
+import { useApiQuery } from './ApiUtils';
 import { type RepositoryMaintainer, type RepositoryIssue } from './models';
 import { type CommitLog, type Repository } from './models/Dashboard';
 
@@ -13,19 +13,6 @@ const useReposQuery = <TResponse = void, TSelect = TResponse>(
   queryParams?: Record<string, string | number | undefined>,
 ) =>
   useApiQuery<TResponse, TSelect>(
-    queryName,
-    `/repos${url}`,
-    refetchInterval,
-    queryParams,
-  );
-
-const useReposArrayQuery = <TItem = void>(
-  queryName: string,
-  url: string,
-  refetchInterval?: number,
-  queryParams?: Record<string, string | number | undefined>,
-) =>
-  useArrayApiQuery<TItem>(
     queryName,
     `/repos${url}`,
     refetchInterval,
@@ -47,7 +34,7 @@ export const useRepositoryConfig = (repo: string) =>
  * @param repo - Full repository name (e.g., "opentensor/btcli")
  */
 export const useRepositoryMaintainers = (repo: string) =>
-  useReposArrayQuery<RepositoryMaintainer>(
+  useReposQuery<RepositoryMaintainer[]>(
     'useRepositoryMaintainers',
     `/${encodeURIComponent(repo)}/maintainers`,
   );
@@ -57,7 +44,7 @@ export const useRepositoryMaintainers = (repo: string) =>
  * @param repo - Full repository name (e.g., "opentensor/btcli")
  */
 export const useRepositoryIssues = (repo: string) =>
-  useReposArrayQuery<RepositoryIssue>(
+  useReposQuery<RepositoryIssue[]>(
     'useRepositoryIssues',
     `/${encodeURIComponent(repo)}/issues`,
   );
@@ -68,7 +55,7 @@ export const useRepositoryIssues = (repo: string) =>
  * @param state - Optional filter: "open", "closed", "merged"
  */
 export const useRepositoryPRs = (repo: string, state?: string) =>
-  useReposArrayQuery<CommitLog>(
+  useReposQuery<CommitLog[]>(
     'useRepositoryPRs',
     `/${encodeURIComponent(repo)}/prs`,
     undefined,

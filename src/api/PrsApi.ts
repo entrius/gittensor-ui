@@ -1,5 +1,5 @@
 // Pull Request API hooks - uses /prs endpoints
-import { useApiQuery, useArrayApiQuery } from './ApiUtils';
+import { useApiQuery } from './ApiUtils';
 import {
   type CommitLog,
   type PullRequestComment,
@@ -24,26 +24,11 @@ const usePrsQuery = <TResponse = void, TSelect = TResponse>(
     enabled,
   );
 
-const usePrsArrayQuery = <TItem = void>(
-  queryName: string,
-  url: string,
-  refetchInterval?: number,
-  queryParams?: Record<string, string | number | undefined>,
-  enabled?: boolean,
-) =>
-  useArrayApiQuery<TItem>(
-    queryName,
-    `/prs${url}`,
-    refetchInterval,
-    queryParams,
-    enabled,
-  );
-
 /**
  * Get all pull requests across the network
  * Returns all PRs regardless of miner registration status
  */
-export const useAllPrs = () => usePrsArrayQuery<CommitLog>('useAllPrs', '');
+export const useAllPrs = () => usePrsQuery<CommitLog[]>('useAllPrs', '');
 
 // Shared cache key for the pull requests dataset.
 export const getAllPrsQueryKey = () =>
@@ -73,7 +58,7 @@ export const usePullRequestDetails = (
  * @param number - Pull request number
  */
 export const usePullRequestComments = (repo: string, number: number) =>
-  usePrsArrayQuery<PullRequestComment>(
+  usePrsQuery<PullRequestComment[]>(
     'usePullRequestComments',
     '/comments',
     undefined,

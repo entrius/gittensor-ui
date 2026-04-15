@@ -1,4 +1,4 @@
-import { useApiQuery, useArrayApiQuery, ensureArray } from './ApiUtils';
+import { useApiQuery } from './ApiUtils';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import {
@@ -25,31 +25,13 @@ export const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
     enabled,
   );
 
-export const useDashboardArrayQuery = <TItem = void>(
-  queryName: string,
-  url: string,
-  refetchInterval?: number,
-  queryParams?: Record<string, string | number | undefined>,
-  enabled?: boolean,
-) =>
-  useArrayApiQuery<TItem>(
-    queryName,
-    `/dash${url}`,
-    refetchInterval,
-    queryParams,
-    enabled,
-  );
-
 export const useStats = () => useDashboardQuery<Stats>('useStats', '/stats');
 
 export const useHistoricalTrend = () =>
-  useDashboardArrayQuery<CommitsTrend>(
-    'useHistoricalTrend',
-    '/lines/hist-trend',
-  );
+  useDashboardQuery<CommitsTrend[]>('useHistoricalTrend', '/lines/hist-trend');
 
 export const useRepoChanges = (options?: { refetchInterval?: number }) =>
-  useDashboardArrayQuery<RepoChanges>(
+  useDashboardQuery<RepoChanges[]>(
     'useRepoChanges',
     '/repos/commits',
     options?.refetchInterval,
@@ -60,20 +42,17 @@ export const getReposQueryKey = () =>
   ['useReposAndWeights', '/dash/repos', undefined] as const;
 
 export const useReposAndWeights = () =>
-  useDashboardArrayQuery<Repository>('useReposAndWeights', '/repos');
+  useDashboardQuery<Repository[]>('useReposAndWeights', '/repos');
 
 export const useLanguagesAndWeights = () =>
-  useDashboardArrayQuery<LanguageWeight>(
-    'useLanguagesAndWeights',
-    '/languages',
-  );
+  useDashboardQuery<LanguageWeight[]>('useLanguagesAndWeights', '/languages');
 
 export const useCommitLog = (
   options?: { refetchInterval?: number },
   page?: number,
   limit?: number,
 ) =>
-  useDashboardArrayQuery<CommitLog>(
+  useDashboardQuery<CommitLog[]>(
     'useCommitLog',
     '/commits',
     options?.refetchInterval,
@@ -94,7 +73,7 @@ export const useInfiniteCommitLog = (options?: {
       const { data } = await axios.get<CommitLog[]>(requestUrl, {
         params: { page: pageParam, limit },
       });
-      return ensureArray<CommitLog>(data);
+      return data;
     },
     getNextPageParam: (lastPage: CommitLog[], allPages: CommitLog[][]) => {
       // If the last page has fewer items than the limit, we've reached the end
