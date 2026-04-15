@@ -12,7 +12,7 @@ import {
   Chip,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useInfiniteCommitLog, usePullRequestDetails } from '../../../api';
+import { useInfiniteCommitLog } from '../../../api';
 import theme, { REPO_OWNER_AVATAR_BACKGROUNDS } from '../../../theme';
 
 const MONTH_SHORT = [
@@ -73,13 +73,8 @@ const CommitLogItem: React.FC<{
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
-  const { data: details } = usePullRequestDetails(
-    entry.repository,
-    entry.pullRequestNumber,
-  );
-
-  const isMerged = !!(details?.mergedAt || entry.mergedAt);
-  const isClosed = details?.prState === 'CLOSED' || entry.prState === 'CLOSED';
+  const isMerged = !!entry.mergedAt;
+  const isClosed = entry.prState === 'CLOSED' && !entry.mergedAt;
 
   let status = { label: 'OPEN', color: theme.palette.status.neutral };
   if (isMerged)
@@ -87,11 +82,7 @@ const CommitLogItem: React.FC<{
   else if (isClosed)
     status = { label: 'CLOSED', color: theme.palette.status.closed };
 
-  const timestampRaw =
-    details?.mergedAt ||
-    details?.prCreatedAt ||
-    entry.mergedAt ||
-    entry.prCreatedAt;
+  const timestampRaw = entry.mergedAt || entry.prCreatedAt;
   const timestamp = timestampRaw
     ? formatUtcTimestamp(timestampRaw)
     : 'Loading...';
