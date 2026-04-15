@@ -124,6 +124,8 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
           textTransform: 'uppercase',
           textAlign: 'center',
           mb: 1,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden', 
         }}
       >
         {title}{' '}
@@ -131,10 +133,10 @@ const PRStatusChart: React.FC<PRStatusChartProps> = ({
           <Box
             component="span"
             sx={{
-              fontSize: '0.7rem',
-              opacity: 0.7,
-              textTransform: 'none',
-              fontWeight: 500,
+            fontSize: '0.7rem',
+            opacity: 0.7,
+            textTransform: 'none',
+            fontWeight: 500,
             }}
           >
             ({subtitle})
