@@ -36,10 +36,31 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import { type MinerStatusFilter } from '../../utils/ExplorerUtils';
 
-type PrSortField = 'number' | 'score' | 'lines' | 'date';
+type PrSortField = 'number' | 'repository' | 'score' | 'lines' | 'date';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 20;
+
+// Direction applied when a user first clicks a column header — string
+// columns feel natural ascending, numeric/date columns descending.
+const DEFAULT_SORT_DIR: Record<PrSortField, SortDir> = {
+  number: 'desc',
+  repository: 'asc',
+  score: 'desc',
+  lines: 'desc',
+  date: 'desc',
+};
+
+// Mirrors the Score cell's render logic so clicking the Score header
+// sorts by what users actually see: merged → score, open → collateral,
+// closed-unmerged → treated as zero.
+const getEffectiveScore = (pr: CommitLog): number => {
+  if (pr.prState === 'CLOSED' && !pr.mergedAt) return 0;
+  if (!pr.mergedAt && pr.collateralScore) {
+    return parseFloat(pr.collateralScore || '0');
+  }
+  return parseFloat(pr.score || '0');
+};
 
 const tooltipSlotProps = {
   tooltip: {
@@ -112,7 +133,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
       } else {
         setSortField(field);
-        setSortDir('desc');
+        setSortDir(DEFAULT_SORT_DIR[field]);
       }
       setPage(0);
     },
@@ -149,8 +170,12 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         case 'number':
           cmp = a.pullRequestNumber - b.pullRequestNumber;
           break;
+        case 'repository':
+          cmp = a.repository.localeCompare(b.repository);
+          if (cmp === 0) cmp = a.pullRequestNumber - b.pullRequestNumber;
+          break;
         case 'score':
-          cmp = parseFloat(a.score || '0') - parseFloat(b.score || '0');
+          cmp = getEffectiveScore(a) - getEffectiveScore(b);
           break;
         case 'lines':
           cmp = a.additions + a.deletions - (b.additions + b.deletions);
@@ -408,7 +433,18 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     Title
                   </TableCell>
                   <TableCell sx={{ ...headerCellStyle, width: '25%' }}>
-                    Repository
+                    <TableSortLabel
+                      active={sortField === 'repository'}
+                      direction={
+                        sortField === 'repository'
+                          ? sortDir
+                          : DEFAULT_SORT_DIR.repository
+                      }
+                      onClick={() => handleSort('repository')}
+                      sx={sortLabelSx}
+                    >
+                      Repository
+                    </TableSortLabel>
                   </TableCell>
                   <TableCell
                     align="right"
