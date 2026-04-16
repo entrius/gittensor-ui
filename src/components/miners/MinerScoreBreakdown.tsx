@@ -24,12 +24,13 @@ import {
   usePullRequestDetails,
   type CommitLog,
 } from '../../api';
-import { STATUS_COLORS } from '../../theme';
+import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
 import {
   parseNumber,
   calculateOpenIssueThreshold,
 } from '../../utils/ExplorerUtils';
 import { credibilityColor } from '../../utils/format';
+import { buildMergedPillDefs } from '../../utils/multiplierDefs';
 
 type ViewMode = 'prs' | 'issues';
 
@@ -38,21 +39,9 @@ interface MinerScoreBreakdownProps {
   viewMode?: ViewMode;
 }
 
-const tooltipSlotProps = {
-  tooltip: {
-    sx: {
-      backgroundColor: 'surface.tooltip',
-      color: 'text.primary',
-      fontSize: '0.72rem',
-      fontFamily: '"JetBrains Mono", monospace',
-      padding: '8px 12px',
-      borderRadius: '6px',
-      border: '1px solid',
-      borderColor: 'border.light',
-      maxWidth: 280,
-    },
-  },
-  arrow: { sx: { color: 'surface.tooltip' } },
+const tipProps = {
+  ...tooltipSlotProps,
+  tooltip: { sx: { ...tooltipSlotProps.tooltip.sx, maxWidth: 280 } },
 };
 
 interface MultiplierPillProps {
@@ -84,11 +73,11 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
     format === 'percent'
       ? `${(value * 100).toFixed(1)}%`
       : format === 'value'
-        ? Number(value).toFixed(2)
-        : `×${Number(value).toFixed(2)}`;
+        ? parseNumber(value).toFixed(2)
+        : `×${parseNumber(value).toFixed(2)}`;
 
   return (
-    <Tooltip title={tooltip} arrow placement="top" slotProps={tooltipSlotProps}>
+    <Tooltip title={tooltip} arrow placement="top" slotProps={tipProps}>
       <Box
         sx={{
           display: 'inline-flex',
@@ -104,7 +93,6 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
       >
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.62rem',
             color: STATUS_COLORS.neutral,
             textTransform: 'uppercase',
@@ -114,7 +102,6 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
         </Typography>
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.72rem',
             fontWeight: 600,
             color,
@@ -183,7 +170,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.78rem',
                 fontWeight: 600,
                 color: 'text.primary',
@@ -194,7 +180,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
             </Typography>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.72rem',
                 color: (t) => alpha(t.palette.text.primary, 0.6),
                 overflow: 'hidden',
@@ -208,7 +193,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.25 }}>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.62rem',
                 color: (t) => alpha(t.palette.text.primary, 0.5),
               }}
@@ -226,7 +210,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
             />
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.62rem',
                 color: statusColor,
               }}
@@ -239,7 +222,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
         {/* Score */}
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.9rem',
             fontWeight: 600,
             color: isClosed
@@ -282,7 +264,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
           }}
         >
           {/* Score multiplier chips — sourced from PR details API */}
-          {isMerged && (
+          {isMerged && prDetails && (
             <Box
               sx={{
                 display: 'flex',
@@ -291,109 +273,24 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
                 alignItems: 'center',
               }}
             >
-              {prDetails?.credibilityMultiplier != null && (
+              {buildMergedPillDefs(prDetails).map((def) => (
                 <MultiplierPill
-                  label="cred"
-                  value={parseFloat(prDetails.credibilityMultiplier)}
+                  key={def.key}
+                  label={def.label}
+                  value={def.value}
+                  format={def.format}
                   tooltip={
                     <Stack direction="column">
                       <Typography variant="tooltipLabel">
-                        Credibility{' '}
-                        {Number(prDetails.credibilityMultiplier).toFixed(4)}×
+                        {def.tooltipTitle}
                       </Typography>
                       <Typography variant="tooltipDesc">
-                        Based on your PR success rate, scaled to reward
-                        consistency.
+                        {def.tooltipDesc}
                       </Typography>
                     </Stack>
                   }
                 />
-              )}
-              {prDetails?.repoWeightMultiplier != null && (
-                <MultiplierPill
-                  label="repo wt"
-                  value={parseFloat(prDetails.repoWeightMultiplier)}
-                  tooltip={
-                    <Stack direction="column">
-                      <Typography variant="tooltipLabel">
-                        Repo Weight{' '}
-                        {Number(prDetails.repoWeightMultiplier).toFixed(4)}×
-                      </Typography>
-                      <Typography variant="tooltipDesc">
-                        Based on repository weight and activity.
-                      </Typography>
-                    </Stack>
-                  }
-                />
-              )}
-              {prDetails?.issueMultiplier != null && (
-                <MultiplierPill
-                  label="issue"
-                  value={parseFloat(prDetails.issueMultiplier)}
-                  tooltip={
-                    <Stack direction="column">
-                      <Typography variant="tooltipLabel">
-                        Issue {Number(prDetails.issueMultiplier).toFixed(4)}×
-                      </Typography>
-                      <Typography variant="tooltipDesc">
-                        Bonus for PRs linked to issues.
-                      </Typography>
-                    </Stack>
-                  }
-                />
-              )}
-              {prDetails?.timeDecayMultiplier != null && (
-                <MultiplierPill
-                  label="decay"
-                  value={parseFloat(prDetails.timeDecayMultiplier)}
-                  tooltip={
-                    <Stack direction="column">
-                      <Typography variant="tooltipLabel">
-                        Time Decay{' '}
-                        {Number(prDetails.timeDecayMultiplier).toFixed(4)}×
-                      </Typography>
-                      <Typography variant="tooltipDesc">
-                        Recent PRs score higher.
-                      </Typography>
-                    </Stack>
-                  }
-                />
-              )}
-              {prDetails?.openPrSpamMultiplier != null && (
-                <MultiplierPill
-                  label="spam"
-                  value={parseFloat(prDetails.openPrSpamMultiplier)}
-                  tooltip={
-                    <Stack direction="column">
-                      <Typography variant="tooltipLabel">
-                        Open PR Spam{' '}
-                        {Number(prDetails.openPrSpamMultiplier).toFixed(4)}×
-                      </Typography>
-                      <Typography variant="tooltipDesc">
-                        Penalty for excessive open PRs.
-                      </Typography>
-                    </Stack>
-                  }
-                />
-              )}
-              {prDetails?.reviewQualityMultiplier != null && (
-                <MultiplierPill
-                  label="review"
-                  value={parseFloat(prDetails.reviewQualityMultiplier)}
-                  tooltip={
-                    <Stack direction="column">
-                      <Typography variant="tooltipLabel">
-                        Review Quality{' '}
-                        {Number(prDetails.reviewQualityMultiplier).toFixed(4)}×
-                      </Typography>
-                      <Typography variant="tooltipDesc">
-                        Multiplier based on the amount of requested changes the
-                        PR required.
-                      </Typography>
-                    </Stack>
-                  }
-                />
-              )}
+              ))}
             </Box>
           )}
 
@@ -411,9 +308,9 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
               `+${pr.additions} / -${pr.deletions}`,
               `${pr.commitCount} commit${pr.commitCount !== 1 ? 's' : ''}`,
               pr.tokenScore != null &&
-                `tokens ${Number(pr.tokenScore).toFixed(2)}`,
+                `tokens ${parseNumber(pr.tokenScore).toFixed(2)}`,
               pr.totalNodesScored != null &&
-                Number(pr.totalNodesScored) > 0 &&
+                parseNumber(pr.totalNodesScored) > 0 &&
                 `${pr.totalNodesScored} nodes`,
             ]
               .filter(Boolean)
@@ -422,7 +319,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
                   <Typography
                     component="span"
                     sx={{
-                      fontFamily: '"JetBrains Mono", monospace',
                       fontSize: '0.65rem',
                       color: (t) => alpha(t.palette.text.primary, 0.4),
                     }}
@@ -433,7 +329,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
                     <Typography
                       component="span"
                       sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.65rem',
                         color: (t) => alpha(t.palette.text.primary, 0.2),
                         mx: 0.25,
@@ -449,7 +344,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
                 <Typography
                   component="span"
                   sx={{
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.65rem',
                     color: (t) => alpha(t.palette.text.primary, 0.2),
                     mx: 0.25,
@@ -460,7 +354,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
                 <Typography
                   component="span"
                   sx={{
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.65rem',
                     color: STATUS_COLORS.warningOrange,
                   }}
@@ -481,7 +374,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
                 onNavigateToPr(pr.repository, pr.pullRequestNumber);
               }}
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.65rem',
                 textTransform: 'none',
                 color: 'primary.main',
@@ -502,7 +394,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.65rem',
                 textTransform: 'none',
                 color: (t) => alpha(t.palette.text.primary, 0.5),
@@ -547,7 +438,6 @@ const MetricRow: React.FC<{
     <Box>
       <Typography
         sx={{
-          fontFamily: '"JetBrains Mono", monospace',
           fontSize: '0.82rem',
           color: 'text.primary',
         }}
@@ -557,7 +447,6 @@ const MetricRow: React.FC<{
       {sub && (
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.7rem',
             color: (t) => alpha(t.palette.text.primary, 0.4),
             mt: 0.25,
@@ -569,7 +458,6 @@ const MetricRow: React.FC<{
     </Box>
     <Typography
       sx={{
-        fontFamily: '"JetBrains Mono", monospace',
         fontSize: '0.95rem',
         fontWeight: 600,
         color: color || 'text.primary',
@@ -611,7 +499,6 @@ const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
       <Typography
         sx={{
           color: 'text.primary',
-          fontFamily: '"JetBrains Mono", monospace',
           fontSize: '1.1rem',
           fontWeight: 600,
           mb: 0.8,
@@ -640,7 +527,6 @@ const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
         >
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.85rem',
               color: (t) => alpha(t.palette.text.primary, 0.4),
             }}
@@ -649,7 +535,6 @@ const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
           </Typography>
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.75rem',
               color: (t) => alpha(t.palette.text.primary, 0.3),
               mt: 0.5,
@@ -674,7 +559,7 @@ const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
               label="Issue Credibility"
               value={`${(issueCred * 100).toFixed(1)}%`}
               color={credibilityColor(issueCred)}
-              sub="Solved / (solved + closed)"
+              sub="Solved / (solved + max(0, closed − 1))"
             />
             <MetricRow
               label="Eligibility"
@@ -767,7 +652,6 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
         <Box>
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '1rem',
               fontWeight: 600,
               color: 'text.primary',
@@ -777,7 +661,6 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
           </Typography>
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.72rem',
               color: (t) => alpha(t.palette.text.primary, 0.45),
               mt: 0.25,
@@ -815,7 +698,6 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
           <Typography
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.72rem',
               color:
                 page === 0
@@ -830,7 +712,6 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
           </Typography>
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.72rem',
               color: (t) => alpha(t.palette.text.primary, 0.5),
             }}
@@ -840,7 +721,6 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
           <Typography
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.72rem',
               color:
                 page >= totalPages - 1

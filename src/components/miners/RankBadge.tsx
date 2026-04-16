@@ -69,7 +69,6 @@ const RankBadge: React.FC<RankBadgeProps> = ({ rank, displayNumber }) => {
         component="span"
         sx={{
           color: getRankTextColor(rank, defaultTextColor),
-          fontFamily: '"JetBrains Mono", monospace',
           fontSize: '0.7rem',
           fontWeight: 600,
           lineHeight: 1,

@@ -203,7 +203,6 @@ const RepositoryDetailsPage: React.FC = () => {
                   <Typography
                     variant="h4"
                     sx={(theme) => ({
-                      fontFamily: '"JetBrains Mono", monospace',
                       fontWeight: 600,
                       color: theme.palette.text.primary,
                     })}
@@ -333,7 +332,6 @@ const RepositoryDetailsPage: React.FC = () => {
                               px: 0.8,
                               py: 0.1,
                               borderRadius: '10px',
-                              fontFamily: '"JetBrains Mono", monospace',
                               lineHeight: 1.4,
                             }}
                           >

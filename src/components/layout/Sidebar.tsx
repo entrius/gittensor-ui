@@ -8,6 +8,7 @@ import {
   Divider,
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useWatchlist } from '../../hooks/useWatchlist';
 
 interface SidebarProps {
   onNavigate?: () => void;
@@ -16,16 +17,26 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { count: watchlistCount } = useWatchlist();
 
   const handleNavigate = (path: string) => {
     navigate(path);
     onNavigate?.(); // Call onNavigate if provided (for mobile drawer closing)
   };
 
-  const navItems = [
+  const navItems: Array<{
+    label: string;
+    path: string;
+    badge?: string | number;
+  }> = [
     { label: 'Dashboard', path: '/dashboard' },
     { label: 'OSS Contributions', path: '/top-miners' },
-    { label: 'Discoveries', path: '/discoveries', badge: 'New' },
+    { label: 'Discoveries', path: '/discoveries', badge: 'new' },
+    {
+      label: 'Watchlist',
+      path: '/watchlist',
+      badge: watchlistCount > 0 ? watchlistCount : undefined,
+    },
     { label: 'Bounties', path: '/bounties' },
     { label: 'Repositories', path: '/repositories' },
     { label: 'Onboard', path: '/onboard' },
@@ -76,7 +87,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               py: 1.5,
               px: 2,
               color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.95rem',
               textTransform: 'none',
               backgroundColor: location.pathname.startsWith(item.path)
@@ -101,7 +111,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               <Typography
                 component="span"
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.65rem',
                   color: 'secondary.main',
                   fontStyle: 'italic',

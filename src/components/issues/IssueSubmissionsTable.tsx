@@ -21,7 +21,6 @@ import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { formatDate } from '../../utils/format';
 
 const headerCellSx = {
-  fontFamily: '"JetBrains Mono", monospace',
   fontSize: '0.7rem',
   fontWeight: 600,
   letterSpacing: '0.5px',
@@ -33,7 +32,6 @@ const headerCellSx = {
 };
 
 const bodyCellSx = {
-  fontFamily: '"JetBrains Mono", monospace',
   fontSize: '0.85rem',
   color: 'text.primary',
   borderBottom: '1px solid',
@@ -68,7 +66,6 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
       <Box sx={{ p: 3, pb: 2 }}>
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.8rem',
             fontWeight: 600,
             color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
@@ -171,7 +168,6 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                           );
                         }}
                         sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.85rem',
                           color: STATUS_COLORS.info,
                           cursor: 'pointer',
@@ -185,7 +181,6 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                     ) : (
                       <Typography
                         sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.85rem',
                           color: STATUS_COLORS.info,
                         }}
@@ -201,14 +196,12 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                         : submission.prState === 'OPEN'
                           ? 'OPEN'
                           : 'CLOSED';
-                      let color = theme.palette.status.neutral;
-                      if (state === 'MERGED') {
-                        color = theme.palette.status.merged;
-                      } else if (state === 'OPEN') {
-                        color = theme.palette.status.open;
-                      } else if (state === 'CLOSED') {
-                        color = theme.palette.status.closed;
-                      }
+                      const color =
+                        state === 'MERGED'
+                          ? theme.palette.status.merged
+                          : state === 'OPEN'
+                            ? theme.palette.status.open
+                            : theme.palette.status.closed;
                       return (
                         <Chip
                           variant="status"
@@ -224,7 +217,6 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                   <TableCell sx={{ ...bodyCellSx, textAlign: 'right' }}>
                     <Typography
                       sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.85rem',
                         fontWeight: 600,
                         color: 'text.primary',
@@ -236,7 +228,6 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                   <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
                     <Typography
                       sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.8rem',
                         color: alpha(theme.palette.common.white, 0.6),
                       }}

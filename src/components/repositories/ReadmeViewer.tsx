@@ -1,17 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Box, CircularProgress, Alert, Paper } from '@mui/material';
+import {
+  Box,
+  CircularProgress,
+  Alert,
+  Paper,
+  alpha,
+  useTheme,
+} from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import axios from 'axios';
-import { STATUS_COLORS } from '../../theme';
 import { resolveRelativeUrl } from './MarkdownRenderers';
+import { markdownDocumentPaperSx } from '../../theme';
 
 interface ReadmeViewerProps {
   repositoryFullName: string; // e.g., "opentensor/bittensor"
 }
 
 const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
+  const theme = useTheme();
   const [content, setContent] = useState<string | null>(null);
   const [defaultBranch, setDefaultBranch] = useState<string>('main');
   const [loading, setLoading] = useState<boolean>(true);
@@ -69,7 +77,10 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
     return (
       <Alert
         severity="warning"
-        sx={{ backgroundColor: 'rgba(255, 152, 0, 0.1)', color: '#ff9800' }}
+        sx={{
+          backgroundColor: alpha(theme.palette.warning.main, 0.1),
+          color: theme.palette.warning.main,
+        }}
       >
         {error}
       </Alert>
@@ -77,111 +88,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
   }
 
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        p: { xs: 2, md: 5 },
-        pt: { xs: 2, md: 0 }, // Reduce top padding
-        maxWidth: '900px',
-        mx: 'auto',
-        backgroundColor: 'transparent', // Seamless look
-        color: '#c9d1d9', // GitHub Dark Text
-        fontFamily:
-          '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
-        lineHeight: 1.6,
-        '& h1': {
-          fontSize: '2em',
-          borderBottom: '1px solid #30363d',
-          pb: 0.3,
-          mb: 3,
-          mt: 1,
-          fontWeight: 600,
-          color: '#ffffff',
-        },
-        '& h2': {
-          fontSize: '1.5em',
-          borderBottom: '1px solid #30363d',
-          pb: 0.3,
-          mb: 3,
-          mt: 2,
-          fontWeight: 600,
-          color: '#ffffff',
-        },
-        '& h3': {
-          fontSize: '1.25em',
-          mb: 2,
-          mt: 3,
-          fontWeight: 600,
-          color: '#ffffff',
-        },
-        '& p': {
-          marginBottom: '16px',
-          fontSize: '16px',
-        },
-        '& a': {
-          color: STATUS_COLORS.info,
-          textDecoration: 'none',
-          '&:hover': { textDecoration: 'underline' },
-        },
-        '& ul, & ol': {
-          marginBottom: '16px',
-          paddingLeft: '2em',
-        },
-        '& li': {
-          marginBottom: '4px',
-        },
-        '& blockquote': {
-          borderLeft: '4px solid #30363d',
-          padding: '0 1em',
-          color: STATUS_COLORS.open,
-          marginLeft: 0,
-          marginBottom: '16px',
-        },
-        '& code': {
-          backgroundColor: 'rgba(110, 118, 129, 0.4)',
-          padding: '0.2em 0.4em',
-          borderRadius: '6px',
-          fontSize: '85%',
-          fontFamily: '"JetBrains Mono", monospace',
-        },
-        '& pre': {
-          backgroundColor: '#161b22',
-          padding: '16px',
-          overflow: 'auto',
-          borderRadius: '6px',
-          marginBottom: '16px',
-          '& code': {
-            backgroundColor: 'transparent',
-            padding: 0,
-            fontSize: '100%',
-            color: '#c9d1d9',
-          },
-        },
-        '& table': {
-          borderCollapse: 'collapse',
-          width: '100%',
-          marginBottom: '16px',
-          display: 'block',
-          overflowX: 'auto',
-        },
-        '& th': {
-          fontWeight: 600,
-          border: '1px solid #30363d',
-          padding: '6px 13px',
-          textAlign: 'left',
-        },
-        '& td': {
-          border: '1px solid #30363d',
-          padding: '6px 13px',
-        },
-        '& tr:nth-of-type(2n)': {
-          backgroundColor: '#161b22',
-        },
-        '& img': {
-          backgroundColor: 'transparent',
-        },
-      }}
-    >
+    <Paper elevation={0} sx={markdownDocumentPaperSx(theme)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
