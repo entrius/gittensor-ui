@@ -15,6 +15,7 @@ export interface IssueBounty {
   registeredAtBlock: number;
   createdAt: string;
   updatedAt: string;
+  closedAt: string | null;
   completedAt: string | null;
   title?: string;
 }
@@ -43,6 +44,17 @@ export interface IssueDetails extends IssueBounty {
   labels: string[];
 }
 
+export interface MinerIssueEntry {
+  issueNumber: number;
+  title: string;
+  repositoryFullName: string;
+  githubUrl: string;
+  state: 'open' | 'closed';
+  createdAt: string;
+  updatedAt: string;
+  closedAt: string | null;
+}
+
 export interface IssueSubmission {
   number: number;
   repositoryFullName: string;
@@ -56,19 +68,4 @@ export interface IssueSubmission {
   commits: number;
   hotkey: string | null;
   isWinner: boolean;
-}
-
-export interface GitHubIssue {
-  repositoryFullName: string;
-  issueNumber: number;
-  title: string;
-  body: string | null;
-  state: 'open' | 'closed';
-  htmlUrl: string;
-  authorLogin: string | null;
-  createdAt: string;
-  updatedAt: string;
-  closedAt: string | null;
-  commentsCount: number;
-  labels: string[];
 }

@@ -42,6 +42,7 @@ const MinerDetailsPage: React.FC = () => {
 
   const modeParam = searchParams.get('mode');
   const viewMode: ViewMode = modeParam === 'issues' ? 'issues' : 'prs';
+
   const tabs = viewMode === 'issues' ? ISSUE_TABS : PR_TABS;
 
   const tabParam = searchParams.get('tab');
@@ -54,7 +55,7 @@ const MinerDetailsPage: React.FC = () => {
     const p = new URLSearchParams(searchParams);
     p.set('mode', mode);
     p.set('tab', 'overview');
-    setSearchParams(p);
+    setSearchParams(p, { replace: true });
   };
 
   const handleTabChange = (
@@ -63,7 +64,7 @@ const MinerDetailsPage: React.FC = () => {
   ) => {
     const p = new URLSearchParams(searchParams);
     p.set('tab', newValue);
-    setSearchParams(p);
+    setSearchParams(p, { replace: true });
   };
 
   if (!githubId) {
@@ -185,11 +186,16 @@ const MinerDetailsPage: React.FC = () => {
                 )}
               </>
             )}
-            {activeTab === 'activity' && <MinerActivity githubId={githubId} />}
+
+            {activeTab === 'activity' && (
+              <MinerActivity githubId={githubId} viewMode={viewMode} />
+            )}
             {activeTab === 'pull-requests' && (
               <MinerPRsTable githubId={githubId} />
             )}
-            {activeTab === 'issues' && <MinerIssuesTable githubId={githubId} />}
+            {activeTab === 'issues' && (
+              <MinerIssuesTable githubId={githubId} />
+            )}
             {activeTab === 'repositories' && (
               <MinerRepositoriesTable githubId={githubId} />
             )}

@@ -5,6 +5,7 @@ import {
   type MinerEvaluation,
   type CommitLog,
 } from './models/Dashboard';
+import { type MinerIssueEntry } from './models/Issues';
 
 /**
  * Helper to create /miners endpoint queries
@@ -52,6 +53,20 @@ export const useMinerPRs = (githubId: string, enabled?: boolean) =>
   useMinersQuery<CommitLog[]>(
     'useMinerPRs',
     `/${githubId}/prs`,
+    undefined,
+    undefined,
+    enabled,
+  );
+
+/**
+ * Get all issues for a specific miner
+ * @param githubId - Numeric GitHub ID (e.g., "583231"), NOT username
+ * @param enabled - Optional flag to enable/disable the query
+ */
+export const useMinerIssues = (githubId: string, enabled?: boolean) =>
+  useMinersQuery<MinerIssueEntry[]>(
+    'useMinerIssues',
+    `/${githubId}/issues`,
     undefined,
     undefined,
     enabled,

@@ -1,10 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  useGitHubIssuesByAuthor,
-  useMinerGithubData,
-  useReposAndWeights,
-  useMinerStats,
-} from '../../api';
+import { useMinerIssues } from '../../api';
+import { type MinerIssueEntry } from '../../api/models/Issues';
 import {
   Avatar,
   Box,
@@ -40,62 +36,22 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
   const [activeTab, setActiveTab] = useState<IssueTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const minerStatsQuery = useMinerStats(githubId);
-  const githubDataQuery = useMinerGithubData(githubId, true);
-  const reposQuery = useReposAndWeights();
+  const { data: issues, isLoading } = useMinerIssues(githubId);
 
-  const minerLogin = useMemo(
-    () =>
-      (
-        githubDataQuery.data?.login ||
-        minerStatsQuery.data?.githubUsername ||
-        ''
-      ).trim(),
-    [githubDataQuery.data?.login, minerStatsQuery.data?.githubUsername],
-  );
-
-  const issuesQuery = useGitHubIssuesByAuthor(minerLogin, !!minerLogin);
-
-  const registeredRepos = useMemo(
-    () =>
-      new Set(
-        (reposQuery.data || []).map((repo) =>
-          repo.fullName.toLowerCase().trim(),
-        ),
-      ),
-    [reposQuery.data],
-  );
-
-  const authoredIssues = useMemo(() => {
-    const registeredRepoIssues = (issuesQuery.data || []).filter((issue) =>
-      registeredRepos.has(issue.repositoryFullName.toLowerCase().trim()),
-    );
-
-    return registeredRepoIssues.sort(
+  const allIssues = useMemo(() => {
+    if (!issues) return [];
+    return [...issues].sort(
       (a, b) =>
         new Date(b.updatedAt || b.createdAt).getTime() -
         new Date(a.updatedAt || a.createdAt).getTime(),
     );
-  }, [issuesQuery.data, registeredRepos]);
+  }, [issues]);
 
   const issuesByTab = useMemo(() => {
-    const openIssues = authoredIssues.filter((issue) => issue.state === 'open');
-    const closedIssues = authoredIssues.filter(
-      (issue) => issue.state === 'closed',
-    );
-
-    return {
-      open: openIssues,
-      closed: closedIssues,
-      all: authoredIssues,
-    };
-  }, [authoredIssues]);
-
-  const isLoading =
-    minerStatsQuery.isLoading ||
-    githubDataQuery.isLoading ||
-    issuesQuery.isLoading ||
-    reposQuery.isLoading;
+    const openIssues = allIssues.filter((i) => i.state === 'open');
+    const closedIssues = allIssues.filter((i) => i.state === 'closed');
+    return { open: openIssues, closed: closedIssues, all: allIssues };
+  }, [allIssues]);
 
   useEffect(() => {
     setActiveTab('all');
@@ -105,11 +61,10 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
   const visibleIssues = useMemo(() => {
     const issuesForTab = issuesByTab[activeTab];
     const query = searchQuery.trim().toLowerCase();
-
     if (!query) return issuesForTab;
 
     return issuesForTab.filter(
-      (issue) =>
+      (issue: MinerIssueEntry) =>
         issue.title.toLowerCase().includes(query) ||
         issue.repositoryFullName.toLowerCase().includes(query) ||
         String(issue.issueNumber).includes(query),
@@ -118,11 +73,18 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
 
   const hasFilters = activeTab !== 'all' || !!searchQuery.trim();
 
+  if (isLoading) {
+    return (
+      <Card sx={{ p: 4, textAlign: 'center' }} elevation={0}>
+        <CircularProgress size={40} sx={{ color: 'primary.main' }} />
+      </Card>
+    );
+  }
+
   return (
     <Card
       sx={{
         p: 0,
-        position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -165,7 +127,7 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
               }}
             >
               ({visibleIssues.length}
-              {hasFilters ? ` of ${authoredIssues.length}` : ''})
+              {hasFilters ? ` of ${allIssues.length}` : ''})
             </Typography>
           </Box>
 
@@ -240,7 +202,7 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
         />
       </Box>
 
-      {!authoredIssues.length ? (
+      {!allIssues.length ? (
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Typography
             sx={{
@@ -302,15 +264,16 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {visibleIssues.map((issue) => {
-                const owner = issue.repositoryFullName.split('/')[0] || '';
+              {visibleIssues.map((issue: MinerIssueEntry) => {
+                const owner =
+                  issue.repositoryFullName.split('/')[0] || '';
 
                 return (
                   <TableRow
                     key={`${issue.repositoryFullName}-${issue.issueNumber}`}
                     onClick={() =>
                       window.open(
-                        issue.htmlUrl,
+                        issue.githubUrl,
                         '_blank',
                         'noopener,noreferrer',
                       )
@@ -331,7 +294,7 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
                     >
                       <Box
                         component="a"
-                        href={issue.htmlUrl}
+                        href={issue.githubUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(event) => event.stopPropagation()}
@@ -434,22 +397,6 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
             </TableBody>
           </Table>
         </TableContainer>
-      )}
-
-      {isLoading && (
-        <Box
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: (t) => alpha(t.palette.background.default, 0.55),
-            backdropFilter: 'blur(2px)',
-          }}
-        >
-          <CircularProgress size={28} />
-        </Box>
       )}
     </Card>
   );
