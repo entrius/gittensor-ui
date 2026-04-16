@@ -36,6 +36,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
+import FilterButton from '../FilterButton';
 import ReactECharts from 'echarts-for-react';
 import { useSearchParams } from 'react-router-dom';
 import { truncateText } from '../../utils';
@@ -101,8 +102,20 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const urlSort = searchParams.get('sort') as SortColumn;
   const urlDir = searchParams.get('dir') as SortDirection;
   const urlSearch = searchParams.get('search') || '';
+  const urlStatusFilter = searchParams.get('status') as
+    | 'all'
+    | 'active'
+    | 'inactive'
+    | null;
 
   const [searchQuery, setSearchQuery] = useState(urlSearch);
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'active' | 'inactive'
+  >(
+    urlStatusFilter === 'active' || urlStatusFilter === 'inactive'
+      ? urlStatusFilter
+      : 'all',
+  );
   const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(urlPage >= 0 ? urlPage : 0);
   const [rowsPerPage, setRowsPerPage] = useState(
@@ -128,12 +141,14 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       const sort = overrides?.sort ?? sortColumn;
       const dir = overrides?.dir ?? sortDirection;
       const search = overrides?.search ?? searchQuery;
+      const active = overrides?.status ?? statusFilter;
 
       if (rows !== '10') params.rows = rows;
       if (pg !== '0') params.page = pg;
       if (sort !== 'weight') params.sort = sort;
       if (dir !== 'desc') params.dir = dir;
       if (search) params.search = search;
+      if (active !== 'all') params.status = active;
 
       setSearchParams(params, { replace: true });
     },
@@ -143,6 +158,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       sortColumn,
       sortDirection,
       searchQuery,
+      statusFilter,
       setSearchParams,
     ],
   );
@@ -183,6 +199,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const filteredRepositories = useMemo(() => {
     let filtered = rankedRepositories;
 
+    if (statusFilter === 'active') {
+      filtered = filtered.filter((repo) => !repo.inactiveAt);
+    } else if (statusFilter === 'inactive') {
+      filtered = filtered.filter((repo) => !!repo.inactiveAt);
+    }
+
     // Apply search filter
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
@@ -192,7 +214,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     }
 
     return filtered;
-  }, [rankedRepositories, searchQuery]);
+  }, [rankedRepositories, statusFilter, searchQuery]);
 
   const getChartOption = () => {
     const chartData = filteredRepositories.slice(
@@ -551,7 +573,50 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             flexWrap: 'wrap',
           }}
         >
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 2,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
+            <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+              <FilterButton
+                label="All"
+                count={rankedRepositories.length}
+                color={STATUS_COLORS.neutral}
+                isActive={statusFilter === 'all'}
+                onClick={() => {
+                  setStatusFilter('all');
+                  setPage(0);
+                  syncToUrl({ status: 'all', page: '0' });
+                }}
+              />
+              <FilterButton
+                label="Active"
+                count={rankedRepositories.filter((r) => !r.inactiveAt).length}
+                color={STATUS_COLORS.success}
+                isActive={statusFilter === 'active'}
+                onClick={() => {
+                  setStatusFilter('active');
+                  setPage(0);
+                  syncToUrl({ status: 'active', page: '0' });
+                }}
+              />
+              <FilterButton
+                label="Inactive"
+                count={rankedRepositories.filter((r) => !!r.inactiveAt).length}
+                color={STATUS_COLORS.closed}
+                isActive={statusFilter === 'inactive'}
+                onClick={() => {
+                  setStatusFilter('inactive');
+                  setPage(0);
+                  syncToUrl({ status: 'inactive', page: '0' });
+                }}
+              />
+            </Box>
+
             <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
               <IconButton
                 onClick={() => setShowChart(!showChart)}
