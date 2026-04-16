@@ -12,9 +12,10 @@ import {
   Link,
   Breadcrumbs,
   Avatar,
+  useTheme,
 } from '@mui/material';
 import axios from 'axios';
-import { STATUS_COLORS, GITHUB_VIEWER_COLORS } from '../../theme';
+import { STATUS_COLORS } from '../../theme';
 import { formatDistanceToNow } from 'date-fns';
 import FolderIcon from '@mui/icons-material/Folder';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
@@ -121,6 +122,7 @@ function resolveGithubCommitAttribution(
 const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
   repositoryFullName,
 }) => {
+  const theme = useTheme();
   const [tree, setTree] = useState<FileNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -304,7 +306,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
             sx={{
               fontWeight: !currentPath ? 600 : 400,
               color: !currentPath
-                ? GITHUB_VIEWER_COLORS.text
+                ? theme.palette.text.tertiary
                 : STATUS_COLORS.info,
               cursor: !currentPath ? 'default' : 'pointer',
               fontSize: '14px',
@@ -325,7 +327,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                 sx={{
                   fontWeight: isLast ? 600 : 400,
                   color: isLast
-                    ? GITHUB_VIEWER_COLORS.text
+                    ? theme.palette.text.tertiary
                     : STATUS_COLORS.info,
                   cursor: isLast ? 'default' : 'pointer',
                   fontSize: '14px',
@@ -343,10 +345,10 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
         <Paper
           elevation={0}
           sx={{
-            border: `1px solid ${GITHUB_VIEWER_COLORS.border}`,
+            border: `1px solid ${theme.palette.border.light}`,
             borderBottom: 'none',
             borderRadius: '6px 6px 0 0',
-            backgroundColor: GITHUB_VIEWER_COLORS.bgSubtle,
+            backgroundColor: theme.palette.surface.elevated,
             p: 2,
             display: 'flex',
             alignItems: 'center',
@@ -379,7 +381,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   sx={{
                     fontSize: '13px',
                     fontWeight: 600,
-                    color: GITHUB_VIEWER_COLORS.text,
+                    color: theme.palette.text.tertiary,
                     whiteSpace: 'nowrap',
                   }}
                 >
@@ -410,7 +412,6 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   sx={{
                     fontSize: '13px',
                     color: STATUS_COLORS.open,
-                    fontFamily: '"JetBrains Mono", monospace',
                   }}
                 >
                   {currentCommit.sha}
@@ -443,9 +444,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
           component={Paper}
           elevation={0}
           sx={{
-            border: `1px solid ${GITHUB_VIEWER_COLORS.border}`,
+            border: `1px solid ${theme.palette.border.light}`,
             borderRadius: isFile ? '6px' : '0 0 6px 6px', // Connect to header
-            backgroundColor: GITHUB_VIEWER_COLORS.bg,
+            backgroundColor: theme.palette.background.paper,
           }}
         >
           <Table size="small">
@@ -456,7 +457,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   hover
                   sx={{
                     '&:hover': {
-                      backgroundColor: GITHUB_VIEWER_COLORS.bgSubtle,
+                      backgroundColor: theme.palette.surface.elevated,
                     },
                     cursor: 'pointer',
                   }}
@@ -472,7 +473,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                     }}
                     sx={{
                       color: STATUS_COLORS.info,
-                      borderBottom: `1px solid ${GITHUB_VIEWER_COLORS.borderMuted}`,
+                      borderBottom: `1px solid ${theme.palette.border.subtle}`,
                       py: 1,
                       fontSize: '13px',
                       fontWeight: 600,
@@ -489,7 +490,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   onClick={() => handleNavigate(node.path)}
                   sx={{
                     '&:hover': {
-                      backgroundColor: GITHUB_VIEWER_COLORS.bgSubtle,
+                      backgroundColor: theme.palette.surface.elevated,
                     },
                     cursor: 'pointer',
                     transition: 'background-color 0.1s',
@@ -497,7 +498,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                 >
                   <TableCell
                     sx={{
-                      borderBottom: `1px solid ${GITHUB_VIEWER_COLORS.borderMuted}`,
+                      borderBottom: `1px solid ${theme.palette.border.subtle}`,
                       py: 1,
                       width: '32px',
                       pl: 2,
@@ -505,10 +506,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   >
                     {node.type === 'tree' ? (
                       <FolderIcon
-                        sx={{
-                          color: GITHUB_VIEWER_COLORS.folder,
-                          fontSize: 16,
-                        }}
+                        sx={{ color: theme.palette.status.info, fontSize: 16 }}
                       />
                     ) : (
                       <InsertDriveFileIcon
@@ -518,9 +516,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   </TableCell>
                   <TableCell
                     sx={{
-                      borderBottom: `1px solid ${GITHUB_VIEWER_COLORS.borderMuted}`,
+                      borderBottom: `1px solid ${theme.palette.border.subtle}`,
                       py: 1,
-                      color: GITHUB_VIEWER_COLORS.text,
+                      color: theme.palette.text.tertiary,
                       fontSize: '14px',
                       fontWeight: node.type === 'tree' ? 600 : 400,
                     }}
@@ -529,7 +527,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   </TableCell>
                   <TableCell
                     sx={{
-                      borderBottom: `1px solid ${GITHUB_VIEWER_COLORS.borderMuted}`,
+                      borderBottom: `1px solid ${theme.palette.border.subtle}`,
                       py: 1,
                       color: STATUS_COLORS.open,
                       fontSize: '13px',

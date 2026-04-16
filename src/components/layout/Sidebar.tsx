@@ -87,7 +87,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               py: 1.5,
               px: 2,
               color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.95rem',
               textTransform: 'none',
               backgroundColor: location.pathname.startsWith(item.path)
@@ -112,7 +111,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               <Typography
                 component="span"
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.65rem',
                   color: 'secondary.main',
                   fontStyle: 'italic',

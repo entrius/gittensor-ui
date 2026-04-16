@@ -6,6 +6,8 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  alpha,
+  useTheme,
 } from '@mui/material';
 import FolderIcon from '@mui/icons-material/Folder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
@@ -34,8 +36,10 @@ const FileItem: React.FC<{
   onSelect: (path: string) => void;
   selectedFile: string | null;
 }> = ({ node, level, onSelect, selectedFile }) => {
+  const theme = useTheme();
   const [open, setOpen] = useState(false);
   const isSelected = selectedFile === node.path;
+  const accent = theme.palette.status.info;
 
   const handleClick = () => {
     if (node.type === 'tree') {
@@ -68,16 +72,14 @@ const FileItem: React.FC<{
           py: 0.25,
           minHeight: 24,
           height: 24,
-          backgroundColor: isSelected
-            ? 'rgba(56, 139, 253, 0.15)'
-            : 'transparent',
+          backgroundColor: isSelected ? alpha(accent, 0.15) : 'transparent',
           borderLeft: isSelected
-            ? '2px solid #388bfd'
+            ? `2px solid ${accent}`
             : '2px solid transparent',
           '&:hover': {
             backgroundColor: isSelected
-              ? 'rgba(56, 139, 253, 0.15)'
-              : 'rgba(255, 255, 255, 0.04)',
+              ? alpha(accent, 0.15)
+              : alpha(theme.palette.common.white, 0.04),
           },
           transition: 'all 0.1s ease-in-out',
         }}
@@ -123,7 +125,9 @@ const FileItem: React.FC<{
               fontFamily:
                 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
               fontSize: '13px',
-              color: isSelected ? '#fff' : STATUS_COLORS.open,
+              color: isSelected
+                ? theme.palette.text.primary
+                : STATUS_COLORS.open,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',

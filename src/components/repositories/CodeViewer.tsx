@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { scrollbarSx, GITHUB_VIEWER_COLORS } from '../../theme';
-import { Box, Typography, CircularProgress, Alert } from '@mui/material';
+import { scrollbarSx } from '../../theme';
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Alert,
+  alpha,
+  useTheme,
+} from '@mui/material';
 import axios from 'axios';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -17,6 +24,7 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
   filePath,
   defaultBranch = 'main',
 }) => {
+  const theme = useTheme();
   const [content, setContent] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +115,7 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          backgroundColor: GITHUB_VIEWER_COLORS.bg,
+          backgroundColor: theme.palette.background.default,
           p: 4,
         }}
       >
@@ -119,9 +127,9 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
             maxWidth: '100%',
             maxHeight: '100%',
             objectFit: 'contain',
-            border: `1px solid ${GITHUB_VIEWER_COLORS.border}`,
+            border: `1px solid ${theme.palette.border.light}`,
             borderRadius: '6px',
-            backgroundColor: GITHUB_VIEWER_COLORS.bgSubtle,
+            backgroundColor: theme.palette.surface.elevated,
           }}
         />
       </Box>
@@ -139,23 +147,23 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
           ...scrollbarSx,
           '& img': { maxWidth: '100%' },
           '& pre': {
-            backgroundColor: '#1e1e1e',
+            backgroundColor: theme.palette.surface.tooltip,
             p: 2,
             borderRadius: 1,
             overflowX: 'auto',
           },
           '& code': {
             fontFamily: 'monospace',
-            backgroundColor: 'rgba(255,255,255,0.1)',
+            backgroundColor: alpha(theme.palette.common.white, 0.1),
             px: 0.5,
             borderRadius: 0.5,
           },
           '& h1, & h2, & h3': {
-            color: '#fff',
-            borderBottom: `1px solid ${GITHUB_VIEWER_COLORS.border}`,
+            color: theme.palette.text.primary,
+            borderBottom: `1px solid ${theme.palette.border.light}`,
             pb: 1,
           },
-          color: GITHUB_VIEWER_COLORS.text,
+          color: theme.palette.text.tertiary,
           lineHeight: 1.6,
         }}
       >
@@ -170,7 +178,7 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
         height: '100%',
         width: '100%',
         overflow: 'hidden',
-        backgroundColor: '#1e1e1e',
+        backgroundColor: theme.palette.surface.tooltip,
         fontSize: '14px',
         '& pre': {
           ...scrollbarSx,

@@ -5,7 +5,6 @@ export const getHeaderCellStyle = (theme: Theme) => ({
   backgroundColor: theme.palette.surface.elevated,
   backdropFilter: 'blur(8px)',
   color: alpha(theme.palette.text.primary, 0.7),
-  fontFamily: '"JetBrains Mono", monospace',
   fontWeight: 500,
   fontSize: '0.75rem',
   borderBottom: `1px solid ${theme.palette.border.light}`,
@@ -15,7 +14,6 @@ export const getHeaderCellStyle = (theme: Theme) => ({
 
 export const getBodyCellStyle = (theme: Theme) => ({
   color: theme.palette.text.primary,
-  fontFamily: '"JetBrains Mono", monospace',
   borderBottom: `1px solid ${theme.palette.border.light}`,
   fontSize: '0.85rem',
 });
@@ -38,7 +36,6 @@ export const searchFieldSx: SxProps<Theme> = {
   maxWidth: 400,
   minWidth: 350,
   '& .MuiOutlinedInput-root': {
-    fontFamily: '"JetBrains Mono", monospace',
     fontSize: '0.8rem',
     color: 'text.primary',
     backgroundColor: 'surface.subtle',
