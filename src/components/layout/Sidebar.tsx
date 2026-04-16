@@ -142,7 +142,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
             <Typography
               variant="caption"
               component="span"
-              onClick={() => handleNavigate('/about')}
+              onClick={() => handleNavigate('/onboard?tab=about')}
               sx={{
                 color: 'text.primary',
                 fontSize: '0.65rem',
@@ -165,7 +165,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
             <Typography
               variant="caption"
               component="span"
-              onClick={() => handleNavigate('/faq')}
+              onClick={() => handleNavigate('/onboard?tab=faq')}
               sx={{
                 color: 'text.primary',
                 fontSize: '0.65rem',
