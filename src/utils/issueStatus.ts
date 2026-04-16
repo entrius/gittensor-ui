@@ -18,14 +18,6 @@ export const getIssueStatusMeta = (status: string): IssueStatusMeta => {
         text: 'Pending',
         tone: 'warning',
       };
-    case 'open':
-      return {
-        bgColor: 'rgba(139, 148, 158, 0.15)',
-        borderColor: 'rgba(139, 148, 158, 0.4)',
-        color: STATUS_COLORS.open,
-        text: 'Open',
-        tone: 'open',
-      };
     case 'active':
       return {
         bgColor: 'rgba(88, 166, 255, 0.15)',
@@ -35,7 +27,6 @@ export const getIssueStatusMeta = (status: string): IssueStatusMeta => {
         tone: 'info',
       };
     case 'completed':
-    case 'merged':
       return {
         bgColor: 'rgba(63, 185, 80, 0.15)',
         borderColor: 'rgba(63, 185, 80, 0.4)',
@@ -44,7 +35,6 @@ export const getIssueStatusMeta = (status: string): IssueStatusMeta => {
         tone: 'merged',
       };
     case 'cancelled':
-    case 'closed':
       return {
         bgColor: 'rgba(239, 68, 68, 0.15)',
         borderColor: 'rgba(239, 68, 68, 0.4)',
