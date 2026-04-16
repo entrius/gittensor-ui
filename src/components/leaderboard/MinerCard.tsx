@@ -17,6 +17,36 @@ interface MinerCardProps {
 
 const INACTIVE_OPACITY = 0.24;
 
+const CHART_SEGMENT_COLORS = [
+  CHART_COLORS.merged,
+  CHART_COLORS.open,
+  CHART_COLORS.closed,
+];
+const CHART_INACTIVE_RATIOS = [2 / 3, 1, 1 / 2];
+
+interface Segment {
+  label: string;
+  value: number;
+}
+
+const getPrSegments = (miner: MinerStats): Segment[] => [
+  { label: 'Merged', value: miner.totalMergedPrs ?? 0 },
+  { label: 'Open', value: miner.totalOpenPrs ?? 0 },
+  { label: 'Closed', value: miner.totalClosedPrs ?? 0 },
+];
+
+const getIssueSegments = (miner: MinerStats): Segment[] => [
+  { label: 'Solved', value: miner.totalSolvedIssues ?? 0 },
+  { label: 'Open', value: miner.totalOpenIssues ?? 0 },
+  { label: 'Closed', value: miner.totalClosedIssues ?? 0 },
+];
+
+const getSegments = (
+  miner: MinerStats,
+  variant: LeaderboardVariant,
+): Segment[] =>
+  variant === 'discoveries' ? getIssueSegments(miner) : getPrSegments(miner);
+
 export const MinerCard: React.FC<MinerCardProps> = ({
   miner,
   href,
@@ -39,22 +69,13 @@ export const MinerCard: React.FC<MinerCardProps> = ({
   const credibilityPercent = (miner.credibility ?? 0) * 100;
   const issueCredPercent = (miner.issueCredibility ?? 0) * 100;
   const isWatchlist = variant === 'watchlist';
+  const isDiscoveries = variant === 'discoveries';
   const isEligible = isWatchlist
     ? (miner.isEligible ?? false) ||
-      (miner.issueDiscoveryScore ?? 0) > 0 ||
-      (miner.totalSolvedIssues ?? 0) > 0
+      (miner.isIssueEligible ?? false)
     : (miner.isEligible ?? false);
-  const isDiscoveries = variant === 'discoveries';
 
-  const donutMerged = isDiscoveries
-    ? (miner.totalSolvedIssues ?? 0)
-    : (miner.totalMergedPrs ?? 0);
-  const donutOpen = isDiscoveries
-    ? (miner.totalOpenIssues ?? 0)
-    : (miner.totalOpenPrs ?? 0);
-  const donutClosed = isDiscoveries
-    ? (miner.totalClosedIssues ?? 0)
-    : (miner.totalClosedPrs ?? 0);
+  const segments = getSegments(miner, variant);
 
   return (
     <RowLink href={href} state={linkState} sx={{ height: '100%' }}>
@@ -252,34 +273,37 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             </Typography>
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 1.5, flexShrink: 0 }}>
-            <CredDonut
-              merged={donutMerged}
-              open={donutOpen}
-              closed={donutClosed}
-              percent={isDiscoveries ? issueCredPercent : credibilityPercent}
-              isEligible={
-                isWatchlist ? (miner.isEligible ?? false) : isEligible
-              }
-              label={isWatchlist ? 'PRs' : undefined}
-            />
-            {isWatchlist && (
+          {isWatchlist ? (
+            <Box sx={{ display: 'flex', gap: 1.5, flexShrink: 0 }}>
               <CredDonut
-                merged={miner.totalSolvedIssues ?? 0}
-                open={miner.totalOpenIssues ?? 0}
-                closed={miner.totalClosedIssues ?? 0}
+                segments={getPrSegments(miner)}
+                percent={credibilityPercent}
+                isEligible={miner.isEligible ?? false}
+                label="PRs"
+              />
+              <CredDonut
+                segments={getIssueSegments(miner)}
                 percent={issueCredPercent}
                 isEligible={miner.isIssueEligible ?? false}
                 label="Issues"
               />
-            )}
-          </Box>
+            </Box>
+          ) : (
+            <CredDonut
+              segments={segments}
+              percent={isDiscoveries ? issueCredPercent : credibilityPercent}
+              isEligible={isEligible}
+              size={56}
+            />
+          )}
         </Box>
 
         <MinerCardFooter
           miner={miner}
-          variant={variant}
+          totalScore={miner.totalScore}
+          segments={segments}
           isEligible={isEligible}
+          variant={variant}
         />
       </Card>
     </RowLink>
@@ -288,16 +312,35 @@ export const MinerCard: React.FC<MinerCardProps> = ({
 
 interface MinerCardFooterProps {
   miner: MinerStats;
-  variant: LeaderboardVariant;
+  totalScore: number;
+  segments: Segment[];
   isEligible: boolean;
+  variant: LeaderboardVariant;
 }
 
 const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
   miner,
-  variant,
+  totalScore,
+  segments,
   isEligible,
+  variant,
 }) => {
   const muiTheme = useTheme();
+  const inactiveColor = alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY);
+
+  const statColors = isEligible
+    ? [
+        STATUS_COLORS.merged,
+        alpha(muiTheme.palette.text.primary, 0.84),
+        muiTheme.palette.status.closed,
+      ]
+    : [inactiveColor, inactiveColor, inactiveColor];
+
+  const issueSegments = getIssueSegments(miner);
+  const issueTotal =
+    (miner.totalSolvedIssues ?? 0) +
+    (miner.totalOpenIssues ?? 0) +
+    (miner.totalClosedIssues ?? 0);
 
   return (
     <Box
@@ -313,162 +356,6 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
         p: 1,
       })}
     >
-      <PrimaryStatsRow miner={miner} isEligible={isEligible} />
-      {(variant === 'discoveries' || variant === 'watchlist') && (
-        <IssueStatsSection
-          miner={miner}
-          isEligible={isEligible}
-          textColor={alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY)}
-        />
-      )}
-    </Box>
-  );
-};
-
-interface PrimaryStatsRowProps {
-  miner: MinerStats;
-  isEligible: boolean;
-}
-
-const PrimaryStatsRow: React.FC<PrimaryStatsRowProps> = ({
-  miner,
-  isEligible,
-}) => {
-  const muiTheme = useTheme();
-
-  return (
-    <Box
-      sx={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr 1fr 4.5rem',
-        gap: 1,
-        alignItems: 'center',
-      }}
-    >
-      {[
-        {
-          label: 'Merged',
-          value: miner.totalMergedPrs ?? 0,
-          color: isEligible
-            ? STATUS_COLORS.merged
-            : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
-        },
-        {
-          label: 'Open',
-          value: miner.totalOpenPrs ?? 0,
-          color: isEligible
-            ? alpha(muiTheme.palette.text.primary, 0.84)
-            : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
-        },
-        {
-          label: 'Closed',
-          value: miner.totalClosedPrs ?? 0,
-          color: isEligible
-            ? muiTheme.palette.status.closed
-            : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
-        },
-      ].map(({ label, value, color }) => (
-        <Box key={label}>
-          <Typography
-            sx={(theme) => ({
-              fontFamily: FONTS.mono,
-              fontSize: '0.6rem',
-              color: isEligible
-                ? theme.palette.status.open
-                : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
-              textTransform: 'uppercase',
-              mb: 0.2,
-            })}
-          >
-            {label}
-          </Typography>
-          <Typography
-            sx={{
-              fontFamily: FONTS.mono,
-              fontSize: '0.85rem',
-              color,
-              fontWeight: 600,
-            }}
-          >
-            {value}
-          </Typography>
-        </Box>
-      ))}
-      <Box
-        sx={(theme) => ({
-          textAlign: 'right',
-          borderLeft: `1px solid ${
-            isEligible
-              ? theme.palette.border.light
-              : theme.palette.border.subtle
-          }`,
-          pl: 1.5,
-        })}
-      >
-        <Typography
-          sx={(theme) => ({
-            fontFamily: FONTS.mono,
-            fontSize: '0.6rem',
-            color: isEligible
-              ? theme.palette.status.open
-              : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
-            textTransform: 'uppercase',
-            mb: 0.2,
-          })}
-        >
-          Score
-        </Typography>
-        <Typography
-          sx={{
-            fontFamily: FONTS.mono,
-            fontSize: '0.9rem',
-            color: isEligible
-              ? muiTheme.palette.text.primary
-              : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
-            fontWeight: 700,
-          }}
-        >
-          {Number(miner.totalScore).toFixed(2)}
-        </Typography>
-      </Box>
-    </Box>
-  );
-};
-
-interface IssueStatsSectionProps {
-  miner: MinerStats;
-  isEligible: boolean;
-  textColor: string;
-}
-
-const IssueStatsSection: React.FC<IssueStatsSectionProps> = ({
-  miner,
-  isEligible,
-  textColor,
-}) => {
-  const muiTheme = useTheme();
-
-  return (
-    <Box
-      sx={(theme) => ({
-        pt: 0.35,
-        borderTop: `1px solid ${theme.palette.border.light}`,
-      })}
-    >
-      <Typography
-        sx={{
-          fontFamily: FONTS.mono,
-          fontSize: '0.7rem',
-          fontWeight: 700,
-          color: muiTheme.palette.status.open,
-          minWidth: 28,
-          textTransform: 'uppercase',
-          mb: 0.35,
-          letterSpacing: '0.04em',
-        }}
-      >
-        Issues
-      </Typography>
       <Box
         sx={{
           display: 'grid',
@@ -477,50 +364,14 @@ const IssueStatsSection: React.FC<IssueStatsSectionProps> = ({
           alignItems: 'center',
         }}
       >
-        {[
-          {
-            label: 'Solved',
-            value: miner.totalSolvedIssues ?? 0,
-            color: isEligible ? STATUS_COLORS.merged : textColor,
-          },
-          {
-            label: 'Open',
-            value: miner.totalOpenIssues ?? 0,
-            color: isEligible
-              ? alpha(muiTheme.palette.text.primary, 0.84)
-              : textColor,
-          },
-          {
-            label: 'Closed',
-            value: miner.totalClosedIssues ?? 0,
-            color: isEligible ? muiTheme.palette.status.closed : textColor,
-          },
-        ].map(({ label, value, color }) => (
-          <Box key={label}>
-            <Typography
-              sx={(theme) => ({
-                fontFamily: FONTS.mono,
-                fontSize: '0.6rem',
-                color: isEligible
-                  ? theme.palette.status.open
-                  : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
-                textTransform: 'uppercase',
-                mb: 0.2,
-              })}
-            >
-              {label}
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: FONTS.mono,
-                fontSize: '0.85rem',
-                color,
-                fontWeight: 600,
-              }}
-            >
-              {value}
-            </Typography>
-          </Box>
+        {segments.map((segment, i) => (
+          <StatCell
+            key={segment.label}
+            label={segment.label}
+            value={segment.value}
+            color={statColors[i]}
+            isEligible={isEligible}
+          />
         ))}
         <Box
           sx={(theme) => ({
@@ -533,68 +384,169 @@ const IssueStatsSection: React.FC<IssueStatsSectionProps> = ({
             pl: 1.5,
           })}
         >
-          <Typography
-            sx={(theme) => ({
-              fontFamily: FONTS.mono,
-              fontSize: '0.6rem',
-              color: isEligible
-                ? theme.palette.status.open
-                : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
-              textTransform: 'uppercase',
-              mb: 0.2,
-            })}
-          >
-            Issues
-          </Typography>
+          <StatLabel isEligible={isEligible}>Score</StatLabel>
           <Typography
             sx={{
               fontFamily: FONTS.mono,
               fontSize: '0.9rem',
-              color: isEligible ? muiTheme.palette.text.primary : textColor,
+              color: isEligible
+                ? muiTheme.palette.text.primary
+                : inactiveColor,
               fontWeight: 700,
             }}
           >
-            {(miner.totalSolvedIssues ?? 0) +
-              (miner.totalOpenIssues ?? 0) +
-              (miner.totalClosedIssues ?? 0)}
+            {Number(totalScore).toFixed(2)}
           </Typography>
         </Box>
       </Box>
+
+      {(variant === 'discoveries' || variant === 'watchlist') && (
+        <Box
+          sx={(theme) => ({
+            pt: 0.35,
+            borderTop: `1px solid ${theme.palette.border.light}`,
+          })}
+        >
+          <Typography
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              color: muiTheme.palette.status.open,
+              textTransform: 'uppercase',
+              mb: 0.35,
+              letterSpacing: '0.04em',
+            }}
+          >
+            Issues
+          </Typography>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr 1fr 4.5rem',
+              gap: 1,
+              alignItems: 'center',
+            }}
+          >
+            {issueSegments.map((segment, i) => (
+              <StatCell
+                key={segment.label}
+                label={segment.label}
+                value={segment.value}
+                color={statColors[i]}
+                isEligible={isEligible}
+              />
+            ))}
+            <Box
+              sx={(theme) => ({
+                textAlign: 'right',
+                borderLeft: `1px solid ${
+                  isEligible
+                    ? theme.palette.border.light
+                    : theme.palette.border.subtle
+                }`,
+                pl: 1.5,
+              })}
+            >
+              <StatLabel isEligible={isEligible}>Issues</StatLabel>
+              <Typography
+                sx={{
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.9rem',
+                  color: isEligible
+                    ? muiTheme.palette.text.primary
+                    : inactiveColor,
+                  fontWeight: 700,
+                }}
+              >
+                {issueTotal}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 };
 
+interface StatCellProps {
+  label: string;
+  value: number;
+  color: string;
+  isEligible: boolean;
+}
+
+const StatCell: React.FC<StatCellProps> = ({
+  label,
+  value,
+  color,
+  isEligible,
+}) => (
+  <Box>
+    <StatLabel isEligible={isEligible}>{label}</StatLabel>
+    <Typography
+      sx={{
+        fontFamily: FONTS.mono,
+        fontSize: '0.85rem',
+        color,
+        fontWeight: 600,
+      }}
+    >
+      {value}
+    </Typography>
+  </Box>
+);
+
+const StatLabel: React.FC<{
+  isEligible: boolean;
+  children: React.ReactNode;
+}> = ({ isEligible, children }) => (
+  <Typography
+    sx={(theme) => ({
+      fontFamily: FONTS.mono,
+      fontSize: '0.6rem',
+      color: isEligible
+        ? theme.palette.status.open
+        : alpha(theme.palette.text.tertiary, INACTIVE_OPACITY),
+      textTransform: 'uppercase',
+      mb: 0.2,
+    })}
+  >
+    {children}
+  </Typography>
+);
+
 interface CredDonutProps {
-  merged: number;
-  open: number;
-  closed: number;
+  segments: Segment[];
   percent: number;
   isEligible: boolean;
   label?: string;
+  size?: number;
 }
 
-const DONUT_SIZE = 48;
-
 const CredDonut: React.FC<CredDonutProps> = ({
-  merged,
-  open,
-  closed,
+  segments,
   percent,
   isEligible,
   label,
+  size = 48,
 }) => {
   const muiTheme = useTheme();
 
   return (
     <Box
-      sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        flexShrink: 0,
+      }}
     >
       <Box
         sx={{
           position: 'relative',
-          width: DONUT_SIZE,
-          height: DONUT_SIZE,
-          flexShrink: 0,
+          width: size,
+          height: size,
           opacity: isEligible ? 1 : INACTIVE_OPACITY,
         }}
       >
@@ -608,41 +560,17 @@ const CredDonut: React.FC<CredDonutProps> = ({
                 silent: true,
                 label: { show: false },
                 itemStyle: { borderRadius: 3, borderWidth: 0 },
-                data: [
-                  {
-                    value: merged,
-                    itemStyle: {
-                      color: isEligible
-                        ? CHART_COLORS.merged
-                        : alpha(
-                            muiTheme.palette.text.secondary,
-                            (INACTIVE_OPACITY * 2) / 3,
-                          ),
-                    },
+                data: segments.map((segment, i) => ({
+                  value: segment.value,
+                  itemStyle: {
+                    color: isEligible
+                      ? CHART_SEGMENT_COLORS[i]
+                      : alpha(
+                          muiTheme.palette.text.secondary,
+                          INACTIVE_OPACITY * CHART_INACTIVE_RATIOS[i],
+                        ),
                   },
-                  {
-                    value: open,
-                    itemStyle: {
-                      color: isEligible
-                        ? CHART_COLORS.open
-                        : alpha(
-                            muiTheme.palette.text.secondary,
-                            INACTIVE_OPACITY,
-                          ),
-                    },
-                  },
-                  {
-                    value: closed,
-                    itemStyle: {
-                      color: isEligible
-                        ? CHART_COLORS.closed
-                        : alpha(
-                            muiTheme.palette.text.secondary,
-                            INACTIVE_OPACITY / 2,
-                          ),
-                    },
-                  },
-                ],
+                })),
               },
             ],
           }}
@@ -664,7 +592,7 @@ const CredDonut: React.FC<CredDonutProps> = ({
           <Typography
             sx={(theme) => ({
               fontFamily: FONTS.mono,
-              fontSize: '0.65rem',
+              fontSize: size <= 48 ? '0.65rem' : '0.75rem',
               color: isEligible
                 ? percent >= 80
                   ? STATUS_COLORS.merged
