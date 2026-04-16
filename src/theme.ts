@@ -217,6 +217,22 @@ export const bodyCellStyle = {
   fontSize: '0.85rem',
 };
 
+export const tooltipSlotProps = {
+  tooltip: {
+    sx: {
+      backgroundColor: 'surface.tooltip',
+      color: 'text.primary',
+      fontSize: '0.72rem',
+      padding: '8px 12px',
+      borderRadius: '6px',
+      border: '1px solid',
+      borderColor: 'border.light',
+      maxWidth: 260,
+    },
+  },
+  arrow: { sx: { color: 'surface.tooltip' } },
+};
+
 // Module Augmentation for Custom Theme Properties
 declare module '@mui/material/styles' {
   interface TypeText {
