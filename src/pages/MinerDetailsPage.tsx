@@ -12,16 +12,18 @@ import {
   MinerScoreCard,
   SEO,
 } from '../components';
+import { WatchlistButton } from '../components/common';
 
 type ViewMode = 'prs' | 'issues';
 
-const TAB_NAMES = [
+const PR_TABS = [
   'overview',
   'activity',
   'pull-requests',
   'repositories',
 ] as const;
-type MinerDetailsTab = (typeof TAB_NAMES)[number];
+const ISSUE_TABS = ['overview', 'activity', 'issues', 'repositories'] as const;
+type MinerDetailsTab = (typeof PR_TABS)[number] | (typeof ISSUE_TABS)[number];
 
 const tabSx = {
   '& .MuiTab-root': {
@@ -41,9 +43,11 @@ const MinerDetailsPage: React.FC = () => {
   const modeParam = searchParams.get('mode');
   const viewMode: ViewMode = modeParam === 'issues' ? 'issues' : 'prs';
 
+  const tabs = viewMode === 'issues' ? ISSUE_TABS : PR_TABS;
+
   const tabParam = searchParams.get('tab');
   const activeTab: MinerDetailsTab =
-    tabParam && TAB_NAMES.includes(tabParam as MinerDetailsTab)
+    tabParam && (tabs as readonly string[]).includes(tabParam)
       ? (tabParam as MinerDetailsTab)
       : 'overview';
 
@@ -51,7 +55,7 @@ const MinerDetailsPage: React.FC = () => {
     const p = new URLSearchParams(searchParams);
     p.set('mode', mode);
     p.set('tab', 'overview');
-    setSearchParams(p);
+    setSearchParams(p, { replace: true });
   };
 
   const handleTabChange = (
@@ -60,7 +64,7 @@ const MinerDetailsPage: React.FC = () => {
   ) => {
     const p = new URLSearchParams(searchParams);
     p.set('tab', newValue);
-    setSearchParams(p);
+    setSearchParams(p, { replace: true });
   };
 
   if (!githubId) {
@@ -99,7 +103,10 @@ const MinerDetailsPage: React.FC = () => {
               justifyContent: 'space-between',
             }}
           >
-            <BackButton to="/top-miners" mb={0} />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <BackButton to="/top-miners" mb={0} />
+              <WatchlistButton githubId={githubId} size="medium" />
+            </Box>
             <Box
               sx={{
                 display: 'flex',
@@ -166,7 +173,7 @@ const MinerDetailsPage: React.FC = () => {
               <Tab value="overview" label="Overview" />
               <Tab value="activity" label="Activity" />
               <Tab
-                value="pull-requests"
+                value={viewMode === 'issues' ? 'issues' : 'pull-requests'}
                 label={viewMode === 'issues' ? 'Issues' : 'Pull Requests'}
               />
               <Tab value="repositories" label="Repositories" />
@@ -176,13 +183,21 @@ const MinerDetailsPage: React.FC = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {activeTab === 'overview' && (
               <>
-                <MinerInsightsCard githubId={githubId} />
-                <MinerScoreBreakdown githubId={githubId} />
+                <MinerInsightsCard githubId={githubId} viewMode={viewMode} />
+                {viewMode === 'prs' && (
+                  <MinerScoreBreakdown githubId={githubId} />
+                )}
               </>
             )}
-            {activeTab === 'activity' && <MinerActivity githubId={githubId} />}
+
+            {activeTab === 'activity' && (
+              <MinerActivity githubId={githubId} viewMode={viewMode} />
+            )}
             {activeTab === 'pull-requests' && (
               <MinerPRsTable githubId={githubId} />
+            )}
+            {activeTab === 'issues' && (
+              <MinerScoreBreakdown githubId={githubId} viewMode="issues" />
             )}
             {activeTab === 'repositories' && (
               <MinerRepositoriesTable githubId={githubId} />

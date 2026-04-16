@@ -8,6 +8,7 @@ import {
   Divider,
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useWatchlist } from '../../hooks/useWatchlist';
 
 interface SidebarProps {
   onNavigate?: () => void;
@@ -16,16 +17,26 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { count: watchlistCount } = useWatchlist();
 
   const handleNavigate = (path: string) => {
     navigate(path);
     onNavigate?.(); // Call onNavigate if provided (for mobile drawer closing)
   };
 
-  const navItems = [
+  const navItems: Array<{
+    label: string;
+    path: string;
+    badge?: string | number;
+  }> = [
     { label: 'dashboard', path: '/dashboard' },
     { label: 'oss contributions', path: '/top-miners' },
     { label: 'discoveries', path: '/discoveries', badge: 'new' },
+    {
+      label: 'watchlist',
+      path: '/watchlist',
+      badge: watchlistCount > 0 ? watchlistCount : undefined,
+    },
     { label: 'bounties', path: '/bounties' },
     { label: 'repositories', path: '/repositories' },
     { label: 'onboard', path: '/onboard' },
@@ -75,20 +86,23 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               justifyContent: 'flex-start',
               py: 1.5,
               px: 2,
-              color: '#ffffff',
+              color: 'text.primary',
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.95rem',
               textTransform: 'none',
               backgroundColor: location.pathname.startsWith(item.path)
-                ? 'rgba(255, 255, 255, 0.1)'
+                ? 'border.light'
                 : 'transparent',
               borderLeft: location.pathname.startsWith(item.path)
-                ? '2px solid #ffffff'
+                ? '2px solid'
                 : '2px solid transparent',
+              borderColor: location.pathname.startsWith(item.path)
+                ? 'text.primary'
+                : 'transparent',
               borderRadius: 0,
               textAlign: 'left',
               '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                backgroundColor: 'surface.light',
                 color: 'primary.main',
               },
             }}
@@ -117,7 +131,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
 
       {/* Footer */}
       <Box sx={{ mt: 2 }}>
-        <Divider sx={{ borderColor: '#3d3d3d', mb: 2 }} />
+        <Divider sx={{ borderColor: 'border.medium', mb: 2 }} />
         <Stack direction="column" spacing={1} alignItems="center">
           <Stack
             direction="row"
@@ -127,13 +141,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
             justifyContent="center"
           >
             <Typography
-              color="#ffffff"
               variant="caption"
               component="a"
               href="https://docs.gittensor.io"
               target="_blank"
               rel="noopener noreferrer"
               sx={{
+                color: 'text.primary',
                 fontSize: '0.65rem',
                 textDecoration: 'none',
                 '&:hover': { textDecoration: 'underline' },
@@ -145,20 +159,20 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               orientation="vertical"
               flexItem
               sx={{
-                borderColor: '#3d3d3d',
+                borderColor: 'border.medium',
                 mx: 0.5,
                 height: '12px',
                 alignSelf: 'center',
               }}
             />
             <Typography
-              color="#ffffff"
               variant="caption"
               component="a"
               href="https://docs.learnbittensor.org/resources/community-links"
               target="_blank"
               rel="noopener noreferrer"
               sx={{
+                color: 'text.primary',
                 fontSize: '0.65rem',
                 textDecoration: 'none',
                 '&:hover': { textDecoration: 'underline' },
@@ -170,20 +184,20 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               orientation="vertical"
               flexItem
               sx={{
-                borderColor: '#3d3d3d',
+                borderColor: 'border.medium',
                 mx: 0.5,
                 height: '12px',
                 alignSelf: 'center',
               }}
             />
             <Typography
-              color="#ffffff"
               variant="caption"
               component="a"
               href="https://github.com/entrius/gittensor"
               target="_blank"
               rel="noopener noreferrer"
               sx={{
+                color: 'text.primary',
                 fontSize: '0.65rem',
                 textDecoration: 'none',
                 '&:hover': { textDecoration: 'underline' },
@@ -195,20 +209,20 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               orientation="vertical"
               flexItem
               sx={{
-                borderColor: '#3d3d3d',
+                borderColor: 'border.medium',
                 mx: 0.5,
                 height: '12px',
                 alignSelf: 'center',
               }}
             />
             <Typography
-              color="#ffffff"
               variant="caption"
               component="a"
               href="https://x.com/gittensor_io"
               target="_blank"
               rel="noopener noreferrer"
               sx={{
+                color: 'text.primary',
                 fontSize: '0.65rem',
                 textDecoration: 'none',
                 '&:hover': { textDecoration: 'underline' },
@@ -221,7 +235,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
             variant="caption"
             sx={{
               fontSize: '0.6rem',
-              color: '#888888',
+              color: 'text.secondary',
             }}
           >
             © Gittensor 2026

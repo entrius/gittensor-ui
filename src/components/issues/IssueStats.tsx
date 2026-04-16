@@ -2,7 +2,7 @@ import React from 'react';
 import { Grid, Skeleton, Box } from '@mui/material';
 import { IssuesStats } from '../../api/models/Issues';
 import { useStats } from '../../api';
-import KpiCard from '../dashboard/KpiCard';
+import KpiCard from '../KpiCard';
 import { formatTokenAmount } from '../../utils/format';
 import { STATUS_COLORS } from '../../theme';
 
@@ -41,7 +41,8 @@ const IssueStats: React.FC<IssueStatsProps> = ({
               sx={{
                 p: 2,
                 backgroundColor: 'transparent',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                border: '1px solid',
+                borderColor: 'border.light',
                 borderRadius: 3,
               }}
             >

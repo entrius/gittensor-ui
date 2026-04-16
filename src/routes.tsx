@@ -11,7 +11,9 @@ export type AppRoute = Omit<PathRouteProps, 'path'> & {
 const HomePage = React.lazy(() => import('./pages/HomePage'));
 const AboutPage = React.lazy(() => import('./pages/AboutPage'));
 const FAQPage = React.lazy(() => import('./pages/FAQPage'));
-const DashboardPage = React.lazy(() => import('./pages/DashboardPage'));
+const DashboardPage = React.lazy(
+  () => import('./pages/dashboard/DashboardPage'),
+);
 const IssuesPage = React.lazy(() => import('./pages/IssuesPage'));
 const SearchPage = React.lazy(() => import('./pages/search/SearchPage'));
 const IssueDetailsPage = React.lazy(() => import('./pages/IssueDetailsPage'));
@@ -24,6 +26,7 @@ const RepositoryDetailsPage = React.lazy(
 const PRDetailsPage = React.lazy(() => import('./pages/PRDetailsPage'));
 const DiscoveriesPage = React.lazy(() => import('./pages/DiscoveriesPage'));
 const OnboardPage = React.lazy(() => import('./pages/OnboardPage'));
+const WatchlistPage = React.lazy(() => import('./pages/WatchlistPage'));
 
 // 404 page
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
@@ -58,6 +61,12 @@ const routesArray: AppRoute[] = [
     name: 'top-miners',
     path: '/top-miners',
     element: <TopMinersPage />,
+    showGlobalSearch: true,
+  },
+  {
+    name: 'watchlist',
+    path: '/watchlist',
+    element: <WatchlistPage />,
     showGlobalSearch: true,
   },
   {

@@ -5,11 +5,13 @@ import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS, STATUS_COLORS } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
+import { RowLink, WatchlistButton } from '../common';
 import { type MinerStats, type LeaderboardVariant, FONTS } from './types';
 
 interface MinerCardProps {
   miner: MinerStats;
-  onClick: () => void;
+  href: string;
+  linkState?: unknown;
   variant?: LeaderboardVariant;
 }
 
@@ -47,7 +49,8 @@ const getSegments = (
 
 export const MinerCard: React.FC<MinerCardProps> = ({
   miner,
-  onClick,
+  href,
+  linkState,
   variant = 'oss',
 }) => {
   const muiTheme = useTheme();
@@ -70,260 +73,277 @@ export const MinerCard: React.FC<MinerCardProps> = ({
   const segments = getSegments(miner, variant);
 
   return (
-    <Card
-      onClick={onClick}
-      sx={(theme) => ({
-        p: 1,
-        backgroundColor: isEligible
-          ? theme.palette.background.default
-          : theme.palette.surface.subtle,
-        backdropFilter: 'blur(12px)',
-        border: '1px solid',
-        borderColor: isEligible
-          ? alpha(theme.palette.status.merged, 0.3)
-          : theme.palette.border.subtle,
-        borderRadius: 2,
-        cursor: 'pointer',
-        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
-        position: 'relative',
-        boxShadow: isEligible
-          ? `0 2px 8px ${alpha(theme.palette.background.default, 0.1)}`
-          : 'none',
-        '&:hover': {
+    <RowLink href={href} state={linkState} sx={{ height: '100%' }}>
+      <Card
+        sx={(theme) => ({
+          p: 1,
           backgroundColor: isEligible
-            ? theme.palette.surface.elevated
-            : theme.palette.surface.light,
+            ? theme.palette.background.default
+            : theme.palette.surface.subtle,
+          backdropFilter: 'blur(12px)',
+          border: '1px solid',
           borderColor: isEligible
-            ? alpha(theme.palette.status.merged, 0.5)
+            ? alpha(theme.palette.status.merged, 0.3)
             : theme.palette.border.subtle,
-          transform: isEligible ? 'translateY(-2px)' : 'none',
-          boxShadow: isEligible
-            ? `0 8px 24px -6px ${alpha(theme.palette.background.default, 0.6)}`
-            : 'none',
-        },
-      })}
-      elevation={0}
-    >
-      <Box
-        sx={{
+          borderRadius: 2,
+          cursor: 'pointer',
+          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          height: '100%',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-        }}
+          flexDirection: 'column',
+          gap: 1,
+          position: 'relative',
+          boxShadow: isEligible
+            ? `0 2px 8px ${alpha(theme.palette.background.default, 0.1)}`
+            : 'none',
+          '&:hover': {
+            backgroundColor: isEligible
+              ? theme.palette.surface.elevated
+              : theme.palette.surface.light,
+            borderColor: isEligible
+              ? alpha(theme.palette.status.merged, 0.5)
+              : theme.palette.border.subtle,
+            transform: isEligible ? 'translateY(-2px)' : 'none',
+            boxShadow: isEligible
+              ? `0 8px 24px -6px ${alpha(theme.palette.background.default, 0.6)}`
+              : 'none',
+          },
+        })}
+        elevation={0}
       >
         <Box
-          sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+          }}
         >
-          <Avatar
-            src={avatarSrc}
-            sx={(theme) => ({
-              width: 36,
-              height: 36,
-              border: '2px solid',
-              borderColor: isEligible
-                ? alpha(theme.palette.status.merged, 0.3)
-                : theme.palette.border.subtle,
-              filter: isEligible ? 'none' : 'grayscale(100%)',
-              opacity: isEligible ? 1 : INACTIVE_OPACITY,
-              flexShrink: 0,
-            })}
-          />
           <Box
             sx={{
-              minWidth: 0,
-              minHeight: 36,
               display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              overflow: 'hidden',
+              alignItems: 'center',
+              gap: 1.5,
+              minWidth: 0,
             }}
           >
-            <Typography
+            <Avatar
+              src={avatarSrc}
               sx={(theme) => ({
-                fontFamily: FONTS.mono,
-                fontSize: '1rem',
-                fontWeight: 700,
-                color: isEligible
-                  ? theme.palette.text.primary
-                  : theme.palette.text.tertiary,
+                width: 36,
+                height: 36,
+                border: '2px solid',
+                borderColor: isEligible
+                  ? alpha(theme.palette.status.merged, 0.3)
+                  : theme.palette.border.subtle,
+                filter: isEligible ? 'none' : 'grayscale(100%)',
                 opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                flexShrink: 0,
+              })}
+            />
+            <Box
+              sx={{
+                minWidth: 0,
+                minHeight: 36,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
                 overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              })}
+              }}
             >
-              {username}
-            </Typography>
-            <Typography
-              sx={(theme) => ({
-                fontFamily: FONTS.mono,
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                color: isEligible
-                  ? theme.palette.status.merged
-                  : theme.palette.text.tertiary,
-                opacity: isEligible ? 1 : INACTIVE_OPACITY,
-                lineHeight: 1,
-                mt: 0.1,
-              })}
-            >
-              #{miner.rank}
-            </Typography>
+              <Typography
+                sx={(theme) => ({
+                  fontFamily: FONTS.mono,
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  color: isEligible
+                    ? theme.palette.text.primary
+                    : theme.palette.text.tertiary,
+                  opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                })}
+              >
+                {username}
+              </Typography>
+              <Typography
+                sx={(theme) => ({
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  color: isEligible
+                    ? theme.palette.status.merged
+                    : theme.palette.text.tertiary,
+                  opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                  lineHeight: 1,
+                  mt: 0.1,
+                })}
+              >
+                #{miner.rank}
+              </Typography>
+            </Box>
           </Box>
-        </Box>
-        {!isEligible && (
-          <Typography
-            sx={(theme) => ({
-              fontFamily: FONTS.mono,
-              fontSize: '0.65rem',
-              fontWeight: 700,
-              color: theme.palette.text.secondary,
-              textTransform: 'uppercase',
-              border: `1px solid ${theme.palette.border.subtle}`,
-              borderRadius: 1,
-              px: 0.75,
-              py: 0.25,
-              letterSpacing: '0.06em',
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
               flexShrink: 0,
-              backgroundColor: theme.palette.surface.subtle,
-            })}
+            }}
           >
-            Ineligible
-          </Typography>
-        )}
-      </Box>
-
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 2,
-        }}
-      >
-        <Box>
-          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
-            <Typography
-              sx={(theme) => ({
-                fontFamily: FONTS.mono,
-                fontSize: '1.6rem',
-                fontWeight: 800,
-                color: isEligible
-                  ? theme.palette.status.merged
-                  : theme.palette.text.tertiary,
-                opacity: isEligible ? 1 : INACTIVE_OPACITY,
-                lineHeight: 1,
-              })}
-            >
-              ${Math.round(miner.usdPerDay || 0).toLocaleString()}
-            </Typography>
-            <Typography
-              sx={(theme) => ({
-                fontFamily: FONTS.mono,
-                fontSize: '0.75rem',
-                color: isEligible
-                  ? theme.palette.status.open
-                  : theme.palette.text.tertiary,
-                opacity: isEligible ? 1 : INACTIVE_OPACITY,
-              })}
-            >
-              /day
-            </Typography>
+            {!isEligible && (
+              <Typography
+                sx={(theme) => ({
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  color: theme.palette.text.secondary,
+                  textTransform: 'uppercase',
+                  border: `1px solid ${theme.palette.border.subtle}`,
+                  borderRadius: 1,
+                  px: 0.75,
+                  py: 0.25,
+                  letterSpacing: '0.06em',
+                  backgroundColor: theme.palette.surface.subtle,
+                })}
+              >
+                Ineligible
+              </Typography>
+            )}
+            {miner.githubId && (
+              <WatchlistButton githubId={miner.githubId} size="small" />
+            )}
           </Box>
-          <Typography
-            sx={(theme) => ({
-              fontFamily: FONTS.mono,
-              fontSize: '0.7rem',
-              color: isEligible
-                ? theme.palette.status.merged
-                : theme.palette.text.tertiary,
-              opacity: isEligible ? 0.7 : INACTIVE_OPACITY,
-              mt: 0.2,
-            })}
-          >
-            ~${Math.round((miner.usdPerDay || 0) * 30).toLocaleString()}/mo
-          </Typography>
         </Box>
 
         <Box
           sx={{
-            position: 'relative',
-            width: 56,
-            height: 56,
-            flexShrink: 0,
-            opacity: isEligible ? 1 : INACTIVE_OPACITY,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
           }}
         >
-          <ReactECharts
-            option={{
-              backgroundColor: 'transparent',
-              series: [
-                {
-                  type: 'pie',
-                  radius: ['65%', '90%'],
-                  silent: true,
-                  label: { show: false },
-                  itemStyle: {
-                    borderRadius: 3,
-                    borderWidth: 0,
-                  },
-                  data: segments.map((segment, i) => ({
-                    value: segment.value,
-                    itemStyle: {
-                      color: isEligible
-                        ? CHART_SEGMENT_COLORS[i]
-                        : alpha(
-                            muiTheme.palette.text.secondary,
-                            INACTIVE_OPACITY * CHART_INACTIVE_RATIOS[i],
-                          ),
-                    },
-                  })),
-                },
-              ],
-            }}
-            style={{ width: '100%', height: '100%' }}
-            opts={{ renderer: 'svg' }}
-          />
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+              <Typography
+                sx={(theme) => ({
+                  fontFamily: FONTS.mono,
+                  fontSize: '1.6rem',
+                  fontWeight: 800,
+                  color: isEligible
+                    ? theme.palette.status.merged
+                    : theme.palette.text.tertiary,
+                  opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                  lineHeight: 1,
+                })}
+              >
+                ${Math.round(miner.usdPerDay || 0).toLocaleString()}
+              </Typography>
+              <Typography
+                sx={(theme) => ({
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.75rem',
+                  color: isEligible
+                    ? theme.palette.status.open
+                    : theme.palette.text.tertiary,
+                  opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                })}
+              >
+                /day
+              </Typography>
+            </Box>
             <Typography
               sx={(theme) => ({
                 fontFamily: FONTS.mono,
-                fontSize: '0.75rem',
+                fontSize: '0.7rem',
                 color: isEligible
-                  ? credibilityPercent >= 80
-                    ? STATUS_COLORS.merged
-                    : STATUS_COLORS.open
+                  ? theme.palette.status.merged
                   : theme.palette.text.tertiary,
-                fontWeight: 700,
+                opacity: isEligible ? 0.7 : INACTIVE_OPACITY,
+                mt: 0.2,
               })}
             >
-              {credibilityPercent.toFixed(0)}%
+              ~${Math.round((miner.usdPerDay || 0) * 30).toLocaleString()}/mo
             </Typography>
           </Box>
-        </Box>
-      </Box>
 
-      <MinerCardFooter
-        totalScore={miner.totalScore}
-        segments={segments}
-        isEligible={isEligible}
-      />
-    </Card>
+          <Box
+            sx={{
+              position: 'relative',
+              width: 56,
+              height: 56,
+              flexShrink: 0,
+              opacity: isEligible ? 1 : INACTIVE_OPACITY,
+            }}
+          >
+            <ReactECharts
+              option={{
+                backgroundColor: 'transparent',
+                series: [
+                  {
+                    type: 'pie',
+                    radius: ['65%', '90%'],
+                    silent: true,
+                    label: { show: false },
+                    itemStyle: {
+                      borderRadius: 3,
+                      borderWidth: 0,
+                    },
+                    data: segments.map((segment, i) => ({
+                      value: segment.value,
+                      itemStyle: {
+                        color: isEligible
+                          ? CHART_SEGMENT_COLORS[i]
+                          : alpha(
+                              muiTheme.palette.text.secondary,
+                              INACTIVE_OPACITY * CHART_INACTIVE_RATIOS[i],
+                            ),
+                      },
+                    })),
+                  },
+                ],
+              }}
+              style={{ width: '100%', height: '100%' }}
+              opts={{ renderer: 'svg' }}
+            />
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Typography
+                sx={(theme) => ({
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.75rem',
+                  color: isEligible
+                    ? credibilityPercent >= 80
+                      ? STATUS_COLORS.merged
+                      : STATUS_COLORS.open
+                    : theme.palette.text.tertiary,
+                  fontWeight: 700,
+                })}
+              >
+                {credibilityPercent.toFixed(0)}%
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        <MinerCardFooter
+          totalScore={miner.totalScore}
+          segments={segments}
+          isEligible={isEligible}
+        />
+      </Card>
+    </RowLink>
   );
 };
 

@@ -1,6 +1,16 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme, alpha } from '@mui/material/styles';
 
 // Shared Color Constants (exported for use outside MUI components)
+export const UI_COLORS = {
+  white: '#ffffff',
+  black: '#000000',
+  primary: '#1d37fc',
+  textSecondary: '#7d7d7d',
+  textTertiary: 'rgba(201, 209, 217, 0.64)',
+  surfaceElevated: '#161b22',
+  surfaceTooltip: 'rgba(30, 30, 30, 0.95)',
+} as const;
+
 export const RANK_COLORS = {
   first: '#FFD700',
   second: '#C0C0C0',
@@ -9,7 +19,7 @@ export const RANK_COLORS = {
 
 export const STATUS_COLORS = {
   merged: '#3fb950', // Green - merged PRs
-  open: '#8b949e', // Gray - open PRs
+  open: alpha(UI_COLORS.white, 0.6), // Preserve prior white-on-dark appearance
   closed: '#ff7b72', // Red - closed PRs
   neutral: '#9ca3af', // Grey - default/neutral state
   success: '#4ade80', // Green - success states
@@ -63,6 +73,21 @@ export const scrollbarSx = {
   },
 } as const;
 
+/** Git-style contribution calendar levels (empty → most active) */
+export const CONTRIBUTION_HEATMAP_SCALE = [
+  '#161b22',
+  '#0e4429',
+  '#006d32',
+  '#26a641',
+  '#39d353',
+] as const;
+
+/** Known org avatars on GitHub that need a non-transparent backdrop */
+export const REPO_OWNER_AVATAR_BACKGROUNDS = {
+  opentensor: '#ffffff',
+  bitcoin: '#F7931A',
+} as const;
+
 export const TEXT_OPACITY = {
   primary: 1,
   secondary: 0.7,
@@ -71,6 +96,27 @@ export const TEXT_OPACITY = {
   faint: 0.3,
   ghost: 0.2,
 } as const;
+
+export const headerCellStyle = {
+  backgroundColor: 'surface.tooltip',
+  backdropFilter: 'blur(8px)',
+  color: 'text.secondary',
+  fontFamily: '"JetBrains Mono", monospace',
+  fontWeight: 500,
+  fontSize: '0.75rem',
+  borderBottom: '1px solid',
+  borderColor: 'border.light',
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.5px',
+};
+
+export const bodyCellStyle = {
+  color: 'text.primary',
+  fontFamily: '"JetBrains Mono", monospace',
+  borderBottom: '1px solid',
+  borderColor: 'border.light',
+  fontSize: '0.85rem',
+};
 
 // Module Augmentation for Custom Theme Properties
 declare module '@mui/material/styles' {
@@ -240,21 +286,21 @@ const theme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#1d37fc',
+      main: UI_COLORS.primary,
     },
     secondary: {
       main: '#fff30d',
     },
     background: {
-      default: '#000000',
+      default: UI_COLORS.black,
       paper: '#0a0f1f',
     },
     text: {
-      primary: '#ffffff',
-      secondary: '#7d7d7d',
-      tertiary: 'rgba(201, 209, 217, 0.64)',
+      primary: UI_COLORS.white,
+      secondary: UI_COLORS.textSecondary,
+      tertiary: UI_COLORS.textTertiary,
     },
-    divider: '#ffffff',
+    divider: UI_COLORS.white,
     // Rank podium colors (1st/2nd/3rd)
     rank: {
       first: RANK_COLORS.first,
@@ -295,17 +341,17 @@ const theme = createTheme({
     },
     // Border colors
     border: {
-      subtle: 'rgba(255, 255, 255, 0.08)',
-      light: 'rgba(255, 255, 255, 0.1)',
-      medium: 'rgba(255, 255, 255, 0.2)',
+      subtle: alpha(UI_COLORS.white, 0.08),
+      light: alpha(UI_COLORS.white, 0.1),
+      medium: alpha(UI_COLORS.white, 0.2),
     },
     // Surface colors
     surface: {
       transparent: 'transparent',
-      subtle: 'rgba(255, 255, 255, 0.02)',
-      light: 'rgba(255, 255, 255, 0.05)',
-      elevated: '#161b22',
-      tooltip: 'rgba(30, 30, 30, 0.95)',
+      subtle: alpha(UI_COLORS.white, 0.02),
+      light: alpha(UI_COLORS.white, 0.05),
+      elevated: UI_COLORS.surfaceElevated,
+      tooltip: UI_COLORS.surfaceTooltip,
     },
   },
   typography: {

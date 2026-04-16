@@ -8,18 +8,13 @@ import { getReposQueryKey } from './DashboardApi';
 import { getIssuesQueryKey } from './IssuesApi';
 import { getAllMinersQueryKey } from './MinerApi';
 import { getAllPrsQueryKey } from './PrsApi';
+import { type DatasetState } from './models';
 import { type IssueBounty } from './models/Issues';
 import {
   type CommitLog,
   type MinerEvaluation,
   type Repository,
 } from './models/Dashboard';
-
-type DatasetState<T> = {
-  data: T[];
-  isLoading: boolean;
-  isError: boolean;
-};
 
 type SearchDatasets = {
   miners: DatasetState<MinerEvaluation>;
