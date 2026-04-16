@@ -48,4 +48,3 @@ export const useRepositoryIssues = (repo: string) =>
     'useRepositoryIssues',
     `/${encodeURIComponent(repo)}/issues`,
   );
-

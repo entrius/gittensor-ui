@@ -98,7 +98,6 @@ const routesArray: AppRoute[] = [
   },
 ];
 
-
 // Matches a pathname against app route definitions so layout code can
 // read route-level UI metadata such as showGlobalSearch.
 export const getRouteForPathname = (pathname: string) =>
