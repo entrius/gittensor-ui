@@ -143,9 +143,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
     const fetchRepoData = async () => {
       setLoading(true);
       try {
-        const repoResponse = await axios.get(
-          githubRepoUrl(repositoryFullName),
-        );
+        const repoResponse = await axios.get(githubRepoUrl(repositoryFullName));
         const branch = repoResponse.data.default_branch || 'main';
         setDefaultBranch(branch);
 
