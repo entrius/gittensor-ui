@@ -258,7 +258,9 @@ export const MinerCard: React.FC<MinerCardProps> = ({
               open={donutOpen}
               closed={donutClosed}
               percent={isDiscoveries ? issueCredPercent : credibilityPercent}
-              isEligible={isWatchlist ? (miner.isEligible ?? false) : isEligible}
+              isEligible={
+                isWatchlist ? (miner.isEligible ?? false) : isEligible
+              }
               label={isWatchlist ? 'PRs' : undefined}
             />
             {isWatchlist && (
@@ -584,7 +586,9 @@ const CredDonut: React.FC<CredDonutProps> = ({
   const muiTheme = useTheme();
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <Box
+      sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+    >
       <Box
         sx={{
           position: 'relative',

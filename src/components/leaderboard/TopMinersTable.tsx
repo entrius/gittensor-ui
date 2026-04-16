@@ -33,7 +33,13 @@ const getAllowedSortOptions = (variant: LeaderboardVariant): SortOption[] => {
   if (variant === 'discoveries')
     return ['totalScore', 'usdPerDay', 'totalIssues', 'credibility'];
   if (variant === 'watchlist')
-    return ['totalScore', 'usdPerDay', 'totalPRs', 'totalIssues', 'credibility'];
+    return [
+      'totalScore',
+      'usdPerDay',
+      'totalPRs',
+      'totalIssues',
+      'credibility',
+    ];
   return ['totalScore', 'usdPerDay', 'totalPRs', 'credibility'];
 };
 
