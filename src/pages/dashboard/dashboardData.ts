@@ -16,9 +16,15 @@ import {
 } from '../../utils';
 
 export type PresetTimeRange = '1d' | '7d' | '35d';
-export type TrendTimeRange = PresetTimeRange | 'all';
+export type CustomTrendRange = {
+  kind: 'custom';
+  from: string; // yyyy-mm-dd
+  to: string; // yyyy-mm-dd
+};
+export type TrendTimeRange = PresetTimeRange | 'all' | CustomTrendRange;
 export type TrendSeriesKey =
   | 'mergedPrs'
+  | 'closedUnmergedPrs'
   | 'issuesResolved'
   | 'prsOpened'
   | 'issuesOpened';
@@ -78,6 +84,7 @@ const RANGE_CONFIG: Record<
 
 const TREND_SERIES_KEYS: TrendSeriesKey[] = [
   'mergedPrs',
+  'closedUnmergedPrs',
   'issuesResolved',
   'prsOpened',
   'issuesOpened',
@@ -100,10 +107,36 @@ const isWithinWindow = (timestamp: number | null, window: WindowBounds) =>
 
 export const getRangeConfig = (range: PresetTimeRange) => RANGE_CONFIG[range];
 
+const isCustomRange = (range: TrendTimeRange): range is CustomTrendRange =>
+  typeof range === 'object' && range.kind === 'custom';
+
+const parseDateInputToUtcStartMs = (value: string): number | null => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  const timestamp = Date.UTC(year, month, day, 0, 0, 0, 0);
+  return Number.isFinite(timestamp) ? timestamp : null;
+};
+
 export const getWindowBounds = (
   range: TrendTimeRange,
   now = new Date(),
 ): WindowBounds => {
+  if (isCustomRange(range)) {
+    const fromMs = parseDateInputToUtcStartMs(range.from);
+    const toMs = parseDateInputToUtcStartMs(range.to);
+    const fallbackEndMs = now.getTime();
+    const fallbackStartMs = fallbackEndMs - 7 * DAY_MS;
+    if (fromMs === null || toMs === null) {
+      return { startMs: fallbackStartMs, endMs: fallbackEndMs };
+    }
+    const startMs = Math.min(fromMs, toMs);
+    const endMs = Math.max(fromMs, toMs) + DAY_MS;
+    return { startMs, endMs };
+  }
+
   if (range === 'all') {
     return { startMs: GITTENSOR_START_MS, endMs: now.getTime() };
   }
@@ -122,7 +155,7 @@ export const getPreviousWindowBounds = (
   }
 
   const current = getWindowBounds(range, now);
-  const { windowMs } = getRangeConfig(range);
+  const windowMs = current.endMs - current.startMs;
   return {
     startMs: current.startMs - windowMs,
     endMs: current.startMs,
@@ -166,6 +199,21 @@ const buildTrendBuckets = (
   range: TrendTimeRange,
   now = new Date(),
 ): Array<{ startMs: number; endMs: number; label: string }> => {
+  if (isCustomRange(range)) {
+    const { startMs, endMs } = getWindowBounds(range, now);
+    const totalMs = Math.max(DAY_MS, endMs - startMs);
+    const pointCount = Math.max(1, Math.ceil(totalMs / DAY_MS));
+
+    return Array.from({ length: pointCount }, (_, index) => {
+      const bucketStart = startMs + index * DAY_MS;
+      return {
+        startMs: bucketStart,
+        endMs: bucketStart + DAY_MS,
+        label: formatTrendBucketLabel(bucketStart, '7d'),
+      };
+    });
+  }
+
   if (range !== 'all') {
     const { points, bucketMs, windowMs } = getRangeConfig(range);
     const startMs = now.getTime() - windowMs;
@@ -242,6 +290,9 @@ export const buildDashboardTrendData = (
   now = new Date(),
 ): { labels: string[]; series: DashboardTrendSeries[] } => {
   const mergedPrTimestamps = prs.map((pr) => toTimestamp(pr.mergedAt));
+  const closedUnmergedPrTimestamps = prs
+    .filter((pr) => !pr.mergedAt)
+    .map((pr) => toTimestamp(pr.closedAt));
   const openedPrTimestamps = prs.map((pr) => toTimestamp(pr.prCreatedAt));
   const openedIssueTimestamps = issues.map((issue) =>
     toTimestamp(issue.createdAt),
@@ -252,6 +303,7 @@ export const buildDashboardTrendData = (
   const buckets = buildTrendBuckets(
     [
       ...mergedPrTimestamps,
+      ...closedUnmergedPrTimestamps,
       ...openedPrTimestamps,
       ...openedIssueTimestamps,
       ...resolvedIssueTimestamps,
@@ -260,6 +312,10 @@ export const buildDashboardTrendData = (
     now,
   );
   const mergedPrValues = bucketTimestamps(mergedPrTimestamps, buckets);
+  const closedUnmergedPrValues = bucketTimestamps(
+    closedUnmergedPrTimestamps,
+    buckets,
+  );
   const openedPrValues = bucketTimestamps(openedPrTimestamps, buckets);
   const openedIssueValues = bucketTimestamps(openedIssueTimestamps, buckets);
   const resolvedIssueValues = bucketTimestamps(
@@ -274,11 +330,13 @@ export const buildDashboardTrendData = (
       values:
         key === 'mergedPrs'
           ? mergedPrValues
-          : key === 'prsOpened'
-            ? openedPrValues
-            : key === 'issuesResolved'
-              ? resolvedIssueValues
-              : openedIssueValues,
+          : key === 'closedUnmergedPrs'
+            ? closedUnmergedPrValues
+            : key === 'prsOpened'
+              ? openedPrValues
+              : key === 'issuesResolved'
+                ? resolvedIssueValues
+                : openedIssueValues,
     })),
   };
 };

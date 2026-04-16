@@ -134,7 +134,9 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   const rangeDescription =
     range === 'all'
       ? 'All-time totals'
-      : `Deltas vs previous ${range.toUpperCase()} window`;
+      : typeof range === 'string'
+        ? `Deltas vs previous ${range.toUpperCase()} window`
+        : 'Deltas vs previous custom window';
 
   return (
     <>

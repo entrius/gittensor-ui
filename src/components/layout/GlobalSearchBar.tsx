@@ -377,10 +377,37 @@ const GlobalSearchBar: React.FC = () => {
     }
   }, [activeIndex, navItems]);
 
-  // Global shortcuts: Cmd/Ctrl+K and "/" to focus the search input.
+  // Global shortcuts: Cmd/Ctrl+K, Cmd/Ctrl+F, and "/" to focus the search input.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        const input = inputRef.current;
+        if (input) {
+          input.focus();
+          input.select();
+        }
+        return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
+        const target =
+          (e.target as HTMLElement | null) ||
+          (document.activeElement as HTMLElement | null);
+        if (!target) return;
+        const tag = target.tagName;
+        const isEditable =
+          tag === 'INPUT' ||
+          tag === 'TEXTAREA' ||
+          target.isContentEditable === true;
+        if (isEditable) return;
+        if (
+          target.closest(
+            '[role="dialog"], [role="menu"], [role="listbox"], [aria-modal="true"]',
+          )
+        ) {
+          return;
+        }
         e.preventDefault();
         const input = inputRef.current;
         if (input) {
@@ -569,7 +596,7 @@ const GlobalSearchBar: React.FC = () => {
                   pointerEvents: 'none',
                 })}
               >
-                {isMac ? '⌘K' : 'Ctrl K'}
+                {isMac ? '⌘K' : 'Ctrl+K'}
               </Box>
             </InputAdornment>
           ),

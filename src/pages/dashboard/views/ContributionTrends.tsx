@@ -1,10 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
+  Button,
   Card,
   CardContent,
   CircularProgress,
   Stack,
+  TextField,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
@@ -40,6 +42,12 @@ const TREND_SERIES_PRESENTATION: Record<
     lineWidth: 3,
     lineOpacity: 1,
   },
+  closedUnmergedPrs: {
+    label: 'Closed (Unmerged) PRs',
+    colorOpacity: 0.85,
+    lineWidth: 2,
+    lineOpacity: 0.86,
+  },
   issuesResolved: {
     label: 'Issues Resolved',
     colorOpacity: 0.85,
@@ -63,7 +71,9 @@ const TREND_SERIES_PRESENTATION: Record<
 const getTrendSeriesBaseColor = (theme: Theme, seriesKey: TrendSeriesKey) =>
   seriesKey === 'mergedPrs' || seriesKey === 'prsOpened'
     ? theme.palette.diff.additions
-    : theme.palette.status.award;
+    : seriesKey === 'closedUnmergedPrs'
+      ? theme.palette.status.closed
+      : theme.palette.status.award;
 
 const getTrendSeriesColor = (theme: Theme, seriesKey: TrendSeriesKey) =>
   alpha(
@@ -80,6 +90,23 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
 }) => {
   const theme = useTheme();
   const [hiddenSeries, setHiddenSeries] = useState<TrendSeriesKey[]>([]);
+  const today = new Date();
+  const defaultTo = today.toISOString().slice(0, 10);
+  const defaultFrom = new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+  const [customFrom, setCustomFrom] = useState(defaultFrom);
+  const [customTo, setCustomTo] = useState(defaultTo);
+
+  const selectedRangeKey =
+    typeof range === 'string' ? range : ('custom' as const);
+
+  useEffect(() => {
+    if (typeof range === 'object' && range.kind === 'custom') {
+      setCustomFrom(range.from);
+      setCustomTo(range.to);
+    }
+  }, [range]);
 
   const visibleSeries = useMemo(
     () => series.filter((entry) => !hiddenSeries.includes(entry.key)),
@@ -87,7 +114,14 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
   );
 
   const chartOption = useMemo(() => {
-    const labelInterval = range === '35d' ? 6 : range === '7d' ? 0 : 'auto';
+    const labelInterval =
+      range === '35d'
+        ? 6
+        : range === '7d'
+          ? 0
+          : typeof range === 'object' && labels.length > 14
+            ? 2
+            : 'auto';
     const tooltipPrimaryColor = theme.palette.text.primary;
     const tooltipSecondaryColor = alpha(theme.palette.text.primary, 0.66);
     const tooltipFontFamily = theme.typography.mono.fontFamily;
@@ -247,12 +281,17 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
 
         <ToggleButtonGroup
           exclusive
-          value={range}
+          value={selectedRangeKey}
           onChange={(
             _event: React.MouseEvent<HTMLElement>,
-            nextRange: TrendTimeRange | null,
+            nextRange: '1d' | '7d' | '35d' | 'all' | 'custom' | null,
           ) => {
-            if (nextRange) onRangeChange(nextRange);
+            if (!nextRange) return;
+            if (nextRange === 'custom') {
+              onRangeChange({ kind: 'custom', from: customFrom, to: customTo });
+              return;
+            }
+            onRangeChange(nextRange);
           }}
           size="small"
           aria-label="Contribution timeline time range"
@@ -287,8 +326,48 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
           <ToggleButton value="7d">7D</ToggleButton>
           <ToggleButton value="35d">35D</ToggleButton>
           <ToggleButton value="all">All</ToggleButton>
+          <ToggleButton value="custom">Custom</ToggleButton>
         </ToggleButtonGroup>
       </Stack>
+
+      {selectedRangeKey === 'custom' && (
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1}
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          sx={{ mb: 1.1 }}
+        >
+          <TextField
+            size="small"
+            type="date"
+            label="From"
+            value={customFrom}
+            onChange={(event) => setCustomFrom(event.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            size="small"
+            type="date"
+            label="To"
+            value={customTo}
+            onChange={(event) => setCustomTo(event.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() =>
+              onRangeChange({ kind: 'custom', from: customFrom, to: customTo })
+            }
+            sx={{
+              textTransform: 'none',
+              fontFamily: theme.typography.mono.fontFamily,
+            }}
+          >
+            Apply Range
+          </Button>
+        </Stack>
+      )}
 
       <Card
         elevation={0}
