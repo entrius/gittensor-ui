@@ -70,7 +70,6 @@ export const MinerCard: React.FC<MinerCardProps> = ({
   const credibilityPercent = (miner.credibility ?? 0) * 100;
   const isEligible = miner.isEligible ?? false;
 
-<<<<<<< HEAD
   const isDiscoveries = variant === 'discoveries';
   const donutMerged = isDiscoveries
     ? (miner.totalSolvedIssues ?? 0)
@@ -81,9 +80,6 @@ export const MinerCard: React.FC<MinerCardProps> = ({
   const donutClosed = isDiscoveries
     ? (miner.totalClosedIssues ?? 0)
     : (miner.totalClosedPrs ?? 0);
-=======
-  const segments = getSegments(miner, variant);
->>>>>>> test
 
   return (
     <RowLink href={href} state={linkState} sx={{ height: '100%' }}>
