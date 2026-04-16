@@ -1,4 +1,9 @@
-import { createTheme, alpha } from '@mui/material/styles';
+import {
+  createTheme,
+  alpha,
+  type Theme,
+  type SxProps,
+} from '@mui/material/styles';
 
 // Shared Color Constants (exported for use outside MUI components)
 export const UI_COLORS = {
@@ -96,6 +101,100 @@ export const TEXT_OPACITY = {
   faint: 0.3,
   ghost: 0.2,
 } as const;
+
+/** Theme-driven markdown document body (README, CONTRIBUTING, etc.). */
+export const markdownDocumentPaperSx = (theme: Theme): SxProps<Theme> => ({
+  p: { xs: 2, md: 5 },
+  pt: { xs: 2, md: 0 },
+  maxWidth: '900px',
+  mx: 'auto',
+  backgroundColor: 'transparent',
+  color: theme.palette.text.tertiary,
+  fontFamily:
+    '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+  lineHeight: 1.6,
+  '& h1': {
+    fontSize: '2em',
+    borderBottom: `1px solid ${theme.palette.border.light}`,
+    pb: 0.3,
+    mb: 3,
+    mt: 1,
+    fontWeight: 600,
+    color: theme.palette.text.primary,
+  },
+  '& h2': {
+    fontSize: '1.5em',
+    borderBottom: `1px solid ${theme.palette.border.light}`,
+    pb: 0.3,
+    mb: 3,
+    mt: 2,
+    fontWeight: 600,
+    color: theme.palette.text.primary,
+  },
+  '& h3': {
+    fontSize: '1.25em',
+    mb: 2,
+    mt: 3,
+    fontWeight: 600,
+    color: theme.palette.text.primary,
+  },
+  '& p': { marginBottom: '16px', fontSize: '16px' },
+  '& a': {
+    color: STATUS_COLORS.info,
+    textDecoration: 'none',
+    '&:hover': { textDecoration: 'underline' },
+  },
+  '& ul, & ol': { marginBottom: '16px', paddingLeft: '2em' },
+  '& li': { marginBottom: '4px' },
+  '& blockquote': {
+    borderLeft: `4px solid ${theme.palette.border.light}`,
+    padding: '0 1em',
+    color: STATUS_COLORS.open,
+    marginLeft: 0,
+    marginBottom: '16px',
+  },
+  '& code': {
+    backgroundColor: alpha(theme.palette.grey[500], 0.4),
+    padding: '0.2em 0.4em',
+    borderRadius: '6px',
+    fontSize: '85%',
+    fontFamily: '"JetBrains Mono", monospace',
+  },
+  '& pre': {
+    backgroundColor: theme.palette.surface.elevated,
+    padding: '16px',
+    overflow: 'auto',
+    borderRadius: '6px',
+    marginBottom: '16px',
+    '& code': {
+      backgroundColor: 'transparent',
+      padding: 0,
+      fontSize: '100%',
+      color: theme.palette.text.tertiary,
+    },
+  },
+  '& table': {
+    borderCollapse: 'collapse',
+    width: '100%',
+    marginBottom: '16px',
+    display: 'block',
+    overflowX: 'auto',
+  },
+  '& th': {
+    fontWeight: 600,
+    border: `1px solid ${theme.palette.border.light}`,
+    padding: '6px 13px',
+    textAlign: 'left',
+  },
+  '& td': {
+    border: `1px solid ${theme.palette.border.light}`,
+    padding: '6px 13px',
+  },
+  '& tr:nth-of-type(2n)': {
+    backgroundColor: theme.palette.surface.elevated,
+  },
+  '& img': { backgroundColor: 'transparent' },
+});
 
 export const headerCellStyle = {
   backgroundColor: 'surface.tooltip',

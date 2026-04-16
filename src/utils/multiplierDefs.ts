@@ -1,4 +1,5 @@
 import type { PullRequestDetails } from '../api/models/Dashboard';
+import { parseNumber } from './ExplorerUtils';
 
 export interface MultiplierPillDef {
   key: string;
@@ -28,10 +29,10 @@ function parseOpt(raw: string | number | undefined | null): number {
   return parseFloat(String(raw ?? '0'));
 }
 function fmtMul(raw: string | number): string {
-  return `${Number(raw).toFixed(4)}×`;
+  return `${parseNumber(raw).toFixed(4)}×`;
 }
 function fmtVal(raw: string | number): string {
-  return Number(raw).toFixed(4);
+  return parseNumber(raw).toFixed(4);
 }
 function fmtGrid(raw: string | number, suffix: string = 'x'): string {
   return `${parseFloat(String(raw)).toFixed(2)}${suffix}`;
@@ -157,7 +158,10 @@ function buildGridEntry(
 
 function buildDensityEntry(pr: PullRequestDetails): MultiplierGridEntry | null {
   if (pr.codeDensity == null) return null;
-  return { label: 'Code Density', value: Number(pr.codeDensity).toFixed(2) };
+  return {
+    label: 'Code Density',
+    value: parseNumber(pr.codeDensity).toFixed(2),
+  };
 }
 
 const OPEN_GRID: GridConfig[] = [
