@@ -30,7 +30,7 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
 }) => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const monoFontFamily = theme.typography.mono.fontFamily;
+  const monoFontFamily = theme.typography.fontFamily;
 
   const openContributor = (githubId: string) => {
     navigate(`/miners/details?githubId=${encodeURIComponent(githubId)}`, {
