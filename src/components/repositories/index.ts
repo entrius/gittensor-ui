@@ -1,4 +1,3 @@
-export { default as RepositoryWeightsTable } from './RepositoryWeightsTable';
 export { default as LanguageWeightsTable } from './LanguageWeightsTable';
 export { default as RepositoryContributorsTable } from './RepositoryContributorsTable';
 export { default as RepositoryStats } from './RepositoryStats';

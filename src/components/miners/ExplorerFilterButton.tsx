@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, useTheme } from '@mui/material';
+import { Button } from '@mui/material';
 
 interface ExplorerFilterButtonProps {
   label: string;
@@ -16,7 +16,6 @@ const ExplorerFilterButton: React.FC<ExplorerFilterButtonProps> = ({
   selected,
   onClick,
 }) => {
-  const theme = useTheme();
   return (
     <Button
       size="small"
@@ -29,7 +28,6 @@ const ExplorerFilterButton: React.FC<ExplorerFilterButtonProps> = ({
         py: { xs: 0.5, sm: 0.75 },
         minWidth: 'auto',
         textTransform: 'none',
-        fontFamily: theme.typography.mono.fontFamily,
         fontSize: { xs: '0.65rem', sm: '0.75rem' },
         border: selected ? `1px solid ${color}` : '1px solid transparent',
         whiteSpace: 'nowrap',

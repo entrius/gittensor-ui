@@ -69,7 +69,6 @@ const IssuesPage: React.FC = () => {
               onChange={handleTabChange}
               sx={(theme) => ({
                 '& .MuiTab-root': {
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.85rem',
                   fontWeight: 600,
                   textTransform: 'none',
@@ -93,7 +92,6 @@ const IssuesPage: React.FC = () => {
             <Typography
               sx={{
                 fontSize: '0.72rem',
-                fontFamily: '"JetBrains Mono", monospace',
                 color: (t) => alpha(t.palette.text.primary, 0.35),
                 pr: 1,
               }}

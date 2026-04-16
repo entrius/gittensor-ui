@@ -3,15 +3,12 @@ import { Box, Tabs, Tab, Card, CardContent } from '@mui/material';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { useSearchParams } from 'react-router-dom';
-import { AboutContent } from './AboutPage';
-import { FAQContent } from './FAQPage';
+import { AboutContent } from '../components/onboard/AboutContent';
+import { FAQContent } from '../components/onboard/FAQContent';
 
 import { GettingStarted } from '../components/onboard/GettingStarted';
 import { Scoring } from '../components/onboard/Scoring';
-import {
-  RepositoryWeightsTable,
-  LanguageWeightsTable,
-} from '../components/repositories';
+import { LanguageWeightsTable } from '../components/repositories';
 
 const OnboardPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -22,18 +19,16 @@ const OnboardPage: React.FC = () => {
     about: 0,
     'getting-started': 1,
     scoring: 2,
-    repositories: 3,
-    languages: 4,
-    faq: 5,
+    languages: 3,
+    faq: 4,
   };
 
   const indexToTabName: Record<number, string> = {
     0: 'about',
     1: 'getting-started',
     2: 'scoring',
-    3: 'repositories',
-    4: 'languages',
-    5: 'faq',
+    3: 'languages',
+    4: 'faq',
   };
 
   const activeTab =
@@ -94,7 +89,6 @@ const OnboardPage: React.FC = () => {
             <Tab label="About" />
             <Tab label="Getting Started" />
             <Tab label="Scoring" />
-            <Tab label="Repositories" />
             <Tab label="Languages" />
             <Tab label="FAQ" />
           </Tabs>
@@ -125,38 +119,12 @@ const OnboardPage: React.FC = () => {
                 elevation={0}
               >
                 <CardContent>
-                  <RepositoryWeightsTable />
-                </CardContent>
-              </Card>
-            </Box>
-          )}
-          {activeTab === 4 && (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '100%',
-              }}
-            >
-              <Card
-                sx={(theme) => ({
-                  borderRadius: 3,
-                  border: '1px solid',
-                  borderColor: theme.palette.border.light,
-                  backgroundColor: theme.palette.surface.transparent,
-                  maxWidth: 1200,
-                  width: '100%',
-                })}
-                elevation={0}
-              >
-                <CardContent>
                   <LanguageWeightsTable />
                 </CardContent>
               </Card>
             </Box>
           )}
-          {activeTab === 5 && <FAQContent />}
+          {activeTab === 4 && <FAQContent />}
         </Box>
       </Box>
     </Page>

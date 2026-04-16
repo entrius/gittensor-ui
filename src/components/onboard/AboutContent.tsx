@@ -12,8 +12,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CodeIcon from '@mui/icons-material/Code';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-import { Navigate } from 'react-router-dom';
-import { useMonthlyRewards } from '../hooks/useMonthlyRewards';
+import { useMonthlyRewards } from '../../hooks/useMonthlyRewards';
 
 export const AboutContent: React.FC = () => {
   const theme = useTheme();
@@ -42,7 +41,6 @@ export const AboutContent: React.FC = () => {
             fontWeight="bold"
             sx={{
               mb: 3,
-              fontFamily: '"JetBrains Mono", monospace',
               color: 'text.primary',
             }}
           >
@@ -274,7 +272,6 @@ export const AboutContent: React.FC = () => {
               mb: 2.5,
               fontSize: { xs: '1.2rem', sm: '1.3rem' },
               color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
               letterSpacing: '0.02em',
             }}
           >
@@ -337,7 +334,3 @@ export const AboutContent: React.FC = () => {
     </Box>
   );
 };
-
-const AboutPage: React.FC = () => <Navigate to="/onboard?tab=about" replace />;
-
-export default AboutPage;

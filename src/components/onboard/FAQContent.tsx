@@ -1,7 +1,6 @@
 import React from 'react';
 import { Stack, Box } from '@mui/material';
-import { Navigate } from 'react-router-dom';
-import FAQ from '../components/FAQ';
+import FAQ from '../FAQ';
 
 export const FAQContent: React.FC = () => (
   <Box
@@ -146,7 +145,3 @@ export const FAQContent: React.FC = () => (
     </Stack>
   </Box>
 );
-
-const FAQPage: React.FC = () => <Navigate to="/onboard?tab=faq" replace />;
-
-export default FAQPage;
