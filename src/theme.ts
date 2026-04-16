@@ -223,7 +223,6 @@ export const tooltipSlotProps = {
       backgroundColor: 'surface.tooltip',
       color: 'text.primary',
       fontSize: '0.72rem',
-      fontFamily: '"JetBrains Mono", monospace',
       padding: '8px 12px',
       borderRadius: '6px',
       border: '1px solid',
