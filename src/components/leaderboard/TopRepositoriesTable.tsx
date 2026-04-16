@@ -194,11 +194,16 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     return filtered;
   }, [rankedRepositories, searchQuery]);
 
-  const getChartOption = () => {
-    const chartData = filteredRepositories.slice(
-      page * rowsPerPage,
-      page * rowsPerPage + rowsPerPage,
-    );
+  const paginatedRepositories = useMemo(
+    () =>
+      filteredRepositories.slice(
+        page * rowsPerPage,
+        page * rowsPerPage + rowsPerPage,
+      ),
+    [filteredRepositories, page, rowsPerPage],
+  );
+
+  const getChartOption = (chartData: RepoStats[]) => {
     const white = UI_COLORS.white;
     const borderSubtle = alpha(white, 0.08);
     const borderLight = alpha(white, 0.1);
@@ -426,6 +431,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           emphasis: {
             focus: 'series',
             itemStyle: {
+              color: barGradient,
               shadowBlur: 20,
               shadowColor: alpha(STATUS_COLORS.info, 0.5),
             },
@@ -710,9 +716,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             backgroundColor: 'surface.subtle',
           }}
         >
-          {showChart && filteredRepositories.length > 0 && (
+          {showChart && paginatedRepositories.length > 0 && (
             <ReactECharts
-              option={getChartOption()}
+              option={getChartOption(paginatedRepositories)}
               style={{ height: '100%', width: '100%' }}
             />
           )}
@@ -770,149 +776,147 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredRepositories
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((repo) => {
-                return (
-                  <TableRow
-                    key={repo.repository}
-                    hover
-                    onClick={() => onSelectRepository(repo.repository || '')}
-                    sx={{
-                      cursor: 'pointer',
-                      '&:hover': {
-                        backgroundColor: 'border.subtle',
-                      },
-                      transition: 'all 0.2s',
-                      opacity: repo.inactiveAt ? 0.5 : 1,
-                      borderBottom: '1px solid',
-                      borderColor: 'surface.light',
-                    }}
-                  >
-                    <TableCell sx={{ ...bodyCellStyle, width: '60px', pr: 0 }}>
-                      <RankIcon rank={repo.rank || 0} />
-                    </TableCell>
-                    <TableCell sx={{ ...bodyCellStyle, width: '35%', pl: 1.5 }}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1,
-                          cursor: 'pointer',
-                          '&:hover': {
-                            '& .MuiTypography-root': {
-                              color: 'primary.main',
-                              textDecoration: 'underline',
-                            },
+            {paginatedRepositories.map((repo) => {
+              return (
+                <TableRow
+                  key={repo.repository}
+                  hover
+                  onClick={() => onSelectRepository(repo.repository || '')}
+                  sx={{
+                    cursor: 'pointer',
+                    '&:hover': {
+                      backgroundColor: 'border.subtle',
+                    },
+                    transition: 'all 0.2s',
+                    opacity: repo.inactiveAt ? 0.5 : 1,
+                    borderBottom: '1px solid',
+                    borderColor: 'surface.light',
+                  }}
+                >
+                  <TableCell sx={{ ...bodyCellStyle, width: '60px', pr: 0 }}>
+                    <RankIcon rank={repo.rank || 0} />
+                  </TableCell>
+                  <TableCell sx={{ ...bodyCellStyle, width: '35%', pl: 1.5 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        cursor: 'pointer',
+                        '&:hover': {
+                          '& .MuiTypography-root': {
+                            color: 'primary.main',
+                            textDecoration: 'underline',
                           },
+                        },
+                      }}
+                    >
+                      <Avatar
+                        src={`https://avatars.githubusercontent.com/${(repo.repository || '').split('/')[0]}`}
+                        alt={(repo.repository || '').split('/')[0]}
+                        sx={{
+                          width: 20,
+                          height: 20,
+                          border: '1px solid',
+                          borderColor: 'border.medium',
+                          backgroundColor: getRepositoryOwnerAvatarBackground(
+                            (repo.repository || '').split('/')[0],
+                          ),
                         }}
-                      >
-                        <Avatar
-                          src={`https://avatars.githubusercontent.com/${(repo.repository || '').split('/')[0]}`}
-                          alt={(repo.repository || '').split('/')[0]}
+                      />
+                      <Tooltip title={repo.repository || ''} placement="top">
+                        <Typography
+                          component="span"
                           sx={{
-                            width: 20,
-                            height: 20,
-                            border: '1px solid',
-                            borderColor: 'border.medium',
-                            backgroundColor: getRepositoryOwnerAvatarBackground(
-                              (repo.repository || '').split('/')[0],
-                            ),
+                            color: 'text.primary',
+                            fontWeight: 500,
+                            transition: 'color 0.2s',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: '100%',
+                            display: 'inline-block',
                           }}
-                        />
-                        <Tooltip title={repo.repository || ''} placement="top">
-                          <Typography
-                            component="span"
-                            sx={{
-                              color: 'text.primary',
-                              fontWeight: 500,
-                              transition: 'color 0.2s',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              maxWidth: '100%',
-                              display: 'inline-block',
-                            }}
-                          >
-                            {truncateText(repo.repository || '', 40)}
-                          </Typography>
-                        </Tooltip>
-                      </Box>
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      sx={{ ...bodyCellStyle, width: '12%' }}
+                        >
+                          {truncateText(repo.repository || '', 40)}
+                        </Typography>
+                      </Tooltip>
+                    </Box>
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ ...bodyCellStyle, width: '12%' }}
+                  >
+                    <Typography
+                      sx={{
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        color: 'text.primary',
+                      }}
                     >
-                      <Typography
-                        sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          color: 'text.primary',
-                        }}
-                      >
-                        {repo.weight.toFixed(2)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      sx={{ ...bodyCellStyle, width: '18%' }}
+                      {repo.weight.toFixed(2)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ ...bodyCellStyle, width: '18%' }}
+                  >
+                    <Typography
+                      sx={{
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        color:
+                          (repo.totalScore || 0) > 0
+                            ? 'text.primary'
+                            : 'text.secondary',
+                      }}
                     >
-                      <Typography
-                        sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          color:
-                            (repo.totalScore || 0) > 0
-                              ? 'text.primary'
-                              : 'text.secondary',
-                        }}
-                      >
-                        {(repo.totalScore || 0) > 0
-                          ? Number(repo.totalScore || 0).toFixed(2)
-                          : '-'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      sx={{ ...bodyCellStyle, width: '15%' }}
+                      {(repo.totalScore || 0) > 0
+                        ? Number(repo.totalScore || 0).toFixed(2)
+                        : '-'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ ...bodyCellStyle, width: '15%' }}
+                  >
+                    <Typography
+                      sx={{
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: '0.75rem',
+                        color:
+                          (repo.totalPRs || 0) > 0
+                            ? 'text.primary'
+                            : 'text.secondary',
+                      }}
                     >
-                      <Typography
-                        sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
-                          fontSize: '0.75rem',
-                          color:
-                            (repo.totalPRs || 0) > 0
-                              ? 'text.primary'
-                              : 'text.secondary',
-                        }}
-                      >
-                        {(repo.totalPRs || 0) > 0 ? repo.totalPRs : '-'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      sx={{ ...bodyCellStyle, width: '15%' }}
+                      {(repo.totalPRs || 0) > 0 ? repo.totalPRs : '-'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ ...bodyCellStyle, width: '15%' }}
+                  >
+                    <Typography
+                      sx={{
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: '0.75rem',
+                        color:
+                          (repo.uniqueMiners?.size || 0) > 0
+                            ? 'text.primary'
+                            : 'text.secondary',
+                      }}
                     >
-                      <Typography
-                        sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
-                          fontSize: '0.75rem',
-                          color:
-                            (repo.uniqueMiners?.size || 0) > 0
-                              ? 'text.primary'
-                              : 'text.secondary',
-                        }}
-                      >
-                        {(repo.uniqueMiners?.size || 0) > 0
-                          ? repo.uniqueMiners?.size
-                          : '-'}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+                      {(repo.uniqueMiners?.size || 0) > 0
+                        ? repo.uniqueMiners?.size
+                        : '-'}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
             {!filteredRepositories.length &&
               trimmedSearch &&
               isDirectRepoInput && (
