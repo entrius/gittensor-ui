@@ -142,6 +142,52 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
           >
             <Typography
               variant="caption"
+              component="span"
+              onClick={() => handleNavigate('/about')}
+              sx={{
+                color: 'text.primary',
+                fontSize: '0.65rem',
+                cursor: 'pointer',
+                '&:hover': { textDecoration: 'underline' },
+              }}
+            >
+              About
+            </Typography>
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{
+                borderColor: 'border.medium',
+                mx: 0.5,
+                height: '12px',
+                alignSelf: 'center',
+              }}
+            />
+            <Typography
+              variant="caption"
+              component="span"
+              onClick={() => handleNavigate('/faq')}
+              sx={{
+                color: 'text.primary',
+                fontSize: '0.65rem',
+                cursor: 'pointer',
+                '&:hover': { textDecoration: 'underline' },
+              }}
+            >
+              FAQ
+            </Typography>
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{
+                borderColor: 'border.medium',
+                mx: 0.5,
+                height: '12px',
+                alignSelf: 'center',
+              }}
+            />
+            <Typography
+              variant="caption"
               component="a"
               href="https://docs.gittensor.io"
               target="_blank"
