@@ -116,10 +116,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<PrSortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
-  const statusFilter: MinerStatusFilter = isMinerStatusFilter(
-    searchParams.get('prStatus'),
-  )
-    ? searchParams.get('prStatus')!
+  const prStatusParam = searchParams.get('prStatus');
+  const statusFilter: MinerStatusFilter = isMinerStatusFilter(prStatusParam)
+    ? prStatusParam
     : 'all';
 
   useEffect(() => {
