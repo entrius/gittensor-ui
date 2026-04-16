@@ -84,8 +84,8 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
     format === 'percent'
       ? `${(value * 100).toFixed(1)}%`
       : format === 'value'
-        ? Number(value).toFixed(2)
-        : `×${Number(value).toFixed(2)}`;
+        ? parseNumber(value).toFixed(2)
+        : `×${parseNumber(value).toFixed(2)}`;
 
   return (
     <Tooltip title={tooltip} arrow placement="top" slotProps={tooltipSlotProps}>
@@ -319,9 +319,9 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
               `+${pr.additions} / -${pr.deletions}`,
               `${pr.commitCount} commit${pr.commitCount !== 1 ? 's' : ''}`,
               pr.tokenScore != null &&
-                `tokens ${Number(pr.tokenScore).toFixed(2)}`,
+                `tokens ${parseNumber(pr.tokenScore).toFixed(2)}`,
               pr.totalNodesScored != null &&
-                Number(pr.totalNodesScored) > 0 &&
+                parseNumber(pr.totalNodesScored) > 0 &&
                 `${pr.totalNodesScored} nodes`,
             ]
               .filter(Boolean)
