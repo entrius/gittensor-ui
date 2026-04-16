@@ -216,7 +216,7 @@ const RepositoryWeightsTable: React.FC = () => {
     }));
 
     return {
-      backgroundColor: 'transparent',
+      backgroundColor: alpha(theme.palette.common.black, 0),
       title: {
         text: 'Repository Weights Distribution',
         subtext: 'Weight distribution across repositories',
@@ -252,7 +252,7 @@ const RepositoryWeightsTable: React.FC = () => {
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                 <img
                   src="https://avatars.githubusercontent.com/${data.owner}"
-                  style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid ${theme.palette.border.medium}; background-color: ${data.owner === 'opentensor' ? REPO_OWNER_AVATAR_BACKGROUNDS.opentensor : data.owner === 'bitcoin' ? REPO_OWNER_AVATAR_BACKGROUNDS.bitcoin : 'transparent'};"
+                  style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid ${theme.palette.border.medium}; background-color: ${data.owner === 'opentensor' ? REPO_OWNER_AVATAR_BACKGROUNDS.opentensor : data.owner === 'bitcoin' ? REPO_OWNER_AVATAR_BACKGROUNDS.bitcoin : alpha(theme.palette.common.black, 0)};"
                 />
                 <div style="font-weight: 600;">${data.fullName}</div>
               </div>
@@ -324,134 +324,131 @@ const RepositoryWeightsTable: React.FC = () => {
 
   return (
     <Box ref={containerRef}>
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ p: 2, pb: 1 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 2,
+          mb: 3,
+          flexWrap: 'wrap',
+        }}
+      >
+        <Box sx={{ flex: 1 }}>
           <Typography variant="body2" color="text.secondary">
             Contribute to any of these projects to gain score and earn emissions
           </Typography>
         </Box>
 
-        <Box
-          sx={{
-            px: 2,
-            pb: 2,
-            display: 'flex',
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            gap: 2,
-            flexWrap: 'wrap',
-          }}
-        >
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
-              <IconButton
-                onClick={() => setShowChart(!showChart)}
-                size="small"
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+            <IconButton
+              onClick={() => setShowChart(!showChart)}
+              size="small"
+              sx={{
+                color: showChart
+                  ? 'text.primary'
+                  : alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+                border: `1px solid ${theme.palette.border.light}`,
+                borderRadius: 2,
+                padding: '6px',
+                '&:hover': {
+                  backgroundColor: 'surface.light',
+                  borderColor: 'border.medium',
+                },
+              }}
+            >
+              {showChart ? (
+                <TableChartIcon fontSize="small" />
+              ) : (
+                <BarChartIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
+
+          <FormControl size="small">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                variant="body2"
                 sx={{
-                  color: showChart
-                    ? 'text.primary'
-                    : alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-                  border: `1px solid ${theme.palette.border.light}`,
-                  borderRadius: 2,
-                  padding: '6px',
-                  '&:hover': {
-                    backgroundColor: 'surface.light',
-                    borderColor: 'border.medium',
-                  },
+                  color: alpha(
+                    theme.palette.common.white,
+                    TEXT_OPACITY.secondary,
+                  ),
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.8rem',
                 }}
               >
-                {showChart ? (
-                  <TableChartIcon fontSize="small" />
-                ) : (
-                  <BarChartIcon fontSize="small" />
-                )}
-              </IconButton>
-            </Tooltip>
-
-            <FormControl size="small">
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: alpha(
-                      theme.palette.common.white,
-                      TEXT_OPACITY.secondary,
-                    ),
-                    fontFamily: '"JetBrains Mono", monospace',
-                    fontSize: '0.8rem',
-                  }}
-                >
-                  Rows:
-                </Typography>
-                <Select
-                  value={rowsPerPage}
-                  onChange={(e) => {
-                    setRowsPerPage(e.target.value as number);
-                    setPage(0);
-                  }}
-                  sx={{
-                    color: 'text.primary',
-                    fontFamily: '"JetBrains Mono", monospace',
-                    backgroundColor: alpha(theme.palette.common.black, 0.4),
-                    fontSize: '0.8rem',
-                    height: '36px',
-                    borderRadius: 2,
-                    minWidth: '80px',
-                    '& fieldset': { borderColor: theme.palette.border.light },
-                    '&:hover fieldset': {
-                      borderColor: theme.palette.border.medium,
-                    },
-                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                    '& .MuiSelect-select': {
-                      py: 0.75,
-                    },
-                  }}
-                >
-                  <MenuItem value={5}>5</MenuItem>
-                  <MenuItem value={10}>10</MenuItem>
-                  <MenuItem value={25}>25</MenuItem>
-                  <MenuItem value={50}>50</MenuItem>
-                </Select>
-              </Box>
-            </FormControl>
-            <TextField
-              placeholder="Search..."
-              size="small"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search
-                      sx={{
-                        color: alpha(
-                          theme.palette.common.white,
-                          TEXT_OPACITY.tertiary,
-                        ),
-                        fontSize: '1rem',
-                      }}
-                    />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                width: '200px',
-                '& .MuiOutlinedInput-root': {
+                Rows:
+              </Typography>
+              <Select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(e.target.value as number);
+                  setPage(0);
+                }}
+                sx={{
                   color: 'text.primary',
                   fontFamily: '"JetBrains Mono", monospace',
                   backgroundColor: alpha(theme.palette.common.black, 0.4),
                   fontSize: '0.8rem',
                   height: '36px',
                   borderRadius: 2,
+                  minWidth: '80px',
                   '& fieldset': { borderColor: theme.palette.border.light },
                   '&:hover fieldset': {
                     borderColor: theme.palette.border.medium,
                   },
                   '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                  '& .MuiSelect-select': {
+                    py: 0.75,
+                  },
+                }}
+              >
+                <MenuItem value={5}>5</MenuItem>
+                <MenuItem value={10}>10</MenuItem>
+                <MenuItem value={25}>25</MenuItem>
+                <MenuItem value={50}>50</MenuItem>
+              </Select>
+            </Box>
+          </FormControl>
+          <TextField
+            placeholder="Search..."
+            size="small"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search
+                    sx={{
+                      color: alpha(
+                        theme.palette.common.white,
+                        TEXT_OPACITY.tertiary,
+                      ),
+                      fontSize: '1rem',
+                    }}
+                  />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              width: '200px',
+              '& .MuiOutlinedInput-root': {
+                color: 'text.primary',
+                fontFamily: '"JetBrains Mono", monospace',
+                backgroundColor: alpha(theme.palette.common.black, 0.4),
+                fontSize: '0.8rem',
+                height: '36px',
+                borderRadius: 2,
+                '& fieldset': { borderColor: theme.palette.border.light },
+                '&:hover fieldset': {
+                  borderColor: theme.palette.border.medium,
                 },
-              }}
-            />
-          </Box>
+                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+              },
+            }}
+          />
         </Box>
       </Box>
 
@@ -483,7 +480,7 @@ const RepositoryWeightsTable: React.FC = () => {
           component={Paper}
           elevation={0}
           sx={{
-            backgroundColor: 'transparent',
+            backgroundColor: alpha(theme.palette.common.black, 0),
             maxHeight: '800px',
             overflowY: 'auto',
             ...scrollbarSx,
@@ -650,7 +647,7 @@ const RepositoryWeightsTable: React.FC = () => {
                                   backgroundColor:
                                     REPO_OWNER_AVATAR_BACKGROUNDS[
                                       repo.owner as keyof typeof REPO_OWNER_AVATAR_BACKGROUNDS
-                                    ] ?? 'transparent',
+                                    ] ?? alpha(theme.palette.common.black, 0),
                                   transition: 'transform 0.2s',
                                   '&:hover': {
                                     transform: 'scale(1.2)',
@@ -708,7 +705,7 @@ const RepositoryWeightsTable: React.FC = () => {
                                   backgroundColor:
                                     REPO_OWNER_AVATAR_BACKGROUNDS[
                                       repo.owner as keyof typeof REPO_OWNER_AVATAR_BACKGROUNDS
-                                    ] ?? 'transparent',
+                                    ] ?? alpha(theme.palette.common.black, 0),
                                   transition: 'transform 0.2s',
                                   '&:hover': {
                                     transform: 'scale(1.2)',
