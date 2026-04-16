@@ -68,7 +68,6 @@ const PRHeader: React.FC<PRHeaderProps> = ({
             variant="h5"
             sx={{
               color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '1.3rem',
               fontWeight: 500,
             }}
@@ -118,7 +117,6 @@ const PRHeader: React.FC<PRHeaderProps> = ({
             }
             sx={{
               color: 'text.tertiary',
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.85rem',
               cursor: 'pointer',
               transition: 'color 0.2s',
@@ -157,7 +155,6 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                       backgroundColor: 'surface.tooltip',
                       color: 'text.primary',
                       fontSize: '0.75rem',
-                      fontFamily: '"JetBrains Mono", monospace',
                       padding: '8px 12px',
                       borderRadius: '6px',
                       border: '1px solid',
@@ -175,7 +172,6 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                 <Typography
                   sx={{
                     color: 'text.tertiary',
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.75rem',
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px',
@@ -193,7 +189,6 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               </Tooltip>
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '2.25rem',
                   fontWeight: 700,
                   lineHeight: 1,
@@ -226,7 +221,6 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                       backgroundColor: 'surface.tooltip',
                       color: 'text.primary',
                       fontSize: '0.75rem',
-                      fontFamily: '"JetBrains Mono", monospace',
                       padding: '8px 12px',
                       borderRadius: '6px',
                       border: '1px solid',
@@ -244,7 +238,6 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                 <Typography
                   sx={{
                     color: 'text.tertiary',
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.75rem',
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px',
@@ -262,7 +255,6 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               </Tooltip>
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '2.25rem',
                   fontWeight: 700,
                   lineHeight: 1,
@@ -282,7 +274,6 @@ const PRHeader: React.FC<PRHeaderProps> = ({
             <Typography
               sx={{
                 color: 'text.tertiary',
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.75rem',
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
@@ -293,7 +284,6 @@ const PRHeader: React.FC<PRHeaderProps> = ({
             </Typography>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '2.25rem',
                 fontWeight: 700,
                 lineHeight: 1,
@@ -315,7 +305,6 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                         backgroundColor: 'surface.tooltip',
                         color: 'text.primary',
                         fontSize: '0.75rem',
-                        fontFamily: '"JetBrains Mono", monospace',
                         padding: '8px 12px',
                         borderRadius: '6px',
                         border: '1px solid',
@@ -332,7 +321,6 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                 >
                   <Typography
                     sx={{
-                      fontFamily: '"JetBrains Mono", monospace',
                       fontSize: '0.95rem',
                       color: 'status.success',
                       opacity: 0.8,
