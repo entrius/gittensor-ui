@@ -122,7 +122,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const trimmedSearch = searchQuery.trim();
-  const isMobileSearchVisible = isMobile && (isMobileSearchOpen || !!trimmedSearch);
+  const isMobileSearchVisible =
+    isMobile && (isMobileSearchOpen || !!trimmedSearch);
   const isDirectRepoInput = /^[^/\s]+\/[^/\s]+$/.test(trimmedSearch);
 
   // Sync filter state to URL params (replace, don't push)
