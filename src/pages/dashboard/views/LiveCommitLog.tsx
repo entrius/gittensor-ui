@@ -10,9 +10,18 @@ import {
   alpha,
   Avatar,
   Chip,
+  FormControl,
+  MenuItem,
+  Select,
+  type SelectChangeEvent,
+  Popover,
+  List,
+  ListItemButton,
+  ListItemText,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useInfiniteCommitLog } from '../../../api';
+import { SearchInput } from '../../../components/common/SearchInput';
 import theme, { REPO_OWNER_AVATAR_BACKGROUNDS } from '../../../theme';
 
 const MONTH_SHORT = [
@@ -49,6 +58,7 @@ interface CommitLogEntry {
   commitCount: number;
   repository: string;
   mergedAt: string | null;
+  closedAt?: string | null;
   prCreatedAt: string;
   prState?: string;
   author: string;
@@ -100,9 +110,71 @@ const getCommitStatus = (entry: CommitLogEntry): CommitStatus => {
   return 'open';
 };
 
-const getCommitTimestamp = (entry: CommitLogEntry) => {
-  const timestamp = entry.mergedAt || entry.prCreatedAt;
-  return timestamp ? new Date(timestamp).getTime() : 0;
+/** Best available proxy for “last activity” when the API has no single updatedAt. */
+const getLastActivityMs = (entry: CommitLogEntry) => {
+  const candidates = [entry.mergedAt, entry.closedAt, entry.prCreatedAt].filter(
+    Boolean,
+  ) as string[];
+  if (candidates.length === 0) return 0;
+  return Math.max(...candidates.map((iso) => new Date(iso).getTime()));
+};
+
+const getPrCreatedMs = (entry: CommitLogEntry) =>
+  entry.prCreatedAt ? new Date(entry.prCreatedAt).getTime() : 0;
+
+const parseScore = (entry: CommitLogEntry) => {
+  const n = parseFloat(entry.score);
+  return Number.isFinite(n) ? n : 0;
+};
+
+type ActivitySort =
+  | 'latestActivity'
+  | 'newest'
+  | 'oldest'
+  | 'scoreHigh'
+  | 'scoreLow';
+
+const ACTIVITY_SORT_LABELS: Record<ActivitySort, string> = {
+  latestActivity: 'Latest activity',
+  newest: 'Newest PR',
+  oldest: 'Oldest PR',
+  scoreHigh: 'Score (high)',
+  scoreLow: 'Score (low)',
+};
+
+const entryMatchesSearch = (entry: CommitLogEntry, rawQuery: string) => {
+  const q = rawQuery.trim().toLowerCase();
+  if (!q) return true;
+
+  const numberOnly = /^#?(\d+)$/.exec(q);
+  if (numberOnly) {
+    return entry.pullRequestNumber === Number(numberOnly[1]);
+  }
+
+  const tokens = q.split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return true;
+
+  const haystack =
+    `${entry.repository} ${entry.pullRequestTitle} #${entry.pullRequestNumber}`.toLowerCase();
+  return tokens.every((token) => haystack.includes(token));
+};
+
+const sortEntries = (entries: CommitLogEntry[], sort: ActivitySort) => {
+  const copy = [...entries];
+  switch (sort) {
+    case 'latestActivity':
+      return copy.sort((a, b) => getLastActivityMs(b) - getLastActivityMs(a));
+    case 'newest':
+      return copy.sort((a, b) => getPrCreatedMs(b) - getPrCreatedMs(a));
+    case 'oldest':
+      return copy.sort((a, b) => getPrCreatedMs(a) - getPrCreatedMs(b));
+    case 'scoreHigh':
+      return copy.sort((a, b) => parseScore(b) - parseScore(a));
+    case 'scoreLow':
+      return copy.sort((a, b) => parseScore(a) - parseScore(b));
+    default:
+      return copy;
+  }
 };
 
 const getScoreColor = (score: string) => {
@@ -315,6 +387,13 @@ const LiveCommitLog: React.FC = () => {
     useInfiniteCommitLog({ refetchInterval: 10000 });
 
   const [statusFilter, setStatusFilter] = useState<CommitStatusFilter>('all');
+  const [repositoryFilter, setRepositoryFilter] = useState<string | null>(null);
+  const [repoPopoverAnchor, setRepoPopoverAnchor] =
+    useState<HTMLElement | null>(null);
+  const [repoListSearch, setRepoListSearch] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activitySort, setActivitySort] =
+    useState<ActivitySort>('latestActivity');
   const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
   const logContainerRef = useRef<HTMLDivElement>(null);
@@ -360,21 +439,44 @@ const LiveCommitLog: React.FC = () => {
     });
   }, [apiCommits]);
 
-  const visibleEntries = useMemo(
-    () =>
-      [...logEntries]
-        .filter(
-          (entry) =>
-            statusFilter === 'all' || getCommitStatus(entry) === statusFilter,
-        )
-        .sort((a, b) => getCommitTimestamp(b) - getCommitTimestamp(a)),
-    [logEntries, statusFilter],
-  );
+  const uniqueRepositories = useMemo(() => {
+    const names = new Set(
+      logEntries.map((e) => e.repository).filter((name) => Boolean(name)),
+    );
+    return [...names].sort((a, b) => a.localeCompare(b));
+  }, [logEntries]);
+
+  const filteredRepositoryList = useMemo(() => {
+    const q = repoListSearch.trim().toLowerCase();
+    if (!q) return uniqueRepositories;
+    return uniqueRepositories.filter((name) => name.toLowerCase().includes(q));
+  }, [uniqueRepositories, repoListSearch]);
+
+  useEffect(() => {
+    if (!repoPopoverAnchor) setRepoListSearch('');
+  }, [repoPopoverAnchor]);
+
+  const visibleEntries = useMemo(() => {
+    const filtered = logEntries.filter((entry) => {
+      if (statusFilter !== 'all' && getCommitStatus(entry) !== statusFilter) {
+        return false;
+      }
+      if (repositoryFilter && entry.repository !== repositoryFilter) {
+        return false;
+      }
+      return true;
+    });
+    const searched = filtered.filter((entry) =>
+      entryMatchesSearch(entry, searchQuery),
+    );
+    return sortEntries(searched, activitySort);
+  }, [logEntries, statusFilter, repositoryFilter, searchQuery, activitySort]);
 
   const hasAnyEntries = logEntries.length > 0;
   const showInitialLoading = isLoading && !hasAnyEntries;
   const showWaitingForActivity = !showInitialLoading && !hasAnyEntries;
   const showFilteredEmptyState = hasAnyEntries && visibleEntries.length === 0;
+  const searchTrimmed = searchQuery.trim();
 
   // Intersection observer for infinite scroll
   useEffect(() => {
@@ -423,7 +525,7 @@ const LiveCommitLog: React.FC = () => {
         }}
       >
         <Stack
-          spacing={0.5}
+          spacing={1}
           useFlexGap
           sx={{ mb: isMobile ? 1 : 1.5, flexShrink: 0 }}
         >
@@ -456,9 +558,57 @@ const LiveCommitLog: React.FC = () => {
               }}
             />
           </Stack>
+
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={1}
+            alignItems={{ xs: 'stretch', sm: 'center' }}
+            sx={{ minWidth: 0 }}
+          >
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <SearchInput
+                value={searchQuery}
+                onChange={setSearchQuery}
+                width="100%"
+                placeholder="Title, #, repo…"
+              />
+            </Box>
+            <FormControl
+              size="small"
+              sx={{ minWidth: { xs: '100%', sm: 168 } }}
+            >
+              <Select<ActivitySort>
+                value={activitySort}
+                onChange={(e: SelectChangeEvent<ActivitySort>) =>
+                  setActivitySort(e.target.value as ActivitySort)
+                }
+                displayEmpty
+                aria-label="Sort live activity"
+                sx={(t) => ({
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.72rem',
+                  borderRadius: 2,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: t.palette.border.light,
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: t.palette.border.medium,
+                  },
+                })}
+              >
+                {(Object.keys(ACTIVITY_SORT_LABELS) as ActivitySort[]).map(
+                  (key) => (
+                    <MenuItem key={key} value={key} dense>
+                      {ACTIVITY_SORT_LABELS[key]}
+                    </MenuItem>
+                  ),
+                )}
+              </Select>
+            </FormControl>
+          </Stack>
+
           <Box
             sx={{
-              mt: 0.5,
               borderBottom: (t) => `1px solid ${t.palette.border.light}`,
             }}
           />
@@ -467,6 +617,9 @@ const LiveCommitLog: React.FC = () => {
               mt: 1,
               mb: '1px',
               display: 'inline-flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'center',
               alignSelf: 'center',
               gap: 0.5,
               p: 0.5,
@@ -518,7 +671,151 @@ const LiveCommitLog: React.FC = () => {
                 </Box>
               );
             })}
+            <Box
+              component="button"
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded={Boolean(repoPopoverAnchor)}
+              onClick={(e) =>
+                setRepoPopoverAnchor((prev) => (prev ? null : e.currentTarget))
+              }
+              sx={(t) => ({
+                px: isMobile ? 1.35 : 1.6,
+                height: isMobile ? 22 : 24,
+                display: 'flex',
+                alignItems: 'center',
+                border: 0,
+                borderRadius: 1.5,
+                backgroundColor:
+                  repoPopoverAnchor || repositoryFilter
+                    ? alpha(t.palette.text.primary, 0.15)
+                    : 'transparent',
+                color:
+                  repoPopoverAnchor || repositoryFilter
+                    ? t.palette.text.primary
+                    : alpha(t.palette.text.secondary, 0.82),
+                cursor: 'pointer',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: isMobile ? '0.68rem' : '0.72rem',
+                fontWeight: repoPopoverAnchor || repositoryFilter ? 600 : 500,
+                lineHeight: 1,
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  backgroundColor: alpha(t.palette.text.primary, 0.1),
+                  color: t.palette.text.primary,
+                },
+                '&:focus-visible': {
+                  outline: `1px solid ${t.palette.primary.main}`,
+                  outlineOffset: 1,
+                },
+              })}
+            >
+              Repository
+            </Box>
           </Box>
+
+          <Popover
+            open={Boolean(repoPopoverAnchor)}
+            anchorEl={repoPopoverAnchor}
+            onClose={() => setRepoPopoverAnchor(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+            PaperProps={{
+              sx: (t) => ({
+                mt: 0.75,
+                p: 1.25,
+                minWidth: isMobile ? 'min(100vw - 32px, 300px)' : 280,
+                maxWidth: 340,
+                borderRadius: 2,
+                border: `1px solid ${t.palette.border.light}`,
+                backgroundColor: t.palette.background.default,
+              }),
+            }}
+          >
+            <Stack spacing={1.25}>
+              <SearchInput
+                value={repoListSearch}
+                onChange={setRepoListSearch}
+                width="100%"
+                placeholder="Search repositories…"
+              />
+              <List
+                dense
+                disablePadding
+                sx={{
+                  maxHeight: 260,
+                  overflowY: 'auto',
+                  '&::-webkit-scrollbar': { width: '6px' },
+                  '&::-webkit-scrollbar-thumb': {
+                    backgroundColor: theme.palette.border.light,
+                    borderRadius: '3px',
+                  },
+                }}
+                aria-label="Repositories in live activity"
+              >
+                <ListItemButton
+                  selected={repositoryFilter === null}
+                  onClick={() => {
+                    setRepositoryFilter(null);
+                    setRepoPopoverAnchor(null);
+                  }}
+                  sx={(t) => ({
+                    borderRadius: 1,
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: '0.72rem',
+                    '&.Mui-selected': {
+                      backgroundColor: alpha(t.palette.text.primary, 0.12),
+                    },
+                  })}
+                >
+                  <ListItemText primary="All repositories" />
+                </ListItemButton>
+                {filteredRepositoryList.length === 0 ? (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      display: 'block',
+                      px: 1,
+                      py: 1.5,
+                      color: 'text.secondary',
+                      fontFamily: '"JetBrains Mono", monospace',
+                    }}
+                  >
+                    {uniqueRepositories.length === 0
+                      ? 'No repositories loaded yet.'
+                      : 'No repositories match your search.'}
+                  </Typography>
+                ) : (
+                  filteredRepositoryList.map((repo) => (
+                    <ListItemButton
+                      key={repo}
+                      selected={repositoryFilter === repo}
+                      onClick={() => {
+                        setRepositoryFilter(repo);
+                        setRepoPopoverAnchor(null);
+                      }}
+                      sx={(t) => ({
+                        borderRadius: 1,
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: '0.72rem',
+                        '&.Mui-selected': {
+                          backgroundColor: alpha(t.palette.text.primary, 0.12),
+                        },
+                      })}
+                    >
+                      <ListItemText
+                        primary={repo}
+                        primaryTypographyProps={{
+                          noWrap: true,
+                          title: repo,
+                        }}
+                      />
+                    </ListItemButton>
+                  ))
+                )}
+              </List>
+            </Stack>
+          </Popover>
         </Stack>
 
         {showInitialLoading ? (
@@ -571,10 +868,12 @@ const LiveCommitLog: React.FC = () => {
                   color: 'text.secondary',
                 }}
               >
-                <Typography variant="body2">
-                  No{' '}
-                  {COMMIT_STATUS_META[statusFilter].filterLabel.toLowerCase()}{' '}
-                  activity yet.
+                <Typography variant="body2" sx={{ textAlign: 'center', px: 1 }}>
+                  {searchTrimmed
+                    ? 'No PRs match your search for this filter.'
+                    : repositoryFilter
+                      ? `No activity for ${repositoryFilter} with the current filters.`
+                      : `No ${COMMIT_STATUS_META[statusFilter].filterLabel.toLowerCase()} activity yet.`}
                 </Typography>
               </Box>
             ) : (
