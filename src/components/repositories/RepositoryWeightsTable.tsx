@@ -36,8 +36,16 @@ import { Search } from '@mui/icons-material';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
+import type { TooltipComponentFormatterCallbackParams } from 'echarts';
 import { useReposAndWeights } from '../../api';
 import { format } from 'date-fns';
+
+interface WeightChartDataItem {
+  value: number;
+  name: string;
+  fullName: string;
+  owner: string;
+}
 
 type SortField = 'owner' | 'name' | 'weight';
 type SortOrder = 'asc' | 'desc';
@@ -244,8 +252,9 @@ const RepositoryWeightsTable: React.FC = () => {
           color: theme.palette.text.primary,
           fontFamily: 'JetBrains Mono',
         },
-        formatter: (params: any) => {
-          const data = params[0]?.data;
+        formatter: (params: TooltipComponentFormatterCallbackParams) => {
+          if (!Array.isArray(params)) return '';
+          const data = params[0]?.data as WeightChartDataItem | undefined;
           if (!data) return '';
           return `
             <div style="font-family: 'JetBrains Mono', monospace;">

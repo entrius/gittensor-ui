@@ -770,7 +770,7 @@ const UnifiedDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                       whiteSpace: 'pre',
                     }}
                   >
-                    {(row as any).content}
+                    {row.content}
                   </TableCell>
                 </TableRow>
               );

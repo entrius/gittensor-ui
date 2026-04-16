@@ -37,6 +37,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
+import type { TooltipComponentFormatterCallbackParams } from 'echarts';
 import { useSearchParams } from 'react-router-dom';
 import { truncateText } from '../../utils';
 import { RankIcon } from './RankIcon';
@@ -275,7 +276,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           fontSize: 12,
         },
         padding: [12, 16],
-        formatter: (params: any) => {
+        formatter: (params: TooltipComponentFormatterCallbackParams) => {
+          if (!Array.isArray(params)) return '';
           const data = params[0];
           const item = seriesData[data.dataIndex];
 
