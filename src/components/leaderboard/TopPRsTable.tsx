@@ -46,6 +46,7 @@ import {
   truncateText,
 } from '../../utils';
 import { RankIcon } from './RankIcon';
+import TopScrollbar from '../common/TopScrollbar';
 import { STATUS_COLORS, UI_COLORS, scrollbarSx } from '../../theme';
 import FilterButton from '../FilterButton';
 
@@ -81,6 +82,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
   >('all');
   const [useLogScale, setUseLogScale] = useState(true);
   const cardRef = useRef<HTMLDivElement>(null);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
 
   const rankedPRs = useMemo(
     () => prs.map((pr, index) => ({ ...pr, rank: index + 1 })),
@@ -635,7 +637,9 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
         </Box>
       </Collapse>
 
+      <TopScrollbar targetRef={tableContainerRef} />
       <TableContainer
+        ref={tableContainerRef}
         sx={{
           overflowY: 'auto',
           ...scrollbarSx,

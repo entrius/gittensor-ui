@@ -40,6 +40,7 @@ import ReactECharts from 'echarts-for-react';
 import { useSearchParams } from 'react-router-dom';
 import { truncateText } from '../../utils';
 import { RankIcon } from './RankIcon';
+import TopScrollbar from '../common/TopScrollbar';
 import {
   getRepositoryOwnerAvatarBackground,
   headerCellStyle,
@@ -116,6 +117,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   );
   const [useLogScale, setUseLogScale] = useState(true);
   const isInitialMount = useRef(true);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
   const trimmedSearch = searchQuery.trim();
   const isDirectRepoInput = /^[^/\s]+\/[^/\s]+$/.test(trimmedSearch);
 
@@ -673,7 +675,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         </Box>
       </Collapse>
 
+      <TopScrollbar targetRef={tableContainerRef} />
       <TableContainer
+        ref={tableContainerRef}
         sx={{
           overflowY: 'auto',
           ...scrollbarSx,
