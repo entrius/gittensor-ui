@@ -1,8 +1,7 @@
 import React from 'react';
 import { Stack, Box } from '@mui/material';
-import { Page } from '../components/layout';
+import { Navigate } from 'react-router-dom';
 import FAQ from '../components/FAQ';
-import { SEO } from '../components';
 
 export const FAQContent: React.FC = () => (
   <Box
@@ -149,21 +148,7 @@ export const FAQContent: React.FC = () => (
 );
 
 const FAQPage: React.FC = () => (
-  <Page title="FAQ">
-    <SEO
-      title="Frequently Asked Questions"
-      description="Find answers to common questions about Gittensor, incentive mechanisms, subnets, alpha tokens, and how to start mining."
-    />
-    <Box
-      sx={{
-        minHeight: { xs: 'auto', md: 'calc(100vh - 80px)' },
-        py: { xs: 2, sm: 0 },
-        display: 'flex',
-      }}
-    >
-      <FAQContent />
-    </Box>
-  </Page>
+  <Navigate to="/onboard?tab=faq" replace />
 );
 
 export default FAQPage;
