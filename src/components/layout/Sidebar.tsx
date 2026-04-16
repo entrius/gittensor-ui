@@ -23,12 +23,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
   };
 
   const navItems = [
-    { label: 'dashboard', path: '/dashboard' },
-    { label: 'oss contributions', path: '/top-miners' },
-    { label: 'discoveries', path: '/discoveries', badge: 'new' },
-    { label: 'bounties', path: '/bounties' },
-    { label: 'repositories', path: '/repositories' },
-    { label: 'onboard', path: '/onboard' },
+    { label: 'Dashboard', path: '/dashboard' },
+    { label: 'OSS Contributions', path: '/top-miners' },
+    { label: 'Discoveries', path: '/discoveries', badge: 'New' },
+    { label: 'Bounties', path: '/bounties' },
+    { label: 'Repositories', path: '/repositories' },
+    { label: 'Onboard', path: '/onboard' },
   ];
 
   return (
