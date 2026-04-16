@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Box, CircularProgress, Alert, Paper } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -6,56 +6,41 @@ import rehypeRaw from 'rehype-raw';
 import axios from 'axios';
 import { STATUS_COLORS } from '../../theme';
 import { resolveRelativeUrl } from './MarkdownRenderers';
+import useAbortableFetch from '../../hooks/useAbortableFetch';
 
 interface ReadmeViewerProps {
   repositoryFullName: string; // e.g., "opentensor/bittensor"
 }
 
 const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
-  const [content, setContent] = useState<string | null>(null);
-  const [defaultBranch, setDefaultBranch] = useState<string>('main');
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const fetchReadme = async () => {
-      setLoading(true);
-      setError(null);
+  const { data, loading, error } = useAbortableFetch<{
+    content: string;
+    defaultBranch: string;
+  }>(
+    async (signal) => {
+      if (!repositoryFullName) return null;
       try {
-        // Try 'main' branch first
-        try {
-          const response = await axios.get(
-            `https://cdn.jsdelivr.net/gh/${repositoryFullName}@main/README.md`,
-            { signal: controller.signal },
-          );
-          if (controller.signal.aborted) return;
-          setContent(response.data);
-          setDefaultBranch('main');
-        } catch (err) {
-          if (axios.isCancel(err) || controller.signal.aborted) return;
-          // Fallback to 'master' branch
-          const response = await axios.get(
-            `https://cdn.jsdelivr.net/gh/${repositoryFullName}@master/README.md`,
-            { signal: controller.signal },
-          );
-          if (controller.signal.aborted) return;
-          setContent(response.data);
-          setDefaultBranch('master');
-        }
+        const response = await axios.get(
+          `https://cdn.jsdelivr.net/gh/${repositoryFullName}@main/README.md`,
+          { signal },
+        );
+        return { content: response.data as string, defaultBranch: 'main' };
       } catch (err) {
-        if (axios.isCancel(err) || controller.signal.aborted) return;
-        console.error('Failed to fetch README', err);
-        setError('Could not load README.md');
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (axios.isCancel(err)) throw err;
+        // Fallback to 'master' branch
+        const response = await axios.get(
+          `https://cdn.jsdelivr.net/gh/${repositoryFullName}@master/README.md`,
+          { signal },
+        );
+        return { content: response.data as string, defaultBranch: 'master' };
       }
-    };
+    },
+    [repositoryFullName],
+    { errorMessage: 'Could not load README.md' },
+  );
 
-    if (repositoryFullName) fetchReadme();
-    return () => controller.abort();
-  }, [repositoryFullName]);
+  const content = data?.content ?? null;
+  const defaultBranch = data?.defaultBranch ?? 'main';
 
   if (loading) {
     return (
