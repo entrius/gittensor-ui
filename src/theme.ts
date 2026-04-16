@@ -97,6 +97,19 @@ export const TEXT_OPACITY = {
   ghost: 0.2,
 } as const;
 
+export const FONTS = {
+  mono: '"JetBrains Mono", monospace',
+} as const;
+
+export const GITHUB_VIEWER_COLORS = {
+  bg: '#0D1117',
+  bgSubtle: UI_COLORS.surfaceElevated,
+  border: '#30363D',
+  borderMuted: '#21262D',
+  text: '#C9D1D9',
+  folder: '#54AEFF',
+} as const;
+
 export const headerCellStyle = {
   backgroundColor: 'surface.tooltip',
   backdropFilter: 'blur(8px)',

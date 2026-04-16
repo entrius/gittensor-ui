@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import axios from 'axios';
-import { STATUS_COLORS } from '../../theme';
+import { STATUS_COLORS, GITHUB_VIEWER_COLORS } from '../../theme';
 import { resolveRelativeUrl } from './MarkdownRenderers';
 
 interface ReadmeViewerProps {
@@ -85,13 +85,13 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
         maxWidth: '900px',
         mx: 'auto',
         backgroundColor: 'transparent', // Seamless look
-        color: '#c9d1d9', // GitHub Dark Text
+        color: GITHUB_VIEWER_COLORS.text, // GitHub Dark Text
         fontFamily:
           '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
         lineHeight: 1.6,
         '& h1': {
           fontSize: '2em',
-          borderBottom: '1px solid #30363d',
+          borderBottom: `1px solid ${GITHUB_VIEWER_COLORS.border}`,
           pb: 0.3,
           mb: 3,
           mt: 1,
@@ -100,7 +100,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
         },
         '& h2': {
           fontSize: '1.5em',
-          borderBottom: '1px solid #30363d',
+          borderBottom: `1px solid ${GITHUB_VIEWER_COLORS.border}`,
           pb: 0.3,
           mb: 3,
           mt: 2,
@@ -131,7 +131,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
           marginBottom: '4px',
         },
         '& blockquote': {
-          borderLeft: '4px solid #30363d',
+          borderLeft: `4px solid ${GITHUB_VIEWER_COLORS.border}`,
           padding: '0 1em',
           color: STATUS_COLORS.open,
           marginLeft: 0,
@@ -145,7 +145,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
           fontFamily: '"JetBrains Mono", monospace',
         },
         '& pre': {
-          backgroundColor: '#161b22',
+          backgroundColor: GITHUB_VIEWER_COLORS.bgSubtle,
           padding: '16px',
           overflow: 'auto',
           borderRadius: '6px',
@@ -154,7 +154,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
             backgroundColor: 'transparent',
             padding: 0,
             fontSize: '100%',
-            color: '#c9d1d9',
+            color: GITHUB_VIEWER_COLORS.text,
           },
         },
         '& table': {
@@ -166,16 +166,16 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
         },
         '& th': {
           fontWeight: 600,
-          border: '1px solid #30363d',
+          border: `1px solid ${GITHUB_VIEWER_COLORS.border}`,
           padding: '6px 13px',
           textAlign: 'left',
         },
         '& td': {
-          border: '1px solid #30363d',
+          border: `1px solid ${GITHUB_VIEWER_COLORS.border}`,
           padding: '6px 13px',
         },
         '& tr:nth-of-type(2n)': {
-          backgroundColor: '#161b22',
+          backgroundColor: GITHUB_VIEWER_COLORS.bgSubtle,
         },
         '& img': {
           backgroundColor: 'transparent',

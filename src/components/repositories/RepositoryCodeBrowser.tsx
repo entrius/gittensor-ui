@@ -14,7 +14,7 @@ import {
   Avatar,
 } from '@mui/material';
 import axios from 'axios';
-import { STATUS_COLORS } from '../../theme';
+import { STATUS_COLORS, GITHUB_VIEWER_COLORS } from '../../theme';
 import { formatDistanceToNow } from 'date-fns';
 import FolderIcon from '@mui/icons-material/Folder';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
@@ -303,7 +303,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
             onClick={() => handleNavigate(null)}
             sx={{
               fontWeight: !currentPath ? 600 : 400,
-              color: !currentPath ? '#c9d1d9' : STATUS_COLORS.info,
+              color: !currentPath
+                ? GITHUB_VIEWER_COLORS.text
+                : STATUS_COLORS.info,
               cursor: !currentPath ? 'default' : 'pointer',
               fontSize: '14px',
             }}
@@ -322,7 +324,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                 onClick={() => !isLast && handleNavigate(path)}
                 sx={{
                   fontWeight: isLast ? 600 : 400,
-                  color: isLast ? '#c9d1d9' : STATUS_COLORS.info,
+                  color: isLast
+                    ? GITHUB_VIEWER_COLORS.text
+                    : STATUS_COLORS.info,
                   cursor: isLast ? 'default' : 'pointer',
                   fontSize: '14px',
                 }}
@@ -339,10 +343,10 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
         <Paper
           elevation={0}
           sx={{
-            border: '1px solid #30363d',
+            border: `1px solid ${GITHUB_VIEWER_COLORS.border}`,
             borderBottom: 'none',
             borderRadius: '6px 6px 0 0',
-            backgroundColor: '#161b22',
+            backgroundColor: GITHUB_VIEWER_COLORS.bgSubtle,
             p: 2,
             display: 'flex',
             alignItems: 'center',
@@ -375,7 +379,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   sx={{
                     fontSize: '13px',
                     fontWeight: 600,
-                    color: '#c9d1d9',
+                    color: GITHUB_VIEWER_COLORS.text,
                     whiteSpace: 'nowrap',
                   }}
                 >
@@ -439,9 +443,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
           component={Paper}
           elevation={0}
           sx={{
-            border: '1px solid #30363d',
+            border: `1px solid ${GITHUB_VIEWER_COLORS.border}`,
             borderRadius: isFile ? '6px' : '0 0 6px 6px', // Connect to header
-            backgroundColor: '#0d1117',
+            backgroundColor: GITHUB_VIEWER_COLORS.bg,
           }}
         >
           <Table size="small">
@@ -451,7 +455,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                 <TableRow
                   hover
                   sx={{
-                    '&:hover': { backgroundColor: '#161b22' },
+                    '&:hover': {
+                      backgroundColor: GITHUB_VIEWER_COLORS.bgSubtle,
+                    },
                     cursor: 'pointer',
                   }}
                 >
@@ -466,7 +472,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                     }}
                     sx={{
                       color: STATUS_COLORS.info,
-                      borderBottom: '1px solid #21262d',
+                      borderBottom: `1px solid ${GITHUB_VIEWER_COLORS.borderMuted}`,
                       py: 1,
                       fontSize: '13px',
                       fontWeight: 600,
@@ -482,21 +488,28 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   hover
                   onClick={() => handleNavigate(node.path)}
                   sx={{
-                    '&:hover': { backgroundColor: '#161b22' },
+                    '&:hover': {
+                      backgroundColor: GITHUB_VIEWER_COLORS.bgSubtle,
+                    },
                     cursor: 'pointer',
                     transition: 'background-color 0.1s',
                   }}
                 >
                   <TableCell
                     sx={{
-                      borderBottom: '1px solid #21262d',
+                      borderBottom: `1px solid ${GITHUB_VIEWER_COLORS.borderMuted}`,
                       py: 1,
                       width: '32px',
                       pl: 2,
                     }}
                   >
                     {node.type === 'tree' ? (
-                      <FolderIcon sx={{ color: '#54aeff', fontSize: 16 }} />
+                      <FolderIcon
+                        sx={{
+                          color: GITHUB_VIEWER_COLORS.folder,
+                          fontSize: 16,
+                        }}
+                      />
                     ) : (
                       <InsertDriveFileIcon
                         sx={{ color: STATUS_COLORS.open, fontSize: 16 }}
@@ -505,9 +518,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   </TableCell>
                   <TableCell
                     sx={{
-                      borderBottom: '1px solid #21262d',
+                      borderBottom: `1px solid ${GITHUB_VIEWER_COLORS.borderMuted}`,
                       py: 1,
-                      color: '#c9d1d9',
+                      color: GITHUB_VIEWER_COLORS.text,
                       fontSize: '14px',
                       fontWeight: node.type === 'tree' ? 600 : 400,
                     }}
@@ -516,7 +529,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   </TableCell>
                   <TableCell
                     sx={{
-                      borderBottom: '1px solid #21262d',
+                      borderBottom: `1px solid ${GITHUB_VIEWER_COLORS.borderMuted}`,
                       py: 1,
                       color: STATUS_COLORS.open,
                       fontSize: '13px',

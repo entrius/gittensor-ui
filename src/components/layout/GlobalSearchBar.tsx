@@ -605,7 +605,7 @@ const GlobalSearchBar: React.FC = () => {
             top: 'calc(100% + 8px)',
             left: 0,
             right: 0,
-            zIndex: 1200,
+            zIndex: theme.zIndex.modal,
             p: 1.2,
             border: `1px solid ${theme.palette.border.light}`,
             borderRadius: 2,

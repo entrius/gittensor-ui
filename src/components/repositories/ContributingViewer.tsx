@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import axios from 'axios';
-import { STATUS_COLORS } from '../../theme';
+import { STATUS_COLORS, GITHUB_VIEWER_COLORS } from '../../theme';
 import { resolveRelativeUrl } from './MarkdownRenderers';
 
 interface ContributingViewerProps {
@@ -97,13 +97,13 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
         maxWidth: '900px',
         mx: 'auto',
         backgroundColor: 'transparent',
-        color: '#c9d1d9',
+        color: GITHUB_VIEWER_COLORS.text,
         fontFamily:
           '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
         lineHeight: 1.6,
         '& h1': {
           fontSize: '2em',
-          borderBottom: '1px solid #30363d',
+          borderBottom: `1px solid ${GITHUB_VIEWER_COLORS.border}`,
           pb: 0.3,
           mb: 3,
           mt: 1,
@@ -112,7 +112,7 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
         },
         '& h2': {
           fontSize: '1.5em',
-          borderBottom: '1px solid #30363d',
+          borderBottom: `1px solid ${GITHUB_VIEWER_COLORS.border}`,
           pb: 0.3,
           mb: 3,
           mt: 2,
@@ -135,7 +135,7 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
         '& ul, & ol': { marginBottom: '16px', paddingLeft: '2em' },
         '& li': { marginBottom: '4px' },
         '& blockquote': {
-          borderLeft: '4px solid #30363d',
+          borderLeft: `4px solid ${GITHUB_VIEWER_COLORS.border}`,
           padding: '0 1em',
           color: STATUS_COLORS.open,
           marginLeft: 0,
@@ -149,7 +149,7 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
           fontFamily: '"JetBrains Mono", monospace',
         },
         '& pre': {
-          backgroundColor: '#161b22',
+          backgroundColor: GITHUB_VIEWER_COLORS.bgSubtle,
           padding: '16px',
           overflow: 'auto',
           borderRadius: '6px',
@@ -158,7 +158,7 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
             backgroundColor: 'transparent',
             padding: 0,
             fontSize: '100%',
-            color: '#c9d1d9',
+            color: GITHUB_VIEWER_COLORS.text,
           },
         },
         '& table': {
@@ -170,12 +170,17 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
         },
         '& th': {
           fontWeight: 600,
-          border: '1px solid #30363d',
+          border: `1px solid ${GITHUB_VIEWER_COLORS.border}`,
           padding: '6px 13px',
           textAlign: 'left',
         },
-        '& td': { border: '1px solid #30363d', padding: '6px 13px' },
-        '& tr:nth-of-type(2n)': { backgroundColor: '#161b22' },
+        '& td': {
+          border: `1px solid ${GITHUB_VIEWER_COLORS.border}`,
+          padding: '6px 13px',
+        },
+        '& tr:nth-of-type(2n)': {
+          backgroundColor: GITHUB_VIEWER_COLORS.bgSubtle,
+        },
         '& img': { backgroundColor: 'transparent' },
       }}
     >

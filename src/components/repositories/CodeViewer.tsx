@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { scrollbarSx } from '../../theme';
+import { scrollbarSx, GITHUB_VIEWER_COLORS } from '../../theme';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import axios from 'axios';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -107,7 +107,7 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          backgroundColor: '#0d1117',
+          backgroundColor: GITHUB_VIEWER_COLORS.bg,
           p: 4,
         }}
       >
@@ -119,9 +119,9 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
             maxWidth: '100%',
             maxHeight: '100%',
             objectFit: 'contain',
-            border: '1px solid #30363d',
+            border: `1px solid ${GITHUB_VIEWER_COLORS.border}`,
             borderRadius: '6px',
-            backgroundColor: '#161b22', // slight background to see transparent pngs better
+            backgroundColor: GITHUB_VIEWER_COLORS.bgSubtle,
           }}
         />
       </Box>
@@ -152,10 +152,10 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
           },
           '& h1, & h2, & h3': {
             color: '#fff',
-            borderBottom: '1px solid #30363d',
+            borderBottom: `1px solid ${GITHUB_VIEWER_COLORS.border}`,
             pb: 1,
           },
-          color: '#c9d1d9',
+          color: GITHUB_VIEWER_COLORS.text,
           lineHeight: 1.6,
         }}
       >
