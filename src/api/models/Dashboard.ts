@@ -1,13 +1,3 @@
-export type RepoChanges = {
-  repositoryFullName: string;
-  commits: number;
-  additions: number;
-  deletions: number;
-  linesChanged: number;
-  weight: string; // bc float
-  inactiveAt: string | null;
-};
-
 export type Repository = {
   fullName: string;
   owner: string;

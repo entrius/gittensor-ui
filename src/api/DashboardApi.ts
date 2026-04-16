@@ -2,7 +2,6 @@ import { useApiQuery } from './ApiUtils';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import {
-  type RepoChanges,
   type CommitsTrend,
   type Stats,
   type Repository,
@@ -29,13 +28,6 @@ export const useStats = () => useDashboardQuery<Stats>('useStats', '/stats');
 
 export const useHistoricalTrend = () =>
   useDashboardQuery<CommitsTrend[]>('useHistoricalTrend', '/lines/hist-trend');
-
-export const useRepoChanges = (options?: { refetchInterval?: number }) =>
-  useDashboardQuery<RepoChanges[]>(
-    'useRepoChanges',
-    '/repos/commits',
-    options?.refetchInterval,
-  );
 
 // Shared cache key for the repositories dataset.
 export const getReposQueryKey = () =>
