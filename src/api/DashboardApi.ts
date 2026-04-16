@@ -47,18 +47,6 @@ export const useReposAndWeights = () =>
 export const useLanguagesAndWeights = () =>
   useDashboardQuery<LanguageWeight[]>('useLanguagesAndWeights', '/languages');
 
-export const useCommitLog = (
-  options?: { refetchInterval?: number },
-  page?: number,
-  limit?: number,
-) =>
-  useDashboardQuery<CommitLog[]>(
-    'useCommitLog',
-    '/commits',
-    options?.refetchInterval,
-    { page, limit },
-  );
-
 export const useInfiniteCommitLog = (options?: {
   refetchInterval?: number;
 }) => {
