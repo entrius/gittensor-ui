@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatDate } from '../../utils/format';
 import {
   Box,
   Typography,
@@ -231,11 +232,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
                   component="span"
                   sx={{ fontSize: 'inherit', color: 'inherit' }}
                 >
-                  {new Date(item.createdAt).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
+                  {formatDate(item.createdAt)}
                 </Typography>
               </Box>
 

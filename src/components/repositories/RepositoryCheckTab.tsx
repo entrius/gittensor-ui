@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { formatDate } from '../../utils/format';
 import {
   Box,
   Grid,
@@ -330,7 +331,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                       fontFamily: '"JetBrains Mono", monospace',
                     }}
                   >
-                    {new Date(repoData.pushed_at).toLocaleDateString()}
+                    {formatDate(repoData.pushed_at)}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -348,7 +349,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                       fontFamily: '"JetBrains Mono", monospace',
                     }}
                   >
-                    {new Date(repoData.created_at).toLocaleDateString()}
+                    {formatDate(repoData.created_at)}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
