@@ -13,10 +13,11 @@ import {
   TableHead,
   TableRow,
   useTheme,
+  alpha,
 } from '@mui/material';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { IssueSubmission } from '../../api/models/Issues';
-import { STATUS_COLORS } from '../../theme';
+import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { formatDate } from '../../utils/format';
 
 const headerCellSx = {
@@ -25,16 +26,18 @@ const headerCellSx = {
   fontWeight: 600,
   letterSpacing: '0.5px',
   textTransform: 'uppercase' as const,
-  color: 'rgba(255, 255, 255, 0.3)',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  color: 'text.secondary',
+  borderBottom: '1px solid',
+  borderColor: 'border.light',
   py: 1.5,
 };
 
 const bodyCellSx = {
   fontFamily: '"JetBrains Mono", monospace',
   fontSize: '0.85rem',
-  color: '#ffffff',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+  color: 'text.primary',
+  borderBottom: '1px solid',
+  borderBottomColor: 'border.subtle',
   py: 1.5,
 };
 
@@ -55,8 +58,8 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
   return (
     <Card
       sx={{
-        backgroundColor: '#000000',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'background.default',
+        border: `1px solid ${theme.palette.border.light}`,
         borderRadius: 3,
         overflow: 'hidden',
       }}
@@ -68,7 +71,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.8rem',
             fontWeight: 600,
-            color: 'rgba(255, 255, 255, 0.5)',
+            color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
           }}
@@ -85,7 +88,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
         <Box sx={{ p: 4, pt: 2, textAlign: 'center' }}>
           <Typography
             sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
+              color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
               fontSize: '0.9rem',
             }}
           >
@@ -125,7 +128,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                     cursor: 'pointer',
                     transition: 'background-color 0.2s',
                     '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      backgroundColor: alpha(theme.palette.common.white, 0.03),
                     },
                   }}
                 >
@@ -224,7 +227,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.85rem',
                         fontWeight: 600,
-                        color: '#ffffff',
+                        color: 'text.primary',
                       }}
                     >
                       {Number(submission.tokenScore).toLocaleString()}
@@ -235,7 +238,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                       sx={{
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.8rem',
-                        color: 'rgba(255, 255, 255, 0.6)',
+                        color: alpha(theme.palette.common.white, 0.6),
                       }}
                     >
                       {formatDate(submission.prCreatedAt)}
