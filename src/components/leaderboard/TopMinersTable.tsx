@@ -31,7 +31,7 @@ interface TopMinersTableProps {
 
 const getAllowedSortOptions = (variant: LeaderboardVariant): SortOption[] =>
   variant === 'discoveries'
-    ? ['totalScore', 'usdPerDay', 'totalPRs', 'totalIssues', 'credibility']
+    ? ['totalScore', 'usdPerDay', 'totalIssues', 'credibility']
     : ['totalScore', 'usdPerDay', 'totalPRs', 'credibility'];
 
 const getSortOptionFromQuery = (
@@ -311,7 +311,9 @@ const SortButtons: React.FC<SortButtonsProps> = ({
     {[
       { label: 'Score', value: 'totalScore' },
       { label: 'Earnings', value: 'usdPerDay' },
-      { label: 'PRs', value: 'totalPRs' },
+      ...(variant !== 'discoveries'
+        ? [{ label: 'PRs', value: 'totalPRs' as const }]
+        : []),
       ...(variant === 'discoveries'
         ? [{ label: 'Issues', value: 'totalIssues' as const }]
         : []),
