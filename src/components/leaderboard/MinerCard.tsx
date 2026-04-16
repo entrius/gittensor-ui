@@ -71,8 +71,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
   const isWatchlist = variant === 'watchlist';
   const isDiscoveries = variant === 'discoveries';
   const isEligible = isWatchlist
-    ? (miner.isEligible ?? false) ||
-      (miner.isIssueEligible ?? false)
+    ? (miner.isEligible ?? false) || (miner.isIssueEligible ?? false)
     : (miner.isEligible ?? false);
 
   const segments = getSegments(miner, variant);
@@ -389,9 +388,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
             sx={{
               fontFamily: FONTS.mono,
               fontSize: '0.9rem',
-              color: isEligible
-                ? muiTheme.palette.text.primary
-                : inactiveColor,
+              color: isEligible ? muiTheme.palette.text.primary : inactiveColor,
               fontWeight: 700,
             }}
           >
