@@ -129,16 +129,7 @@ const CommitLogItem: React.FC<{
     status = { label: 'MERGED', color: theme.palette.status.merged };
   else if (isClosed)
     status = { label: 'CLOSED', color: theme.palette.status.closed };
-<<<<<<< HEAD
-
   const timestampRaw = entry.mergedAt || entry.prCreatedAt;
-=======
-  const timestampRaw =
-    details?.mergedAt ||
-    details?.prCreatedAt ||
-    entry.mergedAt ||
-    entry.prCreatedAt;
->>>>>>> test
   const timestamp = timestampRaw
     ? formatUtcTimestamp(timestampRaw)
     : 'Loading...';
