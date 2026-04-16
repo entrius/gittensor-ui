@@ -26,6 +26,7 @@ const RepositoryDetailsPage = React.lazy(
 const PRDetailsPage = React.lazy(() => import('./pages/PRDetailsPage'));
 const DiscoveriesPage = React.lazy(() => import('./pages/DiscoveriesPage'));
 const OnboardPage = React.lazy(() => import('./pages/OnboardPage'));
+const WatchlistPage = React.lazy(() => import('./pages/WatchlistPage'));
 
 // 404 page
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
@@ -60,6 +61,12 @@ const routesArray: AppRoute[] = [
     name: 'top-miners',
     path: '/top-miners',
     element: <TopMinersPage />,
+    showGlobalSearch: true,
+  },
+  {
+    name: 'watchlist',
+    path: '/watchlist',
+    element: <WatchlistPage />,
     showGlobalSearch: true,
   },
   {

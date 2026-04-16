@@ -13,6 +13,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { usePullRequestDetails } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import theme, { RANK_COLORS, STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { buildMultiplierGrid } from '../../utils/multiplierDefs';
 
 interface PRDetailsCardProps {
   repository: string;
@@ -108,50 +109,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     },
   ];
 
-  // For OPEN PRs: collateral = base_score × repo_weight × issue_multiplier × 20%
-  // Only show applicable multipliers
-  const multipliers: Array<{
-    label: string;
-    value: string;
-    isCredibility?: boolean;
-  }> = isOpenPR
-    ? [
-        {
-          label: 'Repo Weight',
-          value: `${parseFloat(prDetails.repoWeightMultiplier ?? '0').toFixed(2)}x`,
-        },
-        {
-          label: 'Issue Bonus',
-          value: `${parseFloat(prDetails.issueMultiplier ?? '0').toFixed(2)}x`,
-        },
-        {
-          label: 'Collateral %',
-          value: '20%',
-        },
-      ]
-    : [
-        {
-          label: 'Repo Weight',
-          value: `${parseFloat(prDetails.repoWeightMultiplier ?? '0').toFixed(2)}x`,
-        },
-        {
-          label: 'Issue Bonus',
-          value: `${parseFloat(prDetails.issueMultiplier ?? '0').toFixed(2)}x`,
-        },
-        {
-          label: 'Credibility',
-          value: `${parseFloat(prDetails.credibilityMultiplier ?? '0').toFixed(2)}x`,
-          isCredibility: true,
-        },
-        {
-          label: 'Review Quality',
-          value: `${parseFloat(prDetails.reviewQualityMultiplier ?? '0').toFixed(2)}x`,
-        },
-        {
-          label: 'Time Decay',
-          value: `${parseFloat(prDetails.timeDecayMultiplier ?? '0').toFixed(2)}x`,
-        },
-      ];
+  const multipliers = buildMultiplierGrid(prDetails, isOpenPR);
 
   return (
     <Card
