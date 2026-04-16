@@ -30,6 +30,7 @@ import {
   calculateOpenIssueThreshold,
 } from '../../utils/ExplorerUtils';
 import { credibilityColor } from '../../utils/format';
+import { buildMergedPillDefs } from '../../utils/multiplierDefs';
 
 type ViewMode = 'prs' | 'issues';
 
@@ -282,7 +283,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
           }}
         >
           {/* Score multiplier chips — sourced from PR details API */}
-          {isMerged && (
+          {isMerged && prDetails && (
             <Box
               sx={{
                 display: 'flex',
@@ -291,109 +292,24 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
                 alignItems: 'center',
               }}
             >
-              {prDetails?.credibilityMultiplier != null && (
+              {buildMergedPillDefs(prDetails).map((def) => (
                 <MultiplierPill
-                  label="cred"
-                  value={parseFloat(prDetails.credibilityMultiplier)}
+                  key={def.key}
+                  label={def.label}
+                  value={def.value}
+                  format={def.format}
                   tooltip={
                     <Stack direction="column">
                       <Typography variant="tooltipLabel">
-                        Credibility{' '}
-                        {Number(prDetails.credibilityMultiplier).toFixed(4)}×
+                        {def.tooltipTitle}
                       </Typography>
                       <Typography variant="tooltipDesc">
-                        Based on your PR success rate, scaled to reward
-                        consistency.
+                        {def.tooltipDesc}
                       </Typography>
                     </Stack>
                   }
                 />
-              )}
-              {prDetails?.repoWeightMultiplier != null && (
-                <MultiplierPill
-                  label="repo wt"
-                  value={parseFloat(prDetails.repoWeightMultiplier)}
-                  tooltip={
-                    <Stack direction="column">
-                      <Typography variant="tooltipLabel">
-                        Repo Weight{' '}
-                        {Number(prDetails.repoWeightMultiplier).toFixed(4)}×
-                      </Typography>
-                      <Typography variant="tooltipDesc">
-                        Based on repository weight and activity.
-                      </Typography>
-                    </Stack>
-                  }
-                />
-              )}
-              {prDetails?.issueMultiplier != null && (
-                <MultiplierPill
-                  label="issue"
-                  value={parseFloat(prDetails.issueMultiplier)}
-                  tooltip={
-                    <Stack direction="column">
-                      <Typography variant="tooltipLabel">
-                        Issue {Number(prDetails.issueMultiplier).toFixed(4)}×
-                      </Typography>
-                      <Typography variant="tooltipDesc">
-                        Bonus for PRs linked to issues.
-                      </Typography>
-                    </Stack>
-                  }
-                />
-              )}
-              {prDetails?.timeDecayMultiplier != null && (
-                <MultiplierPill
-                  label="decay"
-                  value={parseFloat(prDetails.timeDecayMultiplier)}
-                  tooltip={
-                    <Stack direction="column">
-                      <Typography variant="tooltipLabel">
-                        Time Decay{' '}
-                        {Number(prDetails.timeDecayMultiplier).toFixed(4)}×
-                      </Typography>
-                      <Typography variant="tooltipDesc">
-                        Recent PRs score higher.
-                      </Typography>
-                    </Stack>
-                  }
-                />
-              )}
-              {prDetails?.openPrSpamMultiplier != null && (
-                <MultiplierPill
-                  label="spam"
-                  value={parseFloat(prDetails.openPrSpamMultiplier)}
-                  tooltip={
-                    <Stack direction="column">
-                      <Typography variant="tooltipLabel">
-                        Open PR Spam{' '}
-                        {Number(prDetails.openPrSpamMultiplier).toFixed(4)}×
-                      </Typography>
-                      <Typography variant="tooltipDesc">
-                        Penalty for excessive open PRs.
-                      </Typography>
-                    </Stack>
-                  }
-                />
-              )}
-              {prDetails?.reviewQualityMultiplier != null && (
-                <MultiplierPill
-                  label="review"
-                  value={parseFloat(prDetails.reviewQualityMultiplier)}
-                  tooltip={
-                    <Stack direction="column">
-                      <Typography variant="tooltipLabel">
-                        Review Quality{' '}
-                        {Number(prDetails.reviewQualityMultiplier).toFixed(4)}×
-                      </Typography>
-                      <Typography variant="tooltipDesc">
-                        Multiplier based on the amount of requested changes the
-                        PR required.
-                      </Typography>
-                    </Stack>
-                  }
-                />
-              )}
+              ))}
             </Box>
           )}
 
