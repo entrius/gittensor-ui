@@ -65,7 +65,7 @@ const MinerDetailsPage: React.FC = () => {
   ) => {
     const p = new URLSearchParams(searchParams);
     p.set('tab', newValue);
-    setSearchParams(p);
+    setSearchParams(p, { replace: true });
   };
 
   if (!githubId) {

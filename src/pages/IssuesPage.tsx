@@ -8,7 +8,7 @@
  */
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Box, Tabs, Tab, Stack } from '@mui/material';
+import { Box, Tabs, Tab, Stack, Typography, alpha } from '@mui/material';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { IssueStats, IssuesList } from '../components/issues';
@@ -92,6 +92,32 @@ const IssuesPage: React.FC = () => {
               <Tab label="Pending Issues" />
               <Tab label="History" />
             </Tabs>
+
+            <Typography
+              sx={{
+                fontSize: '0.72rem',
+                fontFamily: '"JetBrains Mono", monospace',
+                color: (t) => alpha(t.palette.text.primary, 0.35),
+                pr: 1,
+              }}
+            >
+              Learn more about bounties in the{' '}
+              <Typography
+                component="a"
+                href="https://docs.gittensor.io/issue-bounties.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  color: 'primary.main',
+                  fontSize: 'inherit',
+                  fontFamily: 'inherit',
+                  textDecoration: 'none',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                docs
+              </Typography>
+            </Typography>
           </Box>
 
           {/* Tab Content */}

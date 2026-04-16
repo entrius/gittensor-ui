@@ -97,6 +97,27 @@ export const TEXT_OPACITY = {
   ghost: 0.2,
 } as const;
 
+export const headerCellStyle = {
+  backgroundColor: 'surface.tooltip',
+  backdropFilter: 'blur(8px)',
+  color: 'text.secondary',
+  fontFamily: '"JetBrains Mono", monospace',
+  fontWeight: 500,
+  fontSize: '0.75rem',
+  borderBottom: '1px solid',
+  borderColor: 'border.light',
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.5px',
+};
+
+export const bodyCellStyle = {
+  color: 'text.primary',
+  fontFamily: '"JetBrains Mono", monospace',
+  borderBottom: '1px solid',
+  borderColor: 'border.light',
+  fontSize: '0.85rem',
+};
+
 // Module Augmentation for Custom Theme Properties
 declare module '@mui/material/styles' {
   interface TypeText {

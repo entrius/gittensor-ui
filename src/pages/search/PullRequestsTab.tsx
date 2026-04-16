@@ -14,7 +14,7 @@ const formatPrScore = (pr: CommitLog) => {
   if (pr.prState === 'CLOSED' && !pr.mergedAt) return '-';
   if (!pr.score) return '-';
 
-  return Number(pr.score).toFixed(4);
+  return parseFloat(pr.score).toFixed(4);
 };
 
 const formatPrDateOrStatus = (pr: CommitLog) => {

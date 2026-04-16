@@ -44,7 +44,7 @@ import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
-import { STATUS_COLORS, DIFF_COLORS } from '../../theme';
+import { STATUS_COLORS, DIFF_COLORS, scrollbarSx } from '../../theme';
 
 interface PRFile {
   sha: string;
@@ -1255,6 +1255,7 @@ const PRFileDiffViewer: React.FC<{
               overflowX: 'auto',
               overflowY: 'auto',
               mr: '16px',
+              ...scrollbarSx,
             }}
           >
             {viewMode === 'unified' ? (
@@ -1398,6 +1399,7 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
             p: 1,
             display: 'flex',
             flexDirection: 'column',
+            ...scrollbarSx,
           }}
         >
           <Box
