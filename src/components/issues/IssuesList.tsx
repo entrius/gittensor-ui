@@ -22,7 +22,8 @@ import { IssueBounty } from '../../api/models/Issues';
 import { useStats } from '../../api';
 import { formatTokenAmount, formatDate } from '../../utils/format';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
-import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { scrollbarSx, STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { TopHorizontalScrollbar } from '../common';
 import BountyProgress from './BountyProgress';
 
 type ListType = 'available' | 'pending' | 'history';
@@ -53,6 +54,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const { data: dashStats } = useStats();
   const taoPrice = dashStats?.prices?.tao?.data?.price ?? 0;
   const alphaPrice = dashStats?.prices?.alpha?.data?.price ?? 0;
+  const tableContainerRef = React.useRef<HTMLDivElement | null>(null);
 
   const toUsd = (alphaAmount: string): string | null => {
     if (taoPrice <= 0 || alphaPrice <= 0) return null;
@@ -145,8 +147,25 @@ const IssuesList: React.FC<IssuesListProps> = ({
       }}
       elevation={0}
     >
-      <TableContainer>
-        <Table size="small">
+      <TopHorizontalScrollbar targetRef={tableContainerRef} />
+      <TableContainer
+        ref={tableContainerRef}
+        sx={{
+          overflowX: 'auto',
+          ...scrollbarSx,
+        }}
+      >
+        <Table
+          size="small"
+          sx={{
+            minWidth:
+              listType === 'history'
+                ? 1600
+                : listType === 'pending'
+                  ? 1500
+                  : 1300,
+          }}
+        >
           <TableHead>
             <TableRow>
               <TableCell sx={{ ...headerCellSx, width: '60px' }}>ID</TableCell>
