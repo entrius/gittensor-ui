@@ -11,13 +11,20 @@ export interface IssueStatusMeta {
 export const getIssueStatusMeta = (status: string): IssueStatusMeta => {
   switch (status) {
     case 'registered':
-    case 'open':
       return {
         bgColor: 'rgba(245, 158, 11, 0.15)',
         color: STATUS_COLORS.warning,
         borderColor: 'rgba(245, 158, 11, 0.4)',
         text: 'Pending',
         tone: 'warning',
+      };
+    case 'open':
+      return {
+        bgColor: 'rgba(139, 148, 158, 0.15)',
+        color: STATUS_COLORS.open,
+        borderColor: 'rgba(139, 148, 158, 0.4)',
+        text: 'Open',
+        tone: 'open',
       };
     case 'active':
       return {
@@ -67,9 +74,18 @@ export const getBountyAmountColor = (
   status: string,
   mutedFallback: boolean,
 ): string => {
-  if (!mutedFallback && (status === 'active' || status === 'registered')) {
-    return STATUS_COLORS.info;
+  if (mutedFallback) {
+    return 'rgba(125, 125, 125, 1)';
   }
-  // Muted fallback — matches `text.secondary` in the MUI dark theme
-  return 'rgba(125, 125, 125, 1)'; // UI_COLORS.textSecondary (#7d7d7d)
+  switch (status) {
+    case 'active':
+      return STATUS_COLORS.merged;
+    case 'registered':
+      return STATUS_COLORS.warning;
+    case 'completed':
+      return STATUS_COLORS.merged;
+    case 'cancelled':
+    default:
+      return 'rgba(125, 125, 125, 1)';
+  }
 };

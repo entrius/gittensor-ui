@@ -19,7 +19,6 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { IssueSubmission } from '../../api/models/Issues';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { formatDate } from '../../utils/format';
-import { getIssueStatusMeta } from '../../utils/issueStatus';
 
 const headerCellSx = {
   fontSize: '0.7rem',
@@ -193,18 +192,23 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                   <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
                     {(() => {
                       const state = submission.mergedAt
-                        ? 'merged'
+                        ? 'MERGED'
                         : submission.prState === 'OPEN'
-                          ? 'open'
-                          : 'closed';
-                      const meta = getIssueStatusMeta(state);
+                          ? 'OPEN'
+                          : 'CLOSED';
+                      const color =
+                        state === 'MERGED'
+                          ? theme.palette.status.merged
+                          : state === 'OPEN'
+                            ? theme.palette.status.open
+                            : theme.palette.status.closed;
                       return (
                         <Chip
                           variant="status"
-                          label={state.toUpperCase()}
+                          label={state}
                           sx={{
-                            color: meta.color,
-                            borderColor: meta.borderColor,
+                            color,
+                            borderColor: color,
                           }}
                         />
                       );
