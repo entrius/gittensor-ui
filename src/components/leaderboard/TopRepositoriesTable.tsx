@@ -40,7 +40,6 @@ import ReactECharts from 'echarts-for-react';
 import { useSearchParams } from 'react-router-dom';
 import { truncateText } from '../../utils';
 import { RankIcon } from './RankIcon';
-import TopScrollbar from '../common/TopScrollbar';
 import ScrollJumpButton from '../common/ScrollJumpButton';
 import {
   getRepositoryOwnerAvatarBackground,
@@ -676,7 +675,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         </Box>
       </Collapse>
 
-      <TopScrollbar targetRef={tableContainerRef} />
       <TableContainer
         ref={tableContainerRef}
         sx={{
