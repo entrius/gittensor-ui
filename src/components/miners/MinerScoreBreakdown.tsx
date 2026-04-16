@@ -559,7 +559,7 @@ const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
               label="Issue Credibility"
               value={`${(issueCred * 100).toFixed(1)}%`}
               color={credibilityColor(issueCred)}
-              sub="Solved / (solved + closed)"
+              sub="Solved / (solved + max(0, closed − 1))"
             />
             <MetricRow
               label="Eligibility"
