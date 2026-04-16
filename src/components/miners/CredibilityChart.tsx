@@ -30,12 +30,10 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
           color: theme.palette.text.primary,
           fontSize: 28,
           fontWeight: 'bold',
-          fontFamily: '"JetBrains Mono", monospace',
         },
         subtextStyle: {
           color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
           fontSize: 11,
-          fontFamily: '"JetBrains Mono", monospace',
           fontWeight: 500,
         },
       },
@@ -47,7 +45,6 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
         borderWidth: 1,
         textStyle: {
           color: theme.palette.text.primary,
-          fontFamily: '"JetBrains Mono", monospace',
         },
       },
       series: [
@@ -152,7 +149,6 @@ const LegendItem: React.FC<{ label: string; value: number; color: string }> = ({
         sx={{
           color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
           fontSize: '0.65rem',
-          fontFamily: '"JetBrains Mono", monospace',
         }}
       >
         {label}
@@ -161,7 +157,6 @@ const LegendItem: React.FC<{ label: string; value: number; color: string }> = ({
         sx={{
           color,
           fontSize: '0.75rem',
-          fontFamily: '"JetBrains Mono", monospace',
           fontWeight: 700,
         }}
       >
