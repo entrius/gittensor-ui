@@ -2,8 +2,6 @@ import { useApiQuery } from './ApiUtils';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import {
-  type RepoChanges,
-  type CommitsTrend,
   type Stats,
   type Repository,
   type LanguageWeight,
