@@ -1087,13 +1087,21 @@ const PRFileDiffViewer: React.FC<{
   }, [file.patch]);
 
   const [copied, setCopied] = useState(false);
+  const copyTimerRef = useRef<number | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current !== null)
+        window.clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
   const handleCopyPath = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard.writeText(file.filename);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    copyTimerRef.current = window.setTimeout(() => setCopied(false), 2000);
   };
 
   if (!file.patch) {

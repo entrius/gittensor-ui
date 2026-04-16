@@ -319,11 +319,19 @@ const LiveCommitLog: React.FC = () => {
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
   const logContainerRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const highlightTimerRef = useRef<number | null>(null);
 
   const apiCommits = useMemo<CommitLogEntry[]>(
     () => data?.pages.flat() ?? [],
     [data],
   );
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimerRef.current !== null)
+        window.clearTimeout(highlightTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (apiCommits.length === 0) return;
@@ -352,7 +360,10 @@ const LiveCommitLog: React.FC = () => {
 
       if (isHeadUpdate) {
         setNewEntryIds(new Set(novelItems.map(getCommitId)));
-        setTimeout(() => setNewEntryIds(new Set()), 2000);
+        highlightTimerRef.current = window.setTimeout(
+          () => setNewEntryIds(new Set()),
+          2000,
+        );
         return [...novelItems, ...updatedLog];
       }
 
