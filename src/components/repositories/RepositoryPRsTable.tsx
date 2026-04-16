@@ -36,12 +36,7 @@ import {
   headerCellStyle,
   bodyCellStyle,
 } from '../../theme';
-import {
-  getPrStatusCounts,
-  isClosedUnmergedPr,
-  isMergedPr,
-  isOpenPr,
-} from '../../utils';
+import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
 import FilterButton from '../FilterButton';
 
 interface RepositoryPRsTableProps {
@@ -55,9 +50,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
 }) => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const [filter, setFilter] = useState<'all' | 'open' | 'closed' | 'merged'>(
-    state,
-  );
+  const [filter, setFilter] = useState<PrStatusFilter>(state);
   const [sortField, setSortField] = useState<PrSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
@@ -88,14 +81,10 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     return getPrStatusCounts(allPRs);
   }, [allPRs]);
 
-  const filteredPRs = useMemo(() => {
-    if (!allPRs) return [];
-    if (filter === 'all') return allPRs;
-    if (filter === 'merged') return allPRs.filter(isMergedPr);
-    if (filter === 'open') return allPRs.filter(isOpenPr);
-    if (filter === 'closed') return allPRs.filter(isClosedUnmergedPr);
-    return allPRs;
-  }, [allPRs, filter]);
+  const filteredPRs = useMemo(
+    () => filterPrs(allPRs ?? [], { statusFilter: filter }),
+    [allPRs, filter],
+  );
 
   const sortedPRs = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
