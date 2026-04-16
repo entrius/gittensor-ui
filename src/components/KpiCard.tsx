@@ -78,7 +78,6 @@ const KpiCard: React.FC<KpiCardProps> = ({
           fontWeight="bold"
           sx={{
             color: (muiTheme) => muiTheme.palette.text.primary,
-            fontFamily: (muiTheme) => muiTheme.typography.mono.fontFamily,
             my: isLarge ? (isMobile ? 0.45 : 0.8) : 0.35,
             fontSize: isLarge
               ? isMobile

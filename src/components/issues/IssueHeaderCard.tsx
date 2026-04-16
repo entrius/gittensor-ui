@@ -63,7 +63,6 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
               display: 'flex',
               alignItems: 'center',
               gap: 0.5,
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '1rem',
               color: STATUS_COLORS.info,
               textDecoration: 'none',
@@ -79,7 +78,6 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             label={statusBadge.text}
             size="small"
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.75rem',
               fontWeight: 600,
               backgroundColor: statusBadge.bgColor,
@@ -116,7 +114,6 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
           <Box>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.7rem',
                 color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
                 textTransform: 'uppercase',
@@ -136,7 +133,6 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
               >
                 <Typography
                   sx={{
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '1.25rem',
                     fontWeight: 600,
                     color: STATUS_COLORS.warning,
@@ -146,7 +142,6 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                 </Typography>
                 <Typography
                   sx={{
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.9rem',
                     color: alpha(
                       theme.palette.common.white,
@@ -160,7 +155,6 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             ) : issue.status === 'completed' ? (
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '1.25rem',
                   fontWeight: 600,
                   color: STATUS_COLORS.merged,
@@ -171,7 +165,6 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             ) : (
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '1.25rem',
                   fontWeight: 600,
                   color:
@@ -186,7 +179,6 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             {usdEstimate && (
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.8rem',
                   color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
                   mt: 0.25,
@@ -201,7 +193,6 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             <Box>
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.7rem',
                   color: alpha(
                     theme.palette.common.white,
@@ -216,7 +207,6 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
               </Typography>
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.9rem',
                   color: 'text.primary',
                 }}
@@ -229,7 +219,6 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
           <Box>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.7rem',
                 color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
                 textTransform: 'uppercase',
@@ -241,7 +230,6 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             </Typography>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.9rem',
                 color: 'text.primary',
               }}
@@ -260,7 +248,6 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                 label={label}
                 size="small"
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.7rem',
                   backgroundColor: alpha(theme.palette.common.white, 0.1),
                   color: 'text.primary',

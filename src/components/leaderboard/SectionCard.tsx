@@ -55,7 +55,6 @@ export const SectionCard: React.FC<{
               <Typography
                 variant="h6"
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '1.25rem',
                   fontWeight: 600,
                 }}
