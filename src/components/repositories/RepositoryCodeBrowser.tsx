@@ -14,6 +14,12 @@ import {
   Avatar,
 } from '@mui/material';
 import axios from 'axios';
+import {
+  githubCommitDetailUrl,
+  githubCommitsUrl,
+  githubGitTreeUrl,
+  githubRepoUrl,
+} from '../../constants/github';
 import { STATUS_COLORS } from '../../theme';
 import { formatDistanceToNow } from 'date-fns';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -66,7 +72,7 @@ async function fetchCommitPayload(
   if (!c.committer?.id && !c.committer?.login && c.sha) {
     try {
       const { data } = await axios.get(
-        `https://api.github.com/repos/${repositoryFullName}/commits/${c.sha}`,
+        githubCommitDetailUrl(repositoryFullName, c.sha),
       );
       c = data;
     } catch {
@@ -138,13 +144,13 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
       setLoading(true);
       try {
         const repoResponse = await axios.get(
-          `https://api.github.com/repos/${repositoryFullName}`,
+          githubRepoUrl(repositoryFullName),
         );
         const branch = repoResponse.data.default_branch || 'main';
         setDefaultBranch(branch);
 
         const treeResponse = await axios.get(
-          `https://api.github.com/repos/${repositoryFullName}/git/trees/${branch}?recursive=1`,
+          githubGitTreeUrl(repositoryFullName, branch, { recursive: true }),
         );
 
         if (treeResponse.data.tree) {
@@ -184,7 +190,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
         }
 
         const response = await axios.get(
-          `https://api.github.com/repos/${repositoryFullName}/commits?${params.toString()}`,
+          githubCommitsUrl(repositoryFullName, params),
         );
 
         if (response.data && response.data.length > 0) {
