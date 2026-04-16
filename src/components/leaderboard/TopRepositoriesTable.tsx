@@ -30,6 +30,8 @@ import {
   Switch,
   FormControlLabel,
   alpha,
+  useMediaQuery,
+  useTheme,
   type SxProps,
   type Theme,
 } from '@mui/material';
@@ -115,8 +117,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     urlDir === 'asc' || urlDir === 'desc' ? urlDir : 'desc',
   );
   const [useLogScale, setUseLogScale] = useState(true);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const isInitialMount = useRef(true);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const trimmedSearch = searchQuery.trim();
+  const isMobileSearchVisible = isMobile && (isMobileSearchOpen || !!trimmedSearch);
   const isDirectRepoInput = /^[^/\s]+\/[^/\s]+$/.test(trimmedSearch);
 
   // Sync filter state to URL params (replace, don't push)
@@ -465,6 +471,71 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     syncToUrl({ sort: column, dir: newDir, page: '0' });
   };
 
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && isDirectRepoInput) {
+      onSelectRepository(trimmedSearch);
+    }
+    if (e.key === 'Escape' && !trimmedSearch) {
+      setIsMobileSearchOpen(false);
+    }
+  };
+
+  const searchAdornment = (
+    <InputAdornment position="start">
+      <SearchIcon
+        sx={{
+          color: 'text.tertiary',
+          fontSize: '1rem',
+        }}
+      />
+    </InputAdornment>
+  );
+
+  const searchFieldBaseSx = {
+    '& .MuiOutlinedInput-root': {
+      color: 'text.primary',
+      fontFamily: '"JetBrains Mono", monospace',
+      backgroundColor: 'background.default',
+      fontSize: '0.8rem',
+      height: '36px',
+      borderRadius: 2,
+      '& fieldset': { borderColor: 'border.light' },
+      '&:hover fieldset': {
+        borderColor: 'border.medium',
+      },
+      '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+    },
+  } as const;
+
+  const searchInput = (
+    <TextField
+      placeholder="Search or enter owner/repo..."
+      size="small"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      onKeyDown={handleSearchKeyDown}
+      onBlur={() => {
+        if (isMobile && !trimmedSearch) {
+          setIsMobileSearchOpen(false);
+        }
+      }}
+      autoFocus={isMobileSearchOpen}
+      InputProps={{
+        startAdornment: searchAdornment,
+      }}
+      sx={{
+        width: '200px',
+        ...(isMobileSearchVisible
+          ? {
+              flexBasis: { xs: '100%', sm: 'auto' },
+              order: { xs: 10, sm: 'initial' },
+            }
+          : {}),
+        ...searchFieldBaseSx,
+      }}
+    />
+  );
+
   const SortableHeader = ({
     column,
     children,
@@ -519,6 +590,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     syncToUrl({ search: searchQuery, page: '0' });
   }, [searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (!isMobile) {
+      setIsMobileSearchOpen(false);
+    }
+  }, [isMobile]);
+
   if (isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -557,7 +634,15 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             flexWrap: 'wrap',
           }}
         >
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 2,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              width: '100%',
+            }}
+          >
             <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
               <IconButton
                 onClick={() => setShowChart(!showChart)}
@@ -657,45 +742,30 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               </Box>
             </FormControl>
 
-            <TextField
-              placeholder="Search or enter owner/repo..."
-              size="small"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && isDirectRepoInput) {
-                  onSelectRepository(trimmedSearch);
-                }
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon
-                      sx={{
-                        color: 'text.tertiary',
-                        fontSize: '1rem',
-                      }}
-                    />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                width: '200px',
-                '& .MuiOutlinedInput-root': {
-                  color: 'text.primary',
-                  fontFamily: '"JetBrains Mono", monospace',
-                  backgroundColor: 'background.default',
-                  fontSize: '0.8rem',
-                  height: '36px',
+            {isMobileSearchVisible ? (
+              searchInput
+            ) : isMobile ? (
+              <IconButton
+                size="small"
+                onClick={() => setIsMobileSearchOpen(true)}
+                sx={{
+                  color: 'text.tertiary',
+                  border: '1px solid',
+                  borderColor: 'border.light',
                   borderRadius: 2,
-                  '& fieldset': { borderColor: 'border.light' },
-                  '&:hover fieldset': {
+                  width: 36,
+                  height: 36,
+                  '&:hover': {
+                    backgroundColor: 'surface.light',
                     borderColor: 'border.medium',
                   },
-                  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                },
-              }}
-            />
+                }}
+              >
+                <SearchIcon sx={{ fontSize: '1rem' }} />
+              </IconButton>
+            ) : (
+              searchInput
+            )}
           </Box>
         </Box>
       </Box>
