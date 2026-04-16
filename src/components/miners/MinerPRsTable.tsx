@@ -32,7 +32,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
 import { type MinerStatusFilter } from '../../utils/ExplorerUtils';
-import { headerCellStyle, bodyCellStyle } from '../../theme';
+import { headerCellStyle, bodyCellStyle, tooltipSlotProps } from '../../theme';
 
 type PrSortField = 'number' | 'repository' | 'score' | 'lines' | 'date';
 type SortDir = 'asc' | 'desc';
@@ -58,23 +58,6 @@ const getEffectiveScore = (pr: CommitLog): number => {
     return parseFloat(pr.collateralScore || '0');
   }
   return parseFloat(pr.score || '0');
-};
-
-const tooltipSlotProps = {
-  tooltip: {
-    sx: {
-      backgroundColor: 'surface.tooltip',
-      color: 'text.primary',
-      fontSize: '0.72rem',
-      fontFamily: '"JetBrains Mono", monospace',
-      padding: '8px 12px',
-      borderRadius: '6px',
-      border: '1px solid',
-      borderColor: 'border.light',
-      maxWidth: 260,
-    },
-  },
-  arrow: { sx: { color: 'surface.tooltip' } },
 };
 
 const getScoreTooltip = (pr: CommitLog): string | null => {

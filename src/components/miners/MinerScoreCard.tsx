@@ -29,7 +29,12 @@ import {
   useGeneralConfig,
   type MinerEvaluation,
 } from '../../api';
-import { RANK_COLORS, STATUS_COLORS, RISK_COLORS } from '../../theme';
+import {
+  RANK_COLORS,
+  STATUS_COLORS,
+  RISK_COLORS,
+  tooltipSlotProps,
+} from '../../theme';
 import {
   calculateDynamicOpenPrThreshold,
   calculateOpenIssueThreshold,
@@ -58,23 +63,6 @@ const openPrColor = (open: number, threshold: number) => {
   if (open >= threshold - 1) return RISK_COLORS.critical;
   if (open >= threshold - 2) return RISK_COLORS.approaching;
   return undefined;
-};
-
-const tooltipSlotProps = {
-  tooltip: {
-    sx: {
-      backgroundColor: 'surface.tooltip',
-      color: 'text.primary',
-      fontSize: '0.75rem',
-      fontFamily: '"JetBrains Mono", monospace',
-      padding: '8px 12px',
-      borderRadius: '6px',
-      border: '1px solid',
-      borderColor: 'border.light',
-      maxWidth: 260,
-    },
-  },
-  arrow: { sx: { color: 'surface.tooltip' } },
 };
 
 interface StatTileProps {
