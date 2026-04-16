@@ -27,16 +27,6 @@ export const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
 
 export const useStats = () => useDashboardQuery<Stats>('useStats', '/stats');
 
-export const useHistoricalTrend = () =>
-  useDashboardQuery<CommitsTrend[]>('useHistoricalTrend', '/lines/hist-trend');
-
-export const useRepoChanges = (options?: { refetchInterval?: number }) =>
-  useDashboardQuery<RepoChanges[]>(
-    'useRepoChanges',
-    '/repos/commits',
-    options?.refetchInterval,
-  );
-
 // Shared cache key for the repositories dataset.
 export const getReposQueryKey = () =>
   ['useReposAndWeights', '/dash/repos', undefined] as const;
