@@ -77,17 +77,20 @@ const IssuesList: React.FC<IssuesListProps> = ({
     },
     [alphaPrice, taoPrice],
   );
-  const headerCellSx = {
-    fontFamily: '"JetBrains Mono", monospace',
-    fontSize: '0.7rem',
-    fontWeight: 600,
-    letterSpacing: '0.5px',
-    textTransform: 'uppercase' as const,
-    color: 'text.secondary',
-    borderBottom: '1px solid',
-    borderColor: 'border.light',
-    py: 1.5,
-  };
+  const headerCellSx = useMemo(
+    () => ({
+      fontFamily: '"JetBrains Mono", monospace',
+      fontSize: '0.7rem',
+      fontWeight: 600,
+      letterSpacing: '0.5px',
+      textTransform: 'uppercase' as const,
+      color: 'text.secondary',
+      borderBottom: '1px solid',
+      borderColor: 'border.light',
+      py: 1.5,
+    }),
+    [],
+  );
 
   const bodyCellSx = {
     fontFamily: '"JetBrains Mono", monospace',
@@ -190,7 +193,9 @@ const IssuesList: React.FC<IssuesListProps> = ({
       if (typeof a.value === 'number' && typeof b.value === 'number') {
         return (a.value - b.value) * directionFactor;
       }
-      return collator.compare(String(a.value), String(b.value)) * directionFactor;
+      return (
+        collator.compare(String(a.value), String(b.value)) * directionFactor
+      );
     });
 
     return decorated.map((item) => item.issue);
@@ -252,7 +257,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         </TableSortLabel>
       </TableCell>
     ),
-    [handleSort, sortDirection, sortKey],
+    [handleSort, headerCellSx, sortDirection, sortKey],
   );
 
   if (isLoading) {
@@ -323,7 +328,12 @@ const IssuesList: React.FC<IssuesListProps> = ({
           <TableHead>
             <TableRow>
               {renderSortableHeader('ID', 'id', 'left', '60px')}
-              {renderSortableHeader('Repository', 'repository', 'left', '220px')}
+              {renderSortableHeader(
+                'Repository',
+                'repository',
+                'left',
+                '220px',
+              )}
               {renderSortableHeader('Issue', 'issue')}
 
               {/* Available Issues columns */}
@@ -338,7 +348,12 @@ const IssuesList: React.FC<IssuesListProps> = ({
               {listType === 'pending' && (
                 <>
                   {renderSortableHeader('Target Bounty', 'bounty', 'right')}
-                  {renderSortableHeader('Funding', 'funding', 'center', '140px')}
+                  {renderSortableHeader(
+                    'Funding',
+                    'funding',
+                    'center',
+                    '140px',
+                  )}
                   {renderSortableHeader('Status', 'status', 'center')}
                 </>
               )}
