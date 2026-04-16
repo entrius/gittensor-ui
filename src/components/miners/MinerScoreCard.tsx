@@ -324,6 +324,14 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
     }, 0);
   }, [prs]);
 
+  const totalLinesChanged = useMemo(() => {
+    if (!prs || prs.length === 0) return 0;
+    return prs.reduce(
+      (sum, pr) => sum + (pr.additions || 0) + (pr.deletions || 0),
+      0,
+    );
+  }, [prs]);
+
   if (isLoading) {
     return (
       <Card sx={{ p: 4, textAlign: 'center' }} elevation={0}>
@@ -605,7 +613,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             <StatTile
               label="PRs"
               value={String(minerStats.totalPrs || 0)}
-              sub={`${Number((minerStats.totalAdditions ?? 0) + (minerStats.totalDeletions ?? 0)).toLocaleString()} lines`}
+              sub={`${totalLinesChanged.toLocaleString()} lines`}
               rank={rankings?.totalPrs}
             />
           </Grid>
