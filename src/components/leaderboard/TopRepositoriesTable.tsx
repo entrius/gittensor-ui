@@ -32,6 +32,7 @@ import {
   alpha,
   type SxProps,
   type Theme,
+  type SortDirection as MuiSortDirection,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import BarChartIcon from '@mui/icons-material/BarChart';
@@ -432,34 +433,80 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   }) => (
     <TableCell
       align={align}
+      sortDirection={
+        sortColumn === column ? (sortDirection as MuiSortDirection) : false
+      }
+      aria-sort={
+        sortColumn === column
+          ? sortDirection === 'asc'
+            ? 'ascending'
+            : 'descending'
+          : 'none'
+      }
       sx={{
         ...headerCellStyle,
         ...(sx || {}),
-        cursor: 'pointer',
         userSelect: 'none',
-        '&:hover': {
-          backgroundColor: 'surface.light',
-        },
       }}
-      onClick={() => handleSort(column)}
     >
       <Box
         sx={{
+          width: '100%',
           display: 'flex',
-          alignItems: 'center',
           justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
-          gap: 0.5,
         }}
       >
-        {children}
-        {sortColumn === column && (
-          <Typography
-            component="span"
-            sx={{ fontSize: '0.7rem', opacity: 0.7 }}
-          >
-            {sortDirection === 'asc' ? '▲' : '▼'}
-          </Typography>
-        )}
+        <Box
+          role="button"
+          tabIndex={0}
+          aria-label={`Sort by ${String(children)}`}
+          onClick={() => handleSort(column)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              handleSort(column);
+            }
+          }}
+          sx={{
+            position: 'relative',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.5,
+            cursor: 'pointer',
+            transition: 'color 0.2s',
+            '&:hover': {
+              color: 'text.primary',
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              inset: '-3px -6px',
+              borderRadius: 1,
+              opacity: 0,
+              pointerEvents: 'none',
+              transition: 'opacity 0.2s',
+            },
+            '&:focus-visible': {
+              outline: 'none',
+            },
+            '&:focus-visible::after': {
+              opacity: 1,
+              backgroundColor: 'surface.light',
+              boxShadow: (theme) =>
+                `0 0 0 2px ${theme.palette.background.default}, 0 0 0 4px ${theme.palette.primary.main}`,
+            },
+          }}
+        >
+          {children}
+          {sortColumn === column && (
+            <Typography
+              component="span"
+              sx={{ fontSize: '0.7rem', opacity: 0.7 }}
+            >
+              {sortDirection === 'asc' ? '▲' : '▼'}
+            </Typography>
+          )}
+        </Box>
       </Box>
     </TableCell>
   );
