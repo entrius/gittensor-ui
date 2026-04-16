@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseNumber,
+  getGithubAvatarSrc,
+  getPrStatusLabel,
+  getIssueStatusLabel,
   calculateDynamicOpenPrThreshold,
+  calculateOpenIssueThreshold,
   normalizeMinerEvaluations,
   normalizeCommitLogs,
   sortMinerRepoStats,
@@ -38,6 +42,91 @@ describe('parseNumber', () => {
   it('uses custom fallback', () => {
     expect(parseNumber(null, 10)).toBe(10);
     expect(parseNumber('invalid', -1)).toBe(-1);
+  });
+});
+
+describe('getGithubAvatarSrc', () => {
+  it('returns avatar URL for a valid username', () => {
+    expect(getGithubAvatarSrc('octocat')).toBe(
+      'https://avatars.githubusercontent.com/octocat',
+    );
+  });
+
+  it('returns empty string for undefined', () => {
+    expect(getGithubAvatarSrc(undefined)).toBe('');
+  });
+
+  it('returns empty string for null', () => {
+    expect(getGithubAvatarSrc(null)).toBe('');
+  });
+
+  it('returns empty string for empty string', () => {
+    expect(getGithubAvatarSrc('')).toBe('');
+  });
+});
+
+describe('getPrStatusLabel', () => {
+  it('returns Merged when prState is MERGED', () => {
+    expect(getPrStatusLabel({ prState: 'MERGED', mergedAt: null })).toBe(
+      'Merged',
+    );
+  });
+
+  it('returns Merged when prState is lowercase merged', () => {
+    expect(getPrStatusLabel({ prState: 'merged', mergedAt: null })).toBe(
+      'Merged',
+    );
+  });
+
+  it('returns Merged when mergedAt is set regardless of prState', () => {
+    expect(
+      getPrStatusLabel({ prState: 'CLOSED', mergedAt: '2024-01-01' }),
+    ).toBe('Merged');
+  });
+
+  it('returns Open when prState is OPEN', () => {
+    expect(getPrStatusLabel({ prState: 'OPEN', mergedAt: null })).toBe('Open');
+  });
+
+  it('returns Open when prState and mergedAt are both missing', () => {
+    expect(getPrStatusLabel({ prState: '', mergedAt: null })).toBe('Open');
+    expect(getPrStatusLabel({ prState: undefined as any, mergedAt: null })).toBe(
+      'Open',
+    );
+  });
+
+  it('returns Closed for CLOSED state without mergedAt', () => {
+    expect(getPrStatusLabel({ prState: 'CLOSED', mergedAt: null })).toBe(
+      'Closed',
+    );
+  });
+});
+
+describe('getIssueStatusLabel', () => {
+  it('returns Solved for completed status', () => {
+    expect(getIssueStatusLabel({ status: 'completed' })).toBe('Solved');
+  });
+
+  it('returns Closed for cancelled status', () => {
+    expect(getIssueStatusLabel({ status: 'cancelled' })).toBe('Closed');
+  });
+
+  it('returns Open for active status', () => {
+    expect(getIssueStatusLabel({ status: 'active' })).toBe('Open');
+  });
+
+  it('returns Open for registered status', () => {
+    expect(getIssueStatusLabel({ status: 'registered' })).toBe('Open');
+  });
+
+  it('returns Open for unknown status values', () => {
+    expect(getIssueStatusLabel({ status: 'something-else' as any })).toBe(
+      'Open',
+    );
+  });
+
+  it('returns Open for undefined status', () => {
+    expect(getIssueStatusLabel({ status: undefined as any })).toBe('Open');
   });
 });
 
@@ -82,6 +171,38 @@ describe('calculateDynamicOpenPrThreshold', () => {
       maxOpenPrThreshold: 30,
     } as any;
     expect(calculateDynamicOpenPrThreshold(baseMiner, scoring)).toBe(8);
+  });
+});
+
+describe('calculateOpenIssueThreshold', () => {
+  it('returns base threshold of 5 when token score is 0', () => {
+    expect(calculateOpenIssueThreshold({ issueTokenScore: 0 } as any)).toBe(5);
+  });
+
+  it('adds bonus from token score', () => {
+    // 5 + floor(600 / 300) = 5 + 2 = 7
+    expect(calculateOpenIssueThreshold({ issueTokenScore: 600 } as any)).toBe(
+      7,
+    );
+  });
+
+  it('floors partial bonus', () => {
+    // 5 + floor(500 / 300) = 5 + 1 = 6
+    expect(calculateOpenIssueThreshold({ issueTokenScore: 500 } as any)).toBe(
+      6,
+    );
+  });
+
+  it('caps at 30', () => {
+    // 5 + floor(99999 / 300) = 5 + 333 → capped at 30
+    expect(
+      calculateOpenIssueThreshold({ issueTokenScore: 99999 } as any),
+    ).toBe(30);
+  });
+
+  it('handles missing issueTokenScore gracefully', () => {
+    expect(calculateOpenIssueThreshold({} as any)).toBe(5);
+    expect(calculateOpenIssueThreshold({ issueTokenScore: undefined } as any)).toBe(5);
   });
 });
 
