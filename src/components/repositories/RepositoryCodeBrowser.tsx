@@ -12,6 +12,7 @@ import {
   Link,
   Breadcrumbs,
   Avatar,
+  useTheme,
 } from '@mui/material';
 import axios from 'axios';
 import { STATUS_COLORS } from '../../theme';
@@ -121,6 +122,7 @@ function resolveGithubCommitAttribution(
 const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
   repositoryFullName,
 }) => {
+  const theme = useTheme();
   const [tree, setTree] = useState<FileNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -303,7 +305,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
             onClick={() => handleNavigate(null)}
             sx={{
               fontWeight: !currentPath ? 600 : 400,
-              color: !currentPath ? '#c9d1d9' : STATUS_COLORS.info,
+              color: !currentPath
+                ? theme.palette.text.tertiary
+                : STATUS_COLORS.info,
               cursor: !currentPath ? 'default' : 'pointer',
               fontSize: '14px',
             }}
@@ -322,7 +326,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                 onClick={() => !isLast && handleNavigate(path)}
                 sx={{
                   fontWeight: isLast ? 600 : 400,
-                  color: isLast ? '#c9d1d9' : STATUS_COLORS.info,
+                  color: isLast
+                    ? theme.palette.text.tertiary
+                    : STATUS_COLORS.info,
                   cursor: isLast ? 'default' : 'pointer',
                   fontSize: '14px',
                 }}
@@ -339,10 +345,10 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
         <Paper
           elevation={0}
           sx={{
-            border: '1px solid #30363d',
+            border: `1px solid ${theme.palette.border.light}`,
             borderBottom: 'none',
             borderRadius: '6px 6px 0 0',
-            backgroundColor: '#161b22',
+            backgroundColor: theme.palette.surface.elevated,
             p: 2,
             display: 'flex',
             alignItems: 'center',
@@ -375,7 +381,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   sx={{
                     fontSize: '13px',
                     fontWeight: 600,
-                    color: '#c9d1d9',
+                    color: theme.palette.text.tertiary,
                     whiteSpace: 'nowrap',
                   }}
                 >
@@ -406,7 +412,6 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   sx={{
                     fontSize: '13px',
                     color: STATUS_COLORS.open,
-                    fontFamily: '"JetBrains Mono", monospace',
                   }}
                 >
                   {currentCommit.sha}
@@ -439,9 +444,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
           component={Paper}
           elevation={0}
           sx={{
-            border: '1px solid #30363d',
+            border: `1px solid ${theme.palette.border.light}`,
             borderRadius: isFile ? '6px' : '0 0 6px 6px', // Connect to header
-            backgroundColor: '#0d1117',
+            backgroundColor: theme.palette.background.paper,
           }}
         >
           <Table size="small">
@@ -451,7 +456,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                 <TableRow
                   hover
                   sx={{
-                    '&:hover': { backgroundColor: '#161b22' },
+                    '&:hover': {
+                      backgroundColor: theme.palette.surface.elevated,
+                    },
                     cursor: 'pointer',
                   }}
                 >
@@ -466,7 +473,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                     }}
                     sx={{
                       color: STATUS_COLORS.info,
-                      borderBottom: '1px solid #21262d',
+                      borderBottom: `1px solid ${theme.palette.border.subtle}`,
                       py: 1,
                       fontSize: '13px',
                       fontWeight: 600,
@@ -482,21 +489,25 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   hover
                   onClick={() => handleNavigate(node.path)}
                   sx={{
-                    '&:hover': { backgroundColor: '#161b22' },
+                    '&:hover': {
+                      backgroundColor: theme.palette.surface.elevated,
+                    },
                     cursor: 'pointer',
                     transition: 'background-color 0.1s',
                   }}
                 >
                   <TableCell
                     sx={{
-                      borderBottom: '1px solid #21262d',
+                      borderBottom: `1px solid ${theme.palette.border.subtle}`,
                       py: 1,
                       width: '32px',
                       pl: 2,
                     }}
                   >
                     {node.type === 'tree' ? (
-                      <FolderIcon sx={{ color: '#54aeff', fontSize: 16 }} />
+                      <FolderIcon
+                        sx={{ color: theme.palette.status.info, fontSize: 16 }}
+                      />
                     ) : (
                       <InsertDriveFileIcon
                         sx={{ color: STATUS_COLORS.open, fontSize: 16 }}
@@ -505,9 +516,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   </TableCell>
                   <TableCell
                     sx={{
-                      borderBottom: '1px solid #21262d',
+                      borderBottom: `1px solid ${theme.palette.border.subtle}`,
                       py: 1,
-                      color: '#c9d1d9',
+                      color: theme.palette.text.tertiary,
                       fontSize: '14px',
                       fontWeight: node.type === 'tree' ? 600 : 400,
                     }}
@@ -516,7 +527,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   </TableCell>
                   <TableCell
                     sx={{
-                      borderBottom: '1px solid #21262d',
+                      borderBottom: `1px solid ${theme.palette.border.subtle}`,
                       py: 1,
                       color: STATUS_COLORS.open,
                       fontSize: '13px',

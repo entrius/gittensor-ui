@@ -45,7 +45,6 @@ const tooltipSlotProps = {
       backgroundColor: 'surface.tooltip',
       color: 'text.primary',
       fontSize: '0.72rem',
-      fontFamily: '"JetBrains Mono", monospace',
       padding: '8px 12px',
       borderRadius: '6px',
       border: '1px solid',
@@ -85,8 +84,8 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
     format === 'percent'
       ? `${(value * 100).toFixed(1)}%`
       : format === 'value'
-        ? Number(value).toFixed(2)
-        : `×${Number(value).toFixed(2)}`;
+        ? parseNumber(value).toFixed(2)
+        : `×${parseNumber(value).toFixed(2)}`;
 
   return (
     <Tooltip title={tooltip} arrow placement="top" slotProps={tooltipSlotProps}>
@@ -105,7 +104,6 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
       >
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.62rem',
             color: STATUS_COLORS.neutral,
             textTransform: 'uppercase',
@@ -115,7 +113,6 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
         </Typography>
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.72rem',
             fontWeight: 600,
             color,
@@ -184,7 +181,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.78rem',
                 fontWeight: 600,
                 color: 'text.primary',
@@ -195,7 +191,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
             </Typography>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.72rem',
                 color: (t) => alpha(t.palette.text.primary, 0.6),
                 overflow: 'hidden',
@@ -209,7 +204,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.25 }}>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.62rem',
                 color: (t) => alpha(t.palette.text.primary, 0.5),
               }}
@@ -227,7 +221,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
             />
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.62rem',
                 color: statusColor,
               }}
@@ -240,7 +233,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
         {/* Score */}
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.9rem',
             fontWeight: 600,
             color: isClosed
@@ -327,9 +319,9 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
               `+${pr.additions} / -${pr.deletions}`,
               `${pr.commitCount} commit${pr.commitCount !== 1 ? 's' : ''}`,
               pr.tokenScore != null &&
-                `tokens ${Number(pr.tokenScore).toFixed(2)}`,
+                `tokens ${parseNumber(pr.tokenScore).toFixed(2)}`,
               pr.totalNodesScored != null &&
-                Number(pr.totalNodesScored) > 0 &&
+                parseNumber(pr.totalNodesScored) > 0 &&
                 `${pr.totalNodesScored} nodes`,
             ]
               .filter(Boolean)
@@ -338,7 +330,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
                   <Typography
                     component="span"
                     sx={{
-                      fontFamily: '"JetBrains Mono", monospace',
                       fontSize: '0.65rem',
                       color: (t) => alpha(t.palette.text.primary, 0.4),
                     }}
@@ -349,7 +340,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
                     <Typography
                       component="span"
                       sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.65rem',
                         color: (t) => alpha(t.palette.text.primary, 0.2),
                         mx: 0.25,
@@ -365,7 +355,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
                 <Typography
                   component="span"
                   sx={{
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.65rem',
                     color: (t) => alpha(t.palette.text.primary, 0.2),
                     mx: 0.25,
@@ -376,7 +365,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
                 <Typography
                   component="span"
                   sx={{
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.65rem',
                     color: STATUS_COLORS.warningOrange,
                   }}
@@ -397,7 +385,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
                 onNavigateToPr(pr.repository, pr.pullRequestNumber);
               }}
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.65rem',
                 textTransform: 'none',
                 color: 'primary.main',
@@ -418,7 +405,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.65rem',
                 textTransform: 'none',
                 color: (t) => alpha(t.palette.text.primary, 0.5),
@@ -463,7 +449,6 @@ const MetricRow: React.FC<{
     <Box>
       <Typography
         sx={{
-          fontFamily: '"JetBrains Mono", monospace',
           fontSize: '0.82rem',
           color: 'text.primary',
         }}
@@ -473,7 +458,6 @@ const MetricRow: React.FC<{
       {sub && (
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.7rem',
             color: (t) => alpha(t.palette.text.primary, 0.4),
             mt: 0.25,
@@ -485,7 +469,6 @@ const MetricRow: React.FC<{
     </Box>
     <Typography
       sx={{
-        fontFamily: '"JetBrains Mono", monospace',
         fontSize: '0.95rem',
         fontWeight: 600,
         color: color || 'text.primary',
@@ -527,7 +510,6 @@ const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
       <Typography
         sx={{
           color: 'text.primary',
-          fontFamily: '"JetBrains Mono", monospace',
           fontSize: '1.1rem',
           fontWeight: 600,
           mb: 0.8,
@@ -556,7 +538,6 @@ const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
         >
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.85rem',
               color: (t) => alpha(t.palette.text.primary, 0.4),
             }}
@@ -565,7 +546,6 @@ const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
           </Typography>
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.75rem',
               color: (t) => alpha(t.palette.text.primary, 0.3),
               mt: 0.5,
@@ -683,7 +663,6 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
         <Box>
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '1rem',
               fontWeight: 600,
               color: 'text.primary',
@@ -693,7 +672,6 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
           </Typography>
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.72rem',
               color: (t) => alpha(t.palette.text.primary, 0.45),
               mt: 0.25,
@@ -731,7 +709,6 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
           <Typography
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.72rem',
               color:
                 page === 0
@@ -746,7 +723,6 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
           </Typography>
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.72rem',
               color: (t) => alpha(t.palette.text.primary, 0.5),
             }}
@@ -756,7 +732,6 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
           <Typography
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.72rem',
               color:
                 page >= totalPages - 1

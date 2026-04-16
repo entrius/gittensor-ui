@@ -53,7 +53,6 @@ const ErrorFallback: React.FC<ErrorFallbackProps> = ({
         <ErrorOutlineIcon sx={{ fontSize: 42, color: STATUS_COLORS.closed }} />
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: { xs: '1.25rem', md: '1.5rem' },
             color: '#fff',
             fontWeight: 500,
@@ -63,7 +62,6 @@ const ErrorFallback: React.FC<ErrorFallbackProps> = ({
         </Typography>
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.85rem',
             color: 'rgba(255,255,255,0.6)',
             lineHeight: 1.6,
@@ -76,7 +74,6 @@ const ErrorFallback: React.FC<ErrorFallbackProps> = ({
           component="pre"
           sx={{
             width: '100%',
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.75rem',
             color: 'rgba(255,255,255,0.5)',
             border: '1px solid rgba(255,255,255,0.1)',

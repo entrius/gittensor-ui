@@ -301,13 +301,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         top: 20,
         textStyle: {
           color: primaryColor,
-          fontFamily: 'JetBrains Mono',
           fontSize: 18,
           fontWeight: 600,
         },
         subtextStyle: {
           color: alpha(white, TEXT_OPACITY.tertiary),
-          fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
       },
@@ -324,7 +322,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         borderWidth: 1,
         textStyle: {
           color: primaryColor,
-          fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
         padding: [12, 16],
@@ -368,7 +365,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         data: xAxisData.map((item) => item.name),
         axisLabel: {
           color: textColor,
-          fontFamily: 'JetBrains Mono',
           fontSize: 11,
           interval: 0,
           rotate: 45,
@@ -393,13 +389,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         name: metric.yAxis,
         nameTextStyle: {
           color: textColor,
-          fontFamily: 'JetBrains Mono',
           fontSize: 12,
           padding: [0, 0, 0, 0],
         },
         axisLabel: {
           color: textColor,
-          fontFamily: 'JetBrains Mono',
           fontSize: 11,
           formatter: (value: number) => {
             if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
@@ -689,7 +683,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                   <Typography
                     variant="body2"
                     sx={{
-                      fontFamily: 'JetBrains Mono',
                       fontSize: '0.8rem',
                       color: 'text.secondary',
                     }}
@@ -706,7 +699,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                   variant="body2"
                   sx={{
                     color: 'text.secondary',
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.8rem',
                   }}
                 >
@@ -722,7 +714,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                   }}
                   sx={{
                     color: 'text.primary',
-                    fontFamily: '"JetBrains Mono", monospace',
                     backgroundColor: 'background.default',
                     fontSize: '0.8rem',
                     height: '36px',
@@ -916,7 +907,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     >
                       <Typography
                         sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.75rem',
                           fontWeight: 600,
                           color: 'text.primary',
@@ -931,7 +921,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     >
                       <Typography
                         sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.75rem',
                           fontWeight: 600,
                           color:
@@ -951,7 +940,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     >
                       <Typography
                         sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.75rem',
                           color:
                             (repo.totalPRs || 0) > 0
@@ -968,7 +956,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     >
                       <Typography
                         sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.75rem',
                           color:
                             (repo.uniqueMiners?.size || 0) > 0
@@ -1003,10 +990,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                         }}
                       >
                         Repository not in tracked list. Open details for{' '}
-                        <Typography
-                          component="span"
-                          sx={{ fontFamily: '"JetBrains Mono", monospace' }}
-                        >
+                        <Typography component="span">
                           {trimmedSearch}
                         </Typography>
                         ?
@@ -1040,9 +1024,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           borderTop: '1px solid',
           borderColor: 'border.light',
           color: 'text.secondary',
-          '.MuiTablePagination-displayedRows': {
-            fontFamily: '"JetBrains Mono", monospace',
-          },
+          '.MuiTablePagination-displayedRows': {},
         }}
       />
     </Card>

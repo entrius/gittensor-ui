@@ -63,7 +63,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
         <Typography
           sx={{
             color: alpha(STATUS_COLORS.error, 0.9),
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.9rem',
           }}
         >
@@ -163,7 +162,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                 variant="h5"
                 sx={{
                   color: 'text.primary',
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '1.3rem',
                   fontWeight: 500,
                 }}
@@ -228,7 +226,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                     theme.palette.common.white,
                     TEXT_OPACITY.tertiary,
                   ),
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.85rem',
                   cursor: 'pointer',
                   transition: 'color 0.2s',
@@ -275,7 +272,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                       theme.palette.common.white,
                       TEXT_OPACITY.tertiary,
                     ),
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.7rem',
                     textTransform: 'uppercase',
                     letterSpacing: '1px',
@@ -325,7 +321,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                               : item.rank === 3
                                 ? RANK_COLORS.third
                                 : alpha(theme.palette.common.white, 0.6),
-                        fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.6rem',
                         fontWeight: 600,
                         lineHeight: 1,
@@ -345,7 +340,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                     component="span"
                     sx={{
                       color: alpha(theme.palette.diff.additions, 0.8),
-                      fontFamily: '"JetBrains Mono", monospace',
                       fontSize: '1.5rem',
                       fontWeight: 600,
                     }}
@@ -359,7 +353,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                         theme.palette.common.white,
                         TEXT_OPACITY.muted,
                       ),
-                      fontFamily: '"JetBrains Mono", monospace',
                       fontSize: '1.5rem',
                       fontWeight: 400,
                     }}
@@ -370,7 +363,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                     component="span"
                     sx={{
                       color: alpha(theme.palette.diff.deletions, 0.8),
-                      fontFamily: '"JetBrains Mono", monospace',
                       fontSize: '1.5rem',
                       fontWeight: 600,
                     }}
@@ -382,7 +374,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                 <Typography
                   sx={{
                     color: item.color || theme.palette.text.primary,
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '1.5rem',
                     fontWeight: 600,
                     wordBreak: 'break-all',
@@ -401,7 +392,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
         <Typography
           sx={{
             color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.8rem',
             textTransform: 'uppercase',
             letterSpacing: '1px',
@@ -451,7 +441,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                 <Typography
                   sx={{
                     color: 'text.primary',
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '1.1rem',
                     fontWeight: 600,
                   }}
@@ -528,7 +517,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             <Typography
               sx={{
                 color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.7rem',
                 textTransform: 'uppercase',
                 letterSpacing: '1px',
@@ -566,7 +554,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               <Typography
                 sx={{
                   color: 'text.primary',
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.95rem',
                   fontWeight: 500,
                   transition: 'color 0.2s',
@@ -592,7 +579,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             <Typography
               sx={{
                 color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.7rem',
                 textTransform: 'uppercase',
                 letterSpacing: '1px',
@@ -605,7 +591,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             <Typography
               sx={{
                 color: 'text.primary',
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.95rem',
                 fontWeight: 500,
               }}
@@ -638,7 +623,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                     theme.palette.common.white,
                     TEXT_OPACITY.tertiary,
                   ),
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.7rem',
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
@@ -650,7 +634,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               </Typography>
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.85rem',
                   wordBreak: 'break-all',
                 }}
@@ -680,7 +663,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                   theme.palette.common.white,
                   TEXT_OPACITY.secondary,
                 ),
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.85rem',
               }}
             >
@@ -693,7 +675,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               style={{
                 color: STATUS_COLORS.info,
                 textDecoration: 'none',
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.85rem',
                 fontWeight: 500,
               }}
