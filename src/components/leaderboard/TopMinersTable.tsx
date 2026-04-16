@@ -199,7 +199,13 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             />
           </Box>
         }
-        action={<SearchInput value={searchQuery} onChange={setSearchQuery} />}
+        action={
+          <SearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            width="100%"
+          />
+        }
         sx={{
           mb: 2,
           position: 'sticky',
