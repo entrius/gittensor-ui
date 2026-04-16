@@ -620,6 +620,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               value={String(minerStats.totalPrs || 0)}
               sub={`${Number((minerStats.totalAdditions ?? 0) + (minerStats.totalDeletions ?? 0)).toLocaleString()} lines`}
               rank={rankings?.totalPrs}
+              tooltip="Total pull requests submitted. Lines count includes both additions and deletions across all PRs."
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
@@ -664,7 +665,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               value={`${(Number(minerStats.issueCredibility || 0) * 100).toFixed(1)}%`}
               sub={`${minerStats.totalSolvedIssues || 0} solved · ${minerStats.totalClosedIssues || 0} closed`}
               color={credibilityColor(Number(minerStats.issueCredibility || 0))}
-              tooltip="Ratio of solved issues to total attempts. Higher credibility means a stronger multiplier on discovery scores."
+              tooltip="Credibility = solved / (solved + max(0, closed − 1)). One closed issue is forgiven. 80%+ required for eligibility."
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
@@ -684,6 +685,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                   (minerStats.totalClosedIssues || 0),
               )}
               sub={`${minerStats.totalSolvedIssues || 0} solved · ${minerStats.totalOpenIssues || 0} open`}
+              tooltip="Total discovered issues (solved + open + closed). Only solved issues with a qualifying PR contribute to your discovery score."
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
