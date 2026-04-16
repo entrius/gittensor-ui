@@ -9,7 +9,6 @@ import {
   TableHead,
   TableRow,
   Typography,
-  CircularProgress,
   Avatar,
   TextField,
   InputAdornment,
@@ -46,6 +45,7 @@ import {
   truncateText,
 } from '../../utils';
 import { RankIcon } from './RankIcon';
+import LeaderboardTableSkeleton from './LeaderboardTableSkeleton';
 import { STATUS_COLORS, UI_COLORS, scrollbarSx } from '../../theme';
 import FilterButton from '../FilterButton';
 
@@ -357,14 +357,6 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
     }
   }, [rowsPerPage]);
 
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress size={40} sx={{ color: 'primary.main' }} />
-      </Box>
-    );
-  }
-
   return (
     <Card
       ref={cardRef}
@@ -675,9 +667,12 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredPRs
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((pr) => (
+            {isLoading ? (
+              <LeaderboardTableSkeleton variant="prs" rows={rowsPerPage} />
+            ) : (
+              filteredPRs
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((pr) => (
                 <TableRow
                   key={`${pr.repository}-${pr.pullRequestNumber}`}
                   hover
@@ -907,7 +902,8 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
                     </Box>
                   </TableCell>
                 </TableRow>
-              ))}
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>

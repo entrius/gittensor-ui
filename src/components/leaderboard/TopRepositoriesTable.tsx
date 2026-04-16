@@ -15,7 +15,6 @@ import {
   TableHead,
   TableRow,
   Typography,
-  CircularProgress,
   Avatar,
   TextField,
   InputAdornment,
@@ -40,6 +39,7 @@ import ReactECharts from 'echarts-for-react';
 import { useSearchParams } from 'react-router-dom';
 import { truncateText } from '../../utils';
 import { RankIcon } from './RankIcon';
+import LeaderboardTableSkeleton from './LeaderboardTableSkeleton';
 import {
   getRepositoryOwnerAvatarBackground,
   headerCellStyle,
@@ -473,14 +473,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     syncToUrl({ search: searchQuery, page: '0' });
   }, [searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress size={40} sx={{ color: 'primary.main' }} />
-      </Box>
-    );
-  }
-
   return (
     <Card
       sx={{
@@ -724,9 +716,16 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredRepositories
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((repo) => {
+            {isLoading ? (
+              <LeaderboardTableSkeleton
+                variant="repositories"
+                rows={rowsPerPage}
+              />
+            ) : (
+              <>
+                {filteredRepositories
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((repo) => {
                 return (
                   <TableRow
                     key={repo.repository}
@@ -906,6 +905,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                   </TableCell>
                 </TableRow>
               )}
+              </>
+            )}
           </TableBody>
         </Table>
       </TableContainer>
