@@ -265,8 +265,7 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
             </TableHead>
             <TableBody>
               {visibleIssues.map((issue: MinerIssueEntry) => {
-                const owner =
-                  issue.repositoryFullName.split('/')[0] || '';
+                const owner = issue.repositoryFullName.split('/')[0] || '';
 
                 return (
                   <TableRow
