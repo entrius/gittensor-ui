@@ -309,7 +309,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                     nextSearchParams.delete(VISIBLE_QUERY_PARAM);
                   }
 
-                  return nextSearchParams.toString() === previousParams.toString()
+                  return nextSearchParams.toString() ===
+                    previousParams.toString()
                     ? previousParams
                     : nextSearchParams;
                 },
