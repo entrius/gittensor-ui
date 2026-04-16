@@ -43,7 +43,6 @@ export const AboutContent: React.FC = () => {
             fontWeight="bold"
             sx={{
               mb: 3,
-              fontFamily: '"JetBrains Mono", monospace',
               color: 'text.primary',
             }}
           >
@@ -275,7 +274,6 @@ export const AboutContent: React.FC = () => {
               mb: 2.5,
               fontSize: { xs: '1.2rem', sm: '1.3rem' },
               color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
               letterSpacing: '0.02em',
             }}
           >

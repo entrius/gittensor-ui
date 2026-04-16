@@ -89,7 +89,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
             variant="h6"
             sx={{
               color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
             }}
           >
             Issues
@@ -192,7 +191,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                   variant="h6"
                   sx={{
                     color: 'text.primary',
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '1.1rem',
                     fontWeight: 500,
                   }}
@@ -247,7 +245,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                             border: `1px solid ${statusColors.border}`,
                             fontSize: '0.65rem',
                             fontWeight: 700,
-                            fontFamily: '"JetBrains Mono", monospace',
                             height: '22px',
                             '& .MuiChip-label': { px: 1 },
                           }}
@@ -255,7 +252,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                         <Typography
                           sx={{
                             color: STATUS_COLORS.open,
-                            fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.8rem',
                             whiteSpace: 'nowrap',
                           }}
@@ -265,7 +261,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                         <Typography
                           sx={{
                             color: 'text.primary',
-                            fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.85rem',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -292,7 +287,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                         <Typography
                           sx={{
                             color: getBountyAmountColor(bounty.status),
-                            fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.85rem',
                             fontWeight: 600,
                           }}
@@ -345,7 +339,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
             variant="h6"
             sx={{
               color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '1.1rem',
               fontWeight: 500,
             }}
@@ -386,7 +379,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
             <Typography
               sx={{
                 color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.9rem',
               }}
             >

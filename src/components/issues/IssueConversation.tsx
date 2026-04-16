@@ -294,7 +294,6 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                   fontSize: '85%',
                   backgroundColor: alpha(STATUS_COLORS.neutral, 0.4),
                   borderRadius: '6px',
-                  fontFamily: '"JetBrains Mono", monospace',
                 },
                 '& pre': {
                   mt: 2,

@@ -146,7 +146,6 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
           padding: '0.2em 0.4em',
           borderRadius: '6px',
           fontSize: '85%',
-          fontFamily: '"JetBrains Mono", monospace',
         },
         '& pre': {
           backgroundColor: '#161b22',

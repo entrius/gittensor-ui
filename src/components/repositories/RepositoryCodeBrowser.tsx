@@ -406,7 +406,6 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   sx={{
                     fontSize: '13px',
                     color: STATUS_COLORS.open,
-                    fontFamily: '"JetBrains Mono", monospace',
                   }}
                 >
                   {currentCommit.sha}

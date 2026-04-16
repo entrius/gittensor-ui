@@ -43,7 +43,6 @@ const BountyProgress: React.FC<BountyProgressProps> = ({
       />
       <Typography
         sx={{
-          fontFamily: '"JetBrains Mono", monospace',
           fontSize: '0.65rem',
           color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
           mt: 0.5,

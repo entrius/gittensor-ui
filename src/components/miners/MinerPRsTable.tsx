@@ -66,7 +66,6 @@ const tooltipSlotProps = {
       backgroundColor: 'surface.tooltip',
       color: 'text.primary',
       fontSize: '0.72rem',
-      fontFamily: '"JetBrains Mono", monospace',
       padding: '8px 12px',
       borderRadius: '6px',
       border: '1px solid',
@@ -244,7 +243,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               variant="h6"
               sx={{
                 color: 'text.primary',
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: { xs: '0.95rem', sm: '1.1rem' },
                 fontWeight: 500,
               }}
@@ -254,7 +252,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             <Typography
               sx={{
                 color: (t) => alpha(t.palette.text.primary, 0.5),
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.75rem',
               }}
             >
@@ -358,7 +355,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             maxWidth: 400,
             minWidth: 350,
             '& .MuiOutlinedInput-root': {
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.8rem',
               color: 'text.primary',
               backgroundColor: 'surface.subtle',
@@ -377,7 +373,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           <Typography
             sx={{
               color: (t) => alpha(t.palette.text.primary, 0.5),
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
             }}
           >
@@ -389,7 +384,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           <Typography
             sx={{
               color: (t) => alpha(t.palette.text.primary, 0.5),
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
             }}
           >
@@ -591,7 +585,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           sx={{
                             color: theme.palette.diff.additions,
                             mr: 1,
-                            fontFamily: '"JetBrains Mono", monospace',
                           }}
                         >
                           +{pr.additions}
@@ -600,7 +593,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           component="span"
                           sx={{
                             color: theme.palette.diff.deletions,
-                            fontFamily: '"JetBrains Mono", monospace',
                           }}
                         >
                           -{pr.deletions}
@@ -611,7 +603,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           {pr.prState === 'CLOSED' && !pr.mergedAt ? (
                             <Typography
                               sx={{
-                                fontFamily: '"JetBrains Mono", monospace',
                                 fontSize: { xs: '0.7rem', sm: '0.75rem' },
                                 fontWeight: 600,
                                 color: (t) =>
@@ -623,7 +614,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           ) : !pr.mergedAt && pr.collateralScore ? (
                             <Typography
                               sx={{
-                                fontFamily: '"JetBrains Mono", monospace',
                                 fontSize: { xs: '0.7rem', sm: '0.75rem' },
                                 fontWeight: 600,
                                 color: theme.palette.status.warningOrange,
@@ -640,7 +630,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                             >
                               <Typography
                                 sx={{
-                                  fontFamily: '"JetBrains Mono", monospace',
                                   fontSize: { xs: '0.7rem', sm: '0.75rem' },
                                   fontWeight: 600,
                                   cursor: 'pointer',
@@ -652,7 +641,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           ) : (
                             <Typography
                               sx={{
-                                fontFamily: '"JetBrains Mono", monospace',
                                 fontSize: { xs: '0.7rem', sm: '0.75rem' },
                                 fontWeight: 600,
                               }}
@@ -665,7 +653,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                             pr.prState !== 'CLOSED' && (
                               <Typography
                                 sx={{
-                                  fontFamily: '"JetBrains Mono", monospace',
                                   fontSize: '0.6rem',
                                   color: (t) =>
                                     alpha(t.palette.text.primary, 0.5),

@@ -62,7 +62,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
     return `~${usd.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`;
   };
   const headerCellSx = {
-    fontFamily: '"JetBrains Mono", monospace',
     fontSize: '0.7rem',
     fontWeight: 600,
     letterSpacing: '0.5px',
@@ -74,7 +73,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
   };
 
   const bodyCellSx = {
-    fontFamily: '"JetBrains Mono", monospace',
     fontSize: '0.85rem',
     color: 'text.primary',
     borderBottom: '1px solid',
@@ -239,7 +237,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                   <TableCell sx={bodyCellSx}>
                     <Typography
                       sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.8rem',
                         color: alpha(theme.palette.common.white, 0.6),
                       }}
@@ -257,7 +254,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                       />
                       <Typography
                         sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.85rem',
                           color: STATUS_COLORS.info,
                         }}
@@ -277,7 +273,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                       {issue.title && (
                         <Typography
                           sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.85rem',
                             color: 'text.primary',
                             fontWeight: 500,
@@ -299,7 +294,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                           display: 'flex',
                           alignItems: 'center',
                           gap: 0.5,
-                          fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.75rem',
                           color: alpha(
                             theme.palette.common.white,
@@ -324,7 +318,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                       <TableCell sx={{ ...bodyCellSx, textAlign: 'right' }}>
                         <Typography
                           sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.85rem',
                             fontWeight: 600,
                             color: STATUS_COLORS.merged,
@@ -335,7 +328,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                         {toUsd(issue.targetBounty) && (
                           <Typography
                             sx={{
-                              fontFamily: '"JetBrains Mono", monospace',
                               fontSize: '0.7rem',
                               color: alpha(theme.palette.common.white, 0.35),
                             }}
@@ -349,7 +341,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                           label={statusBadge.text}
                           size="small"
                           sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.7rem',
                             fontWeight: 600,
                             backgroundColor: statusBadge.bgColor,
@@ -367,7 +358,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                       <TableCell sx={{ ...bodyCellSx, textAlign: 'right' }}>
                         <Typography
                           sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.85rem',
                             fontWeight: 600,
                             color: STATUS_COLORS.award,
@@ -378,7 +368,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                         {toUsd(issue.targetBounty) && (
                           <Typography
                             sx={{
-                              fontFamily: '"JetBrains Mono", monospace',
                               fontSize: '0.7rem',
                               color: alpha(theme.palette.common.white, 0.35),
                             }}
@@ -398,7 +387,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                           label={statusBadge.text}
                           size="small"
                           sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.7rem',
                             fontWeight: 600,
                             backgroundColor: statusBadge.bgColor,
@@ -416,7 +404,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                       <TableCell sx={{ ...bodyCellSx, textAlign: 'right' }}>
                         <Typography
                           sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.85rem',
                             fontWeight: 600,
                             color:
@@ -433,7 +420,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                         {toUsd(issue.targetBounty) && (
                           <Typography
                             sx={{
-                              fontFamily: '"JetBrains Mono", monospace',
                               fontSize: '0.7rem',
                               color: alpha(theme.palette.common.white, 0.35),
                             }}
@@ -447,7 +433,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                           <Tooltip title={issue.solverHotkey} arrow>
                             <Typography
                               sx={{
-                                fontFamily: '"JetBrains Mono", monospace',
                                 fontSize: '0.8rem',
                                 color: STATUS_COLORS.info,
                                 cursor: 'pointer',
@@ -475,7 +460,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                           label={statusBadge.text}
                           size="small"
                           sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.7rem',
                             fontWeight: 600,
                             backgroundColor: statusBadge.bgColor,
@@ -487,7 +471,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                       <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
                         <Typography
                           sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.8rem',
                             color: alpha(theme.palette.common.white, 0.6),
                           }}
