@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Box, Tabs, Tab, CircularProgress, Typography } from '@mui/material';
+import { Box, Tabs, Tab, Typography } from '@mui/material';
 import { Page } from '../components/layout';
 import {
   PRDetailsCard,
@@ -9,6 +9,7 @@ import {
   BackButton,
   SEO,
   PRComments,
+  QueryBoundary,
 } from '../components';
 import { usePullRequestDetails } from '../api';
 import { STATUS_COLORS } from '../theme';
@@ -24,7 +25,7 @@ const PRDetailsPage: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
 
   // Call hook unconditionally (React rules of hooks)
-  const { data: prDetails, isLoading } = usePullRequestDetails(
+  const prQuery = usePullRequestDetails(
     repository || '',
     pullRequestNumber ? parseInt(pullRequestNumber) : 0,
   );
@@ -41,6 +42,24 @@ const PRDetailsPage: React.FC = () => {
     setTabValue(newValue);
   };
 
+  const renderNotFound = () => (
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '50vh',
+        flexDirection: 'column',
+        gap: 2,
+      }}
+    >
+      <Typography variant="h6" color="error">
+        PR not found
+      </Typography>
+      <BackButton to="/repositories" label="Back to Repositories" />
+    </Box>
+  );
+
   return (
     <Page title="Pull Request Details">
       <SEO
@@ -49,35 +68,13 @@ const PRDetailsPage: React.FC = () => {
         type="website"
       />
 
-      {isLoading ? (
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '50vh',
-          }}
-        >
-          <CircularProgress />
-        </Box>
-      ) : !prDetails ? (
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '50vh',
-            flexDirection: 'column',
-            gap: 2,
-          }}
-        >
-          <Typography variant="h6" color="error">
-            PR not found
-          </Typography>
-          <BackButton to="/repositories" label="Back to Repositories" />
-        </Box>
-      ) : (
-        <Box
+      <QueryBoundary
+        query={prQuery}
+        renderEmpty={renderNotFound}
+        renderError={renderNotFound}
+      >
+        {(prDetails) => (
+          <Box
           sx={{
             display: 'flex',
             flexDirection: 'column',
@@ -184,8 +181,9 @@ const PRDetailsPage: React.FC = () => {
               )}
             </Box>
           </Box>
-        </Box>
-      )}
+          </Box>
+        )}
+      </QueryBoundary>
     </Page>
   );
 };

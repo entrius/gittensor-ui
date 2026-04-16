@@ -1,15 +1,8 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Typography,
-  CircularProgress,
-  Stack,
-  Tabs,
-  Tab,
-} from '@mui/material';
+import { Box, Typography, Stack, Tabs, Tab } from '@mui/material';
 import { Page } from '../components/layout';
-import { BackButton, SEO } from '../components';
+import { BackButton, SEO, QueryBoundary } from '../components';
 import {
   IssueHeaderCard,
   IssueSubmissionsTable,
@@ -27,7 +20,7 @@ const IssueDetailsPage: React.FC = () => {
   const id = idParam ? parseInt(idParam, 10) : 0;
   const [tabValue, setTabValue] = useState(0);
 
-  const { data: issue, isLoading: isLoadingDetails } = useIssueDetails(id);
+  const issueQuery = useIssueDetails(id);
   const { data: submissions, isLoading: isLoadingSubmissions } =
     useIssueSubmissions(id);
 
@@ -43,42 +36,38 @@ const IssueDetailsPage: React.FC = () => {
     setTabValue(newValue);
   };
 
+  const renderNotFound = () => (
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '50vh',
+        flexDirection: 'column',
+        gap: 2,
+      }}
+    >
+      <Typography variant="h6" color="error">
+        Issue not found
+      </Typography>
+      <BackButton to="/bounties" label="Back to Bounties" />
+    </Box>
+  );
+
   return (
     <Page title="Issue Details">
       <SEO
-        title={issue?.title || `Issue #${id}`}
-        description={`View issue bounty details for ${issue?.repositoryFullName || 'issue'} #${issue?.issueNumber || id} on Gittensor.`}
+        title={issueQuery.data?.title || `Issue #${id}`}
+        description={`View issue bounty details for ${issueQuery.data?.repositoryFullName || 'issue'} #${issueQuery.data?.issueNumber || id} on Gittensor.`}
       />
 
-      {isLoadingDetails ? (
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '50vh',
-          }}
-        >
-          <CircularProgress />
-        </Box>
-      ) : !issue ? (
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '50vh',
-            flexDirection: 'column',
-            gap: 2,
-          }}
-        >
-          <Typography variant="h6" color="error">
-            Issue not found
-          </Typography>
-          <BackButton to="/bounties" label="Back to Bounties" />
-        </Box>
-      ) : (
-        <Box
+      <QueryBoundary
+        query={issueQuery}
+        renderEmpty={renderNotFound}
+        renderError={renderNotFound}
+      >
+        {(issue) => (
+          <Box
           sx={{
             display: 'flex',
             flexDirection: 'column',
@@ -153,8 +142,9 @@ const IssueDetailsPage: React.FC = () => {
               )}
             </Box>
           </Stack>
-        </Box>
-      )}
+          </Box>
+        )}
+      </QueryBoundary>
     </Page>
   );
 };
