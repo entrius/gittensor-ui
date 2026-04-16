@@ -204,6 +204,15 @@ const GlobalSearchBar: React.FC = () => {
   const rowRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const blurTimerRef = useRef<number | null>(null);
 
+  // Clear pending blur timer on unmount to avoid state updates on dead component.
+  useEffect(() => {
+    return () => {
+      if (blurTimerRef.current !== null) {
+        window.clearTimeout(blurTimerRef.current);
+      }
+    };
+  }, []);
+
   // Activate dataset loading after first interaction (or immediately on /search).
   const [isSearchActivated, setIsSearchActivated] = useState(isSearchPage);
 
