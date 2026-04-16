@@ -589,7 +589,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             </FormControl>
 
             <TextField
-              placeholder="Search or enter owner/repo..."
+              placeholder="Search or enter owner/repository"
               size="small"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -611,7 +611,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 ),
               }}
               sx={{
-                width: '200px',
+                width: { xs: '100%', sm: '300px' },
+                maxWidth: '100%',
+                transition: 'width 0.2s ease',
+                '&:focus-within': {
+                  width: { xs: '100%', sm: '340px' },
+                },
                 '& .MuiOutlinedInput-root': {
                   color: '#ffffff',
                   fontFamily: '"JetBrains Mono", monospace',
