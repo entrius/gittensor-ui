@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import { useLinkBehavior } from '../common/linkBehavior';
+import { useWatchlist } from '../../hooks/useWatchlist';
 
 interface SidebarProps {
   onNavigate?: () => void;
@@ -16,11 +17,17 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
   const location = useLocation();
+  const { count: watchlistCount } = useWatchlist();
 
   const navItems = [
     { label: 'dashboard', path: '/dashboard' },
     { label: 'oss contributions', path: '/top-miners' },
     { label: 'discoveries', path: '/discoveries', badge: 'new' },
+    {
+      label: 'watchlist',
+      path: '/watchlist',
+      badge: watchlistCount > 0 ? String(watchlistCount) : undefined,
+    },
     { label: 'bounties', path: '/bounties' },
     { label: 'repositories', path: '/repositories' },
     { label: 'onboard', path: '/onboard' },

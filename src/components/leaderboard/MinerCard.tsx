@@ -6,6 +6,7 @@ import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS, STATUS_COLORS } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
+import { WatchlistButton } from '../common';
 import { type MinerStats, type LeaderboardVariant, FONTS } from './types';
 
 interface MinerCardProps {
@@ -154,26 +155,37 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             </Typography>
           </Box>
         </Box>
-        {!isEligible && (
-          <Typography
-            sx={(theme) => ({
-              fontFamily: FONTS.mono,
-              fontSize: '0.65rem',
-              fontWeight: 700,
-              color: theme.palette.text.secondary,
-              textTransform: 'uppercase',
-              border: `1px solid ${theme.palette.border.subtle}`,
-              borderRadius: 1,
-              px: 0.75,
-              py: 0.25,
-              letterSpacing: '0.06em',
-              flexShrink: 0,
-              backgroundColor: theme.palette.surface.subtle,
-            })}
-          >
-            Ineligible
-          </Typography>
-        )}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            flexShrink: 0,
+          }}
+        >
+          {!isEligible && (
+            <Typography
+              sx={(theme) => ({
+                fontFamily: FONTS.mono,
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                color: theme.palette.text.secondary,
+                textTransform: 'uppercase',
+                border: `1px solid ${theme.palette.border.subtle}`,
+                borderRadius: 1,
+                px: 0.75,
+                py: 0.25,
+                letterSpacing: '0.06em',
+                backgroundColor: theme.palette.surface.subtle,
+              })}
+            >
+              Ineligible
+            </Typography>
+          )}
+          {miner.githubId && (
+            <WatchlistButton githubId={miner.githubId} size="small" />
+          )}
+        </Box>
       </Box>
 
       <Box

@@ -8,7 +8,7 @@ import {
   type MinerStats,
 } from '../components';
 import { useAllMiners } from '../api';
-import { parseNumber } from '../utils';
+import { mapAllMinersToStats } from '../utils/minerMapper';
 import theme, { scrollbarSx } from '../theme';
 
 const MINER_LINK_STATE = { backLabel: 'Back to Leaderboard' } as const;
@@ -20,38 +20,11 @@ const TopMinersPage: React.FC = () => {
   const allMinersStats = allMinerStatsQuery?.data;
   const isLoadingMinerStats = allMinerStatsQuery?.isLoading;
 
-  // Normalize leaderboard miner data.
-  const minerStats = useMemo(() => {
-    if (!Array.isArray(allMinersStats)) return [];
-
-    const rankById = new Map(
-      [...allMinersStats]
-        .sort((a, b) => Number(b.totalScore) - Number(a.totalScore))
-        .map((stat, index) => [String(stat.id), index + 1]),
-    );
-
-    return allMinersStats.map((stat) => ({
-      id: String(stat.id),
-      githubId: stat.githubId || '',
-      author: stat.githubUsername || undefined,
-      totalScore: parseNumber(stat.totalScore),
-      baseTotalScore: parseNumber(stat.baseTotalScore),
-      totalPRs: parseNumber(stat.totalPrs),
-      linesChanged: parseNumber(stat.totalNodesScored),
-      linesAdded: parseNumber(stat.totalAdditions),
-      linesDeleted: parseNumber(stat.totalDeletions),
-      hotkey: stat.hotkey || 'N/A',
-      rank: rankById.get(String(stat.id)),
-      uniqueReposCount: parseNumber(stat.uniqueReposCount),
-      credibility: parseNumber(stat.credibility),
-      isEligible: stat.isEligible ?? false,
-      usdPerDay: parseNumber(stat.usdPerDay),
-      // PR status counts for credibility donut
-      totalMergedPrs: parseNumber(stat.totalMergedPrs),
-      totalOpenPrs: parseNumber(stat.totalOpenPrs),
-      totalClosedPrs: parseNumber(stat.totalClosedPrs),
-    }));
-  }, [allMinersStats]);
+  const minerStats = useMemo(
+    () =>
+      Array.isArray(allMinersStats) ? mapAllMinersToStats(allMinersStats) : [],
+    [allMinersStats],
+  );
 
   // Dashboard-like responsive logic
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));

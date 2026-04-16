@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress, Alert, Paper } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import axios from 'axios';
 import { STATUS_COLORS } from '../../theme';
 import { resolveRelativeUrl } from './MarkdownRenderers';
-import { useAbortableEffect } from '../../hooks/useAbortableEffect';
-import { fetchFirstMarkdown } from './jsdelivrFetch';
 
 interface ReadmeViewerProps {
   repositoryFullName: string; // e.g., "opentensor/bittensor"
@@ -18,28 +17,45 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  useAbortableEffect(
-    async (signal) => {
-      if (!repositoryFullName) return;
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchReadme = async () => {
       setLoading(true);
       setError(null);
-      const result = await fetchFirstMarkdown(
-        repositoryFullName,
-        ['main', 'master'],
-        ['README.md'],
-        signal,
-      );
-      if (signal.aborted) return;
-      if (result) {
-        setContent(result.content);
-        setDefaultBranch(result.branch);
-      } else {
+      try {
+        // Try 'main' branch first
+        try {
+          const response = await axios.get(
+            `https://cdn.jsdelivr.net/gh/${repositoryFullName}@main/README.md`,
+            { signal: controller.signal },
+          );
+          if (controller.signal.aborted) return;
+          setContent(response.data);
+          setDefaultBranch('main');
+        } catch (err) {
+          if (axios.isCancel(err) || controller.signal.aborted) return;
+          // Fallback to 'master' branch
+          const response = await axios.get(
+            `https://cdn.jsdelivr.net/gh/${repositoryFullName}@master/README.md`,
+            { signal: controller.signal },
+          );
+          if (controller.signal.aborted) return;
+          setContent(response.data);
+          setDefaultBranch('master');
+        }
+      } catch (err) {
+        if (axios.isCancel(err) || controller.signal.aborted) return;
+        console.error('Failed to fetch README', err);
         setError('Could not load README.md');
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
       }
-      setLoading(false);
-    },
-    [repositoryFullName],
-  );
+    };
+
+    if (repositoryFullName) fetchReadme();
+    return () => controller.abort();
+  }, [repositoryFullName]);
 
   if (loading) {
     return (

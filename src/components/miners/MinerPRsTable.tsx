@@ -20,11 +20,7 @@ import {
   useTheme,
   type Theme,
 } from '@mui/material';
-import {
-  Search as SearchIcon,
-  NavigateBefore as PrevIcon,
-  NavigateNext as NextIcon,
-} from '@mui/icons-material';
+import { Search as SearchIcon } from '@mui/icons-material';
 import { useMinerPRs, type CommitLog } from '../../api';
 import {
   getPrStatusCounts,
@@ -35,6 +31,7 @@ import {
 import { useSearchParams } from 'react-router-dom';
 import { LinkTableRow } from '../common/linkBehavior';
 import ExplorerFilterButton from './ExplorerFilterButton';
+import TablePagination from './TablePagination';
 import { type MinerStatusFilter } from '../../utils/ExplorerUtils';
 import { headerCellStyle, bodyCellStyle } from '../../theme';
 
@@ -694,57 +691,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             </Table>
           </TableContainer>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 2,
-                py: 1.5,
-                borderTop: '1px solid',
-                borderColor: 'border.subtle',
-              }}
-            >
-              <Box
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                sx={{
-                  cursor: page > 0 ? 'pointer' : 'default',
-                  opacity: page > 0 ? 1 : 0.3,
-                  display: 'flex',
-                  alignItems: 'center',
-                  color: (t) => alpha(t.palette.text.primary, 0.6),
-                  '&:hover': page > 0 ? { color: 'text.primary' } : {},
-                }}
-              >
-                <PrevIcon sx={{ fontSize: '1.2rem' }} />
-              </Box>
-              <Typography
-                sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '0.75rem',
-                  color: (t) => alpha(t.palette.text.primary, 0.5),
-                }}
-              >
-                {page + 1} / {totalPages}
-              </Typography>
-              <Box
-                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                sx={{
-                  cursor: page < totalPages - 1 ? 'pointer' : 'default',
-                  opacity: page < totalPages - 1 ? 1 : 0.3,
-                  display: 'flex',
-                  alignItems: 'center',
-                  color: (t) => alpha(t.palette.text.primary, 0.6),
-                  '&:hover':
-                    page < totalPages - 1 ? { color: 'text.primary' } : {},
-                }}
-              >
-                <NextIcon sx={{ fontSize: '1.2rem' }} />
-              </Box>
-            </Box>
-          )}
+          <TablePagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </>
       )}
     </Card>

@@ -13,6 +13,7 @@ import {
   MinerScoreCard,
   SEO,
 } from '../components';
+import { WatchlistButton } from '../components/common';
 
 type ViewMode = 'prs' | 'issues';
 
@@ -104,7 +105,10 @@ const MinerDetailsPage: React.FC = () => {
               justifyContent: 'space-between',
             }}
           >
-            <BackButton to="/top-miners" mb={0} />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <BackButton to="/top-miners" mb={0} />
+              <WatchlistButton githubId={githubId} size="medium" />
+            </Box>
             <Box
               sx={{
                 display: 'flex',

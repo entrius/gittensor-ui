@@ -1,14 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { scrollbarSx } from '../../theme';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import axios from 'axios';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import ReactMarkdown from 'react-markdown';
-import {
-  isAbortError,
-  useAbortableEffect,
-} from '../../hooks/useAbortableEffect';
 
 interface CodeViewerProps {
   repositoryFullName: string;
@@ -33,9 +29,12 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
     ? `https://cdn.jsdelivr.net/gh/${repositoryFullName}@${defaultBranch}/${filePath}`
     : '';
 
-  useAbortableEffect(
-    async (signal) => {
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchContent = async () => {
       if (!filePath || isImage) {
+        // Don't fetch text content for images or if no file selected
         setContent(null);
         setLoading(false);
         return;
@@ -44,24 +43,27 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get<string>(rawUrl, {
+        // Use raw.githubusercontent.com
+        const response = await axios.get(rawUrl, {
           transformResponse: [(data) => data],
-          signal,
-        });
-        if (signal.aborted) return;
+          signal: controller.signal,
+        }); // Force text
+        if (controller.signal.aborted) return;
         setContent(response.data);
       } catch (err) {
-        if (isAbortError(err)) return;
+        if (axios.isCancel(err) || controller.signal.aborted) return;
         console.error('Failed to fetch file content', err);
         setError(
           'Could not load file content. It might be binary or too large.',
         );
       } finally {
-        if (!signal.aborted) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
-    },
-    [filePath, isImage, rawUrl],
-  );
+    };
+
+    fetchContent();
+    return () => controller.abort();
+  }, [repositoryFullName, filePath, defaultBranch, isImage, rawUrl]);
 
   if (!filePath) {
     return (
