@@ -28,7 +28,6 @@ type MinerDetailsTab = (typeof PR_TABS)[number] | (typeof ISSUE_TABS)[number];
 const tabSx = {
   '& .MuiTab-root': {
     color: 'text.secondary',
-    fontFamily: '"JetBrains Mono", monospace',
     textTransform: 'none' as const,
     fontSize: '0.83rem',
     fontWeight: 500,
@@ -147,7 +146,6 @@ const MinerDetailsPage: React.FC = () => {
                 >
                   <Typography
                     sx={{
-                      fontFamily: '"JetBrains Mono", monospace',
                       fontSize: '0.8rem',
                       fontWeight: 600,
                     }}

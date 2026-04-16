@@ -27,7 +27,6 @@ const RepositoryMaintainers: React.FC<RepositoryMaintainersProps> = ({
           variant="subtitle2"
           sx={{
             color: 'text.secondary',
-            fontFamily: '"JetBrains Mono", monospace',
             mb: 2,
           }}
         >
@@ -52,7 +51,6 @@ const RepositoryMaintainers: React.FC<RepositoryMaintainersProps> = ({
         variant="subtitle2"
         sx={{
           color: 'text.secondary',
-          fontFamily: '"JetBrains Mono", monospace',
           mb: 2,
         }}
       >

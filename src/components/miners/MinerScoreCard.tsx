@@ -66,7 +66,6 @@ const tooltipSlotProps = {
       backgroundColor: 'surface.tooltip',
       color: 'text.primary',
       fontSize: '0.75rem',
-      fontFamily: '"JetBrains Mono", monospace',
       padding: '8px 12px',
       borderRadius: '6px',
       border: '1px solid',
@@ -158,7 +157,6 @@ const StatTile: React.FC<StatTileProps> = ({
           <Typography
             component="span"
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.6rem',
               fontWeight: 600,
               color:
@@ -178,7 +176,6 @@ const StatTile: React.FC<StatTileProps> = ({
     </Box>
     <Typography
       sx={{
-        fontFamily: '"JetBrains Mono", monospace',
         fontSize: '1.5rem',
         fontWeight: 600,
         color: color || 'text.primary',
@@ -190,7 +187,6 @@ const StatTile: React.FC<StatTileProps> = ({
     {sub && (
       <Typography
         sx={{
-          fontFamily: '"JetBrains Mono", monospace',
           fontSize: '0.75rem',
           color: (t) => alpha(t.palette.text.primary, 0.4),
           mt: 0.25,
@@ -273,7 +269,6 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
         component="span"
         sx={{
           color: 'inherit',
-          fontFamily: '"JetBrains Mono", monospace',
           fontSize: { xs: '0.55rem', sm: '0.65rem' },
           wordBreak: 'break-all',
         }}
@@ -343,7 +338,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
         <Typography
           sx={{
             color: alpha(STATUS_COLORS.error, 0.9),
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.9rem',
           }}
         >
@@ -379,7 +373,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             position: 'absolute',
             top: 16,
             right: 16,
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.7rem',
             color: (t) => alpha(t.palette.text.primary, 0.5),
             borderColor: 'border.light',
@@ -415,7 +408,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           >
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: { xs: '1.15rem', sm: '1.35rem' },
                 fontWeight: 700,
                 color: 'text.primary',
@@ -437,7 +429,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                   color: eligibilityColor,
                   borderColor: alpha(eligibilityColor, 0.35),
                   backgroundColor: alpha(eligibilityColor, 0.1),
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.7rem',
                   letterSpacing: '0.5px',
                   textTransform: 'uppercase',
@@ -461,7 +452,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                   color: issueEligibilityColor,
                   borderColor: alpha(issueEligibilityColor, 0.35),
                   backgroundColor: alpha(issueEligibilityColor, 0.1),
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.7rem',
                   letterSpacing: '0.5px',
                   textTransform: 'uppercase',
@@ -485,7 +475,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               rel="noopener noreferrer"
               sx={{
                 color: 'primary.main',
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.9rem',
                 textDecoration: 'none',
                 display: 'inline-flex',
@@ -504,7 +493,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             <Typography
               sx={{
                 color: (t) => alpha(t.palette.text.primary, 0.7),
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.8rem',
                 mt: 1,
                 lineHeight: 1.5,
@@ -569,7 +557,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               sx={{
                 display: { xs: 'flex', sm: 'none' },
                 mt: 1,
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.65rem',
                 color: (t) => alpha(t.palette.text.primary, 0.5),
                 borderColor: 'border.light',
