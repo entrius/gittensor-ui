@@ -1,9 +1,11 @@
 import {
   type CommitLog,
+  type IssueBounty,
   type MinerEvaluation,
   type Repository,
   type RepositoryPrScoring,
 } from '../api';
+import { isMergedPr } from './prStatus';
 
 export const getGithubAvatarSrc = (username?: string | null) => {
   if (username) {
@@ -24,6 +26,30 @@ export const parseNumber = (value: unknown, fallback = 0): number => {
   return fallback;
 };
 
+export const getPrStatusLabel = (
+  pr: Pick<CommitLog, 'prState' | 'mergedAt'>,
+): 'Merged' | 'Open' | 'Closed' => {
+  const state = (pr.prState || '').toUpperCase();
+  if (state === 'MERGED' || pr.mergedAt) return 'Merged';
+  if (state === 'OPEN' || (!state && !pr.mergedAt)) return 'Open';
+  return 'Closed';
+};
+
+export const getIssueStatusLabel = (
+  issue: Pick<IssueBounty, 'status'>,
+): 'Solved' | 'Open' | 'Closed' => {
+  switch (issue.status) {
+    case 'completed':
+      return 'Solved';
+    case 'cancelled':
+      return 'Closed';
+    case 'active':
+    case 'registered':
+    default:
+      return 'Open';
+  }
+};
+
 export const calculateDynamicOpenPrThreshold = (
   minerStats: MinerEvaluation,
   prScoring: RepositoryPrScoring | undefined,
@@ -40,6 +66,13 @@ export const calculateDynamicOpenPrThreshold = (
   const bonus = Math.floor(tokenScore / tokenScorePer);
 
   return Math.min(baseThreshold + bonus, maxThreshold);
+};
+
+export const calculateOpenIssueThreshold = (
+  minerStats: MinerEvaluation,
+): number => {
+  const issueTokenScore = parseNumber(minerStats.issueTokenScore);
+  return Math.min(5 + Math.floor(issueTokenScore / 300), 30);
 };
 
 const isMinerEvaluationLike = (value: unknown): value is MinerEvaluation => {
@@ -193,7 +226,7 @@ export const aggregatePRsByRepository = (
     };
     existing.prs += 1;
     existing.score += parseFloat(pr.score || '0');
-    if (pr.prState === 'MERGED') {
+    if (isMergedPr(pr)) {
       existing.tokenScore += parseFloat(String(pr.tokenScore ?? '0'));
     }
     statsMap.set(pr.repository, existing);

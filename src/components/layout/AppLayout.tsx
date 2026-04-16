@@ -6,12 +6,14 @@ import {
   IconButton,
   AppBar,
   Toolbar,
+  alpha,
 } from '@mui/material';
 import { Outlet, useLocation } from 'react-router-dom';
 import MenuIcon from '@mui/icons-material/Menu';
 import { LoadingPage } from '../../pages';
 import useOnNavigate from '../../hooks/useOnNavigate';
 import { Sidebar } from '..';
+import ErrorBoundary from '../ErrorBoundary';
 import GlobalSearchBar from './GlobalSearchBar';
 import theme from '../../theme';
 import { getRouteForPathname } from '../../routes';
@@ -68,8 +70,7 @@ const AppLayout: React.FC = () => {
               style={{
                 height: '40px',
                 width: 'auto',
-                filter:
-                  'brightness(0) invert(1) drop-shadow(0 0 6px rgba(255, 255, 255, 0.8))',
+                filter: `brightness(0) invert(1) drop-shadow(0 0 6px ${alpha(theme.palette.common.white, 0.8)})`,
               }}
             />
           </Toolbar>
@@ -90,13 +91,12 @@ const AppLayout: React.FC = () => {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: 280,
-              backgroundColor: '#000000',
-              backgroundImage:
-                'linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))',
-              borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+              backgroundColor: 'background.default',
+              backgroundImage: `linear-gradient(${alpha(theme.palette.common.white, 0.05)}, ${alpha(theme.palette.common.white, 0.05)})`,
+              borderRight: `1px solid ${theme.palette.border.light}`,
             },
             '& .MuiBackdrop-root': {
-              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              backgroundColor: alpha(theme.palette.common.black, 0.7),
             },
           }}
         >
@@ -111,7 +111,7 @@ const AppLayout: React.FC = () => {
             flexShrink: 0,
             width: '240px',
             minWidth: '240px',
-            borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRight: `1px solid ${theme.palette.border.light}`,
           }}
         >
           <Sidebar />
@@ -145,14 +145,16 @@ const AppLayout: React.FC = () => {
                 px: { xs: 1, md: 0 },
                 position: 'sticky',
                 top: 0,
-                zIndex: 1200,
+                zIndex: 500,
                 backgroundColor: 'background.default',
               }}
             >
               <GlobalSearchBar />
             </Box>
           )}
-          <Outlet />
+          <ErrorBoundary variant="inline" resetKey={location.pathname}>
+            <Outlet />
+          </ErrorBoundary>
         </Suspense>
       </Box>
     </Box>

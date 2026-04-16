@@ -15,7 +15,7 @@ export const RankIcon: React.FC<{ rank: number }> = ({ rank }) => {
   return (
     <Box
       sx={{
-        backgroundColor: '#000000',
+        backgroundColor: 'background.default',
         borderRadius: '2px',
         width: '22px',
         height: '22px',
@@ -24,7 +24,7 @@ export const RankIcon: React.FC<{ rank: number }> = ({ rank }) => {
         justifyContent: 'center',
         flexShrink: 0,
         border: '1px solid',
-        borderColor: color ? alpha(color, 0.4) : 'rgba(255, 255, 255, 0.15)',
+        borderColor: color ? alpha(color, 0.4) : 'border.light',
         boxShadow: color
           ? `0 0 12px ${alpha(color, 0.4)}, 0 0 4px ${alpha(color, 0.2)}`
           : 'none',
@@ -33,7 +33,7 @@ export const RankIcon: React.FC<{ rank: number }> = ({ rank }) => {
       <Typography
         component="span"
         sx={{
-          color: color ?? 'rgba(255, 255, 255, 0.6)',
+          color: color ?? 'text.secondary',
           fontFamily: '"JetBrains Mono", monospace',
           fontSize: '0.65rem',
           fontWeight: 600,

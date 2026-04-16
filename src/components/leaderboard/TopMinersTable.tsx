@@ -1,34 +1,111 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Typography, CircularProgress, Grid } from '@mui/material';
-import { alpha, type Theme } from '@mui/material/styles';
+import { alpha, useTheme, type Theme } from '@mui/material/styles';
+import { useSearchParams } from 'react-router-dom';
 import { SectionCard } from './SectionCard';
 import { MinerCard } from './MinerCard';
 import { SearchInput } from '../common/SearchInput';
+import FilterButton from '../FilterButton';
 import { STATUS_COLORS } from '../../theme';
-import { type MinerStats, type SortOption, FONTS } from './types';
+import {
+  type MinerStats,
+  type SortOption,
+  type LeaderboardVariant,
+  FONTS,
+} from './types';
 
 // Re-export MinerStats for backward compatibility
 export type { MinerStats } from './types';
 
 const MINERS_PAGE_SIZE = 60;
+const SORT_QUERY_PARAM = 'sort';
+const ELIGIBLE_QUERY_PARAM = 'eligible';
 
 interface TopMinersTableProps {
   miners: MinerStats[];
   isLoading?: boolean;
-  onSelectMiner: (githubId: string) => void;
-  activityLabel?: string;
+  getHref: (miner: MinerStats) => string;
+  linkState?: unknown;
+  variant?: LeaderboardVariant;
 }
+
+const getAllowedSortOptions = (variant: LeaderboardVariant): SortOption[] =>
+  variant === 'discoveries'
+    ? ['totalScore', 'usdPerDay', 'totalPRs', 'totalIssues', 'credibility']
+    : ['totalScore', 'usdPerDay', 'totalPRs', 'credibility'];
+
+const getSortOptionFromQuery = (
+  value: string | null,
+  variant: LeaderboardVariant,
+): SortOption => {
+  if (!value) return 'totalScore';
+
+  const allowedOptions = getAllowedSortOptions(variant);
+  return allowedOptions.includes(value as SortOption)
+    ? (value as SortOption)
+    : 'totalScore';
+};
 
 const TopMinersTable: React.FC<TopMinersTableProps> = ({
   miners,
   isLoading,
-  onSelectMiner,
-  activityLabel = 'PRs',
+  getHref,
+  linkState,
+  variant = 'oss',
 }) => {
+  const theme = useTheme();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortOption, setSortOption] = useState<SortOption>('totalScore');
-  const [showEligibleOnly, setShowEligibleOnly] = useState(false);
+  const sortParamValue = searchParams.get(SORT_QUERY_PARAM);
+  const sortOption = useMemo(
+    () => getSortOptionFromQuery(sortParamValue, variant),
+    [sortParamValue, variant],
+  );
+  const showEligibleOnly = searchParams.get(ELIGIBLE_QUERY_PARAM) === 'true';
   const [visibleCount, setVisibleCount] = useState(MINERS_PAGE_SIZE);
+
+  const handleSortChange = useCallback(
+    (nextSortOption: SortOption) => {
+      setSearchParams(
+        (previousParams) => {
+          const nextSearchParams = new URLSearchParams(previousParams);
+
+          if (nextSortOption === 'totalScore') {
+            nextSearchParams.delete(SORT_QUERY_PARAM);
+          } else {
+            nextSearchParams.set(SORT_QUERY_PARAM, nextSortOption);
+          }
+
+          return nextSearchParams.toString() === previousParams.toString()
+            ? previousParams
+            : nextSearchParams;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const handleToggleEligible = useCallback(() => {
+    setSearchParams(
+      (previousParams) => {
+        const nextSearchParams = new URLSearchParams(previousParams);
+        const isEligibleEnabled =
+          nextSearchParams.get(ELIGIBLE_QUERY_PARAM) === 'true';
+
+        if (isEligibleEnabled) {
+          nextSearchParams.delete(ELIGIBLE_QUERY_PARAM);
+        } else {
+          nextSearchParams.set(ELIGIBLE_QUERY_PARAM, 'true');
+        }
+
+        return nextSearchParams.toString() === previousParams.toString()
+          ? previousParams
+          : nextSearchParams;
+      },
+      { replace: true },
+    );
+  }, [setSearchParams]);
 
   // Helper to sort a list of miners
   const sortMinersList = (list: MinerStats[], option: SortOption) =>
@@ -40,6 +117,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           return (b.usdPerDay ?? 0) - (a.usdPerDay ?? 0);
         case 'totalPRs':
           return b.totalPRs - a.totalPRs;
+        case 'totalIssues':
+          return (b.totalIssues ?? 0) - (a.totalIssues ?? 0);
         case 'credibility':
           return (b.credibility ?? 0) - (a.credibility ?? 0);
         default:
@@ -109,13 +188,14 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           >
             <SortButtons
               sortOption={sortOption}
-              onSortChange={setSortOption}
-              activityLabel={activityLabel}
+              onSortChange={handleSortChange}
+              variant={variant}
             />
             <FilterButton
               label="Eligible"
               isActive={showEligibleOnly}
-              onClick={() => setShowEligibleOnly((prev) => !prev)}
+              onClick={handleToggleEligible}
+              color={theme.palette.status.merged}
             />
           </Box>
         }
@@ -143,7 +223,9 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
               <Grid item xs={12} sm={12} md={6} lg={4} xl={4} key={miner.id}>
                 <MinerCard
                   miner={miner}
-                  onClick={() => onSelectMiner(miner.githubId)}
+                  variant={variant}
+                  href={getHref(miner)}
+                  linkState={linkState}
                 />
               </Grid>
             ))}
@@ -210,13 +292,13 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 interface SortButtonsProps {
   sortOption: SortOption;
   onSortChange: (option: SortOption) => void;
-  activityLabel: string;
+  variant: LeaderboardVariant;
 }
 
 const SortButtons: React.FC<SortButtonsProps> = ({
   sortOption,
   onSortChange,
-  activityLabel,
+  variant,
 }) => (
   <Box
     sx={{
@@ -229,7 +311,10 @@ const SortButtons: React.FC<SortButtonsProps> = ({
     {[
       { label: 'Score', value: 'totalScore' },
       { label: 'Earnings', value: 'usdPerDay' },
-      { label: activityLabel, value: 'totalPRs' },
+      { label: 'PRs', value: 'totalPRs' },
+      ...(variant === 'discoveries'
+        ? [{ label: 'Issues', value: 'totalIssues' as const }]
+        : []),
       { label: 'Credibility', value: 'credibility' },
     ].map((option) => (
       <Box
@@ -273,55 +358,6 @@ const SortButtons: React.FC<SortButtonsProps> = ({
         </Typography>
       </Box>
     ))}
-  </Box>
-);
-
-interface FilterButtonProps {
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
-}
-
-const FilterButton: React.FC<FilterButtonProps> = ({
-  label,
-  isActive,
-  onClick,
-}) => (
-  <Box
-    onClick={onClick}
-    sx={(theme) => ({
-      px: 1.5,
-      height: 32,
-      display: 'flex',
-      alignItems: 'center',
-      borderRadius: 2,
-      cursor: 'pointer',
-      backgroundColor: isActive
-        ? alpha(theme.palette.status.merged, 0.16)
-        : 'transparent',
-      color: isActive ? theme.palette.text.primary : STATUS_COLORS.open,
-      border: '1px solid',
-      borderColor: isActive
-        ? alpha(theme.palette.status.merged, 0.4)
-        : 'transparent',
-      transition: 'all 0.2s',
-      '&:hover': {
-        backgroundColor: isActive
-          ? alpha(theme.palette.status.merged, 0.2)
-          : theme.palette.surface.light,
-        color: theme.palette.text.primary,
-      },
-    })}
-  >
-    <Typography
-      sx={{
-        fontFamily: FONTS.mono,
-        fontSize: '0.75rem',
-        fontWeight: 600,
-      }}
-    >
-      {label}
-    </Typography>
   </Box>
 );
 

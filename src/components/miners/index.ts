@@ -1,9 +1,7 @@
 export { default as CredibilityChart } from './CredibilityChart';
 export { default as EmptyStateMessage } from './EmptyStateMessage';
-export { default as IssueDiscoveryScoreCard } from './IssueDiscoveryScoreCard';
 export { default as ExplorerFilterButton } from './ExplorerFilterButton';
 export { default as MinerActivity } from './MinerActivity';
-export { default as MinerFocusCard } from './MinerFocusCard';
 export { default as MinerInsightsCard } from './MinerInsightsCard';
 export { default as MinerPRsTable } from './MinerPRsTable';
 export { default as MinerRepositoriesTable } from './MinerRepositoriesTable';

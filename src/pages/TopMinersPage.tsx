@@ -5,7 +5,7 @@ import { Page } from '../components/layout';
 import { TopMinersTable, LeaderboardSidebar, SEO } from '../components';
 import { useAllMiners } from '../api';
 import { parseNumber } from '../utils';
-import theme from '../theme';
+import theme, { scrollbarSx } from '../theme';
 
 const TopMinersPage: React.FC = () => {
   const navigate = useNavigate();
@@ -83,7 +83,7 @@ const TopMinersPage: React.FC = () => {
       >
         {/* Main Content Area */}
         <Box
-          sx={(theme) => ({
+          sx={{
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
@@ -92,20 +92,8 @@ const TopMinersPage: React.FC = () => {
             overflow: showSidebarRight ? 'auto' : 'visible',
             minWidth: 0,
             pr: showSidebarRight ? 1 : 0,
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: theme.palette.border.light,
-              borderRadius: '4px',
-              '&:hover': {
-                backgroundColor: theme.palette.border.medium,
-              },
-            },
-          })}
+            ...scrollbarSx,
+          }}
         >
           <Typography
             sx={{
@@ -123,7 +111,10 @@ const TopMinersPage: React.FC = () => {
             <TopMinersTable
               miners={minerStats}
               isLoading={isLoadingMinerStats}
-              onSelectMiner={handleSelectMiner}
+              getHref={(m) =>
+                `/miners/details?githubId=${encodeURIComponent(m.githubId)}`
+              }
+              linkState={{ backLabel: 'Back to Leaderboard' }}
             />
           </Box>
         </Box>

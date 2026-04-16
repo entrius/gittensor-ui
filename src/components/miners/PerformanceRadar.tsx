@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, alpha, useTheme } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
-import { STATUS_COLORS } from '../../theme';
+import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 
 interface PerformanceRadarProps {
   credibility: number;
@@ -20,6 +20,8 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
   totalPRs,
   avgRepoWeight,
 }) => {
+  const theme = useTheme();
+
   const chartOption = useMemo(
     () => ({
       backgroundColor: 'transparent',
@@ -37,19 +39,19 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
         shape: 'circle',
         splitNumber: 5,
         axisName: {
-          color: 'rgba(255, 255, 255, 0.6)',
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
           fontFamily: '"JetBrains Mono", monospace',
           fontSize: 9,
           lineHeight: 12,
         },
         splitLine: {
           lineStyle: {
-            color: Array(5).fill('rgba(255, 255, 255, 0.05)'),
+            color: Array(5).fill(alpha(theme.palette.common.white, 0.05)),
           },
         },
         splitArea: { show: false },
         axisLine: {
-          lineStyle: { color: 'rgba(255, 255, 255, 0.1)' },
+          lineStyle: { color: alpha(theme.palette.common.white, 0.1) },
         },
       },
       series: [
@@ -88,6 +90,7 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
       uniqueRepos,
       totalPRs,
       avgRepoWeight,
+      theme,
     ],
   );
 
@@ -101,7 +104,11 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
     >
       <Typography
         variant="monoSmall"
-        sx={{ color: 'rgba(255, 255, 255, 0.4)', mb: 2, textAlign: 'center' }}
+        sx={{
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+          mb: 2,
+          textAlign: 'center',
+        }}
       >
         Performance Profile
       </Typography>

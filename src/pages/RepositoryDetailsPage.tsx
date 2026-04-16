@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Alert,
@@ -60,14 +60,32 @@ function CustomTabPanel(props: TabPanelProps) {
   );
 }
 
+/** Synced to the `tab` query param so back navigation from PR details restores the active tab. */
+const REPO_TAB_KEYS = [
+  'readme',
+  'code',
+  'issues',
+  'pull-requests',
+  'contributing',
+  'repo-check',
+] as const;
+
+function tabIndexFromSearchParam(tab: string | null): number {
+  if (!tab) return 0;
+  const idx = REPO_TAB_KEYS.indexOf(tab as (typeof REPO_TAB_KEYS)[number]);
+  return idx >= 0 ? idx : 0;
+}
+
 const RepositoryDetailsPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const repo = searchParams.get('name');
-  const [tabValue, setTabValue] = useState(0);
+  const tabValue = tabIndexFromSearchParam(searchParams.get('tab'));
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
   const { data: bountySummary } = useRepoBountySummary(repo || '');
-  const trackedRepo = repos?.find((r) => r.fullName === repo);
+  const trackedRepo = repos?.find(
+    (r) => r.fullName.toLowerCase() === (repo ?? '').toLowerCase(),
+  );
   const isTrackedRepository = Boolean(trackedRepo);
 
   const owner = repo ? repo.split('/')[0] : '';
@@ -101,13 +119,14 @@ const RepositoryDetailsPage: React.FC = () => {
           <BackButton to="/repositories" label="Back to Repositories" />
           <Alert
             severity="warning"
-            sx={{
+            sx={(theme) => ({
               mt: 2,
-              backgroundColor: 'rgba(245, 124, 0, 0.08)',
-              border: '1px solid rgba(255, 183, 77, 0.3)',
-              color: '#ffcc80',
-              '& .MuiAlert-icon': { color: '#ffb74d' },
-            }}
+              backgroundColor: alpha(STATUS_COLORS.warningOrange, 0.08),
+              border: '1px solid',
+              borderColor: alpha(STATUS_COLORS.warningOrange, 0.3),
+              color: alpha(theme.palette.text.primary, 0.8),
+              '& .MuiAlert-icon': { color: theme.palette.status.warningOrange },
+            })}
           >
             <Typography sx={{ fontWeight: 600, mb: 0.5 }}>
               This repository is not tracked by Gittensor.
@@ -123,7 +142,20 @@ const RepositoryDetailsPage: React.FC = () => {
   }
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (!repo) return next;
+        next.set('name', repo);
+        if (newValue === 0) {
+          next.delete('tab');
+        } else {
+          next.set('tab', REPO_TAB_KEYS[newValue]);
+        }
+        return next;
+      },
+      { replace: true },
+    );
   };
 
   return (
@@ -135,10 +167,11 @@ const RepositoryDetailsPage: React.FC = () => {
 
       {/* Header Section */}
       <Box
-        sx={{
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
-          backgroundColor: 'rgba(0,0,0,0.2)',
-        }}
+        sx={(theme) => ({
+          borderBottom: '1px solid',
+          borderColor: theme.palette.border.light,
+          backgroundColor: theme.palette.surface.subtle,
+        })}
       >
         <Container maxWidth="xl">
           <Box sx={{ pt: 3, pb: 0 }}>
@@ -155,39 +188,39 @@ const RepositoryDetailsPage: React.FC = () => {
                   <Avatar
                     src={`https://avatars.githubusercontent.com/${owner}`}
                     variant="rounded"
-                    sx={{
+                    sx={(theme) => ({
                       width: 32,
                       height: 32,
                       borderRadius: '4px',
                       backgroundColor:
                         owner === 'opentensor'
-                          ? '#ffffff'
+                          ? theme.palette.text.primary
                           : owner === 'bitcoin'
-                            ? '#F7931A'
-                            : 'transparent',
-                    }}
+                            ? theme.palette.status.warningOrange
+                            : theme.palette.surface.transparent,
+                    })}
                   />
                   <Typography
                     variant="h4"
-                    sx={{
+                    sx={(theme) => ({
                       fontFamily: '"JetBrains Mono", monospace',
                       fontWeight: 600,
-                      color: '#fff',
-                    }}
+                      color: theme.palette.text.primary,
+                    })}
                   >
                     {repo}
                   </Typography>
                   <Chip variant="info" label="Public" />
                   <Chip
                     label="Tracked"
-                    sx={{
-                      backgroundColor: 'rgba(46, 125, 50, 0.15)',
-                      color: '#66bb6a',
-                      border: '1px solid rgba(102, 187, 106, 0.35)',
+                    sx={(theme) => ({
+                      backgroundColor: alpha(STATUS_COLORS.success, 0.15),
+                      color: theme.palette.status.success,
+                      border: `1px solid ${alpha(STATUS_COLORS.success, 0.35)}`,
                       fontSize: '0.75rem',
                       height: '24px',
                       fontWeight: 600,
-                    }}
+                    })}
                   />
                   {(() => {
                     const currentRepo = trackedRepo;
@@ -196,14 +229,14 @@ const RepositoryDetailsPage: React.FC = () => {
                       return (
                         <Chip
                           label={`Inactive since ${new Date(currentRepo.inactiveAt).toLocaleDateString()}`}
-                          sx={{
-                            backgroundColor: 'rgba(211, 47, 47, 0.1)',
-                            color: '#ff5252',
-                            border: '1px solid rgba(255, 82, 82, 0.3)',
+                          sx={(theme) => ({
+                            backgroundColor: alpha(STATUS_COLORS.error, 0.1),
+                            color: theme.palette.status.error,
+                            border: `1px solid ${alpha(STATUS_COLORS.error, 0.3)}`,
                             fontSize: '0.75rem',
                             height: '24px',
                             fontWeight: 600,
-                          }}
+                          })}
                         />
                       );
                     }
@@ -225,11 +258,12 @@ const RepositoryDetailsPage: React.FC = () => {
                   startIcon={<GitHubIcon />}
                   href={`https://github.com/${repo}`}
                   target="_blank"
-                  sx={{
-                    borderColor: 'rgba(255,255,255,0.2)',
-                    color: '#fff',
-                    '&:hover': { borderColor: 'primary.main' },
-                  }}
+                  rel="noopener noreferrer"
+                  sx={(theme) => ({
+                    borderColor: theme.palette.border.medium,
+                    color: theme.palette.text.primary,
+                    '&:hover': { borderColor: theme.palette.primary.main },
+                  })}
                 >
                   View on GitHub
                 </Button>
@@ -240,7 +274,7 @@ const RepositoryDetailsPage: React.FC = () => {
               value={tabValue}
               onChange={handleTabChange}
               aria-label="repository tabs"
-              sx={{
+              sx={(theme) => ({
                 '& .MuiTab-root': {
                   color: STATUS_COLORS.open,
                   fontFamily:
@@ -250,16 +284,16 @@ const RepositoryDetailsPage: React.FC = () => {
                   minHeight: '48px',
                   fontSize: '14px',
                   '&.Mui-selected': {
-                    color: '#fff',
+                    color: theme.palette.text.primary,
                     fontWeight: 600,
                   },
                 },
                 '& .MuiTabs-indicator': {
-                  backgroundColor: 'primary.main',
+                  backgroundColor: theme.palette.primary.main,
                   height: '3px',
                   borderRadius: '3px 3px 0 0',
                 },
-              }}
+              })}
             >
               <Tab
                 icon={<ArticleIcon sx={{ fontSize: 16, mb: 0, mr: 1 }} />}

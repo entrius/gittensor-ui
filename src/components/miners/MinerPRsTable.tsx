@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Card,
   Typography,
@@ -26,14 +26,42 @@ import {
   NavigateNext as NextIcon,
 } from '@mui/icons-material';
 import { useMinerPRs, type CommitLog } from '../../api';
-import { useNavigate } from 'react-router-dom';
+import {
+  getPrStatusCounts,
+  isClosedUnmergedPr,
+  isMergedPr,
+  isOpenPr,
+} from '../../utils';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import { type MinerStatusFilter } from '../../utils/ExplorerUtils';
+import { headerCellStyle, bodyCellStyle } from '../../theme';
 
-type PrSortField = 'number' | 'score' | 'lines' | 'date';
+type PrSortField = 'number' | 'repository' | 'score' | 'lines' | 'date';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 20;
+
+// Direction applied when a user first clicks a column header — string
+// columns feel natural ascending, numeric/date columns descending.
+const DEFAULT_SORT_DIR: Record<PrSortField, SortDir> = {
+  number: 'desc',
+  repository: 'asc',
+  score: 'desc',
+  lines: 'desc',
+  date: 'desc',
+};
+
+// Mirrors the Score cell's render logic so clicking the Score header
+// sorts by what users actually see: merged → score, open → collateral,
+// closed-unmerged → treated as zero.
+const getEffectiveScore = (pr: CommitLog): number => {
+  if (pr.prState === 'CLOSED' && !pr.mergedAt) return 0;
+  if (!pr.mergedAt && pr.collateralScore) {
+    return parseFloat(pr.collateralScore || '0');
+  }
+  return parseFloat(pr.score || '0');
+};
 
 const tooltipSlotProps = {
   tooltip: {
@@ -70,13 +98,38 @@ interface MinerPRsTableProps {
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<MinerStatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<PrSortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
-  const [page, setPage] = useState(0);
+
+  useEffect(() => {
+    setSelectedAuthor(null);
+    setStatusFilter('all');
+    setSearchQuery('');
+    setSortField('date');
+    setSortDir('desc');
+  }, [githubId]);
+
+  const page = parseInt(searchParams.get('prPage') || '0', 10);
+  const setPage = useCallback(
+    (updater: number | ((prev: number) => number)) => {
+      const next = typeof updater === 'function' ? updater(page) : updater;
+      setSearchParams(
+        (prev) => {
+          const p = new URLSearchParams(prev);
+          if (next === 0) p.delete('prPage');
+          else p.set('prPage', String(next));
+          return p;
+        },
+        { replace: true },
+      );
+    },
+    [page, setSearchParams],
+  );
 
   const handleSort = useCallback(
     (field: PrSortField) => {
@@ -84,11 +137,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
       } else {
         setSortField(field);
-        setSortDir('desc');
+        setSortDir(DEFAULT_SORT_DIR[field]);
       }
       setPage(0);
     },
-    [sortField],
+    [sortField, setPage],
   );
 
   const filteredPRs = useMemo(() => {
@@ -97,19 +150,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     if (selectedAuthor) {
       filtered = filtered.filter((pr) => pr.author === selectedAuthor);
     }
-    if (statusFilter === 'open') {
-      filtered = filtered.filter(
-        (pr) => pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
-      );
-    } else if (statusFilter === 'merged') {
-      filtered = filtered.filter(
-        (pr) => pr.mergedAt || pr.prState === 'MERGED',
-      );
-    } else if (statusFilter === 'closed') {
-      filtered = filtered.filter(
-        (pr) => pr.prState === 'CLOSED' && !pr.mergedAt,
-      );
-    }
+    if (statusFilter === 'open') filtered = filtered.filter(isOpenPr);
+    else if (statusFilter === 'merged') filtered = filtered.filter(isMergedPr);
+    else if (statusFilter === 'closed')
+      filtered = filtered.filter(isClosedUnmergedPr);
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -130,8 +174,12 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         case 'number':
           cmp = a.pullRequestNumber - b.pullRequestNumber;
           break;
+        case 'repository':
+          cmp = a.repository.localeCompare(b.repository);
+          if (cmp === 0) cmp = a.pullRequestNumber - b.pullRequestNumber;
+          break;
         case 'score':
-          cmp = parseFloat(a.score || '0') - parseFloat(b.score || '0');
+          cmp = getEffectiveScore(a) - getEffectiveScore(b);
           break;
         case 'lines':
           cmp = a.additions + a.deletions - (b.additions + b.deletions);
@@ -157,19 +205,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
 
   const statusCounts = useMemo(() => {
     if (!prs) return { all: 0, open: 0, merged: 0, closed: 0 };
-    return {
-      all: prs.length,
-      open: prs.filter(
-        (pr: CommitLog) =>
-          pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
-      ).length,
-      merged: prs.filter(
-        (pr: CommitLog) => pr.mergedAt || pr.prState === 'MERGED',
-      ).length,
-      closed: prs.filter(
-        (pr: CommitLog) => pr.prState === 'CLOSED' && !pr.mergedAt,
-      ).length,
-    };
+    return getPrStatusCounts(prs);
   }, [prs]);
 
   if (isLoading) {
@@ -401,7 +437,18 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                     Title
                   </TableCell>
                   <TableCell sx={{ ...headerCellStyle, width: '25%' }}>
-                    Repository
+                    <TableSortLabel
+                      active={sortField === 'repository'}
+                      direction={
+                        sortField === 'repository'
+                          ? sortDir
+                          : DEFAULT_SORT_DIR.repository
+                      }
+                      onClick={() => handleSort('repository')}
+                      sx={sortLabelSx}
+                    >
+                      Repository
+                    </TableSortLabel>
                   </TableCell>
                   <TableCell
                     align="right"
@@ -585,7 +632,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                                 color: theme.palette.status.warningOrange,
                               }}
                             >
-                              {parseFloat(pr.collateralScore).toFixed(4)}
+                              {parseFloat(pr.collateralScore || '0').toFixed(4)}
                             </Typography>
                           ) : scoreTooltip ? (
                             <Tooltip
@@ -602,7 +649,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                                   cursor: 'pointer',
                                 }}
                               >
-                                {parseFloat(pr.score).toFixed(4)}
+                                {parseFloat(pr.score || '0').toFixed(4)}
                               </Typography>
                             </Tooltip>
                           ) : (
@@ -613,7 +660,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                                 fontWeight: 600,
                               }}
                             >
-                              {parseFloat(pr.score).toFixed(4)}
+                              {parseFloat(pr.score || '0').toFixed(4)}
                             </Typography>
                           )}
                           {!pr.mergedAt &&
@@ -719,33 +766,6 @@ const sortLabelSx = {
   '& .MuiTableSortLabel-icon': {
     color: (t: Theme) => `${alpha(t.palette.text.primary, 0.4)} !important`,
   },
-};
-
-const headerCellStyle = {
-  backgroundColor: 'surface.elevated',
-  backdropFilter: 'blur(8px)',
-  color: (t: Theme) => alpha(t.palette.text.primary, 0.7),
-  fontFamily: '"JetBrains Mono", monospace',
-  fontWeight: 500,
-  fontSize: { xs: '0.65rem', sm: '0.75rem' },
-  borderBottom: '1px solid',
-  borderColor: 'border.light',
-  height: { xs: '48px', sm: '56px' },
-  py: { xs: 1, sm: 1.5 },
-  px: { xs: 0.5, sm: 2 },
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.5px',
-};
-
-const bodyCellStyle = {
-  color: 'text.primary',
-  fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: '1px solid',
-  borderColor: 'border.light',
-  fontSize: '0.85rem',
-  py: { xs: 0.75, sm: 1 },
-  px: { xs: 0.5, sm: 2 },
-  height: { xs: '52px', sm: '60px' },
 };
 
 export default MinerPRsTable;

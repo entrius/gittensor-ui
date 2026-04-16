@@ -1,5 +1,11 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
+  REPO_OWNER_AVATAR_BACKGROUNDS,
+  STATUS_COLORS,
+  TEXT_OPACITY,
+  scrollbarSx,
+} from '../../theme';
+import {
   Box,
   Table,
   TableBody,
@@ -17,6 +23,7 @@ import {
   useMediaQuery,
   useTheme,
   CircularProgress,
+  alpha,
   Tooltip,
   Select,
   MenuItem,
@@ -30,7 +37,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
 import { useReposAndWeights } from '../../api';
-import dayjs from 'dayjs';
+import { format } from 'date-fns';
 
 type SortField = 'owner' | 'name' | 'weight';
 type SortOrder = 'asc' | 'desc';
@@ -58,7 +65,7 @@ const AnimatedWeightBar = ({
       sx={{
         width: '100%',
         height: '4px',
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'surface.light',
         borderRadius: '2px',
         overflow: 'hidden',
       }}
@@ -67,8 +74,7 @@ const AnimatedWeightBar = ({
         sx={{
           width: `${width}%`,
           height: '100%',
-          background:
-            'linear-gradient(90deg, rgba(139, 148, 158, 0.8), rgba(100, 108, 118, 0.4))',
+          background: `linear-gradient(90deg, ${alpha(STATUS_COLORS.neutral, 0.8)}, ${alpha(STATUS_COLORS.neutral, 0.4)})`,
           borderRadius: '2px',
           transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
@@ -183,8 +189,8 @@ const RepositoryWeightsTable: React.FC = () => {
 
     const minWeight = weights.length > 0 ? Math.min(...weights) : 0;
 
-    const textColor = 'rgba(255, 255, 255, 0.85)';
-    const gridColor = 'rgba(255, 255, 255, 0.08)';
+    const textColor = theme.palette.text.primary;
+    const gridColor = theme.palette.border.subtle;
 
     const xAxisData = chartData.map((item) => item.name);
 
@@ -201,8 +207,8 @@ const RepositoryWeightsTable: React.FC = () => {
           x2: 0,
           y2: 1,
           colorStops: [
-            { offset: 0, color: 'rgba(139, 148, 158, 0.8)' },
-            { offset: 1, color: 'rgba(100, 108, 118, 0.4)' },
+            { offset: 0, color: alpha(STATUS_COLORS.neutral, 0.8) },
+            { offset: 1, color: alpha(STATUS_COLORS.neutral, 0.4) },
           ],
         },
         borderRadius: [4, 4, 0, 0],
@@ -217,13 +223,13 @@ const RepositoryWeightsTable: React.FC = () => {
         left: 'center',
         top: 20,
         textStyle: {
-          color: '#ffffff',
+          color: theme.palette.text.primary,
           fontFamily: 'JetBrains Mono',
           fontSize: 18,
           fontWeight: 600,
         },
         subtextStyle: {
-          color: 'rgba(255, 255, 255, 0.5)',
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
           fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
@@ -231,10 +237,13 @@ const RepositoryWeightsTable: React.FC = () => {
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
-        backgroundColor: 'rgba(15, 15, 18, 0.95)',
-        borderColor: 'rgba(255, 255, 255, 0.15)',
+        backgroundColor: alpha(theme.palette.background.paper, 0.95),
+        borderColor: alpha(theme.palette.common.white, 0.15),
         borderWidth: 1,
-        textStyle: { color: '#fff', fontFamily: 'JetBrains Mono' },
+        textStyle: {
+          color: theme.palette.text.primary,
+          fontFamily: 'JetBrains Mono',
+        },
         formatter: (params: any) => {
           const data = params[0]?.data;
           if (!data) return '';
@@ -243,7 +252,7 @@ const RepositoryWeightsTable: React.FC = () => {
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                 <img
                   src="https://avatars.githubusercontent.com/${data.owner}"
-                  style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); background-color: ${data.owner === 'opentensor' ? '#ffffff' : data.owner === 'bitcoin' ? '#F7931A' : 'transparent'};"
+                  style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid ${theme.palette.border.medium}; background-color: ${data.owner === 'opentensor' ? REPO_OWNER_AVATAR_BACKGROUNDS.opentensor : data.owner === 'bitcoin' ? REPO_OWNER_AVATAR_BACKGROUNDS.bitcoin : 'transparent'};"
                 />
                 <div style="font-weight: 600;">${data.fullName}</div>
               </div>
@@ -315,11 +324,7 @@ const RepositoryWeightsTable: React.FC = () => {
 
   return (
     <Box ref={containerRef}>
-      <Box
-        sx={{
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        }}
-      >
+      <Box sx={{ mb: 3 }}>
         <Box sx={{ p: 2, pb: 1 }}>
           <Typography variant="body2" color="text.secondary">
             Contribute to any of these projects to gain score and earn emissions
@@ -343,13 +348,15 @@ const RepositoryWeightsTable: React.FC = () => {
                 onClick={() => setShowChart(!showChart)}
                 size="small"
                 sx={{
-                  color: showChart ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: showChart
+                    ? 'text.primary'
+                    : alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+                  border: `1px solid ${theme.palette.border.light}`,
                   borderRadius: 2,
                   padding: '6px',
                   '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    backgroundColor: 'surface.light',
+                    borderColor: 'border.medium',
                   },
                 }}
               >
@@ -366,7 +373,10 @@ const RepositoryWeightsTable: React.FC = () => {
                 <Typography
                   variant="body2"
                   sx={{
-                    color: 'rgba(255, 255, 255, 0.7)',
+                    color: alpha(
+                      theme.palette.common.white,
+                      TEXT_OPACITY.secondary,
+                    ),
                     fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.8rem',
                   }}
@@ -380,16 +390,16 @@ const RepositoryWeightsTable: React.FC = () => {
                     setPage(0);
                   }}
                   sx={{
-                    color: '#ffffff',
+                    color: 'text.primary',
                     fontFamily: '"JetBrains Mono", monospace',
-                    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                    backgroundColor: alpha(theme.palette.common.black, 0.4),
                     fontSize: '0.8rem',
                     height: '36px',
                     borderRadius: 2,
                     minWidth: '80px',
-                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                    '& fieldset': { borderColor: theme.palette.border.light },
                     '&:hover fieldset': {
-                      borderColor: 'rgba(255, 255, 255, 0.2)',
+                      borderColor: theme.palette.border.medium,
                     },
                     '&.Mui-focused fieldset': { borderColor: 'primary.main' },
                     '& .MuiSelect-select': {
@@ -414,7 +424,10 @@ const RepositoryWeightsTable: React.FC = () => {
                   <InputAdornment position="start">
                     <Search
                       sx={{
-                        color: 'rgba(255, 255, 255, 0.5)',
+                        color: alpha(
+                          theme.palette.common.white,
+                          TEXT_OPACITY.tertiary,
+                        ),
                         fontSize: '1rem',
                       }}
                     />
@@ -424,15 +437,15 @@ const RepositoryWeightsTable: React.FC = () => {
               sx={{
                 width: '200px',
                 '& .MuiOutlinedInput-root': {
-                  color: '#ffffff',
+                  color: 'text.primary',
                   fontFamily: '"JetBrains Mono", monospace',
-                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  backgroundColor: alpha(theme.palette.common.black, 0.4),
                   fontSize: '0.8rem',
                   height: '36px',
                   borderRadius: 2,
-                  '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                  '& fieldset': { borderColor: theme.palette.border.light },
                   '&:hover fieldset': {
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    borderColor: theme.palette.border.medium,
                   },
                   '&.Mui-focused fieldset': { borderColor: 'primary.main' },
                 },
@@ -446,9 +459,9 @@ const RepositoryWeightsTable: React.FC = () => {
         <Box
           sx={{
             p: 2,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            borderBottom: `1px solid ${theme.palette.border.light}`,
             height: '500px',
-            backgroundColor: 'rgba(0,0,0,0.2)',
+            backgroundColor: alpha(theme.palette.common.black, 0.2),
           }}
         >
           {showChart && filteredAndSortedRepos.length > 0 && (
@@ -473,19 +486,7 @@ const RepositoryWeightsTable: React.FC = () => {
             backgroundColor: 'transparent',
             maxHeight: '800px',
             overflowY: 'auto',
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '4px',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              },
-            },
+            ...scrollbarSx,
           }}
         >
           <Table stickyHeader>
@@ -494,9 +495,12 @@ const RepositoryWeightsTable: React.FC = () => {
                 {!isMobile && (
                   <TableCell
                     sx={{
-                      backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                      backgroundColor: alpha(
+                        theme.palette.background.paper,
+                        0.95,
+                      ),
                       backdropFilter: 'blur(8px)',
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderBottom: `1px solid ${theme.palette.border.light}`,
                       height: '56px',
                       py: 1.5,
                       boxSizing: 'border-box',
@@ -522,9 +526,12 @@ const RepositoryWeightsTable: React.FC = () => {
                 )}
                 <TableCell
                   sx={{
-                    backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                    backgroundColor: alpha(
+                      theme.palette.background.paper,
+                      0.95,
+                    ),
                     backdropFilter: 'blur(8px)',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderBottom: `1px solid ${theme.palette.border.light}`,
                     height: '56px',
                     py: 1.5,
                     boxSizing: 'border-box',
@@ -550,9 +557,12 @@ const RepositoryWeightsTable: React.FC = () => {
                 <TableCell
                   align="right"
                   sx={{
-                    backgroundColor: 'rgba(18, 18, 20, 0.95)',
+                    backgroundColor: alpha(
+                      theme.palette.background.paper,
+                      0.95,
+                    ),
                     backdropFilter: 'blur(8px)',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderBottom: `1px solid ${theme.palette.border.light}`,
                     height: '56px',
                     py: 1.5,
                     boxSizing: 'border-box',
@@ -581,9 +591,10 @@ const RepositoryWeightsTable: React.FC = () => {
               {paginatedRepos.map((repo) => {
                 const isInactive =
                   repo.inactiveAt !== null && repo.inactiveAt !== undefined;
-                const inactiveDate = isInactive
-                  ? dayjs(repo.inactiveAt).format('DD/MM/YY hh:mm a')
-                  : null;
+                const inactiveDate =
+                  isInactive && repo.inactiveAt
+                    ? format(new Date(repo.inactiveAt), 'dd/MM/yy hh:mm aaa')
+                    : null;
 
                 return (
                   <Tooltip
@@ -596,11 +607,11 @@ const RepositoryWeightsTable: React.FC = () => {
                       hover
                       sx={{
                         backgroundColor: isInactive
-                          ? 'rgba(211, 47, 47, 0.08)'
+                          ? alpha(theme.palette.error.main, 0.08)
                           : 'inherit',
                         '&:hover': {
                           backgroundColor: isInactive
-                            ? 'rgba(211, 47, 47, 0.12)'
+                            ? alpha(theme.palette.error.main, 0.12)
                             : undefined,
                         },
                       }}
@@ -635,13 +646,11 @@ const RepositoryWeightsTable: React.FC = () => {
                                 sx={{
                                   width: 24,
                                   height: 24,
-                                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                                  border: `1px solid ${theme.palette.border.medium}`,
                                   backgroundColor:
-                                    repo.owner === 'opentensor'
-                                      ? '#ffffff'
-                                      : repo.owner === 'bitcoin'
-                                        ? '#F7931A'
-                                        : 'transparent',
+                                    REPO_OWNER_AVATAR_BACKGROUNDS[
+                                      repo.owner as keyof typeof REPO_OWNER_AVATAR_BACKGROUNDS
+                                    ] ?? 'transparent',
                                   transition: 'transform 0.2s',
                                   '&:hover': {
                                     transform: 'scale(1.2)',
@@ -695,13 +704,11 @@ const RepositoryWeightsTable: React.FC = () => {
                                 sx={{
                                   width: 24,
                                   height: 24,
-                                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                                  border: `1px solid ${theme.palette.border.medium}`,
                                   backgroundColor:
-                                    repo.owner === 'opentensor'
-                                      ? '#ffffff'
-                                      : repo.owner === 'bitcoin'
-                                        ? '#F7931A'
-                                        : 'transparent',
+                                    REPO_OWNER_AVATAR_BACKGROUNDS[
+                                      repo.owner as keyof typeof REPO_OWNER_AVATAR_BACKGROUNDS
+                                    ] ?? 'transparent',
                                   transition: 'transform 0.2s',
                                   '&:hover': {
                                     transform: 'scale(1.2)',
@@ -747,7 +754,7 @@ const RepositoryWeightsTable: React.FC = () => {
                                 variant="body2"
                                 sx={{
                                   color: isInactive
-                                    ? 'rgba(211, 47, 47, 0.7)'
+                                    ? alpha(theme.palette.error.main, 0.7)
                                     : 'text.secondary',
                                   textDecoration: 'none',
                                   '&:hover': { textDecoration: 'underline' },

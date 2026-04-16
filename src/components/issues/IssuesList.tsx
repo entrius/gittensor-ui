@@ -14,12 +14,15 @@ import {
   Link,
   Tooltip,
   Avatar,
+  alpha,
+  useTheme,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueBounty } from '../../api/models/Issues';
 import { useStats } from '../../api';
-import { formatTokenAmount } from '../../utils/format';
-import { STATUS_COLORS } from '../../theme';
+import { formatTokenAmount, formatDate } from '../../utils/format';
+import { getIssueStatusMeta } from '../../utils/issueStatus';
+import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import BountyProgress from './BountyProgress';
 
 type ListType = 'available' | 'pending' | 'history';
@@ -30,59 +33,6 @@ interface IssuesListProps {
   listType: ListType;
   onSelectIssue?: (id: number) => void;
 }
-
-/**
- * Get status badge color and text
- */
-const getStatusBadge = (
-  status: IssueBounty['status'],
-): { color: string; bgColor: string; text: string } => {
-  switch (status) {
-    case 'registered':
-      return {
-        color: STATUS_COLORS.warning,
-        bgColor: 'rgba(245, 158, 11, 0.15)',
-        text: 'Pending',
-      };
-    case 'active':
-      return {
-        color: STATUS_COLORS.info,
-        bgColor: 'rgba(88, 166, 255, 0.15)',
-        text: 'Available',
-      };
-    case 'completed':
-      return {
-        color: STATUS_COLORS.merged,
-        bgColor: 'rgba(63, 185, 80, 0.15)',
-        text: 'Completed',
-      };
-    case 'cancelled':
-      return {
-        color: STATUS_COLORS.error,
-        bgColor: 'rgba(239, 68, 68, 0.15)',
-        text: 'Cancelled',
-      };
-    default:
-      return {
-        color: STATUS_COLORS.open,
-        bgColor: 'rgba(139, 148, 158, 0.15)',
-        text: status,
-      };
-  }
-};
-
-/**
- * Format date for display
- */
-const formatDate = (dateStr: string | null | undefined): string => {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
 
 /**
  * Truncate wallet address for display
@@ -99,6 +49,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
   listType,
   onSelectIssue,
 }) => {
+  const theme = useTheme();
   const { data: dashStats } = useStats();
   const taoPrice = dashStats?.prices?.tao?.data?.price ?? 0;
   const alphaPrice = dashStats?.prices?.alpha?.data?.price ?? 0;
@@ -116,8 +67,9 @@ const IssuesList: React.FC<IssuesListProps> = ({
     fontWeight: 600,
     letterSpacing: '0.5px',
     textTransform: 'uppercase' as const,
-    color: 'rgba(255, 255, 255, 0.3)',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+    color: 'text.secondary',
+    borderBottom: '1px solid',
+    borderColor: 'border.light',
     py: 1.5,
   };
 
@@ -125,7 +77,8 @@ const IssuesList: React.FC<IssuesListProps> = ({
     fontFamily: '"JetBrains Mono", monospace',
     fontSize: '0.85rem',
     color: 'text.primary',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+    borderBottom: '1px solid',
+    borderBottomColor: 'border.subtle',
     py: 1.5,
   };
 
@@ -134,7 +87,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
       <Card
         sx={{
           backgroundColor: 'background.default',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: `1px solid ${theme.palette.border.light}`,
           borderRadius: 3,
         }}
         elevation={0}
@@ -164,14 +117,18 @@ const IssuesList: React.FC<IssuesListProps> = ({
       <Card
         sx={{
           backgroundColor: 'background.default',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: `1px solid ${theme.palette.border.light}`,
           borderRadius: 3,
           p: 4,
           textAlign: 'center',
         }}
         elevation={0}
       >
-        <Typography sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+        <Typography
+          sx={{
+            color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+          }}
+        >
           {emptyMessages[listType]}
         </Typography>
       </Card>
@@ -182,7 +139,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
     <Card
       sx={{
         backgroundColor: 'background.default',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: `1px solid ${theme.palette.border.light}`,
         borderRadius: 3,
         overflow: 'hidden',
       }}
@@ -264,7 +221,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
           </TableHead>
           <TableBody>
             {issues.map((issue) => {
-              const statusBadge = getStatusBadge(issue.status);
+              const statusBadge = getIssueStatusMeta(issue.status);
 
               return (
                 <TableRow
@@ -274,7 +231,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                     cursor: onSelectIssue ? 'pointer' : 'default',
                     transition: 'background-color 0.2s',
                     '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      backgroundColor: alpha(theme.palette.common.white, 0.03),
                     },
                   }}
                 >
@@ -284,7 +241,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                       sx={{
                         fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.8rem',
-                        color: 'rgba(255, 255, 255, 0.6)',
+                        color: alpha(theme.palette.common.white, 0.6),
                       }}
                     >
                       #{issue.id}
@@ -344,7 +301,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
                           gap: 0.5,
                           fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.75rem',
-                          color: 'rgba(255, 255, 255, 0.5)',
+                          color: alpha(
+                            theme.palette.common.white,
+                            TEXT_OPACITY.tertiary,
+                          ),
                           textDecoration: 'none',
                           '&:hover': {
                             color: STATUS_COLORS.info,
@@ -377,7 +337,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                             sx={{
                               fontFamily: '"JetBrains Mono", monospace',
                               fontSize: '0.7rem',
-                              color: 'rgba(255, 255, 255, 0.35)',
+                              color: alpha(theme.palette.common.white, 0.35),
                             }}
                           >
                             {toUsd(issue.targetBounty)}
@@ -420,7 +380,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                             sx={{
                               fontFamily: '"JetBrains Mono", monospace',
                               fontSize: '0.7rem',
-                              color: 'rgba(255, 255, 255, 0.35)',
+                              color: alpha(theme.palette.common.white, 0.35),
                             }}
                           >
                             {toUsd(issue.targetBounty)}
@@ -462,7 +422,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
                             color:
                               issue.status === 'completed'
                                 ? STATUS_COLORS.merged
-                                : 'rgba(255, 255, 255, 0.4)',
+                                : alpha(
+                                    theme.palette.common.white,
+                                    TEXT_OPACITY.muted,
+                                  ),
                           }}
                         >
                           {`${formatTokenAmount(issue.targetBounty)} ل`}
@@ -472,7 +435,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                             sx={{
                               fontFamily: '"JetBrains Mono", monospace',
                               fontSize: '0.7rem',
-                              color: 'rgba(255, 255, 255, 0.35)',
+                              color: alpha(theme.palette.common.white, 0.35),
                             }}
                           >
                             {toUsd(issue.targetBounty)}
@@ -497,7 +460,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
                           <Typography
                             sx={{
                               fontSize: '0.8rem',
-                              color: 'rgba(255, 255, 255, 0.3)',
+                              color: alpha(
+                                theme.palette.common.white,
+                                TEXT_OPACITY.faint,
+                              ),
                             }}
                           >
                             -
@@ -523,7 +489,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                           sx={{
                             fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.8rem',
-                            color: 'rgba(255, 255, 255, 0.6)',
+                            color: alpha(theme.palette.common.white, 0.6),
                           }}
                         >
                           {formatDate(issue.completedAt || issue.updatedAt)}

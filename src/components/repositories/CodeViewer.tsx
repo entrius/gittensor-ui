@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { scrollbarSx } from '../../theme';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import axios from 'axios';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -29,6 +30,8 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
     : '';
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchContent = async () => {
       if (!filePath || isImage) {
         // Don't fetch text content for images or if no file selected
@@ -43,19 +46,23 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
         // Use raw.githubusercontent.com
         const response = await axios.get(rawUrl, {
           transformResponse: [(data) => data],
+          signal: controller.signal,
         }); // Force text
+        if (controller.signal.aborted) return;
         setContent(response.data);
       } catch (err) {
+        if (axios.isCancel(err) || controller.signal.aborted) return;
         console.error('Failed to fetch file content', err);
         setError(
           'Could not load file content. It might be binary or too large.',
         );
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
     fetchContent();
+    return () => controller.abort();
   }, [repositoryFullName, filePath, defaultBranch, isImage, rawUrl]);
 
   if (!filePath) {
@@ -129,6 +136,7 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
           p: 3,
           height: '100%',
           overflow: 'auto',
+          ...scrollbarSx,
           '& img': { maxWidth: '100%' },
           '& pre': {
             backgroundColor: '#1e1e1e',
@@ -161,9 +169,12 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
       sx={{
         height: '100%',
         width: '100%',
-        overflow: 'auto',
+        overflow: 'hidden',
         backgroundColor: '#1e1e1e',
         fontSize: '14px',
+        '& pre': {
+          ...scrollbarSx,
+        },
       }}
     >
       <SyntaxHighlighter

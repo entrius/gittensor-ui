@@ -37,9 +37,13 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
   const mostActive = useMemo(
     () =>
       [...miners]
-        .sort((a, b) => (b.totalPRs || 0) - (a.totalPRs || 0))
+        .sort((a, b) =>
+          variant === 'discoveries'
+            ? (b.totalIssues || 0) - (a.totalIssues || 0)
+            : (b.totalPRs || 0) - (a.totalPRs || 0),
+        )
         .slice(0, 5),
-    [miners],
+    [miners, variant],
   );
 
   // Network Stats Data
@@ -48,6 +52,7 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
       totalMiners: miners.length,
       eligible: miners.filter((m) => m.isEligible).length,
       totalPRs: miners.reduce((acc, m) => acc + (m.totalPRs || 0), 0),
+      totalIssues: miners.reduce((acc, m) => acc + (m.totalIssues || 0), 0),
       dailyPool: miners.reduce((acc, m) => acc + (m.usdPerDay || 0), 0),
     }),
     [miners],
@@ -74,7 +79,11 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
           />
           <StatRow
             label={variant === 'discoveries' ? 'Total Issues' : 'Total PRs'}
-            value={networkStats.totalPRs}
+            value={
+              variant === 'discoveries'
+                ? networkStats.totalIssues
+                : networkStats.totalPRs
+            }
           />
           <StatRow
             label="Daily Pool"
@@ -105,6 +114,7 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
                 miner={miner}
                 rank={i + 1}
                 type={leaderboardType}
+                variant={variant}
                 onClick={() =>
                   onSelectMiner(miner.githubId || miner.author || '')
                 }
@@ -279,6 +289,7 @@ interface LeaderboardRowProps {
   miner: MinerStats;
   rank: number;
   type: 'earners' | 'active';
+  variant?: 'oss' | 'discoveries';
   onClick: () => void;
 }
 
@@ -286,6 +297,7 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
   miner,
   rank,
   type,
+  variant = 'oss',
   onClick,
 }) => (
   <Box
@@ -350,7 +362,9 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
     >
       {type === 'earners'
         ? `$${Math.round(miner.usdPerDay || 0).toLocaleString()}`
-        : miner.totalPRs}
+        : variant === 'discoveries'
+          ? miner.totalIssues
+          : miner.totalPRs}
     </Typography>
   </Box>
 );

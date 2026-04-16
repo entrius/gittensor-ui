@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, alpha, useTheme } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
-import { CHART_COLORS } from '../../theme';
+import { CHART_COLORS, TEXT_OPACITY } from '../../theme';
 
 interface CredibilityChartProps {
   merged: number;
@@ -16,6 +16,8 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
   closed,
   credibility,
 }) => {
+  const theme = useTheme();
+
   const chartOption = useMemo(
     () => ({
       backgroundColor: 'transparent',
@@ -25,13 +27,13 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
         left: 'center',
         top: '38%',
         textStyle: {
-          color: '#fff',
+          color: theme.palette.text.primary,
           fontSize: 28,
           fontWeight: 'bold',
           fontFamily: '"JetBrains Mono", monospace',
         },
         subtextStyle: {
-          color: 'rgba(255, 255, 255, 0.4)',
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
           fontSize: 11,
           fontFamily: '"JetBrains Mono", monospace',
           fontWeight: 500,
@@ -40,11 +42,11 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
       tooltip: {
         trigger: 'item',
         formatter: '{b}: {c} ({d}%)',
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        borderColor: 'rgba(255, 255, 255, 0.15)',
+        backgroundColor: alpha(theme.palette.common.black, 0.9),
+        borderColor: alpha(theme.palette.common.white, 0.15),
         borderWidth: 1,
         textStyle: {
-          color: '#fff',
+          color: theme.palette.text.primary,
           fontFamily: '"JetBrains Mono", monospace',
         },
       },
@@ -56,7 +58,7 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
           avoidLabelOverlap: false,
           itemStyle: {
             borderRadius: 6,
-            borderColor: '#0d1117',
+            borderColor: theme.palette.background.paper,
             borderWidth: 3,
           },
           label: { show: false, position: 'center' },
@@ -82,7 +84,7 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
         },
       ],
     }),
-    [merged, open, closed, credibility],
+    [merged, open, closed, credibility, theme],
   );
 
   return (
@@ -96,12 +98,12 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
       <Typography
         variant="monoSmall"
         sx={{
-          color: 'rgba(255, 255, 255, 0.4)',
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
           mb: 0.75,
           textAlign: 'center',
         }}
       >
-        PR Success Ratio
+        Credibility
       </Typography>
 
       <Box sx={{ height: '190px', width: '100%', mb: 0.75 }}>
@@ -133,36 +135,40 @@ const LegendItem: React.FC<{ label: string; value: number; color: string }> = ({
   label,
   value,
   color,
-}) => (
-  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-    <Box
-      sx={{
-        width: 6,
-        height: 6,
-        borderRadius: '50%',
-        backgroundColor: color,
-      }}
-    />
-    <Typography
-      sx={{
-        color: 'rgba(255, 255, 255, 0.6)',
-        fontSize: '0.65rem',
-        fontFamily: '"JetBrains Mono", monospace',
-      }}
-    >
-      {label}
-    </Typography>
-    <Typography
-      sx={{
-        color,
-        fontSize: '0.75rem',
-        fontFamily: '"JetBrains Mono", monospace',
-        fontWeight: 700,
-      }}
-    >
-      {value}
-    </Typography>
-  </Box>
-);
+}) => {
+  const theme = useTheme();
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+      <Box
+        sx={{
+          width: 6,
+          height: 6,
+          borderRadius: '50%',
+          backgroundColor: color,
+        }}
+      />
+      <Typography
+        sx={{
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
+          fontSize: '0.65rem',
+          fontFamily: '"JetBrains Mono", monospace',
+        }}
+      >
+        {label}
+      </Typography>
+      <Typography
+        sx={{
+          color,
+          fontSize: '0.75rem',
+          fontFamily: '"JetBrains Mono", monospace',
+          fontWeight: 700,
+        }}
+      >
+        {value}
+      </Typography>
+    </Box>
+  );
+};
 
 export default CredibilityChart;
