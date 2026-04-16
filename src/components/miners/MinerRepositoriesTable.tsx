@@ -162,7 +162,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
               variant="h6"
               sx={{
                 color: 'text.primary',
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: { xs: '0.95rem', sm: '1.1rem' },
                 fontWeight: 500,
               }}
@@ -172,7 +171,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
             <Typography
               sx={{
                 color: (t) => alpha(t.palette.text.primary, 0.5),
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.75rem',
               }}
             >
@@ -400,7 +398,6 @@ const RepoTableRow: React.FC<RepoTableRowProps> = ({
             component="span"
             title={repo.repository}
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.85rem',
               minWidth: 0,
               flex: 1,

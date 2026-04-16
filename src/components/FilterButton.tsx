@@ -28,7 +28,6 @@ const FilterButton: React.FC<FilterButtonProps> = ({
       px: 2,
       minWidth: 'auto',
       textTransform: 'none',
-      fontFamily: '"JetBrains Mono", monospace',
       fontSize: '0.8rem',
       border: isActive ? `1px solid ${color}` : '1px solid transparent',
       '&:hover': {

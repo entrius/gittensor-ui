@@ -66,7 +66,6 @@ const tooltipSlotProps = {
       backgroundColor: 'surface.tooltip',
       color: 'text.primary',
       fontSize: '0.75rem',
-      fontFamily: '"JetBrains Mono", monospace',
       padding: '8px 12px',
       borderRadius: '6px',
       border: '1px solid',
@@ -158,7 +157,6 @@ const StatTile: React.FC<StatTileProps> = ({
           <Typography
             component="span"
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.6rem',
               fontWeight: 600,
               color:
@@ -178,7 +176,6 @@ const StatTile: React.FC<StatTileProps> = ({
     </Box>
     <Typography
       sx={{
-        fontFamily: '"JetBrains Mono", monospace',
         fontSize: '1.5rem',
         fontWeight: 600,
         color: color || 'text.primary',
@@ -190,7 +187,6 @@ const StatTile: React.FC<StatTileProps> = ({
     {sub && (
       <Typography
         sx={{
-          fontFamily: '"JetBrains Mono", monospace',
           fontSize: '0.75rem',
           color: (t) => alpha(t.palette.text.primary, 0.4),
           mt: 0.25,
@@ -273,7 +269,6 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
         component="span"
         sx={{
           color: 'inherit',
-          fontFamily: '"JetBrains Mono", monospace',
           fontSize: { xs: '0.55rem', sm: '0.65rem' },
           wordBreak: 'break-all',
         }}
@@ -343,7 +338,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
         <Typography
           sx={{
             color: alpha(STATUS_COLORS.error, 0.9),
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.9rem',
           }}
         >
@@ -379,7 +373,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             position: 'absolute',
             top: 16,
             right: 16,
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.7rem',
             color: (t) => alpha(t.palette.text.primary, 0.5),
             borderColor: 'border.light',
@@ -415,7 +408,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           >
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: { xs: '1.15rem', sm: '1.35rem' },
                 fontWeight: 700,
                 color: 'text.primary',
@@ -437,7 +429,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                   color: eligibilityColor,
                   borderColor: alpha(eligibilityColor, 0.35),
                   backgroundColor: alpha(eligibilityColor, 0.1),
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.7rem',
                   letterSpacing: '0.5px',
                   textTransform: 'uppercase',
@@ -461,7 +452,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                   color: issueEligibilityColor,
                   borderColor: alpha(issueEligibilityColor, 0.35),
                   backgroundColor: alpha(issueEligibilityColor, 0.1),
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.7rem',
                   letterSpacing: '0.5px',
                   textTransform: 'uppercase',
@@ -485,7 +475,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               rel="noopener noreferrer"
               sx={{
                 color: 'primary.main',
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.9rem',
                 textDecoration: 'none',
                 display: 'inline-flex',
@@ -504,7 +493,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             <Typography
               sx={{
                 color: (t) => alpha(t.palette.text.primary, 0.7),
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.8rem',
                 mt: 1,
                 lineHeight: 1.5,
@@ -569,7 +557,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               sx={{
                 display: { xs: 'flex', sm: 'none' },
                 mt: 1,
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.65rem',
                 color: (t) => alpha(t.palette.text.primary, 0.5),
                 borderColor: 'border.light',
@@ -588,7 +575,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           <Grid item xs={6} sm={4} md={2}>
             <StatTile
               label="Score"
-              value={Number(minerStats.totalScore).toFixed(2)}
+              value={parseNumber(minerStats.totalScore).toFixed(2)}
               sub={
                 topPrScore != null
                   ? `Best PR: ${topPrScore.toFixed(2)}`
@@ -609,8 +596,8 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           <Grid item xs={6} sm={4} md={2}>
             <StatTile
               label="Token Score"
-              value={Number(minerStats.totalTokenScore || 0).toFixed(0)}
-              sub={`${Number(minerStats.totalNodesScored || 0).toLocaleString()} tokens`}
+              value={parseNumber(minerStats.totalTokenScore).toFixed(0)}
+              sub={`${parseNumber(minerStats.totalNodesScored).toLocaleString()} tokens`}
               tooltip="Sum of token-level scores from merged PRs. Each scored code element (function, class, etc.) contributes to this."
             />
           </Grid>
@@ -618,7 +605,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             <StatTile
               label="PRs"
               value={String(minerStats.totalPrs || 0)}
-              sub={`${Number((minerStats.totalAdditions ?? 0) + (minerStats.totalDeletions ?? 0)).toLocaleString()} lines`}
+              sub={`${(parseNumber(minerStats.totalAdditions) + parseNumber(minerStats.totalDeletions)).toLocaleString()} lines`}
               rank={rankings?.totalPrs}
               tooltip="Total pull requests submitted. Lines count includes both additions and deletions across all PRs."
             />
@@ -655,14 +642,14 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           <Grid item xs={6} sm={4} md={2}>
             <StatTile
               label="Score"
-              value={Number(minerStats.issueDiscoveryScore || 0).toFixed(2)}
+              value={parseNumber(minerStats.issueDiscoveryScore).toFixed(2)}
               tooltip="Aggregate score for issue discovery contributions."
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
             <StatTile
               label="Credibility"
-              value={`${(Number(minerStats.issueCredibility || 0) * 100).toFixed(1)}%`}
+              value={`${(parseNumber(minerStats.issueCredibility) * 100).toFixed(1)}%`}
               sub={`${minerStats.totalSolvedIssues || 0} solved · ${minerStats.totalClosedIssues || 0} closed`}
               color={credibilityColor(Number(minerStats.issueCredibility || 0))}
               tooltip="Credibility = solved / (solved + max(0, closed − 1)). One closed issue is forgiven. 80%+ required for eligibility."
@@ -671,7 +658,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           <Grid item xs={6} sm={4} md={2}>
             <StatTile
               label="Token Score"
-              value={Number(minerStats.issueTokenScore || 0).toFixed(0)}
+              value={parseNumber(minerStats.issueTokenScore).toFixed(0)}
               sub={`${minerStats.totalValidSolvedIssues || 0} valid (need 7)`}
               tooltip="Sum of solving PR token scores across valid issues. Reflects code quality generated by discovered issues."
             />
