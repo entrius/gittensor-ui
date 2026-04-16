@@ -85,13 +85,16 @@ const TopScrollbar: React.FC<TopScrollbarProps> = ({ targetRef }) => {
   return (
     <Box
       ref={scrollRef}
+      aria-hidden="true"
       sx={{
         overflowX: 'auto',
         overflowY: 'hidden',
+        height: 12,
+        minHeight: 12,
         ...scrollbarSx,
       }}
     >
-      <Box sx={{ width: scrollWidth, height: '1px' }} />
+      <Box sx={{ width: scrollWidth, height: 1 }} />
     </Box>
   );
 };

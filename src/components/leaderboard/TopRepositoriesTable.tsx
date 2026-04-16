@@ -41,6 +41,7 @@ import { useSearchParams } from 'react-router-dom';
 import { truncateText } from '../../utils';
 import { RankIcon } from './RankIcon';
 import TopScrollbar from '../common/TopScrollbar';
+import ScrollJumpButton from '../common/ScrollJumpButton';
 import {
   getRepositoryOwnerAvatarBackground,
   headerCellStyle,
@@ -932,6 +933,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           },
         }}
       />
+      <ScrollJumpButton targetRef={tableContainerRef} />
     </Card>
   );
 };

@@ -47,6 +47,7 @@ import {
 } from '../../utils';
 import { RankIcon } from './RankIcon';
 import TopScrollbar from '../common/TopScrollbar';
+import ScrollJumpButton from '../common/ScrollJumpButton';
 import { STATUS_COLORS, UI_COLORS, scrollbarSx } from '../../theme';
 import FilterButton from '../FilterButton';
 
@@ -934,6 +935,7 @@ const TopPRsTable: React.FC<TopPRsTableProps> = ({
           },
         }}
       />
+      <ScrollJumpButton targetRef={tableContainerRef} />
     </Card>
   );
 };
