@@ -40,6 +40,17 @@ export const MinerCard: React.FC<MinerCardProps> = ({
   const credibilityPercent = (miner.credibility ?? 0) * 100;
   const isEligible = miner.isEligible ?? false;
 
+  const isDiscoveries = variant === 'discoveries';
+  const donutMerged = isDiscoveries
+    ? (miner.totalSolvedIssues ?? 0)
+    : (miner.totalMergedPrs ?? 0);
+  const donutOpen = isDiscoveries
+    ? (miner.totalOpenIssues ?? 0)
+    : (miner.totalOpenPrs ?? 0);
+  const donutClosed = isDiscoveries
+    ? (miner.totalClosedIssues ?? 0)
+    : (miner.totalClosedPrs ?? 0);
+
   return (
     <RowLink href={href} state={linkState} sx={{ height: '100%' }}>
       <Card
@@ -249,7 +260,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                     },
                     data: [
                       {
-                        value: miner.totalMergedPrs ?? 0,
+                        value: donutMerged,
                         itemStyle: {
                           color: isEligible
                             ? CHART_COLORS.merged
@@ -260,7 +271,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                         },
                       },
                       {
-                        value: miner.totalOpenPrs ?? 0,
+                        value: donutOpen,
                         itemStyle: {
                           color: isEligible
                             ? CHART_COLORS.open
@@ -271,7 +282,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                         },
                       },
                       {
-                        value: miner.totalClosedPrs ?? 0,
+                        value: donutClosed,
                         itemStyle: {
                           color: isEligible
                             ? CHART_COLORS.closed
