@@ -30,5 +30,11 @@ export const mapAllMinersToStats = (
     totalMergedPrs: parseNumber(stat.totalMergedPrs),
     totalOpenPrs: parseNumber(stat.totalOpenPrs),
     totalClosedPrs: parseNumber(stat.totalClosedPrs),
+    totalSolvedIssues: parseNumber(stat.totalSolvedIssues),
+    totalOpenIssues: parseNumber(stat.totalOpenIssues),
+    totalClosedIssues: parseNumber(stat.totalClosedIssues),
+    issueDiscoveryScore: parseNumber(stat.issueDiscoveryScore),
+    issueCredibility: parseNumber(stat.issueCredibility),
+    isIssueEligible: stat.isIssueEligible ?? false,
   }));
 };
