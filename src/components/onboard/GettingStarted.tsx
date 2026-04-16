@@ -3,6 +3,7 @@ import { Box, Typography, Stack, Button, Tabs, Tab } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { alpha } from '@mui/material/styles';
+import { PRODUCT_SUBNET } from '../../constants/productSubnet';
 
 const MONO = '"JetBrains Mono", monospace';
 
@@ -164,11 +165,11 @@ const StepDetail: React.FC<{ step: number }> = ({ step }) => {
           </Typography>
           <NetworkTabs network={network} onChange={setNetwork} />
           {network === 'mainnet' ? (
-            <CodeBlock label="mainnet (subnet 74)">{`btcli subnet register --netuid 74 \\
+            <CodeBlock label={`mainnet (subnet ${PRODUCT_SUBNET.MAINNET})`}>{`btcli subnet register --netuid ${PRODUCT_SUBNET.MAINNET} \\
   --wallet-name <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME>`}</CodeBlock>
           ) : (
-            <CodeBlock label="testnet (subnet 422)">{`btcli subnet register --netuid 422 \\
+            <CodeBlock label={`testnet (subnet ${PRODUCT_SUBNET.TESTNET})`}>{`btcli subnet register --netuid ${PRODUCT_SUBNET.TESTNET} \\
   --wallet-name <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
   --network test`}</CodeBlock>
@@ -274,12 +275,12 @@ uv pip install -e .`}</CodeBlock>
             <CodeBlock label="mainnet">{`gitt miner post --pat <YOUR_PAT> \\
   --wallet <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
-  --netuid 74`}</CodeBlock>
+  --netuid ${PRODUCT_SUBNET.MAINNET}`}</CodeBlock>
           ) : (
             <CodeBlock label="testnet">{`gitt miner post --pat <YOUR_PAT> \\
   --wallet <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
-  --netuid 422 --network test`}</CodeBlock>
+  --netuid ${PRODUCT_SUBNET.TESTNET} --network test`}</CodeBlock>
           )}
           <Typography
             variant="body2"
@@ -306,12 +307,12 @@ uv pip install -e .`}</CodeBlock>
             <CodeBlock label="mainnet">{`gitt miner check \\
   --wallet <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
-  --netuid 74`}</CodeBlock>
+  --netuid ${PRODUCT_SUBNET.MAINNET}`}</CodeBlock>
           ) : (
             <CodeBlock label="testnet">{`gitt miner check \\
   --wallet <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
-  --netuid 422 --network test`}</CodeBlock>
+  --netuid ${PRODUCT_SUBNET.TESTNET} --network test`}</CodeBlock>
           )}
           <Typography
             variant="body2"

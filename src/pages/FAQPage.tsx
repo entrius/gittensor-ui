@@ -3,6 +3,10 @@ import { Stack, Box } from '@mui/material';
 import { Page } from '../components/layout';
 import FAQ from '../components/FAQ';
 import { SEO } from '../components';
+import {
+  PRODUCT_SUBNET,
+  taostatsSubnetChartUrl,
+} from '../constants/productSubnet';
 
 export const FAQContent: React.FC = () => (
   <Box
@@ -46,7 +50,7 @@ export const FAQContent: React.FC = () => (
             provide utility value to the incentive mechanism or other aspects of
             a subnet. Check Gittensor's token page on{' '}
             <a
-              href="https://taostats.io/subnets/74/chart"
+              href={taostatsSubnetChartUrl(PRODUCT_SUBNET.MAINNET)}
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: 'inherit', textDecoration: 'underline' }}
@@ -59,7 +63,7 @@ export const FAQContent: React.FC = () => (
       />
       <FAQ
         question="What is Gittensor?"
-        answer="Gittensor is subnet 74 within the Bittensor network that rewards open source software developers for their contributions. It distributes emissions, in the form of alpha tokens, to developers whose code has been integrated and merged into recognized GitHub repositories."
+        answer={`Gittensor is subnet ${PRODUCT_SUBNET.MAINNET} within the Bittensor network that rewards open source software developers for their contributions. It distributes emissions, in the form of alpha tokens, to developers whose code has been integrated and merged into recognized GitHub repositories.`}
       />
       <FAQ
         question="How do I start mining on Gittensor?"
