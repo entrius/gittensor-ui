@@ -72,8 +72,8 @@ const WatchlistPage: React.FC = () => {
             }}
           >
             Your watchlist — {count}{' '}
-            {count === 1 ? 'miner pinned' : 'miners pinned'}. Stored locally
-            in this browser.
+            {count === 1 ? 'miner pinned' : 'miners pinned'}. Stored locally in
+            this browser.
           </Typography>
           {count > 0 && (
             <Button
@@ -151,10 +151,17 @@ const WatchlistPage: React.FC = () => {
           Clear all {count} pinned miners?
         </DialogTitle>
         <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)} sx={{ textTransform: 'none' }}>
+          <Button
+            onClick={() => setConfirmOpen(false)}
+            sx={{ textTransform: 'none' }}
+          >
             Cancel
           </Button>
-          <Button onClick={handleClear} color="error" sx={{ textTransform: 'none' }}>
+          <Button
+            onClick={handleClear}
+            color="error"
+            sx={{ textTransform: 'none' }}
+          >
             Clear watchlist
           </Button>
         </DialogActions>
