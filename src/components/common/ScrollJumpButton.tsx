@@ -109,9 +109,7 @@ const ScrollJumpButton: React.FC<ScrollJumpButtonProps> = ({
       <Fab
         size="small"
         onClick={handleClick}
-        aria-label={
-          direction === 'down' ? 'Jump to bottom' : 'Jump to top'
-        }
+        aria-label={direction === 'down' ? 'Jump to bottom' : 'Jump to top'}
         sx={{
           position: 'fixed',
           bottom: 24,
