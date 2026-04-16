@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Box } from '@mui/material';
 import { scrollbarSx } from '../../theme';
 
@@ -42,37 +42,42 @@ const TopScrollbar: React.FC<TopScrollbarProps> = ({ targetRef }) => {
   }, [targetRef]);
 
   // Bidirectional scroll sync.
-  const handleTopScroll = useCallback(() => {
-    const top = scrollRef.current;
-    const bottom = targetRef.current;
-    if (!top || !bottom || syncingRef.current) return;
-    syncingRef.current = true;
-    bottom.scrollLeft = top.scrollLeft;
-    syncingRef.current = false;
-  }, [targetRef]);
-
-  const handleBottomScroll = useCallback(() => {
-    const top = scrollRef.current;
-    const bottom = targetRef.current;
-    if (!top || !bottom || syncingRef.current) return;
-    syncingRef.current = true;
-    top.scrollLeft = bottom.scrollLeft;
-    syncingRef.current = false;
-  }, [targetRef]);
-
   useEffect(() => {
     const top = scrollRef.current;
     const bottom = targetRef.current;
     if (!top || !bottom) return;
 
-    top.addEventListener('scroll', handleTopScroll);
-    bottom.addEventListener('scroll', handleBottomScroll);
+    let rafId = 0;
+
+    const onTopScroll = () => {
+      if (syncingRef.current) return;
+      syncingRef.current = true;
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        bottom.scrollLeft = top.scrollLeft;
+        syncingRef.current = false;
+      });
+    };
+
+    const onBottomScroll = () => {
+      if (syncingRef.current) return;
+      syncingRef.current = true;
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        top.scrollLeft = bottom.scrollLeft;
+        syncingRef.current = false;
+      });
+    };
+
+    top.addEventListener('scroll', onTopScroll);
+    bottom.addEventListener('scroll', onBottomScroll);
 
     return () => {
-      top.removeEventListener('scroll', handleTopScroll);
-      bottom.removeEventListener('scroll', handleBottomScroll);
+      top.removeEventListener('scroll', onTopScroll);
+      bottom.removeEventListener('scroll', onBottomScroll);
+      cancelAnimationFrame(rafId);
     };
-  }, [targetRef, handleTopScroll, handleBottomScroll]);
+  }, [targetRef]);
 
   // Don't render when the table fits without overflow.
   if (scrollWidth <= clientWidth) return null;
