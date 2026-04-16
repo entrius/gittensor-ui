@@ -23,7 +23,6 @@ export const MinerCard: React.FC<MinerCardProps> = ({
   linkState,
   variant = 'oss',
 }) => {
-  const muiTheme = useTheme();
   const isNumericId = (value?: string) => !value || /^\d+$/.test(value);
   const shouldFetch = !!miner.githubId && isNumericId(miner.author);
   const { data: githubData } = useMinerGithubData(miner.githubId, shouldFetch);
@@ -38,7 +37,24 @@ export const MinerCard: React.FC<MinerCardProps> = ({
   const avatarSrc = githubData?.avatarUrl || getGithubAvatarSrc(username);
 
   const credibilityPercent = (miner.credibility ?? 0) * 100;
-  const isEligible = miner.isEligible ?? false;
+  const issueCredPercent = (miner.issueCredibility ?? 0) * 100;
+  const isWatchlist = variant === 'watchlist';
+  const isEligible = isWatchlist
+    ? (miner.isEligible ?? false) ||
+      (miner.issueDiscoveryScore ?? 0) > 0 ||
+      (miner.totalSolvedIssues ?? 0) > 0
+    : (miner.isEligible ?? false);
+  const isDiscoveries = variant === 'discoveries';
+
+  const donutMerged = isDiscoveries
+    ? (miner.totalSolvedIssues ?? 0)
+    : (miner.totalMergedPrs ?? 0);
+  const donutOpen = isDiscoveries
+    ? (miner.totalOpenIssues ?? 0)
+    : (miner.totalOpenPrs ?? 0);
+  const donutClosed = isDiscoveries
+    ? (miner.totalClosedIssues ?? 0)
+    : (miner.totalClosedPrs ?? 0);
 
   return (
     <RowLink href={href} state={linkState} sx={{ height: '100%' }}>
@@ -236,96 +252,25 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             </Typography>
           </Box>
 
-          <Box
-            sx={{
-              position: 'relative',
-              width: 56,
-              height: 56,
-              flexShrink: 0,
-              opacity: isEligible ? 1 : INACTIVE_OPACITY,
-            }}
-          >
-            <ReactECharts
-              option={{
-                backgroundColor: 'transparent',
-                series: [
-                  {
-                    type: 'pie',
-                    radius: ['65%', '90%'],
-                    silent: true,
-                    label: { show: false },
-                    itemStyle: {
-                      borderRadius: 3,
-                      borderWidth: 0,
-                    },
-                    data: [
-                      {
-                        value: miner.totalMergedPrs ?? 0,
-                        itemStyle: {
-                          color: isEligible
-                            ? CHART_COLORS.merged
-                            : alpha(
-                                muiTheme.palette.text.secondary,
-                                (INACTIVE_OPACITY * 2) / 3,
-                              ),
-                        },
-                      },
-                      {
-                        value: miner.totalOpenPrs ?? 0,
-                        itemStyle: {
-                          color: isEligible
-                            ? CHART_COLORS.open
-                            : alpha(
-                                muiTheme.palette.text.secondary,
-                                INACTIVE_OPACITY,
-                              ),
-                        },
-                      },
-                      {
-                        value: miner.totalClosedPrs ?? 0,
-                        itemStyle: {
-                          color: isEligible
-                            ? CHART_COLORS.closed
-                            : alpha(
-                                muiTheme.palette.text.secondary,
-                                INACTIVE_OPACITY / 2,
-                              ),
-                        },
-                      },
-                    ],
-                  },
-                ],
-              }}
-              style={{ width: '100%', height: '100%' }}
-              opts={{ renderer: 'svg' }}
+          <Box sx={{ display: 'flex', gap: 1.5, flexShrink: 0 }}>
+            <CredDonut
+              merged={donutMerged}
+              open={donutOpen}
+              closed={donutClosed}
+              percent={isDiscoveries ? issueCredPercent : credibilityPercent}
+              isEligible={isWatchlist ? (miner.isEligible ?? false) : isEligible}
+              label={isWatchlist ? 'PRs' : undefined}
             />
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Typography
-                sx={(theme) => ({
-                  fontFamily: FONTS.mono,
-                  fontSize: '0.75rem',
-                  color: isEligible
-                    ? credibilityPercent >= 80
-                      ? STATUS_COLORS.merged
-                      : STATUS_COLORS.open
-                    : theme.palette.text.tertiary,
-                  fontWeight: 700,
-                })}
-              >
-                {credibilityPercent.toFixed(0)}%
-              </Typography>
-            </Box>
+            {isWatchlist && (
+              <CredDonut
+                merged={miner.totalSolvedIssues ?? 0}
+                open={miner.totalOpenIssues ?? 0}
+                closed={miner.totalClosedIssues ?? 0}
+                percent={issueCredPercent}
+                isEligible={miner.isIssueEligible ?? false}
+                label="Issues"
+              />
+            )}
           </Box>
         </Box>
 
@@ -357,7 +302,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
       sx={(theme) => ({
         display: 'flex',
         flexDirection: 'column',
-        gap: variant === 'discoveries' ? 0.75 : 0,
+        gap: variant === 'discoveries' || variant === 'watchlist' ? 0.75 : 0,
         backgroundColor: isEligible
           ? alpha(theme.palette.background.default, 0.2)
           : theme.palette.surface.subtle,
@@ -367,7 +312,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
       })}
     >
       <PrimaryStatsRow miner={miner} isEligible={isEligible} />
-      {variant === 'discoveries' && (
+      {(variant === 'discoveries' || variant === 'watchlist') && (
         <IssueStatsSection
           miner={miner}
           isEligible={isEligible}
@@ -393,7 +338,7 @@ const PrimaryStatsRow: React.FC<PrimaryStatsRowProps> = ({
     <Box
       sx={{
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr 1fr auto',
+        gridTemplateColumns: '1fr 1fr 1fr 4.5rem',
         gap: 1,
         alignItems: 'center',
       }}
@@ -525,7 +470,7 @@ const IssueStatsSection: React.FC<IssueStatsSectionProps> = ({
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr 1fr auto',
+          gridTemplateColumns: '1fr 1fr 1fr 4.5rem',
           gap: 1,
           alignItems: 'center',
         }}
@@ -613,6 +558,135 @@ const IssueStatsSection: React.FC<IssueStatsSectionProps> = ({
           </Typography>
         </Box>
       </Box>
+    </Box>
+  );
+};
+
+interface CredDonutProps {
+  merged: number;
+  open: number;
+  closed: number;
+  percent: number;
+  isEligible: boolean;
+  label?: string;
+}
+
+const DONUT_SIZE = 48;
+
+const CredDonut: React.FC<CredDonutProps> = ({
+  merged,
+  open,
+  closed,
+  percent,
+  isEligible,
+  label,
+}) => {
+  const muiTheme = useTheme();
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <Box
+        sx={{
+          position: 'relative',
+          width: DONUT_SIZE,
+          height: DONUT_SIZE,
+          flexShrink: 0,
+          opacity: isEligible ? 1 : INACTIVE_OPACITY,
+        }}
+      >
+        <ReactECharts
+          option={{
+            backgroundColor: 'transparent',
+            series: [
+              {
+                type: 'pie',
+                radius: ['65%', '90%'],
+                silent: true,
+                label: { show: false },
+                itemStyle: { borderRadius: 3, borderWidth: 0 },
+                data: [
+                  {
+                    value: merged,
+                    itemStyle: {
+                      color: isEligible
+                        ? CHART_COLORS.merged
+                        : alpha(
+                            muiTheme.palette.text.secondary,
+                            (INACTIVE_OPACITY * 2) / 3,
+                          ),
+                    },
+                  },
+                  {
+                    value: open,
+                    itemStyle: {
+                      color: isEligible
+                        ? CHART_COLORS.open
+                        : alpha(
+                            muiTheme.palette.text.secondary,
+                            INACTIVE_OPACITY,
+                          ),
+                    },
+                  },
+                  {
+                    value: closed,
+                    itemStyle: {
+                      color: isEligible
+                        ? CHART_COLORS.closed
+                        : alpha(
+                            muiTheme.palette.text.secondary,
+                            INACTIVE_OPACITY / 2,
+                          ),
+                    },
+                  },
+                ],
+              },
+            ],
+          }}
+          style={{ width: '100%', height: '100%' }}
+          opts={{ renderer: 'svg' }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Typography
+            sx={(theme) => ({
+              fontFamily: FONTS.mono,
+              fontSize: '0.65rem',
+              color: isEligible
+                ? percent >= 80
+                  ? STATUS_COLORS.merged
+                  : STATUS_COLORS.open
+                : theme.palette.text.tertiary,
+              fontWeight: 700,
+            })}
+          >
+            {percent.toFixed(0)}%
+          </Typography>
+        </Box>
+      </Box>
+      {label && (
+        <Typography
+          sx={(theme) => ({
+            fontFamily: FONTS.mono,
+            fontSize: '0.55rem',
+            color: theme.palette.status.open,
+            textTransform: 'uppercase',
+            mt: 0.25,
+            letterSpacing: '0.04em',
+          })}
+        >
+          {label}
+        </Typography>
+      )}
     </Box>
   );
 };
