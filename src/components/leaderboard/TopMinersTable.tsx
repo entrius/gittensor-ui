@@ -254,7 +254,11 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           </Box>
         }
         action={
-          <SearchInput value={searchQuery} onChange={handleSearchChange} />
+          <SearchInput
+            value={searchQuery}
+            onChange={handleSearchChange}
+            width="100%"
+          />
         }
         sx={{
           mb: 2,
