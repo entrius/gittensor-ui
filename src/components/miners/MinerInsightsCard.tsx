@@ -349,7 +349,6 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
         <Typography
           sx={{
             color: 'text.primary',
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '1.1rem',
             fontWeight: 600,
             mb: 0.8,
@@ -391,7 +390,6 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
                 <Typography
                   sx={{
                     color: style.color,
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.83rem',
                     fontWeight: 600,
                   }}
@@ -414,7 +412,6 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
                 label={insight.type}
                 sx={{
                   textTransform: 'uppercase',
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.62rem',
                   color: style.color,
                   backgroundColor: alpha(style.color, 0.12),
@@ -432,7 +429,6 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
           mt: 2,
           textAlign: 'right',
           fontSize: '0.72rem',
-          fontFamily: '"JetBrains Mono", monospace',
           color: (t) => alpha(t.palette.text.primary, 0.35),
         }}
       >

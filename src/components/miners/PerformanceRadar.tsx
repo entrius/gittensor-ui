@@ -40,7 +40,6 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
         splitNumber: 5,
         axisName: {
           color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
-          fontFamily: '"JetBrains Mono", monospace',
           fontSize: 9,
           lineHeight: 12,
         },

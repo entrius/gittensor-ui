@@ -355,55 +355,25 @@ const theme = createTheme({
     },
   },
   typography: {
-    fontFamily:
-      '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    h1: {
-      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
-    },
-    h2: {
-      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
-    },
-    h3: {
-      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
-    },
-    h4: {
-      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
-    },
-    h5: {
-      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
-    },
-    h6: {
-      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
-    },
-    body1: {
-      fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-    },
-    body2: {
-      fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-    },
-    button: {
-      fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-    },
+    // JetBrains Mono is the app-wide default — every component inherits it
+    // without needing an explicit fontFamily prop.
+    fontFamily: '"JetBrains Mono", monospace',
     dataValue: {
-      fontFamily: '"JetBrains Mono", "Courier New", monospace',
       fontWeight: 500,
       letterSpacing: '0.02em',
     },
     dataLabel: {
-      fontFamily: '"JetBrains Mono", "Courier New", monospace',
       fontSize: '0.75rem',
       fontWeight: 400,
       letterSpacing: '0.05em',
       textTransform: 'uppercase',
     },
-    // Base monospace style
+    // Base monospace weight
     mono: {
-      fontFamily: '"JetBrains Mono", monospace',
       fontWeight: 500,
     },
-    // Small monospace for labels
+    // Small uppercase label style
     monoSmall: {
-      fontFamily: '"JetBrains Mono", monospace',
       fontSize: '0.7rem',
       fontWeight: 600,
       letterSpacing: '0.5px',
@@ -411,14 +381,12 @@ const theme = createTheme({
     },
     // Section titles
     sectionTitle: {
-      fontFamily: '"JetBrains Mono", monospace',
       fontSize: '1rem',
       fontWeight: 600,
       color: '#fff',
     },
     // Table headers
     tableHeader: {
-      fontFamily: '"JetBrains Mono", monospace',
       fontSize: '0.7rem',
       fontWeight: 600,
       letterSpacing: '0.5px',
@@ -427,14 +395,12 @@ const theme = createTheme({
     },
     // Large stat values
     statValue: {
-      fontFamily: '"JetBrains Mono", monospace',
       fontSize: '1.1rem',
       fontWeight: 600,
       color: '#fff',
     },
     // Stat labels
     statLabel: {
-      fontFamily: '"JetBrains Mono", monospace',
       fontSize: '0.7rem',
       fontWeight: 500,
       textTransform: 'uppercase',
@@ -442,13 +408,11 @@ const theme = createTheme({
     },
     // Tooltip heading — multiplier name + value
     tooltipLabel: {
-      fontFamily: '"JetBrains Mono", monospace',
       fontSize: '0.72rem',
       fontWeight: 600,
     },
     // Tooltip supporting description
     tooltipDesc: {
-      fontFamily: '"JetBrains Mono", monospace',
       fontSize: '0.72rem',
       fontWeight: 400,
       opacity: 0.7,
@@ -459,8 +423,7 @@ const theme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          fontFamily:
-            '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: '"JetBrains Mono", monospace',
         },
       },
     },

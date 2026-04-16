@@ -55,7 +55,6 @@ const LegendItem: React.FC<{ label: string; value: number; color: string }> = ({
         sx={{
           color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
           fontSize: '0.65rem',
-          fontFamily: '"JetBrains Mono", monospace',
         }}
       >
         {label}
@@ -64,7 +63,6 @@ const LegendItem: React.FC<{ label: string; value: number; color: string }> = ({
         sx={{
           color,
           fontSize: '0.75rem',
-          fontFamily: '"JetBrains Mono", monospace',
           fontWeight: 700,
         }}
       >
@@ -94,12 +92,10 @@ const IssueCredibilityChart: React.FC<{
           color: theme.palette.text.primary,
           fontSize: 28,
           fontWeight: 'bold',
-          fontFamily: '"JetBrains Mono", monospace',
         },
         subtextStyle: {
           color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
           fontSize: 11,
-          fontFamily: '"JetBrains Mono", monospace',
           fontWeight: 500,
         },
       },
@@ -111,7 +107,6 @@ const IssueCredibilityChart: React.FC<{
         borderWidth: 1,
         textStyle: {
           color: theme.palette.text.primary,
-          fontFamily: '"JetBrains Mono", monospace',
         },
       },
       series: [
@@ -220,7 +215,6 @@ const IssuePerformanceRadar: React.FC<{
         splitNumber: 5,
         axisName: {
           color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-          fontFamily: '"JetBrains Mono", monospace',
           fontSize: 9,
           lineHeight: 12,
         },

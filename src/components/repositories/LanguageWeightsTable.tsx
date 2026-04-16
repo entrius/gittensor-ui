@@ -133,13 +133,11 @@ const LanguageWeightsTable: React.FC = () => {
         top: 20,
         textStyle: {
           color: '#ffffff',
-          fontFamily: 'JetBrains Mono',
           fontSize: 18,
           fontWeight: 600,
         },
         subtextStyle: {
           color: 'rgba(255, 255, 255, 0.5)',
-          fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
       },
@@ -163,7 +161,6 @@ const LanguageWeightsTable: React.FC = () => {
         data: xAxisData,
         axisLabel: {
           color: textColor,
-          fontFamily: 'JetBrains Mono',
           rotate: 45,
           interval: 0,
         },
@@ -255,7 +252,6 @@ const LanguageWeightsTable: React.FC = () => {
                 variant="body2"
                 sx={{
                   color: 'rgba(255, 255, 255, 0.7)',
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.8rem',
                 }}
               >
@@ -269,7 +265,6 @@ const LanguageWeightsTable: React.FC = () => {
                 }}
                 sx={{
                   color: '#ffffff',
-                  fontFamily: '"JetBrains Mono", monospace',
                   backgroundColor: 'rgba(0, 0, 0, 0.4)',
                   fontSize: '0.8rem',
                   height: '36px',
@@ -310,7 +305,6 @@ const LanguageWeightsTable: React.FC = () => {
               width: '200px',
               '& .MuiOutlinedInput-root': {
                 color: '#ffffff',
-                fontFamily: '"JetBrains Mono", monospace',
                 backgroundColor: 'rgba(0, 0, 0, 0.4)',
                 fontSize: '0.8rem',
                 height: '36px',
@@ -502,9 +496,7 @@ const LanguageWeightsTable: React.FC = () => {
         showFirstButton
         showLastButton
         sx={{
-          '.MuiTablePagination-displayedRows': {
-            fontFamily: '"JetBrains Mono", monospace',
-          },
+          '.MuiTablePagination-displayedRows': {},
         }}
       />
 
