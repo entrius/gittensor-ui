@@ -127,6 +127,17 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
                 title={`${activity.count} contribution${activity.count !== 1 ? 's' : ''} on ${new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
                 arrow
                 placement="top"
+                enterDelay={0}
+                enterNextDelay={0}
+                leaveDelay={0}
+                disableInteractive
+                slotProps={{
+                  popper: {
+                    sx: {
+                      zIndex: theme.zIndex.tooltip,
+                    },
+                  },
+                }}
               >
                 {block}
               </Tooltip>
