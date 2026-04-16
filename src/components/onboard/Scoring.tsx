@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { Box, Typography, Button, Grid, Tabs, Tab } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  Grid,
+  Tabs,
+  Tab,
+  alpha,
+  useTheme,
+} from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 type ScoringCategory = 'oss' | 'discovery';
@@ -56,6 +65,7 @@ const CATEGORIES: {
 ];
 
 export const Scoring: React.FC = () => {
+  const theme = useTheme();
   const [category, setCategory] = useState<ScoringCategory>('oss');
   const activeCategory =
     CATEGORIES.find((c) => c.value === category) ?? CATEGORIES[0];
@@ -68,8 +78,7 @@ export const Scoring: React.FC = () => {
         fontWeight="bold"
         sx={{
           mb: 4,
-          fontFamily: '"JetBrains Mono", monospace',
-          color: '#fff',
+          color: 'text.primary',
           textAlign: 'center',
         }}
       >
@@ -79,7 +88,7 @@ export const Scoring: React.FC = () => {
       <Box
         sx={{
           mb: 4,
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          borderBottom: `1px solid ${theme.palette.border.light}`,
           display: 'flex',
           justifyContent: 'center',
         }}
@@ -90,12 +99,13 @@ export const Scoring: React.FC = () => {
           sx={{
             '& .MuiTab-root': {
               textTransform: 'none',
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
-              color: 'rgba(255, 255, 255, 0.55)',
-              '&.Mui-selected': { color: '#fff' },
+              color: alpha(theme.palette.common.white, 0.55),
+              '&.Mui-selected': { color: 'text.primary' },
             },
-            '& .MuiTabs-indicator': { backgroundColor: '#fff' },
+            '& .MuiTabs-indicator': {
+              backgroundColor: theme.palette.common.white,
+            },
           }}
         >
           {CATEGORIES.map((c) => (
@@ -113,7 +123,7 @@ export const Scoring: React.FC = () => {
                 p: 3,
                 borderRadius: 4,
                 cursor: 'default',
-                background: 'rgba(255, 255, 255, 0.02)',
+                background: alpha(theme.palette.common.white, 0.02),
                 border: '1px solid',
                 borderColor: 'border.subtle',
               }}
@@ -122,7 +132,7 @@ export const Scoring: React.FC = () => {
                 variant="h6"
                 sx={{
                   fontWeight: 'bold',
-                  color: '#fff',
+                  color: 'text.primary',
                   mb: 2,
                   fontSize: '1.1rem',
                 }}
@@ -148,8 +158,7 @@ export const Scoring: React.FC = () => {
           textAlign: 'center',
           p: 6,
           borderRadius: 4,
-          background:
-            'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(255,255,255,0.02) 100%)',
+          background: `linear-gradient(180deg, transparent 0%, ${alpha(theme.palette.common.white, 0.02)} 100%)`,
           border: '1px solid',
           borderColor: 'border.subtle',
         }}
@@ -157,7 +166,7 @@ export const Scoring: React.FC = () => {
         <Typography
           variant="h5"
           fontWeight="bold"
-          sx={{ mb: 2, color: '#fff' }}
+          sx={{ mb: 2, color: 'text.primary' }}
         >
           Dive Deeper
         </Typography>
@@ -183,7 +192,7 @@ export const Scoring: React.FC = () => {
             fontSize: '1rem',
             fontWeight: 'bold',
             borderRadius: '50px',
-            boxShadow: '0 0 20px rgba(0, 0, 0, 0.2)',
+            boxShadow: `0 0 20px ${alpha(theme.palette.common.black, 0.2)}`,
             textTransform: 'none',
           }}
         >

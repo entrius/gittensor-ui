@@ -322,7 +322,6 @@ const PRComments: React.FC<PRCommentsProps> = ({
                   fontSize: '85%',
                   backgroundColor: 'rgba(110, 118, 129, 0.4)',
                   borderRadius: '6px',
-                  fontFamily: '"JetBrains Mono", monospace',
                 },
                 '& pre': {
                   mt: 2,

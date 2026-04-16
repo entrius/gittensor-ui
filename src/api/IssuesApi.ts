@@ -52,18 +52,6 @@ export const useIssuesStats = () =>
   useApiQuery<IssuesStats>('useIssuesStats', '/issues/stats');
 
 /**
- * Fetch a single issue by ID.
- */
-export const useIssue = (id: number) =>
-  useApiQuery<IssueBounty>(
-    'useIssue',
-    `/issues/${id}`,
-    undefined,
-    undefined,
-    !!id,
-  );
-
-/**
  * Fetch issue details with GitHub data.
  */
 export const useIssueDetails = (id: number) =>

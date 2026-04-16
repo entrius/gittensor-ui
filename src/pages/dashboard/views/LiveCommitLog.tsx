@@ -12,7 +12,7 @@ import {
   Chip,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useInfiniteCommitLog, usePullRequestDetails } from '../../../api';
+import { useInfiniteCommitLog } from '../../../api';
 import theme, { REPO_OWNER_AVATAR_BACKGROUNDS } from '../../../theme';
 
 const MONTH_SHORT = [
@@ -121,24 +121,15 @@ const CommitLogItem: React.FC<{
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
-  const { data: details } = usePullRequestDetails(
-    entry.repository,
-    entry.pullRequestNumber,
-  );
-
-  const isMerged = !!(details?.mergedAt || entry.mergedAt);
-  const isClosed = details?.prState === 'CLOSED' || entry.prState === 'CLOSED';
+  const isMerged = !!entry.mergedAt;
+  const isClosed = entry.prState === 'CLOSED' && !entry.mergedAt;
 
   let status = { label: 'OPEN', color: theme.palette.status.neutral };
   if (isMerged)
     status = { label: 'MERGED', color: theme.palette.status.merged };
   else if (isClosed)
     status = { label: 'CLOSED', color: theme.palette.status.closed };
-  const timestampRaw =
-    details?.mergedAt ||
-    details?.prCreatedAt ||
-    entry.mergedAt ||
-    entry.prCreatedAt;
+  const timestampRaw = entry.mergedAt || entry.prCreatedAt;
   const timestamp = timestampRaw
     ? formatUtcTimestamp(timestampRaw)
     : 'Loading...';
@@ -215,7 +206,6 @@ const CommitLogItem: React.FC<{
               variant="caption"
               sx={{
                 color: 'text.secondary',
-                fontFamily: '"JetBrains Mono", monospace',
               }}
             >
               {entry.repository}
@@ -225,7 +215,6 @@ const CommitLogItem: React.FC<{
             variant="caption"
             sx={{
               color: 'text.secondary',
-              fontFamily: '"JetBrains Mono", monospace',
             }}
           >
             #{entry.pullRequestNumber}
@@ -304,7 +293,6 @@ const CommitLogItem: React.FC<{
               sx={{
                 color: getScoreColor(entry.score),
                 fontWeight: 600,
-                fontFamily: '"JetBrains Mono", monospace',
               }}
             >
               SCORE: {parseFloat(entry.score).toFixed(2)}
@@ -445,7 +433,6 @@ const LiveCommitLog: React.FC = () => {
               variant="h6"
               sx={{
                 fontSize: isMobile ? '0.9rem' : isTablet ? '0.95rem' : '1rem',
-                fontFamily: '"JetBrains Mono", monospace',
                 fontWeight: 500,
               }}
             >
@@ -508,7 +495,6 @@ const LiveCommitLog: React.FC = () => {
                       ? t.palette.text.primary
                       : alpha(option.color, 0.82),
                     cursor: 'pointer',
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: isMobile ? '0.68rem' : '0.72rem',
                     fontWeight: selected ? 600 : 500,
                     lineHeight: 1,

@@ -6,6 +6,8 @@ import {
   Tooltip,
   Link,
   Skeleton,
+  alpha,
+  useTheme,
 } from '@mui/material';
 import { useRepositoryMaintainers } from '../../api';
 import { STATUS_COLORS } from '../../theme';
@@ -17,6 +19,7 @@ interface RepositoryMaintainersProps {
 const RepositoryMaintainers: React.FC<RepositoryMaintainersProps> = ({
   repositoryFullName,
 }) => {
+  const theme = useTheme();
   const { data: maintainers, isLoading } =
     useRepositoryMaintainers(repositoryFullName);
 
@@ -27,7 +30,6 @@ const RepositoryMaintainers: React.FC<RepositoryMaintainersProps> = ({
           variant="subtitle2"
           sx={{
             color: 'text.secondary',
-            fontFamily: '"JetBrains Mono", monospace',
             mb: 2,
           }}
         >
@@ -52,7 +54,6 @@ const RepositoryMaintainers: React.FC<RepositoryMaintainersProps> = ({
         variant="subtitle2"
         sx={{
           color: 'text.secondary',
-          fontFamily: '"JetBrains Mono", monospace',
           mb: 2,
         }}
       >
@@ -85,7 +86,7 @@ const RepositoryMaintainers: React.FC<RepositoryMaintainersProps> = ({
                   '&:hover': {
                     transform: 'scale(1.1)',
                     borderColor: 'primary.main',
-                    boxShadow: '0 0 8px rgba(247, 129, 102, 0.4)',
+                    boxShadow: `0 0 8px ${alpha(theme.palette.primary.main, 0.4)}`,
                   },
                 }}
               />

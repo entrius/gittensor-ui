@@ -14,7 +14,7 @@ const formatPrScore = (pr: CommitLog) => {
   if (pr.prState === 'CLOSED' && !pr.mergedAt) return '-';
   if (!pr.score) return '-';
 
-  return Number(pr.score).toFixed(4);
+  return parseFloat(pr.score).toFixed(4);
 };
 
 const formatPrDateOrStatus = (pr: CommitLog) => {
@@ -44,7 +44,6 @@ const prColumns: SearchResultsTableColumn<CommitLog>[] = [
         <SearchTruncatedText
           tooltip={prTitle}
           sx={(theme) => ({
-            fontFamily: theme.typography.mono.fontFamily,
             color: theme.palette.text.primary,
           })}
           text={prTitle}
@@ -93,7 +92,6 @@ const prColumns: SearchResultsTableColumn<CommitLog>[] = [
           component="span"
           sx={(theme) => ({
             color: theme.palette.diff.additions,
-            fontFamily: theme.typography.mono.fontFamily,
           })}
         >
           +{pr.additions || 0}
@@ -102,7 +100,6 @@ const prColumns: SearchResultsTableColumn<CommitLog>[] = [
           component="span"
           sx={(theme) => ({
             color: theme.palette.diff.deletions,
-            fontFamily: theme.typography.mono.fontFamily,
           })}
         >
           -{pr.deletions || 0}

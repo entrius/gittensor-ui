@@ -41,7 +41,6 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
         <Typography
           sx={{
             color: 'text.primary',
-            fontFamily: '"JetBrains Mono", monospace',
             fontWeight: 700,
             fontSize: '2.5rem',
             lineHeight: 1,
@@ -53,7 +52,6 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
           variant="body2"
           sx={{
             color: alpha(theme.palette.common.white, TEXT_OPACITY.faint),
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.85rem',
             mt: 0.5,
           }}
@@ -77,7 +75,6 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
             <Typography
               sx={{
                 color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.85rem',
                 textAlign: 'center',
               }}
@@ -88,7 +85,6 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
               <Typography
                 sx={{
                   color: alpha(theme.palette.common.white, TEXT_OPACITY.ghost),
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.75rem',
                   textAlign: 'center',
                   mt: 0.5,
@@ -131,6 +127,17 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
                 title={`${activity.count} contribution${activity.count !== 1 ? 's' : ''} on ${new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
                 arrow
                 placement="top"
+                enterDelay={0}
+                enterNextDelay={0}
+                leaveDelay={0}
+                disableInteractive
+                slotProps={{
+                  popper: {
+                    sx: {
+                      zIndex: theme.zIndex.tooltip,
+                    },
+                  },
+                }}
               >
                 {block}
               </Tooltip>
