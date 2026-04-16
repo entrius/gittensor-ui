@@ -11,7 +11,6 @@ const EmptyStateMessage: React.FC<EmptyStateMessageProps> = ({ message }) => {
       <Typography
         sx={{
           color: (t) => alpha(t.palette.text.primary, 0.5),
-          fontFamily: '"JetBrains Mono", monospace',
           fontSize: '0.9rem',
         }}
       >

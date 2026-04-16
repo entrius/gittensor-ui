@@ -26,6 +26,7 @@ const RepositoryDetailsPage = React.lazy(
 const PRDetailsPage = React.lazy(() => import('./pages/PRDetailsPage'));
 const DiscoveriesPage = React.lazy(() => import('./pages/DiscoveriesPage'));
 const OnboardPage = React.lazy(() => import('./pages/OnboardPage'));
+const WatchlistPage = React.lazy(() => import('./pages/WatchlistPage'));
 
 // 404 page
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
@@ -63,6 +64,12 @@ const routesArray: AppRoute[] = [
     showGlobalSearch: true,
   },
   {
+    name: 'watchlist',
+    path: '/watchlist',
+    element: <WatchlistPage />,
+    showGlobalSearch: true,
+  },
+  {
     name: 'repositories',
     path: '/repositories',
     element: <RepositoriesPage />,
@@ -97,14 +104,6 @@ const routesArray: AppRoute[] = [
     element: <NotFoundPage />,
   },
 ];
-
-export const routePaths = routesArray.reduce<Record<string, AppRoute>>(
-  (acc, x) => {
-    acc[x.path] = x;
-    return acc;
-  },
-  {},
-);
 
 // Matches a pathname against app route definitions so layout code can
 // read route-level UI metadata such as showGlobalSearch.
