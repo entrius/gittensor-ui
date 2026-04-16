@@ -44,7 +44,7 @@ const buildStatusChartOption = (
   segments: DashboardOverviewSection['chartSegments'],
 ): Record<string, unknown> => {
   const totalValue = segments.reduce((sum, segment) => sum + segment.value, 0);
-  const monoFontFamily = theme.typography.mono.fontFamily;
+  const monoFontFamily = theme.typography.fontFamily;
 
   return {
     backgroundColor: 'transparent',
@@ -130,7 +130,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   kpis,
 }) => {
   const theme = useTheme();
-  const monoFontFamily = theme.typography.mono.fontFamily;
+  const monoFontFamily = theme.typography.fontFamily;
   const rangeDescription =
     range === 'all'
       ? 'All-time totals'

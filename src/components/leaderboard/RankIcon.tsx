@@ -34,7 +34,6 @@ export const RankIcon: React.FC<{ rank: number }> = ({ rank }) => {
         component="span"
         sx={{
           color: color ?? 'text.secondary',
-          fontFamily: '"JetBrains Mono", monospace',
           fontSize: '0.65rem',
           fontWeight: 600,
           lineHeight: 1,

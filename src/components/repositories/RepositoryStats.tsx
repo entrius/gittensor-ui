@@ -124,7 +124,6 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
             variant="body2"
             sx={{
               color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '13px',
             }}
           >
@@ -152,7 +151,6 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
             variant="body2"
             sx={{
               color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '13px',
             }}
           >
@@ -180,7 +178,6 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
             variant="body2"
             sx={{
               color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '13px',
             }}
           >
@@ -206,7 +203,6 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
             variant="body2"
             sx={{
               color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '13px',
             }}
           >
@@ -237,7 +233,6 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
                 variant="body2"
                 sx={{
                   color: RANK_COLORS.first,
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '13px',
                   fontWeight: 600,
                 }}
@@ -265,7 +260,6 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
                   variant="body2"
                   sx={{
                     color: 'text.primary',
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '13px',
                   }}
                 >
@@ -293,7 +287,6 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
                   variant="body2"
                   sx={{
                     color: STATUS_COLORS.merged,
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '13px',
                     fontWeight: 500,
                   }}
@@ -329,7 +322,6 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
                     label={branch}
                     size="small"
                     sx={{
-                      fontFamily: '"JetBrains Mono", monospace',
                       fontSize: '12px',
                       height: '24px',
                       bgcolor: 'surface.light',

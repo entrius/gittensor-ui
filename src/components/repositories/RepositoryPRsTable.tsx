@@ -154,7 +154,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
             variant="h6"
             sx={{
               color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
             }}
           >
             Pull Requests
@@ -223,7 +222,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           variant="h6"
           sx={{
             color: 'text.primary',
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '1.1rem',
             fontWeight: 500,
           }}
@@ -268,7 +266,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           <Typography
             sx={{
               color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
             }}
           >
@@ -446,7 +443,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                   <TableCell align="right" sx={bodyCellStyle}>
                     <Typography
                       sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.75rem',
                         fontWeight: 600,
                       }}

@@ -78,7 +78,6 @@ export const Scoring: React.FC = () => {
         fontWeight="bold"
         sx={{
           mb: 4,
-          fontFamily: '"JetBrains Mono", monospace',
           color: 'text.primary',
           textAlign: 'center',
         }}
@@ -100,7 +99,6 @@ export const Scoring: React.FC = () => {
           sx={{
             '& .MuiTab-root': {
               textTransform: 'none',
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
               color: alpha(theme.palette.common.white, 0.55),
               '&.Mui-selected': { color: 'text.primary' },

@@ -39,6 +39,13 @@ type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 20;
 
+const MINER_STATUS_FILTERS: readonly MinerStatusFilter[] = [
+  'all',
+  'open',
+  'merged',
+  'closed',
+];
+
 // Direction applied when a user first clicks a column header — string
 // columns feel natural ascending, numeric/date columns descending.
 const DEFAULT_SORT_DIR: Record<PrSortField, SortDir> = {
@@ -71,6 +78,11 @@ const getScoreTooltip = (pr: CommitLog): string | null => {
   return parts.join(' · ');
 };
 
+const isMinerStatusFilter = (
+  value: string | null,
+): value is MinerStatusFilter =>
+  value !== null && (MINER_STATUS_FILTERS as readonly string[]).includes(value);
+
 interface MinerPRsTableProps {
   githubId: string;
 }
@@ -81,14 +93,16 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<MinerStatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<PrSortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const prStatusParam = searchParams.get('prStatus');
+  const statusFilter: MinerStatusFilter = isMinerStatusFilter(prStatusParam)
+    ? prStatusParam
+    : 'all';
 
   useEffect(() => {
     setSelectedAuthor(null);
-    setStatusFilter('all');
     setSearchQuery('');
     setSortField('date');
     setSortDir('desc');
@@ -109,6 +123,22 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       );
     },
     [page, setSearchParams],
+  );
+
+  const setStatusFilter = useCallback(
+    (next: MinerStatusFilter) => {
+      setSearchParams(
+        (prev) => {
+          const p = new URLSearchParams(prev);
+          if (next === 'all') p.delete('prStatus');
+          else p.set('prStatus', next);
+          p.delete('prPage');
+          return p;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
   );
 
   const handleSort = useCallback(
@@ -227,7 +257,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               variant="h6"
               sx={{
                 color: 'text.primary',
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: { xs: '0.95rem', sm: '1.1rem' },
                 fontWeight: 500,
               }}
@@ -237,7 +266,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             <Typography
               sx={{
                 color: (t) => alpha(t.palette.text.primary, 0.5),
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.75rem',
               }}
             >
@@ -278,7 +306,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 selected={statusFilter === 'all'}
                 onClick={() => {
                   setStatusFilter('all');
-                  setPage(0);
                 }}
               />
               <ExplorerFilterButton
@@ -288,7 +315,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 selected={statusFilter === 'open'}
                 onClick={() => {
                   setStatusFilter('open');
-                  setPage(0);
                 }}
               />
               <ExplorerFilterButton
@@ -298,7 +324,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 selected={statusFilter === 'merged'}
                 onClick={() => {
                   setStatusFilter('merged');
-                  setPage(0);
                 }}
               />
               <ExplorerFilterButton
@@ -308,7 +333,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 selected={statusFilter === 'closed'}
                 onClick={() => {
                   setStatusFilter('closed');
-                  setPage(0);
                 }}
               />
             </Box>
@@ -341,7 +365,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             maxWidth: 400,
             minWidth: 350,
             '& .MuiOutlinedInput-root': {
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.8rem',
               color: 'text.primary',
               backgroundColor: 'surface.subtle',
@@ -360,7 +383,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           <Typography
             sx={{
               color: (t) => alpha(t.palette.text.primary, 0.5),
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
             }}
           >
@@ -372,7 +394,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           <Typography
             sx={{
               color: (t) => alpha(t.palette.text.primary, 0.5),
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
             }}
           >
@@ -574,7 +595,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           sx={{
                             color: theme.palette.diff.additions,
                             mr: 1,
-                            fontFamily: '"JetBrains Mono", monospace',
                           }}
                         >
                           +{pr.additions}
@@ -583,7 +603,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           component="span"
                           sx={{
                             color: theme.palette.diff.deletions,
-                            fontFamily: '"JetBrains Mono", monospace',
                           }}
                         >
                           -{pr.deletions}
@@ -594,7 +613,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           {pr.prState === 'CLOSED' && !pr.mergedAt ? (
                             <Typography
                               sx={{
-                                fontFamily: '"JetBrains Mono", monospace',
                                 fontSize: { xs: '0.7rem', sm: '0.75rem' },
                                 fontWeight: 600,
                                 color: (t) =>
@@ -606,7 +624,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           ) : !pr.mergedAt && pr.collateralScore ? (
                             <Typography
                               sx={{
-                                fontFamily: '"JetBrains Mono", monospace',
                                 fontSize: { xs: '0.7rem', sm: '0.75rem' },
                                 fontWeight: 600,
                                 color: theme.palette.status.warningOrange,
@@ -623,7 +640,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                             >
                               <Typography
                                 sx={{
-                                  fontFamily: '"JetBrains Mono", monospace',
                                   fontSize: { xs: '0.7rem', sm: '0.75rem' },
                                   fontWeight: 600,
                                   cursor: 'pointer',
@@ -635,7 +651,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           ) : (
                             <Typography
                               sx={{
-                                fontFamily: '"JetBrains Mono", monospace',
                                 fontSize: { xs: '0.7rem', sm: '0.75rem' },
                                 fontWeight: 600,
                               }}
@@ -648,7 +663,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                             pr.prState !== 'CLOSED' && (
                               <Typography
                                 sx={{
-                                  fontFamily: '"JetBrains Mono", monospace',
                                   fontSize: '0.6rem',
                                   color: (t) =>
                                     alpha(t.palette.text.primary, 0.5),
