@@ -137,7 +137,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
             direction="row"
             spacing={0.5}
             alignItems="center"
-            flexWrap="wrap"
             justifyContent="center"
           >
             <Typography
@@ -176,16 +175,14 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
             >
               FAQ
             </Typography>
-            <Divider
-              orientation="vertical"
-              flexItem
-              sx={{
-                borderColor: 'border.medium',
-                mx: 0.5,
-                height: '12px',
-                alignSelf: 'center',
-              }}
-            />
+          </Stack>
+          <Stack
+            direction="row"
+            spacing={0.5}
+            alignItems="center"
+            flexWrap="wrap"
+            justifyContent="center"
+          >
             <Typography
               variant="caption"
               component="a"
