@@ -338,8 +338,6 @@ export const AboutContent: React.FC = () => {
   );
 };
 
-const AboutPage: React.FC = () => (
-  <Navigate to="/onboard?tab=about" replace />
-);
+const AboutPage: React.FC = () => <Navigate to="/onboard?tab=about" replace />;
 
 export default AboutPage;

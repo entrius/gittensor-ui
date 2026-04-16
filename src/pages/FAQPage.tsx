@@ -147,8 +147,6 @@ export const FAQContent: React.FC = () => (
   </Box>
 );
 
-const FAQPage: React.FC = () => (
-  <Navigate to="/onboard?tab=faq" replace />
-);
+const FAQPage: React.FC = () => <Navigate to="/onboard?tab=faq" replace />;
 
 export default FAQPage;
