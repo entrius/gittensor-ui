@@ -66,7 +66,7 @@ const IssueStats: React.FC<IssueStatsProps> = ({
       </Grid>
       <Grid item xs={6} sm={3}>
         <KpiCard
-          title="Active Issues"
+          title="Available Issues"
           value={stats?.activeIssues ?? 0}
           subtitle="Available for solving"
         />
