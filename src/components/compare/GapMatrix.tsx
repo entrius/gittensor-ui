@@ -15,13 +15,6 @@ import {
 import { STATUS_COLORS } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 
-const MINER_COLORS = [
-  STATUS_COLORS.merged,
-  STATUS_COLORS.info,
-  STATUS_COLORS.warning,
-  STATUS_COLORS.error,
-];
-
 interface GapMinerData {
   githubId: string;
   username: string;

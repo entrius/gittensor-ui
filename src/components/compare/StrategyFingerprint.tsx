@@ -50,9 +50,7 @@ export const StrategyFingerprint: React.FC<StrategyFingerprintProps> = ({
     return fingerprints.map((fp, i) => ({
       ...fp,
       color: MINER_COLORS[i % MINER_COLORS.length],
-      normalized: AXES.map(
-        (axis, j) => (fp[axis.key] / maxes[j]) * 100,
-      ),
+      normalized: AXES.map((axis, j) => (fp[axis.key] / maxes[j]) * 100),
       raw: AXES.map((axis) => fp[axis.key]),
     }));
   }, [fingerprints]);
@@ -126,7 +124,8 @@ export const StrategyFingerprint: React.FC<StrategyFingerprintProps> = ({
       ],
       tooltip: {
         trigger: 'item',
-        backgroundColor: theme.palette.surface?.tooltip ?? 'rgba(10,10,12,0.95)',
+        backgroundColor:
+          theme.palette.surface?.tooltip ?? 'rgba(10,10,12,0.95)',
         borderColor: alpha(theme.palette.common.white, 0.15),
         borderWidth: 1,
         textStyle: {

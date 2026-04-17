@@ -1,14 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Box,
-  Grid,
-  Typography,
-  Button,
-  Tabs,
-  Tab,
-  alpha,
-  useMediaQuery,
-} from '@mui/material';
+import { Box, Grid, Typography, Button, Tabs, Tab, alpha } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
@@ -22,7 +13,7 @@ import { FrontierFinder } from '../components/compare/FrontierFinder';
 import { StrategyFingerprint } from '../components/compare/StrategyFingerprint';
 import { TerritoryGrid } from '../components/compare/TerritoryGrid';
 import { useWatchlistIntel } from '../hooks/useWatchlistIntel';
-import theme, { scrollbarSx } from '../theme';
+import { scrollbarSx } from '../theme';
 
 type CompareTab = 'overview' | 'territory' | 'bets' | 'strategy' | 'frontier';
 
@@ -45,8 +36,6 @@ const ComparePage: React.FC = () => {
 
   const allMinerStatsQuery = useAllMiners();
   const allMinersStats = allMinerStatsQuery?.data;
-
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Normalize all miners
   const allNormalized = useMemo(() => {
@@ -79,8 +68,12 @@ const ComparePage: React.FC = () => {
   }, [allNormalized, pinned]);
 
   // Territory Intel
-  const { territoryMap, liveBets, fingerprints, isLoading: isIntelLoading } =
-    useWatchlistIntel(pinned);
+  const {
+    territoryMap,
+    liveBets,
+    fingerprints,
+    isLoading: isIntelLoading,
+  } = useWatchlistIntel(pinned);
 
   // Fetch real repo weights and enrich territory map
   const { data: repoWeights } = useReposAndWeights();
@@ -258,13 +251,7 @@ const ComparePage: React.FC = () => {
                       item
                       xs={12}
                       sm={6}
-                      md={
-                        pinnedCount <= 2
-                          ? 6
-                          : pinnedCount === 3
-                            ? 4
-                            : 3
-                      }
+                      md={pinnedCount <= 2 ? 6 : pinnedCount === 3 ? 4 : 3}
                     >
                       <PulseCard
                         miner={miner}
@@ -289,10 +276,7 @@ const ComparePage: React.FC = () => {
 
             {/* Live Bets Tab */}
             {activeTab === 'bets' && (
-              <LiveBetsFeed
-                bets={liveBets}
-                isLoading={isIntelLoading}
-              />
+              <LiveBetsFeed bets={liveBets} isLoading={isIntelLoading} />
             )}
 
             {/* Strategy Tab */}

@@ -6,7 +6,12 @@ import { useMinerPRs, type CommitLog } from '../api';
 export interface RepoTerritory {
   fullName: string;
   weight: number;
-  presence: { githubId: string; author: string; prCount: number; totalScore: number }[];
+  presence: {
+    githubId: string;
+    author: string;
+    prCount: number;
+    totalScore: number;
+  }[];
   isContested: boolean;
   isFrontier: boolean;
 }
@@ -141,9 +146,7 @@ const buildFingerprint = (
   author: string,
   prs: CommitLog[],
 ): MinerFingerprint => {
-  const merged = prs.filter(
-    (p) => p.prState === 'MERGED' || !!p.mergedAt,
-  );
+  const merged = prs.filter((p) => p.prState === 'MERGED' || !!p.mergedAt);
 
   if (merged.length === 0) {
     return {
@@ -223,16 +226,12 @@ export const useWatchlistIntel = (
     miner3.data,
   ]);
 
-  const territoryMap = useMemo(
-    () => buildTerritoryMap(minerData),
-    [minerData],
-  );
+  const territoryMap = useMemo(() => buildTerritoryMap(minerData), [minerData]);
 
   const liveBets = useMemo(() => extractLiveBets(minerData), [minerData]);
 
   const fingerprints = useMemo(
-    () =>
-      minerData.map((m) => buildFingerprint(m.githubId, m.author, m.prs)),
+    () => minerData.map((m) => buildFingerprint(m.githubId, m.author, m.prs)),
     [minerData],
   );
 

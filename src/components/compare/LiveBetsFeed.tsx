@@ -127,7 +127,8 @@ export const LiveBetsFeed: React.FC<LiveBetsFeedProps> = ({
                 color: 'text.secondary',
               }}
             >
-              {[...new Set(list.map((b) => b.author))].join(' & ')} have open PRs in{' '}
+              {[...new Set(list.map((b) => b.author))].join(' & ')} have open
+              PRs in{' '}
               <Typography
                 component="span"
                 sx={{
@@ -190,7 +191,9 @@ export const LiveBetsFeed: React.FC<LiveBetsFeedProps> = ({
             >
               {bet.pullRequestTitle}
             </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.25 }}>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.25 }}
+            >
               <Typography
                 sx={{
                   fontFamily: '"JetBrains Mono", monospace',
@@ -242,7 +245,7 @@ export const LiveBetsFeed: React.FC<LiveBetsFeedProps> = ({
                 color: 'text.secondary',
               }}
             >
-              {(bet.additions || bet.deletions)
+              {bet.additions || bet.deletions
                 ? `+${bet.additions ?? 0} −${bet.deletions ?? 0}`
                 : ''}
             </Typography>

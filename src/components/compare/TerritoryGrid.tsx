@@ -172,7 +172,7 @@ export const TerritoryGrid: React.FC<TerritoryGridProps> = ({
             (a, b) => b.totalScore - a.totalScore,
           )[0];
           const dominantColor = dominant
-            ? colorMap.get(dominant.githubId) ?? theme.palette.text.secondary
+            ? (colorMap.get(dominant.githubId) ?? theme.palette.text.secondary)
             : theme.palette.text.secondary;
 
           const totalPrs = territory.presence.reduce(
@@ -185,18 +185,18 @@ export const TerritoryGrid: React.FC<TerritoryGridProps> = ({
               key={territory.fullName}
               title={
                 <Box sx={{ p: 0.5 }}>
-                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, mb: 0.5 }}>
+                  <Typography
+                    sx={{ fontSize: '0.75rem', fontWeight: 600, mb: 0.5 }}
+                  >
                     {territory.fullName}
                   </Typography>
                   <Typography sx={{ fontSize: '0.7rem', mb: 0.5 }}>
                     Weight: {territory.weight.toFixed(2)} · {totalPrs} PRs
                   </Typography>
                   {territory.presence.map((p) => (
-                    <Typography
-                      key={p.githubId}
-                      sx={{ fontSize: '0.68rem' }}
-                    >
-                      {p.author}: {p.prCount} PRs · {p.totalScore.toFixed(2)} pts
+                    <Typography key={p.githubId} sx={{ fontSize: '0.68rem' }}>
+                      {p.author}: {p.prCount} PRs · {p.totalScore.toFixed(2)}{' '}
+                      pts
                     </Typography>
                   ))}
                 </Box>
@@ -213,7 +213,7 @@ export const TerritoryGrid: React.FC<TerritoryGridProps> = ({
                 sx={{
                   p: 1.5,
                   borderRadius: 2,
-                  border: `1px solid`,
+                  border: '1px solid',
                   borderColor: territory.isContested
                     ? STATUS_COLORS.warning
                     : alpha(dominantColor, 0.3),

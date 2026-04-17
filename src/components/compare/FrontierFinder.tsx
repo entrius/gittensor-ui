@@ -275,10 +275,7 @@ export const FrontierFinder: React.FC<FrontierFinderProps> = ({
                     </TableCell>
                     <TableCell sx={cellSx}>
                       {territory.presence
-                        .map(
-                          (p) =>
-                            `${p.author} (${p.prCount})`,
-                        )
+                        .map((p) => `${p.author} (${p.prCount})`)
                         .join(', ')}
                     </TableCell>
                   </TableRow>

@@ -221,4 +221,3 @@ export const usePulseBoard = (): UsePulseBoard => {
 
 export const computeDelta = (live: number, snapshotValue: number): number =>
   live - snapshotValue;
-
