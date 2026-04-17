@@ -18,7 +18,7 @@ import {
   type PullRequestComment,
   type PullRequestDetails,
 } from '../../api/models/Dashboard';
-import { STATUS_COLORS, UI_COLORS } from '../../theme';
+import { STATUS_COLORS, UI_COLORS, scrollbarSx } from '../../theme';
 import 'github-markdown-css/github-markdown-dark.css'; // Import standard GitHub Dark styles
 
 /** A comment or the PR description rendered in the conversation timeline. */
@@ -276,6 +276,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
                 fontFamily:
                   '-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji"', // GitHub's exact font stack
                 overflowX: 'auto',
+                ...scrollbarSx,
                 // Typography refinements
                 '& > *:first-of-type': { mt: 0 },
                 '& > *:last-child': { mb: 0 },

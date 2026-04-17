@@ -564,11 +564,7 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
         overflowX: 'auto',
         borderRight: side === 'left' ? '1px solid' : 'none',
         borderColor: 'border.light',
-        '&::-webkit-scrollbar': { height: '8px' },
-        '&::-webkit-scrollbar-thumb': {
-          backgroundColor: 'border.light',
-          borderRadius: '4px',
-        },
+        ...scrollbarSx,
       }}
     >
       <Table

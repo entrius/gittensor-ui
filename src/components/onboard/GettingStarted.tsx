@@ -12,7 +12,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
 import { alpha } from '@mui/material/styles';
-import { tooltipSlotProps } from '../../theme';
+import { scrollbarSx, tooltipSlotProps } from '../../theme';
 
 const MONO = '"JetBrains Mono", monospace';
 
@@ -94,6 +94,7 @@ const CodeBlock: React.FC<{
           p: 2,
           pr: 5,
           overflow: 'auto',
+          ...scrollbarSx,
         }}
       >
         <Typography

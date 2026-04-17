@@ -23,7 +23,7 @@ import { IssueBounty } from '../../api/models/Issues';
 import { useStats } from '../../api';
 import { formatTokenAmount, formatDate } from '../../utils/format';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
-import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
 import BountyProgress from './BountyProgress';
 import { LinkTableRow } from '../common/linkBehavior';
 
@@ -325,7 +325,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
       }}
       elevation={0}
     >
-      <TableContainer>
+      <TableContainer sx={{ ...scrollbarSx }}>
         <Table size="small">
           <TableHead>
             <TableRow>
