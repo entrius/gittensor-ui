@@ -118,7 +118,7 @@ const IssuesPage: React.FC = () => {
           </Box>
 
           {/* Tab Content */}
-          <Box sx={{ minHeight: 400 }}>
+          <Box>
             {tabIndex === 0 && (
               <IssuesList
                 issues={activeIssuesQuery.data || []}

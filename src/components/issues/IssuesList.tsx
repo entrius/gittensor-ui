@@ -16,6 +16,7 @@ import {
   Avatar,
   alpha,
   useTheme,
+  TablePagination,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueBounty } from '../../api/models/Issues';
@@ -43,6 +44,8 @@ const truncateAddress = (address: string | null): string => {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 };
 
+const HISTORY_ROWS_PER_PAGE_OPTIONS = [10, 25, 50] as const;
+
 const IssuesList: React.FC<IssuesListProps> = ({
   issues,
   isLoading = false,
@@ -50,6 +53,13 @@ const IssuesList: React.FC<IssuesListProps> = ({
   onSelectIssue,
 }) => {
   const theme = useTheme();
+  const [historyPage, setHistoryPage] = React.useState(0);
+  const [historyRowsPerPage, setHistoryRowsPerPage] = React.useState(10);
+
+  React.useEffect(() => {
+    setHistoryPage(0);
+  }, [issues.length, listType]);
+
   const { data: dashStats } = useStats();
   const taoPrice = dashStats?.prices?.tao?.data?.price ?? 0;
   const alphaPrice = dashStats?.prices?.alpha?.data?.price ?? 0;
@@ -112,6 +122,14 @@ const IssuesList: React.FC<IssuesListProps> = ({
     history: 'No completed or cancelled issues yet',
   };
 
+  const rowsToRender =
+    listType === 'history'
+      ? issues.slice(
+          historyPage * historyRowsPerPage,
+          historyPage * historyRowsPerPage + historyRowsPerPage,
+        )
+      : issues;
+
   if (issues.length === 0) {
     return (
       <Card
@@ -145,6 +163,33 @@ const IssuesList: React.FC<IssuesListProps> = ({
       }}
       elevation={0}
     >
+      {listType === 'history' && issues.length > 0 && (
+        <TablePagination
+          component="div"
+          count={issues.length}
+          page={historyPage}
+          onPageChange={(_, newPage) => setHistoryPage(newPage)}
+          rowsPerPage={historyRowsPerPage}
+          onRowsPerPageChange={(e) => {
+            setHistoryRowsPerPage(parseInt(e.target.value, 10));
+            setHistoryPage(0);
+          }}
+          rowsPerPageOptions={[...HISTORY_ROWS_PER_PAGE_OPTIONS]}
+          showFirstButton
+          showLastButton
+          sx={{
+            borderBottom: '1px solid',
+            borderColor: 'border.light',
+            color: 'text.secondary',
+            '.MuiTablePagination-displayedRows': {
+              fontFamily: '"JetBrains Mono", monospace',
+            },
+            '.MuiTablePagination-selectLabel, .MuiTablePagination-input': {
+              fontFamily: '"JetBrains Mono", monospace',
+            },
+          }}
+        />
+      )}
       <TableContainer>
         <Table size="small">
           <TableHead>
@@ -220,7 +265,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {issues.map((issue) => {
+            {rowsToRender.map((issue) => {
               const statusBadge = getIssueStatusMeta(issue.status);
 
               return (
