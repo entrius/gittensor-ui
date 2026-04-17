@@ -22,16 +22,17 @@ const FilterButton: React.FC<FilterButtonProps> = ({
     size="small"
     onClick={onClick}
     sx={{
-      color: isActive ? activeTextColor : 'text.tertiary',
-      backgroundColor: isActive ? color : 'transparent',
+      color: isActive ? color : 'text.tertiary',
+      backgroundColor: isActive ? 'surface.elevated' : 'transparent',
       borderRadius: '6px',
       px: 2,
       minWidth: 'auto',
       textTransform: 'none',
       fontSize: '0.8rem',
-      border: isActive ? `1px solid ${color}` : '1px solid transparent',
+      border: `1px solid`,
+      borderColor: isActive ? color : 'transparent',
       '&:hover': {
-        backgroundColor: 'border.light',
+        backgroundColor: isActive ? 'surface.light' : 'border.light',
       },
     }}
   >
