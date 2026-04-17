@@ -27,10 +27,12 @@ import {
   getPrStatusCounts,
   paginateItems,
   type PrStatusFilter,
+  type ExportColumn,
 } from '../../utils';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
+import { ExportMenu } from '../common/ExportMenu';
 import { headerCellStyle, bodyCellStyle, tooltipSlotProps } from '../../theme';
 
 type PrSortField = 'number' | 'repository' | 'score' | 'lines' | 'date';
@@ -204,6 +206,45 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     return getPrStatusCounts(prs);
   }, [prs]);
 
+  const exportColumns = useMemo<ExportColumn<CommitLog>[]>(
+    () => [
+      {
+        label: 'PR #',
+        accessor: (pr) => pr.pullRequestNumber,
+        width: 8,
+      },
+      { label: 'Title', accessor: (pr) => pr.pullRequestTitle, width: 60 },
+      { label: 'Repository', accessor: (pr) => pr.repository, width: 28 },
+      { label: 'Additions', accessor: (pr) => pr.additions, width: 10 },
+      { label: 'Deletions', accessor: (pr) => pr.deletions, width: 10 },
+      {
+        label: 'Score',
+        accessor: (pr) => Number(getEffectiveScore(pr).toFixed(4)),
+        width: 10,
+      },
+      {
+        label: 'Status',
+        accessor: (pr) =>
+          pr.mergedAt ? 'Merged' : pr.prState === 'CLOSED' ? 'Closed' : 'Open',
+        width: 8,
+      },
+      {
+        label: 'Date',
+        accessor: (pr) => pr.mergedAt ?? pr.prCreatedAt ?? '',
+        width: 20,
+      },
+    ],
+    [],
+  );
+
+  const exportOptions = useMemo(
+    () => ({
+      slug: `miner-prs-${githubId}`,
+      title: `Miner PRs (${githubId})`,
+    }),
+    [githubId],
+  );
+
   if (isLoading) {
     return (
       <Card sx={{ p: 4, textAlign: 'center' }} elevation={0}>
@@ -322,6 +363,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 }}
               />
             </Box>
+            <ExportMenu
+              rows={sortedPRs}
+              columns={exportColumns}
+              options={exportOptions}
+            />
           </Box>
         </Box>
 

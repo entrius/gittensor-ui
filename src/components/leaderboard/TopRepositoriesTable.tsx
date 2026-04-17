@@ -39,9 +39,10 @@ import FilterButton from '../FilterButton';
 import ReactECharts from 'echarts-for-react';
 import type { TooltipComponentFormatterCallbackParams } from 'echarts';
 import { useSearchParams } from 'react-router-dom';
-import { truncateText } from '../../utils';
+import { truncateText, type ExportColumn } from '../../utils';
 import { RankIcon } from './RankIcon';
 import LeaderboardTableSkeleton from './LeaderboardTableSkeleton';
+import { ExportMenu } from '../common/ExportMenu';
 import {
   getRepositoryOwnerAvatarBackground,
   headerCellStyle,
@@ -216,6 +217,40 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
 
     return filtered;
   }, [rankedRepositories, statusFilter, searchQuery]);
+
+  const exportColumns = useMemo<ExportColumn<RepoStats>[]>(
+    () => [
+      { label: 'Rank', accessor: (repo) => repo.rank ?? null, width: 6 },
+      { label: 'Repository', accessor: (repo) => repo.repository, width: 40 },
+      {
+        label: 'Weight',
+        accessor: (repo) => Number(repo.weight.toFixed(6)),
+        width: 12,
+      },
+      {
+        label: 'Total Score',
+        accessor: (repo) => Number(repo.totalScore.toFixed(4)),
+        width: 14,
+      },
+      { label: 'PRs', accessor: (repo) => repo.totalPRs, width: 8 },
+      {
+        label: 'Contributors',
+        accessor: (repo) => repo.uniqueMiners.size,
+        width: 12,
+      },
+      {
+        label: 'Status',
+        accessor: (repo) => (repo.inactiveAt ? 'Inactive' : 'Active'),
+        width: 10,
+      },
+    ],
+    [],
+  );
+
+  const exportOptions = useMemo(
+    () => ({ slug: 'top-repositories', title: 'Top Repositories' }),
+    [],
+  );
 
   const getChartOption = () => {
     const chartData = filteredRepositories.slice(
@@ -744,6 +779,13 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                   '&.Mui-focused fieldset': { borderColor: 'primary.main' },
                 },
               }}
+            />
+
+            <ExportMenu
+              rows={filteredRepositories}
+              columns={exportColumns}
+              options={exportOptions}
+              size="medium"
             />
           </Box>
         </Box>

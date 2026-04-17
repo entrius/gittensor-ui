@@ -5,8 +5,10 @@ import { useSearchParams } from 'react-router-dom';
 import { SectionCard } from './SectionCard';
 import { MinerCard } from './MinerCard';
 import { SearchInput } from '../common/SearchInput';
+import { ExportMenu } from '../common/ExportMenu';
 import FilterButton from '../FilterButton';
 import { STATUS_COLORS } from '../../theme';
+import type { ExportColumn } from '../../utils';
 import {
   type MinerStats,
   type SortOption,
@@ -212,6 +214,57 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     [filteredMiners, visibleCount],
   );
 
+  const exportColumns = useMemo<ExportColumn<MinerStats>[]>(() => {
+    const activityColumn: ExportColumn<MinerStats> =
+      variant === 'discoveries'
+        ? {
+            label: 'Issues',
+            accessor: (miner) => miner.totalIssues ?? 0,
+            width: 8,
+          }
+        : { label: 'PRs', accessor: (miner) => miner.totalPRs, width: 8 };
+
+    return [
+      { label: 'Rank', accessor: (miner) => miner.rank ?? null, width: 6 },
+      { label: 'Miner', accessor: (miner) => miner.author ?? miner.githubId },
+      { label: 'Hotkey', accessor: (miner) => miner.hotkey, width: 20 },
+      {
+        label: 'Total Score',
+        accessor: (miner) => Number(miner.totalScore.toFixed(4)),
+        width: 12,
+      },
+      {
+        label: 'USD / Day',
+        accessor: (miner) =>
+          miner.usdPerDay != null ? Number(miner.usdPerDay.toFixed(2)) : null,
+        width: 10,
+      },
+      activityColumn,
+      {
+        label: 'Credibility',
+        accessor: (miner) =>
+          miner.credibility != null
+            ? Number(miner.credibility.toFixed(4))
+            : null,
+        width: 12,
+      },
+      {
+        label: 'Eligible',
+        accessor: (miner) => (miner.isEligible ? 'Yes' : 'No'),
+        width: 8,
+      },
+    ];
+  }, [variant]);
+
+  const exportOptions = useMemo(
+    () => ({
+      slug: variant === 'discoveries' ? 'top-miners-discoveries' : 'top-miners',
+      title:
+        variant === 'discoveries' ? 'Top Miners (Discoveries)' : 'Top Miners',
+    }),
+    [variant],
+  );
+
   const remainingMiners = Math.max(
     0,
     filteredMiners.length - visibleMiners.length,
@@ -250,6 +303,11 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
               isActive={showEligibleOnly}
               onClick={handleToggleEligible}
               color={theme.palette.status.merged}
+            />
+            <ExportMenu
+              rows={filteredMiners}
+              columns={exportColumns}
+              options={exportOptions}
             />
           </Box>
         }

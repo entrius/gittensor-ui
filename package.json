@@ -28,6 +28,8 @@
     "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.5",
     "github-markdown-css": "^5.8.1",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "parse-diff": "^0.11.1",
     "react": "^18.3.1",
     "react-activity-calendar": "^3.0.5",
@@ -38,7 +40,8 @@
     "react-syntax-highlighter": "^16.1.0",
     "react-tooltip": "^5.30.0",
     "rehype-raw": "^7.0.0",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

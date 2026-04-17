@@ -23,8 +23,10 @@ import { IssueBounty } from '../../api/models/Issues';
 import { useStats } from '../../api';
 import { formatTokenAmount, formatDate } from '../../utils/format';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
+import type { ExportColumn } from '../../utils';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import BountyProgress from './BountyProgress';
+import { ExportMenu } from '../common/ExportMenu';
 
 type ListType = 'available' | 'pending' | 'history';
 type SortDirection = 'asc' | 'desc';
@@ -200,6 +202,97 @@ const IssuesList: React.FC<IssuesListProps> = ({
     return decorated.map((item) => item.issue);
   }, [issues, sortDirection, sortKey]);
 
+  const exportColumns = useMemo<ExportColumn<IssueBounty>[]>(() => {
+    const commonColumns: ExportColumn<IssueBounty>[] = [
+      { label: 'ID', accessor: (issue) => issue.id, width: 6 },
+      {
+        label: 'Repository',
+        accessor: (issue) => issue.repositoryFullName,
+        width: 28,
+      },
+      {
+        label: 'Issue',
+        accessor: (issue) =>
+          issue.title
+            ? `#${issue.issueNumber} — ${issue.title}`
+            : `#${issue.issueNumber}`,
+        width: 60,
+      },
+    ];
+
+    const statusColumn: ExportColumn<IssueBounty> = {
+      label: 'Status',
+      accessor: (issue) => getIssueStatusMeta(issue.status).text,
+      width: 12,
+    };
+
+    if (listType === 'available') {
+      return [
+        ...commonColumns,
+        {
+          label: 'Bounty (α)',
+          accessor: (issue) => parseAmount(issue.targetBounty),
+          width: 12,
+        },
+        statusColumn,
+      ];
+    }
+
+    if (listType === 'pending') {
+      return [
+        ...commonColumns,
+        {
+          label: 'Target Bounty (α)',
+          accessor: (issue) => parseAmount(issue.targetBounty),
+          width: 14,
+        },
+        {
+          label: 'Funding %',
+          accessor: (issue) => {
+            const target = parseAmount(issue.targetBounty);
+            if (target <= 0) return 0;
+            return Number(
+              ((parseAmount(issue.bountyAmount) / target) * 100).toFixed(2),
+            );
+          },
+          width: 10,
+        },
+        statusColumn,
+      ];
+    }
+
+    return [
+      ...commonColumns,
+      {
+        label: 'Payout (α)',
+        accessor: (issue) => parseAmount(issue.targetBounty),
+        width: 12,
+      },
+      {
+        label: 'Solver',
+        accessor: (issue) => issue.solverHotkey ?? '',
+        width: 20,
+      },
+      statusColumn,
+      {
+        label: 'Date',
+        accessor: (issue) =>
+          issue.completedAt
+            ? formatDate(issue.completedAt)
+            : formatDate(issue.updatedAt),
+        width: 14,
+      },
+    ];
+  }, [listType]);
+
+  const exportOptions = useMemo(
+    () => ({
+      slug: `bounties-${listType}`,
+      title: `Bounties — ${listType.charAt(0).toUpperCase()}${listType.slice(1)}`,
+    }),
+    [listType],
+  );
+
   const renderSortableHeader = useCallback(
     (
       label: string,
@@ -322,6 +415,33 @@ const IssuesList: React.FC<IssuesListProps> = ({
       }}
       elevation={0}
     >
+      <Box
+        sx={{
+          px: 2,
+          py: 1.5,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid',
+          borderColor: 'border.light',
+          gap: 2,
+        }}
+      >
+        <Typography
+          sx={{
+            fontSize: '0.75rem',
+            color: 'text.secondary',
+            fontFamily: '"JetBrains Mono", monospace',
+          }}
+        >
+          {issues.length} {issues.length === 1 ? 'issue' : 'issues'}
+        </Typography>
+        <ExportMenu
+          rows={sortedIssues}
+          columns={exportColumns}
+          options={exportOptions}
+        />
+      </Box>
       <TableContainer>
         <Table size="small">
           <TableHead>
