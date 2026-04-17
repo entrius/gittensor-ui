@@ -196,14 +196,12 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                         : submission.prState === 'OPEN'
                           ? 'OPEN'
                           : 'CLOSED';
-                      let color = theme.palette.status.neutral;
-                      if (state === 'MERGED') {
-                        color = theme.palette.status.merged;
-                      } else if (state === 'OPEN') {
-                        color = theme.palette.status.open;
-                      } else if (state === 'CLOSED') {
-                        color = theme.palette.status.closed;
-                      }
+                      const color =
+                        state === 'MERGED'
+                          ? theme.palette.status.merged
+                          : state === 'OPEN'
+                            ? theme.palette.status.open
+                            : theme.palette.status.closed;
                       return (
                         <Chip
                           variant="status"

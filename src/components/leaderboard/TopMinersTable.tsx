@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { Box, Typography, CircularProgress, Grid } from '@mui/material';
 import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import { useSearchParams } from 'react-router-dom';
@@ -20,6 +20,8 @@ export type { MinerStats } from './types';
 const MINERS_PAGE_SIZE = 60;
 const SORT_QUERY_PARAM = 'sort';
 const ELIGIBLE_QUERY_PARAM = 'eligible';
+const SEARCH_QUERY_PARAM = 'search';
+const VISIBLE_QUERY_PARAM = 'visible';
 
 interface TopMinersTableProps {
   miners: MinerStats[];
@@ -55,6 +57,17 @@ const getSortOptionFromQuery = (
     : 'totalScore';
 };
 
+const getVisibleCountFromQuery = (value: string | null): number => {
+  if (!value) return MINERS_PAGE_SIZE;
+
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < MINERS_PAGE_SIZE) {
+    return MINERS_PAGE_SIZE;
+  }
+
+  return parsed;
+};
+
 const TopMinersTable: React.FC<TopMinersTableProps> = ({
   miners,
   isLoading,
@@ -64,14 +77,17 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 }) => {
   const theme = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [searchQuery, setSearchQuery] = useState('');
+  const searchQuery = searchParams.get(SEARCH_QUERY_PARAM) ?? '';
   const sortParamValue = searchParams.get(SORT_QUERY_PARAM);
   const sortOption = useMemo(
     () => getSortOptionFromQuery(sortParamValue, variant),
     [sortParamValue, variant],
   );
   const showEligibleOnly = searchParams.get(ELIGIBLE_QUERY_PARAM) === 'true';
-  const [visibleCount, setVisibleCount] = useState(MINERS_PAGE_SIZE);
+  const visibleCount = useMemo(
+    () => getVisibleCountFromQuery(searchParams.get(VISIBLE_QUERY_PARAM)),
+    [searchParams],
+  );
 
   const handleSortChange = useCallback(
     (nextSortOption: SortOption) => {
@@ -84,6 +100,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           } else {
             nextSearchParams.set(SORT_QUERY_PARAM, nextSortOption);
           }
+          nextSearchParams.delete(VISIBLE_QUERY_PARAM);
 
           return nextSearchParams.toString() === previousParams.toString()
             ? previousParams
@@ -107,6 +124,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
         } else {
           nextSearchParams.set(ELIGIBLE_QUERY_PARAM, 'true');
         }
+        nextSearchParams.delete(VISIBLE_QUERY_PARAM);
 
         return nextSearchParams.toString() === previousParams.toString()
           ? previousParams
@@ -159,8 +177,44 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   }, [miners, searchQuery, showEligibleOnly, sortOption]);
 
   useEffect(() => {
-    setVisibleCount(MINERS_PAGE_SIZE);
-  }, [miners, searchQuery, showEligibleOnly, sortOption]);
+    if (visibleCount <= filteredMiners.length) return;
+
+    setSearchParams(
+      (previousParams) => {
+        const nextSearchParams = new URLSearchParams(previousParams);
+        nextSearchParams.delete(VISIBLE_QUERY_PARAM);
+
+        return nextSearchParams.toString() === previousParams.toString()
+          ? previousParams
+          : nextSearchParams;
+      },
+      { replace: true },
+    );
+  }, [filteredMiners.length, setSearchParams, visibleCount]);
+
+  const handleSearchChange = useCallback(
+    (nextQuery: string) => {
+      setSearchParams(
+        (previousParams) => {
+          const nextSearchParams = new URLSearchParams(previousParams);
+          const normalizedQuery = nextQuery.trim();
+
+          if (normalizedQuery) {
+            nextSearchParams.set(SEARCH_QUERY_PARAM, normalizedQuery);
+          } else {
+            nextSearchParams.delete(SEARCH_QUERY_PARAM);
+          }
+          nextSearchParams.delete(VISIBLE_QUERY_PARAM);
+
+          return nextSearchParams.toString() === previousParams.toString()
+            ? previousParams
+            : nextSearchParams;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   const visibleMiners = useMemo(
     () => filteredMiners.slice(0, visibleCount),
@@ -208,7 +262,13 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             />
           </Box>
         }
-        action={<SearchInput value={searchQuery} onChange={setSearchQuery} />}
+        action={
+          <SearchInput
+            value={searchQuery}
+            onChange={handleSearchChange}
+            width="100%"
+          />
+        }
         sx={{
           mb: 2,
           position: 'sticky',
@@ -243,11 +303,33 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 
         {remainingMiners > 0 && (
           <Box
-            onClick={() =>
-              setVisibleCount((prev) =>
-                Math.min(prev + MINERS_PAGE_SIZE, filteredMiners.length),
-              )
-            }
+            onClick={() => {
+              const nextVisibleCount = Math.min(
+                visibleCount + MINERS_PAGE_SIZE,
+                filteredMiners.length,
+              );
+
+              setSearchParams(
+                (previousParams) => {
+                  const nextSearchParams = new URLSearchParams(previousParams);
+
+                  if (nextVisibleCount > MINERS_PAGE_SIZE) {
+                    nextSearchParams.set(
+                      VISIBLE_QUERY_PARAM,
+                      String(nextVisibleCount),
+                    );
+                  } else {
+                    nextSearchParams.delete(VISIBLE_QUERY_PARAM);
+                  }
+
+                  return nextSearchParams.toString() ===
+                    previousParams.toString()
+                    ? previousParams
+                    : nextSearchParams;
+                },
+                { replace: true },
+              );
+            }}
             sx={(theme) => ({
               py: 1.25,
               borderRadius: 2,

@@ -3,7 +3,8 @@ import { Box, Tabs, Tab, Card, CardContent } from '@mui/material';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { useSearchParams } from 'react-router-dom';
-import { AboutContent } from './AboutPage';
+import { AboutContent } from '../components/onboard/AboutContent';
+import { FAQContent } from '../components/onboard/FAQContent';
 
 import { GettingStarted } from '../components/onboard/GettingStarted';
 import { Scoring } from '../components/onboard/Scoring';
@@ -19,6 +20,7 @@ const OnboardPage: React.FC = () => {
     'getting-started': 1,
     scoring: 2,
     languages: 3,
+    faq: 4,
   };
 
   const indexToTabName: Record<number, string> = {
@@ -26,6 +28,7 @@ const OnboardPage: React.FC = () => {
     1: 'getting-started',
     2: 'scoring',
     3: 'languages',
+    4: 'faq',
   };
 
   const activeTab =
@@ -87,6 +90,7 @@ const OnboardPage: React.FC = () => {
             <Tab label="Getting Started" />
             <Tab label="Scoring" />
             <Tab label="Languages" />
+            <Tab label="FAQ" />
           </Tabs>
         </Box>
 
@@ -120,6 +124,7 @@ const OnboardPage: React.FC = () => {
               </Card>
             </Box>
           )}
+          {activeTab === 4 && <FAQContent />}
         </Box>
       </Box>
     </Page>
