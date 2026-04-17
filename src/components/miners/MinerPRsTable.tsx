@@ -23,15 +23,14 @@ import {
 import { Search as SearchIcon } from '@mui/icons-material';
 import { useMinerPRs, type CommitLog } from '../../api';
 import {
+  filterPrs,
   getPrStatusCounts,
-  isClosedUnmergedPr,
-  isMergedPr,
-  isOpenPr,
+  paginateItems,
+  type PrStatusFilter,
 } from '../../utils';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
-import { type MinerStatusFilter } from '../../utils/ExplorerUtils';
 import { headerCellStyle, bodyCellStyle, tooltipSlotProps } from '../../theme';
 
 type PrSortField = 'number' | 'repository' | 'score' | 'lines' | 'date';
@@ -39,7 +38,7 @@ type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 20;
 
-const MINER_STATUS_FILTERS: readonly MinerStatusFilter[] = [
+const PR_STATUS_FILTERS: readonly PrStatusFilter[] = [
   'all',
   'open',
   'merged',
@@ -78,10 +77,8 @@ const getScoreTooltip = (pr: CommitLog): string | null => {
   return parts.join(' · ');
 };
 
-const isMinerStatusFilter = (
-  value: string | null,
-): value is MinerStatusFilter =>
-  value !== null && (MINER_STATUS_FILTERS as readonly string[]).includes(value);
+const isPrStatusFilter = (value: string | null): value is PrStatusFilter =>
+  value !== null && (PR_STATUS_FILTERS as readonly string[]).includes(value);
 
 interface MinerPRsTableProps {
   githubId: string;
@@ -97,7 +94,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const [sortField, setSortField] = useState<PrSortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const prStatusParam = searchParams.get('prStatus');
-  const statusFilter: MinerStatusFilter = isMinerStatusFilter(prStatusParam)
+  const statusFilter: PrStatusFilter = isPrStatusFilter(prStatusParam)
     ? prStatusParam
     : 'all';
 
@@ -126,7 +123,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   );
 
   const setStatusFilter = useCallback(
-    (next: MinerStatusFilter) => {
+    (next: PrStatusFilter) => {
       setSearchParams(
         (prev) => {
           const p = new URLSearchParams(prev);
@@ -154,27 +151,16 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     [sortField, setPage],
   );
 
-  const filteredPRs = useMemo(() => {
-    if (!prs) return [];
-    let filtered = prs;
-    if (selectedAuthor) {
-      filtered = filtered.filter((pr) => pr.author === selectedAuthor);
-    }
-    if (statusFilter === 'open') filtered = filtered.filter(isOpenPr);
-    else if (statusFilter === 'merged') filtered = filtered.filter(isMergedPr);
-    else if (statusFilter === 'closed')
-      filtered = filtered.filter(isClosedUnmergedPr);
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (pr) =>
-          pr.pullRequestTitle.toLowerCase().includes(q) ||
-          pr.repository.toLowerCase().includes(q) ||
-          String(pr.pullRequestNumber).includes(q),
-      );
-    }
-    return filtered;
-  }, [prs, selectedAuthor, statusFilter, searchQuery]);
+  const filteredPRs = useMemo(
+    () =>
+      filterPrs(prs ?? [], {
+        author: selectedAuthor,
+        includeNumber: true,
+        searchQuery,
+        statusFilter,
+      }),
+    [prs, selectedAuthor, statusFilter, searchQuery],
+  );
 
   const sortedPRs = useMemo(() => {
     const sorted = [...filteredPRs];
@@ -206,10 +192,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     return sorted;
   }, [filteredPRs, sortField, sortDir]);
 
-  const pagedPRs = useMemo(() => {
-    const start = page * PAGE_SIZE;
-    return sortedPRs.slice(start, start + PAGE_SIZE);
-  }, [sortedPRs, page]);
+  const pagedPRs = useMemo(
+    () => paginateItems(sortedPRs, page, PAGE_SIZE),
+    [sortedPRs, page],
+  );
 
   const totalPages = Math.ceil(sortedPRs.length / PAGE_SIZE);
 

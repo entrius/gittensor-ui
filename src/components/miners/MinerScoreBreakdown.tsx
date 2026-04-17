@@ -28,6 +28,7 @@ import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
 import {
   parseNumber,
   calculateOpenIssueThreshold,
+  isOutsideScoringWindow,
 } from '../../utils/ExplorerUtils';
 import { credibilityColor } from '../../utils/format';
 import { buildMergedPillDefs } from '../../utils/multiplierDefs';
@@ -134,6 +135,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
   const isClosed = pr.prState === 'CLOSED' && !pr.mergedAt;
   const isOpen = !pr.mergedAt && pr.prState !== 'CLOSED';
   const collateral = parseFloat(pr.collateralScore || '0');
+  const isStale = isMerged && isOutsideScoringWindow(pr.mergedAt);
 
   const statusColor = isMerged
     ? STATUS_COLORS.merged
@@ -229,6 +231,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
               : isOpen
                 ? STATUS_COLORS.warningOrange
                 : 'text.primary',
+            opacity: isStale ? 0.4 : 1,
             flexShrink: 0,
           }}
         >

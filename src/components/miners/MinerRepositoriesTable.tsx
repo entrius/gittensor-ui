@@ -39,6 +39,7 @@ import {
   sortMinerRepoStats,
   hasActiveFilters,
   getDisplayCount,
+  isOutsideScoringWindow,
 } from '../../utils/ExplorerUtils';
 
 interface MinerRepositoriesTableProps {
@@ -343,14 +344,15 @@ const RepoTableRow: React.FC<RepoTableRowProps> = ({
   const owner = repo.repository.split('/')[0];
   const avatarBgColor = getAvatarBgColor(owner);
   const avgPerPr = repo.prs > 0 ? (repo.score / repo.prs).toFixed(4) : '\u2014';
-
+  const isStale = isOutsideScoringWindow(repo.latestPrDate);
   return (
     <TableRow
       sx={{
+        opacity: isStale ? 0.4 : 1,
         '&:hover': {
           backgroundColor: 'surface.light',
         },
-        transition: 'background-color 0.2s',
+        transition: 'background-color 0.2s, opacity 0.2s',
       }}
     >
       <TableCell sx={bodyCellStyle}>

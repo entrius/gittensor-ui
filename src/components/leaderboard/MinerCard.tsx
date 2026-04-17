@@ -445,7 +445,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
                 pl: 1.5,
               })}
             >
-              <StatLabel isEligible={isEligible}>Issues</StatLabel>
+              <StatLabel isEligible={isEligible}>Total</StatLabel>
               <Typography
                 sx={{
                   fontFamily: FONTS.mono,
