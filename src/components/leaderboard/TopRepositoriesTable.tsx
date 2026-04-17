@@ -934,8 +934,31 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           sx={{ ...bodyCellStyle, width: '35%', pl: 1.5 }}
                         >
                           <Box
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              window.open(
+                                `https://github.com/${repo.repository || ''}`,
+                                '_blank',
+                                'noopener,noreferrer',
+                              );
+                            }}
+                            role="link"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                window.open(
+                                  `https://github.com/${repo.repository || ''}`,
+                                  '_blank',
+                                  'noopener,noreferrer',
+                                );
+                              }
+                            }}
+                            aria-label={`Open ${repo.repository || ''} on GitHub`}
                             sx={{
-                              display: 'flex',
+                              display: 'inline-flex',
                               alignItems: 'center',
                               gap: 1,
                               cursor: 'pointer',
@@ -962,7 +985,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                               }}
                             />
                             <Tooltip
-                              title={repo.repository || ''}
+                              title={`Open ${repo.repository || ''} on GitHub`}
                               placement="top"
                             >
                               <Typography
