@@ -38,7 +38,7 @@ const IssueStats: React.FC<IssueStatsProps> = ({
       subtitle: 'All registered issues',
     },
     {
-      title: 'Active Issues',
+      title: 'Available Issues',
       value: stats?.activeIssues ?? 0,
       subtitle: 'Available for solving',
     },
