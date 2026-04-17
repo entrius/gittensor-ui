@@ -35,7 +35,8 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
 
   const minerIssues = useMemo(() => {
     return [...issues].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
   }, [issues]);
 
@@ -51,7 +52,8 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
     () => ({
       total: minerIssues.length,
       open: minerIssues.filter((issue) => issue.status !== 'completed').length,
-      solved: minerIssues.filter((issue) => issue.status === 'completed').length,
+      solved: minerIssues.filter((issue) => issue.status === 'completed')
+        .length,
     }),
     [minerIssues],
   );
@@ -94,7 +96,9 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
           gap: 1.5,
         }}
       >
-        <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: 'text.primary' }}>
+        <Typography
+          sx={{ fontSize: '1rem', fontWeight: 600, color: 'text.primary' }}
+        >
           Issues Opened ({counts.total})
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -137,7 +141,9 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
           </Typography>
         </Box>
       ) : (
-        <TableContainer sx={{ maxHeight: 560, overflow: 'auto', ...scrollbarSx }}>
+        <TableContainer
+          sx={{ maxHeight: 560, overflow: 'auto', ...scrollbarSx }}
+        >
           <Table stickyHeader>
             <TableHead>
               <TableRow>
@@ -164,7 +170,9 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
                 return (
                   <TableRow
                     key={issue.id}
-                    onClick={() => window.open(getIssueUrl(issue.githubUrl), '_blank')}
+                    onClick={() =>
+                      window.open(getIssueUrl(issue.githubUrl), '_blank')
+                    }
                     sx={{
                       cursor: 'pointer',
                       '&:hover': { backgroundColor: 'surface.light' },
@@ -186,7 +194,9 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
                       </a>{' '}
                       {issue.title ? `- ${issue.title}` : ''}
                     </TableCell>
-                    <TableCell sx={bodyCellStyle}>{issue.repositoryFullName}</TableCell>
+                    <TableCell sx={bodyCellStyle}>
+                      {issue.repositoryFullName}
+                    </TableCell>
                     <TableCell sx={bodyCellStyle}>
                       <Chip
                         label={isSolved ? 'SOLVED' : 'OPEN'}
