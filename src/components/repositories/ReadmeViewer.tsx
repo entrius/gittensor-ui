@@ -7,10 +7,8 @@ import {
   alpha,
   useTheme,
 } from '@mui/material';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
 import axios from 'axios';
+import { SafeMarkdown } from '../common';
 import { resolveRelativeUrl } from './MarkdownRenderers';
 import { markdownDocumentPaperSx } from '../../theme';
 
@@ -89,9 +87,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
 
   return (
     <Paper elevation={0} sx={markdownDocumentPaperSx(theme)}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
+      <SafeMarkdown
         components={{
           a: ({
             href,
@@ -132,7 +128,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
         }}
       >
         {content || ''}
-      </ReactMarkdown>
+      </SafeMarkdown>
     </Paper>
   );
 };
