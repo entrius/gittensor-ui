@@ -134,7 +134,8 @@ type PullRequestsTabProps = {
   isLoading: boolean;
   onPageChange: (newPage: number) => void;
   onRowsPerPageChange: (rowsPerPage: number) => void;
-  onSelectPr: (repository: string, pullRequestNumber: number) => void;
+  getPrHref: (pr: CommitLog) => string;
+  linkState?: Record<string, unknown>;
   page: number;
   paginatedPrResults: CommitLog[];
   prResults: CommitLog[];
@@ -147,7 +148,8 @@ const PullRequestsTab: React.FC<PullRequestsTabProps> = ({
   isLoading,
   onPageChange,
   onRowsPerPageChange,
-  onSelectPr,
+  getPrHref,
+  linkState,
   page,
   paginatedPrResults,
   prResults,
@@ -163,9 +165,8 @@ const PullRequestsTab: React.FC<PullRequestsTabProps> = ({
     isLoading={isLoading}
     minWidth={960}
     onPageChange={onPageChange}
-    onRowClick={(pr: CommitLog) =>
-      onSelectPr(pr.repository, pr.pullRequestNumber)
-    }
+    getRowHref={getPrHref}
+    linkState={linkState}
     onRowsPerPageChange={onRowsPerPageChange}
     page={page}
     rows={paginatedPrResults}

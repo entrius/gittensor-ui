@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import { type SxProps, type Theme } from '@mui/material/styles';
 import { type SystemStyleObject } from '@mui/system';
+import { LinkTableRow } from '../../components/common/linkBehavior';
 
 export type SearchResultsTableColumn<T> = {
   key: string;
@@ -37,7 +38,8 @@ type SearchResultsTableProps<T> = {
   isError: boolean;
   isLoading: boolean;
   minWidth: number;
-  onRowClick?: (item: T) => void;
+  getRowHref?: (item: T) => string;
+  linkState?: Record<string, unknown>;
   onPageChange: (newPage: number) => void;
   onRowsPerPageChange: (rowsPerPage: number) => void;
   page: number;
@@ -58,13 +60,6 @@ const searchBodyCellSx: SxProps<Theme> = (theme) => ({
   color: theme.palette.text.primary,
   borderBottom: `1px solid ${theme.palette.border.subtle}`,
   py: 1.5,
-});
-
-const searchClickableRowSx: SxProps<Theme> = (theme) => ({
-  cursor: 'pointer',
-  '&:hover': {
-    backgroundColor: theme.palette.surface.subtle,
-  },
 });
 
 const searchTableCardSx = (theme: Theme) => ({
@@ -112,7 +107,8 @@ const SearchResultsTable = <T,>({
   isError,
   isLoading,
   minWidth,
-  onRowClick,
+  getRowHref,
+  linkState,
   onPageChange,
   onRowsPerPageChange,
   page,
@@ -159,36 +155,43 @@ const SearchResultsTable = <T,>({
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.map((item) => (
-                <TableRow
-                  key={getRowKey(item)}
-                  onClick={onRowClick ? () => onRowClick(item) : undefined}
-                  sx={onRowClick ? searchClickableRowSx : undefined}
-                >
-                  {columns.map((column) => {
-                    const customCellSx =
-                      typeof column.cellSx === 'function'
-                        ? column.cellSx(item)
-                        : column.cellSx;
+              {rows.map((item) => {
+                const href = getRowHref?.(item);
+                const cells = columns.map((column) => {
+                  const customCellSx =
+                    typeof column.cellSx === 'function'
+                      ? column.cellSx(item)
+                      : column.cellSx;
 
-                    return (
-                      <TableCell
-                        key={column.key}
-                        align={column.align}
-                        sx={[
-                          searchBodyCellSx,
-                          ...(column.width !== undefined
-                            ? [{ width: column.width }]
-                            : []),
-                          ...(customCellSx ? [customCellSx] : []),
-                        ]}
-                      >
-                        {column.renderCell(item)}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
-              ))}
+                  return (
+                    <TableCell
+                      key={column.key}
+                      align={column.align}
+                      sx={[
+                        searchBodyCellSx,
+                        ...(column.width !== undefined
+                          ? [{ width: column.width }]
+                          : []),
+                        ...(customCellSx ? [customCellSx] : []),
+                      ]}
+                    >
+                      {column.renderCell(item)}
+                    </TableCell>
+                  );
+                });
+                return href ? (
+                  <LinkTableRow
+                    key={getRowKey(item)}
+                    href={href}
+                    linkState={linkState}
+                    sx={rowLinkSx}
+                  >
+                    {cells}
+                  </LinkTableRow>
+                ) : (
+                  <TableRow key={getRowKey(item)}>{cells}</TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>
@@ -211,5 +214,12 @@ const SearchResultsTable = <T,>({
     ) : null}
   </Card>
 );
+
+const rowLinkSx: SxProps<Theme> = (theme) => ({
+  cursor: 'pointer',
+  '&:hover': {
+    backgroundColor: theme.palette.surface.subtle,
+  },
+});
 
 export default SearchResultsTable;

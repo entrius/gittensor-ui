@@ -17,7 +17,8 @@ import {
   GitHub as GitHubIcon,
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import {
   useMinerStats,
   useMinerPRs,
@@ -28,6 +29,7 @@ import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
 import {
   parseNumber,
   calculateOpenIssueThreshold,
+  isOutsideScoringWindow,
 } from '../../utils/ExplorerUtils';
 import { credibilityColor } from '../../utils/format';
 import { buildMergedPillDefs } from '../../utils/multiplierDefs';
@@ -116,11 +118,13 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
 
 interface PrScoreRowProps {
   pr: CommitLog;
-  onNavigateToPr: (repo: string, prNumber: number) => void;
 }
 
-const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
+const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr }) => {
   const [expanded, setExpanded] = useState(false);
+  const prLinkProps = useLinkBehavior<HTMLAnchorElement>(
+    `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
+  );
 
   // Fetch full PR details (with all multipliers) — cached by React Query
   const { data: prDetails } = usePullRequestDetails(
@@ -134,6 +138,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
   const isClosed = pr.prState === 'CLOSED' && !pr.mergedAt;
   const isOpen = !pr.mergedAt && pr.prState !== 'CLOSED';
   const collateral = parseFloat(pr.collateralScore || '0');
+  const isStale = isMerged && isOutsideScoringWindow(pr.mergedAt);
 
   const statusColor = isMerged
     ? STATUS_COLORS.merged
@@ -229,6 +234,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
               : isOpen
                 ? STATUS_COLORS.warningOrange
                 : 'text.primary',
+            opacity: isStale ? 0.4 : 1,
             flexShrink: 0,
           }}
         >
@@ -369,11 +375,14 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
             <Button
               size="small"
               startIcon={<OpenInNewIcon sx={{ fontSize: '0.85rem' }} />}
+              component="a"
+              {...prLinkProps}
               onClick={(e) => {
                 e.stopPropagation();
-                onNavigateToPr(pr.repository, pr.pullRequestNumber);
+                prLinkProps.onClick(e);
               }}
               sx={{
+                ...linkResetSx,
                 fontSize: '0.65rem',
                 textTransform: 'none',
                 color: 'primary.main',
@@ -599,7 +608,6 @@ const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
 // ---------------------------------------------------------------------------
 
 const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const PAGE_SIZE = 10;
@@ -620,10 +628,6 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
     },
     [page, setSearchParams],
   );
-
-  const handleNavigateToPr = (repo: string, prNumber: number) => {
-    navigate(`/miners/pr?repo=${encodeURIComponent(repo)}&number=${prNumber}`);
-  };
 
   const sortedPrs = useMemo(() => {
     if (!prs) return [];
@@ -677,7 +681,6 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
           <PrScoreRow
             key={`${pr.repository}-${pr.pullRequestNumber}-${i}`}
             pr={pr}
-            onNavigateToPr={handleNavigateToPr}
           />
         ))}
       </Box>
