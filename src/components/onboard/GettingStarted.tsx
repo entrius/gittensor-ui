@@ -170,11 +170,15 @@ const StepDetail: React.FC<{ step: number }> = ({ step }) => {
           </Typography>
           <NetworkTabs network={network} onChange={setNetwork} />
           {network === 'mainnet' ? (
-            <CodeBlock label={`mainnet (subnet ${NETWORK_CONFIG.subnetId})`}>{`btcli subnet register --netuid ${NETWORK_CONFIG.subnetId} \\
+            <CodeBlock
+              label={`mainnet (subnet ${NETWORK_CONFIG.subnetId})`}
+            >{`btcli subnet register --netuid ${NETWORK_CONFIG.subnetId} \\
   --wallet-name <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME>`}</CodeBlock>
           ) : (
-            <CodeBlock label={`testnet (subnet ${NETWORK_CONFIG.testnetSubnetId})`}>{`btcli subnet register --netuid ${NETWORK_CONFIG.testnetSubnetId} \\
+            <CodeBlock
+              label={`testnet (subnet ${NETWORK_CONFIG.testnetSubnetId})`}
+            >{`btcli subnet register --netuid ${NETWORK_CONFIG.testnetSubnetId} \\
   --wallet-name <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
   --network test`}</CodeBlock>
