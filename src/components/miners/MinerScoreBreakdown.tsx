@@ -10,6 +10,7 @@ import {
   Collapse,
   IconButton,
   Button,
+  useTheme,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -33,6 +34,12 @@ import {
 } from '../../utils/ExplorerUtils';
 import { credibilityColor } from '../../utils/format';
 import { buildMergedPillDefs } from '../../utils/multiplierDefs';
+import {
+  filterPrs,
+  getPrStatusCounts,
+  type PrStatusFilter,
+} from '../../utils';
+import FilterButton from '../FilterButton';
 
 type ViewMode = 'prs' | 'issues';
 
@@ -608,8 +615,10 @@ const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
 // ---------------------------------------------------------------------------
 
 const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
+  const theme = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
+  const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
   const PAGE_SIZE = 10;
 
   const page = parseInt(searchParams.get('scorePage') || '0', 10);
@@ -629,17 +638,28 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
     [page, setSearchParams],
   );
 
+  const handleFilterChange = (next: PrStatusFilter) => {
+    setStatusFilter(next);
+    setPage(0);
+  };
+
+  const statusCounts = useMemo(() => getPrStatusCounts(prs ?? []), [prs]);
+
   const sortedPrs = useMemo(() => {
     if (!prs) return [];
-    return [...prs].sort(
+    return [...filterPrs(prs, { statusFilter })].sort(
       (a, b) => parseFloat(b.score || '0') - parseFloat(a.score || '0'),
     );
-  }, [prs]);
+  }, [prs, statusFilter]);
 
   if (isLoading || !prs || prs.length === 0) return null;
 
-  const totalPages = Math.ceil(sortedPrs.length / PAGE_SIZE);
-  const displayPrs = sortedPrs.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(sortedPrs.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const displayPrs = sortedPrs.slice(
+    safePage * PAGE_SIZE,
+    (safePage + 1) * PAGE_SIZE,
+  );
 
   return (
     <Card sx={{ p: 0, overflow: 'hidden' }} elevation={0}>
@@ -649,8 +669,10 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
           borderBottom: '1px solid',
           borderColor: 'border.subtle',
           display: 'flex',
+          flexWrap: 'wrap',
           justifyContent: 'space-between',
           alignItems: 'center',
+          gap: 1.5,
         }}
       >
         <Box>
@@ -673,16 +695,59 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
             Click any PR to see multiplier details
           </Typography>
         </Box>
+        <Stack direction="row" spacing={1} flexWrap="wrap">
+          <FilterButton
+            label="All"
+            isActive={statusFilter === 'all'}
+            onClick={() => handleFilterChange('all')}
+            count={statusCounts.all}
+            color={theme.palette.status.neutral}
+          />
+          <FilterButton
+            label="Open"
+            isActive={statusFilter === 'open'}
+            onClick={() => handleFilterChange('open')}
+            count={statusCounts.open}
+            color={theme.palette.status.open}
+          />
+          <FilterButton
+            label="Merged"
+            isActive={statusFilter === 'merged'}
+            onClick={() => handleFilterChange('merged')}
+            count={statusCounts.merged}
+            color={theme.palette.status.merged}
+          />
+          <FilterButton
+            label="Closed"
+            isActive={statusFilter === 'closed'}
+            onClick={() => handleFilterChange('closed')}
+            count={statusCounts.closed}
+            color={theme.palette.status.closed}
+          />
+        </Stack>
       </Box>
 
       {/* PR list */}
       <Box>
-        {displayPrs.map((pr, i) => (
-          <PrScoreRow
-            key={`${pr.repository}-${pr.pullRequestNumber}-${i}`}
-            pr={pr}
-          />
-        ))}
+        {displayPrs.length === 0 ? (
+          <Typography
+            sx={{
+              fontSize: '0.8rem',
+              color: (t) => alpha(t.palette.text.primary, 0.5),
+              textAlign: 'center',
+              py: 4,
+            }}
+          >
+            No {statusFilter === 'all' ? '' : statusFilter} PRs to show.
+          </Typography>
+        ) : (
+          displayPrs.map((pr, i) => (
+            <PrScoreRow
+              key={`${pr.repository}-${pr.pullRequestNumber}-${i}`}
+              pr={pr}
+            />
+          ))
+        )}
       </Box>
 
       {/* Pagination */}
@@ -703,12 +768,12 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
             sx={{
               fontSize: '0.72rem',
               color:
-                page === 0
+                safePage === 0
                   ? (t) => alpha(t.palette.text.primary, 0.2)
                   : 'primary.main',
-              cursor: page === 0 ? 'default' : 'pointer',
+              cursor: safePage === 0 ? 'default' : 'pointer',
               userSelect: 'none',
-              '&:hover': page > 0 ? { textDecoration: 'underline' } : {},
+              '&:hover': safePage > 0 ? { textDecoration: 'underline' } : {},
             }}
           >
             ← Prev
@@ -719,20 +784,20 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
               color: (t) => alpha(t.palette.text.primary, 0.5),
             }}
           >
-            {page + 1} / {totalPages}
+            {safePage + 1} / {totalPages}
           </Typography>
           <Typography
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             sx={{
               fontSize: '0.72rem',
               color:
-                page >= totalPages - 1
+                safePage >= totalPages - 1
                   ? (t) => alpha(t.palette.text.primary, 0.2)
                   : 'primary.main',
-              cursor: page >= totalPages - 1 ? 'default' : 'pointer',
+              cursor: safePage >= totalPages - 1 ? 'default' : 'pointer',
               userSelect: 'none',
               '&:hover':
-                page < totalPages - 1 ? { textDecoration: 'underline' } : {},
+                safePage < totalPages - 1 ? { textDecoration: 'underline' } : {},
             }}
           >
             Next →
