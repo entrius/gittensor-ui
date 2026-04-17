@@ -98,17 +98,27 @@ const MinerDetailsPage: React.FC = () => {
           <Box
             sx={{
               display: 'flex',
-              alignItems: 'center',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'stretch', sm: 'center' },
               justifyContent: 'space-between',
+              gap: { xs: 1.25, sm: 0 },
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 1,
+              }}
+            >
               <BackButton to="/top-miners" mb={0} />
               <WatchlistButton githubId={githubId} size="medium" />
             </Box>
             <Box
               sx={{
                 display: 'flex',
+                width: { xs: '100%', sm: 'auto' },
                 gap: 0.5,
                 backgroundColor: 'surface.subtle',
                 p: 0.5,
@@ -127,6 +137,8 @@ const MinerDetailsPage: React.FC = () => {
                   sx={{
                     px: 2,
                     py: 0.75,
+                    flex: { xs: 1, sm: 'unset' },
+                    minWidth: 0,
                     borderRadius: 1.5,
                     cursor: 'pointer',
                     backgroundColor:
@@ -148,6 +160,7 @@ const MinerDetailsPage: React.FC = () => {
                     sx={{
                       fontSize: '0.8rem',
                       fontWeight: 600,
+                      textAlign: 'center',
                     }}
                   >
                     {option.label}

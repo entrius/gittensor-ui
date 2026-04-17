@@ -188,6 +188,13 @@ const StatTile: React.FC<StatTileProps> = ({
 );
 
 const COPY_FEEDBACK_MS = 1500;
+const HOTKEY_VISIBLE_EDGE_CHARS = 5;
+
+const formatHotkeyPreview = (hotkey: string): string => {
+  if (!hotkey) return '';
+  if (hotkey.length <= HOTKEY_VISIBLE_EDGE_CHARS * 2 + 3) return hotkey;
+  return `${hotkey.slice(0, HOTKEY_VISIBLE_EDGE_CHARS)}...${hotkey.slice(-HOTKEY_VISIBLE_EDGE_CHARS)}`;
+};
 
 const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
   const [copied, setCopied] = useState(false);
@@ -259,10 +266,10 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
         sx={{
           color: 'inherit',
           fontSize: { xs: '0.55rem', sm: '0.65rem' },
-          wordBreak: 'break-all',
+          wordBreak: 'normal',
         }}
       >
-        {copied ? '✓ Copied to clipboard' : hotkey}
+        {copied ? '✓ Copied to clipboard' : formatHotkeyPreview(hotkey)}
       </Typography>
     </ButtonBase>
   );
@@ -373,14 +380,75 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
         />
       )}
 
-      {/* Identity row */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+      {/* Mobile row 1: OSS/Issue eligibility */}
+      <Box
+        sx={{
+          display: { xs: 'flex', sm: 'none' },
+          alignItems: 'center',
+          gap: 1,
+          flexWrap: 'wrap',
+          mb: 1,
+        }}
+      >
+        <Tooltip
+          title="Requires 5+ merged PRs with token score >= 5 and 80%+ credibility"
+          arrow
+          placement="bottom"
+          slotProps={tooltipSlotProps}
+        >
+          <Chip
+            variant="outlined"
+            label={isEligible ? 'OSS Eligible' : 'OSS Ineligible'}
+            size="small"
+            sx={{
+              color: eligibilityColor,
+              borderColor: alpha(eligibilityColor, 0.35),
+              backgroundColor: alpha(eligibilityColor, 0.1),
+              fontSize: '0.7rem',
+              letterSpacing: '0.5px',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}
+          />
+        </Tooltip>
+        <Tooltip
+          title="Requires 7+ solved issues with token score >= 5 and 80%+ issue credibility"
+          arrow
+          placement="bottom"
+          slotProps={tooltipSlotProps}
+        >
+          <Chip
+            variant="outlined"
+            label={isIssueEligible ? 'Issues Eligible' : 'Issues Ineligible'}
+            size="small"
+            sx={{
+              color: issueEligibilityColor,
+              borderColor: alpha(issueEligibilityColor, 0.35),
+              backgroundColor: alpha(issueEligibilityColor, 0.1),
+              fontSize: '0.7rem',
+              letterSpacing: '0.5px',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}
+          />
+        </Tooltip>
+      </Box>
+
+      {/* Row 2: avatar + identity details */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: 2,
+          mb: 1,
+        }}
+      >
         <Avatar
           src={`https://avatars.githubusercontent.com/${username}`}
           alt={username}
           sx={{
-            width: 64,
-            height: 64,
+            width: { xs: 72, sm: 64 },
+            height: { xs: 72, sm: 64 },
             border: '2px solid',
             borderColor: 'border.light',
           }}
@@ -415,6 +483,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                 label={isEligible ? 'OSS Eligible' : 'OSS Ineligible'}
                 size="small"
                 sx={{
+                  display: { xs: 'none', sm: 'inline-flex' },
                   color: eligibilityColor,
                   borderColor: alpha(eligibilityColor, 0.35),
                   backgroundColor: alpha(eligibilityColor, 0.1),
@@ -438,6 +507,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                 }
                 size="small"
                 sx={{
+                  display: { xs: 'none', sm: 'inline-flex' },
                   color: issueEligibilityColor,
                   borderColor: alpha(issueEligibilityColor, 0.35),
                   backgroundColor: alpha(issueEligibilityColor, 0.1),
@@ -452,9 +522,9 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           <Box
             sx={{
               display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-              flexWrap: 'wrap',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              gap: 0.35,
             }}
           >
             <Typography
@@ -491,7 +561,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             </Typography>
           )}
 
-          {/* GitHub meta — compact inline chips */}
+          {/* Row 3: role/location/followers chips */}
           {githubData && (
             <Stack direction="row" gap={1} flexWrap="wrap" sx={{ mt: 1 }}>
               {githubData.company && (
@@ -532,32 +602,29 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                 icon={<FollowersIcon />}
                 label={`${githubData.followers} followers`}
                 size="small"
+                sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
               />
             </Stack>
           )}
 
-          {/* Updated chip — mobile */}
-          {minerStats.updatedAt && (
-            <Chip
-              icon={<UpdateIcon sx={{ fontSize: '0.8rem' }} />}
-              label={`Updated ${formatTimeAgo(new Date(minerStats.updatedAt))}`}
-              variant="outlined"
-              size="small"
-              sx={{
-                display: { xs: 'flex', sm: 'none' },
-                mt: 1,
-                fontSize: '0.65rem',
-                color: (t) => alpha(t.palette.text.primary, 0.5),
-                borderColor: 'border.light',
-                backgroundColor: 'surface.elevated',
-                '& .MuiChip-icon': {
-                  color: (t) => alpha(t.palette.text.primary, 0.4),
-                },
-              }}
-            />
-          )}
         </Box>
       </Box>
+
+      {/* Row 4 (mobile): followers + updated ago */}
+      <Typography
+        sx={{
+          display: { xs: 'block', sm: 'none' },
+          mb: 2,
+          fontSize: '0.75rem',
+          lineHeight: 1.4,
+          color: (t) => alpha(t.palette.text.primary, 0.5),
+        }}
+      >
+        {githubData?.followers ?? 0} followers
+        {minerStats.updatedAt
+          ? ` • Updated ${formatTimeAgo(new Date(minerStats.updatedAt))}`
+          : ''}
+      </Typography>
 
       {viewMode === 'prs' ? (
         <Grid container spacing={1.5}>
