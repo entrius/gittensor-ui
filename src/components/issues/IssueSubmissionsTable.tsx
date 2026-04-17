@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { LinkBox, LinkTableRow } from '../common/linkBehavior';
 import {
   Box,
   Card,
@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { IssueSubmission } from '../../api/models/Issues';
-import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { formatDate } from '../../utils/format';
 
 const headerCellSx = {
@@ -50,7 +50,6 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
   isLoading,
   backLabel,
 }) => {
-  const navigate = useNavigate();
   const theme = useTheme();
 
   return (
@@ -93,7 +92,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
           </Typography>
         </Box>
       ) : (
-        <TableContainer>
+        <TableContainer sx={{ ...scrollbarSx }}>
           <Table size="small">
             <TableHead>
               <TableRow>
@@ -113,14 +112,10 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
             </TableHead>
             <TableBody>
               {submissions.map((submission) => (
-                <TableRow
+                <LinkTableRow
                   key={`${submission.repositoryFullName}-${submission.number}`}
-                  onClick={() =>
-                    navigate(
-                      `/miners/pr?repo=${encodeURIComponent(submission.repositoryFullName)}&number=${submission.number}`,
-                      backLabel ? { state: { backLabel } } : undefined,
-                    )
-                  }
+                  href={`/miners/pr?repo=${encodeURIComponent(submission.repositoryFullName)}&number=${submission.number}`}
+                  linkState={backLabel ? { backLabel } : undefined}
                   sx={{
                     cursor: 'pointer',
                     transition: 'background-color 0.2s',
@@ -158,15 +153,11 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                   </TableCell>
                   <TableCell sx={bodyCellSx}>
                     {submission.authorGithubId ? (
-                      <Typography
-                        component="span"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(
-                            `/miners/details?githubId=${submission.authorGithubId}`,
-                            backLabel ? { state: { backLabel } } : undefined,
-                          );
-                        }}
+                      <LinkBox
+                        component={Typography}
+                        href={`/miners/details?githubId=${submission.authorGithubId}`}
+                        linkState={backLabel ? { backLabel } : undefined}
+                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
                         sx={{
                           fontSize: '0.85rem',
                           color: STATUS_COLORS.info,
@@ -177,7 +168,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                         }}
                       >
                         {submission.authorLogin}
-                      </Typography>
+                      </LinkBox>
                     ) : (
                       <Typography
                         sx={{
@@ -235,7 +226,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                       {formatDate(submission.prCreatedAt)}
                     </Typography>
                   </TableCell>
-                </TableRow>
+                </LinkTableRow>
               ))}
             </TableBody>
           </Table>

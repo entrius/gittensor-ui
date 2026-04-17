@@ -30,7 +30,15 @@ const WatchlistPage: React.FC = () => {
     [allMinersStats],
   );
   const minerStats = useMemo(
-    () => allMinerStats.filter((m) => watchedSet.has(m.githubId)),
+    () =>
+      allMinerStats
+        .filter((m) => watchedSet.has(m.githubId))
+        .map((m) => ({
+          ...m,
+          // Watchlist cards should be enabled if miner is eligible for either
+          // OSS contributions or Issue Discoveries.
+          isEligible: Boolean(m.ossIsEligible || m.discoveriesIsEligible),
+        })),
     [allMinerStats, watchedSet],
   );
 
@@ -133,11 +141,12 @@ const WatchlistPage: React.FC = () => {
             <TopMinersTable
               miners={minerStats}
               isLoading={isLoadingMinerStats}
-              getHref={(m) =>
+              getMinerHref={(m) =>
                 `/miners/details?githubId=${encodeURIComponent(m.githubId)}`
               }
               linkState={{ backLabel: 'Back to Watchlist' }}
               variant="watchlist"
+              showDualEligibilityBadges
             />
           </Box>
         )}

@@ -17,7 +17,8 @@ import {
   GitHub as GitHubIcon,
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import {
   useMinerStats,
   useMinerPRs,
@@ -117,11 +118,13 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
 
 interface PrScoreRowProps {
   pr: CommitLog;
-  onNavigateToPr: (repo: string, prNumber: number) => void;
 }
 
-const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
+const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr }) => {
   const [expanded, setExpanded] = useState(false);
+  const prLinkProps = useLinkBehavior<HTMLAnchorElement>(
+    `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
+  );
 
   // Fetch full PR details (with all multipliers) — cached by React Query
   const { data: prDetails } = usePullRequestDetails(
@@ -315,6 +318,12 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
               pr.totalNodesScored != null &&
                 parseNumber(pr.totalNodesScored) > 0 &&
                 `${pr.totalNodesScored} nodes`,
+              pr.structuralCount != null &&
+                parseNumber(pr.structuralCount) > 0 &&
+                `${pr.structuralCount} structural (${parseNumber(pr.structuralScore).toFixed(2)})`,
+              pr.leafCount != null &&
+                parseNumber(pr.leafCount) > 0 &&
+                `${pr.leafCount} leaf (${parseNumber(pr.leafScore).toFixed(2)})`,
             ]
               .filter(Boolean)
               .map((stat, i, arr) => (
@@ -372,11 +381,14 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
             <Button
               size="small"
               startIcon={<OpenInNewIcon sx={{ fontSize: '0.85rem' }} />}
+              component="a"
+              {...prLinkProps}
               onClick={(e) => {
                 e.stopPropagation();
-                onNavigateToPr(pr.repository, pr.pullRequestNumber);
+                prLinkProps.onClick(e);
               }}
               sx={{
+                ...linkResetSx,
                 fontSize: '0.65rem',
                 textTransform: 'none',
                 color: 'primary.main',
@@ -602,7 +614,6 @@ const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
 // ---------------------------------------------------------------------------
 
 const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const PAGE_SIZE = 10;
@@ -623,10 +634,6 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
     },
     [page, setSearchParams],
   );
-
-  const handleNavigateToPr = (repo: string, prNumber: number) => {
-    navigate(`/miners/pr?repo=${encodeURIComponent(repo)}&number=${prNumber}`);
-  };
 
   const sortedPrs = useMemo(() => {
     if (!prs) return [];
@@ -680,7 +687,6 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
           <PrScoreRow
             key={`${pr.repository}-${pr.pullRequestNumber}-${i}`}
             pr={pr}
-            onNavigateToPr={handleNavigateToPr}
           />
         ))}
       </Box>

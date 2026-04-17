@@ -91,9 +91,9 @@ const RepositoryDetailsPage: React.FC = () => {
 
   const owner = repo ? repo.split('/')[0] : '';
 
-  // If no repo is provided, redirect to miners page
+  // If no repo is provided, redirect to repository list (registered route)
   if (!repo) {
-    navigate('/miners');
+    navigate('/repositories', { replace: true });
     return null;
   }
 
