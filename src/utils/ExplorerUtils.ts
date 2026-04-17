@@ -68,11 +68,16 @@ export const calculateDynamicOpenPrThreshold = (
   return Math.min(baseThreshold + bonus, maxThreshold);
 };
 
+const ISSUE_OPEN_THRESHOLD_BASE = 5;
+const ISSUE_OPEN_THRESHOLD_TOKEN_STEP = 300;
+const ISSUE_OPEN_THRESHOLD_MAX = 30;
+
 export const calculateOpenIssueThreshold = (
   minerStats: MinerEvaluation,
 ): number => {
   const issueTokenScore = parseNumber(minerStats.issueTokenScore);
-  return Math.min(5 + Math.floor(issueTokenScore / 300), 30);
+  const bonus = Math.floor(issueTokenScore / ISSUE_OPEN_THRESHOLD_TOKEN_STEP);
+  return Math.min(ISSUE_OPEN_THRESHOLD_BASE + bonus, ISSUE_OPEN_THRESHOLD_MAX);
 };
 
 const isMinerEvaluationLike = (value: unknown): value is MinerEvaluation => {

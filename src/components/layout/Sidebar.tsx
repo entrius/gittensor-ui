@@ -236,7 +236,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               color: 'text.secondary',
             }}
           >
-            © Gittensor 2026
+            © Gittensor {new Date().getFullYear()}
           </Typography>
         </Stack>
       </Box>

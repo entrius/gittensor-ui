@@ -6,6 +6,12 @@ import { alpha } from '@mui/material/styles';
 
 const MONO = '"JetBrains Mono", monospace';
 
+const NETWORK_CONFIG = {
+  subnetId: 74,
+  testnetSubnetId: 422,
+  scoringCadence: 'every 2 hours',
+} as const;
+
 const steps = [
   {
     step: 1,
@@ -164,11 +170,11 @@ const StepDetail: React.FC<{ step: number }> = ({ step }) => {
           </Typography>
           <NetworkTabs network={network} onChange={setNetwork} />
           {network === 'mainnet' ? (
-            <CodeBlock label="mainnet (subnet 74)">{`btcli subnet register --netuid 74 \\
+            <CodeBlock label={`mainnet (subnet ${NETWORK_CONFIG.subnetId})`}>{`btcli subnet register --netuid ${NETWORK_CONFIG.subnetId} \\
   --wallet-name <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME>`}</CodeBlock>
           ) : (
-            <CodeBlock label="testnet (subnet 422)">{`btcli subnet register --netuid 422 \\
+            <CodeBlock label={`testnet (subnet ${NETWORK_CONFIG.testnetSubnetId})`}>{`btcli subnet register --netuid ${NETWORK_CONFIG.testnetSubnetId} \\
   --wallet-name <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
   --network test`}</CodeBlock>
@@ -274,12 +280,12 @@ uv pip install -e .`}</CodeBlock>
             <CodeBlock label="mainnet">{`gitt miner post --pat <YOUR_PAT> \\
   --wallet <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
-  --netuid 74`}</CodeBlock>
+  --netuid ${NETWORK_CONFIG.subnetId}`}</CodeBlock>
           ) : (
             <CodeBlock label="testnet">{`gitt miner post --pat <YOUR_PAT> \\
   --wallet <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
-  --netuid 422 --network test`}</CodeBlock>
+  --netuid ${NETWORK_CONFIG.testnetSubnetId} --network test`}</CodeBlock>
           )}
           <Typography
             variant="body2"
@@ -306,12 +312,12 @@ uv pip install -e .`}</CodeBlock>
             <CodeBlock label="mainnet">{`gitt miner check \\
   --wallet <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
-  --netuid 74`}</CodeBlock>
+  --netuid ${NETWORK_CONFIG.subnetId}`}</CodeBlock>
           ) : (
             <CodeBlock label="testnet">{`gitt miner check \\
   --wallet <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
-  --netuid 422 --network test`}</CodeBlock>
+  --netuid ${NETWORK_CONFIG.testnetSubnetId} --network test`}</CodeBlock>
           )}
           <Typography
             variant="body2"
@@ -333,7 +339,7 @@ uv pip install -e .`}</CodeBlock>
           >
             You're all set! Start contributing to whitelisted repositories — no
             miner process needs to run. Validators score your merged PRs
-            automatically every 2 hours.
+            automatically {NETWORK_CONFIG.scoringCadence}.
           </Typography>
           <Box
             component="ul"
