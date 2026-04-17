@@ -30,10 +30,16 @@ import {
   paginateItems,
   type PrStatusFilter,
 } from '../../utils';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { LinkTableRow } from '../common/linkBehavior';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
-import { headerCellStyle, bodyCellStyle, tooltipSlotProps } from '../../theme';
+import {
+  headerCellStyle,
+  bodyCellStyle,
+  tooltipSlotProps,
+  scrollbarSx,
+} from '../../theme';
 
 type PrSortField = 'number' | 'repository' | 'score' | 'lines' | 'date';
 type SortDir = 'asc' | 'desc';
@@ -88,7 +94,6 @@ interface MinerPRsTableProps {
 
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const theme = useTheme();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
@@ -394,16 +399,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             sx={{
               overflowY: 'auto',
               overflowX: 'auto',
-              '&::-webkit-scrollbar': {
-                width: { xs: '6px', sm: '8px' },
-                height: { xs: '6px', sm: '8px' },
-              },
-              '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: 'border.light',
-                borderRadius: '4px',
-                '&:hover': { backgroundColor: 'border.medium' },
-              },
+              ...scrollbarSx,
             }}
           >
             <Table
@@ -484,17 +480,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 {pagedPRs.map((pr, index) => {
                   const scoreTooltip = getScoreTooltip(pr);
                   return (
-                    <TableRow
+                    <LinkTableRow
                       key={`${pr.repository}-${pr.pullRequestNumber}-${index}`}
-                      onClick={() => {
-                        navigate(
-                          `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
-                          {
-                            state: {
-                              backLabel: `Back to ${prs?.[0]?.author || githubId}`,
-                            },
-                          },
-                        );
+                      href={`/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`}
+                      linkState={{
+                        backLabel: `Back to ${prs?.[0]?.author || githubId}`,
                       }}
                       sx={{
                         cursor: 'pointer',
@@ -677,7 +667,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                             ? 'Closed'
                             : 'Open'}
                       </TableCell>
-                    </TableRow>
+                    </LinkTableRow>
                   );
                 })}
               </TableBody>

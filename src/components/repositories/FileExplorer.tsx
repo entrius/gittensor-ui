@@ -14,7 +14,7 @@ import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import { STATUS_COLORS } from '../../theme';
+import { STATUS_COLORS, scrollbarSx } from '../../theme';
 
 export interface FileNode {
   path: string;
@@ -224,6 +224,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
       height: '100%',
       overflowY: 'auto',
       overflowX: 'hidden',
+      ...scrollbarSx,
     }}
   >
     <List component="nav" dense>

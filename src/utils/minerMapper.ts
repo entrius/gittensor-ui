@@ -26,9 +26,17 @@ export const mapAllMinersToStats = (
     uniqueReposCount: parseNumber(stat.uniqueReposCount),
     credibility: parseNumber(stat.credibility),
     isEligible: stat.isEligible ?? false,
+    ossIsEligible: stat.isEligible ?? false,
+    discoveriesIsEligible: stat.isIssueEligible ?? false,
     usdPerDay: parseNumber(stat.usdPerDay),
     totalMergedPrs: parseNumber(stat.totalMergedPrs),
     totalOpenPrs: parseNumber(stat.totalOpenPrs),
     totalClosedPrs: parseNumber(stat.totalClosedPrs),
+    totalSolvedIssues: parseNumber(stat.totalSolvedIssues),
+    totalOpenIssues: parseNumber(stat.totalOpenIssues),
+    totalClosedIssues: parseNumber(stat.totalClosedIssues),
+    issueDiscoveryScore: parseNumber(stat.issueDiscoveryScore),
+    issueCredibility: parseNumber(stat.issueCredibility),
+    isIssueEligible: stat.isIssueEligible ?? false,
   }));
 };

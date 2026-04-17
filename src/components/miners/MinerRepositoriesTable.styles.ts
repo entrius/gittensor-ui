@@ -1,5 +1,6 @@
 import { type Theme, alpha } from '@mui/material';
 import { type SxProps } from '@mui/system';
+import { scrollbarSx } from '../../theme';
 
 export const getHeaderCellStyle = (theme: Theme) => ({
   backgroundColor: theme.palette.surface.elevated,
@@ -49,14 +50,5 @@ export const searchFieldSx: SxProps<Theme> = {
 export const tableContainerSx: SxProps<Theme> = {
   overflowY: 'auto',
   overflowX: 'auto',
-  '&::-webkit-scrollbar': {
-    width: { xs: '6px', sm: '8px' },
-    height: { xs: '6px', sm: '8px' },
-  },
-  '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
-  '&::-webkit-scrollbar-thumb': {
-    backgroundColor: 'border.light',
-    borderRadius: '4px',
-    '&:hover': { backgroundColor: 'border.medium' },
-  },
+  ...scrollbarSx,
 };

@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { usePullRequestDetails } from '../../api';
-import { useNavigate } from 'react-router-dom';
+import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import theme, { RANK_COLORS, STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { buildMultiplierGrid } from '../../utils/multiplierDefs';
 import { getGithubAvatarBg, getGithubAvatarSrc } from '../../utils';
@@ -27,10 +27,18 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   pullRequestNumber,
   hideHeader = false,
 }) => {
-  const navigate = useNavigate();
   // Fetch detailed PR data directly
   const { data: prDetails, isLoading: isDetailsLoading } =
     usePullRequestDetails(repository, pullRequestNumber);
+
+  const repoLinkProps = useLinkBehavior<HTMLAnchorElement>(
+    `/miners/repository?name=${encodeURIComponent(repository)}`,
+    { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
+  );
+  const authorLinkProps = useLinkBehavior<HTMLAnchorElement>(
+    `/miners/details?githubId=${prDetails?.githubId ?? ''}`,
+    { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
+  );
 
   if (isDetailsLoading) {
     return (
@@ -96,6 +104,26 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
       rank: null,
     },
     {
+      label: 'Structural',
+      value:
+        prDetails.structuralCount != null
+          ? `${prDetails.structuralCount} (${parseFloat(String(prDetails.structuralScore ?? 0)).toFixed(2)})`
+          : '-',
+      rank: null,
+      tooltip:
+        'Functions, classes, and modules scored via AST analysis. Structural nodes carry more weight per node because they represent high-value code organization.',
+    },
+    {
+      label: 'Leaf',
+      value:
+        prDetails.leafCount != null
+          ? `${prDetails.leafCount} (${parseFloat(String(prDetails.leafScore ?? 0)).toFixed(2)})`
+          : '-',
+      rank: null,
+      tooltip:
+        'Individual statements and expressions scored via AST analysis. More leaf nodes means a larger diff, but structural nodes contribute more score per node.',
+    },
+    {
       label: 'Changes',
       value: '',
       rank: null,
@@ -125,13 +153,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
       {!hideHeader && (
         <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box
-            onClick={() =>
-              navigate(
-                `/miners/repository?name=${encodeURIComponent(repository)}`,
-                { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
-              )
-            }
+            component="a"
+            {...repoLinkProps}
             sx={{
+              ...linkResetSx,
               cursor: 'pointer',
               transition: 'transform 0.2s',
               '&:hover': {
@@ -209,15 +234,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography
-                onClick={() =>
-                  navigate(
-                    `/miners/repository?name=${encodeURIComponent(repository)}`,
-                    {
-                      state: { backLabel: `Back to PR #${pullRequestNumber}` },
-                    },
-                  )
-                }
+                component="a"
+                {...repoLinkProps}
                 sx={{
+                  ...linkResetSx,
                   color: alpha(
                     theme.palette.common.white,
                     TEXT_OPACITY.tertiary,
@@ -272,9 +292,40 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                     textTransform: 'uppercase',
                     letterSpacing: '1px',
                     fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
                   }}
                 >
                   {item.label}
+                  {item.tooltip && (
+                    <Tooltip
+                      title={item.tooltip}
+                      arrow
+                      slotProps={{
+                        tooltip: {
+                          sx: {
+                            backgroundColor: 'surface.tooltip',
+                            color: 'text.primary',
+                            fontSize: '0.7rem',
+                            maxWidth: 280,
+                            p: 1.5,
+                            border: '1px solid',
+                            borderColor: 'border.light',
+                          },
+                        },
+                        arrow: { sx: { color: 'surface.tooltip' } },
+                      }}
+                    >
+                      <InfoOutlinedIcon
+                        sx={{
+                          fontSize: '0.7rem',
+                          cursor: 'help',
+                          opacity: 0.5,
+                        }}
+                      />
+                    </Tooltip>
+                  )}
                 </Typography>
                 {item.rank && (
                   <Box
@@ -523,12 +574,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               Author
             </Typography>
             <Box
-              onClick={() =>
-                navigate(`/miners/details?githubId=${prDetails.githubId}`, {
-                  state: { backLabel: `Back to PR #${pullRequestNumber}` },
-                })
-              }
+              component="a"
+              {...authorLinkProps}
               sx={{
+                ...linkResetSx,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1.5,

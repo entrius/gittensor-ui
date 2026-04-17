@@ -46,10 +46,10 @@ const PRDetailsPage: React.FC = () => {
       : null,
   );
 
-  // If no repo or PR number is provided, redirect to miners page
+  // If no repo or PR number is provided, redirect to OSS contributors (registered route)
   if (!repository || !pullRequestNumber) {
     if (typeof window !== 'undefined') {
-      navigate('/miners?tab=prs');
+      navigate('/top-miners', { replace: true });
     }
     return null;
   }

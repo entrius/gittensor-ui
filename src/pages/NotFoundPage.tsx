@@ -1,4 +1,5 @@
 import React from 'react';
+import { scrollbarSx } from '../theme';
 import { Box, Button, Stack, Typography, alpha } from '@mui/material';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
 import HomeIcon from '@mui/icons-material/Home';
@@ -67,6 +68,7 @@ const NotFoundPage: React.FC = () => {
             overflow: 'auto',
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-all',
+            ...scrollbarSx,
           }}
         >
           {location.pathname}
