@@ -6,19 +6,38 @@
  * - Pending Issues: Registered issues awaiting funding
  * - History: Completed or cancelled issues
  */
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Box, Tabs, Tab, Stack, Typography, alpha } from '@mui/material';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { IssueStats, IssuesList } from '../components/issues';
 import { useIssuesStats, useIssues } from '../api';
+import { readStoredTab, writeStoredTab } from '../utils/tabPreferences';
 
 const TAB_SLUGS = ['available', 'pending', 'history'] as const;
+
+const BOUNTIES_TAB_STORAGE_KEY = 'gittensor-ui:bounties-last-tab';
 
 const IssuesPage: React.FC = () => {
   const navigate = useNavigate();
   const { tab: tabParam } = useParams<{ tab?: string }>();
+
+  useLayoutEffect(() => {
+    if (
+      tabParam &&
+      TAB_SLUGS.includes(tabParam as (typeof TAB_SLUGS)[number])
+    ) {
+      writeStoredTab(BOUNTIES_TAB_STORAGE_KEY, tabParam);
+      return;
+    }
+    const saved = readStoredTab(BOUNTIES_TAB_STORAGE_KEY);
+    const slug =
+      saved && TAB_SLUGS.includes(saved as (typeof TAB_SLUGS)[number])
+        ? saved
+        : 'available';
+    navigate(`/bounties/${slug}`, { replace: true });
+  }, [tabParam, navigate]);
 
   const tabIndex = Math.max(
     0,
@@ -31,7 +50,9 @@ const IssuesPage: React.FC = () => {
   const historyIssuesQuery = useIssues('completed,cancelled');
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    navigate(`/bounties/${TAB_SLUGS[newValue]}`, { replace: true });
+    const slug = TAB_SLUGS[newValue];
+    writeStoredTab(BOUNTIES_TAB_STORAGE_KEY, slug);
+    navigate(`/bounties/${slug}`, { replace: true });
   };
 
   return (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Box, Tabs, Tab, CircularProgress, Typography } from '@mui/material';
 import { Page } from '../components/layout';
@@ -15,19 +15,68 @@ import { STATUS_COLORS } from '../theme';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CodeIcon from '@mui/icons-material/Code';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import { readStoredTab, writeStoredTab } from '../utils/tabPreferences';
+
+const PR_DETAILS_TAB_STORAGE_KEY = 'gittensor-ui:pr-details-last-tab';
+
+const PR_TAB_SLUGS = ['overview', 'files', 'conversation'] as const;
 
 const PRDetailsPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const repository = searchParams.get('repo');
   const pullRequestNumber = searchParams.get('number');
   const [tabValue, setTabValue] = useState(0);
+  const tabInitForPr = useRef<string | null>(null);
 
   // Call hook unconditionally (React rules of hooks)
   const { data: prDetails, isLoading } = usePullRequestDetails(
     repository || '',
     pullRequestNumber ? parseInt(pullRequestNumber) : 0,
   );
+
+  const prRouteKey =
+    repository && pullRequestNumber ? `${repository}#${pullRequestNumber}` : '';
+
+  useLayoutEffect(() => {
+    if (!repository || !pullRequestNumber || !prDetails) {
+      return;
+    }
+    if (tabInitForPr.current === prRouteKey) {
+      return;
+    }
+    tabInitForPr.current = prRouteKey;
+
+    const tabFromUrl = searchParams.get('tab');
+    if (
+      tabFromUrl &&
+      PR_TAB_SLUGS.includes(tabFromUrl as (typeof PR_TAB_SLUGS)[number])
+    ) {
+      const idx = PR_TAB_SLUGS.indexOf(
+        tabFromUrl as (typeof PR_TAB_SLUGS)[number],
+      );
+      setTabValue(idx);
+      writeStoredTab(PR_DETAILS_TAB_STORAGE_KEY, PR_TAB_SLUGS[idx]);
+      return;
+    }
+
+    const saved = readStoredTab(PR_DETAILS_TAB_STORAGE_KEY);
+    const idx =
+      saved && PR_TAB_SLUGS.includes(saved as (typeof PR_TAB_SLUGS)[number])
+        ? PR_TAB_SLUGS.indexOf(saved as (typeof PR_TAB_SLUGS)[number])
+        : 0;
+    setTabValue(idx);
+    const p = new URLSearchParams(searchParams);
+    p.set('tab', PR_TAB_SLUGS[idx]);
+    setSearchParams(p, { replace: true });
+  }, [
+    repository,
+    pullRequestNumber,
+    prDetails,
+    prRouteKey,
+    searchParams,
+    setSearchParams,
+  ]);
 
   // If no repo or PR number is provided, redirect to miners page
   if (!repository || !pullRequestNumber) {
@@ -39,6 +88,11 @@ const PRDetailsPage: React.FC = () => {
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
+    const slug = PR_TAB_SLUGS[newValue];
+    writeStoredTab(PR_DETAILS_TAB_STORAGE_KEY, slug);
+    const p = new URLSearchParams(searchParams);
+    p.set('tab', slug);
+    setSearchParams(p, { replace: true });
   };
 
   return (

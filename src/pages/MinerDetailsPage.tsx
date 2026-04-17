@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { Box, Tab, Tabs, Typography, alpha } from '@mui/material';
 import { Page } from '../components/layout';
@@ -13,8 +13,12 @@ import {
   SEO,
 } from '../components';
 import { WatchlistButton } from '../components/common';
+import { readStoredTab, writeStoredTab } from '../utils/tabPreferences';
 
 type ViewMode = 'prs' | 'issues';
+
+const minerTabStorageKey = (mode: ViewMode) =>
+  `gittensor-ui:miner-details-tab:${mode}`;
 
 const PR_TABS = [
   'overview',
@@ -45,6 +49,26 @@ const MinerDetailsPage: React.FC = () => {
   const tabs = viewMode === 'issues' ? ISSUE_TABS : PR_TABS;
 
   const tabParam = searchParams.get('tab');
+
+  useLayoutEffect(() => {
+    if (!githubId) {
+      return;
+    }
+    const allowedTabs = viewMode === 'issues' ? ISSUE_TABS : PR_TABS;
+    if (tabParam && (allowedTabs as readonly string[]).includes(tabParam)) {
+      writeStoredTab(minerTabStorageKey(viewMode), tabParam);
+      return;
+    }
+    const saved = readStoredTab(minerTabStorageKey(viewMode));
+    const nextTab: MinerDetailsTab =
+      saved && (allowedTabs as readonly string[]).includes(saved)
+        ? (saved as MinerDetailsTab)
+        : 'overview';
+    const p = new URLSearchParams(searchParams);
+    p.set('tab', nextTab);
+    setSearchParams(p, { replace: true });
+  }, [githubId, viewMode, tabParam, searchParams, setSearchParams]);
+
   const activeTab: MinerDetailsTab =
     tabParam && (tabs as readonly string[]).includes(tabParam)
       ? (tabParam as MinerDetailsTab)
@@ -53,7 +77,13 @@ const MinerDetailsPage: React.FC = () => {
   const handleModeChange = (mode: ViewMode) => {
     const p = new URLSearchParams(searchParams);
     p.set('mode', mode);
-    p.set('tab', 'overview');
+    const nextTabs = mode === 'issues' ? ISSUE_TABS : PR_TABS;
+    const saved = readStoredTab(minerTabStorageKey(mode));
+    const nextTab: MinerDetailsTab =
+      saved && (nextTabs as readonly string[]).includes(saved)
+        ? (saved as MinerDetailsTab)
+        : 'overview';
+    p.set('tab', nextTab);
     setSearchParams(p, { replace: true });
   };
 
@@ -61,6 +91,7 @@ const MinerDetailsPage: React.FC = () => {
     _event: React.SyntheticEvent,
     newValue: MinerDetailsTab,
   ) => {
+    writeStoredTab(minerTabStorageKey(viewMode), newValue);
     const p = new URLSearchParams(searchParams);
     p.set('tab', newValue);
     setSearchParams(p, { replace: true });
