@@ -388,6 +388,16 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           {getInitials(username)}
         </Avatar>
         <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography
+            sx={{
+              fontSize: { xs: '1.15rem', sm: '1.35rem' },
+              fontWeight: 700,
+              color: 'text.primary',
+              mb: 0.5,
+            }}
+          >
+            {githubData?.name || username}
+          </Typography>
           <Box
             sx={{
               display: 'flex',
@@ -397,15 +407,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               mb: 0.5,
             }}
           >
-            <Typography
-              sx={{
-                fontSize: { xs: '1.15rem', sm: '1.35rem' },
-                fontWeight: 700,
-                color: 'text.primary',
-              }}
-            >
-              {githubData?.name || username}
-            </Typography>
             <Tooltip
               title="Requires 5+ merged PRs with token score >= 5 and 80%+ credibility"
               arrow

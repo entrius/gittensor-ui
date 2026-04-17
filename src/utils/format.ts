@@ -64,6 +64,22 @@ export const formatUsdEstimate = (
 };
 
 /**
+ * Convert an Alpha token amount to a formatted USD string using live prices.
+ * Returns null when the amount is missing, zero, or prices are unavailable.
+ */
+export const formatAlphaToUsd = (
+  alphaAmount: string | undefined,
+  taoPrice: number,
+  alphaPrice: number,
+): string | null => {
+  if (!alphaAmount) return null;
+  const amount = parseFloat(alphaAmount);
+  if (isNaN(amount) || amount === 0) return null;
+  const usd = amount * alphaPrice * taoPrice;
+  return `~${usd.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`;
+};
+
+/**
  * Return up to two uppercase initials from a display name or username.
  * Falls back to "?" for empty/undefined input.
  */
