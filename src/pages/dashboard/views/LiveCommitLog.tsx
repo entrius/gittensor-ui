@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -10,9 +10,15 @@ import {
   alpha,
   Avatar,
   Chip,
+  IconButton,
+  TextField,
 } from '@mui/material';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import FirstPageIcon from '@mui/icons-material/FirstPage';
+import LastPageIcon from '@mui/icons-material/LastPage';
 import { LinkBox } from '../../../components/common/linkBehavior';
-import { useInfiniteCommitLog } from '../../../api';
+import { useCommitLog } from '../../../api';
 import theme, {
   REPO_OWNER_AVATAR_BACKGROUNDS,
   scrollbarSx,
@@ -102,6 +108,9 @@ const getCommitStatus = (entry: CommitLogEntry): CommitStatus => {
   if (entry.prState === 'CLOSED') return 'closed';
   return 'open';
 };
+
+/** Matches server page size in DashboardApi (useInfiniteCommitLog / /dash/commits) */
+const COMMITS_PAGE_SIZE = 15;
 
 const getCommitTimestamp = (entry: CommitLogEntry) => {
   const timestamp = entry.mergedAt || entry.prCreatedAt;
@@ -310,93 +319,79 @@ const LiveCommitLog: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteCommitLog({ refetchInterval: 10000 });
-
   const [statusFilter, setStatusFilter] = useState<CommitStatusFilter>('all');
-  const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
-  const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
-  const logContainerRef = useRef<HTMLDivElement>(null);
-  const loadMoreRef = useRef<HTMLAnchorElement>(null);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageInput, setPageInput] = useState('1');
 
-  const apiCommits = useMemo<CommitLogEntry[]>(
-    () => data?.pages.flat() ?? [],
-    [data],
+  const apiPage = pageIndex + 1;
+
+  const { data: pageData, isFetching } = useCommitLog(
+    { refetchInterval: 10000 },
+    apiPage,
+    COMMITS_PAGE_SIZE,
   );
 
   useEffect(() => {
-    if (apiCommits.length === 0) return;
+    setPageIndex(0);
+  }, [statusFilter]);
 
-    setLogEntries((prevLog) => {
-      const previousIds = new Set(prevLog.map(getCommitId));
-      const latestById = new Map(
-        apiCommits.map((entry) => [getCommitId(entry), entry]),
-      );
+  useEffect(() => {
+    setPageInput(String(pageIndex + 1));
+  }, [pageIndex]);
 
-      if (prevLog.length === 0) return apiCommits;
+  const pageEntries = useMemo<CommitLogEntry[]>(
+    () => (Array.isArray(pageData) ? pageData : []),
+    [pageData],
+  );
 
-      const updatedLog = prevLog.map(
-        (entry) => latestById.get(getCommitId(entry)) ?? entry,
-      );
-      const novelItems = apiCommits.filter(
-        (entry) => !previousIds.has(getCommitId(entry)),
-      );
-
-      if (novelItems.length === 0) return updatedLog;
-
-      const firstApiId = getCommitId(apiCommits[0]);
-      const isHeadUpdate = novelItems.some(
-        (entry) => getCommitId(entry) === firstApiId,
-      );
-
-      if (isHeadUpdate) {
-        setNewEntryIds(new Set(novelItems.map(getCommitId)));
-        setTimeout(() => setNewEntryIds(new Set()), 2000);
-        return [...novelItems, ...updatedLog];
-      }
-
-      return [...updatedLog, ...novelItems];
-    });
-  }, [apiCommits]);
+  /** Exact page count only when this response is the last page (short page). */
+  const exactTotalPages = useMemo(() => {
+    if (pageData === undefined) return null;
+    const len = Array.isArray(pageData) ? pageData.length : 0;
+    if (pageIndex === 0 && len === 0) return null;
+    if (len < COMMITS_PAGE_SIZE) return pageIndex + 1;
+    return null;
+  }, [pageData, pageIndex]);
 
   const visibleEntries = useMemo(
     () =>
-      [...logEntries]
+      [...pageEntries]
         .filter(
           (entry) =>
             statusFilter === 'all' || getCommitStatus(entry) === statusFilter,
         )
         .sort((a, b) => getCommitTimestamp(b) - getCommitTimestamp(a)),
-    [logEntries, statusFilter],
+    [pageEntries, statusFilter],
   );
 
-  const hasAnyEntries = logEntries.length > 0;
-  const showInitialLoading = isLoading && !hasAnyEntries;
-  const showWaitingForActivity = !showInitialLoading && !hasAnyEntries;
-  const showFilteredEmptyState = hasAnyEntries && visibleEntries.length === 0;
+  const hasNextServerPage = pageEntries.length === COMMITS_PAGE_SIZE;
+  const hasPrevPage = pageIndex > 0;
+  const canGoLast = exactTotalPages !== null && pageIndex < exactTotalPages - 1;
 
-  // Intersection observer for infinite scroll
-  useEffect(() => {
-    const scrollContainer = logContainerRef.current;
-    const loadMoreElement = loadMoreRef.current;
-    if (!scrollContainer || !loadMoreElement) return;
+  const commitPageInput = useCallback(() => {
+    let parsed = Number.parseInt(pageInput.trim(), 10);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      setPageInput(String(pageIndex + 1));
+      return;
+    }
+    if (exactTotalPages !== null) {
+      parsed = Math.min(parsed, exactTotalPages);
+    }
+    setPageIndex(parsed - 1);
+  }, [exactTotalPages, pageIndex, pageInput]);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      {
-        root: scrollContainer,
-        threshold: 0.1,
-      },
-    );
-
-    observer.observe(loadMoreElement);
-
-    return () => observer.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, visibleEntries.length]);
+  const hasAnyRowsOnServer = pageEntries.length > 0;
+  const awaitingFirstPayload = pageData === undefined && isFetching;
+  const showInitialLoading = pageIndex === 0 && awaitingFirstPayload;
+  const showInnerPageLoading = pageIndex > 0 && awaitingFirstPayload;
+  const showWaitingForActivity =
+    pageIndex === 0 &&
+    !awaitingFirstPayload &&
+    !isFetching &&
+    Array.isArray(pageData) &&
+    pageData.length === 0;
+  const showFilteredEmptyState =
+    hasAnyRowsOnServer && visibleEntries.length === 0;
 
   return (
     <Card
@@ -430,16 +425,120 @@ const LiveCommitLog: React.FC = () => {
             direction="row"
             alignItems="center"
             justifyContent="space-between"
+            gap={1}
           >
             <Typography
               variant="h6"
               sx={{
                 fontSize: isMobile ? '0.9rem' : isTablet ? '0.95rem' : '1rem',
                 fontWeight: 500,
+                flexShrink: 0,
               }}
             >
               Live Activity
             </Typography>
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={0.25}
+              sx={{
+                flexShrink: 0,
+                flexWrap: 'wrap',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <IconButton
+                size="small"
+                aria-label="First page"
+                disabled={pageIndex === 0 || awaitingFirstPayload}
+                onClick={() => setPageIndex(0)}
+                sx={{
+                  color: 'text.secondary',
+                  p: 0.35,
+                  '&:disabled': { opacity: 0.35 },
+                }}
+              >
+                <FirstPageIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+              <IconButton
+                size="small"
+                aria-label="Previous page"
+                disabled={!hasPrevPage || awaitingFirstPayload}
+                onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
+                sx={{
+                  color: 'text.secondary',
+                  p: 0.35,
+                  '&:disabled': { opacity: 0.35 },
+                }}
+              >
+                <ChevronLeftIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+              <TextField
+                size="small"
+                value={pageInput}
+                onChange={(e) => setPageInput(e.target.value)}
+                onBlur={commitPageInput}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    (e.target as HTMLInputElement).blur();
+                  }
+                }}
+                disabled={!hasAnyRowsOnServer && !awaitingFirstPayload}
+                placeholder="1"
+                title="Page number"
+                inputProps={{
+                  'aria-label': 'Page number',
+                  inputMode: 'numeric',
+                  min: 1,
+                  max: exactTotalPages ?? undefined,
+                  style: {
+                    textAlign: 'center',
+                    fontSize: isMobile ? '0.7rem' : '0.75rem',
+                    padding: '4px 4px',
+                  },
+                }}
+                sx={{
+                  width: 44,
+                  mx: 0.25,
+                  '& .MuiOutlinedInput-root': {
+                    height: 28,
+                    backgroundColor: 'background.default',
+                  },
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'border.light',
+                  },
+                }}
+              />
+              <IconButton
+                size="small"
+                aria-label="Next page"
+                disabled={!hasNextServerPage || awaitingFirstPayload}
+                onClick={() => setPageIndex((p) => p + 1)}
+                sx={{
+                  color: 'text.secondary',
+                  p: 0.35,
+                  '&:disabled': { opacity: 0.35 },
+                }}
+              >
+                <ChevronRightIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+              <IconButton
+                size="small"
+                aria-label="Last page"
+                disabled={!canGoLast || awaitingFirstPayload}
+                onClick={() =>
+                  exactTotalPages && setPageIndex(exactTotalPages - 1)
+                }
+                sx={{
+                  color: 'text.secondary',
+                  p: 0.35,
+                  '&:disabled': { opacity: 0.35 },
+                }}
+              >
+                <LastPageIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+            </Stack>
             <Box
               sx={{
                 width: 8,
@@ -447,6 +546,7 @@ const LiveCommitLog: React.FC = () => {
                 borderRadius: '50%',
                 backgroundColor: theme.palette.success.main,
                 animation: 'pulse 2s infinite',
+                flexShrink: 0,
                 '@keyframes pulse': {
                   '0%, 100%': { opacity: 1 },
                   '50%': { opacity: 0.5 },
@@ -531,7 +631,6 @@ const LiveCommitLog: React.FC = () => {
           </Box>
         ) : (
           <Box
-            ref={logContainerRef}
             sx={{
               flex: 1,
               overflowY: 'auto',
@@ -540,7 +639,18 @@ const LiveCommitLog: React.FC = () => {
               ...scrollbarSx,
             }}
           >
-            {showWaitingForActivity ? (
+            {showInnerPageLoading ? (
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  py: 6,
+                }}
+              >
+                <CircularProgress size={28} />
+              </Box>
+            ) : showWaitingForActivity ? (
               <Box
                 sx={{
                   display: 'flex',
@@ -572,18 +682,15 @@ const LiveCommitLog: React.FC = () => {
               <Stack spacing={isMobile ? 1 : isTablet ? 1.25 : 1}>
                 {visibleEntries.map((entry) => {
                   const entryId = getCommitId(entry);
-                  const isNew = newEntryIds.has(entryId);
 
                   return (
-                    <CommitLogItem key={entryId} entry={entry} isNew={isNew} />
+                    <CommitLogItem key={entryId} entry={entry} isNew={false} />
                   );
                 })}
               </Stack>
             )}
 
-            <Box ref={loadMoreRef} sx={{ height: 1 }} />
-
-            {isFetchingNextPage && (
+            {isFetching && hasAnyRowsOnServer && (
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
                 <CircularProgress size={20} />
               </Box>
