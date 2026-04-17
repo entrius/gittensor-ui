@@ -29,17 +29,17 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
     path: string;
     badge?: string | number;
   }> = [
-    { label: 'dashboard', path: '/dashboard' },
-    { label: 'oss contributions', path: '/top-miners' },
-    { label: 'discoveries', path: '/discoveries', badge: 'new' },
+    { label: 'Dashboard', path: '/dashboard' },
+    { label: 'OSS Contributions', path: '/top-miners' },
+    { label: 'Discoveries', path: '/discoveries', badge: 'New' },
     {
-      label: 'watchlist',
+      label: 'Watchlist',
       path: '/watchlist',
       badge: watchlistCount > 0 ? watchlistCount : undefined,
     },
-    { label: 'bounties', path: '/bounties' },
-    { label: 'repositories', path: '/repositories' },
-    { label: 'onboard', path: '/onboard' },
+    { label: 'Bounties', path: '/bounties' },
+    { label: 'Repositories', path: '/repositories' },
+    { label: 'Onboard', path: '/onboard' },
   ];
 
   return (
