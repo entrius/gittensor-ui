@@ -606,7 +606,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               />
             </Stack>
           )}
-
         </Box>
       </Box>
 
