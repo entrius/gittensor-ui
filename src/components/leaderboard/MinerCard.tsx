@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Card, Typography, Avatar } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
+import { GitHub as GitHubIcon } from '@mui/icons-material';
 import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS, STATUS_COLORS } from '../../theme';
@@ -150,22 +151,41 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                 overflow: 'hidden',
               }}
             >
-              <Typography
-                sx={(theme) => ({
-                  fontFamily: FONTS.mono,
-                  fontSize: '1rem',
-                  fontWeight: 700,
-                  color: isEligible
-                    ? theme.palette.text.primary
-                    : theme.palette.text.tertiary,
-                  opacity: isEligible ? 1 : INACTIVE_OPACITY,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                })}
-              >
-                {username}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+                <Typography
+                  sx={(theme) => ({
+                    fontFamily: FONTS.mono,
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    color: isEligible
+                      ? theme.palette.text.primary
+                      : theme.palette.text.tertiary,
+                    opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  })}
+                >
+                  {username}
+                </Typography>
+                <Box
+                  component="a"
+                  href={`https://github.com/${username}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                  sx={{
+                    color: (t) => alpha(t.palette.text.primary, 0.4),
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    flexShrink: 0,
+                    '&:hover': { color: 'text.primary' },
+                    transition: 'color 0.2s',
+                  }}
+                >
+                  <GitHubIcon sx={{ fontSize: '0.9rem' }} />
+                </Box>
+              </Box>
               <Typography
                 sx={(theme) => ({
                   fontFamily: FONTS.mono,

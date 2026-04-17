@@ -23,7 +23,7 @@ const FilterButton: React.FC<FilterButtonProps> = ({
     onClick={onClick}
     sx={{
       color: isActive ? activeTextColor : 'text.tertiary',
-      backgroundColor: isActive ? 'border.subtle' : 'transparent',
+      backgroundColor: isActive ? color : 'transparent',
       borderRadius: '6px',
       px: 2,
       minWidth: 'auto',
