@@ -307,6 +307,15 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         shadowBlur: 12,
       },
     }));
+    const positiveSeriesValues = seriesData
+      .map((item) => item.value)
+      .filter((value) => Number.isFinite(value) && value > 0);
+    const minPositiveValue =
+      positiveSeriesValues.length > 0 ? Math.min(...positiveSeriesValues) : 1;
+    const logMin =
+      minPositiveValue < 1
+        ? 10 ** Math.floor(Math.log10(minPositiveValue))
+        : 1;
 
     return {
       backgroundColor: 'transparent',
@@ -401,7 +410,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       },
       yAxis: {
         type: effectiveLogScale ? 'log' : 'value',
-        min: effectiveLogScale ? 1 : 0,
+        min: effectiveLogScale ? logMin : 0,
         logBase: 10,
         name: metric.yAxis,
         nameTextStyle: {
@@ -413,6 +422,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           color: textColor,
           fontSize: 11,
           formatter: (value: number) => {
+            if (sortColumn === 'weight') {
+              if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
+              if (value >= 10) return value.toFixed(1).replace(/\.0$/, '');
+              if (value >= 1) return value.toFixed(2).replace(/\.?0+$/, '');
+              return value.toFixed(3).replace(/\.?0+$/, '');
+            }
             if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
             return value.toFixed(0);
           },
@@ -491,7 +506,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   }: {
     column: SortColumn;
     children: React.ReactNode;
-    align?: 'left' | 'right';
+    align?: 'left' | 'right' | 'center';
     sx?: SxProps<Theme>;
   }) => (
     <TableCell
@@ -511,7 +526,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         sx={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
+          justifyContent:
+            align === 'right'
+              ? 'flex-end'
+              : align === 'center'
+                ? 'center'
+                : 'flex-start',
           gap: 0.5,
         }}
       >
@@ -783,19 +803,23 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               <TableCell sx={{ ...headerCellStyle, width: '60px' }}>
                 Rank
               </TableCell>
-              <SortableHeader column="repository" sx={{ width: '35%' }}>
+              <SortableHeader
+                column="repository"
+                align="center"
+                sx={{ width: '35%' }}
+              >
                 Repository
               </SortableHeader>
               <SortableHeader
                 column="weight"
-                align="right"
+                align="center"
                 sx={{ width: '12%' }}
               >
                 Weight
               </SortableHeader>
               <SortableHeader
                 column="totalScore"
-                align="right"
+                align="center"
                 sx={{
                   width: '18%',
                 }}
@@ -804,14 +828,14 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               </SortableHeader>
               <SortableHeader
                 column="totalPRs"
-                align="right"
+                align="center"
                 sx={{ width: '15%' }}
               >
                 PRs
               </SortableHeader>
               <SortableHeader
                 column="contributors"
-                align="right"
+                align="center"
                 sx={{ width: '15%' }}
               >
                 Contributors
@@ -853,12 +877,14 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           <RankIcon rank={repo.rank || 0} />
                         </TableCell>
                         <TableCell
+                          align="left"
                           sx={{ ...bodyCellStyle, width: '35%', pl: 1.5 }}
                         >
                           <Box
                             sx={{
                               display: 'flex',
                               alignItems: 'center',
+                              justifyContent: 'flex-start',
                               gap: 1,
                               cursor: 'pointer',
                               '&:hover': {
@@ -906,7 +932,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           </Box>
                         </TableCell>
                         <TableCell
-                          align="right"
+                          align="center"
                           sx={{ ...bodyCellStyle, width: '12%' }}
                         >
                           <Typography
@@ -921,7 +947,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           </Typography>
                         </TableCell>
                         <TableCell
-                          align="right"
+                          align="center"
                           sx={{ ...bodyCellStyle, width: '18%' }}
                         >
                           <Typography
@@ -941,7 +967,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           </Typography>
                         </TableCell>
                         <TableCell
-                          align="right"
+                          align="center"
                           sx={{ ...bodyCellStyle, width: '15%' }}
                         >
                           <Typography
@@ -958,7 +984,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           </Typography>
                         </TableCell>
                         <TableCell
-                          align="right"
+                          align="center"
                           sx={{ ...bodyCellStyle, width: '15%' }}
                         >
                           <Typography
