@@ -12,7 +12,6 @@ import {
   Chip,
 } from '@mui/material';
 import { LinkBox } from '../../../components/common/linkBehavior';
-import { useNavigate } from 'react-router-dom';
 import { useInfiniteCommitLog } from '../../../api';
 import theme, {
   REPO_OWNER_AVATAR_BACKGROUNDS,
