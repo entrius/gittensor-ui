@@ -39,7 +39,7 @@ const DiscoveriesPage: React.FC = () => {
       linesDeleted: parseNumber(stat.totalDeletions),
       hotkey: stat.hotkey || 'N/A',
       uniqueReposCount: parseNumber(stat.uniqueReposCount),
-      credibility: parseNumber(stat.issueCredibility),
+      issueCredibility: parseNumber(stat.issueCredibility),
       isEligible: stat.isIssueEligible ?? false,
       usdPerDay: parseNumber(stat.usdPerDay),
       totalMergedPrs: parseNumber(stat.totalMergedPrs),
