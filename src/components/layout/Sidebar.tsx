@@ -7,7 +7,8 @@ import {
   ButtonBase,
   Divider,
 } from '@mui/material';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { useLinkBehavior } from '../common/linkBehavior';
 import { useWatchlist } from '../../hooks/useWatchlist';
 import { usePulseBoard } from '../../hooks/usePulseBoard';
 
@@ -16,28 +17,18 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
-  const navigate = useNavigate();
   const location = useLocation();
   const { count: watchlistCount } = useWatchlist();
   const { pinnedCount } = usePulseBoard();
 
-  const handleNavigate = (path: string) => {
-    navigate(path);
-    onNavigate?.(); // Call onNavigate if provided (for mobile drawer closing)
-  };
-
-  const navItems: Array<{
-    label: string;
-    path: string;
-    badge?: string | number;
-  }> = [
+  const navItems = [
     { label: 'dashboard', path: '/dashboard' },
     { label: 'oss contributions', path: '/top-miners' },
     { label: 'discoveries', path: '/discoveries', badge: 'new' },
     {
       label: 'watchlist',
       path: '/watchlist',
-      badge: watchlistCount > 0 ? watchlistCount : undefined,
+      badge: watchlistCount > 0 ? String(watchlistCount) : undefined,
     },
     {
       label: 'compare',
@@ -61,16 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
       }}
     >
       {/* Logo */}
-      <ButtonBase
-        disableRipple
-        onClick={() => handleNavigate('/')}
-        sx={{
-          mb: 3,
-          justifyContent: 'center',
-          width: '100%',
-          py: 1,
-        }}
-      >
+      <SidebarLogoLink onNavigate={onNavigate}>
         <img
           src="/gt-logo.svg"
           alt="Gittensor"
@@ -81,53 +63,19 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               'brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))',
           }}
         />
-      </ButtonBase>
+      </SidebarLogoLink>
 
       {/* Navigation */}
       <Stack direction="column" spacing={2}>
         {navItems.map((item) => (
-          <Button
+          <SidebarNavLink
             key={item.path}
-            onClick={() => handleNavigate(item.path)}
-            sx={{
-              justifyContent: 'flex-start',
-              py: 1.5,
-              px: 2,
-              color: 'text.primary',
-              fontSize: '0.95rem',
-              textTransform: 'none',
-              backgroundColor: location.pathname.startsWith(item.path)
-                ? 'border.light'
-                : 'transparent',
-              borderLeft: location.pathname.startsWith(item.path)
-                ? '2px solid'
-                : '2px solid transparent',
-              borderColor: location.pathname.startsWith(item.path)
-                ? 'text.primary'
-                : 'transparent',
-              borderRadius: 0,
-              textAlign: 'left',
-              '&:hover': {
-                backgroundColor: 'surface.light',
-                color: 'primary.main',
-              },
-            }}
-          >
-            {item.label}
-            {item.badge && (
-              <Typography
-                component="span"
-                sx={{
-                  fontSize: '0.65rem',
-                  color: 'secondary.main',
-                  fontStyle: 'italic',
-                  ml: 1,
-                }}
-              >
-                {item.badge}
-              </Typography>
-            )}
-          </Button>
+            path={item.path}
+            label={item.label}
+            badge={item.badge}
+            isActive={location.pathname.startsWith(item.path)}
+            onNavigate={onNavigate}
+          />
         ))}
       </Stack>
 
@@ -248,6 +196,82 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
         </Stack>
       </Box>
     </Box>
+  );
+};
+
+const SidebarLogoLink: React.FC<{
+  onNavigate?: () => void;
+  children: React.ReactNode;
+}> = ({ onNavigate, children }) => {
+  const linkProps = useLinkBehavior<HTMLAnchorElement>('/', {
+    onClick: () => onNavigate?.(),
+  });
+  return (
+    <ButtonBase
+      component="a"
+      disableRipple
+      {...linkProps}
+      sx={{
+        mb: 3,
+        justifyContent: 'center',
+        width: '100%',
+        py: 1,
+      }}
+    >
+      {children}
+    </ButtonBase>
+  );
+};
+
+const SidebarNavLink: React.FC<{
+  path: string;
+  label: string;
+  badge?: string;
+  isActive: boolean;
+  onNavigate?: () => void;
+}> = ({ path, label, badge, isActive, onNavigate }) => {
+  const linkProps = useLinkBehavior<HTMLAnchorElement>(path, {
+    onClick: () => onNavigate?.(),
+  });
+  return (
+    <Button
+      component="a"
+      {...linkProps}
+      sx={{
+        justifyContent: 'flex-start',
+        py: 1.5,
+        px: 2,
+        color: '#ffffff',
+        textDecoration: 'none',
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: '0.95rem',
+        textTransform: 'none',
+        backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+        borderLeft: isActive ? '2px solid #ffffff' : '2px solid transparent',
+        borderRadius: 0,
+        textAlign: 'left',
+        '&:hover': {
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          color: 'primary.main',
+        },
+      }}
+    >
+      {label}
+      {badge && (
+        <Typography
+          component="span"
+          sx={{
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.65rem',
+            color: 'secondary.main',
+            fontStyle: 'italic',
+            ml: 1,
+          }}
+        >
+          {badge}
+        </Typography>
+      )}
+    </Button>
   );
 };
 

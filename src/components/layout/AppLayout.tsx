@@ -16,7 +16,7 @@ import { Sidebar } from '..';
 import ErrorBoundary from '../ErrorBoundary';
 import GlobalSearchBar from './GlobalSearchBar';
 import { CompareTray } from '../compare';
-import theme from '../../theme';
+import theme, { scrollbarSx } from '../../theme';
 import { getRouteForPathname } from '../../routes';
 
 const AppLayout: React.FC = () => {
@@ -134,6 +134,7 @@ const AppLayout: React.FC = () => {
           display: 'flex',
           flexDirection: 'column',
           px: { xs: 1, sm: 2, md: 3 },
+          ...scrollbarSx,
           alignItems: 'center',
         }}
       >

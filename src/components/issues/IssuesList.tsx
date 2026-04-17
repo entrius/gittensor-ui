@@ -23,8 +23,9 @@ import { IssueBounty } from '../../api/models/Issues';
 import { useStats } from '../../api';
 import { formatTokenAmount, formatDate } from '../../utils/format';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
-import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
 import BountyProgress from './BountyProgress';
+import { LinkTableRow } from '../common/linkBehavior';
 
 type ListType = 'available' | 'pending' | 'history';
 type SortDirection = 'asc' | 'desc';
@@ -42,7 +43,8 @@ interface IssuesListProps {
   issues: IssueBounty[];
   isLoading?: boolean;
   listType: ListType;
-  onSelectIssue?: (id: number) => void;
+  getIssueHref?: (id: number) => string;
+  linkState?: Record<string, unknown>;
 }
 
 /**
@@ -58,7 +60,8 @@ const IssuesList: React.FC<IssuesListProps> = ({
   issues,
   isLoading = false,
   listType,
-  onSelectIssue,
+  getIssueHref,
+  linkState,
 }) => {
   const theme = useTheme();
   const [sortKey, setSortKey] = useState<SortKey>('id');
@@ -322,7 +325,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
       }}
       elevation={0}
     >
-      <TableContainer>
+      <TableContainer sx={{ ...scrollbarSx }}>
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -371,20 +374,17 @@ const IssuesList: React.FC<IssuesListProps> = ({
           <TableBody>
             {sortedIssues.map((issue) => {
               const statusBadge = getIssueStatusMeta(issue.status);
+              const href = getIssueHref?.(issue.id);
               const usdDisplay = toUsd(issue.targetBounty);
-
-              return (
-                <TableRow
-                  key={issue.id}
-                  onClick={() => onSelectIssue?.(issue.id)}
-                  sx={{
-                    cursor: onSelectIssue ? 'pointer' : 'default',
-                    transition: 'background-color 0.2s',
-                    '&:hover': {
-                      backgroundColor: alpha(theme.palette.common.white, 0.03),
-                    },
-                  }}
-                >
+              const rowSx = {
+                cursor: href ? 'pointer' : 'default',
+                transition: 'background-color 0.2s',
+                '&:hover': {
+                  backgroundColor: alpha(theme.palette.common.white, 0.03),
+                },
+              };
+              const cells = (
+                <>
                   {/* Common columns */}
                   <TableCell sx={bodyCellSx}>
                     <Typography
@@ -632,6 +632,21 @@ const IssuesList: React.FC<IssuesListProps> = ({
                       </TableCell>
                     </>
                   )}
+                </>
+              );
+
+              return href ? (
+                <LinkTableRow
+                  key={issue.id}
+                  href={href}
+                  linkState={linkState}
+                  sx={rowSx}
+                >
+                  {cells}
+                </LinkTableRow>
+              ) : (
+                <TableRow key={issue.id} sx={rowSx}>
+                  {cells}
                 </TableRow>
               );
             })}
