@@ -3,6 +3,7 @@ import { Box, Typography, Stack, Button, Tabs, Tab } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { alpha } from '@mui/material/styles';
+import { scrollbarSx } from '../../theme';
 
 const MONO = '"JetBrains Mono", monospace';
 
@@ -84,6 +85,7 @@ const CodeBlock: React.FC<{
           p: 2,
           pr: 5,
           overflow: 'auto',
+          ...scrollbarSx,
         }}
       >
         <Typography

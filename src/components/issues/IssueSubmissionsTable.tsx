@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { IssueSubmission } from '../../api/models/Issues';
-import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { formatDate } from '../../utils/format';
 
 const headerCellSx = {
@@ -92,7 +92,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
           </Typography>
         </Box>
       ) : (
-        <TableContainer>
+        <TableContainer sx={{ ...scrollbarSx }}>
           <Table size="small">
             <TableHead>
               <TableRow>
