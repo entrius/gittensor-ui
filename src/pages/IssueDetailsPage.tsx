@@ -9,7 +9,7 @@ import {
   Tab,
 } from '@mui/material';
 import { Page } from '../components/layout';
-import { BackButton, SEO } from '../components';
+import { BackButton, SEO, WatchlistButton } from '../components';
 import {
   IssueHeaderCard,
   IssueSubmissionsTable,
@@ -89,7 +89,16 @@ const IssueDetailsPage: React.FC = () => {
           }}
         >
           <Stack spacing={3}>
-            <BackButton to="/bounties" label="Back to Bounties" mb={0} />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <BackButton to="/bounties" label="Back to Bounties" mb={0} />
+              {issue && (
+                <WatchlistButton
+                  category="bounties"
+                  itemKey={`${issue.repositoryFullName}#${issue.issueNumber}`}
+                  size="small"
+                />
+              )}
+            </Box>
             <IssueHeaderCard issue={issue} />
 
             {/* Tabs */}

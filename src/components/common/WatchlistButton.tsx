@@ -2,28 +2,48 @@ import React from 'react';
 import { IconButton, Tooltip, type SxProps, type Theme } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
-import { useWatchlist } from '../../hooks/useWatchlist';
+import {
+  useWatchlist,
+  type WatchlistCategory,
+} from '../../hooks/useWatchlist';
 
 interface WatchlistButtonProps {
-  githubId: string;
+  /** Backward-compatible: miner GitHub ID. */
+  githubId?: string;
+  /** Entity category (defaults to 'miners' when githubId is provided). */
+  category?: WatchlistCategory;
+  /** Unique key within the category (e.g. repo fullName, issue id, PR uid). */
+  itemKey?: string;
   size?: 'small' | 'medium';
   sx?: SxProps<Theme>;
 }
 
 export const WatchlistButton: React.FC<WatchlistButtonProps> = ({
   githubId,
+  category,
+  itemKey,
   size = 'small',
   sx,
 }) => {
-  const { isWatched, toggle } = useWatchlist();
-  const watched = isWatched(githubId);
+  const { isWatched, isMinerWatched, toggle } = useWatchlist();
+
+  // Resolve the effective category & key.
+  // If only githubId is given (old usage), treat as miner.
+  const effectiveCategory: WatchlistCategory =
+    category ?? (githubId ? 'miners' : 'miners');
+  const effectiveKey = itemKey ?? githubId ?? '';
+
+  const watched = effectiveCategory === 'miners' && githubId && !itemKey
+    ? isMinerWatched(githubId)
+    : isWatched(effectiveCategory, effectiveKey);
+
   const label = watched ? 'Remove from watchlist' : 'Add to watchlist';
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
-    if (!githubId) return;
-    toggle(githubId);
+    if (!effectiveKey) return;
+    toggle(effectiveCategory, effectiveKey);
   };
 
   return (

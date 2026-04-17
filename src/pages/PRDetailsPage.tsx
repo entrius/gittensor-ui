@@ -9,6 +9,7 @@ import {
   BackButton,
   SEO,
   PRComments,
+  WatchlistButton,
 } from '../components';
 import { usePullRequestDetails } from '../api';
 import { STATUS_COLORS } from '../theme';
@@ -97,7 +98,16 @@ const PRDetailsPage: React.FC = () => {
               px: { xs: 2, sm: 2, md: 0 },
             }}
           >
-            <BackButton to="/repositories" label="Back to Repositories" />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <BackButton to="/repositories" label="Back to Repositories" />
+              {prDetails && (
+                <WatchlistButton
+                  category="prs"
+                  itemKey={`${repository}#${pullRequestNumber}`}
+                  size="small"
+                />
+              )}
+            </Box>
 
             {/* Header always visible */}
             <PRHeader
