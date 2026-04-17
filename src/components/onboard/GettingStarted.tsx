@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { Box, Typography, Stack, Button, Tabs, Tab, Tooltip } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Stack,
+  Button,
+  Tabs,
+  Tab,
+  Tooltip,
+} from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
