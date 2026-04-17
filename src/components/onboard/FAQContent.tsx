@@ -65,10 +65,11 @@ export const FAQContent: React.FC = () => (
           <>
             To start mining, you need to make pull requests to recognized OSS
             repositories on GitHub. Once your code is merged into the production
-            branch, you'll be eligible for emissions based on factors like PR
-            size, files affected, repository popularity, and more. Check out our
-            GitHub repository for detailed setup instructions. Feel free to join
-            the{' '}
+            branch, you'll be eligible for emissions based on factors like the
+            repository weight, AST token-based code scoring, language weights,
+            and multipliers such as time decay, review quality, and labels. Check
+            out our GitHub repository for detailed setup instructions. Feel free
+            to join the{' '}
             <a
               href="https://discord.com/invite/bittensor"
               target="_blank"
@@ -87,10 +88,13 @@ export const FAQContent: React.FC = () => (
           <>
             Your rewards are determined by the weight of the repository you
             contribute to, the quality of your code changes (measured by
-            token-based scoring), and multipliers like time decay, review
-            quality, and issue bonuses. We also factor in your 'credibility',
-            which is the ratio of your merged PRs to your total PR attempts
-            (merged + closed). See the{' '}
+            AST token-based scoring), and multipliers like time decay, review
+            quality, label type (e.g. feature: 1.5×, bug: 1.25×), and issue
+            bonuses. We also factor in your credibility, which is the ratio of
+            your merged PRs to your total PR attempts — with one closed PR
+            forgiven (mulligan) before the ratio is calculated. The earliest
+            contributor to a repository also earns pioneer dividends from later
+            contributors' scores. See the{' '}
             <a
               href="https://docs.gittensor.io/oss-contributions.html"
               target="_blank"
@@ -128,8 +132,8 @@ export const FAQContent: React.FC = () => (
           <>
             You must contribute to an incentivized repository listed in our
             master list. To become eligible for rewards, you need at least 5
-            merged PRs with a token score of 5 or higher, 80% credibility, and a
-            GitHub account that is at least 180 days old. Check the{' '}
+            merged PRs with a token score of 5 or higher and 80% credibility
+            (with one closed PR forgiven). Check the{' '}
             <a
               href="https://docs.gittensor.io/oss-contributions.html"
               target="_blank"
@@ -139,6 +143,29 @@ export const FAQContent: React.FC = () => (
               Scoring documentation
             </a>{' '}
             for full eligibility details.
+          </>
+        }
+      />
+      <FAQ
+        question="What is Issue Discovery?"
+        answer={
+          <>
+            Issue Discovery is a separate earning track within Gittensor where
+            miners are rewarded for finding and reporting valid bugs or
+            improvement opportunities in recognized repositories. Discovered
+            issues are evaluated and scored by validators. To become eligible,
+            you need at least 7 valid solved issues and 80% issue credibility.
+            Issue Discovery accounts for 30% of total subnet emissions — the
+            same share as OSS contributions. See the{' '}
+            <a
+              href="https://docs.gittensor.io/issue-discovery.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'inherit', textDecoration: 'underline' }}
+            >
+              Issue Discovery documentation
+            </a>{' '}
+            for full details.
           </>
         }
       />
