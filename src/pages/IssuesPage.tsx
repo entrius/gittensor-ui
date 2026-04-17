@@ -92,79 +92,64 @@ const IssuesPage: React.FC = () => {
               borderColor: theme.palette.border.light,
             })}
           >
-            <Box
-              onTouchStart={handleTabSwipeTouchStart}
-              onTouchEnd={handleTabSwipeTouchEnd}
-              sx={{ touchAction: 'pan-y' }}
-            >
-              <Tabs
-                value={tabIndex}
-                onChange={handleTabChange}
-                sx={(theme) => ({
-                  '& .MuiTab-root': {
-                    fontFamily: '"JetBrains Mono", monospace',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    color: theme.palette.text.secondary,
-                    minHeight: 48,
-                    '&.Mui-selected': {
-                      color: theme.palette.text.primary,
-                    },
-                  },
-                  '& .MuiTabs-indicator': {
-                    backgroundColor: theme.palette.text.primary,
-                    height: 2,
-                  },
-                })}
+            <Stack spacing={1.25}>
+              <Box
+                onTouchStart={handleTabSwipeTouchStart}
+                onTouchEnd={handleTabSwipeTouchEnd}
+                sx={{
+                  touchAction: 'pan-y',
+                  width: '100%',
+                  minWidth: 0,
+                }}
               >
-                <Tab label="Available Issues" />
-                <Tab label="Pending Issues" />
-                <Tab label="History" />
-              </Tabs>
-            </Box>
-
-            <Typography
-              sx={{
-                display: 'flex',
-                alignItems: 'flex-end',
-                justifyContent: 'space-between',
-                gap: 2,
-                flexWrap: 'wrap',
-              }}
-            >
-              <Tabs
-                value={tabIndex}
-                onChange={handleTabChange}
-                sx={(theme) => ({
-                  '& .MuiTab-root': {
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    color: theme.palette.text.secondary,
+                <Tabs
+                  value={tabIndex}
+                  onChange={handleTabChange}
+                  sx={(theme) => ({
+                    width: '100%',
                     minHeight: 48,
-                    '&.Mui-selected': {
-                      color: theme.palette.text.primary,
+                    '& .MuiTabs-flexContainer': {
+                      width: '100%',
                     },
-                  },
-                  '& .MuiTabs-indicator': {
-                    backgroundColor: theme.palette.text.primary,
-                    height: 2,
-                  },
-                })}
-              >
-                <Tab label="Available Issues" />
-                <Tab label="Pending Issues" />
-                <Tab label="History" />
-              </Tabs>
+                    '& .MuiTab-root': {
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: { xs: '0.72rem', sm: '0.8rem', md: '0.85rem' },
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      color: theme.palette.text.secondary,
+                      minHeight: 48,
+                      minWidth: 0,
+                      flex: 1,
+                      px: { xs: 0.5, sm: 1 },
+                      py: 1,
+                      whiteSpace: 'normal',
+                      lineHeight: 1.25,
+                      wordBreak: 'break-word',
+                      '&.Mui-selected': {
+                        color: theme.palette.text.primary,
+                      },
+                    },
+                    '& .MuiTabs-indicator': {
+                      backgroundColor: theme.palette.text.primary,
+                      height: 2,
+                    },
+                  })}
+                >
+                  <Tab label="Available Issues" />
+                  <Tab label="Pending Issues" />
+                  <Tab label="History" />
+                </Tabs>
+              </Box>
 
               <Typography
+                component="div"
                 sx={{
                   fontSize: '0.72rem',
+                  fontFamily: '"JetBrains Mono", monospace',
                   color: (t) => alpha(t.palette.text.primary, 0.35),
-                  pr: 1,
-                  mb: { xs: 1, md: 0 },
-                  textAlign: { xs: 'left', md: 'right' },
+                  width: '100%',
+                  pb: 0.5,
+                  lineHeight: 1.4,
                 }}
               >
                 Learn more about bounties in the{' '}
@@ -184,7 +169,7 @@ const IssuesPage: React.FC = () => {
                   docs
                 </Typography>
               </Typography>
-            </Box>
+            </Stack>
           </Box>
 
           {/* Tab Content */}
