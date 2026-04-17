@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Box, Typography, Stack, Button, Tabs, Tab } from '@mui/material';
+import { Box, Typography, Stack, Button, Tabs, Tab, Tooltip } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import CheckIcon from '@mui/icons-material/Check';
 import { alpha } from '@mui/material/styles';
+import { tooltipSlotProps } from '../../theme';
 
 const MONO = '"JetBrains Mono", monospace';
 
@@ -100,22 +102,32 @@ const CodeBlock: React.FC<{
         >
           {children.trim()}
         </Typography>
-        <Box
-          onClick={handleCopy}
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            cursor: 'pointer',
-            color: copied ? 'success.main' : 'text.tertiary',
-            '&:hover': {
-              color: copied ? 'success.main' : 'text.secondary',
-            },
-            transition: 'color 0.2s',
-          }}
+        <Tooltip
+          title={copied ? 'Copied!' : 'Copy'}
+          placement="left"
+          slotProps={tooltipSlotProps}
         >
-          <ContentCopyIcon sx={{ fontSize: 16 }} />
-        </Box>
+          <Box
+            onClick={handleCopy}
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              cursor: 'pointer',
+              color: copied ? 'success.main' : 'text.tertiary',
+              '&:hover': {
+                color: copied ? 'success.main' : 'text.secondary',
+              },
+              transition: 'color 0.2s',
+            }}
+          >
+            {copied ? (
+              <CheckIcon sx={{ fontSize: 16 }} />
+            ) : (
+              <ContentCopyIcon sx={{ fontSize: 16 }} />
+            )}
+          </Box>
+        </Tooltip>
       </Box>
     </Box>
   );
