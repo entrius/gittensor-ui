@@ -23,6 +23,10 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { formatTokenAmount } from '../../utils/format';
 import {
+  getIssueStatusMeta,
+  getBountyAmountColor,
+} from '../../utils/issueStatus';
+import {
   STATUS_COLORS,
   TEXT_OPACITY,
   scrollbarSx,
@@ -102,214 +106,147 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Bounties Section */}
-      {bounties &&
-        bounties.length > 0 &&
-        (() => {
-          const getStatusColor = (status: string) => {
-            switch (status) {
-              case 'active':
-                return {
-                  bg: alpha(STATUS_COLORS.info, 0.15),
-                  border: alpha(STATUS_COLORS.info, 0.4),
-                  text: STATUS_COLORS.info,
-                };
-              case 'completed':
-                return {
-                  bg: alpha(STATUS_COLORS.merged, 0.15),
-                  border: alpha(STATUS_COLORS.merged, 0.4),
-                  text: STATUS_COLORS.merged,
-                };
-              case 'registered':
-                return {
-                  bg: alpha(STATUS_COLORS.warning, 0.15),
-                  border: alpha(STATUS_COLORS.warning, 0.4),
-                  text: STATUS_COLORS.warning,
-                };
-              case 'cancelled':
-                return {
-                  bg: alpha(STATUS_COLORS.error, 0.15),
-                  border: alpha(STATUS_COLORS.error, 0.4),
-                  text: STATUS_COLORS.error,
-                };
-              default:
-                return {
-                  bg: alpha(STATUS_COLORS.neutral, 0.15),
-                  border: alpha(STATUS_COLORS.neutral, 0.4),
-                  text: STATUS_COLORS.open,
-                };
-            }
-          };
-          const getStatusLabel = (status: string) => {
-            switch (status) {
-              case 'active':
-                return 'Available';
-              case 'completed':
-                return 'Completed';
-              case 'registered':
-                return 'Pending';
-              case 'cancelled':
-                return 'Cancelled';
-              default:
-                return status;
-            }
-          };
-          const getBountyAmountColor = (status: string) => {
-            switch (status) {
-              case 'active':
-                return STATUS_COLORS.merged;
-              case 'registered':
-                return STATUS_COLORS.warning;
-              case 'completed':
-                return STATUS_COLORS.merged;
-              case 'cancelled':
-                return alpha(theme.palette.common.white, TEXT_OPACITY.muted);
-              default:
-                return alpha(theme.palette.common.white, 0.6);
-            }
-          };
-          return (
-            <Card
+      {bounties && bounties.length > 0 && (
+        <Card
+          sx={{
+            borderRadius: 3,
+            border: `1px solid ${theme.palette.border.light}`,
+            backgroundColor: 'transparent',
+            p: 0,
+            overflow: 'hidden',
+          }}
+          elevation={0}
+        >
+          <Box
+            sx={{
+              p: 3,
+              borderBottom: `1px solid ${theme.palette.border.light}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Typography
+              variant="h6"
               sx={{
-                borderRadius: 3,
-                border: `1px solid ${theme.palette.border.light}`,
-                backgroundColor: 'transparent',
-                p: 0,
-                overflow: 'hidden',
+                color: 'text.primary',
+                fontSize: '1.1rem',
+                fontWeight: 500,
               }}
-              elevation={0}
             >
-              <Box
-                sx={{
-                  p: 3,
-                  borderBottom: `1px solid ${theme.palette.border.light}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Typography
-                  variant="h6"
+              Bounties ({bounties.length})
+            </Typography>
+          </Box>
+          <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {bounties.map((bounty) => {
+              const meta = getIssueStatusMeta(bounty.status);
+              return (
+                <Box
+                  key={bounty.id}
+                  onClick={() =>
+                    navigate(`/bounties/details?id=${bounty.id}`, {
+                      state: { backLabel: `Back to ${repositoryFullName}` },
+                    })
+                  }
                   sx={{
-                    color: 'text.primary',
-                    fontSize: '1.1rem',
-                    fontWeight: 500,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    p: 2,
+                    borderRadius: 2,
+                    border: `1px solid ${alpha(theme.palette.common.white, 0.06)}`,
+                    backgroundColor: 'surface.subtle',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: 'surface.light',
+                      borderColor: alpha(theme.palette.common.white, 0.15),
+                      transform: 'translateX(2px)',
+                    },
                   }}
                 >
-                  Bounties ({bounties.length})
-                </Typography>
-              </Box>
-              <Box
-                sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}
-              >
-                {bounties.map((bounty) => {
-                  const statusColors = getStatusColor(bounty.status);
-                  return (
-                    <Box
-                      key={bounty.id}
-                      onClick={() =>
-                        navigate(`/bounties/details?id=${bounty.id}`, {
-                          state: { backLabel: `Back to ${repositoryFullName}` },
-                        })
-                      }
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      minWidth: 0,
+                    }}
+                  >
+                    <Chip
+                      label={meta.text}
+                      size="small"
                       sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        p: 2,
-                        borderRadius: 2,
-                        border: `1px solid ${alpha(theme.palette.common.white, 0.06)}`,
-                        backgroundColor: 'surface.subtle',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          backgroundColor: 'surface.light',
-                          borderColor: alpha(theme.palette.common.white, 0.15),
-                          transform: 'translateX(2px)',
-                        },
+                        backgroundColor: meta.bgColor,
+                        color: meta.color,
+                        border: `1px solid ${meta.borderColor}`,
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        height: '22px',
+                        '& .MuiChip-label': { px: 1 },
+                      }}
+                    />
+                    <Typography
+                      sx={{
+                        color: STATUS_COLORS.open,
+                        fontSize: '0.8rem',
+                        whiteSpace: 'nowrap',
                       }}
                     >
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1.5,
-                          minWidth: 0,
-                        }}
-                      >
-                        <Chip
-                          label={getStatusLabel(bounty.status)}
-                          size="small"
-                          sx={{
-                            backgroundColor: statusColors.bg,
-                            color: statusColors.text,
-                            border: `1px solid ${statusColors.border}`,
-                            fontSize: '0.65rem',
-                            fontWeight: 700,
-                            height: '22px',
-                            '& .MuiChip-label': { px: 1 },
-                          }}
-                        />
-                        <Typography
-                          sx={{
-                            color: STATUS_COLORS.open,
-                            fontSize: '0.8rem',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          #{bounty.issueNumber}
-                        </Typography>
-                        <Typography
-                          sx={{
-                            color: 'text.primary',
-                            fontSize: '0.85rem',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {issues?.find(
-                            (i) =>
-                              i.number === bounty.issueNumber &&
-                              i.repositoryFullName ===
-                                bounty.repositoryFullName,
-                          )?.title ||
-                            `${repositoryFullName}#${bounty.issueNumber}`}
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 2,
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            color: getBountyAmountColor(bounty.status),
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                          }}
-                        >
-                          {`${formatTokenAmount(bounty.targetBounty)} ل`}
-                        </Typography>
-                        <ArrowForwardIcon
-                          sx={{
-                            color: alpha(
-                              theme.palette.common.white,
-                              TEXT_OPACITY.ghost,
-                            ),
-                            fontSize: 16,
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </Box>
-            </Card>
-          );
-        })()}
+                      #{bounty.issueNumber}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        color: 'text.primary',
+                        fontSize: '0.85rem',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {issues?.find(
+                        (i) =>
+                          i.number === bounty.issueNumber &&
+                          i.repositoryFullName === bounty.repositoryFullName,
+                      )?.title || `${repositoryFullName}#${bounty.issueNumber}`}
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        color: getBountyAmountColor(
+                          bounty.status,
+                          alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+                        ),
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {`${formatTokenAmount(bounty.targetBounty)} ل`}
+                    </Typography>
+                    <ArrowForwardIcon
+                      sx={{
+                        color: alpha(
+                          theme.palette.common.white,
+                          TEXT_OPACITY.ghost,
+                        ),
+                        fontSize: 16,
+                      }}
+                    />
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+        </Card>
+      )}
 
       {/* GitHub Issues Table */}
       <Card

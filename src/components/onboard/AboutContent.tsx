@@ -12,9 +12,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CodeIcon from '@mui/icons-material/Code';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-import { Page } from '../components/layout';
-import { SEO } from '../components';
-import { useMonthlyRewards } from '../hooks/useMonthlyRewards';
+import { useMonthlyRewards } from '../../hooks/useMonthlyRewards';
 
 export const AboutContent: React.FC = () => {
   const theme = useTheme();
@@ -336,23 +334,3 @@ export const AboutContent: React.FC = () => {
     </Box>
   );
 };
-
-const AboutPage: React.FC = () => (
-  <Page title="About">
-    <SEO
-      title="About Gittensor"
-      description="Learn about Gittensor's mission to transform software into a global public resource. Understand how miners, validators, and the community work together."
-    />
-    <Box
-      sx={{
-        minHeight: { xs: 'auto', md: 'calc(100vh - 80px)' },
-        py: { xs: 4, sm: 5, md: 6 },
-        display: 'flex',
-      }}
-    >
-      <AboutContent />
-    </Box>
-  </Page>
-);
-
-export default AboutPage;

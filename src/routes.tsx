@@ -1,5 +1,5 @@
 import React from 'react';
-import { matchPath, type PathRouteProps } from 'react-router-dom';
+import { Navigate, matchPath, type PathRouteProps } from 'react-router-dom';
 
 export type AppRoute = Omit<PathRouteProps, 'path'> & {
   name: string;
@@ -9,8 +9,7 @@ export type AppRoute = Omit<PathRouteProps, 'path'> & {
 
 // main menu pages
 const HomePage = React.lazy(() => import('./pages/HomePage'));
-const AboutPage = React.lazy(() => import('./pages/AboutPage'));
-const FAQPage = React.lazy(() => import('./pages/FAQPage'));
+// AboutPage and FAQPage deleted — redirects inline below
 const DashboardPage = React.lazy(
   () => import('./pages/dashboard/DashboardPage'),
 );
@@ -89,8 +88,16 @@ const routesArray: AppRoute[] = [
     path: '/miners/pr',
     element: <PRDetailsPage />,
   },
-  { name: 'about', path: '/about', element: <AboutPage /> },
-  { name: 'faq', path: '/faq', element: <FAQPage /> },
+  {
+    name: 'about',
+    path: '/about',
+    element: <Navigate to="/onboard?tab=about" replace />,
+  },
+  {
+    name: 'faq',
+    path: '/faq',
+    element: <Navigate to="/onboard?tab=faq" replace />,
+  },
   {
     name: 'onboard',
     path: '/onboard',

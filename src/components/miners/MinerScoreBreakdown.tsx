@@ -24,7 +24,7 @@ import {
   usePullRequestDetails,
   type CommitLog,
 } from '../../api';
-import { STATUS_COLORS } from '../../theme';
+import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
 import {
   parseNumber,
   calculateOpenIssueThreshold,
@@ -39,20 +39,9 @@ interface MinerScoreBreakdownProps {
   viewMode?: ViewMode;
 }
 
-const tooltipSlotProps = {
-  tooltip: {
-    sx: {
-      backgroundColor: 'surface.tooltip',
-      color: 'text.primary',
-      fontSize: '0.72rem',
-      padding: '8px 12px',
-      borderRadius: '6px',
-      border: '1px solid',
-      borderColor: 'border.light',
-      maxWidth: 280,
-    },
-  },
-  arrow: { sx: { color: 'surface.tooltip' } },
+const tipProps = {
+  ...tooltipSlotProps,
+  tooltip: { sx: { ...tooltipSlotProps.tooltip.sx, maxWidth: 280 } },
 };
 
 interface MultiplierPillProps {
@@ -88,7 +77,7 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
         : `×${parseNumber(value).toFixed(2)}`;
 
   return (
-    <Tooltip title={tooltip} arrow placement="top" slotProps={tooltipSlotProps}>
+    <Tooltip title={tooltip} arrow placement="top" slotProps={tipProps}>
       <Box
         sx={{
           display: 'inline-flex',
@@ -570,7 +559,7 @@ const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
               label="Issue Credibility"
               value={`${(issueCred * 100).toFixed(1)}%`}
               color={credibilityColor(issueCred)}
-              sub="Solved / (solved + closed)"
+              sub="Solved / (solved + max(0, closed − 1))"
             />
             <MetricRow
               label="Eligibility"

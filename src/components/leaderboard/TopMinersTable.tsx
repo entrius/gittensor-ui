@@ -33,7 +33,7 @@ interface TopMinersTableProps {
 
 const getAllowedSortOptions = (variant: LeaderboardVariant): SortOption[] =>
   variant === 'discoveries'
-    ? ['totalScore', 'usdPerDay', 'totalPRs', 'totalIssues', 'credibility']
+    ? ['totalScore', 'usdPerDay', 'totalIssues', 'credibility']
     : ['totalScore', 'usdPerDay', 'totalPRs', 'credibility'];
 
 const getSortOptionFromQuery = (
@@ -254,7 +254,11 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           </Box>
         }
         action={
-          <SearchInput value={searchQuery} onChange={handleSearchChange} />
+          <SearchInput
+            value={searchQuery}
+            onChange={handleSearchChange}
+            width="100%"
+          />
         }
         sx={{
           mb: 2,
@@ -389,7 +393,9 @@ const SortButtons: React.FC<SortButtonsProps> = ({
     {[
       { label: 'Score', value: 'totalScore' },
       { label: 'Earnings', value: 'usdPerDay' },
-      { label: 'PRs', value: 'totalPRs' },
+      ...(variant !== 'discoveries'
+        ? [{ label: 'PRs', value: 'totalPRs' as const }]
+        : []),
       ...(variant === 'discoveries'
         ? [{ label: 'Issues', value: 'totalIssues' as const }]
         : []),
