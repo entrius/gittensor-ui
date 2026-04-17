@@ -22,6 +22,7 @@ import {
   Tooltip,
   alpha,
   useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import { Search, Check, Close } from '@mui/icons-material';
 import ReactECharts from 'echarts-for-react';
@@ -30,11 +31,12 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import { scrollbarSx, TEXT_OPACITY } from '../../theme';
 import { useLanguagesAndWeights } from '../../api';
 
-type SortField = 'extension' | 'weight' | 'language';
+type SortField = 'extension' | 'weight' | 'language' | 'tokenScoring';
 type SortOrder = 'asc' | 'desc';
 
 const LanguageWeightsTable: React.FC = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { data: languages, isLoading } = useLanguagesAndWeights();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('weight');
@@ -42,11 +44,12 @@ const LanguageWeightsTable: React.FC = () => {
   const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortField(field);
       setSortOrder(field === 'weight' ? 'desc' : 'asc');
@@ -70,11 +73,17 @@ const LanguageWeightsTable: React.FC = () => {
     setPage(0);
   };
 
+  useEffect(() => {
+    if (!isMobile) {
+      setShowMobileSearch(false);
+    }
+  }, [isMobile]);
+
   const filteredAndSortedLanguages = useMemo(() => {
     if (!languages) return [];
+    const searchLower = searchQuery.toLowerCase();
 
     const filtered = languages.filter((lang) => {
-      const searchLower = searchQuery.toLowerCase();
       return (
         lang.extension.toLowerCase().includes(searchLower) ||
         (lang.language && lang.language.toLowerCase().includes(searchLower))
@@ -91,15 +100,18 @@ const LanguageWeightsTable: React.FC = () => {
       } else if (sortField === 'language') {
         aValue = a.language || '';
         bValue = b.language || '';
+      } else if (sortField === 'tokenScoring') {
+        aValue = a.language ? 1 : 0;
+        bValue = b.language ? 1 : 0;
       } else {
         aValue = a.weight;
         bValue = b.weight;
       }
 
-      if (sortField === 'weight') {
+      if (sortField === 'weight' || sortField === 'tokenScoring') {
         return sortOrder === 'asc'
-          ? parseFloat(aValue as string) - parseFloat(bValue as string)
-          : parseFloat(bValue as string) - parseFloat(aValue as string);
+          ? Number(aValue) - Number(bValue)
+          : Number(bValue) - Number(aValue);
       }
 
       return sortOrder === 'asc'
@@ -220,8 +232,9 @@ const LanguageWeightsTable: React.FC = () => {
       <Box
         sx={{
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: { xs: 'stretch', sm: 'center' },
           gap: 2,
           mb: 3,
         }}
@@ -232,114 +245,188 @@ const LanguageWeightsTable: React.FC = () => {
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
-            <IconButton
-              onClick={() => setShowChart(!showChart)}
-              size="small"
-              sx={{
-                color: showChart
-                  ? theme.palette.text.primary
-                  : alpha(theme.palette.common.white, TEXT_OPACITY.muted),
-                border: `1px solid ${theme.palette.border.light}`,
-                borderRadius: 2,
-                padding: '6px',
-                '&:hover': {
-                  backgroundColor: theme.palette.surface.subtle,
-                  borderColor: theme.palette.border.medium,
-                },
-              }}
-            >
-              {showChart ? (
-                <TableChartIcon fontSize="small" />
-              ) : (
-                <BarChartIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Tooltip>
-          <FormControl size="small">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography
-                variant="body2"
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: { xs: 'stretch', sm: 'flex-end' },
+            gap: 1,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+            <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+              <IconButton
+                onClick={() => setShowChart(!showChart)}
+                size="small"
                 sx={{
-                  color: alpha(
-                    theme.palette.common.white,
-                    TEXT_OPACITY.secondary,
-                  ),
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '0.8rem',
+                  color: showChart
+                    ? theme.palette.text.primary
+                    : alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+                  border: `1px solid ${theme.palette.border.light}`,
+                  borderRadius: 2,
+                  padding: '6px',
+                  '&:hover': {
+                    backgroundColor: theme.palette.surface.subtle,
+                    borderColor: theme.palette.border.medium,
+                  },
                 }}
               >
-                Rows:
-              </Typography>
-              <Select
-                value={rowsPerPage}
-                onChange={(e) => {
-                  setRowsPerPage(e.target.value as number);
-                  setPage(0);
+                {showChart ? (
+                  <TableChartIcon fontSize="small" />
+                ) : (
+                  <BarChartIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
+            <FormControl size="small">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: alpha(
+                      theme.palette.common.white,
+                      TEXT_OPACITY.secondary,
+                    ),
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  Rows:
+                </Typography>
+                <Select
+                  value={rowsPerPage}
+                  onChange={(e) => {
+                    setRowsPerPage(e.target.value as number);
+                    setPage(0);
+                  }}
+                  sx={{
+                    color: theme.palette.text.primary,
+                    fontFamily: '"JetBrains Mono", monospace',
+                    backgroundColor: alpha(theme.palette.common.black, 0.4),
+                    fontSize: '0.8rem',
+                    height: '36px',
+                    borderRadius: 2,
+                    minWidth: '80px',
+                    '& fieldset': { borderColor: theme.palette.border.light },
+                    '&:hover fieldset': {
+                      borderColor: theme.palette.border.medium,
+                    },
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                    '& .MuiSelect-select': {
+                      py: 0.75,
+                    },
+                  }}
+                >
+                  <MenuItem value={5}>5</MenuItem>
+                  <MenuItem value={10}>10</MenuItem>
+                  <MenuItem value={25}>25</MenuItem>
+                  <MenuItem value={50}>50</MenuItem>
+                </Select>
+              </Box>
+            </FormControl>
+            {isMobile ? (
+              <Tooltip title="Search">
+                <IconButton
+                  onClick={() => setShowMobileSearch(true)}
+                  size="small"
+                  sx={{
+                    color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+                    border: `1px solid ${theme.palette.border.light}`,
+                    borderRadius: 2,
+                    padding: '6px',
+                    '&:hover': {
+                      backgroundColor: theme.palette.surface.subtle,
+                      borderColor: theme.palette.border.medium,
+                    },
+                  }}
+                >
+                  <Search fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            ) : (
+              <TextField
+                placeholder="Search..."
+                size="small"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search
+                        sx={{
+                          color: alpha(
+                            theme.palette.common.white,
+                            TEXT_OPACITY.muted,
+                          ),
+                          fontSize: '1rem',
+                        }}
+                      />
+                    </InputAdornment>
+                  ),
                 }}
                 sx={{
+                  width: '200px',
+                  '& .MuiOutlinedInput-root': {
+                    color: theme.palette.text.primary,
+                    fontFamily: '"JetBrains Mono", monospace',
+                    backgroundColor: alpha(theme.palette.common.black, 0.4),
+                    fontSize: '0.8rem',
+                    height: '36px',
+                    borderRadius: 2,
+                    '& fieldset': { borderColor: theme.palette.border.light },
+                    '&:hover fieldset': {
+                      borderColor: theme.palette.border.medium,
+                    },
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                  },
+                }}
+              />
+            )}
+          </Box>
+          {isMobile && showMobileSearch && (
+            <TextField
+              autoFocus
+              placeholder="Search..."
+              size="small"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              onBlur={() => {
+                if (!searchQuery.trim()) setShowMobileSearch(false);
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search
+                      sx={{
+                        color: alpha(
+                          theme.palette.common.white,
+                          TEXT_OPACITY.muted,
+                        ),
+                        fontSize: '1rem',
+                      }}
+                    />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                width: '100%',
+                maxWidth: '100%',
+                '& .MuiOutlinedInput-root': {
                   color: theme.palette.text.primary,
                   fontFamily: '"JetBrains Mono", monospace',
                   backgroundColor: alpha(theme.palette.common.black, 0.4),
                   fontSize: '0.8rem',
                   height: '36px',
                   borderRadius: 2,
-                  minWidth: '80px',
                   '& fieldset': { borderColor: theme.palette.border.light },
                   '&:hover fieldset': {
                     borderColor: theme.palette.border.medium,
                   },
                   '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                  '& .MuiSelect-select': {
-                    py: 0.75,
-                  },
-                }}
-              >
-                <MenuItem value={5}>5</MenuItem>
-                <MenuItem value={10}>10</MenuItem>
-                <MenuItem value={25}>25</MenuItem>
-                <MenuItem value={50}>50</MenuItem>
-              </Select>
-            </Box>
-          </FormControl>
-          <TextField
-            placeholder="Search..."
-            size="small"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search
-                    sx={{
-                      color: alpha(
-                        theme.palette.common.white,
-                        TEXT_OPACITY.muted,
-                      ),
-                      fontSize: '1rem',
-                    }}
-                  />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              width: '200px',
-              '& .MuiOutlinedInput-root': {
-                color: theme.palette.text.primary,
-                fontFamily: '"JetBrains Mono", monospace',
-                backgroundColor: alpha(theme.palette.common.black, 0.4),
-                fontSize: '0.8rem',
-                height: '36px',
-                borderRadius: 2,
-                '& fieldset': { borderColor: theme.palette.border.light },
-                '&:hover fieldset': {
-                  borderColor: theme.palette.border.medium,
                 },
-                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-              },
-            }}
-          />
+              }}
+            />
+          )}
         </Box>
       </Box>
 
@@ -380,7 +467,9 @@ const LanguageWeightsTable: React.FC = () => {
             <TableHead>
               <TableRow>
                 <TableCell
+                  onClick={() => handleSort('extension')}
                   sx={{
+                    cursor: 'pointer',
                     backgroundColor: alpha(
                       theme.palette.background.paper,
                       0.95,
@@ -392,7 +481,6 @@ const LanguageWeightsTable: React.FC = () => {
                   <TableSortLabel
                     active={sortField === 'extension'}
                     direction={sortField === 'extension' ? sortOrder : 'asc'}
-                    onClick={() => handleSort('extension')}
                     sx={{
                       '&:hover': {
                         color: 'secondary.main',
@@ -406,7 +494,9 @@ const LanguageWeightsTable: React.FC = () => {
                   </TableSortLabel>
                 </TableCell>
                 <TableCell
+                  onClick={() => handleSort('language')}
                   sx={{
+                    cursor: 'pointer',
                     backgroundColor: alpha(
                       theme.palette.background.paper,
                       0.95,
@@ -418,7 +508,6 @@ const LanguageWeightsTable: React.FC = () => {
                   <TableSortLabel
                     active={sortField === 'language'}
                     direction={sortField === 'language' ? sortOrder : 'asc'}
-                    onClick={() => handleSort('language')}
                     sx={{
                       '&:hover': {
                         color: 'secondary.main',
@@ -433,7 +522,9 @@ const LanguageWeightsTable: React.FC = () => {
                 </TableCell>
                 <TableCell
                   align="center"
+                  onClick={() => handleSort('tokenScoring')}
                   sx={{
+                    cursor: 'pointer',
                     backgroundColor: alpha(
                       theme.palette.background.paper,
                       0.95,
@@ -442,15 +533,30 @@ const LanguageWeightsTable: React.FC = () => {
                     borderBottom: `1px solid ${theme.palette.border.light}`,
                   }}
                 >
-                  <Tooltip title="Indicates if this extension supports token-based scoring. Token scoring uses AST parsing for more accurate contribution measurement.">
-                    <Typography variant="dataLabel" sx={{ cursor: 'pointer' }}>
-                      Token Scoring
-                    </Typography>
-                  </Tooltip>
+                  <TableSortLabel
+                    active={sortField === 'tokenScoring'}
+                    direction={sortField === 'tokenScoring' ? sortOrder : 'desc'}
+                    sx={{
+                      '&:hover': {
+                        color: 'secondary.main',
+                      },
+                      '&.Mui-active': {
+                        color: 'secondary.main',
+                      },
+                    }}
+                  >
+                    <Tooltip title="Indicates if this extension supports token-based scoring. Token scoring uses AST parsing for more accurate contribution measurement.">
+                      <Typography variant="dataLabel" sx={{ cursor: 'pointer' }}>
+                        Token Scoring
+                      </Typography>
+                    </Tooltip>
+                  </TableSortLabel>
                 </TableCell>
                 <TableCell
                   align="right"
+                  onClick={() => handleSort('weight')}
                   sx={{
+                    cursor: 'pointer',
                     backgroundColor: alpha(
                       theme.palette.background.paper,
                       0.95,
@@ -462,7 +568,6 @@ const LanguageWeightsTable: React.FC = () => {
                   <TableSortLabel
                     active={sortField === 'weight'}
                     direction={sortField === 'weight' ? sortOrder : 'desc'}
-                    onClick={() => handleSort('weight')}
                     sx={{
                       '&:hover': {
                         color: 'secondary.main',
