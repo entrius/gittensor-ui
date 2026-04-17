@@ -11,7 +11,11 @@ import {
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueDetails } from '../../api/models/Issues';
-import { formatTokenAmount, formatDate, formatAlphaToUsd } from '../../utils/format';
+import {
+  formatTokenAmount,
+  formatDate,
+  formatAlphaToUsd,
+} from '../../utils/format';
 import { usePrices } from '../../hooks/usePrices';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';

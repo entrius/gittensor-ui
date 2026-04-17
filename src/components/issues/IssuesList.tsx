@@ -20,9 +20,8 @@ import {
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueBounty } from '../../api/models/Issues';
-import { formatAlphaToUsd } from '../../utils/format';
 import { usePrices } from '../../hooks/usePrices';
-import { formatTokenAmount, formatDate } from '../../utils/format';
+import { formatTokenAmount, formatDate, formatAlphaToUsd } from '../../utils/format';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import BountyProgress from './BountyProgress';
@@ -359,7 +358,11 @@ const IssuesList: React.FC<IssuesListProps> = ({
           <TableBody>
             {sortedIssues.map((issue) => {
               const statusBadge = getIssueStatusMeta(issue.status);
-              const usdDisplay = formatAlphaToUsd(issue.targetBounty, taoPrice, alphaPrice);
+              const usdDisplay = formatAlphaToUsd(
+                issue.targetBounty,
+                taoPrice,
+                alphaPrice,
+              );
 
               return (
                 <TableRow
