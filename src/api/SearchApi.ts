@@ -44,7 +44,11 @@ const useCachedSearchDataset = <T>(
   );
 
   return {
-    data: datasetQuery.data ?? cachedData ?? [],
+    data: Array.isArray(datasetQuery.data)
+      ? datasetQuery.data
+      : Array.isArray(cachedData)
+        ? cachedData
+        : [],
     isLoading: isDatasetLoading(
       shouldFetch,
       cachedData,

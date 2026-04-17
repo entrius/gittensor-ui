@@ -119,7 +119,11 @@ const IssuesPage: React.FC = () => {
           <Box sx={{ minHeight: 400 }}>
             {tabIndex === 0 && (
               <IssuesList
-                issues={activeIssuesQuery.data || []}
+                issues={
+                  Array.isArray(activeIssuesQuery.data)
+                    ? activeIssuesQuery.data
+                    : []
+                }
                 isLoading={activeIssuesQuery.isLoading}
                 listType="available"
                 onSelectIssue={(id) =>
@@ -131,7 +135,11 @@ const IssuesPage: React.FC = () => {
             )}
             {tabIndex === 1 && (
               <IssuesList
-                issues={registeredIssuesQuery.data || []}
+                issues={
+                  Array.isArray(registeredIssuesQuery.data)
+                    ? registeredIssuesQuery.data
+                    : []
+                }
                 isLoading={registeredIssuesQuery.isLoading}
                 listType="pending"
                 onSelectIssue={(id) =>
@@ -143,7 +151,11 @@ const IssuesPage: React.FC = () => {
             )}
             {tabIndex === 2 && (
               <IssuesList
-                issues={historyIssuesQuery.data || []}
+                issues={
+                  Array.isArray(historyIssuesQuery.data)
+                    ? historyIssuesQuery.data
+                    : []
+                }
                 isLoading={historyIssuesQuery.isLoading}
                 listType="history"
                 onSelectIssue={(id) =>
