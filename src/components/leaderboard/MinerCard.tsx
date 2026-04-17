@@ -469,7 +469,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
         </Box>
       </Box>
 
-      {(variant === 'discoveries' || variant === 'watchlist') && (
+      {variant === 'watchlist' && (
         <Box
           sx={(theme) => ({
             pt: 0.35,
