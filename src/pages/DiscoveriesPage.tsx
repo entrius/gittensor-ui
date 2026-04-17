@@ -98,6 +98,7 @@ const DiscoveriesPage: React.FC = () => {
             overflow: showSidebarRight ? 'auto' : 'visible',
             minWidth: 0,
             pr: showSidebarRight ? 1 : 0,
+            order: showSidebarRight ? 1 : 2,
             ...scrollbarSx,
           }}
         >
@@ -132,6 +133,7 @@ const DiscoveriesPage: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             gap: 2,
+            order: showSidebarRight ? 2 : 1,
           }}
         >
           <LeaderboardSidebar

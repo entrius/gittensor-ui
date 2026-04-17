@@ -15,12 +15,14 @@ export const SectionCard: React.FC<{
   title?: string;
   action?: React.ReactNode;
   centerContent?: React.ReactNode;
-}> = ({ children, sx, title, action, centerContent }) => {
+  id?: string;
+}> = ({ children, sx, title, action, centerContent, id }) => {
   const hasAction = !!action;
   const hasCenter = !!centerContent;
 
   return (
     <Card
+      id={id}
       sx={{
         borderRadius: 3,
         border: '1px solid',

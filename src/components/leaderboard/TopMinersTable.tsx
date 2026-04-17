@@ -1,6 +1,12 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { Box, Typography, CircularProgress, Grid } from '@mui/material';
-import { alpha, type Theme } from '@mui/material/styles';
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Grid,
+  useMediaQuery,
+} from '@mui/material';
+import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import { useSearchParams } from 'react-router-dom';
 import { SectionCard } from './SectionCard';
 import { MinerCard } from './MinerCard';
@@ -16,7 +22,11 @@ import {
 // Re-export MinerStats for backward compatibility
 export type { MinerStats } from './types';
 
+/** Desktop: initial load and each “Show more” step */
 const MINERS_PAGE_SIZE = 60;
+/** Viewports below `xl`: shorter first page and load-more step */
+const COMPACT_VISIBLE_INITIAL = 6;
+const COMPACT_VISIBLE_STEP = 12;
 const SORT_QUERY_PARAM = 'sort';
 const ELIGIBLE_QUERY_PARAM = 'eligible';
 const SEARCH_QUERY_PARAM = 'search';
@@ -67,17 +77,6 @@ const getEligibilityFilterFromQuery = (
   return 'all';
 };
 
-const getVisibleCountFromQuery = (value: string | null): number => {
-  if (!value) return MINERS_PAGE_SIZE;
-
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isFinite(parsed) || parsed < MINERS_PAGE_SIZE) {
-    return MINERS_PAGE_SIZE;
-  }
-
-  return parsed;
-};
-
 const TopMinersTable: React.FC<TopMinersTableProps> = ({
   miners,
   isLoading,
@@ -86,6 +85,15 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   variant = 'oss',
   showDualEligibilityBadges = false,
 }) => {
+  const theme = useTheme();
+  const useCompactPaging = useMediaQuery(theme.breakpoints.down('xl'));
+  const initialChunk = useCompactPaging
+    ? COMPACT_VISIBLE_INITIAL
+    : MINERS_PAGE_SIZE;
+  const loadMoreChunk = useCompactPaging
+    ? COMPACT_VISIBLE_STEP
+    : MINERS_PAGE_SIZE;
+
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get(SEARCH_QUERY_PARAM) ?? '';
   const sortParamValue = searchParams.get(SORT_QUERY_PARAM);
@@ -97,10 +105,13 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     () => getEligibilityFilterFromQuery(searchParams.get(ELIGIBLE_QUERY_PARAM)),
     [searchParams],
   );
-  const visibleCount = useMemo(
-    () => getVisibleCountFromQuery(searchParams.get(VISIBLE_QUERY_PARAM)),
-    [searchParams],
-  );
+  const visibleCount = useMemo(() => {
+    const raw = searchParams.get(VISIBLE_QUERY_PARAM);
+    if (!raw) return initialChunk;
+    const parsed = Number.parseInt(raw, 10);
+    if (!Number.isFinite(parsed) || parsed < initialChunk) return initialChunk;
+    return parsed;
+  }, [searchParams, initialChunk]);
 
   const handleSortChange = useCallback(
     (nextSortOption: SortOption) => {
@@ -279,12 +290,39 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
               flexWrap: { xs: 'wrap', sm: 'nowrap' },
             }}
           >
-            <Typography
-              variant="h6"
-              sx={{ fontSize: '1.25rem', fontWeight: 600, flexShrink: 0 }}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                flexWrap: 'wrap',
+                flexShrink: 0,
+              }}
             >
-              Miners ({filteredMiners.length})
-            </Typography>
+              <Typography
+                variant="h6"
+                sx={{ fontSize: '1.25rem', fontWeight: 600 }}
+              >
+                Miners ({filteredMiners.length})
+              </Typography>
+              {useCompactPaging && variant !== 'watchlist' && (
+                <Typography
+                  component="a"
+                  href="#leaderboard-network-stats"
+                  sx={{
+                    fontFamily: FONTS.mono,
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    color: 'primary.main',
+                    textDecoration: 'none',
+                    letterSpacing: '0.04em',
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  Network summary
+                </Typography>
+              )}
+            </Box>
             <Box
               sx={{ flex: 1, minWidth: 0, width: { xs: '100%', sm: 'auto' } }}
             >
@@ -341,7 +379,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           <Box
             onClick={() => {
               const nextVisibleCount = Math.min(
-                visibleCount + MINERS_PAGE_SIZE,
+                visibleCount + loadMoreChunk,
                 filteredMiners.length,
               );
 
@@ -349,7 +387,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                 (previousParams) => {
                   const nextSearchParams = new URLSearchParams(previousParams);
 
-                  if (nextVisibleCount > MINERS_PAGE_SIZE) {
+                  if (nextVisibleCount > initialChunk) {
                     nextSearchParams.set(
                       VISIBLE_QUERY_PARAM,
                       String(nextVisibleCount),
@@ -393,7 +431,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                 letterSpacing: '0.06em',
               }}
             >
-              Show {Math.min(MINERS_PAGE_SIZE, remainingMiners)} More
+              Show {Math.min(loadMoreChunk, remainingMiners)} More
             </Typography>
           </Box>
         )}

@@ -65,6 +65,7 @@ const TopMinersPage: React.FC = () => {
             overflow: showSidebarRight ? 'auto' : 'visible',
             minWidth: 0,
             pr: showSidebarRight ? 1 : 0,
+            order: showSidebarRight ? 1 : 2,
             ...scrollbarSx,
           }}
         >
@@ -99,6 +100,7 @@ const TopMinersPage: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             gap: 2, // Add gap for spacing when stacked
+            order: showSidebarRight ? 2 : 1,
           }}
         >
           {/* Render extracted Sidebar Content here */}

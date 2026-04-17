@@ -67,7 +67,14 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
       sx={{ height: '100%', overflow: 'auto', pr: 1, ...scrollbarSx }}
     >
       {/* CARD 1: Network Stats */}
-      <SectionCard title="Network Stats" sx={{ flexShrink: 0 }}>
+      <SectionCard
+        id="leaderboard-network-stats"
+        title="Network Stats"
+        sx={{
+          flexShrink: 0,
+          scrollMarginTop: { xs: 72, sm: 80 },
+        }}
+      >
         <Box
           sx={{
             pt: 1,
