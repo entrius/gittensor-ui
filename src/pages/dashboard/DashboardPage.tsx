@@ -7,6 +7,7 @@ import { type TrendTimeRange } from './dashboardData';
 import useDashboardData from './useDashboardData';
 import ActiveNetwork from './views/ActiveNetwork';
 import DashboardTopContributors from './views/DashboardTopContributors';
+import EmissionEconomicsCard from './views/EmissionEconomicsCard';
 import LiveSidebar from './views/LiveSidebar';
 
 const DashboardFeaturePage: React.FC = () => {
@@ -88,6 +89,8 @@ const DashboardFeaturePage: React.FC = () => {
               isLoading={isLoading}
               onRangeChange={setRange}
             />
+
+            <EmissionEconomicsCard />
 
             <DashboardTopContributors
               contributors={featuredContributors}

@@ -23,7 +23,13 @@ export interface RepositoryPrScoring {
   maxOpenPrThreshold: number;
 }
 
+export interface EmissionConfig {
+  dailyAlphaEmission: number;
+  minerEmissionShare: number;
+}
+
 export interface GeneralConfigResponse {
   languageFileScoring: LanguageFileScoring;
   repositoryPrScoring: RepositoryPrScoring;
+  emission?: EmissionConfig;
 }
