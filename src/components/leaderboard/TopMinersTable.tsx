@@ -1,11 +1,10 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { Box, Typography, CircularProgress, Grid } from '@mui/material';
-import { alpha, useTheme, type Theme } from '@mui/material/styles';
+import { alpha, type Theme } from '@mui/material/styles';
 import { useSearchParams } from 'react-router-dom';
 import { SectionCard } from './SectionCard';
 import { MinerCard } from './MinerCard';
 import { SearchInput } from '../common/SearchInput';
-import FilterButton from '../FilterButton';
 import { STATUS_COLORS } from '../../theme';
 import {
   type MinerStats,
@@ -57,6 +56,16 @@ const getSortOptionFromQuery = (
     : 'totalScore';
 };
 
+type EligibilityFilter = 'all' | 'eligible' | 'ineligible';
+
+const getEligibilityFilterFromQuery = (
+  value: string | null,
+): EligibilityFilter => {
+  if (value === 'true') return 'eligible';
+  if (value === 'false') return 'ineligible';
+  return 'all';
+};
+
 const getVisibleCountFromQuery = (value: string | null): number => {
   if (!value) return MINERS_PAGE_SIZE;
 
@@ -75,7 +84,6 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   linkState,
   variant = 'oss',
 }) => {
-  const theme = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get(SEARCH_QUERY_PARAM) ?? '';
   const sortParamValue = searchParams.get(SORT_QUERY_PARAM);
@@ -83,7 +91,10 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     () => getSortOptionFromQuery(sortParamValue, variant),
     [sortParamValue, variant],
   );
-  const showEligibleOnly = searchParams.get(ELIGIBLE_QUERY_PARAM) === 'true';
+  const eligibilityFilter = useMemo(
+    () => getEligibilityFilterFromQuery(searchParams.get(ELIGIBLE_QUERY_PARAM)),
+    [searchParams],
+  );
   const visibleCount = useMemo(
     () => getVisibleCountFromQuery(searchParams.get(VISIBLE_QUERY_PARAM)),
     [searchParams],
@@ -112,27 +123,30 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     [setSearchParams],
   );
 
-  const handleToggleEligible = useCallback(() => {
-    setSearchParams(
-      (previousParams) => {
-        const nextSearchParams = new URLSearchParams(previousParams);
-        const isEligibleEnabled =
-          nextSearchParams.get(ELIGIBLE_QUERY_PARAM) === 'true';
+  const handleEligibilityChange = useCallback(
+    (nextFilter: EligibilityFilter) => {
+      setSearchParams(
+        (previousParams) => {
+          const nextSearchParams = new URLSearchParams(previousParams);
 
-        if (isEligibleEnabled) {
-          nextSearchParams.delete(ELIGIBLE_QUERY_PARAM);
-        } else {
-          nextSearchParams.set(ELIGIBLE_QUERY_PARAM, 'true');
-        }
-        nextSearchParams.delete(VISIBLE_QUERY_PARAM);
+          if (nextFilter === 'all') {
+            nextSearchParams.delete(ELIGIBLE_QUERY_PARAM);
+          } else if (nextFilter === 'eligible') {
+            nextSearchParams.set(ELIGIBLE_QUERY_PARAM, 'true');
+          } else {
+            nextSearchParams.set(ELIGIBLE_QUERY_PARAM, 'false');
+          }
+          nextSearchParams.delete(VISIBLE_QUERY_PARAM);
 
-        return nextSearchParams.toString() === previousParams.toString()
-          ? previousParams
-          : nextSearchParams;
-      },
-      { replace: true },
-    );
-  }, [setSearchParams]);
+          return nextSearchParams.toString() === previousParams.toString()
+            ? previousParams
+            : nextSearchParams;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   // Helper to sort a list of miners
   const sortMinersList = (list: MinerStats[], option: SortOption) =>
@@ -166,15 +180,17 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       );
     }
 
-    if (showEligibleOnly) {
+    if (eligibilityFilter === 'eligible') {
       result = result.filter((m) => m.isEligible);
+    } else if (eligibilityFilter === 'ineligible') {
+      result = result.filter((m) => !m.isEligible);
     }
 
     return sortMinersList(result, sortOption).map((miner, index) => ({
       ...miner,
       rank: index + 1,
     }));
-  }, [miners, searchQuery, showEligibleOnly, sortOption]);
+  }, [miners, searchQuery, eligibilityFilter, sortOption]);
 
   useEffect(() => {
     if (visibleCount <= filteredMiners.length) return;
@@ -236,39 +252,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 
   return (
     <Box sx={{ p: 2 }}>
-      {/* Header Card */}
+      {/* Header Card — two-row toolbar */}
       <SectionCard
-        title={`Miners (${filteredMiners.length})`}
-        centerContent={
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 1,
-              flexWrap: 'wrap',
-            }}
-          >
-            <SortButtons
-              sortOption={sortOption}
-              onSortChange={handleSortChange}
-              variant={variant}
-            />
-            <FilterButton
-              label="Eligible"
-              isActive={showEligibleOnly}
-              onClick={handleToggleEligible}
-              color={theme.palette.status.merged}
-            />
-          </Box>
-        }
-        action={
-          <SearchInput
-            value={searchQuery}
-            onChange={handleSearchChange}
-            width="100%"
-          />
-        }
         sx={{
           mb: 2,
           position: 'sticky',
@@ -282,7 +267,55 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           boxShadow: 'none',
         }}
       >
-        {null}
+        <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {/* Row 1: Title + Search */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              flexWrap: { xs: 'wrap', sm: 'nowrap' },
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{ fontSize: '1.25rem', fontWeight: 600, flexShrink: 0 }}
+            >
+              Miners ({filteredMiners.length})
+            </Typography>
+            <Box
+              sx={{ flex: 1, minWidth: 0, width: { xs: '100%', sm: 'auto' } }}
+            >
+              <SearchInput
+                value={searchQuery}
+                onChange={handleSearchChange}
+                width="100%"
+                placeholder="Search miners..."
+              />
+            </Box>
+          </Box>
+
+          {/* Row 2: Sort tabs + Eligibility toggle */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 1,
+              flexWrap: 'wrap',
+            }}
+          >
+            <SortButtons
+              sortOption={sortOption}
+              onSortChange={handleSortChange}
+              variant={variant}
+            />
+            <EligibilityToggle
+              value={eligibilityFilter}
+              onChange={handleEligibilityChange}
+            />
+          </Box>
+        </Box>
       </SectionCard>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -451,6 +484,76 @@ const SortButtons: React.FC<SortButtonsProps> = ({
         </Typography>
       </Box>
     ))}
+  </Box>
+);
+
+interface EligibilityToggleProps {
+  value: EligibilityFilter;
+  onChange: (next: EligibilityFilter) => void;
+}
+
+const ELIGIBILITY_OPTIONS: Array<{ value: EligibilityFilter; label: string }> =
+  [
+    { value: 'all', label: 'All' },
+    { value: 'eligible', label: 'Eligible' },
+    { value: 'ineligible', label: 'Ineligible' },
+  ];
+
+const EligibilityToggle: React.FC<EligibilityToggleProps> = ({
+  value,
+  onChange,
+}) => (
+  <Box
+    sx={(theme) => ({
+      display: 'inline-flex',
+      gap: 0.5,
+      p: 0.5,
+      borderRadius: 2,
+      backgroundColor: theme.palette.surface.light,
+    })}
+  >
+    {ELIGIBILITY_OPTIONS.map((option) => {
+      const isActive = value === option.value;
+      return (
+        <Box
+          key={option.value}
+          component="button"
+          type="button"
+          aria-pressed={isActive}
+          onClick={() => onChange(option.value)}
+          sx={(theme) => ({
+            px: 1.5,
+            height: 24,
+            display: 'flex',
+            alignItems: 'center',
+            border: 0,
+            borderRadius: 1.5,
+            backgroundColor: isActive
+              ? alpha(theme.palette.text.primary, 0.15)
+              : 'transparent',
+            color: isActive
+              ? theme.palette.text.primary
+              : theme.palette.text.tertiary,
+            cursor: 'pointer',
+            fontFamily: FONTS.mono,
+            fontSize: '0.72rem',
+            fontWeight: isActive ? 600 : 500,
+            lineHeight: 1,
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              backgroundColor: alpha(theme.palette.text.primary, 0.1),
+              color: theme.palette.text.primary,
+            },
+            '&:focus-visible': {
+              outline: `1px solid ${theme.palette.border.medium}`,
+              outlineOffset: 1,
+            },
+          })}
+        >
+          {option.label}
+        </Box>
+      );
+    })}
   </Box>
 );
 
