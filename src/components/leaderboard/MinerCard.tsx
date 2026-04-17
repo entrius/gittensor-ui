@@ -18,8 +18,6 @@ interface MinerCardProps {
 
 const INACTIVE_OPACITY = 0.24;
 
-// Positional per-segment styling shared by the donut and the stats row, so
-// the percentage, donut slices, and labels always describe the same data.
 const CHART_SEGMENT_COLORS = [
   CHART_COLORS.merged,
   CHART_COLORS.open,
@@ -32,21 +30,23 @@ interface Segment {
   value: number;
 }
 
+const getPrSegments = (miner: MinerStats): Segment[] => [
+  { label: 'Merged', value: miner.totalMergedPrs ?? 0 },
+  { label: 'Open', value: miner.totalOpenPrs ?? 0 },
+  { label: 'Closed', value: miner.totalClosedPrs ?? 0 },
+];
+
+const getIssueSegments = (miner: MinerStats): Segment[] => [
+  { label: 'Solved', value: miner.totalSolvedIssues ?? 0 },
+  { label: 'Open', value: miner.totalOpenIssues ?? 0 },
+  { label: 'Closed', value: miner.totalClosedIssues ?? 0 },
+];
+
 const getSegments = (
   miner: MinerStats,
   variant: LeaderboardVariant,
 ): Segment[] =>
-  variant === 'discoveries'
-    ? [
-        { label: 'Solved', value: miner.totalSolvedIssues ?? 0 },
-        { label: 'Open', value: miner.totalOpenIssues ?? 0 },
-        { label: 'Closed', value: miner.totalClosedIssues ?? 0 },
-      ]
-    : [
-        { label: 'Merged', value: miner.totalMergedPrs ?? 0 },
-        { label: 'Open', value: miner.totalOpenPrs ?? 0 },
-        { label: 'Closed', value: miner.totalClosedPrs ?? 0 },
-      ];
+  variant === 'discoveries' ? getIssueSegments(miner) : getPrSegments(miner);
 
 export const MinerCard: React.FC<MinerCardProps> = ({
   miner,
@@ -54,7 +54,6 @@ export const MinerCard: React.FC<MinerCardProps> = ({
   linkState,
   variant = 'oss',
 }) => {
-  const muiTheme = useTheme();
   const isNumericId = (value?: string) => !value || /^\d+$/.test(value);
   const shouldFetch = !!miner.githubId && isNumericId(miner.author);
   const { data: githubData } = useMinerGithubData(miner.githubId, shouldFetch);
@@ -69,7 +68,12 @@ export const MinerCard: React.FC<MinerCardProps> = ({
   const avatarSrc = githubData?.avatarUrl || getGithubAvatarSrc(username);
 
   const credibilityPercent = (miner.credibility ?? 0) * 100;
-  const isEligible = miner.isEligible ?? false;
+  const issueCredPercent = (miner.issueCredibility ?? 0) * 100;
+  const isWatchlist = variant === 'watchlist';
+  const isDiscoveries = variant === 'discoveries';
+  const isEligible = isWatchlist
+    ? (miner.isEligible ?? false) || (miner.isIssueEligible ?? false)
+    : (miner.isEligible ?? false);
 
   const segments = getSegments(miner, variant);
 
@@ -272,79 +276,37 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             </Typography>
           </Box>
 
-          <Box
-            sx={{
-              position: 'relative',
-              width: 56,
-              height: 56,
-              flexShrink: 0,
-              opacity: isEligible ? 1 : INACTIVE_OPACITY,
-            }}
-          >
-            <ReactECharts
-              option={{
-                backgroundColor: 'transparent',
-                series: [
-                  {
-                    type: 'pie',
-                    radius: ['65%', '90%'],
-                    silent: true,
-                    label: { show: false },
-                    itemStyle: {
-                      borderRadius: 3,
-                      borderWidth: 0,
-                    },
-                    data: segments.map((segment, i) => ({
-                      value: segment.value,
-                      itemStyle: {
-                        color: isEligible
-                          ? CHART_SEGMENT_COLORS[i]
-                          : alpha(
-                              muiTheme.palette.text.secondary,
-                              INACTIVE_OPACITY * CHART_INACTIVE_RATIOS[i],
-                            ),
-                      },
-                    })),
-                  },
-                ],
-              }}
-              style={{ width: '100%', height: '100%' }}
-              opts={{ renderer: 'svg' }}
-            />
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Typography
-                sx={(theme) => ({
-                  fontFamily: FONTS.mono,
-                  fontSize: '0.75rem',
-                  color: isEligible
-                    ? credibilityPercent >= 80
-                      ? STATUS_COLORS.merged
-                      : STATUS_COLORS.open
-                    : theme.palette.text.tertiary,
-                  fontWeight: 700,
-                })}
-              >
-                {credibilityPercent.toFixed(0)}%
-              </Typography>
+          {isWatchlist ? (
+            <Box sx={{ display: 'flex', gap: 1.5, flexShrink: 0 }}>
+              <CredDonut
+                segments={getPrSegments(miner)}
+                percent={credibilityPercent}
+                isEligible={miner.isEligible ?? false}
+                label="PRs"
+              />
+              <CredDonut
+                segments={getIssueSegments(miner)}
+                percent={issueCredPercent}
+                isEligible={miner.isIssueEligible ?? false}
+                label="Issues"
+              />
             </Box>
-          </Box>
+          ) : (
+            <CredDonut
+              segments={segments}
+              percent={isDiscoveries ? issueCredPercent : credibilityPercent}
+              isEligible={isEligible}
+              size={56}
+            />
+          )}
         </Box>
 
         <MinerCardFooter
+          miner={miner}
           totalScore={miner.totalScore}
           segments={segments}
           isEligible={isEligible}
+          variant={variant}
         />
       </Card>
     </RowLink>
@@ -352,15 +314,19 @@ export const MinerCard: React.FC<MinerCardProps> = ({
 };
 
 interface MinerCardFooterProps {
+  miner: MinerStats;
   totalScore: number;
   segments: Segment[];
   isEligible: boolean;
+  variant: LeaderboardVariant;
 }
 
 const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
+  miner,
   totalScore,
   segments,
   isEligible,
+  variant,
 }) => {
   const muiTheme = useTheme();
   const inactiveColor = alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY);
@@ -373,13 +339,18 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
       ]
     : [inactiveColor, inactiveColor, inactiveColor];
 
+  const issueSegments = getIssueSegments(miner);
+  const issueTotal =
+    (miner.totalSolvedIssues ?? 0) +
+    (miner.totalOpenIssues ?? 0) +
+    (miner.totalClosedIssues ?? 0);
+
   return (
     <Box
       sx={(theme) => ({
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr 1fr auto',
-        gap: 1,
-        alignItems: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: variant === 'discoveries' || variant === 'watchlist' ? 0.75 : 0,
         backgroundColor: isEligible
           ? alpha(theme.palette.background.default, 0.2)
           : theme.palette.surface.subtle,
@@ -388,38 +359,113 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
         p: 1,
       })}
     >
-      {segments.map((segment, i) => (
-        <StatCell
-          key={segment.label}
-          label={segment.label}
-          value={segment.value}
-          color={statColors[i]}
-          isEligible={isEligible}
-        />
-      ))}
       <Box
-        sx={(theme) => ({
-          textAlign: 'right',
-          borderLeft: `1px solid ${
-            isEligible
-              ? theme.palette.border.light
-              : theme.palette.border.subtle
-          }`,
-          pl: 1.5,
-        })}
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr 1fr 4.5rem',
+          gap: 1,
+          alignItems: 'center',
+        }}
       >
-        <StatLabel isEligible={isEligible}>Score</StatLabel>
-        <Typography
-          sx={{
-            fontFamily: FONTS.mono,
-            fontSize: '0.9rem',
-            color: isEligible ? muiTheme.palette.text.primary : inactiveColor,
-            fontWeight: 700,
-          }}
+        {segments.map((segment, i) => (
+          <StatCell
+            key={segment.label}
+            label={segment.label}
+            value={segment.value}
+            color={statColors[i]}
+            isEligible={isEligible}
+          />
+        ))}
+        <Box
+          sx={(theme) => ({
+            textAlign: 'right',
+            borderLeft: `1px solid ${
+              isEligible
+                ? theme.palette.border.light
+                : theme.palette.border.subtle
+            }`,
+            pl: 1.5,
+          })}
         >
-          {Number(totalScore).toFixed(2)}
-        </Typography>
+          <StatLabel isEligible={isEligible}>Score</StatLabel>
+          <Typography
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.9rem',
+              color: isEligible ? muiTheme.palette.text.primary : inactiveColor,
+              fontWeight: 700,
+            }}
+          >
+            {Number(totalScore).toFixed(2)}
+          </Typography>
+        </Box>
       </Box>
+
+      {(variant === 'discoveries' || variant === 'watchlist') && (
+        <Box
+          sx={(theme) => ({
+            pt: 0.35,
+            borderTop: `1px solid ${theme.palette.border.light}`,
+          })}
+        >
+          <Typography
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              color: muiTheme.palette.status.open,
+              textTransform: 'uppercase',
+              mb: 0.35,
+              letterSpacing: '0.04em',
+            }}
+          >
+            Issues
+          </Typography>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr 1fr 4.5rem',
+              gap: 1,
+              alignItems: 'center',
+            }}
+          >
+            {issueSegments.map((segment, i) => (
+              <StatCell
+                key={segment.label}
+                label={segment.label}
+                value={segment.value}
+                color={statColors[i]}
+                isEligible={isEligible}
+              />
+            ))}
+            <Box
+              sx={(theme) => ({
+                textAlign: 'right',
+                borderLeft: `1px solid ${
+                  isEligible
+                    ? theme.palette.border.light
+                    : theme.palette.border.subtle
+                }`,
+                pl: 1.5,
+              })}
+            >
+              <StatLabel isEligible={isEligible}>Total</StatLabel>
+              <Typography
+                sx={{
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.9rem',
+                  color: isEligible
+                    ? muiTheme.palette.text.primary
+                    : inactiveColor,
+                  fontWeight: 700,
+                }}
+              >
+                {issueTotal}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 };
@@ -470,3 +516,110 @@ const StatLabel: React.FC<{
     {children}
   </Typography>
 );
+
+interface CredDonutProps {
+  segments: Segment[];
+  percent: number;
+  isEligible: boolean;
+  label?: string;
+  size?: number;
+}
+
+const CredDonut: React.FC<CredDonutProps> = ({
+  segments,
+  percent,
+  isEligible,
+  label,
+  size = 48,
+}) => {
+  const muiTheme = useTheme();
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        flexShrink: 0,
+      }}
+    >
+      <Box
+        sx={{
+          position: 'relative',
+          width: size,
+          height: size,
+          opacity: isEligible ? 1 : INACTIVE_OPACITY,
+        }}
+      >
+        <ReactECharts
+          option={{
+            backgroundColor: 'transparent',
+            series: [
+              {
+                type: 'pie',
+                radius: ['65%', '90%'],
+                silent: true,
+                label: { show: false },
+                itemStyle: { borderRadius: 3, borderWidth: 0 },
+                data: segments.map((segment, i) => ({
+                  value: segment.value,
+                  itemStyle: {
+                    color: isEligible
+                      ? CHART_SEGMENT_COLORS[i]
+                      : alpha(
+                          muiTheme.palette.text.secondary,
+                          INACTIVE_OPACITY * CHART_INACTIVE_RATIOS[i],
+                        ),
+                  },
+                })),
+              },
+            ],
+          }}
+          style={{ width: '100%', height: '100%' }}
+          opts={{ renderer: 'svg' }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Typography
+            sx={(theme) => ({
+              fontFamily: FONTS.mono,
+              fontSize: size <= 48 ? '0.65rem' : '0.75rem',
+              color: isEligible
+                ? percent >= 80
+                  ? STATUS_COLORS.merged
+                  : STATUS_COLORS.open
+                : theme.palette.text.tertiary,
+              fontWeight: 700,
+            })}
+          >
+            {percent.toFixed(0)}%
+          </Typography>
+        </Box>
+      </Box>
+      {label && (
+        <Typography
+          sx={(theme) => ({
+            fontFamily: FONTS.mono,
+            fontSize: '0.55rem',
+            color: theme.palette.status.open,
+            textTransform: 'uppercase',
+            mt: 0.25,
+            letterSpacing: '0.04em',
+          })}
+        >
+          {label}
+        </Typography>
+      )}
+    </Box>
+  );
+};
