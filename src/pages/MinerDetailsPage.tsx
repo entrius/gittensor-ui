@@ -98,8 +98,10 @@ const MinerDetailsPage: React.FC = () => {
           <Box
             sx={{
               display: 'flex',
-              alignItems: 'center',
+              alignItems: { xs: 'stretch', sm: 'center' },
               justifyContent: 'space-between',
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: { xs: 1.25, sm: 0 },
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -113,6 +115,7 @@ const MinerDetailsPage: React.FC = () => {
                 backgroundColor: 'surface.subtle',
                 p: 0.5,
                 borderRadius: 2,
+                width: { xs: '100%', sm: 'auto' },
               }}
             >
               {(
@@ -125,10 +128,12 @@ const MinerDetailsPage: React.FC = () => {
                   key={option.value}
                   onClick={() => handleModeChange(option.value)}
                   sx={{
-                    px: 2,
+                    px: { xs: 1.25, sm: 2 },
                     py: 0.75,
                     borderRadius: 1.5,
                     cursor: 'pointer',
+                    minWidth: 0,
+                    flex: { xs: 1, sm: '0 0 auto' },
                     backgroundColor:
                       viewMode === option.value
                         ? 'surface.elevated'
@@ -146,8 +151,10 @@ const MinerDetailsPage: React.FC = () => {
                 >
                   <Typography
                     sx={{
-                      fontSize: '0.8rem',
+                      fontSize: { xs: '0.74rem', sm: '0.8rem' },
                       fontWeight: 600,
+                      textAlign: 'center',
+                      whiteSpace: 'nowrap',
                     }}
                   >
                     {option.label}
