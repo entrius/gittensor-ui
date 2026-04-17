@@ -198,6 +198,15 @@ export const useWatchlistIntel = (
   const queries = [miner0, miner1, miner2, miner3];
   const isLoading = pinnedIds.some((_, i) => queries[i]?.isLoading);
 
+  const pin0 = pinnedIds[0] ?? '';
+  const pin1 = pinnedIds[1] ?? '';
+  const pin2 = pinnedIds[2] ?? '';
+  const pin3 = pinnedIds[3] ?? '';
+  const data0 = miner0.data;
+  const data1 = miner1.data;
+  const data2 = miner2.data;
+  const data3 = miner3.data;
+
   const minerData = useMemo(() => {
     return pinnedIds
       .map((id, i) => {
@@ -215,16 +224,7 @@ export const useWatchlistIntel = (
       prs: CommitLog[];
     }[];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    pinnedIds[0],
-    pinnedIds[1],
-    pinnedIds[2],
-    pinnedIds[3],
-    miner0.data,
-    miner1.data,
-    miner2.data,
-    miner3.data,
-  ]);
+  }, [pin0, pin1, pin2, pin3, data0, data1, data2, data3]);
 
   const territoryMap = useMemo(() => buildTerritoryMap(minerData), [minerData]);
 
