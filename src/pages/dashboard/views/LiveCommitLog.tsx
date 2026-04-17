@@ -11,9 +11,9 @@ import {
   Avatar,
   Chip,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { useInfiniteCommitLog } from '../../../api';
+import { LinkBox } from '../../../components/common/linkBehavior';
 import theme, { REPO_OWNER_AVATAR_BACKGROUNDS } from '../../../theme';
+import { useInfiniteCommitLog } from '../../../api';
 
 const MONTH_SHORT = [
   'Jan',
@@ -116,8 +116,8 @@ const getScoreColor = (score: string) => {
 const CommitLogItem: React.FC<{
   entry: CommitLogEntry;
   isNew: boolean;
-}> = ({ entry, isNew }) => {
-  const navigate = useNavigate();
+  innerRef?: React.Ref<HTMLAnchorElement>;
+}> = ({ entry, isNew, innerRef }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
@@ -134,14 +134,11 @@ const CommitLogItem: React.FC<{
     ? formatUtcTimestamp(timestampRaw)
     : 'Loading...';
 
-  return (
-    <Box
-      onClick={() =>
-        navigate(
-          `/miners/pr?repo=${entry.repository}&number=${entry.pullRequestNumber}`,
-          { state: { backLabel: 'Back to Dashboard' } },
-        )
-      }
+  const content = (
+    <LinkBox
+      href={`/miners/pr?repo=${entry.repository}&number=${entry.pullRequestNumber}`}
+      linkState={{ backLabel: 'Back to Dashboard' }}
+      ref={innerRef}
       sx={{
         p: isMobile ? 0.75 : isTablet ? 1.25 : 1,
         borderRadius: 3,
@@ -300,8 +297,10 @@ const CommitLogItem: React.FC<{
           </Stack>
         </Stack>
       </Stack>
-    </Box>
+    </LinkBox>
   );
+
+  return content;
 };
 
 const LiveCommitLog: React.FC = () => {
@@ -315,7 +314,7 @@ const LiveCommitLog: React.FC = () => {
   const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
   const logContainerRef = useRef<HTMLDivElement>(null);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLAnchorElement>(null);
 
   const apiCommits = useMemo<CommitLogEntry[]>(
     () => data?.pages.flat() ?? [],

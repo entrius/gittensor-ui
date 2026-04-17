@@ -26,15 +26,24 @@ const VISIBLE_QUERY_PARAM = 'visible';
 interface TopMinersTableProps {
   miners: MinerStats[];
   isLoading?: boolean;
-  getHref: (miner: MinerStats) => string;
-  linkState?: unknown;
+  getMinerHref: (miner: MinerStats) => string;
+  linkState?: Record<string, unknown>;
   variant?: LeaderboardVariant;
 }
 
-const getAllowedSortOptions = (variant: LeaderboardVariant): SortOption[] =>
-  variant === 'discoveries'
-    ? ['totalScore', 'usdPerDay', 'totalIssues', 'credibility']
-    : ['totalScore', 'usdPerDay', 'totalPRs', 'credibility'];
+const getAllowedSortOptions = (variant: LeaderboardVariant): SortOption[] => {
+  if (variant === 'discoveries')
+    return ['totalScore', 'usdPerDay', 'totalIssues', 'credibility'];
+  if (variant === 'watchlist')
+    return [
+      'totalScore',
+      'usdPerDay',
+      'totalPRs',
+      'totalIssues',
+      'credibility',
+    ];
+  return ['totalScore', 'usdPerDay', 'totalPRs', 'credibility'];
+};
 
 const getSortOptionFromQuery = (
   value: string | null,
@@ -62,7 +71,7 @@ const getVisibleCountFromQuery = (value: string | null): number => {
 const TopMinersTable: React.FC<TopMinersTableProps> = ({
   miners,
   isLoading,
-  getHref,
+  getMinerHref,
   linkState,
   variant = 'oss',
 }) => {
@@ -284,7 +293,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                 <MinerCard
                   miner={miner}
                   variant={variant}
-                  href={getHref(miner)}
+                  href={getMinerHref(miner)}
                   linkState={linkState}
                 />
               </Grid>
@@ -396,7 +405,7 @@ const SortButtons: React.FC<SortButtonsProps> = ({
       ...(variant !== 'discoveries'
         ? [{ label: 'PRs', value: 'totalPRs' as const }]
         : []),
-      ...(variant === 'discoveries'
+      ...(variant === 'discoveries' || variant === 'watchlist'
         ? [{ label: 'Issues', value: 'totalIssues' as const }]
         : []),
       { label: 'Credibility', value: 'credibility' },
