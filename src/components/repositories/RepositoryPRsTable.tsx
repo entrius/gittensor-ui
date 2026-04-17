@@ -28,6 +28,7 @@ type PrSortField =
   | 'mergedAt';
 type SortOrder = 'asc' | 'desc';
 import { useAllPrs } from '../../api';
+import { useSearchParams } from 'react-router-dom';
 import { LinkTableRow } from '../common/linkBehavior';
 import theme, {
   TEXT_OPACITY,
@@ -43,13 +44,42 @@ interface RepositoryPRsTableProps {
   state?: 'open' | 'closed' | 'merged' | 'all';
 }
 
+const PR_STATUS_FILTERS: readonly PrStatusFilter[] = [
+  'all',
+  'open',
+  'merged',
+  'closed',
+];
+
+const isPrStatusFilter = (value: string | null): value is PrStatusFilter =>
+  value !== null && (PR_STATUS_FILTERS as readonly string[]).includes(value);
+
 const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   repositoryFullName,
   state = 'all',
 }) => {
-  const [filter, setFilter] = useState<PrStatusFilter>(state);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const prStatusParam = searchParams.get('prStatus');
+  const filter: PrStatusFilter = isPrStatusFilter(prStatusParam)
+    ? prStatusParam
+    : state;
   const [sortField, setSortField] = useState<PrSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+
+  const setStatusFilter = (next: PrStatusFilter) => {
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (next === 'all') {
+          params.delete('prStatus');
+        } else {
+          params.set('prStatus', next);
+        }
+        return params;
+      },
+      { replace: true },
+    );
+  };
 
   const handleSort = (field: PrSortField) => {
     if (sortField === field) {
@@ -148,28 +178,28 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
             <FilterButton
               label="All"
               isActive={filter === 'all'}
-              onClick={() => setFilter('all')}
+              onClick={() => setStatusFilter('all')}
               count={counts.all}
               color={theme.palette.status.neutral}
             />
             <FilterButton
               label="Open"
               isActive={filter === 'open'}
-              onClick={() => setFilter('open')}
+              onClick={() => setStatusFilter('open')}
               count={counts.open}
               color={theme.palette.status.open}
             />
             <FilterButton
               label="Merged"
               isActive={filter === 'merged'}
-              onClick={() => setFilter('merged')}
+              onClick={() => setStatusFilter('merged')}
               count={counts.merged}
               color={theme.palette.status.merged}
             />
             <FilterButton
               label="Closed"
               isActive={filter === 'closed'}
-              onClick={() => setFilter('closed')}
+              onClick={() => setStatusFilter('closed')}
               count={counts.closed}
               color={theme.palette.status.closed}
             />
@@ -219,28 +249,28 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           <FilterButton
             label="All"
             isActive={filter === 'all'}
-            onClick={() => setFilter('all')}
+            onClick={() => setStatusFilter('all')}
             count={counts.all}
             color={theme.palette.status.neutral}
           />
           <FilterButton
             label="Open"
             isActive={filter === 'open'}
-            onClick={() => setFilter('open')}
+            onClick={() => setStatusFilter('open')}
             count={counts.open}
             color={theme.palette.status.open}
           />
           <FilterButton
             label="Merged"
             isActive={filter === 'merged'}
-            onClick={() => setFilter('merged')}
+            onClick={() => setStatusFilter('merged')}
             count={counts.merged}
             color={theme.palette.status.merged}
           />
           <FilterButton
             label="Closed"
             isActive={filter === 'closed'}
-            onClick={() => setFilter('closed')}
+            onClick={() => setStatusFilter('closed')}
             count={counts.closed}
             color={theme.palette.status.closed}
           />
