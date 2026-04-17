@@ -84,7 +84,8 @@ const sortByMatchThenTiebreaker = <T>(
     })
     .map((item) => item.item);
 
-const buildMinerSearchData = (miners: MinerEvaluation[]): MinerSearchData[] => {
+const buildMinerSearchData = (rawMiners: MinerEvaluation[]): MinerSearchData[] => {
+  const miners = Array.isArray(rawMiners) ? rawMiners : [];
   const normalizedMiners = miners.map((miner) => ({
     githubId: miner.githubId,
     githubUsername: miner.githubUsername || '',

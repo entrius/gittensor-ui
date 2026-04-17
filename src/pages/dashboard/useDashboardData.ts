@@ -36,17 +36,17 @@ export const useDashboardData = (range: TrendTimeRange) => {
 
   const datasets: DashboardDatasets = {
     prs: {
-      data: prsQuery.data ?? [],
+      data: Array.isArray(prsQuery.data) ? prsQuery.data : [],
       isLoading: prsQuery.isLoading,
       isError: prsQuery.isError,
     },
     miners: {
-      data: minersQuery.data ?? [],
+      data: Array.isArray(minersQuery.data) ? minersQuery.data : [],
       isLoading: minersQuery.isLoading,
       isError: minersQuery.isError,
     },
     issues: {
-      data: issuesQuery.data ?? [],
+      data: Array.isArray(issuesQuery.data) ? issuesQuery.data : [],
       isLoading: issuesQuery.isLoading,
       isError: issuesQuery.isError,
     },
