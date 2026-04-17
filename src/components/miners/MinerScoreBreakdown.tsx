@@ -34,11 +34,7 @@ import {
 } from '../../utils/ExplorerUtils';
 import { credibilityColor } from '../../utils/format';
 import { buildMergedPillDefs } from '../../utils/multiplierDefs';
-import {
-  filterPrs,
-  getPrStatusCounts,
-  type PrStatusFilter,
-} from '../../utils';
+import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
 import FilterButton from '../FilterButton';
 
 type ViewMode = 'prs' | 'issues';
@@ -797,7 +793,9 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
               cursor: safePage >= totalPages - 1 ? 'default' : 'pointer',
               userSelect: 'none',
               '&:hover':
-                safePage < totalPages - 1 ? { textDecoration: 'underline' } : {},
+                safePage < totalPages - 1
+                  ? { textDecoration: 'underline' }
+                  : {},
             }}
           >
             Next →
