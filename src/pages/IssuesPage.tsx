@@ -34,6 +34,31 @@ const IssuesPage: React.FC = () => {
     navigate(`/bounties/${TAB_SLUGS[newValue]}`, { replace: true });
   };
 
+  const tabSwipeTouchRef = React.useRef<{ x: number; y: number } | null>(null);
+
+  const handleTabSwipeTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    tabSwipeTouchRef.current = { x: t.clientX, y: t.clientY };
+  };
+
+  const handleTabSwipeTouchEnd = (e: React.TouchEvent) => {
+    const start = tabSwipeTouchRef.current;
+    tabSwipeTouchRef.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    const minDx = 56;
+    if (Math.abs(dx) < minDx) return;
+    if (Math.abs(dy) > Math.abs(dx) * 0.75) return;
+
+    if (dx < 0 && tabIndex < TAB_SLUGS.length - 1) {
+      navigate(`/bounties/${TAB_SLUGS[tabIndex + 1]}`, { replace: true });
+    } else if (dx > 0 && tabIndex > 0) {
+      navigate(`/bounties/${TAB_SLUGS[tabIndex - 1]}`, { replace: true });
+    }
+  };
+
   return (
     <Page title="Issue Bounties">
       <SEO
@@ -64,31 +89,37 @@ const IssuesPage: React.FC = () => {
               borderColor: theme.palette.border.light,
             })}
           >
-            <Tabs
-              value={tabIndex}
-              onChange={handleTabChange}
-              sx={(theme) => ({
-                '& .MuiTab-root': {
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  color: theme.palette.text.secondary,
-                  minHeight: 48,
-                  '&.Mui-selected': {
-                    color: theme.palette.text.primary,
-                  },
-                },
-                '& .MuiTabs-indicator': {
-                  backgroundColor: theme.palette.text.primary,
-                  height: 2,
-                },
-              })}
+            <Box
+              onTouchStart={handleTabSwipeTouchStart}
+              onTouchEnd={handleTabSwipeTouchEnd}
+              sx={{ touchAction: 'pan-y' }}
             >
-              <Tab label="Available Issues" />
-              <Tab label="Pending Issues" />
-              <Tab label="History" />
-            </Tabs>
+              <Tabs
+                value={tabIndex}
+                onChange={handleTabChange}
+                sx={(theme) => ({
+                  '& .MuiTab-root': {
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    color: theme.palette.text.secondary,
+                    minHeight: 48,
+                    '&.Mui-selected': {
+                      color: theme.palette.text.primary,
+                    },
+                  },
+                  '& .MuiTabs-indicator': {
+                    backgroundColor: theme.palette.text.primary,
+                    height: 2,
+                  },
+                })}
+              >
+                <Tab label="Available Issues" />
+                <Tab label="Pending Issues" />
+                <Tab label="History" />
+              </Tabs>
+            </Box>
 
             <Typography
               sx={{
