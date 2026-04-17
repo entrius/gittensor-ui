@@ -25,6 +25,7 @@ type PrSortField =
   | 'commitCount'
   | 'lines'
   | 'score'
+  | 'predicted'
   | 'status'
   | 'mergedAt';
 type SortOrder = 'asc' | 'desc';
@@ -36,8 +37,14 @@ import {
   headerCellStyle,
   bodyCellStyle,
 } from '../../theme';
-import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
+import {
+  filterPrs,
+  getPrStatusCounts,
+  getPredictedUsdSortValue,
+  type PrStatusFilter,
+} from '../../utils';
 import FilterButton from '../FilterButton';
+import { PredictedEarningsCell } from '../prs';
 
 interface RepositoryPRsTableProps {
   repositoryFullName: string;
@@ -118,6 +125,11 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           return cmpNum(
             a.mergedAt ? new Date(a.mergedAt).getTime() : 0,
             b.mergedAt ? new Date(b.mergedAt).getTime() : 0,
+          );
+        case 'predicted':
+          return cmpNum(
+            getPredictedUsdSortValue(a),
+            getPredictedUsdSortValue(b),
           );
         case 'score':
         default:
@@ -330,6 +342,15 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                     Score
                   </TableSortLabel>
                 </TableCell>
+                <TableCell align="right" sx={headerCellStyle}>
+                  <TableSortLabel
+                    active={sortField === 'predicted'}
+                    direction={sortField === 'predicted' ? sortOrder : 'desc'}
+                    onClick={() => handleSort('predicted')}
+                  >
+                    Predicted
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell sx={headerCellStyle}>
                   <TableSortLabel
                     active={sortField === 'status'}
@@ -438,6 +459,9 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                     >
                       {parseFloat(pr.score || '0').toFixed(4)}
                     </Typography>
+                  </TableCell>
+                  <TableCell align="right" sx={bodyCellStyle}>
+                    <PredictedEarningsCell pr={pr} />
                   </TableCell>
                   <TableCell sx={bodyCellStyle}>
                     {(() => {

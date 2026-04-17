@@ -25,15 +25,23 @@ import { useMinerPRs, type CommitLog } from '../../api';
 import {
   filterPrs,
   getPrStatusCounts,
+  getPredictedUsdSortValue,
   paginateItems,
   type PrStatusFilter,
 } from '../../utils';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
+import { PredictedEarningsCell } from '../prs';
 import { headerCellStyle, bodyCellStyle, tooltipSlotProps } from '../../theme';
 
-type PrSortField = 'number' | 'repository' | 'score' | 'lines' | 'date';
+type PrSortField =
+  | 'number'
+  | 'repository'
+  | 'score'
+  | 'predicted'
+  | 'lines'
+  | 'date';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 20;
@@ -51,6 +59,7 @@ const DEFAULT_SORT_DIR: Record<PrSortField, SortDir> = {
   number: 'desc',
   repository: 'asc',
   score: 'desc',
+  predicted: 'desc',
   lines: 'desc',
   date: 'desc',
 };
@@ -176,6 +185,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           break;
         case 'score':
           cmp = getEffectiveScore(a) - getEffectiveScore(b);
+          break;
+        case 'predicted':
+          cmp = getPredictedUsdSortValue(a) - getPredictedUsdSortValue(b);
           break;
         case 'lines':
           cmp = a.additions + a.deletions - (b.additions + b.deletions);
@@ -410,7 +422,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             >
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ ...headerCellStyle, width: '10%' }}>
+                  <TableCell sx={{ ...headerCellStyle, width: '9%' }}>
                     <TableSortLabel
                       active={sortField === 'number'}
                       direction={sortField === 'number' ? sortDir : 'desc'}
@@ -420,10 +432,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                       PR #
                     </TableSortLabel>
                   </TableCell>
-                  <TableCell sx={{ ...headerCellStyle, width: '25%' }}>
+                  <TableCell sx={{ ...headerCellStyle, width: '22%' }}>
                     Title
                   </TableCell>
-                  <TableCell sx={{ ...headerCellStyle, width: '25%' }}>
+                  <TableCell sx={{ ...headerCellStyle, width: '22%' }}>
                     <TableSortLabel
                       active={sortField === 'repository'}
                       direction={
@@ -439,7 +451,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   </TableCell>
                   <TableCell
                     align="right"
-                    sx={{ ...headerCellStyle, width: '12%' }}
+                    sx={{ ...headerCellStyle, width: '10%' }}
                   >
                     <TableSortLabel
                       active={sortField === 'lines'}
@@ -452,7 +464,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   </TableCell>
                   <TableCell
                     align="right"
-                    sx={{ ...headerCellStyle, width: '13%' }}
+                    sx={{ ...headerCellStyle, width: '11%' }}
                   >
                     <TableSortLabel
                       active={sortField === 'score'}
@@ -465,7 +477,20 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                   </TableCell>
                   <TableCell
                     align="right"
-                    sx={{ ...headerCellStyle, width: '15%' }}
+                    sx={{ ...headerCellStyle, width: '13%' }}
+                  >
+                    <TableSortLabel
+                      active={sortField === 'predicted'}
+                      direction={sortField === 'predicted' ? sortDir : 'desc'}
+                      onClick={() => handleSort('predicted')}
+                      sx={sortLabelSx}
+                    >
+                      Predicted
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ ...headerCellStyle, width: '13%' }}
                   >
                     <TableSortLabel
                       active={sortField === 'date'}
@@ -658,6 +683,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                               </Typography>
                             )}
                         </Box>
+                      </TableCell>
+                      <TableCell align="right" sx={bodyCellStyle}>
+                        <PredictedEarningsCell pr={pr} />
                       </TableCell>
                       <TableCell
                         align="right"
