@@ -307,6 +307,15 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         shadowBlur: 12,
       },
     }));
+    const positiveSeriesValues = seriesData
+      .map((item) => item.value)
+      .filter((value) => Number.isFinite(value) && value > 0);
+    const minPositiveValue =
+      positiveSeriesValues.length > 0 ? Math.min(...positiveSeriesValues) : 1;
+    const logMin =
+      minPositiveValue < 1
+        ? 10 ** Math.floor(Math.log10(minPositiveValue))
+        : 1;
 
     return {
       backgroundColor: 'transparent',
@@ -401,7 +410,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       },
       yAxis: {
         type: effectiveLogScale ? 'log' : 'value',
-        min: effectiveLogScale ? 1 : 0,
+        min: effectiveLogScale ? logMin : 0,
         logBase: 10,
         name: metric.yAxis,
         nameTextStyle: {
@@ -413,6 +422,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           color: textColor,
           fontSize: 11,
           formatter: (value: number) => {
+            if (sortColumn === 'weight') {
+              if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
+              if (value >= 10) return value.toFixed(1).replace(/\.0$/, '');
+              if (value >= 1) return value.toFixed(2).replace(/\.?0+$/, '');
+              return value.toFixed(3).replace(/\.?0+$/, '');
+            }
             if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
             return value.toFixed(0);
           },
