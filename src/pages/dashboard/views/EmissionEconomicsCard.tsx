@@ -62,12 +62,7 @@ const EmissionSlice: React.FC<EmissionSliceProps> = ({
   const monthlyUsdLabel = formatUsdCompact(monthlyUsd);
 
   return (
-    <Tooltip
-      title={tooltip}
-      arrow
-      placement="top"
-      slotProps={tooltipSlotProps}
-    >
+    <Tooltip title={tooltip} arrow placement="top" slotProps={tooltipSlotProps}>
       <Box
         sx={{
           backgroundColor: 'surface.subtle',
@@ -111,9 +106,7 @@ const EmissionSlice: React.FC<EmissionSliceProps> = ({
           >
             {percent.toFixed(1)}%
           </Typography>
-          <InfoOutlinedIcon
-            sx={{ fontSize: '0.75rem', opacity: 0.4 }}
-          />
+          <InfoOutlinedIcon sx={{ fontSize: '0.75rem', opacity: 0.4 }} />
         </Box>
         <Typography
           sx={{
@@ -124,7 +117,8 @@ const EmissionSlice: React.FC<EmissionSliceProps> = ({
             lineHeight: 1.15,
           }}
         >
-          {formatAlpha(alphaPerDay)} <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>α/day</span>
+          {formatAlpha(alphaPerDay)}{' '}
+          <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>α/day</span>
         </Typography>
         <Typography
           sx={{
@@ -207,8 +201,7 @@ const EmissionDonut: React.FC<DonutProps> = ({
           name: string;
           value: number;
           percent: number;
-        }) =>
-          `${name}: ${formatAlpha(value)} α (${percent}%)`,
+        }) => `${name}: ${formatAlpha(value)} α (${percent}%)`,
       },
       title: {
         text: `${breakdown.totalDailyAlpha.toLocaleString()} α`,
@@ -400,7 +393,9 @@ const EmissionEconomicsCard: React.FC = () => {
                 percent={breakdown.minerSharePercent}
                 color={minerColor}
                 tooltip="Share of daily subnet emissions routed to miners for merged PR contributions and issue discovery."
-                monthlyAlpha={breakdown.minerAlphaPerDay * breakdown.daysInMonth}
+                monthlyAlpha={
+                  breakdown.minerAlphaPerDay * breakdown.daysInMonth
+                }
                 monthlyUsd={
                   breakdown.minerUsdPerDay != null
                     ? breakdown.minerUsdPerDay * breakdown.daysInMonth
@@ -462,9 +457,10 @@ const EmissionEconomicsCard: React.FC = () => {
                       fontFamily: MONO_FONT,
                       fontSize: '1.05rem',
                       fontWeight: 600,
-                      color: breakdown.totalUsdPerDay != null
-                        ? theme.palette.status.success
-                        : 'text.primary',
+                      color:
+                        breakdown.totalUsdPerDay != null
+                          ? theme.palette.status.success
+                          : 'text.primary',
                     }}
                   >
                     {breakdown.totalUsdPerDay != null
