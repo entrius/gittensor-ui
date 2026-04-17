@@ -151,7 +151,14 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                 overflow: 'hidden',
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.75,
+                  minWidth: 0,
+                }}
+              >
                 <Typography
                   sx={(theme) => ({
                     fontFamily: FONTS.mono,
