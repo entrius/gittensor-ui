@@ -313,9 +313,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     const minPositiveValue =
       positiveSeriesValues.length > 0 ? Math.min(...positiveSeriesValues) : 1;
     const logMin =
-      minPositiveValue < 1
-        ? 10 ** Math.floor(Math.log10(minPositiveValue))
-        : 1;
+      minPositiveValue < 1 ? 10 ** Math.floor(Math.log10(minPositiveValue)) : 1;
 
     return {
       backgroundColor: 'transparent',
