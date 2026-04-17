@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { formatDate } from '../../utils/format';
 import {
   Box,
   Grid,
@@ -265,7 +266,6 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                       color: 'text.primary',
                       fontWeight: 700,
                       fontSize: '32px',
-                      fontFamily: '"JetBrains Mono", monospace',
                     }}
                   >
                     {score}%
@@ -327,10 +327,9 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     sx={{
                       color: 'text.primary',
                       fontSize: '13px',
-                      fontFamily: '"JetBrains Mono", monospace',
                     }}
                   >
-                    {new Date(repoData.pushed_at).toLocaleDateString()}
+                    {formatDate(repoData.pushed_at)}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -345,10 +344,9 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     sx={{
                       color: 'text.primary',
                       fontSize: '13px',
-                      fontFamily: '"JetBrains Mono", monospace',
                     }}
                   >
-                    {new Date(repoData.created_at).toLocaleDateString()}
+                    {formatDate(repoData.created_at)}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -443,7 +441,6 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                       variant="h4"
                       sx={{
                         color: 'text.primary',
-                        fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '24px',
                         mb: 0.5,
                       }}
@@ -479,7 +476,6 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                       variant="h4"
                       sx={{
                         color: 'text.primary',
-                        fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '24px',
                         mb: 0.5,
                       }}
@@ -539,7 +535,6 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                           variant="h4"
                           sx={{
                             color: 'text.primary',
-                            fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '24px',
                             mb: 0.5,
                           }}
@@ -622,7 +617,6 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                           variant="h4"
                           sx={{
                             color: 'text.primary',
-                            fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '24px',
                             mb: 0.5,
                           }}

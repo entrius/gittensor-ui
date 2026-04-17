@@ -1,8 +1,6 @@
 import React from 'react';
 import { Stack, Box } from '@mui/material';
-import { Page } from '../components/layout';
-import FAQ from '../components/FAQ';
-import { SEO } from '../components';
+import FAQ from '../FAQ';
 
 export const FAQContent: React.FC = () => (
   <Box
@@ -130,8 +128,8 @@ export const FAQContent: React.FC = () => (
           <>
             You must contribute to an incentivized repository listed in our
             master list. To become eligible for rewards, you need at least 5
-            merged PRs with a token score of 5 or higher, 80% credibility, and a
-            GitHub account that is at least 180 days old. Check the{' '}
+            merged PRs with a token score of 5 or higher and 80% credibility.
+            Check the{' '}
             <a
               href="https://docs.gittensor.io/oss-contributions.html"
               target="_blank"
@@ -147,23 +145,3 @@ export const FAQContent: React.FC = () => (
     </Stack>
   </Box>
 );
-
-const FAQPage: React.FC = () => (
-  <Page title="FAQ">
-    <SEO
-      title="Frequently Asked Questions"
-      description="Find answers to common questions about Gittensor, incentive mechanisms, subnets, alpha tokens, and how to start mining."
-    />
-    <Box
-      sx={{
-        minHeight: { xs: 'auto', md: 'calc(100vh - 80px)' },
-        py: { xs: 2, sm: 0 },
-        display: 'flex',
-      }}
-    >
-      <FAQContent />
-    </Box>
-  </Page>
-);
-
-export default FAQPage;

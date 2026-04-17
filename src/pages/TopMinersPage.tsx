@@ -1,57 +1,30 @@
 import React, { useMemo } from 'react';
 import { useMediaQuery, Box, Typography, alpha } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import { Page } from '../components/layout';
-import { TopMinersTable, LeaderboardSidebar, SEO } from '../components';
+import {
+  TopMinersTable,
+  LeaderboardSidebar,
+  SEO,
+  type MinerStats,
+} from '../components';
 import { useAllMiners } from '../api';
-import { parseNumber } from '../utils';
+import { mapAllMinersToStats } from '../utils/minerMapper';
 import theme, { scrollbarSx } from '../theme';
 
-const TopMinersPage: React.FC = () => {
-  const navigate = useNavigate();
+const MINER_LINK_STATE = { backLabel: 'Back to Leaderboard' } as const;
+const getMinerHref = (miner: MinerStats) =>
+  `/miners/details?githubId=${miner.githubId}`;
 
+const TopMinersPage: React.FC = () => {
   const allMinerStatsQuery = useAllMiners();
   const allMinersStats = allMinerStatsQuery?.data;
   const isLoadingMinerStats = allMinerStatsQuery?.isLoading;
 
-  const handleSelectMiner = (githubId: string) => {
-    navigate(`/miners/details?githubId=${githubId}`, {
-      state: { backLabel: 'Back to Leaderboard' },
-    });
-  };
-
-  // Normalize leaderboard miner data.
-  const minerStats = useMemo(() => {
-    if (!Array.isArray(allMinersStats)) return [];
-
-    const rankById = new Map(
-      [...allMinersStats]
-        .sort((a, b) => Number(b.totalScore) - Number(a.totalScore))
-        .map((stat, index) => [String(stat.id), index + 1]),
-    );
-
-    return allMinersStats.map((stat) => ({
-      id: String(stat.id),
-      githubId: stat.githubId || '',
-      author: stat.githubUsername || undefined,
-      totalScore: parseNumber(stat.totalScore),
-      baseTotalScore: parseNumber(stat.baseTotalScore),
-      totalPRs: parseNumber(stat.totalPrs),
-      linesChanged: parseNumber(stat.totalNodesScored),
-      linesAdded: parseNumber(stat.totalAdditions),
-      linesDeleted: parseNumber(stat.totalDeletions),
-      hotkey: stat.hotkey || 'N/A',
-      rank: rankById.get(String(stat.id)),
-      uniqueReposCount: parseNumber(stat.uniqueReposCount),
-      credibility: parseNumber(stat.credibility),
-      isEligible: stat.isEligible ?? false,
-      usdPerDay: parseNumber(stat.usdPerDay),
-      // PR status counts for credibility donut
-      totalMergedPrs: parseNumber(stat.totalMergedPrs),
-      totalOpenPrs: parseNumber(stat.totalOpenPrs),
-      totalClosedPrs: parseNumber(stat.totalClosedPrs),
-    }));
-  }, [allMinersStats]);
+  const minerStats = useMemo(
+    () =>
+      Array.isArray(allMinersStats) ? mapAllMinersToStats(allMinersStats) : [],
+    [allMinersStats],
+  );
 
   // Dashboard-like responsive logic
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -97,7 +70,6 @@ const TopMinersPage: React.FC = () => {
         >
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.8rem',
               color: (t) => alpha(t.palette.text.primary, 0.5),
               lineHeight: 1.6,
@@ -111,10 +83,8 @@ const TopMinersPage: React.FC = () => {
             <TopMinersTable
               miners={minerStats}
               isLoading={isLoadingMinerStats}
-              getHref={(m) =>
-                `/miners/details?githubId=${encodeURIComponent(m.githubId)}`
-              }
-              linkState={{ backLabel: 'Back to Leaderboard' }}
+              getMinerHref={getMinerHref}
+              linkState={MINER_LINK_STATE}
             />
           </Box>
         </Box>
@@ -134,7 +104,8 @@ const TopMinersPage: React.FC = () => {
           {/* Render extracted Sidebar Content here */}
           <LeaderboardSidebar
             miners={minerStats}
-            onSelectMiner={handleSelectMiner}
+            getMinerHref={getMinerHref}
+            linkState={MINER_LINK_STATE}
           />
         </Box>
       </Box>
