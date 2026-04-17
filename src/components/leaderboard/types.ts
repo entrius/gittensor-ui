@@ -23,9 +23,12 @@ export interface MinerStats {
   totalSolvedIssues?: number;
   totalOpenIssues?: number;
   totalClosedIssues?: number;
+  issueDiscoveryScore?: number;
+  issueCredibility?: number;
+  isIssueEligible?: boolean;
 }
 
-export type LeaderboardVariant = 'oss' | 'discoveries';
+export type LeaderboardVariant = 'oss' | 'discoveries' | 'watchlist';
 
 export type SortOption =
   | 'totalScore'
