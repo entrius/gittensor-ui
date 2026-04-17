@@ -199,7 +199,10 @@ export const AboutContent: React.FC = () => {
                     variant="h6"
                     fontWeight="bold"
                     gutterBottom
-                    sx={{ color: 'text.primary', textAlign: { xs: 'center', md: 'left' } }}
+                    sx={{
+                      color: 'text.primary',
+                      textAlign: { xs: 'center', md: 'left' },
+                    }}
                   >
                     {card.title}
                   </Typography>

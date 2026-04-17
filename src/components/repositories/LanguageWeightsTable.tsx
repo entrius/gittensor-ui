@@ -330,7 +330,10 @@ const LanguageWeightsTable: React.FC = () => {
                   onClick={() => setShowMobileSearch(true)}
                   size="small"
                   sx={{
-                    color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+                    color: alpha(
+                      theme.palette.common.white,
+                      TEXT_OPACITY.muted,
+                    ),
                     border: `1px solid ${theme.palette.border.light}`,
                     borderRadius: 2,
                     padding: '6px',
@@ -535,7 +538,9 @@ const LanguageWeightsTable: React.FC = () => {
                 >
                   <TableSortLabel
                     active={sortField === 'tokenScoring'}
-                    direction={sortField === 'tokenScoring' ? sortOrder : 'desc'}
+                    direction={
+                      sortField === 'tokenScoring' ? sortOrder : 'desc'
+                    }
                     sx={{
                       '&:hover': {
                         color: 'secondary.main',
@@ -546,7 +551,10 @@ const LanguageWeightsTable: React.FC = () => {
                     }}
                   >
                     <Tooltip title="Indicates if this extension supports token-based scoring. Token scoring uses AST parsing for more accurate contribution measurement.">
-                      <Typography variant="dataLabel" sx={{ cursor: 'pointer' }}>
+                      <Typography
+                        variant="dataLabel"
+                        sx={{ cursor: 'pointer' }}
+                      >
                         Token Scoring
                       </Typography>
                     </Tooltip>
