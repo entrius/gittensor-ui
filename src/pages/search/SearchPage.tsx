@@ -232,7 +232,6 @@ const SearchPage: React.FC = () => {
                 allowScrollButtonsMobile
                 sx={(theme) => ({
                   '& .MuiTab-root': {
-                    fontFamily: theme.typography.mono.fontFamily,
                     fontSize: '0.85rem',
                     fontWeight: 600,
                     textTransform: 'none',

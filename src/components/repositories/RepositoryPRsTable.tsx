@@ -35,12 +35,7 @@ import theme, {
   headerCellStyle,
   bodyCellStyle,
 } from '../../theme';
-import {
-  getPrStatusCounts,
-  isClosedUnmergedPr,
-  isMergedPr,
-  isOpenPr,
-} from '../../utils';
+import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
 import FilterButton from '../FilterButton';
 
 interface RepositoryPRsTableProps {
@@ -52,9 +47,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   repositoryFullName,
   state = 'all',
 }) => {
-  const [filter, setFilter] = useState<'all' | 'open' | 'closed' | 'merged'>(
-    state,
-  );
+  const [filter, setFilter] = useState<PrStatusFilter>(state);
   const [sortField, setSortField] = useState<PrSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
@@ -85,14 +78,10 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     return getPrStatusCounts(allPRs);
   }, [allPRs]);
 
-  const filteredPRs = useMemo(() => {
-    if (!allPRs) return [];
-    if (filter === 'all') return allPRs;
-    if (filter === 'merged') return allPRs.filter(isMergedPr);
-    if (filter === 'open') return allPRs.filter(isOpenPr);
-    if (filter === 'closed') return allPRs.filter(isClosedUnmergedPr);
-    return allPRs;
-  }, [allPRs, filter]);
+  const filteredPRs = useMemo(
+    () => filterPrs(allPRs ?? [], { statusFilter: filter }),
+    [allPRs, filter],
+  );
 
   const sortedPRs = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -151,7 +140,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
             variant="h6"
             sx={{
               color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
             }}
           >
             Pull Requests
@@ -220,7 +208,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           variant="h6"
           sx={{
             color: 'text.primary',
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '1.1rem',
             fontWeight: 500,
           }}
@@ -265,7 +252,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           <Typography
             sx={{
               color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
             }}
           >
@@ -439,7 +425,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                   <TableCell align="right" sx={bodyCellStyle}>
                     <Typography
                       sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.75rem',
                         fontWeight: 600,
                       }}

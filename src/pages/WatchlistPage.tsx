@@ -65,7 +65,6 @@ const WatchlistPage: React.FC = () => {
         >
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.8rem',
               color: (t) => alpha(t.palette.text.primary, 0.5),
               lineHeight: 1.6,
@@ -80,7 +79,6 @@ const WatchlistPage: React.FC = () => {
               size="small"
               onClick={() => setConfirmOpen(true)}
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.75rem',
                 textTransform: 'none',
                 color: 'text.secondary',
@@ -105,7 +103,6 @@ const WatchlistPage: React.FC = () => {
           >
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.95rem',
               }}
             >
@@ -113,7 +110,6 @@ const WatchlistPage: React.FC = () => {
             </Typography>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.8rem',
                 maxWidth: 480,
                 color: (t) => alpha(t.palette.text.primary, 0.5),
@@ -147,9 +143,7 @@ const WatchlistPage: React.FC = () => {
       </Box>
 
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle sx={{ fontFamily: '"JetBrains Mono", monospace' }}>
-          Clear all {count} pinned miners?
-        </DialogTitle>
+        <DialogTitle>Clear all {count} pinned miners?</DialogTitle>
         <DialogActions>
           <Button
             onClick={() => setConfirmOpen(false)}

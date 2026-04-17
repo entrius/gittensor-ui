@@ -23,13 +23,12 @@ const PR_TABS = [
   'pull-requests',
   'repositories',
 ] as const;
-const ISSUE_TABS = ['overview', 'activity', 'issues', 'repositories'] as const;
+const ISSUE_TABS = ['overview', 'activity', 'repositories'] as const;
 type MinerDetailsTab = (typeof PR_TABS)[number] | (typeof ISSUE_TABS)[number];
 
 const tabSx = {
   '& .MuiTab-root': {
     color: 'text.secondary',
-    fontFamily: '"JetBrains Mono", monospace',
     textTransform: 'none' as const,
     fontSize: '0.83rem',
     fontWeight: 500,
@@ -140,8 +139,7 @@ const MinerDetailsPage: React.FC = () => {
                         : 'transparent',
                       color: isActive
                         ? 'text.primary'
-                        : (t: { palette: { text: { primary: string } } }) =>
-                            alpha(t.palette.text.primary, 0.5),
+                        : (t) => alpha(t.palette.text.primary, 0.5),
                       '&:hover': {
                         backgroundColor: 'surface.elevated',
                         color: 'text.primary',
@@ -150,7 +148,6 @@ const MinerDetailsPage: React.FC = () => {
                   >
                     <Typography
                       sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.8rem',
                         fontWeight: 600,
                       }}
@@ -176,10 +173,9 @@ const MinerDetailsPage: React.FC = () => {
             >
               <Tab value="overview" label="Overview" />
               <Tab value="activity" label="Activity" />
-              <Tab
-                value={viewMode === 'issues' ? 'issues' : 'pull-requests'}
-                label={viewMode === 'issues' ? 'Issues' : 'Pull Requests'}
-              />
+              {viewMode === 'prs' && (
+                <Tab value="pull-requests" label="Pull Requests" />
+              )}
               <Tab value="repositories" label="Repositories" />
             </Tabs>
           </Box>
@@ -188,9 +184,7 @@ const MinerDetailsPage: React.FC = () => {
             {activeTab === 'overview' && (
               <>
                 <MinerInsightsCard githubId={githubId} viewMode={viewMode} />
-                {viewMode === 'prs' && (
-                  <MinerScoreBreakdown githubId={githubId} />
-                )}
+                <MinerScoreBreakdown githubId={githubId} viewMode={viewMode} />
               </>
             )}
 
@@ -199,9 +193,6 @@ const MinerDetailsPage: React.FC = () => {
             )}
             {activeTab === 'pull-requests' && (
               <MinerPRsTable githubId={githubId} />
-            )}
-            {activeTab === 'issues' && (
-              <MinerScoreBreakdown githubId={githubId} viewMode="issues" />
             )}
             {activeTab === 'repositories' && (
               <MinerRepositoriesTable githubId={githubId} />

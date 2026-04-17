@@ -209,7 +209,6 @@ const CommitLogItem: React.FC<{
               variant="caption"
               sx={{
                 color: 'text.secondary',
-                fontFamily: '"JetBrains Mono", monospace',
               }}
             >
               {entry.repository}
@@ -219,7 +218,6 @@ const CommitLogItem: React.FC<{
             variant="caption"
             sx={{
               color: 'text.secondary',
-              fontFamily: '"JetBrains Mono", monospace',
             }}
           >
             #{entry.pullRequestNumber}
@@ -298,7 +296,6 @@ const CommitLogItem: React.FC<{
               sx={{
                 color: getScoreColor(entry.score),
                 fontWeight: 600,
-                fontFamily: '"JetBrains Mono", monospace',
               }}
             >
               SCORE: {parseFloat(entry.score).toFixed(2)}
@@ -441,7 +438,6 @@ const LiveCommitLog: React.FC = () => {
               variant="h6"
               sx={{
                 fontSize: isMobile ? '0.9rem' : isTablet ? '0.95rem' : '1rem',
-                fontFamily: '"JetBrains Mono", monospace',
                 fontWeight: 500,
               }}
             >
@@ -504,7 +500,6 @@ const LiveCommitLog: React.FC = () => {
                       ? t.palette.text.primary
                       : alpha(option.color, 0.82),
                     cursor: 'pointer',
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: isMobile ? '0.68rem' : '0.72rem',
                     fontWeight: selected ? 600 : 500,
                     lineHeight: 1,

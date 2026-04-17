@@ -48,7 +48,6 @@ const HomePage: React.FC = () => {
             color="text.primary"
             fontWeight="bold"
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: { xs: '2rem', sm: '3rem', md: '4rem' },
               textAlign: 'center',
             }}
@@ -106,7 +105,6 @@ const HomePage: React.FC = () => {
                   fontWeight="600"
                   sx={{
                     color: (theme) => theme.palette.text.primary,
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: { xs: '2rem', sm: '2.75rem', md: '3.5rem' },
                     letterSpacing: '-0.02em',
                   }}

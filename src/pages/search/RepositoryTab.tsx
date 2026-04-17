@@ -53,8 +53,7 @@ const repositoryColumns: SearchResultsTableColumn<RepoSearchData>[] = [
             color:
               (repo.rank <= 3 ? getRankColors(repo.rank).color : null) ||
               theme.palette.text.secondary,
-            fontFamily:
-              theme.typography.mono.fontFamily || theme.typography.fontFamily,
+
             fontSize: '0.65rem',
             fontWeight: 600,
             lineHeight: 1,

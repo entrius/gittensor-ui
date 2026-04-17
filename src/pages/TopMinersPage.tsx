@@ -70,7 +70,6 @@ const TopMinersPage: React.FC = () => {
         >
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.8rem',
               color: (t) => alpha(t.palette.text.primary, 0.5),
               lineHeight: 1.6,

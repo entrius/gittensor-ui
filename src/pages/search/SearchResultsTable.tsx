@@ -56,7 +56,6 @@ const searchHeaderCellSx: SxProps<Theme> = (theme) => ({
 });
 
 const searchBodyCellSx: SxProps<Theme> = (theme) => ({
-  fontFamily: theme.typography.mono.fontFamily,
   fontSize: '0.85rem',
   color: theme.palette.text.primary,
   borderBottom: `1px solid ${theme.palette.border.subtle}`,
@@ -92,9 +91,7 @@ const searchTableSx = {
 const searchTablePaginationSx = (theme: Theme) => ({
   borderTop: `1px solid ${theme.palette.border.light}`,
   color: theme.palette.text.secondary,
-  '.MuiTablePagination-displayedRows': {
-    fontFamily: theme.typography.mono.fontFamily,
-  },
+  '.MuiTablePagination-displayedRows': {},
   '.MuiTablePagination-toolbar': {
     minHeight: 48,
   },

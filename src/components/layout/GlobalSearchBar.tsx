@@ -72,7 +72,6 @@ const rowSx = (theme: Theme, active: boolean) => ({
 
 const subtitleSx = (theme: Theme) => ({
   color: theme.palette.text.secondary,
-  fontFamily: theme.typography.mono.fontFamily,
 });
 
 type SectionLabelProps = {
@@ -140,7 +139,6 @@ const ResultRow: React.FC<ResultRowProps> = ({
             color: isAction
               ? theme.palette.primary.main
               : theme.palette.text.primary,
-            fontFamily: theme.typography.mono.fontFamily,
             fontSize: isAction ? '0.9rem' : '0.92rem',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
@@ -182,7 +180,6 @@ const EmptyState: React.FC = () => (
     <Typography
       sx={(theme) => ({
         color: theme.palette.text.primary,
-        fontFamily: theme.typography.mono.fontFamily,
         fontSize: '0.82rem',
       })}
     >
@@ -574,7 +571,6 @@ const GlobalSearchBar: React.FC = () => {
                   borderRadius: 1,
                   border: `1px solid ${theme.palette.border.light}`,
                   color: theme.palette.text.secondary,
-                  fontFamily: theme.typography.mono.fontFamily,
                   fontSize: '0.68rem',
                   lineHeight: 1.4,
                   userSelect: 'none',
@@ -589,7 +585,6 @@ const GlobalSearchBar: React.FC = () => {
         sx={(theme) => ({
           '& .MuiOutlinedInput-root': {
             color: theme.palette.text.primary,
-            fontFamily: theme.typography.mono.fontFamily,
             backgroundColor: theme.palette.surface.subtle,
             fontSize: '0.85rem',
             borderRadius: 2,
@@ -600,7 +595,6 @@ const GlobalSearchBar: React.FC = () => {
             },
           },
           '& .MuiInputBase-input::placeholder': {
-            fontFamily: theme.typography.mono.fontFamily,
             fontSize: '0.8rem',
             opacity: 0.75,
           },

@@ -120,7 +120,6 @@ const RepositoryContributorsTable: React.FC<
           variant="subtitle2"
           sx={{
             color: 'text.secondary',
-            fontFamily: '"JetBrains Mono", monospace',
           }}
         >
           Top Miner Contributors{' '}
@@ -207,7 +206,6 @@ const RepositoryContributorsTable: React.FC<
               {/* Rank */}
               <Box
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '12px',
                   color: index < 3 ? 'text.primary' : STATUS_COLORS.open,
                   fontWeight: index < 3 ? 600 : 400,
@@ -288,7 +286,6 @@ const RepositoryContributorsTable: React.FC<
                   textAlign: 'right',
                   fontSize: '12px',
                   color: 'text.primary',
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontVariantNumeric: 'tabular-nums',
                   minWidth: 0,
                 }}
@@ -302,7 +299,6 @@ const RepositoryContributorsTable: React.FC<
                   textAlign: 'right',
                   fontSize: '12px',
                   color: 'text.primary',
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontVariantNumeric: 'tabular-nums',
                   minWidth: 0,
                 }}
