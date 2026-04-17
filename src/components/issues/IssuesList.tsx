@@ -21,7 +21,11 @@ import {
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueBounty } from '../../api/models/Issues';
 import { usePrices } from '../../hooks/usePrices';
-import { formatTokenAmount, formatDate, formatAlphaToUsd } from '../../utils/format';
+import {
+  formatTokenAmount,
+  formatDate,
+  formatAlphaToUsd,
+} from '../../utils/format';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import BountyProgress from './BountyProgress';
