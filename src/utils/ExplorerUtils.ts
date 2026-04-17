@@ -141,6 +141,7 @@ export interface RepoStats {
   score: number;
   tokenScore: number;
   weight: number;
+  latestPrDate?: string | null;
 }
 
 export type RepoSortField =
@@ -186,6 +187,21 @@ export const sortMinerRepoStats = (
 };
 
 // ---------------------------------------------------------------------------
+// Scoring window staleness check
+// ---------------------------------------------------------------------------
+
+export const SCORING_WINDOW_DAYS = 35;
+
+export const isOutsideScoringWindow = (
+  date: string | null | undefined,
+): boolean => {
+  if (!date) return false;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - SCORING_WINDOW_DAYS);
+  return new Date(date) < cutoff;
+};
+
+// ---------------------------------------------------------------------------
 // Map builders – extract lookup maps from API data
 // ---------------------------------------------------------------------------
 
@@ -221,11 +237,18 @@ export const aggregatePRsByRepository = (
       score: 0,
       tokenScore: 0,
       weight: repoWeights.get(pr.repository) || 0,
+      latestPrDate: null as string | null,
     };
     existing.prs += 1;
     existing.score += parseFloat(pr.score || '0');
     if (isMergedPr(pr)) {
       existing.tokenScore += parseFloat(String(pr.tokenScore ?? '0'));
+    }
+    if (
+      pr.mergedAt &&
+      (!existing.latestPrDate || pr.mergedAt > existing.latestPrDate)
+    ) {
+      existing.latestPrDate = pr.mergedAt;
     }
     statsMap.set(pr.repository, existing);
   }

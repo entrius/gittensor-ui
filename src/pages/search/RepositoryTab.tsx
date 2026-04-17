@@ -128,7 +128,8 @@ type RepositoryTabProps = {
   isLoading: boolean;
   onPageChange: (newPage: number) => void;
   onRowsPerPageChange: (rowsPerPage: number) => void;
-  onSelectRepository: (fullName: string) => void;
+  getRepositoryHref: (repo: RepoSearchData) => string;
+  linkState?: Record<string, unknown>;
   page: number;
   paginatedRepositoryResults: RepoSearchData[];
   rowsPerPage: number;
@@ -141,7 +142,8 @@ const RepositoryTab: React.FC<RepositoryTabProps> = ({
   isLoading,
   onPageChange,
   onRowsPerPageChange,
-  onSelectRepository,
+  getRepositoryHref,
+  linkState,
   page,
   paginatedRepositoryResults,
   rowsPerPage,
@@ -157,7 +159,8 @@ const RepositoryTab: React.FC<RepositoryTabProps> = ({
     isLoading={isLoading}
     minWidth={1000}
     onPageChange={onPageChange}
-    onRowClick={(repo: RepoSearchData) => onSelectRepository(repo.fullName)}
+    getRowHref={getRepositoryHref}
+    linkState={linkState}
     onRowsPerPageChange={onRowsPerPageChange}
     page={page}
     rows={paginatedRepositoryResults}

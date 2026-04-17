@@ -15,11 +15,11 @@ import {
   Chip,
   Stack,
   alpha,
-  useTheme,
 } from '@mui/material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useAllPrs } from '../../api';
-import {
+import { LinkTableRow } from '../common/linkBehavior';
+import theme, {
   TEXT_OPACITY,
   scrollbarSx,
   headerCellStyle,
@@ -79,8 +79,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   repositoryFullName,
   state = 'all',
 }) => {
-  const theme = useTheme();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const filter = readEnumParam<PrStatusFilter>(
@@ -427,14 +425,10 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
             </TableHead>
             <TableBody>
               {sortedPRs.map((pr) => (
-                <TableRow
+                <LinkTableRow
                   key={`${pr.repository}-${pr.pullRequestNumber}`}
-                  onClick={() => {
-                    navigate(
-                      `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
-                      { state: { backLabel: `Back to ${repositoryFullName}` } },
-                    );
-                  }}
+                  href={`/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`}
+                  linkState={{ backLabel: `Back to ${repositoryFullName}` }}
                   sx={{
                     cursor: 'pointer',
                     '&:hover': {
@@ -547,7 +541,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                       ? new Date(pr.mergedAt).toLocaleDateString()
                       : '-'}
                   </TableCell>
-                </TableRow>
+                </LinkTableRow>
               ))}
             </TableBody>
           </Table>
