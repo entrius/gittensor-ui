@@ -15,7 +15,6 @@ import {
   Chip,
   Stack,
   alpha,
-  useTheme,
 } from '@mui/material';
 
 type PrSortField =
@@ -30,8 +29,8 @@ type PrSortField =
   | 'mergedAt';
 type SortOrder = 'asc' | 'desc';
 import { useAllPrs } from '../../api';
-import { useNavigate } from 'react-router-dom';
-import {
+import { LinkTableRow } from '../common/linkBehavior';
+import theme, {
   TEXT_OPACITY,
   scrollbarSx,
   headerCellStyle,
@@ -55,8 +54,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   repositoryFullName,
   state = 'all',
 }) => {
-  const theme = useTheme();
-  const navigate = useNavigate();
   const [filter, setFilter] = useState<PrStatusFilter>(state);
   const [sortField, setSortField] = useState<PrSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
@@ -373,14 +370,10 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
             </TableHead>
             <TableBody>
               {sortedPRs.map((pr) => (
-                <TableRow
+                <LinkTableRow
                   key={`${pr.repository}-${pr.pullRequestNumber}`}
-                  onClick={() => {
-                    navigate(
-                      `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
-                      { state: { backLabel: `Back to ${repositoryFullName}` } },
-                    );
-                  }}
+                  href={`/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`}
+                  linkState={{ backLabel: `Back to ${repositoryFullName}` }}
                   sx={{
                     cursor: 'pointer',
                     '&:hover': {
@@ -496,7 +489,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                       ? new Date(pr.mergedAt).toLocaleDateString()
                       : '-'}
                   </TableCell>
-                </TableRow>
+                </LinkTableRow>
               ))}
             </TableBody>
           </Table>
