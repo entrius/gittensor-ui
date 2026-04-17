@@ -33,6 +33,9 @@ import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
 import { type MinerStatusFilter } from '../../utils/ExplorerUtils';
 import { headerCellStyle, bodyCellStyle, tooltipSlotProps } from '../../theme';
+import { useSelfIdentity } from '../../hooks/useSelfIdentity';
+import { prAuthorMatchesSelf } from '../../utils/selfIdentityMatch';
+import { selfHighlightSx } from '../../utils/selfHighlightSx';
 
 type PrSortField = 'number' | 'repository' | 'score' | 'lines' | 'date';
 type SortDir = 'asc' | 'desc';
@@ -90,6 +93,7 @@ interface MinerPRsTableProps {
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const { prefs } = useSelfIdentity();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
@@ -495,6 +499,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               <TableBody>
                 {pagedPRs.map((pr, index) => {
                   const scoreTooltip = getScoreTooltip(pr);
+                  const isSelf = prAuthorMatchesSelf(
+                    prefs,
+                    pr.author,
+                    pr.hotkey,
+                  );
                   return (
                     <TableRow
                       key={`${pr.repository}-${pr.pullRequestNumber}-${index}`}
@@ -514,6 +523,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           backgroundColor: 'surface.subtle',
                         },
                         transition: 'all 0.2s',
+                        ...selfHighlightSx(theme, isSelf),
                       }}
                     >
                       <TableCell

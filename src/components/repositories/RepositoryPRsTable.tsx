@@ -43,6 +43,9 @@ import {
   isOpenPr,
 } from '../../utils';
 import FilterButton from '../FilterButton';
+import { useSelfIdentity } from '../../hooks/useSelfIdentity';
+import { prAuthorMatchesSelf } from '../../utils/selfIdentityMatch';
+import { selfHighlightSx } from '../../utils/selfHighlightSx';
 
 interface RepositoryPRsTableProps {
   repositoryFullName: string;
@@ -55,6 +58,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
 }) => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const { prefs } = useSelfIdentity();
   const [filter, setFilter] = useState<'all' | 'open' | 'closed' | 'merged'>(
     state,
   );
@@ -362,7 +366,9 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortedPRs.map((pr) => (
+              {sortedPRs.map((pr) => {
+                const isSelf = prAuthorMatchesSelf(prefs, pr.author, pr.hotkey);
+                return (
                 <TableRow
                   key={`${pr.repository}-${pr.pullRequestNumber}`}
                   onClick={() => {
@@ -377,6 +383,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                       backgroundColor: 'surface.light',
                     },
                     transition: 'background-color 0.2s',
+                    ...selfHighlightSx(theme, isSelf),
                   }}
                 >
                   <TableCell sx={bodyCellStyle}>
@@ -484,7 +491,8 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                       : '-'}
                   </TableCell>
                 </TableRow>
-              ))}
+              );
+              })}
             </TableBody>
           </Table>
         </TableContainer>

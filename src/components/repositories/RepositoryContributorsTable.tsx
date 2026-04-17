@@ -13,6 +13,8 @@ import { useAllPrs, useAllMiners } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import { STATUS_COLORS } from '../../theme';
 import { isMergedPr } from '../../utils/prStatus';
+import { useSelfIdentity } from '../../hooks/useSelfIdentity';
+import { contributorRowMatchesSelf } from '../../utils/selfIdentityMatch';
 
 interface RepositoryContributorsTableProps {
   repositoryFullName: string;
@@ -23,6 +25,7 @@ const RepositoryContributorsTable: React.FC<
 > = ({ repositoryFullName }) => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const { prefs } = useSelfIdentity();
   const { data: allPRs, isLoading } = useAllPrs();
   const { data: allMinersStats } = useAllMiners();
 
@@ -181,6 +184,7 @@ const RepositoryContributorsTable: React.FC<
           const minerData = minerDataMap.get(contributor.githubId);
           const minerRank = minerData?.rank;
           const isInactive = !minerData?.isEligible;
+          const isSelf = contributorRowMatchesSelf(prefs, contributor);
 
           return (
             <Box
@@ -197,6 +201,15 @@ const RepositoryContributorsTable: React.FC<
                 alignItems: 'center',
                 minWidth: 0,
                 opacity: isInactive ? 0.5 : 1,
+                ...(isSelf
+                  ? {
+                      borderLeft: `3px solid ${theme.palette.secondary.main}`,
+                      backgroundColor: alpha(
+                        theme.palette.secondary.main,
+                        0.08,
+                      ),
+                    }
+                  : {}),
                 '&:hover': {
                   backgroundColor: alpha(theme.palette.common.white, 0.04),
                   opacity: 1,

@@ -19,6 +19,9 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { IssueSubmission } from '../../api/models/Issues';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { formatDate } from '../../utils/format';
+import { useSelfIdentity } from '../../hooks/useSelfIdentity';
+import { submissionMatchesSelf } from '../../utils/selfIdentityMatch';
+import { selfHighlightSx } from '../../utils/selfHighlightSx';
 
 const headerCellSx = {
   fontSize: '0.7rem',
@@ -52,6 +55,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const theme = useTheme();
+  const { prefs } = useSelfIdentity();
 
   return (
     <Card
@@ -112,7 +116,9 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
               </TableRow>
             </TableHead>
             <TableBody>
-              {submissions.map((submission) => (
+              {submissions.map((submission) => {
+                const isSelf = submissionMatchesSelf(prefs, submission);
+                return (
                 <TableRow
                   key={`${submission.repositoryFullName}-${submission.number}`}
                   onClick={() =>
@@ -127,6 +133,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                     '&:hover': {
                       backgroundColor: alpha(theme.palette.common.white, 0.03),
                     },
+                    ...selfHighlightSx(theme, isSelf),
                   }}
                 >
                   <TableCell sx={bodyCellSx}>
@@ -236,7 +243,8 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                     </Typography>
                   </TableCell>
                 </TableRow>
-              ))}
+              );
+              })}
             </TableBody>
           </Table>
         </TableContainer>

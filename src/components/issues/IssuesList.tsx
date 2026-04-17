@@ -25,6 +25,9 @@ import { formatTokenAmount, formatDate } from '../../utils/format';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import BountyProgress from './BountyProgress';
+import { useSelfIdentity } from '../../hooks/useSelfIdentity';
+import { bountySolverMatchesSelf } from '../../utils/selfIdentityMatch';
+import { selfHighlightSx } from '../../utils/selfHighlightSx';
 
 type ListType = 'available' | 'pending' | 'history';
 type SortDirection = 'asc' | 'desc';
@@ -61,6 +64,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
   onSelectIssue,
 }) => {
   const theme = useTheme();
+  const { prefs } = useSelfIdentity();
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const { data: dashStats } = useStats();
@@ -372,6 +376,9 @@ const IssuesList: React.FC<IssuesListProps> = ({
             {sortedIssues.map((issue) => {
               const statusBadge = getIssueStatusMeta(issue.status);
               const usdDisplay = toUsd(issue.targetBounty);
+              const isSelfRow =
+                listType === 'history' &&
+                bountySolverMatchesSelf(prefs, issue.solverHotkey);
 
               return (
                 <TableRow
@@ -383,6 +390,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                     '&:hover': {
                       backgroundColor: alpha(theme.palette.common.white, 0.03),
                     },
+                    ...selfHighlightSx(theme, isSelfRow),
                   }}
                 >
                   {/* Common columns */}

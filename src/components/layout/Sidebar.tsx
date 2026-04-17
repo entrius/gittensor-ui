@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useWatchlist } from '../../hooks/useWatchlist';
+import { SelfIdentityPanel } from '../common';
 
 interface SidebarProps {
   onNavigate?: () => void;
@@ -123,6 +124,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
           </Button>
         ))}
       </Stack>
+
+      <SelfIdentityPanel />
 
       {/* Spacer to push footer to bottom */}
       <Box sx={{ flexGrow: 1 }} />

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Card, Typography, Avatar } from '@mui/material';
+import { Box, Card, Typography, Avatar, Chip } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
@@ -7,6 +7,9 @@ import { CHART_COLORS, STATUS_COLORS } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { RowLink, WatchlistButton } from '../common';
 import { type MinerStats, type LeaderboardVariant, FONTS } from './types';
+import { useSelfIdentity } from '../../hooks/useSelfIdentity';
+import { minerMatchesSelf } from '../../utils/selfIdentityMatch';
+import { selfHighlightSx } from '../../utils/selfHighlightSx';
 
 interface MinerCardProps {
   miner: MinerStats;
@@ -54,6 +57,8 @@ export const MinerCard: React.FC<MinerCardProps> = ({
   variant = 'oss',
 }) => {
   const muiTheme = useTheme();
+  const { prefs } = useSelfIdentity();
+  const isSelf = minerMatchesSelf(miner, prefs);
   const isNumericId = (value?: string) => !value || /^\d+$/.test(value);
   const shouldFetch = !!miner.githubId && isNumericId(miner.author);
   const { data: githubData } = useMinerGithubData(miner.githubId, shouldFetch);
@@ -96,6 +101,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
           boxShadow: isEligible
             ? `0 2px 8px ${alpha(theme.palette.background.default, 0.1)}`
             : 'none',
+          ...selfHighlightSx(theme, isSelf),
           '&:hover': {
             backgroundColor: isEligible
               ? theme.palette.surface.elevated
@@ -150,22 +156,49 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                 overflow: 'hidden',
               }}
             >
-              <Typography
-                sx={(theme) => ({
-                  fontFamily: FONTS.mono,
-                  fontSize: '1rem',
-                  fontWeight: 700,
-                  color: isEligible
-                    ? theme.palette.text.primary
-                    : theme.palette.text.tertiary,
-                  opacity: isEligible ? 1 : INACTIVE_OPACITY,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                })}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.75,
+                  minWidth: 0,
+                }}
               >
-                {username}
-              </Typography>
+                <Typography
+                  sx={(theme) => ({
+                    fontFamily: FONTS.mono,
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    color: isEligible
+                      ? theme.palette.text.primary
+                      : theme.palette.text.tertiary,
+                    opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  })}
+                >
+                  {username}
+                </Typography>
+                {isSelf && (
+                  <Chip
+                    label="you"
+                    size="small"
+                    sx={{
+                      height: 18,
+                      flexShrink: 0,
+                      fontSize: '0.6rem',
+                      fontWeight: 700,
+                      '& .MuiChip-label': { px: 0.75, py: 0 },
+                      borderColor: (t) => alpha(t.palette.secondary.main, 0.45),
+                      color: 'secondary.main',
+                      backgroundColor: (t) =>
+                        alpha(t.palette.secondary.main, 0.12),
+                    }}
+                    variant="outlined"
+                  />
+                )}
+              </Box>
               <Typography
                 sx={(theme) => ({
                   fontFamily: FONTS.mono,

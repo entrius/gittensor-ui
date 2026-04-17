@@ -14,6 +14,9 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useInfiniteCommitLog } from '../../../api';
 import theme, { REPO_OWNER_AVATAR_BACKGROUNDS } from '../../../theme';
+import { useSelfIdentity } from '../../../hooks/useSelfIdentity';
+import { prAuthorMatchesSelf } from '../../../utils/selfIdentityMatch';
+import { selfHighlightSx } from '../../../utils/selfHighlightSx';
 
 const MONTH_SHORT = [
   'Jan',
@@ -116,7 +119,8 @@ const getScoreColor = (score: string) => {
 const CommitLogItem: React.FC<{
   entry: CommitLogEntry;
   isNew: boolean;
-}> = ({ entry, isNew }) => {
+  isSelf: boolean;
+}> = ({ entry, isNew, isSelf }) => {
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
@@ -142,7 +146,7 @@ const CommitLogItem: React.FC<{
           { state: { backLabel: 'Back to Dashboard' } },
         )
       }
-      sx={{
+      sx={(t) => ({
         p: isMobile ? 0.75 : isTablet ? 1.25 : 1,
         borderRadius: 3,
         border: '1px solid',
@@ -150,6 +154,7 @@ const CommitLogItem: React.FC<{
           ? theme.palette.secondary.main
           : theme.palette.border.light,
         backgroundColor: theme.palette.surface.subtle,
+        ...selfHighlightSx(t, isSelf),
         backdropFilter: 'blur(8px)',
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         animation: isNew ? 'slideIn 0.5s ease-out' : undefined,
@@ -176,7 +181,7 @@ const CommitLogItem: React.FC<{
           from: { opacity: 0, transform: 'translateX(-20px)' },
           to: { opacity: 1, transform: 'translateX(0)' },
         },
-      }}
+      })}
     >
       <Stack
         spacing={isMobile ? 0.5 : isTablet ? 1 : 0.5}
@@ -267,9 +272,27 @@ const CommitLogItem: React.FC<{
             borderTop: `1px solid ${theme.palette.border.subtle}`,
           }}
         >
-          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            by {entry.author}
-          </Typography>
+          <Stack direction="row" alignItems="center" spacing={0.75}>
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              by {entry.author}
+            </Typography>
+            {isSelf && (
+              <Chip
+                label="you"
+                size="small"
+                sx={{
+                  height: 16,
+                  fontSize: '0.55rem',
+                  fontWeight: 700,
+                  '& .MuiChip-label': { px: 0.5, py: 0 },
+                  borderColor: alpha(theme.palette.secondary.main, 0.45),
+                  color: 'secondary.main',
+                  backgroundColor: alpha(theme.palette.secondary.main, 0.12),
+                }}
+                variant="outlined"
+              />
+            )}
+          </Stack>
           <Stack direction="row" spacing={2}>
             <Stack direction="row" spacing={0.5} alignItems="center">
               <Typography
@@ -307,6 +330,7 @@ const CommitLogItem: React.FC<{
 const LiveCommitLog: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const { prefs } = useSelfIdentity();
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteCommitLog({ refetchInterval: 10000 });
@@ -579,7 +603,16 @@ const LiveCommitLog: React.FC = () => {
                   const isNew = newEntryIds.has(entryId);
 
                   return (
-                    <CommitLogItem key={entryId} entry={entry} isNew={isNew} />
+                    <CommitLogItem
+                      key={entryId}
+                      entry={entry}
+                      isNew={isNew}
+                      isSelf={prAuthorMatchesSelf(
+                        prefs,
+                        entry.author,
+                        entry.hotkey,
+                      )}
+                    />
                   );
                 })}
               </Stack>
