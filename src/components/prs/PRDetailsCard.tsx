@@ -103,6 +103,26 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
       rank: null,
     },
     {
+      label: 'Structural',
+      value:
+        prDetails.structuralCount != null
+          ? `${prDetails.structuralCount} (${parseFloat(String(prDetails.structuralScore ?? 0)).toFixed(2)})`
+          : '-',
+      rank: null,
+      tooltip:
+        'Functions, classes, and modules scored via AST analysis. Structural nodes carry more weight per node because they represent high-value code organization.',
+    },
+    {
+      label: 'Leaf',
+      value:
+        prDetails.leafCount != null
+          ? `${prDetails.leafCount} (${parseFloat(String(prDetails.leafScore ?? 0)).toFixed(2)})`
+          : '-',
+      rank: null,
+      tooltip:
+        'Individual statements and expressions scored via AST analysis. More leaf nodes means a larger diff, but structural nodes contribute more score per node.',
+    },
+    {
       label: 'Changes',
       value: '',
       rank: null,
@@ -276,9 +296,40 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                     textTransform: 'uppercase',
                     letterSpacing: '1px',
                     fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
                   }}
                 >
                   {item.label}
+                  {item.tooltip && (
+                    <Tooltip
+                      title={item.tooltip}
+                      arrow
+                      slotProps={{
+                        tooltip: {
+                          sx: {
+                            backgroundColor: 'surface.tooltip',
+                            color: 'text.primary',
+                            fontSize: '0.7rem',
+                            maxWidth: 280,
+                            p: 1.5,
+                            border: '1px solid',
+                            borderColor: 'border.light',
+                          },
+                        },
+                        arrow: { sx: { color: 'surface.tooltip' } },
+                      }}
+                    >
+                      <InfoOutlinedIcon
+                        sx={{
+                          fontSize: '0.7rem',
+                          cursor: 'help',
+                          opacity: 0.5,
+                        }}
+                      />
+                    </Tooltip>
+                  )}
                 </Typography>
                 {item.rank && (
                   <Box
