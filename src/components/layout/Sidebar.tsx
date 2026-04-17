@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useWatchlist } from '../../hooks/useWatchlist';
+import { usePulseBoard } from '../../hooks/usePulseBoard';
 
 interface SidebarProps {
   onNavigate?: () => void;
@@ -18,6 +19,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { count: watchlistCount } = useWatchlist();
+  const { pinnedCount } = usePulseBoard();
 
   const handleNavigate = (path: string) => {
     navigate(path);
@@ -36,6 +38,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
       label: 'watchlist',
       path: '/watchlist',
       badge: watchlistCount > 0 ? watchlistCount : undefined,
+    },
+    {
+      label: 'compare',
+      path: '/compare',
+      badge: pinnedCount > 0 ? pinnedCount : undefined,
     },
     { label: 'bounties', path: '/bounties' },
     { label: 'repositories', path: '/repositories' },

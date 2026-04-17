@@ -15,6 +15,7 @@ import useOnNavigate from '../../hooks/useOnNavigate';
 import { Sidebar } from '..';
 import ErrorBoundary from '../ErrorBoundary';
 import GlobalSearchBar from './GlobalSearchBar';
+import { CompareTray } from '../compare';
 import theme from '../../theme';
 import { getRouteForPathname } from '../../routes';
 
@@ -158,6 +159,9 @@ const AppLayout: React.FC = () => {
           </ErrorBoundary>
         </Suspense>
       </Box>
+
+      {/* Pulse Board compare tray — fixed bottom bar when miners are pinned */}
+      <CompareTray />
     </Box>
   );
 };

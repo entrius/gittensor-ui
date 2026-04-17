@@ -6,6 +6,7 @@ import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS, STATUS_COLORS } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { RowLink, WatchlistButton } from '../common';
+import { PinButton } from '../compare';
 import { type MinerStats, type LeaderboardVariant, FONTS } from './types';
 
 interface MinerCardProps {
@@ -211,7 +212,10 @@ export const MinerCard: React.FC<MinerCardProps> = ({
               </Typography>
             )}
             {miner.githubId && (
-              <WatchlistButton githubId={miner.githubId} size="small" />
+              <>
+                <PinButton githubId={miner.githubId} size="small" />
+                <WatchlistButton githubId={miner.githubId} size="small" />
+              </>
             )}
           </Box>
         </Box>

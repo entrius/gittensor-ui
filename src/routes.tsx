@@ -26,6 +26,7 @@ const PRDetailsPage = React.lazy(() => import('./pages/PRDetailsPage'));
 const DiscoveriesPage = React.lazy(() => import('./pages/DiscoveriesPage'));
 const OnboardPage = React.lazy(() => import('./pages/OnboardPage'));
 const WatchlistPage = React.lazy(() => import('./pages/WatchlistPage'));
+const ComparePage = React.lazy(() => import('./pages/ComparePage'));
 
 // 404 page
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
@@ -66,6 +67,12 @@ const routesArray: AppRoute[] = [
     name: 'watchlist',
     path: '/watchlist',
     element: <WatchlistPage />,
+    showGlobalSearch: true,
+  },
+  {
+    name: 'compare',
+    path: '/compare',
+    element: <ComparePage />,
     showGlobalSearch: true,
   },
   {
