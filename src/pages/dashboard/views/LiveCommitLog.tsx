@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { LinkBox } from '../../../components/common/linkBehavior';
 import theme, { REPO_OWNER_AVATAR_BACKGROUNDS } from '../../../theme';
-import { useInfiniteCommitLog, usePullRequestDetails } from '../../../api';
+import { useInfiniteCommitLog } from '../../../api';
 
 const MONTH_SHORT = [
   'Jan',
@@ -120,15 +120,9 @@ const CommitLogItem: React.FC<{
 }> = ({ entry, isNew, innerRef }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
-  // Hydrate with detailed data
-  const { data: details } = usePullRequestDetails(
-    entry.repository,
-    entry.pullRequestNumber,
-  );
 
-  // Derive status and timestamp from details if available, otherwise fallback
-  const isMerged = !!(details?.mergedAt || entry.mergedAt);
-  const isClosed = details?.prState === 'CLOSED' || entry.prState === 'CLOSED';
+  const isMerged = !!entry.mergedAt;
+  const isClosed = entry.prState === 'CLOSED' && !entry.mergedAt;
 
   let status = { label: 'OPEN', color: theme.palette.status.neutral };
   if (isMerged)
