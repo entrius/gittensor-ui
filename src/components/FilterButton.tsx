@@ -16,7 +16,7 @@ const FilterButton: React.FC<FilterButtonProps> = ({
   onClick,
   count,
   color,
-  activeTextColor = 'text.primary',
+  activeTextColor: _activeTextColor = 'text.primary',
 }) => (
   <Button
     size="small"
@@ -29,7 +29,7 @@ const FilterButton: React.FC<FilterButtonProps> = ({
       minWidth: 'auto',
       textTransform: 'none',
       fontSize: '0.8rem',
-      border: `1px solid`,
+      border: '1px solid',
       borderColor: isActive ? color : 'transparent',
       '&:hover': {
         backgroundColor: isActive ? 'surface.light' : 'border.light',
