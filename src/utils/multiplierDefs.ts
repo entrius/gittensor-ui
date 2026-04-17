@@ -199,3 +199,107 @@ export function buildMultiplierGrid(
   if (isOpen) entries.push({ label: 'Collateral %', value: '20%' });
   return appendOptionalEntries(entries, pr);
 }
+
+export type WaterfallStepKind = 'base' | 'multiplier' | 'additive' | 'total';
+
+export interface WaterfallStep {
+  label: string;
+  kind: WaterfallStepKind;
+  runningBefore: number;
+  runningAfter: number;
+  factor?: number;
+}
+
+interface WaterfallStepConfig {
+  label: string;
+  field: keyof PullRequestDetails;
+  kind: 'multiplier' | 'additive';
+}
+
+const MERGED_WATERFALL_STEPS: WaterfallStepConfig[] = [
+  { label: 'Repo Weight', field: 'repoWeightMultiplier', kind: 'multiplier' },
+  { label: 'Issue Bonus', field: 'issueMultiplier', kind: 'multiplier' },
+  { label: 'Credibility', field: 'credibilityMultiplier', kind: 'multiplier' },
+  {
+    label: 'Review Quality',
+    field: 'reviewQualityMultiplier',
+    kind: 'multiplier',
+  },
+  { label: 'Time Decay', field: 'timeDecayMultiplier', kind: 'multiplier' },
+  { label: 'Label', field: 'labelMultiplier', kind: 'multiplier' },
+  { label: 'Code Density', field: 'codeDensity', kind: 'multiplier' },
+  { label: 'Pioneer', field: 'pioneerDividend', kind: 'additive' },
+];
+
+const OPEN_WATERFALL_STEPS: WaterfallStepConfig[] = [
+  { label: 'Repo Weight', field: 'repoWeightMultiplier', kind: 'multiplier' },
+  { label: 'Issue Bonus', field: 'issueMultiplier', kind: 'multiplier' },
+];
+
+const OPEN_COLLATERAL_FACTOR = 0.2;
+
+function applyFactor(
+  steps: WaterfallStep[],
+  running: number,
+  label: string,
+  kind: 'multiplier' | 'additive',
+  factor: number,
+): number {
+  if (kind === 'multiplier' && factor === 1) return running;
+  if (kind === 'additive' && factor === 0) return running;
+  const next = kind === 'multiplier' ? running * factor : running + factor;
+  steps.push({
+    label,
+    kind,
+    runningBefore: running,
+    runningAfter: next,
+    factor,
+  });
+  return next;
+}
+
+export function buildWaterfallSteps(
+  pr: PullRequestDetails,
+  isOpen: boolean,
+): WaterfallStep[] {
+  const base = parseNumber(pr.baseScore);
+  const steps: WaterfallStep[] = [
+    { label: 'Base Score', kind: 'base', runningBefore: 0, runningAfter: base },
+  ];
+
+  const configs = isOpen ? OPEN_WATERFALL_STEPS : MERGED_WATERFALL_STEPS;
+  let running = base;
+  for (const cfg of configs) {
+    const raw = pr[cfg.field];
+    if (raw == null) continue;
+    running = applyFactor(
+      steps,
+      running,
+      cfg.label,
+      cfg.kind,
+      parseNumber(raw),
+    );
+  }
+
+  if (isOpen) {
+    running = applyFactor(
+      steps,
+      running,
+      'Collateral 20%',
+      'multiplier',
+      OPEN_COLLATERAL_FACTOR,
+    );
+  }
+
+  const finalValue = isOpen
+    ? parseNumber(pr.collateralScore)
+    : parseNumber(pr.earnedScore);
+  steps.push({
+    label: isOpen ? 'Collateral' : 'Earned',
+    kind: 'total',
+    runningBefore: 0,
+    runningAfter: finalValue,
+  });
+
+  return steps;
+}

@@ -13,7 +13,11 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { usePullRequestDetails } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import theme, { RANK_COLORS, STATUS_COLORS, TEXT_OPACITY } from '../../theme';
-import { buildMultiplierGrid } from '../../utils/multiplierDefs';
+import {
+  buildMultiplierGrid,
+  buildWaterfallSteps,
+} from '../../utils/multiplierDefs';
+import MultiplierWaterfallChart from './MultiplierWaterfallChart';
 
 interface PRDetailsCardProps {
   repository: string;
@@ -109,6 +113,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   ];
 
   const multipliers = buildMultiplierGrid(prDetails, isOpenPR);
+  const waterfallSteps = buildWaterfallSteps(prDetails, isOpenPR);
 
   return (
     <Card
@@ -499,6 +504,14 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             );
           })}
         </Grid>
+        {waterfallSteps.length > 1 && (
+          <Box sx={{ mt: 3 }}>
+            <MultiplierWaterfallChart
+              steps={waterfallSteps}
+              isOpen={isOpenPR}
+            />
+          </Box>
+        )}
       </Box>
 
       {/* Additional Info */}
