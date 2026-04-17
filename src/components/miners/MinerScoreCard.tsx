@@ -349,32 +349,16 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
     : STATUS_COLORS.neutral;
 
   return (
-    <Card sx={{ p: 3, position: 'relative' }} elevation={0}>
-      {/* Updated chip — desktop */}
-      {minerStats.updatedAt && (
-        <Chip
-          icon={<UpdateIcon sx={{ fontSize: '0.9rem' }} />}
-          label={`Updated ${formatTimeAgo(new Date(minerStats.updatedAt))}`}
-          variant="outlined"
-          size="small"
-          sx={{
-            display: { xs: 'none', sm: 'flex' },
-            position: 'absolute',
-            top: 16,
-            right: 16,
-            fontSize: '0.7rem',
-            color: (t) => alpha(t.palette.text.primary, 0.5),
-            borderColor: 'border.light',
-            backgroundColor: 'surface.elevated',
-            '& .MuiChip-icon': {
-              color: (t) => alpha(t.palette.text.primary, 0.4),
-            },
-          }}
-        />
-      )}
-
+    <Card sx={{ p: 3 }} elevation={0}>
       {/* Identity row */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: 2,
+          mb: 3,
+        }}
+      >
         <Avatar
           src={`https://avatars.githubusercontent.com/${username}`}
           alt={username}
@@ -389,7 +373,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           <Box
             sx={{
               display: 'flex',
-              alignItems: 'center',
+              alignItems: { xs: 'flex-start', sm: 'center' },
               gap: 1.5,
               flexWrap: 'wrap',
               mb: 0.5,
@@ -449,12 +433,46 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               />
             </Tooltip>
           </Box>
+
+          {minerStats.updatedAt && (
+            <Box
+              sx={{
+                width: '100%',
+                display: 'flex',
+                justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+                mt: 1,
+              }}
+            >
+              <Chip
+                icon={<UpdateIcon sx={{ fontSize: '0.85rem' }} />}
+                label={`Updated ${formatTimeAgo(new Date(minerStats.updatedAt))}`}
+                variant="outlined"
+                size="small"
+                sx={{
+                  maxWidth: '100%',
+                  fontSize: '0.7rem',
+                  color: (t) => alpha(t.palette.text.primary, 0.5),
+                  borderColor: 'border.light',
+                  backgroundColor: 'surface.elevated',
+                  '& .MuiChip-icon': {
+                    color: (t) => alpha(t.palette.text.primary, 0.4),
+                  },
+                  '& .MuiChip-label': {
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  },
+                }}
+              />
+            </Box>
+          )}
+
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
               gap: 1.5,
               flexWrap: 'wrap',
+              mt: minerStats.updatedAt ? 1 : 0,
             }}
           >
             <Typography
@@ -534,27 +552,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                 size="small"
               />
             </Stack>
-          )}
-
-          {/* Updated chip — mobile */}
-          {minerStats.updatedAt && (
-            <Chip
-              icon={<UpdateIcon sx={{ fontSize: '0.8rem' }} />}
-              label={`Updated ${formatTimeAgo(new Date(minerStats.updatedAt))}`}
-              variant="outlined"
-              size="small"
-              sx={{
-                display: { xs: 'flex', sm: 'none' },
-                mt: 1,
-                fontSize: '0.65rem',
-                color: (t) => alpha(t.palette.text.primary, 0.5),
-                borderColor: 'border.light',
-                backgroundColor: 'surface.elevated',
-                '& .MuiChip-icon': {
-                  color: (t) => alpha(t.palette.text.primary, 0.4),
-                },
-              }}
-            />
           )}
         </Box>
       </Box>
