@@ -1,4 +1,8 @@
-import { RANK_COLORS, STATUS_COLORS } from '../../theme';
+import {
+  RANK_COLORS,
+  REPO_OWNER_AVATAR_BACKGROUNDS,
+  STATUS_COLORS,
+} from '../../theme';
 
 export interface MinerStats {
   id: string;
@@ -49,8 +53,8 @@ export const getRankColors = (rank: number) => {
 };
 
 export const getRepositoryOwnerAvatarBackground = (owner: string) => {
-  if (owner === 'opentensor') return 'common.white';
-  if (owner === 'bitcoin') return '#F7931A';
+  if (owner === 'opentensor') return REPO_OWNER_AVATAR_BACKGROUNDS.opentensor;
+  if (owner === 'bitcoin') return REPO_OWNER_AVATAR_BACKGROUNDS.bitcoin;
   return 'transparent';
 };
 
