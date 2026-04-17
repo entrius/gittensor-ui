@@ -67,9 +67,9 @@ export const FAQContent: React.FC = () => (
             repositories on GitHub. Once your code is merged into the production
             branch, you'll be eligible for emissions based on factors like the
             repository weight, AST token-based code scoring, language weights,
-            and multipliers such as time decay, review quality, and labels. Check
-            out our GitHub repository for detailed setup instructions. Feel free
-            to join the{' '}
+            and multipliers such as time decay, review quality, and labels.
+            Check out our GitHub repository for detailed setup instructions.
+            Feel free to join the{' '}
             <a
               href="https://discord.com/invite/bittensor"
               target="_blank"
@@ -87,8 +87,8 @@ export const FAQContent: React.FC = () => (
         answer={
           <>
             Your rewards are determined by the weight of the repository you
-            contribute to, the quality of your code changes (measured by
-            AST token-based scoring), and multipliers like time decay, review
+            contribute to, the quality of your code changes (measured by AST
+            token-based scoring), and multipliers like time decay, review
             quality, label type (e.g. feature: 1.5×, bug: 1.25×), and issue
             bonuses. We also factor in your credibility, which is the ratio of
             your merged PRs to your total PR attempts — with one closed PR
