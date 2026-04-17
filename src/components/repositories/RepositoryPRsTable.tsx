@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Card,
   Typography,
@@ -29,7 +29,7 @@ type PrSortField =
   | 'mergedAt';
 type SortOrder = 'asc' | 'desc';
 import { useAllPrs } from '../../api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   TEXT_OPACITY,
   scrollbarSx,
@@ -38,6 +38,16 @@ import {
 } from '../../theme';
 import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
 import FilterButton from '../FilterButton';
+
+const PR_STATUS_FILTERS: readonly PrStatusFilter[] = [
+  'all',
+  'open',
+  'merged',
+  'closed',
+];
+
+const isPrStatusFilter = (value: string | null): value is PrStatusFilter =>
+  value !== null && (PR_STATUS_FILTERS as readonly string[]).includes(value);
 
 interface RepositoryPRsTableProps {
   repositoryFullName: string;
@@ -50,7 +60,27 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
 }) => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const [filter, setFilter] = useState<PrStatusFilter>(state);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const prStatusParam = searchParams.get('prStatus');
+  const filter: PrStatusFilter = isPrStatusFilter(prStatusParam)
+    ? prStatusParam
+    : state;
+
+  const setFilter = useCallback(
+    (next: PrStatusFilter) => {
+      setSearchParams(
+        (prev) => {
+          const nextParams = new URLSearchParams(prev);
+          if (next === 'all') nextParams.delete('prStatus');
+          else nextParams.set('prStatus', next);
+          return nextParams;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
   const [sortField, setSortField] = useState<PrSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
