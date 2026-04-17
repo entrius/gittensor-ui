@@ -56,6 +56,8 @@ const truncateAddress = (address: string | null): string => {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 };
 
+const PAGE_SIZE = 10;
+
 const IssuesList: React.FC<IssuesListProps> = ({
   issues,
   isLoading = false,
@@ -66,6 +68,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const theme = useTheme();
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [page, setPage] = useState(0);
   const { data: dashStats } = useStats();
   const taoPrice = dashStats?.prices?.tao?.data?.price ?? 0;
   const alphaPrice = dashStats?.prices?.alpha?.data?.price ?? 0;
@@ -145,6 +148,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
       setSortKey(key);
       setSortDirection(getDefaultSortDirection(key));
+      setPage(0);
     },
     [getDefaultSortDirection, sortKey, visibleSortKeys],
   );
@@ -202,6 +206,12 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
     return decorated.map((item) => item.issue);
   }, [issues, sortDirection, sortKey]);
+
+  const totalPages = Math.ceil(sortedIssues.length / PAGE_SIZE);
+  const paginatedIssues = useMemo(
+    () => sortedIssues.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
+    [sortedIssues, page],
+  );
 
   const renderSortableHeader = useCallback(
     (
@@ -372,7 +382,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {sortedIssues.map((issue) => {
+            {paginatedIssues.map((issue) => {
               const statusBadge = getIssueStatusMeta(issue.status);
               const href = getIssueHref?.(issue.id);
               const usdDisplay = toUsd(issue.targetBounty);
@@ -653,6 +663,53 @@ const IssuesList: React.FC<IssuesListProps> = ({
           </TableBody>
         </Table>
       </TableContainer>
+      {totalPages > 1 && (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            gap: 1,
+            px: 2,
+            py: 1.5,
+            borderTop: `1px solid ${theme.palette.border.light}`,
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+              mr: 1,
+            }}
+          >
+            {page * PAGE_SIZE + 1}-
+            {Math.min((page + 1) * PAGE_SIZE, sortedIssues.length)} of{' '}
+            {sortedIssues.length}
+          </Typography>
+          {[
+            { label: '‹', disabled: page === 0, target: page - 1 },
+            {
+              label: '›',
+              disabled: page >= totalPages - 1,
+              target: page + 1,
+            },
+          ].map(({ label, disabled, target }) => (
+            <Box
+              key={label}
+              onClick={() => !disabled && setPage(target)}
+              sx={{
+                cursor: disabled ? 'default' : 'pointer',
+                opacity: disabled ? 0.3 : 0.7,
+                fontSize: '1rem',
+                px: 0.5,
+                '&:hover': { opacity: disabled ? 0.3 : 1 },
+              }}
+            >
+              {label}
+            </Box>
+          ))}
+        </Box>
+      )}
     </Card>
   );
 };
