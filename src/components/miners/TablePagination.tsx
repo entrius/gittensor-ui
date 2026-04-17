@@ -62,7 +62,6 @@ const TablePagination: React.FC<TablePaginationProps> = ({
       </Box>
       <Typography
         sx={{
-          fontFamily: '"JetBrains Mono", monospace',
           fontSize: '0.75rem',
           color: (t) => alpha(t.palette.text.primary, 0.5),
         }}
