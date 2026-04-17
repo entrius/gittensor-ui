@@ -142,6 +142,29 @@ export const FAQContent: React.FC = () => (
           </>
         }
       />
+      <FAQ
+        question="How does Issue Discovery work?"
+        answer={
+          <>
+            File GitHub issues on Gittensor-tracked repositories. When someone
+            else's merged PR resolves your issue, you earn a discovery score
+            based on the solving PR's code quality (token score). Eligibility
+            requires 7 or more valid solved issues (each with a token score of
+            at least 5) and 80%+ issue credibility. Credibility is calculated as{' '}
+            <em>solved / (solved + max(0, closed − 1))</em> — one closed issue
+            is forgiven. See the{' '}
+            <a
+              href="https://docs.gittensor.io/issue-discovery.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'inherit', textDecoration: 'underline' }}
+            >
+              Issue Discovery documentation
+            </a>{' '}
+            for the full scoring breakdown.
+          </>
+        }
+      />
     </Stack>
   </Box>
 );
