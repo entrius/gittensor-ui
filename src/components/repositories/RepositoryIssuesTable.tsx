@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useCallback, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Card,
   Typography,
@@ -26,6 +26,7 @@ import {
   getIssueStatusMeta,
   getBountyAmountColor,
 } from '../../utils/issueStatus';
+import { readEnumParam, writeEnumParam } from '../../utils/urlTableState';
 import {
   STATUS_COLORS,
   TEXT_OPACITY,
@@ -34,6 +35,15 @@ import {
   bodyCellStyle,
 } from '../../theme';
 import FilterButton from '../FilterButton';
+
+type IssueStatusFilter = 'all' | 'open' | 'closed';
+const ISSUE_STATUS_FILTERS: readonly IssueStatusFilter[] = [
+  'all',
+  'open',
+  'closed',
+];
+const DEFAULT_ISSUE_FILTER: IssueStatusFilter = 'all';
+const ISSUE_FILTER_PARAM = 'issueStatus';
 
 interface RepositoryIssuesTableProps {
   repositoryFullName: string;
@@ -44,9 +54,26 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
 }) => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: issues, isLoading } = useRepositoryIssues(repositoryFullName);
   const { data: bounties } = useRepoIssues(repositoryFullName);
-  const [filter, setFilter] = useState<'all' | 'open' | 'closed'>('all');
+
+  const filter = readEnumParam<IssueStatusFilter>(
+    searchParams,
+    ISSUE_FILTER_PARAM,
+    ISSUE_STATUS_FILTERS,
+    DEFAULT_ISSUE_FILTER,
+  );
+  const setFilter = useCallback(
+    (next: IssueStatusFilter) => {
+      setSearchParams(
+        (prev) =>
+          writeEnumParam(prev, ISSUE_FILTER_PARAM, next, DEFAULT_ISSUE_FILTER),
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   const counts = useMemo(() => {
     if (!issues) return { total: 0, open: 0, closed: 0 };

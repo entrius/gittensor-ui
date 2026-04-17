@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   Card,
   Typography,
@@ -17,6 +17,22 @@ import {
   alpha,
   useTheme,
 } from '@mui/material';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAllPrs } from '../../api';
+import {
+  TEXT_OPACITY,
+  scrollbarSx,
+  headerCellStyle,
+  bodyCellStyle,
+} from '../../theme';
+import {
+  filterPrs,
+  getPrStatusCounts,
+  readEnumParam,
+  writeEnumParam,
+  type PrStatusFilter,
+} from '../../utils';
+import FilterButton from '../FilterButton';
 
 type PrSortField =
   | 'pullRequestNumber'
@@ -28,16 +44,31 @@ type PrSortField =
   | 'status'
   | 'mergedAt';
 type SortOrder = 'asc' | 'desc';
-import { useAllPrs } from '../../api';
-import { useNavigate } from 'react-router-dom';
-import {
-  TEXT_OPACITY,
-  scrollbarSx,
-  headerCellStyle,
-  bodyCellStyle,
-} from '../../theme';
-import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
-import FilterButton from '../FilterButton';
+
+const PR_SORT_FIELDS: readonly PrSortField[] = [
+  'pullRequestNumber',
+  'pullRequestTitle',
+  'author',
+  'commitCount',
+  'lines',
+  'score',
+  'status',
+  'mergedAt',
+];
+const SORT_ORDERS: readonly SortOrder[] = ['asc', 'desc'];
+const PR_STATUS_FILTERS: readonly PrStatusFilter[] = [
+  'all',
+  'open',
+  'merged',
+  'closed',
+];
+
+const DEFAULT_SORT_FIELD: PrSortField = 'score';
+const DEFAULT_SORT_ORDER: SortOrder = 'desc';
+
+const SORT_PARAM = 'prSort';
+const DIR_PARAM = 'prDir';
+const FILTER_PARAM = 'prStatus';
 
 interface RepositoryPRsTableProps {
   repositoryFullName: string;
@@ -50,20 +81,64 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
 }) => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const [filter, setFilter] = useState<PrStatusFilter>(state);
-  const [sortField, setSortField] = useState<PrSortField>('score');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const handleSort = (field: PrSortField) => {
-    if (sortField === field) {
-      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortField(field);
-      setSortOrder(
-        field === 'pullRequestTitle' || field === 'author' ? 'asc' : 'desc',
+  const filter = readEnumParam<PrStatusFilter>(
+    searchParams,
+    FILTER_PARAM,
+    PR_STATUS_FILTERS,
+    state,
+  );
+  const sortField = readEnumParam<PrSortField>(
+    searchParams,
+    SORT_PARAM,
+    PR_SORT_FIELDS,
+    DEFAULT_SORT_FIELD,
+  );
+  const sortOrder = readEnumParam<SortOrder>(
+    searchParams,
+    DIR_PARAM,
+    SORT_ORDERS,
+    DEFAULT_SORT_ORDER,
+  );
+
+  const setFilter = useCallback(
+    (next: PrStatusFilter) => {
+      setSearchParams(
+        (prev) => writeEnumParam(prev, FILTER_PARAM, next, state),
+        { replace: true },
       );
-    }
-  };
+    },
+    [setSearchParams, state],
+  );
+
+  const handleSort = useCallback(
+    (field: PrSortField) => {
+      const nextField = field;
+      const nextOrder: SortOrder =
+        field === sortField
+          ? sortOrder === 'asc'
+            ? 'desc'
+            : 'asc'
+          : field === 'pullRequestTitle' || field === 'author'
+            ? 'asc'
+            : 'desc';
+      setSearchParams(
+        (prev) => {
+          let next = writeEnumParam(
+            prev,
+            SORT_PARAM,
+            nextField,
+            DEFAULT_SORT_FIELD,
+          );
+          next = writeEnumParam(next, DIR_PARAM, nextOrder, DEFAULT_SORT_ORDER);
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [sortField, sortOrder, setSearchParams],
+  );
 
   // Fetch ALL PRs at once to enable client-side filtering and accurate counts
   // This avoids server roundtrips on filter change and provides instant UI feedback
