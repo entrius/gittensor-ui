@@ -135,8 +135,6 @@ export const normalizeCommitLogs = (payload: unknown): CommitLog[] => {
   return [];
 };
 
-export type MinerStatusFilter = 'all' | 'open' | 'merged' | 'closed';
-
 export interface RepoStats {
   repository: string;
   prs: number;
