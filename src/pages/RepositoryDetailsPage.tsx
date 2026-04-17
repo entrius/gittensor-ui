@@ -181,16 +181,34 @@ const RepositoryDetailsPage: React.FC = () => {
               container
               spacing={4}
               sx={{ mt: 1, mb: 3 }}
-              alignItems="center"
+              alignItems={{ xs: 'stretch', md: 'flex-start' }}
             >
-              <Grid item xs={12} md={8}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Grid
+                item
+                xs={12}
+                md={8}
+                sx={{
+                  minWidth: 0,
+                  pr: { md: 2 },
+                }}
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    columnGap: 2,
+                    rowGap: 1.5,
+                    minWidth: 0,
+                  }}
+                >
                   <Avatar
                     src={`https://avatars.githubusercontent.com/${owner}`}
                     variant="rounded"
                     sx={(theme) => ({
                       width: 32,
                       height: 32,
+                      flexShrink: 0,
                       borderRadius: '4px',
                       backgroundColor:
                         owner === 'opentensor'
@@ -203,44 +221,58 @@ const RepositoryDetailsPage: React.FC = () => {
                   <Typography
                     variant="h4"
                     sx={(theme) => ({
+                      flex: '1 1 auto',
+                      minWidth: 0,
                       fontWeight: 600,
                       color: theme.palette.text.primary,
+                      overflowWrap: 'anywhere',
+                      wordBreak: 'break-word',
                     })}
                   >
                     {repo}
                   </Typography>
-                  <Chip variant="info" label="Public" />
-                  <Chip
-                    label="Tracked"
-                    sx={(theme) => ({
-                      backgroundColor: alpha(STATUS_COLORS.success, 0.15),
-                      color: theme.palette.status.success,
-                      border: `1px solid ${alpha(STATUS_COLORS.success, 0.35)}`,
-                      fontSize: '0.75rem',
-                      height: '24px',
-                      fontWeight: 600,
-                    })}
-                  />
-                  {(() => {
-                    const currentRepo = trackedRepo;
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                      gap: 1,
+                      minWidth: 0,
+                    }}
+                  >
+                    <Chip variant="info" label="Public" />
+                    <Chip
+                      label="Tracked"
+                      sx={(theme) => ({
+                        backgroundColor: alpha(STATUS_COLORS.success, 0.15),
+                        color: theme.palette.status.success,
+                        border: `1px solid ${alpha(STATUS_COLORS.success, 0.35)}`,
+                        fontSize: '0.75rem',
+                        height: '24px',
+                        fontWeight: 600,
+                      })}
+                    />
+                    {(() => {
+                      const currentRepo = trackedRepo;
 
-                    if (currentRepo?.inactiveAt) {
-                      return (
-                        <Chip
-                          label={`Inactive since ${new Date(currentRepo.inactiveAt).toLocaleDateString()}`}
-                          sx={(theme) => ({
-                            backgroundColor: alpha(STATUS_COLORS.error, 0.1),
-                            color: theme.palette.status.error,
-                            border: `1px solid ${alpha(STATUS_COLORS.error, 0.3)}`,
-                            fontSize: '0.75rem',
-                            height: '24px',
-                            fontWeight: 600,
-                          })}
-                        />
-                      );
-                    }
-                    return null;
-                  })()}
+                      if (currentRepo?.inactiveAt) {
+                        return (
+                          <Chip
+                            label={`Inactive since ${new Date(currentRepo.inactiveAt).toLocaleDateString()}`}
+                            sx={(theme) => ({
+                              backgroundColor: alpha(STATUS_COLORS.error, 0.1),
+                              color: theme.palette.status.error,
+                              border: `1px solid ${alpha(STATUS_COLORS.error, 0.3)}`,
+                              fontSize: '0.75rem',
+                              height: '24px',
+                              fontWeight: 600,
+                            })}
+                          />
+                        );
+                      }
+                      return null;
+                    })()}
+                  </Box>
                 </Box>
               </Grid>
               <Grid
@@ -248,8 +280,10 @@ const RepositoryDetailsPage: React.FC = () => {
                 xs={12}
                 md={4}
                 sx={{
+                  minWidth: 0,
                   display: 'flex',
                   justifyContent: { xs: 'flex-start', md: 'flex-end' },
+                  alignSelf: { md: 'flex-start' },
                 }}
               >
                 <Button
@@ -259,6 +293,8 @@ const RepositoryDetailsPage: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   sx={(theme) => ({
+                    flexShrink: 0,
+                    maxWidth: '100%',
                     borderColor: theme.palette.border.medium,
                     color: theme.palette.text.primary,
                     '&:hover': { borderColor: theme.palette.primary.main },
