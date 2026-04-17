@@ -586,8 +586,8 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             <StatTile
               label="Token Score"
               value={parseNumber(minerStats.totalTokenScore).toFixed(0)}
-              sub={`${parseNumber(minerStats.totalNodesScored).toLocaleString()} tokens`}
-              tooltip="Sum of token-level scores from merged PRs. Each scored code element (function, class, etc.) contributes to this."
+              sub={`${parseNumber(minerStats.totalNodesScored).toLocaleString()} tokens · ${parseNumber(minerStats.totalStructuralCount)} structural · ${parseNumber(minerStats.totalLeafCount)} leaf`}
+              tooltip="Sum of token-level scores from merged PRs. Structural nodes are functions, classes, and modules. Leaf nodes are statements and expressions."
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>

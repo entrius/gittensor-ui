@@ -312,6 +312,12 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
               pr.totalNodesScored != null &&
                 parseNumber(pr.totalNodesScored) > 0 &&
                 `${pr.totalNodesScored} nodes`,
+              pr.structuralCount != null &&
+                parseNumber(pr.structuralCount) > 0 &&
+                `${pr.structuralCount} structural (${parseNumber(pr.structuralScore).toFixed(2)})`,
+              pr.leafCount != null &&
+                parseNumber(pr.leafCount) > 0 &&
+                `${pr.leafCount} leaf (${parseNumber(pr.leafScore).toFixed(2)})`,
             ]
               .filter(Boolean)
               .map((stat, i, arr) => (

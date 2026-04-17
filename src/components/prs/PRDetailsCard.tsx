@@ -95,6 +95,22 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
       rank: null,
     },
     {
+      label: 'Structural',
+      value:
+        prDetails.structuralCount != null
+          ? `${prDetails.structuralCount} (${parseFloat(String(prDetails.structuralScore ?? 0)).toFixed(2)})`
+          : '-',
+      rank: null,
+    },
+    {
+      label: 'Leaf',
+      value:
+        prDetails.leafCount != null
+          ? `${prDetails.leafCount} (${parseFloat(String(prDetails.leafScore ?? 0)).toFixed(2)})`
+          : '-',
+      rank: null,
+    },
+    {
       label: 'Changes',
       value: '',
       rank: null,
