@@ -2,11 +2,7 @@ import React, { useMemo } from 'react';
 import { Box, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { SectionCard } from './SectionCard';
-import {
-  STATUS_COLORS,
-  DIFF_COLORS,
-  CREDIBILITY_COLORS,
-} from '../../theme';
+import { STATUS_COLORS, DIFF_COLORS, CREDIBILITY_COLORS } from '../../theme';
 import { type MinerStats, FONTS } from './types';
 
 interface WatchlistSidebarProps {
@@ -33,15 +29,9 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
   );
 
   const prStats = useMemo(() => {
-    const merged = miners.reduce(
-      (acc, m) => acc + (m.totalMergedPrs || 0),
-      0,
-    );
+    const merged = miners.reduce((acc, m) => acc + (m.totalMergedPrs || 0), 0);
     const open = miners.reduce((acc, m) => acc + (m.totalOpenPrs || 0), 0);
-    const closed = miners.reduce(
-      (acc, m) => acc + (m.totalClosedPrs || 0),
-      0,
-    );
+    const closed = miners.reduce((acc, m) => acc + (m.totalClosedPrs || 0), 0);
     const total = merged + open + closed;
     const mergeRate = total > 0 ? Math.round((merged / total) * 100) : 0;
     return { merged, open, closed, mergeRate };
@@ -52,10 +42,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
       (acc, m) => acc + (m.totalSolvedIssues || 0),
       0,
     );
-    const open = miners.reduce(
-      (acc, m) => acc + (m.totalOpenIssues || 0),
-      0,
-    );
+    const open = miners.reduce((acc, m) => acc + (m.totalOpenIssues || 0), 0);
     const closed = miners.reduce(
       (acc, m) => acc + (m.totalClosedIssues || 0),
       0,
@@ -66,10 +53,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
   }, [miners]);
 
   const codeStats = useMemo(() => {
-    const linesAdded = miners.reduce(
-      (acc, m) => acc + (m.linesAdded || 0),
-      0,
-    );
+    const linesAdded = miners.reduce((acc, m) => acc + (m.linesAdded || 0), 0);
     const linesDeleted = miners.reduce(
       (acc, m) => acc + (m.linesDeleted || 0),
       0,
@@ -241,7 +225,10 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
               Solve Rate
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <MergeRateBar rate={issueStats.solveRate} color={solveRateColor} />
+              <MergeRateBar
+                rate={issueStats.solveRate}
+                color={solveRateColor}
+              />
               <Typography
                 sx={{
                   fontFamily: FONTS.mono,
@@ -309,7 +296,10 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
               Avg Credibility
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <MergeRateBar rate={codeStats.avgCredibility} color={credibilityColor} />
+              <MergeRateBar
+                rate={codeStats.avgCredibility}
+                color={credibilityColor}
+              />
               <Typography
                 sx={{
                   fontFamily: FONTS.mono,
@@ -339,7 +329,14 @@ interface PRColumnProps {
 }
 
 const PRColumn: React.FC<PRColumnProps> = ({ label, value, color }) => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+  <Box
+    sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 0.5,
+    }}
+  >
     <Typography
       sx={{
         fontFamily: FONTS.mono,
