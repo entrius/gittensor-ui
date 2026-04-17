@@ -28,6 +28,7 @@ interface TopMinersTableProps {
   getMinerHref: (miner: MinerStats) => string;
   linkState?: Record<string, unknown>;
   variant?: LeaderboardVariant;
+  showDualEligibilityBadges?: boolean;
 }
 
 const getAllowedSortOptions = (variant: LeaderboardVariant): SortOption[] => {
@@ -83,6 +84,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   getMinerHref,
   linkState,
   variant = 'oss',
+  showDualEligibilityBadges = false,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get(SEARCH_QUERY_PARAM) ?? '';
@@ -328,6 +330,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                   variant={variant}
                   href={getMinerHref(miner)}
                   linkState={linkState}
+                  showDualEligibilityBadges={showDualEligibilityBadges}
                 />
               </Grid>
             ))}

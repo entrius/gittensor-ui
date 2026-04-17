@@ -304,11 +304,11 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
   const rowsToRender =
     listType === 'history'
-      ? issues.slice(
+      ? sortedIssues.slice(
           historyPage * historyRowsPerPage,
           historyPage * historyRowsPerPage + historyRowsPerPage,
         )
-      : issues;
+      : sortedIssues;
 
   if (issues.length === 0) {
     return (
@@ -346,7 +346,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
       {listType === 'history' && issues.length > 0 && (
         <TablePagination
           component="div"
-          count={issues.length}
+          count={sortedIssues.length}
           page={historyPage}
           onPageChange={(_, newPage) => setHistoryPage(newPage)}
           rowsPerPage={historyRowsPerPage}
@@ -418,7 +418,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
           </TableHead>
           <TableBody>
             {rowsToRender.map((issue) => {
-            {sortedIssues.map((issue) => {
               const statusBadge = getIssueStatusMeta(issue.status);
               const href = getIssueHref?.(issue.id);
               const usdDisplay = toUsd(issue.targetBounty);
