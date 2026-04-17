@@ -25,7 +25,7 @@ const ErrorFallback: React.FC<ErrorFallbackProps> = ({
       ? {
           minHeight: '100vh',
           width: '100%',
-          backgroundColor: '#000',
+          backgroundColor: 'background.default',
           px: { xs: 3, md: 6 },
           py: { xs: 6, md: 10 },
         }
@@ -54,7 +54,7 @@ const ErrorFallback: React.FC<ErrorFallbackProps> = ({
         <Typography
           sx={{
             fontSize: { xs: '1.25rem', md: '1.5rem' },
-            color: '#fff',
+            color: 'text.primary',
             fontWeight: 500,
           }}
         >
@@ -63,7 +63,7 @@ const ErrorFallback: React.FC<ErrorFallbackProps> = ({
         <Typography
           sx={{
             fontSize: '0.85rem',
-            color: 'rgba(255,255,255,0.6)',
+            color: 'text.secondary',
             lineHeight: 1.6,
           }}
         >
@@ -75,8 +75,9 @@ const ErrorFallback: React.FC<ErrorFallbackProps> = ({
           sx={{
             width: '100%',
             fontSize: '0.75rem',
-            color: 'rgba(255,255,255,0.5)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            color: 'text.tertiary',
+            border: '1px solid',
+            borderColor: 'border.light',
             borderRadius: 1,
             p: 1.5,
             m: 0,

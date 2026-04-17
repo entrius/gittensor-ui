@@ -133,10 +133,11 @@ const WatchlistPage: React.FC = () => {
             <TopMinersTable
               miners={minerStats}
               isLoading={isLoadingMinerStats}
-              getHref={(m) =>
+              getMinerHref={(m) =>
                 `/miners/details?githubId=${encodeURIComponent(m.githubId)}`
               }
               linkState={{ backLabel: 'Back to Watchlist' }}
+              variant="watchlist"
             />
           </Box>
         )}

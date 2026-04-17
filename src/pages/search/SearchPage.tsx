@@ -1,6 +1,6 @@
 import React from 'react';
 import { Alert, Box, Stack, Tab, Tabs, Typography } from '@mui/material';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { BackButton, SEO } from '../../components';
 import { GlobalSearchBar, Page } from '../../components/layout';
 import IssuesTab from './IssuesTab';
@@ -35,7 +35,6 @@ const paginateResults = <T,>(
 
 const SearchPage: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
   const tabParam = searchParams.get('tab');
@@ -165,32 +164,17 @@ const SearchPage: React.FC = () => {
     backTo: `${location.pathname}${location.search}`,
   };
 
-  const handleSelectMiner = (githubId: string) => {
-    navigate(`/miners/details?githubId=${encodeURIComponent(githubId)}`, {
-      state: searchBackState,
-    });
-  };
+  const getMinerHref = (miner: { githubId: string }) =>
+    `/miners/details?githubId=${encodeURIComponent(miner.githubId)}`;
 
-  const handleSelectRepository = (fullName: string) => {
-    navigate(`/miners/repository?name=${encodeURIComponent(fullName)}`, {
-      state: searchBackState,
-    });
-  };
+  const getRepositoryHref = (repo: { fullName: string }) =>
+    `/miners/repository?name=${encodeURIComponent(repo.fullName)}`;
 
-  const handleSelectPr = (repository: string, pullRequestNumber: number) => {
-    navigate(
-      `/miners/pr?repo=${encodeURIComponent(repository)}&number=${pullRequestNumber}`,
-      {
-        state: searchBackState,
-      },
-    );
-  };
+  const getPrHref = (pr: { repository: string; pullRequestNumber: number }) =>
+    `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`;
 
-  const handleSelectIssue = (id: number) => {
-    navigate(`/bounties/details?id=${id}`, {
-      state: searchBackState,
-    });
-  };
+  const getIssueHref = (issue: { id: number }) =>
+    `/bounties/details?id=${issue.id}`;
 
   return (
     <Page title="Search">
@@ -275,7 +259,8 @@ const SearchPage: React.FC = () => {
                 isLoading={tabState.isLoading}
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
-                onSelectMiner={handleSelectMiner}
+                getMinerHref={getMinerHref}
+                linkState={searchBackState}
                 page={page}
                 rowsPerPage={rowsPerPage}
                 rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
@@ -290,7 +275,8 @@ const SearchPage: React.FC = () => {
                 isLoading={tabState.isLoading}
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
-                onSelectRepository={handleSelectRepository}
+                getRepositoryHref={getRepositoryHref}
+                linkState={searchBackState}
                 page={page}
                 rowsPerPage={rowsPerPage}
                 rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
@@ -305,7 +291,8 @@ const SearchPage: React.FC = () => {
                 isLoading={tabState.isLoading}
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
-                onSelectPr={handleSelectPr}
+                getPrHref={getPrHref}
+                linkState={searchBackState}
                 page={page}
                 rowsPerPage={rowsPerPage}
                 rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
@@ -320,7 +307,8 @@ const SearchPage: React.FC = () => {
                 isLoading={tabState.isLoading}
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
-                onSelectIssue={handleSelectIssue}
+                getIssueHref={getIssueHref}
+                linkState={searchBackState}
                 page={page}
                 rowsPerPage={rowsPerPage}
                 rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
