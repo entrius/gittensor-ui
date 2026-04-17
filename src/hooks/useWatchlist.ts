@@ -1,41 +1,86 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
-const STORAGE_KEY = 'gittensor.watchlist.v1';
+// Migration: v1 stored string[] (miner IDs only), v2 stores categorized watchlist
+const STORAGE_KEY_V1 = 'gittensor.watchlist.v1';
+const STORAGE_KEY_V2 = 'gittensor.watchlist.v2';
+
+export type WatchlistCategory = 'miners' | 'repos' | 'bounties' | 'prs';
+
+type WatchlistData = {
+  [K in WatchlistCategory]: string[];
+};
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
 
-const readFromStorage = (): string[] => {
+const migrateFromV1 = (): WatchlistData => {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
+    const raw = window.localStorage.getItem(STORAGE_KEY_V1);
+    if (!raw) return { miners: [], repos: [], bounties: [], prs: [] };
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed)
-      ? parsed.filter((x): x is string => typeof x === 'string')
-      : [];
+    if (Array.isArray(parsed)) {
+      // Migrate legacy miner IDs to new structure
+      const miners = parsed.filter((x): x is string => typeof x === 'string');
+      // Clear v1 key after successful migration
+      window.localStorage.removeItem(STORAGE_KEY_V1);
+      return { miners, repos: [], bounties: [], prs: [] };
+    }
   } catch {
-    return [];
+    // Invalid v1 data, start fresh
   }
+  return { miners: [], repos: [], bounties: [], prs: [] };
+};
+
+const readFromStorage = (): WatchlistData => {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY_V2);
+    if (!raw) {
+      // Check for v1 data to migrate
+      return migrateFromV1();
+    }
+    const parsed = JSON.parse(raw);
+    // Validate structure
+    if (
+      typeof parsed === 'object' &&
+      Array.isArray(parsed.miners) &&
+      Array.isArray(parsed.repos) &&
+      Array.isArray(parsed.bounties) &&
+      Array.isArray(parsed.prs)
+    ) {
+      return {
+        miners: parsed.miners.filter((x): x is string => typeof x === 'string'),
+        repos: parsed.repos.filter((x): x is string => typeof x === 'string'),
+        bounties: parsed.bounties.filter((x): x is string => typeof x === 'string'),
+        prs: parsed.prs.filter((x): x is string => typeof x === 'string'),
+      };
+    }
+  } catch {
+    // Invalid data, start fresh
+  }
+  return { miners: [], repos: [], bounties: [], prs: [] };
 };
 
 // Module-level snapshot — every useWatchlist() instance in the tab reads from
 // the same reference, so writes from any caller propagate to all consumers.
-let snapshot: string[] = readFromStorage();
+let snapshot: WatchlistData = readFromStorage();
 
 const notify = () => {
   listeners.forEach((l) => l());
 };
 
-const setSnapshot = (next: string[]) => {
-  if (
-    next.length === snapshot.length &&
-    next.every((id, i) => id === snapshot[i])
-  ) {
-    return;
-  }
+const setSnapshot = (next: WatchlistData) => {
+  // Check if anything changed
+  const keys: WatchlistCategory[] = ['miners', 'repos', 'bounties', 'prs'];
+  const changed = keys.some(
+    (k) =>
+      next[k].length !== snapshot[k].length ||
+      !next[k].every((id, i) => id === snapshot[k][i]),
+  );
+  if (!changed) return;
+
   snapshot = next;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    window.localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(next));
   } catch {
     // Storage unavailable (private mode, quota). In-memory state still works.
   }
@@ -43,7 +88,7 @@ const setSnapshot = (next: string[]) => {
 };
 
 const handleStorageEvent = (e: StorageEvent) => {
-  if (e.key !== STORAGE_KEY) return;
+  if (e.key !== STORAGE_KEY_V2) return;
   const next = readFromStorage();
   snapshot = next;
   notify();
@@ -74,39 +119,82 @@ interface UseWatchlist {
   clear: () => void;
 }
 
-export const useWatchlist = (): UseWatchlist => {
-  const ids = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+/**
+ * Hook for managing watchlist with category support.
+ *
+ * @param category - The entity category to manage. Defaults to 'miners' for backward compatibility.
+ *
+ * @example
+ * // Legacy usage (backward compatible)
+ * const watchlist = useWatchlist();
+ *
+ * @example
+ * // Category-specific usage
+ * const repoWatchlist = useWatchlist('repos');
+ * const bountyWatchlist = useWatchlist('bounties');
+ */
+export const useWatchlist = (category: WatchlistCategory = 'miners'): UseWatchlist => {
+  const data = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const ids = data[category];
 
   const isWatched = useCallback(
-    (id: string) => snapshot.includes(id),
-    // Depending on `ids` ensures consumers re-render when the snapshot changes.
+    (id: string) => snapshot[category].includes(id),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ids],
+    [ids, category],
   );
 
-  // Action callbacks read from the module-level `snapshot`, not the rendered
-  // `ids`. This is the key to rapid-click correctness: two fast toggles see
-  // each other's writes immediately instead of both reading a stale array.
-  const add = useCallback((id: string) => {
-    if (!id || snapshot.includes(id)) return;
-    setSnapshot([...snapshot, id]);
-  }, []);
+  const add = useCallback(
+    (id: string) => {
+      if (!id || snapshot[category].includes(id)) return;
+      setSnapshot({
+        ...snapshot,
+        [category]: [...snapshot[category], id],
+      });
+    },
+    [category],
+  );
 
-  const remove = useCallback((id: string) => {
-    if (!snapshot.includes(id)) return;
-    setSnapshot(snapshot.filter((x) => x !== id));
-  }, []);
+  const remove = useCallback(
+    (id: string) => {
+      if (!snapshot[category].includes(id)) return;
+      setSnapshot({
+        ...snapshot,
+        [category]: snapshot[category].filter((x) => x !== id),
+      });
+    },
+    [category],
+  );
 
-  const toggle = useCallback((id: string) => {
-    if (!id) return;
-    setSnapshot(
-      snapshot.includes(id)
-        ? snapshot.filter((x) => x !== id)
-        : [...snapshot, id],
-    );
-  }, []);
+  const toggle = useCallback(
+    (id: string) => {
+      if (!id) return;
+      setSnapshot({
+        ...snapshot,
+        [category]: snapshot[category].includes(id)
+          ? snapshot[category].filter((x) => x !== id)
+          : [...snapshot[category], id],
+      });
+    },
+    [category],
+  );
 
-  const clear = useCallback(() => setSnapshot([]), []);
+  const clear = useCallback(
+    () =>
+      setSnapshot({
+        ...snapshot,
+        [category]: [],
+      }),
+    [category],
+  );
 
   return { ids, count: ids.length, isWatched, add, remove, toggle, clear };
+};
+
+/**
+ * Hook to get total watchlist count across all categories.
+ * Useful for sidebar badge.
+ */
+export const useWatchlistTotalCount = (): number => {
+  const data = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  return data.miners.length + data.repos.length + data.bounties.length + data.prs.length;
 };
