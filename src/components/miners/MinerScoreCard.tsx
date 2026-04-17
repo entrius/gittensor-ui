@@ -39,6 +39,7 @@ import {
   calculateDynamicOpenPrThreshold,
   calculateOpenIssueThreshold,
   parseNumber,
+  resolveMinerDisplayName,
 } from '../../utils/ExplorerUtils';
 import { credibilityColor } from '../../utils/format';
 
@@ -283,7 +284,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
   const { data: generalConfig } = useGeneralConfig();
   const { data: allMinersStats } = useAllMiners();
 
-  const username = githubData?.login || prs?.[0]?.author || githubId;
+  const username = resolveMinerDisplayName(githubId, githubData, prs);
 
   const openPrThreshold = minerStats
     ? calculateDynamicOpenPrThreshold(

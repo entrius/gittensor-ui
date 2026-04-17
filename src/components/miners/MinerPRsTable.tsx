@@ -24,6 +24,8 @@ import { Search as SearchIcon } from '@mui/icons-material';
 import { useMinerPRs, type CommitLog } from '../../api';
 import {
   filterPrs,
+  getGithubAvatarBg,
+  getGithubAvatarSrc,
   getPrStatusCounts,
   paginateItems,
   type PrStatusFilter,
@@ -547,23 +549,25 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                             overflow: 'hidden',
                           }}
                         >
-                          <Avatar
-                            src={`https://avatars.githubusercontent.com/${pr.repository.split('/')[0]}`}
-                            alt={pr.repository.split('/')[0]}
-                            sx={{
-                              width: 20,
-                              height: 20,
-                              flexShrink: 0,
-                              border: '1px solid',
-                              borderColor: 'border.medium',
-                              backgroundColor:
-                                pr.repository.split('/')[0] === 'opentensor'
-                                  ? 'text.primary'
-                                  : pr.repository.split('/')[0] === 'bitcoin'
-                                    ? 'status.warning'
-                                    : 'transparent',
-                            }}
-                          />
+                          {(() => {
+                            const repoOwner = pr.repository.split('/')[0];
+                            return (
+                              <Avatar
+                                src={getGithubAvatarSrc(repoOwner)}
+                                alt={repoOwner}
+                                sx={{
+                                  width: 20,
+                                  height: 20,
+                                  flexShrink: 0,
+                                  border: '1px solid',
+                                  borderColor: 'border.medium',
+                                  backgroundColor:
+                                    getGithubAvatarBg(repoOwner) ??
+                                    'transparent',
+                                }}
+                              />
+                            );
+                          })()}
                           <Box
                             component="span"
                             sx={{

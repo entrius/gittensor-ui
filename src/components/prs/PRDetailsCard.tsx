@@ -14,6 +14,7 @@ import { usePullRequestDetails } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import theme, { RANK_COLORS, STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { buildMultiplierGrid } from '../../utils/multiplierDefs';
+import { getGithubAvatarBg, getGithubAvatarSrc } from '../../utils';
 
 interface PRDetailsCardProps {
   repository: string;
@@ -139,18 +140,13 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             }}
           >
             <Avatar
-              src={`https://avatars.githubusercontent.com/${owner}`}
+              src={getGithubAvatarSrc(owner)}
               alt={owner}
               sx={{
                 width: 64,
                 height: 64,
                 border: `2px solid ${alpha(theme.palette.common.white, 0.2)}`,
-                backgroundColor:
-                  owner === 'opentensor'
-                    ? theme.palette.common.white
-                    : owner === 'bitcoin'
-                      ? '#F7931A'
-                      : 'transparent',
+                backgroundColor: getGithubAvatarBg(owner) ?? 'transparent',
               }}
             />
           </Box>

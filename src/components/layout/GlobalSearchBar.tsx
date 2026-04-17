@@ -6,6 +6,7 @@ import React, {
   useState,
 } from 'react';
 import {
+  Avatar,
   Box,
   ButtonBase,
   CircularProgress,
@@ -22,6 +23,8 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CloseIcon from '@mui/icons-material/Close';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSearchResults } from '../../pages/search/searchData';
+import { useRecentlyViewed } from '../../hooks/useRecentlyViewed';
+import { getGithubAvatarBg, getGithubAvatarSrc } from '../../utils';
 
 const QUICK_RESULT_LIMIT = 3;
 const DROPDOWN_CLOSE_DELAY_MS = 150;
@@ -33,17 +36,23 @@ type NavItemKind = 'miner' | 'repo' | 'pr' | 'issue' | 'action';
 type NavItem = {
   key: string;
   kind: NavItemKind;
+  // Section header rendered above this item. Empty string means no header.
+  // Items sharing the same section render a single header at the boundary.
+  section: string;
   title: string;
   subtitle: string;
+  avatarUrl?: string;
+  avatarBg?: string;
   onSelect: () => void;
 };
 
-const SECTION_LABELS: Record<Exclude<NavItemKind, 'action'>, string> = {
+const SEARCH_SECTIONS: Record<Exclude<NavItemKind, 'action'>, string> = {
   miner: 'Miners',
   repo: 'Repositories',
   pr: 'Pull Requests',
   issue: 'Issues',
 };
+const RECENT_SECTION = 'Recently viewed';
 
 const rowSx = (theme: Theme, active: boolean) => ({
   width: '100%',
@@ -120,7 +129,23 @@ const ResultRow: React.FC<ResultRowProps> = ({
       onMouseEnter={onMouseEnter}
       onClick={item.onSelect}
     >
-      <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
+      {item.avatarUrl && (
+        <Avatar
+          src={item.avatarUrl}
+          alt={item.title}
+          variant={item.kind === 'miner' ? 'circular' : 'rounded'}
+          sx={{
+            width: 28,
+            height: 28,
+            mr: 1.25,
+            flexShrink: 0,
+            // Known orgs (e.g. bitcoin) ship transparent avatars that expect
+            // a brand-colored backdrop; the tracking site supplies it.
+            backgroundColor: item.avatarBg,
+          }}
+        />
+      )}
+      <Box sx={{ minWidth: 0, overflow: 'hidden', flexGrow: 1 }}>
         <Typography
           sx={(theme) => ({
             color: isAction
@@ -196,6 +221,7 @@ const GlobalSearchBar: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [isMac] = useState(detectMac);
+  const { items: recentItems, clear: clearRecent } = useRecentlyViewed();
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const rowRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -290,70 +316,112 @@ const GlobalSearchBar: React.FC = () => {
   // rendering and keyboard navigation.
   const navItems: NavItem[] = useMemo(() => {
     const items: NavItem[] = [];
-    minerResults.forEach((miner) => {
+    if (hasQuery) {
+      minerResults.forEach((miner) => {
+        items.push({
+          key: `miner-${miner.githubId}`,
+          kind: 'miner',
+          section: SEARCH_SECTIONS.miner,
+          title: miner.githubUsername || miner.githubId,
+          subtitle: getMinerSubtitle(miner),
+          avatarUrl: getGithubAvatarSrc(miner.githubUsername),
+          onSelect: () =>
+            navigateAndClose(
+              `/miners/details?githubId=${encodeURIComponent(miner.githubId)}`,
+            ),
+        });
+      });
+      repositoryResults.forEach((repo) => {
+        items.push({
+          key: `repo-${repo.fullName}`,
+          kind: 'repo',
+          section: SEARCH_SECTIONS.repo,
+          title: repo.fullName,
+          subtitle: repo.owner,
+          avatarUrl: getGithubAvatarSrc(repo.owner),
+          avatarBg: getGithubAvatarBg(repo.owner),
+          onSelect: () =>
+            navigateAndClose(
+              `/miners/repository?name=${encodeURIComponent(repo.fullName)}`,
+            ),
+        });
+      });
+      prResults.forEach((pr) => {
+        const repoOwner = pr.repository?.split('/')[0];
+        items.push({
+          key: `pr-${pr.repository}-${pr.pullRequestNumber}`,
+          kind: 'pr',
+          section: SEARCH_SECTIONS.pr,
+          title: `${pr.repository} #${pr.pullRequestNumber}`,
+          subtitle: pr.pullRequestTitle,
+          avatarUrl: getGithubAvatarSrc(repoOwner),
+          avatarBg: getGithubAvatarBg(repoOwner),
+          onSelect: () =>
+            navigateAndClose(
+              `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
+            ),
+        });
+      });
+      issueResults.forEach((issue) => {
+        const repoOwner = issue.repositoryFullName?.split('/')[0];
+        items.push({
+          key: `issue-${issue.id}`,
+          kind: 'issue',
+          section: SEARCH_SECTIONS.issue,
+          title:
+            issue.title || `${issue.repositoryFullName} #${issue.issueNumber}`,
+          subtitle: `${issue.repositoryFullName} · #${issue.issueNumber}`,
+          avatarUrl: getGithubAvatarSrc(repoOwner),
+          avatarBg: getGithubAvatarBg(repoOwner),
+          onSelect: () => navigateAndClose(`/bounties/details?id=${issue.id}`),
+        });
+      });
+      if (trimmedQuery) {
+        items.push({
+          key: 'action-open-full',
+          kind: 'action',
+          section: '',
+          title: `Open full search for "${trimmedQuery}"`,
+          subtitle: '',
+          onSelect: openFullSearch,
+        });
+      }
+      return items;
+    }
+    recentItems.forEach((item) => {
       items.push({
-        key: `miner-${miner.githubId}`,
-        kind: 'miner',
-        title: miner.githubUsername || miner.githubId,
-        subtitle: getMinerSubtitle(miner),
-        onSelect: () =>
-          navigateAndClose(
-            `/miners/details?githubId=${encodeURIComponent(miner.githubId)}`,
-          ),
+        key: `recent-${item.kind}-${item.key}`,
+        kind: item.kind,
+        section: RECENT_SECTION,
+        title: item.title,
+        subtitle: item.subtitle,
+        avatarUrl: item.avatarUrl,
+        avatarBg: item.avatarBg,
+        onSelect: () => navigateAndClose(item.href),
       });
     });
-    repositoryResults.forEach((repo) => {
+    if (items.length > 0) {
       items.push({
-        key: `repo-${repo.fullName}`,
-        kind: 'repo',
-        title: repo.fullName,
-        subtitle: repo.owner,
-        onSelect: () =>
-          navigateAndClose(
-            `/miners/repository?name=${encodeURIComponent(repo.fullName)}`,
-          ),
-      });
-    });
-    prResults.forEach((pr) => {
-      items.push({
-        key: `pr-${pr.repository}-${pr.pullRequestNumber}`,
-        kind: 'pr',
-        title: `${pr.repository} #${pr.pullRequestNumber}`,
-        subtitle: pr.pullRequestTitle,
-        onSelect: () =>
-          navigateAndClose(
-            `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
-          ),
-      });
-    });
-    issueResults.forEach((issue) => {
-      items.push({
-        key: `issue-${issue.id}`,
-        kind: 'issue',
-        title:
-          issue.title || `${issue.repositoryFullName} #${issue.issueNumber}`,
-        subtitle: `${issue.repositoryFullName} · #${issue.issueNumber}`,
-        onSelect: () => navigateAndClose(`/bounties/details?id=${issue.id}`),
-      });
-    });
-    if (trimmedQuery) {
-      items.push({
-        key: 'action-open-full',
+        key: 'action-clear-recent',
         kind: 'action',
-        title: `Open full search for "${trimmedQuery}"`,
+        section: '',
+        title: 'Clear history',
         subtitle: '',
-        onSelect: openFullSearch,
+        onSelect: clearRecent,
       });
     }
     return items;
   }, [
+    hasQuery,
     minerResults,
     repositoryResults,
     prResults,
     issueResults,
     trimmedQuery,
+    recentItems,
     navigateAndClose,
     openFullSearch,
+    clearRecent,
   ]);
 
   // Reset the active row when the result set changes. `navItems` is wrapped
@@ -414,7 +482,8 @@ const GlobalSearchBar: React.FC = () => {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  const showDropdown = !isSearchPage && isDropdownOpen && hasQuery;
+  const showDropdown =
+    !isSearchPage && isDropdownOpen && (hasQuery || navItems.length > 0);
 
   const moveActive = (delta: number) => {
     if (navItems.length === 0) return;
@@ -626,22 +695,18 @@ const GlobalSearchBar: React.FC = () => {
 
           {!isLoading && (
             <Stack spacing={0.5} sx={{ pb: 0.5 }}>
-              {!hasAnyResults && <EmptyState />}
+              {hasQuery && !hasAnyResults && <EmptyState />}
 
               {navItems.map((item, idx) => {
                 const prevItem = idx > 0 ? navItems[idx - 1] : null;
                 const showSectionLabel =
-                  item.kind !== 'action' &&
-                  (!prevItem || prevItem.kind !== item.kind);
+                  !!item.section &&
+                  (!prevItem || prevItem.section !== item.section);
                 return (
                   <React.Fragment key={item.key}>
                     {showSectionLabel && (
                       <SectionLabel
-                        label={
-                          SECTION_LABELS[
-                            item.kind as Exclude<NavItemKind, 'action'>
-                          ]
-                        }
+                        label={item.section}
                         hasResultsAbove={idx > 0}
                       />
                     )}

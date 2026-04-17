@@ -24,6 +24,8 @@ import FactCheckIcon from '@mui/icons-material/FactCheck';
 import { RANK_COLORS, STATUS_COLORS } from '../theme';
 import { Page } from '../components/layout';
 import { useReposAndWeights, useRepoBountySummary } from '../api';
+import { useTrackRecentlyViewed } from '../hooks/useRecentlyViewed';
+import { getGithubAvatarBg, getGithubAvatarSrc } from '../utils';
 import {
   RepositoryContributorsTable,
   RepositoryPRsTable,
@@ -89,6 +91,20 @@ const RepositoryDetailsPage: React.FC = () => {
   const isTrackedRepository = Boolean(trackedRepo);
 
   const owner = repo ? repo.split('/')[0] : '';
+
+  useTrackRecentlyViewed(
+    repo && isTrackedRepository
+      ? {
+          kind: 'repo',
+          key: repo,
+          title: repo,
+          subtitle: owner,
+          href: `/miners/repository?name=${encodeURIComponent(repo)}`,
+          avatarUrl: getGithubAvatarSrc(owner),
+          avatarBg: getGithubAvatarBg(owner),
+        }
+      : null,
+  );
 
   // If no repo is provided, redirect to miners page
   if (!repo) {
@@ -186,18 +202,15 @@ const RepositoryDetailsPage: React.FC = () => {
               <Grid item xs={12} md={8}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Avatar
-                    src={`https://avatars.githubusercontent.com/${owner}`}
+                    src={getGithubAvatarSrc(owner)}
                     variant="rounded"
                     sx={(theme) => ({
                       width: 32,
                       height: 32,
                       borderRadius: '4px',
                       backgroundColor:
-                        owner === 'opentensor'
-                          ? theme.palette.text.primary
-                          : owner === 'bitcoin'
-                            ? theme.palette.status.warningOrange
-                            : theme.palette.surface.transparent,
+                        getGithubAvatarBg(owner) ??
+                        theme.palette.surface.transparent,
                     })}
                   />
                   <Typography

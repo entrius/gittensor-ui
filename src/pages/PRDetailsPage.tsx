@@ -11,6 +11,8 @@ import {
   PRComments,
 } from '../components';
 import { usePullRequestDetails } from '../api';
+import { useTrackRecentlyViewed } from '../hooks/useRecentlyViewed';
+import { getGithubAvatarBg, getGithubAvatarSrc } from '../utils';
 import { STATUS_COLORS } from '../theme';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CodeIcon from '@mui/icons-material/Code';
@@ -27,6 +29,21 @@ const PRDetailsPage: React.FC = () => {
   const { data: prDetails, isLoading } = usePullRequestDetails(
     repository || '',
     pullRequestNumber ? parseInt(pullRequestNumber) : 0,
+  );
+
+  const prRepoOwner = repository ? repository.split('/')[0] : '';
+  useTrackRecentlyViewed(
+    repository && pullRequestNumber
+      ? {
+          kind: 'pr',
+          key: `${repository}#${pullRequestNumber}`,
+          title: `${repository} #${pullRequestNumber}`,
+          subtitle: prDetails?.title || '',
+          href: `/miners/pr?repo=${encodeURIComponent(repository)}&number=${pullRequestNumber}`,
+          avatarUrl: getGithubAvatarSrc(prRepoOwner),
+          avatarBg: getGithubAvatarBg(prRepoOwner),
+        }
+      : null,
   );
 
   // If no repo or PR number is provided, redirect to miners page

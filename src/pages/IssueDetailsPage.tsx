@@ -16,6 +16,8 @@ import {
   IssueConversation,
 } from '../components/issues';
 import { useIssueDetails, useIssueSubmissions } from '../api';
+import { useTrackRecentlyViewed } from '../hooks/useRecentlyViewed';
+import { getGithubAvatarBg, getGithubAvatarSrc } from '../utils';
 import { STATUS_COLORS } from '../theme';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import ListAltIcon from '@mui/icons-material/ListAlt';
@@ -30,6 +32,22 @@ const IssueDetailsPage: React.FC = () => {
   const { data: issue, isLoading: isLoadingDetails } = useIssueDetails(id);
   const { data: submissions, isLoading: isLoadingSubmissions } =
     useIssueSubmissions(id);
+
+  const issueRepoOwner = issue?.repositoryFullName?.split('/')[0] ?? '';
+  useTrackRecentlyViewed(
+    issue
+      ? {
+          kind: 'issue',
+          key: String(issue.id),
+          title:
+            issue.title || `${issue.repositoryFullName} #${issue.issueNumber}`,
+          subtitle: `${issue.repositoryFullName} · #${issue.issueNumber}`,
+          href: `/bounties/details?id=${issue.id}`,
+          avatarUrl: getGithubAvatarSrc(issueRepoOwner),
+          avatarBg: getGithubAvatarBg(issueRepoOwner),
+        }
+      : null,
+  );
 
   // If no ID is provided, redirect to issues page
   if (!idParam) {

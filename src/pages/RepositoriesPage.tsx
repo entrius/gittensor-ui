@@ -8,6 +8,7 @@ import { Page } from '../components/layout';
 import { TopRepositoriesTable, SEO } from '../components';
 import { useAllPrs, useReposAndWeights } from '../api';
 import { type CommitLog } from '../api/models/Dashboard';
+import { getGithubAvatarBg } from '../utils';
 
 const FONTS = { mono: '"JetBrains Mono", monospace' } as const;
 
@@ -17,7 +18,7 @@ const ROW_HEIGHT = 40; // px – keeps every row exactly the same across cards
 const HighlightRow: React.FC<{
   onClick: () => void;
   avatar: string;
-  avatarBg?: (theme: Theme) => string;
+  avatarBg?: string;
   label: React.ReactNode;
   right: React.ReactNode;
 }> = ({ onClick, avatar, avatarBg, label, right }) => (
@@ -55,9 +56,7 @@ const HighlightRow: React.FC<{
           flexShrink: 0,
           border: '1px solid',
           borderColor: theme.palette.border.light,
-          backgroundColor: avatarBg
-            ? avatarBg(theme)
-            : theme.palette.surface.transparent,
+          backgroundColor: avatarBg ?? theme.palette.surface.transparent,
         })}
       />
       {label}
@@ -66,14 +65,8 @@ const HighlightRow: React.FC<{
   </Box>
 );
 
-const getAvatarBg = (name: string) => {
-  const owner = name.split('/')[0];
-  if (owner === 'opentensor')
-    return (theme: Theme) => theme.palette.text.primary;
-  if (owner === 'bitcoin')
-    return (theme: Theme) => theme.palette.status.warningOrange;
-  return (theme: Theme) => theme.palette.surface.transparent;
-};
+const getRepoAvatarBg = (fullName: string) =>
+  getGithubAvatarBg(fullName.split('/')[0]);
 
 const SectionHeader: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -369,7 +362,7 @@ const RepositoriesPage: React.FC = () => {
                         key={repo.name}
                         onClick={() => handleSelectRepository(repo.name)}
                         avatar={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
-                        avatarBg={getAvatarBg(repo.name)}
+                        avatarBg={getRepoAvatarBg(repo.name)}
                         label={
                           <Tooltip title={repo.name} arrow placement="top">
                             <Typography
@@ -437,7 +430,7 @@ const RepositoriesPage: React.FC = () => {
                         key={repo.name}
                         onClick={() => handleSelectRepository(repo.name)}
                         avatar={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
-                        avatarBg={getAvatarBg(repo.name)}
+                        avatarBg={getRepoAvatarBg(repo.name)}
                         label={
                           <Tooltip title={repo.name} arrow placement="top">
                             <Typography
@@ -504,7 +497,7 @@ const RepositoriesPage: React.FC = () => {
                           )
                         }
                         avatar={`https://avatars.githubusercontent.com/${pr.name.split('/')[0]}`}
-                        avatarBg={getAvatarBg(pr.name)}
+                        avatarBg={getRepoAvatarBg(pr.name)}
                         label={
                           <Box
                             sx={{

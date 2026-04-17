@@ -5,7 +5,20 @@ import {
   type Repository,
   type RepositoryPrScoring,
 } from '../api';
+import { REPO_OWNER_AVATAR_BACKGROUNDS } from '../theme';
 import { isMergedPr } from './prStatus';
+
+/**
+ * Resolve the best human-readable name for a miner from whatever data
+ * the caller already has. Preference: GitHub profile login → first PR
+ * author → fall back to the numeric GitHub ID.
+ */
+export const resolveMinerDisplayName = (
+  githubId: string,
+  githubData?: { login?: string } | null,
+  prs?: Pick<CommitLog, 'author'>[] | null,
+): string =>
+  (githubData?.login || prs?.[0]?.author || githubId || '').toString();
 
 export const getGithubAvatarSrc = (username?: string | null) => {
   if (username) {
@@ -13,6 +26,20 @@ export const getGithubAvatarSrc = (username?: string | null) => {
   }
 
   return '';
+};
+
+/**
+ * Some org avatars (e.g. bitcoin, opentensor) are transparent PNGs designed
+ * to sit on a brand-colored backdrop. Returns that backdrop for known orgs,
+ * or undefined when the avatar is self-contained.
+ */
+export const getGithubAvatarBg = (
+  username?: string | null,
+): string | undefined => {
+  if (!username) return undefined;
+  return REPO_OWNER_AVATAR_BACKGROUNDS[
+    username as keyof typeof REPO_OWNER_AVATAR_BACKGROUNDS
+  ];
 };
 
 // Parses numeric-like values and falls back when the value is missing or invalid.

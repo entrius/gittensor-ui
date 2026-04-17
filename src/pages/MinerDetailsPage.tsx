@@ -13,6 +13,9 @@ import {
   SEO,
 } from '../components';
 import { WatchlistButton } from '../components/common';
+import { useTrackRecentlyViewed } from '../hooks/useRecentlyViewed';
+import { useMinerDisplayName } from '../hooks/useMinerDisplayName';
+import { getGithubAvatarSrc } from '../utils';
 
 type ViewMode = 'prs' | 'issues';
 
@@ -65,6 +68,23 @@ const MinerDetailsPage: React.FC = () => {
     p.set('tab', newValue);
     setSearchParams(p, { replace: true });
   };
+
+  const displayName = useMinerDisplayName(githubId || '');
+  // Only build an avatar URL when a GitHub name resolved — the numeric ID
+  // fallback isn't a username and won't produce a meaningful avatar.
+  const hasResolvedName = !!githubId && displayName !== githubId;
+  useTrackRecentlyViewed(
+    githubId
+      ? {
+          kind: 'miner',
+          key: githubId,
+          title: displayName,
+          subtitle: 'Miner',
+          href: `/miners/details?githubId=${encodeURIComponent(githubId)}`,
+          avatarUrl: hasResolvedName ? getGithubAvatarSrc(displayName) : '',
+        }
+      : null,
+  );
 
   if (!githubId) {
     return <Navigate to="/top-miners" replace />;

@@ -13,7 +13,8 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useInfiniteCommitLog } from '../../../api';
-import theme, { REPO_OWNER_AVATAR_BACKGROUNDS } from '../../../theme';
+import theme from '../../../theme';
+import { getGithubAvatarBg, getGithubAvatarSrc } from '../../../utils';
 
 const MONTH_SHORT = [
   'Jan',
@@ -188,20 +189,22 @@ const CommitLogItem: React.FC<{
           alignItems="center"
         >
           <Stack direction="row" alignItems="center" spacing={1}>
-            <Avatar
-              src={`https://avatars.githubusercontent.com/${entry.repository.split('/')[0]}`}
-              sx={{
-                width: 16,
-                height: 16,
-                border: `1px solid ${theme.palette.border.medium}`,
-                backgroundColor:
-                  entry.repository.split('/')[0] === 'opentensor'
-                    ? REPO_OWNER_AVATAR_BACKGROUNDS.opentensor
-                    : entry.repository.split('/')[0] === 'bitcoin'
-                      ? REPO_OWNER_AVATAR_BACKGROUNDS.bitcoin
-                      : theme.palette.surface.transparent,
-              }}
-            />
+            {(() => {
+              const repoOwner = entry.repository.split('/')[0];
+              return (
+                <Avatar
+                  src={getGithubAvatarSrc(repoOwner)}
+                  sx={{
+                    width: 16,
+                    height: 16,
+                    border: `1px solid ${theme.palette.border.medium}`,
+                    backgroundColor:
+                      getGithubAvatarBg(repoOwner) ??
+                      theme.palette.surface.transparent,
+                  }}
+                />
+              );
+            })()}
             <Typography
               variant="caption"
               sx={{
