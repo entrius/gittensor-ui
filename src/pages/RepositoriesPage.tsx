@@ -320,6 +320,8 @@ const RepositoriesPage: React.FC = () => {
       }));
   }, [allPRs, reposWithWeights]);
 
+  const showRecentPrsCard = isLoading || recentPrs.length > 0;
+
   // ── Render ────────────────────────────────────────────────────────────
   return (
     <Page title="Repositories">
@@ -340,7 +342,10 @@ const RepositoriesPage: React.FC = () => {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr 1fr' },
+            gridTemplateColumns: {
+              xs: '1fr',
+              lg: showRecentPrsCard ? '1fr 1fr 1fr' : '1fr 1fr',
+            },
             gap: 2,
             mb: 3,
             alignItems: 'stretch',
@@ -477,96 +482,94 @@ const RepositoriesPage: React.FC = () => {
           </Card>
 
           {/* Recent PRs */}
-          <Card sx={cardSx}>
-            {isLoading || recentPrs.length > 0 ? (
-              <>
-                <SectionHeader>Recent Pull Requests</SectionHeader>
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  {recentPrs.length === 0 && !isLoading ? (
-                    <Typography
-                      sx={(theme) => ({
-                        color: alpha(theme.palette.text.primary, 0.3),
-                        fontSize: '0.8rem',
-                        fontStyle: 'italic',
-                        p: 1,
-                      })}
-                    >
-                      No data available
-                    </Typography>
-                  ) : (
-                    recentPrs.map((pr) => (
-                      <HighlightRow
-                        key={`${pr.name}-${pr.number}`}
-                        onClick={() =>
-                          navigate(
-                            `/miners/pr?repo=${encodeURIComponent(pr.name)}&number=${pr.number}`,
-                            { state: { backLabel: 'Back to Repositories' } },
-                          )
-                        }
-                        avatar={`https://avatars.githubusercontent.com/${pr.name.split('/')[0]}`}
-                        avatarBg={getAvatarBg(pr.name)}
-                        label={
-                          <Box
-                            sx={{
-                              minWidth: 0,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <Tooltip title={pr.name} arrow placement="top">
-                              <Typography
-                                sx={{
-                                  fontFamily: FONTS.mono,
-                                  fontSize: '0.68rem',
-                                  color: 'text.tertiary',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  lineHeight: 1.2,
-                                }}
-                              >
-                                {pr.name}
-                              </Typography>
-                            </Tooltip>
-                            <Tooltip title={pr.title} arrow placement="top">
-                              <Typography
-                                sx={{
-                                  fontFamily: FONTS.mono,
-                                  fontSize: '0.78rem',
-                                  color: 'text.primary',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  lineHeight: 1.3,
-                                }}
-                              >
-                                {pr.title}
-                              </Typography>
-                            </Tooltip>
-                          </Box>
-                        }
-                        right={
-                          <Typography
-                            sx={(theme) => ({
-                              fontFamily: FONTS.mono,
-                              fontSize: '0.68rem',
-                              color: alpha(theme.palette.text.primary, 0.35),
-                              flexShrink: 0,
-                              whiteSpace: 'nowrap',
-                              ml: 1,
-                            })}
-                          >
-                            {formatRelativeTime(pr.createdAt)}
-                          </Typography>
-                        }
-                      />
-                    ))
-                  )}
-                </Box>
-              </>
-            ) : null}
-          </Card>
+          {showRecentPrsCard && (
+            <Card sx={cardSx}>
+              <SectionHeader>Recent Pull Requests</SectionHeader>
+              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                {recentPrs.length === 0 && !isLoading ? (
+                  <Typography
+                    sx={(theme) => ({
+                      color: alpha(theme.palette.text.primary, 0.3),
+                      fontSize: '0.8rem',
+                      fontStyle: 'italic',
+                      p: 1,
+                    })}
+                  >
+                    No data available
+                  </Typography>
+                ) : (
+                  recentPrs.map((pr) => (
+                    <HighlightRow
+                      key={`${pr.name}-${pr.number}`}
+                      onClick={() =>
+                        navigate(
+                          `/miners/pr?repo=${encodeURIComponent(pr.name)}&number=${pr.number}`,
+                          { state: { backLabel: 'Back to Repositories' } },
+                        )
+                      }
+                      avatar={`https://avatars.githubusercontent.com/${pr.name.split('/')[0]}`}
+                      avatarBg={getAvatarBg(pr.name)}
+                      label={
+                        <Box
+                          sx={{
+                            minWidth: 0,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Tooltip title={pr.name} arrow placement="top">
+                            <Typography
+                              sx={{
+                                fontFamily: FONTS.mono,
+                                fontSize: '0.68rem',
+                                color: 'text.tertiary',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                lineHeight: 1.2,
+                              }}
+                            >
+                              {pr.name}
+                            </Typography>
+                          </Tooltip>
+                          <Tooltip title={pr.title} arrow placement="top">
+                            <Typography
+                              sx={{
+                                fontFamily: FONTS.mono,
+                                fontSize: '0.78rem',
+                                color: 'text.primary',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                lineHeight: 1.3,
+                              }}
+                            >
+                              {pr.title}
+                            </Typography>
+                          </Tooltip>
+                        </Box>
+                      }
+                      right={
+                        <Typography
+                          sx={(theme) => ({
+                            fontFamily: FONTS.mono,
+                            fontSize: '0.68rem',
+                            color: alpha(theme.palette.text.primary, 0.35),
+                            flexShrink: 0,
+                            whiteSpace: 'nowrap',
+                            ml: 1,
+                          })}
+                        >
+                          {formatRelativeTime(pr.createdAt)}
+                        </Typography>
+                      }
+                    />
+                  ))
+                )}
+              </Box>
+            </Card>
+          )}
         </Box>
 
         {/* ── Main Table ────────────────────────────────────────────── */}
