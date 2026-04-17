@@ -244,7 +244,10 @@ export const aggregatePRsByRepository = (
     if (isMergedPr(pr)) {
       existing.tokenScore += parseFloat(String(pr.tokenScore ?? '0'));
     }
-    if (pr.mergedAt && (!existing.latestPrDate || pr.mergedAt > existing.latestPrDate)) {
+    if (
+      pr.mergedAt &&
+      (!existing.latestPrDate || pr.mergedAt > existing.latestPrDate)
+    ) {
       existing.latestPrDate = pr.mergedAt;
     }
     statsMap.set(pr.repository, existing);
