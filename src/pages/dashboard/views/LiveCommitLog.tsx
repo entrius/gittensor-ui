@@ -11,9 +11,11 @@ import {
   Avatar,
   Chip,
 } from '@mui/material';
+import StarIcon from '@mui/icons-material/Star';
 import { LinkBox } from '../../../components/common/linkBehavior';
 import theme, { REPO_OWNER_AVATAR_BACKGROUNDS } from '../../../theme';
-import { useInfiniteCommitLog } from '../../../api';
+import { useAllMiners, useInfiniteCommitLog } from '../../../api';
+import { useWatchlist } from '../../../hooks/useWatchlist';
 
 const MONTH_SHORT = [
   'Jan',
@@ -116,8 +118,9 @@ const getScoreColor = (score: string) => {
 const CommitLogItem: React.FC<{
   entry: CommitLogEntry;
   isNew: boolean;
+  isWatched?: boolean;
   innerRef?: React.Ref<HTMLAnchorElement>;
-}> = ({ entry, isNew, innerRef }) => {
+}> = ({ entry, isNew, isWatched = false, innerRef }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
@@ -139,6 +142,11 @@ const CommitLogItem: React.FC<{
       href={`/miners/pr?repo=${entry.repository}&number=${entry.pullRequestNumber}`}
       linkState={{ backLabel: 'Back to Dashboard' }}
       ref={innerRef}
+      aria-label={
+        isWatched
+          ? `${entry.pullRequestTitle} by ${entry.author} (watched)`
+          : undefined
+      }
       sx={{
         p: isMobile ? 0.75 : isTablet ? 1.25 : 1,
         borderRadius: 3,
@@ -146,6 +154,9 @@ const CommitLogItem: React.FC<{
         borderColor: isNew
           ? theme.palette.secondary.main
           : theme.palette.border.light,
+        borderLeft: isWatched
+          ? `3px solid ${theme.palette.warning.main}`
+          : undefined,
         backgroundColor: theme.palette.surface.subtle,
         backdropFilter: 'blur(8px)',
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -264,9 +275,19 @@ const CommitLogItem: React.FC<{
             borderTop: `1px solid ${theme.palette.border.subtle}`,
           }}
         >
-          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            by {entry.author}
-          </Typography>
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            {isWatched && (
+              <StarIcon
+                sx={{
+                  fontSize: 12,
+                  color: 'warning.main',
+                }}
+              />
+            )}
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              by {entry.author}
+            </Typography>
+          </Stack>
           <Stack direction="row" spacing={2}>
             <Stack direction="row" spacing={0.5} alignItems="center">
               <Typography
@@ -309,6 +330,22 @@ const LiveCommitLog: React.FC = () => {
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteCommitLog({ refetchInterval: 10000 });
+
+  // Commits come from /dash/commits, which only exposes `author` (login).
+  // Watchlist is keyed by numeric githubId, so bridge the two using the
+  // /miners lookup (already cached elsewhere on the dashboard).
+  const { data: allMiners } = useAllMiners();
+  const { isWatched } = useWatchlist();
+  const authorToGithubId = useMemo(() => {
+    const map = new Map<string, string>();
+    if (!Array.isArray(allMiners)) return map;
+    allMiners.forEach((miner) => {
+      if (miner.githubUsername && miner.githubId) {
+        map.set(miner.githubUsername.toLowerCase(), miner.githubId);
+      }
+    });
+    return map;
+  }, [allMiners]);
 
   const [statusFilter, setStatusFilter] = useState<CommitStatusFilter>('all');
   const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
@@ -576,9 +613,20 @@ const LiveCommitLog: React.FC = () => {
                 {visibleEntries.map((entry) => {
                   const entryId = getCommitId(entry);
                   const isNew = newEntryIds.has(entryId);
+                  const authorGithubId = authorToGithubId.get(
+                    entry.author.toLowerCase(),
+                  );
+                  const entryIsWatched = authorGithubId
+                    ? isWatched(authorGithubId)
+                    : false;
 
                   return (
-                    <CommitLogItem key={entryId} entry={entry} isNew={isNew} />
+                    <CommitLogItem
+                      key={entryId}
+                      entry={entry}
+                      isNew={isNew}
+                      isWatched={entryIsWatched}
+                    />
                   );
                 })}
               </Stack>
