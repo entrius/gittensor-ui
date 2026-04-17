@@ -107,8 +107,6 @@ export interface UsePulseBoard {
   clearPins: () => void;
   takeSnapshot: (miners: LiveMinerData[]) => void;
   getDelta: (id: string, field: keyof MinerSnapshot) => number | null;
-  getVelocity: (id: string) => number | null;
-  getOvertakeEta: (idA: string, idB: string) => number | null;
 }
 
 export const usePulseBoard = (): UsePulseBoard => {
@@ -204,31 +202,6 @@ export const usePulseBoard = (): UsePulseBoard => {
     [state],
   );
 
-  const getVelocity = useCallback(
-    (id: string): number | null => {
-      const prev = snapshot.snapshots[id];
-      if (!prev) return null;
-      const daysSince =
-        (Date.now() - new Date(prev.capturedAt).getTime()) /
-        (1000 * 60 * 60 * 24);
-      if (daysSince < 0.01) return null;
-      return null; // Computed in component with live data
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state],
-  );
-
-  const getOvertakeEta = useCallback(
-    (idA: string, idB: string): number | null => {
-      const snapA = snapshot.snapshots[idA];
-      const snapB = snapshot.snapshots[idB];
-      if (!snapA || !snapB) return null;
-      return null; // Computed in component with live data
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state],
-  );
-
   return {
     pinned: state.pinned,
     pinnedCount: state.pinned.length,
@@ -241,8 +214,6 @@ export const usePulseBoard = (): UsePulseBoard => {
     clearPins,
     takeSnapshot,
     getDelta,
-    getVelocity,
-    getOvertakeEta,
   };
 };
 
@@ -251,29 +222,3 @@ export const usePulseBoard = (): UsePulseBoard => {
 export const computeDelta = (live: number, snapshotValue: number): number =>
   live - snapshotValue;
 
-export const computeVelocity = (
-  liveScore: number,
-  snap: MinerSnapshot,
-): number | null => {
-  if (!snap.capturedAt) return null;
-  const capturedMs = new Date(snap.capturedAt).getTime();
-  if (isNaN(capturedMs)) return null;
-  const daysSince = (Date.now() - capturedMs) / (1000 * 60 * 60 * 24);
-  if (daysSince < 0.01) return null;
-  return (liveScore - snap.totalScore) / daysSince;
-};
-
-export const computeOvertakeEta = (
-  scoreA: number,
-  velocityA: number | null,
-  scoreB: number,
-  velocityB: number | null,
-): number | null => {
-  if (velocityA === null || velocityB === null) return null;
-  const deltaPerDay = velocityB - velocityA;
-  if (deltaPerDay <= 0) return null; // B is not gaining on A
-  const gap = scoreA - scoreB;
-  if (gap <= 0) return null; // B already ahead
-  const eta = gap / deltaPerDay;
-  return eta <= 60 ? eta : null; // Only show if <60 days
-};

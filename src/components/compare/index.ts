@@ -1,9 +1,7 @@
 export { DeltaBadge } from './DeltaBadge';
-export { VelocityBar, VelocityLabel } from './VelocityBar';
 export { PinButton } from './PinButton';
 export { PulseCard } from './PulseCard';
 export { GapMatrix } from './GapMatrix';
-export { OvertakeIndicator } from './OvertakeIndicator';
 export { CompareTray } from './CompareTray';
 export { TerritoryGrid } from './TerritoryGrid';
 export { LiveBetsFeed } from './LiveBetsFeed';

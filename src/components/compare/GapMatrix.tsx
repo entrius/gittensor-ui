@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Avatar,
   Box,
   Typography,
   Table,
@@ -12,6 +13,14 @@ import {
   useTheme,
 } from '@mui/material';
 import { STATUS_COLORS } from '../../theme';
+import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
+
+const MINER_COLORS = [
+  STATUS_COLORS.merged,
+  STATUS_COLORS.info,
+  STATUS_COLORS.warning,
+  STATUS_COLORS.error,
+];
 
 interface GapMinerData {
   githubId: string;
@@ -85,8 +94,8 @@ const getCellColor = (
   if (higherIsBetter) {
     return value === best ? 'lead' : value === worst ? 'trail' : 'tie';
   }
-  // Lower is better (e.g. rank)
-  return value === worst ? 'lead' : value === best ? 'trail' : 'tie';
+  // Lower is better (e.g. rank): best = min, worst = max
+  return value === best ? 'lead' : value === worst ? 'trail' : 'tie';
 };
 
 export const GapMatrix: React.FC<GapMatrixProps> = ({ miners }) => {
@@ -153,7 +162,28 @@ export const GapMatrix: React.FC<GapMatrixProps> = ({ miners }) => {
               <TableCell sx={headerSx}>Metric</TableCell>
               {miners.map((m) => (
                 <TableCell key={m.githubId} align="center" sx={headerSx}>
-                  {m.username}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 0.75,
+                    }}
+                  >
+                    <Avatar
+                      component="a"
+                      href={`/miners/details?githubId=${encodeURIComponent(m.githubId)}`}
+                      src={getGithubAvatarSrc(m.username)}
+                      sx={{
+                        width: 18,
+                        height: 18,
+                        cursor: 'pointer',
+                        '&:hover': { opacity: 0.8 },
+                      }}
+                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                    />
+                    {m.username}
+                  </Box>
                 </TableCell>
               ))}
             </TableRow>

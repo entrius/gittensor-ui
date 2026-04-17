@@ -156,12 +156,18 @@ export const PulseCard: React.FC<PulseCardProps> = ({ miner, snapshot }) => {
           sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}
         >
           <Avatar
+            component="a"
+            href={`/miners/details?githubId=${encodeURIComponent(miner.githubId)}`}
             src={avatarSrc}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
             sx={{
               width: 36,
               height: 36,
               border: `2px solid ${alpha(theme.palette.status.merged, 0.3)}`,
               flexShrink: 0,
+              cursor: 'pointer',
+              transition: 'opacity 0.15s',
+              '&:hover': { opacity: 0.8 },
             }}
           />
           <Box sx={{ minWidth: 0 }}>
