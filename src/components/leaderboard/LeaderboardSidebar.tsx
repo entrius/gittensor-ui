@@ -4,6 +4,7 @@ import { alpha } from '@mui/material/styles';
 import { SectionCard } from './SectionCard';
 import { STATUS_COLORS, scrollbarSx } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
+import { getInitials } from '../../utils/format';
 import { LinkBox } from '../common/linkBehavior';
 import { type MinerStats, FONTS } from './types';
 
@@ -343,8 +344,10 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
       >
         <Avatar
           src={getGithubAvatarSrc(miner.author || miner.githubId)}
-          sx={{ width: 20, height: 20 }}
-        />
+          sx={{ width: 20, height: 20, fontSize: '0.65rem' }}
+        >
+          {getInitials(miner.author || miner.githubId)}
+        </Avatar>
         <Typography
           sx={(theme) => ({
             fontFamily: FONTS.mono,

@@ -36,6 +36,7 @@ import theme, {
   bodyCellStyle,
 } from '../../theme';
 import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
+import { getInitials } from '../../utils/format';
 import FilterButton from '../FilterButton';
 
 interface RepositoryPRsTableProps {
@@ -400,8 +401,10 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                       <Avatar
                         src={`https://avatars.githubusercontent.com/${pr.author}`}
                         alt={pr.author}
-                        sx={{ width: 20, height: 20 }}
-                      />
+                        sx={{ width: 20, height: 20, fontSize: '0.65rem' }}
+                      >
+                        {getInitials(pr.author)}
+                      </Avatar>
                       {pr.author}
                     </Box>
                   </TableCell>

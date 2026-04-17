@@ -21,7 +21,7 @@ import {
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueBounty } from '../../api/models/Issues';
 import { useStats } from '../../api';
-import { formatTokenAmount, formatDate } from '../../utils/format';
+import { formatTokenAmount, formatDate, getInitials } from '../../utils/format';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
 import BountyProgress from './BountyProgress';
@@ -402,8 +402,15 @@ const IssuesList: React.FC<IssuesListProps> = ({
                     >
                       <Avatar
                         src={`https://avatars.githubusercontent.com/${issue.repositoryFullName.split('/')[0]}`}
-                        sx={{ width: 24, height: 24, borderRadius: 1 }}
-                      />
+                        sx={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: 1,
+                          fontSize: '0.65rem',
+                        }}
+                      >
+                        {getInitials(issue.repositoryFullName.split('/')[0])}
+                      </Avatar>
                       <Typography
                         sx={{
                           fontSize: '0.85rem',

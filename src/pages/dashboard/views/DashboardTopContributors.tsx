@@ -9,20 +9,13 @@ import {
 import { alpha, useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { getGithubAvatarSrc } from '../../../utils';
+import { getInitials } from '../../../utils/format';
 import { type DashboardFeaturedContributor } from '../dashboardData';
 
 interface DashboardTopContributorsProps {
   contributors: DashboardFeaturedContributor[];
   isLoading?: boolean;
 }
-
-const getInitials = (name: string) =>
-  name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
 
 const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
   contributors,

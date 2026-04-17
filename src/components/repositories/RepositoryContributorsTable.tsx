@@ -12,6 +12,7 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useAllPrs, useAllMiners } from '../../api';
 import { LinkBox } from '../common/linkBehavior';
 import { STATUS_COLORS } from '../../theme';
+import { getInitials } from '../../utils/format';
 import { isMergedPr } from '../../utils/prStatus';
 
 interface RepositoryContributorsTableProps {
@@ -237,9 +238,12 @@ const RepositoryContributorsTable: React.FC<
                   sx={{
                     width: 20,
                     height: 20,
+                    fontSize: '0.65rem',
                     border: `1px solid ${theme.palette.border.light}`,
                   }}
-                />
+                >
+                  {getInitials(contributor.author)}
+                </Avatar>
                 <Box
                   sx={{
                     display: 'flex',

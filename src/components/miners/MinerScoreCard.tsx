@@ -40,7 +40,7 @@ import {
   calculateOpenIssueThreshold,
   parseNumber,
 } from '../../utils/ExplorerUtils';
-import { credibilityColor } from '../../utils/format';
+import { credibilityColor, getInitials } from '../../utils/format';
 
 const formatTimeAgo = (date: Date): string => {
   const now = new Date();
@@ -384,7 +384,9 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             border: '2px solid',
             borderColor: 'border.light',
           }}
-        />
+        >
+          {getInitials(username)}
+        </Avatar>
         <Box sx={{ minWidth: 0, flex: 1 }}>
           <Box
             sx={{

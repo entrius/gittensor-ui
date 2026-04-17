@@ -63,6 +63,21 @@ export const formatUsdEstimate = (
   return showZero ? `${prefix}$0` : null;
 };
 
+/**
+ * Return up to two uppercase initials from a display name or username.
+ * Falls back to "?" for empty/undefined input.
+ */
+export const getInitials = (name: string | undefined | null): string => {
+  if (!name) return '?';
+  return (
+    name
+      .split(/[\s/]+/)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('')
+      .slice(0, 2) || '?'
+  );
+};
+
 export const credibilityColor = (cred: number): string => {
   if (cred >= 0.9) return CREDIBILITY_COLORS.excellent;
   if (cred >= 0.7) return CREDIBILITY_COLORS.good;

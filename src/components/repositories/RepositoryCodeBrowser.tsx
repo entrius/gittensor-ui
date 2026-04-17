@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 import { STATUS_COLORS } from '../../theme';
+import { getInitials } from '../../utils/format';
 import { formatDistanceToNow } from 'date-fns';
 import FolderIcon from '@mui/icons-material/Folder';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
@@ -375,8 +376,10 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
               >
                 <Avatar
                   src={currentCommit.avatarUrl}
-                  sx={{ width: 20, height: 20 }}
-                />
+                  sx={{ width: 20, height: 20, fontSize: '0.65rem' }}
+                >
+                  {getInitials(currentCommit.committerLogin)}
+                </Avatar>
                 <Typography
                   sx={{
                     fontSize: '13px',

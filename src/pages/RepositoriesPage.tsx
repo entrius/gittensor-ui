@@ -8,6 +8,7 @@ import { Page } from '../components/layout';
 import { TopRepositoriesTable, SEO } from '../components';
 import { useAllPrs, useReposAndWeights } from '../api';
 import { type CommitLog } from '../api/models/Dashboard';
+import { getInitials } from '../utils/format';
 
 const FONTS = { mono: '"JetBrains Mono", monospace' } as const;
 
@@ -56,10 +57,13 @@ const HighlightRow: React.FC<{
             width: 24,
             height: 24,
             flexShrink: 0,
+            fontSize: '0.65rem',
             border: '1px solid rgba(255,255,255,0.1)',
             backgroundColor: avatarBg,
           }}
-        />
+        >
+          {getInitials(typeof label === 'string' ? label : undefined)}
+        </Avatar>
         {label}
       </Box>
       {right}

@@ -13,6 +13,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { usePullRequestDetails } from '../../api';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import theme, { RANK_COLORS, STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { getInitials } from '../../utils/format';
 import { buildMultiplierGrid } from '../../utils/multiplierDefs';
 
 interface PRDetailsCardProps {
@@ -599,7 +600,9 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                 src={`https://avatars.githubusercontent.com/${prDetails.authorLogin}`}
                 alt={prDetails.authorLogin}
                 sx={{ width: 32, height: 32 }}
-              />
+              >
+                {getInitials(prDetails.authorLogin)}
+              </Avatar>
               <Typography
                 sx={{
                   color: 'text.primary',
