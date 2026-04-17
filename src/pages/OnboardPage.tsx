@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Tabs, Tab, Card, CardContent } from '@mui/material';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { AboutContent } from '../components/onboard/AboutContent';
 import { FAQContent } from '../components/onboard/FAQContent';
 
@@ -10,8 +10,42 @@ import { GettingStarted } from '../components/onboard/GettingStarted';
 import { Scoring } from '../components/onboard/Scoring';
 import { LanguageWeightsTable } from '../components/repositories';
 
+const ONBOARD_TAB_SEO: Record<
+  'about' | 'getting-started' | 'scoring' | 'languages' | 'faq',
+  { title: string; description: string }
+> = {
+  about: {
+    title: 'About',
+    description:
+      'What Gittensor is, how incentives work, and how open-source miners earn rewards.',
+  },
+  'getting-started': {
+    title: 'Getting Started',
+    description:
+      'Start mining on Gittensor. Setup guide, documentation, and resources.',
+  },
+  scoring: {
+    title: 'Scoring',
+    description:
+      'How miner scores work: OSS contributions, PR merges, code quality, discovery bonuses, and credibility requirements.',
+  },
+  languages: {
+    title: 'Languages',
+    description:
+      'Programming language weights used when scoring contributions across tracked repositories.',
+  },
+  faq: {
+    title: 'FAQ',
+    description:
+      'Answers to common questions about subnets, incentives, staking, and Gittensor.',
+  },
+};
+
+type OnboardTabKey = keyof typeof ONBOARD_TAB_SEO;
+
 const OnboardPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
 
   // Determine active tab from URL query param or default to 0
   const tabParam = searchParams.get('tab');
@@ -23,7 +57,7 @@ const OnboardPage: React.FC = () => {
     faq: 4,
   };
 
-  const indexToTabName: Record<number, string> = {
+  const indexToTabName: Record<number, OnboardTabKey> = {
     0: 'about',
     1: 'getting-started',
     2: 'scoring',
@@ -42,12 +76,17 @@ const OnboardPage: React.FC = () => {
     setSearchParams(newParams, { replace: true });
   };
 
+  const activeTabKey = indexToTabName[activeTab];
+  const { title: seoTitle, description: seoDescription } =
+    ONBOARD_TAB_SEO[activeTabKey];
+  const seoUrl =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}${location.pathname}${location.search}`
+      : undefined;
+
   return (
     <Page title="Onboard">
-      <SEO
-        title="Getting Started - Gittensor"
-        description="Start mining on Gittensor. Setup guide, documentation, and resources."
-      />
+      <SEO title={seoTitle} description={seoDescription} url={seoUrl} />
       <Box
         sx={{
           display: 'flex',
