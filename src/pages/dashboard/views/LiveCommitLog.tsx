@@ -11,9 +11,9 @@ import {
   Avatar,
   Chip,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { useInfiniteCommitLog } from '../../../api';
+import { LinkBox } from '../../../components/common/linkBehavior';
 import theme, { REPO_OWNER_AVATAR_BACKGROUNDS } from '../../../theme';
+import { useInfiniteCommitLog } from '../../../api';
 
 const MONTH_SHORT = [
   'Jan',
@@ -116,8 +116,8 @@ const getScoreColor = (score: string) => {
 const CommitLogItem: React.FC<{
   entry: CommitLogEntry;
   isNew: boolean;
-}> = ({ entry, isNew }) => {
-  const navigate = useNavigate();
+  innerRef?: React.Ref<HTMLAnchorElement>;
+}> = ({ entry, isNew, innerRef }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
@@ -134,14 +134,11 @@ const CommitLogItem: React.FC<{
     ? formatUtcTimestamp(timestampRaw)
     : 'Loading...';
 
-  return (
-    <Box
-      onClick={() =>
-        navigate(
-          `/miners/pr?repo=${entry.repository}&number=${entry.pullRequestNumber}`,
-          { state: { backLabel: 'Back to Dashboard' } },
-        )
-      }
+  const content = (
+    <LinkBox
+      href={`/miners/pr?repo=${entry.repository}&number=${entry.pullRequestNumber}`}
+      linkState={{ backLabel: 'Back to Dashboard' }}
+      ref={innerRef}
       sx={{
         p: isMobile ? 0.75 : isTablet ? 1.25 : 1,
         borderRadius: 3,
@@ -206,7 +203,6 @@ const CommitLogItem: React.FC<{
               variant="caption"
               sx={{
                 color: 'text.secondary',
-                fontFamily: '"JetBrains Mono", monospace',
               }}
             >
               {entry.repository}
@@ -216,7 +212,6 @@ const CommitLogItem: React.FC<{
             variant="caption"
             sx={{
               color: 'text.secondary',
-              fontFamily: '"JetBrains Mono", monospace',
             }}
           >
             #{entry.pullRequestNumber}
@@ -295,7 +290,6 @@ const CommitLogItem: React.FC<{
               sx={{
                 color: getScoreColor(entry.score),
                 fontWeight: 600,
-                fontFamily: '"JetBrains Mono", monospace',
               }}
             >
               SCORE: {parseFloat(entry.score).toFixed(2)}
@@ -303,8 +297,10 @@ const CommitLogItem: React.FC<{
           </Stack>
         </Stack>
       </Stack>
-    </Box>
+    </LinkBox>
   );
+
+  return content;
 };
 
 const LiveCommitLog: React.FC = () => {
@@ -318,7 +314,7 @@ const LiveCommitLog: React.FC = () => {
   const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
   const logContainerRef = useRef<HTMLDivElement>(null);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLAnchorElement>(null);
 
   const apiCommits = useMemo<CommitLogEntry[]>(
     () => data?.pages.flat() ?? [],
@@ -436,7 +432,6 @@ const LiveCommitLog: React.FC = () => {
               variant="h6"
               sx={{
                 fontSize: isMobile ? '0.9rem' : isTablet ? '0.95rem' : '1rem',
-                fontFamily: '"JetBrains Mono", monospace',
                 fontWeight: 500,
               }}
             >
@@ -499,7 +494,6 @@ const LiveCommitLog: React.FC = () => {
                       ? t.palette.text.primary
                       : alpha(option.color, 0.82),
                     cursor: 'pointer',
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: isMobile ? '0.68rem' : '0.72rem',
                     fontWeight: selected ? 600 : 500,
                     lineHeight: 1,

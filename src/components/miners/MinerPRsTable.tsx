@@ -20,27 +20,31 @@ import {
   useTheme,
   type Theme,
 } from '@mui/material';
-import {
-  Search as SearchIcon,
-  NavigateBefore as PrevIcon,
-  NavigateNext as NextIcon,
-} from '@mui/icons-material';
+import { Search as SearchIcon } from '@mui/icons-material';
 import { useMinerPRs, type CommitLog } from '../../api';
 import {
+  filterPrs,
   getPrStatusCounts,
-  isClosedUnmergedPr,
-  isMergedPr,
-  isOpenPr,
+  paginateItems,
+  type PrStatusFilter,
 } from '../../utils';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { LinkTableRow } from '../common/linkBehavior';
 import ExplorerFilterButton from './ExplorerFilterButton';
-import { type MinerStatusFilter } from '../../utils/ExplorerUtils';
-import { headerCellStyle, bodyCellStyle } from '../../theme';
+import TablePagination from './TablePagination';
+import { headerCellStyle, bodyCellStyle, tooltipSlotProps } from '../../theme';
 
 type PrSortField = 'number' | 'repository' | 'score' | 'lines' | 'date';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 20;
+
+const PR_STATUS_FILTERS: readonly PrStatusFilter[] = [
+  'all',
+  'open',
+  'merged',
+  'closed',
+];
 
 // Direction applied when a user first clicks a column header — string
 // columns feel natural ascending, numeric/date columns descending.
@@ -63,23 +67,6 @@ const getEffectiveScore = (pr: CommitLog): number => {
   return parseFloat(pr.score || '0');
 };
 
-const tooltipSlotProps = {
-  tooltip: {
-    sx: {
-      backgroundColor: 'surface.tooltip',
-      color: 'text.primary',
-      fontSize: '0.72rem',
-      fontFamily: '"JetBrains Mono", monospace',
-      padding: '8px 12px',
-      borderRadius: '6px',
-      border: '1px solid',
-      borderColor: 'border.light',
-      maxWidth: 260,
-    },
-  },
-  arrow: { sx: { color: 'surface.tooltip' } },
-};
-
 const getScoreTooltip = (pr: CommitLog): string | null => {
   const base = parseFloat(pr.baseScore || '0');
   if (!pr.mergedAt || base <= 0) return null;
@@ -91,24 +78,28 @@ const getScoreTooltip = (pr: CommitLog): string | null => {
   return parts.join(' · ');
 };
 
+const isPrStatusFilter = (value: string | null): value is PrStatusFilter =>
+  value !== null && (PR_STATUS_FILTERS as readonly string[]).includes(value);
+
 interface MinerPRsTableProps {
   githubId: string;
 }
 
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const theme = useTheme();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<MinerStatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<PrSortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const prStatusParam = searchParams.get('prStatus');
+  const statusFilter: PrStatusFilter = isPrStatusFilter(prStatusParam)
+    ? prStatusParam
+    : 'all';
 
   useEffect(() => {
     setSelectedAuthor(null);
-    setStatusFilter('all');
     setSearchQuery('');
     setSortField('date');
     setSortDir('desc');
@@ -131,6 +122,22 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     [page, setSearchParams],
   );
 
+  const setStatusFilter = useCallback(
+    (next: PrStatusFilter) => {
+      setSearchParams(
+        (prev) => {
+          const p = new URLSearchParams(prev);
+          if (next === 'all') p.delete('prStatus');
+          else p.set('prStatus', next);
+          p.delete('prPage');
+          return p;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
   const handleSort = useCallback(
     (field: PrSortField) => {
       if (sortField === field) {
@@ -144,27 +151,16 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     [sortField, setPage],
   );
 
-  const filteredPRs = useMemo(() => {
-    if (!prs) return [];
-    let filtered = prs;
-    if (selectedAuthor) {
-      filtered = filtered.filter((pr) => pr.author === selectedAuthor);
-    }
-    if (statusFilter === 'open') filtered = filtered.filter(isOpenPr);
-    else if (statusFilter === 'merged') filtered = filtered.filter(isMergedPr);
-    else if (statusFilter === 'closed')
-      filtered = filtered.filter(isClosedUnmergedPr);
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (pr) =>
-          pr.pullRequestTitle.toLowerCase().includes(q) ||
-          pr.repository.toLowerCase().includes(q) ||
-          String(pr.pullRequestNumber).includes(q),
-      );
-    }
-    return filtered;
-  }, [prs, selectedAuthor, statusFilter, searchQuery]);
+  const filteredPRs = useMemo(
+    () =>
+      filterPrs(prs ?? [], {
+        author: selectedAuthor,
+        includeNumber: true,
+        searchQuery,
+        statusFilter,
+      }),
+    [prs, selectedAuthor, statusFilter, searchQuery],
+  );
 
   const sortedPRs = useMemo(() => {
     const sorted = [...filteredPRs];
@@ -196,10 +192,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     return sorted;
   }, [filteredPRs, sortField, sortDir]);
 
-  const pagedPRs = useMemo(() => {
-    const start = page * PAGE_SIZE;
-    return sortedPRs.slice(start, start + PAGE_SIZE);
-  }, [sortedPRs, page]);
+  const pagedPRs = useMemo(
+    () => paginateItems(sortedPRs, page, PAGE_SIZE),
+    [sortedPRs, page],
+  );
 
   const totalPages = Math.ceil(sortedPRs.length / PAGE_SIZE);
 
@@ -247,7 +243,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               variant="h6"
               sx={{
                 color: 'text.primary',
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: { xs: '0.95rem', sm: '1.1rem' },
                 fontWeight: 500,
               }}
@@ -257,7 +252,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             <Typography
               sx={{
                 color: (t) => alpha(t.palette.text.primary, 0.5),
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.75rem',
               }}
             >
@@ -298,7 +292,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 selected={statusFilter === 'all'}
                 onClick={() => {
                   setStatusFilter('all');
-                  setPage(0);
                 }}
               />
               <ExplorerFilterButton
@@ -308,7 +301,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 selected={statusFilter === 'open'}
                 onClick={() => {
                   setStatusFilter('open');
-                  setPage(0);
                 }}
               />
               <ExplorerFilterButton
@@ -318,7 +310,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 selected={statusFilter === 'merged'}
                 onClick={() => {
                   setStatusFilter('merged');
-                  setPage(0);
                 }}
               />
               <ExplorerFilterButton
@@ -328,7 +319,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 selected={statusFilter === 'closed'}
                 onClick={() => {
                   setStatusFilter('closed');
-                  setPage(0);
                 }}
               />
             </Box>
@@ -361,7 +351,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             maxWidth: 400,
             minWidth: 350,
             '& .MuiOutlinedInput-root': {
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.8rem',
               color: 'text.primary',
               backgroundColor: 'surface.subtle',
@@ -380,7 +369,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           <Typography
             sx={{
               color: (t) => alpha(t.palette.text.primary, 0.5),
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
             }}
           >
@@ -392,7 +380,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           <Typography
             sx={{
               color: (t) => alpha(t.palette.text.primary, 0.5),
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.9rem',
             }}
           >
@@ -495,17 +482,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 {pagedPRs.map((pr, index) => {
                   const scoreTooltip = getScoreTooltip(pr);
                   return (
-                    <TableRow
+                    <LinkTableRow
                       key={`${pr.repository}-${pr.pullRequestNumber}-${index}`}
-                      onClick={() => {
-                        navigate(
-                          `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
-                          {
-                            state: {
-                              backLabel: `Back to ${prs?.[0]?.author || githubId}`,
-                            },
-                          },
-                        );
+                      href={`/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`}
+                      linkState={{
+                        backLabel: `Back to ${prs?.[0]?.author || githubId}`,
                       }}
                       sx={{
                         cursor: 'pointer',
@@ -594,7 +575,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           sx={{
                             color: theme.palette.diff.additions,
                             mr: 1,
-                            fontFamily: '"JetBrains Mono", monospace',
                           }}
                         >
                           +{pr.additions}
@@ -603,7 +583,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           component="span"
                           sx={{
                             color: theme.palette.diff.deletions,
-                            fontFamily: '"JetBrains Mono", monospace',
                           }}
                         >
                           -{pr.deletions}
@@ -614,7 +593,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           {pr.prState === 'CLOSED' && !pr.mergedAt ? (
                             <Typography
                               sx={{
-                                fontFamily: '"JetBrains Mono", monospace',
                                 fontSize: { xs: '0.7rem', sm: '0.75rem' },
                                 fontWeight: 600,
                                 color: (t) =>
@@ -626,7 +604,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           ) : !pr.mergedAt && pr.collateralScore ? (
                             <Typography
                               sx={{
-                                fontFamily: '"JetBrains Mono", monospace',
                                 fontSize: { xs: '0.7rem', sm: '0.75rem' },
                                 fontWeight: 600,
                                 color: theme.palette.status.warningOrange,
@@ -643,7 +620,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                             >
                               <Typography
                                 sx={{
-                                  fontFamily: '"JetBrains Mono", monospace',
                                   fontSize: { xs: '0.7rem', sm: '0.75rem' },
                                   fontWeight: 600,
                                   cursor: 'pointer',
@@ -655,7 +631,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                           ) : (
                             <Typography
                               sx={{
-                                fontFamily: '"JetBrains Mono", monospace',
                                 fontSize: { xs: '0.7rem', sm: '0.75rem' },
                                 fontWeight: 600,
                               }}
@@ -668,7 +643,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                             pr.prState !== 'CLOSED' && (
                               <Typography
                                 sx={{
-                                  fontFamily: '"JetBrains Mono", monospace',
                                   fontSize: '0.6rem',
                                   color: (t) =>
                                     alpha(t.palette.text.primary, 0.5),
@@ -693,64 +667,18 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                             ? 'Closed'
                             : 'Open'}
                       </TableCell>
-                    </TableRow>
+                    </LinkTableRow>
                   );
                 })}
               </TableBody>
             </Table>
           </TableContainer>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 2,
-                py: 1.5,
-                borderTop: '1px solid',
-                borderColor: 'border.subtle',
-              }}
-            >
-              <Box
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                sx={{
-                  cursor: page > 0 ? 'pointer' : 'default',
-                  opacity: page > 0 ? 1 : 0.3,
-                  display: 'flex',
-                  alignItems: 'center',
-                  color: (t) => alpha(t.palette.text.primary, 0.6),
-                  '&:hover': page > 0 ? { color: 'text.primary' } : {},
-                }}
-              >
-                <PrevIcon sx={{ fontSize: '1.2rem' }} />
-              </Box>
-              <Typography
-                sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '0.75rem',
-                  color: (t) => alpha(t.palette.text.primary, 0.5),
-                }}
-              >
-                {page + 1} / {totalPages}
-              </Typography>
-              <Box
-                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                sx={{
-                  cursor: page < totalPages - 1 ? 'pointer' : 'default',
-                  opacity: page < totalPages - 1 ? 1 : 0.3,
-                  display: 'flex',
-                  alignItems: 'center',
-                  color: (t) => alpha(t.palette.text.primary, 0.6),
-                  '&:hover':
-                    page < totalPages - 1 ? { color: 'text.primary' } : {},
-                }}
-              >
-                <NextIcon sx={{ fontSize: '1.2rem' }} />
-              </Box>
-            </Box>
-          )}
+          <TablePagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </>
       )}
     </Card>

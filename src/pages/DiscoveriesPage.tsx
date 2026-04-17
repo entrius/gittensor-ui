@@ -1,24 +1,24 @@
 import React, { useMemo } from 'react';
 import { useMediaQuery, Box, Typography, alpha } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import { Page } from '../components/layout';
-import { TopMinersTable, LeaderboardSidebar, SEO } from '../components';
+import {
+  TopMinersTable,
+  LeaderboardSidebar,
+  SEO,
+  type MinerStats,
+} from '../components';
 import { useAllMiners } from '../api';
 import theme, { scrollbarSx } from '../theme';
 import { parseNumber } from '../utils/ExplorerUtils';
 
-const DiscoveriesPage: React.FC = () => {
-  const navigate = useNavigate();
+const MINER_LINK_STATE = { backLabel: 'Back to Discoveries' } as const;
+const getMinerHref = (miner: MinerStats) =>
+  `/miners/details?githubId=${miner.githubId}&mode=issues`;
 
+const DiscoveriesPage: React.FC = () => {
   const allMinerStatsQuery = useAllMiners();
   const allMinersStats = allMinerStatsQuery?.data;
   const isLoadingMinerStats = allMinerStatsQuery?.isLoading;
-
-  const handleSelectMiner = (githubId: string) => {
-    navigate(`/miners/details?githubId=${githubId}&mode=issues`, {
-      state: { backLabel: 'Back to Discoveries' },
-    });
-  };
 
   // Process miner stats for TopMinersTable, using issue discovery fields
   const minerStats = useMemo(() => {
@@ -101,7 +101,6 @@ const DiscoveriesPage: React.FC = () => {
         >
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.8rem',
               color: (t) => alpha(t.palette.text.primary, 0.5),
               lineHeight: 1.6,
@@ -114,10 +113,8 @@ const DiscoveriesPage: React.FC = () => {
             <TopMinersTable
               miners={sortedMinerStats}
               isLoading={isLoadingMinerStats}
-              getHref={(m) =>
-                `/miners/details?githubId=${encodeURIComponent(m.githubId)}&mode=issues`
-              }
-              linkState={{ backLabel: 'Back to Discoveries' }}
+              getMinerHref={getMinerHref}
+              linkState={MINER_LINK_STATE}
               variant="discoveries"
             />
           </Box>
@@ -137,7 +134,8 @@ const DiscoveriesPage: React.FC = () => {
         >
           <LeaderboardSidebar
             miners={minerStats}
-            onSelectMiner={handleSelectMiner}
+            getMinerHref={getMinerHref}
+            linkState={MINER_LINK_STATE}
             variant="discoveries"
           />
         </Box>

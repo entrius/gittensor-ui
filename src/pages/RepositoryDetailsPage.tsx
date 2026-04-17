@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { formatDate } from '../utils/format';
 import {
   Alert,
   Box,
@@ -203,7 +204,6 @@ const RepositoryDetailsPage: React.FC = () => {
                   <Typography
                     variant="h4"
                     sx={(theme) => ({
-                      fontFamily: '"JetBrains Mono", monospace',
                       fontWeight: 600,
                       color: theme.palette.text.primary,
                     })}
@@ -228,7 +228,7 @@ const RepositoryDetailsPage: React.FC = () => {
                     if (currentRepo?.inactiveAt) {
                       return (
                         <Chip
-                          label={`Inactive since ${new Date(currentRepo.inactiveAt).toLocaleDateString()}`}
+                          label={`Inactive since ${formatDate(currentRepo.inactiveAt)}`}
                           sx={(theme) => ({
                             backgroundColor: alpha(STATUS_COLORS.error, 0.1),
                             color: theme.palette.status.error,
@@ -333,7 +333,6 @@ const RepositoryDetailsPage: React.FC = () => {
                               px: 0.8,
                               py: 0.1,
                               borderRadius: '10px',
-                              fontFamily: '"JetBrains Mono", monospace',
                               lineHeight: 1.4,
                             }}
                           >

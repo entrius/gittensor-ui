@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { LinkBox, LinkTableRow } from '../common/linkBehavior';
 import {
   Box,
   Card,
@@ -21,7 +21,6 @@ import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { formatDate } from '../../utils/format';
 
 const headerCellSx = {
-  fontFamily: '"JetBrains Mono", monospace',
   fontSize: '0.7rem',
   fontWeight: 600,
   letterSpacing: '0.5px',
@@ -33,7 +32,6 @@ const headerCellSx = {
 };
 
 const bodyCellSx = {
-  fontFamily: '"JetBrains Mono", monospace',
   fontSize: '0.85rem',
   color: 'text.primary',
   borderBottom: '1px solid',
@@ -52,7 +50,6 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
   isLoading,
   backLabel,
 }) => {
-  const navigate = useNavigate();
   const theme = useTheme();
 
   return (
@@ -68,7 +65,6 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
       <Box sx={{ p: 3, pb: 2 }}>
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.8rem',
             fontWeight: 600,
             color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
@@ -116,14 +112,10 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
             </TableHead>
             <TableBody>
               {submissions.map((submission) => (
-                <TableRow
+                <LinkTableRow
                   key={`${submission.repositoryFullName}-${submission.number}`}
-                  onClick={() =>
-                    navigate(
-                      `/miners/pr?repo=${encodeURIComponent(submission.repositoryFullName)}&number=${submission.number}`,
-                      backLabel ? { state: { backLabel } } : undefined,
-                    )
-                  }
+                  href={`/miners/pr?repo=${encodeURIComponent(submission.repositoryFullName)}&number=${submission.number}`}
+                  linkState={backLabel ? { backLabel } : undefined}
                   sx={{
                     cursor: 'pointer',
                     transition: 'background-color 0.2s',
@@ -161,17 +153,12 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                   </TableCell>
                   <TableCell sx={bodyCellSx}>
                     {submission.authorGithubId ? (
-                      <Typography
-                        component="span"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(
-                            `/miners/details?githubId=${submission.authorGithubId}`,
-                            backLabel ? { state: { backLabel } } : undefined,
-                          );
-                        }}
+                      <LinkBox
+                        component={Typography}
+                        href={`/miners/details?githubId=${submission.authorGithubId}`}
+                        linkState={backLabel ? { backLabel } : undefined}
+                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
                         sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.85rem',
                           color: STATUS_COLORS.info,
                           cursor: 'pointer',
@@ -181,11 +168,10 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                         }}
                       >
                         {submission.authorLogin}
-                      </Typography>
+                      </LinkBox>
                     ) : (
                       <Typography
                         sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.85rem',
                           color: STATUS_COLORS.info,
                         }}
@@ -201,14 +187,12 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                         : submission.prState === 'OPEN'
                           ? 'OPEN'
                           : 'CLOSED';
-                      let color = theme.palette.status.neutral;
-                      if (state === 'MERGED') {
-                        color = theme.palette.status.merged;
-                      } else if (state === 'OPEN') {
-                        color = theme.palette.status.open;
-                      } else if (state === 'CLOSED') {
-                        color = theme.palette.status.closed;
-                      }
+                      const color =
+                        state === 'MERGED'
+                          ? theme.palette.status.merged
+                          : state === 'OPEN'
+                            ? theme.palette.status.open
+                            : theme.palette.status.closed;
                       return (
                         <Chip
                           variant="status"
@@ -224,7 +208,6 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                   <TableCell sx={{ ...bodyCellSx, textAlign: 'right' }}>
                     <Typography
                       sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.85rem',
                         fontWeight: 600,
                         color: 'text.primary',
@@ -236,7 +219,6 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                   <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
                     <Typography
                       sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.8rem',
                         color: alpha(theme.palette.common.white, 0.6),
                       }}
@@ -244,7 +226,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                       {formatDate(submission.prCreatedAt)}
                     </Typography>
                   </TableCell>
-                </TableRow>
+                </LinkTableRow>
               ))}
             </TableBody>
           </Table>

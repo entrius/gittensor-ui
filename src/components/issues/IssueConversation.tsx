@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatDate } from '../../utils/format';
 import {
   Box,
   Typography,
@@ -203,11 +204,7 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                   component="span"
                   sx={{ fontSize: 'inherit', color: 'inherit' }}
                 >
-                  {new Date(item.createdAt).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
+                  {formatDate(item.createdAt)}
                 </Typography>
               </Box>
 
@@ -294,7 +291,6 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                   fontSize: '85%',
                   backgroundColor: alpha(STATUS_COLORS.neutral, 0.4),
                   borderRadius: '6px',
-                  fontFamily: '"JetBrains Mono", monospace',
                 },
                 '& pre': {
                   mt: 2,
