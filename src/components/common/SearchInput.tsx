@@ -8,6 +8,9 @@ interface SearchInputProps {
   onChange: (value: string) => void;
   width?: number | string;
   placeholder?: string;
+  inputRef?: React.Ref<HTMLInputElement>;
+  autoFocus?: boolean;
+  onBlur?: React.FocusEventHandler<HTMLInputElement>;
 }
 
 export const SearchInput: React.FC<SearchInputProps> = ({
@@ -15,12 +18,18 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   onChange,
   width = 180,
   placeholder = 'Search...',
+  inputRef,
+  autoFocus = false,
+  onBlur,
 }) => (
   <TextField
+    inputRef={inputRef}
+    autoFocus={autoFocus}
     placeholder={placeholder}
     size="small"
     value={value}
     onChange={(e) => onChange(e.target.value)}
+    onBlur={onBlur}
     InputProps={{
       startAdornment: (
         <InputAdornment position="start">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Box, Card, Typography, Avatar } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
@@ -49,6 +49,8 @@ const getSegments = (
 ): Segment[] =>
   variant === 'discoveries' ? getIssueSegments(miner) : getPrSegments(miner);
 
+const isNumericGithubAuthor = (value?: string) => !value || /^\d+$/.test(value);
+
 export const MinerCard: React.FC<MinerCardProps> = ({
   miner,
   href,
@@ -57,15 +59,14 @@ export const MinerCard: React.FC<MinerCardProps> = ({
   showDualEligibilityBadges = false,
 }) => {
   const linkProps = useLinkBehavior(href, { state: linkState });
-  const isNumericId = (value?: string) => !value || /^\d+$/.test(value);
-  const shouldFetch = !!miner.githubId && isNumericId(miner.author);
+  const shouldFetch = !!miner.githubId && isNumericGithubAuthor(miner.author);
   const { data: githubData } = useMinerGithubData(miner.githubId, shouldFetch);
   const { data: prs } = useMinerPRs(miner.githubId, shouldFetch);
 
   const username =
     githubData?.login ||
     prs?.[0]?.author ||
-    (!isNumericId(miner.author) ? miner.author : miner.githubId) ||
+    (!isNumericGithubAuthor(miner.author) ? miner.author : miner.githubId) ||
     miner.githubId ||
     '';
   const avatarSrc = githubData?.avatarUrl || getGithubAvatarSrc(username);
@@ -87,6 +88,136 @@ export const MinerCard: React.FC<MinerCardProps> = ({
       : baseEligible;
 
   const segments = getSegments(miner, variant);
+
+  const minerIdentity = (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.5,
+        minWidth: 0,
+        flex: { sm: '1 1 0%' },
+      }}
+    >
+      <Avatar
+        src={avatarSrc}
+        sx={(theme) => ({
+          width: 36,
+          height: 36,
+          border: '2px solid',
+          borderColor: isEligible
+            ? alpha(theme.palette.status.merged, 0.3)
+            : theme.palette.border.subtle,
+          filter: isEligible ? 'none' : 'grayscale(100%)',
+          opacity: isEligible ? 1 : INACTIVE_OPACITY,
+          flexShrink: 0,
+        })}
+      />
+      <Box
+        sx={{
+          minWidth: 0,
+          minHeight: 36,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          overflow: 'hidden',
+        }}
+      >
+        <Typography
+          sx={(theme) => ({
+            fontFamily: FONTS.mono,
+            fontSize: '1rem',
+            fontWeight: 700,
+            color: isEligible
+              ? theme.palette.text.primary
+              : theme.palette.text.tertiary,
+            opacity: isEligible ? 1 : INACTIVE_OPACITY,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          })}
+        >
+          {username}
+        </Typography>
+        <Typography
+          sx={(theme) => ({
+            fontFamily: FONTS.mono,
+            fontSize: '0.72rem',
+            fontWeight: 700,
+            color: isEligible
+              ? theme.palette.status.merged
+              : theme.palette.text.tertiary,
+            opacity: isEligible ? 1 : INACTIVE_OPACITY,
+            lineHeight: 1,
+            mt: 0.1,
+          })}
+        >
+          #{miner.rank}
+        </Typography>
+      </Box>
+    </Box>
+  );
+
+  const dualEligibilityPills = (
+    <>
+      <Typography
+        sx={(theme) => ({
+          fontFamily: FONTS.mono,
+          fontSize: { xs: '0.6rem', sm: '0.65rem' },
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          border: `1px solid ${
+            ossEligible
+              ? alpha(theme.palette.status.merged, 0.45)
+              : theme.palette.border.subtle
+          }`,
+          borderRadius: 1,
+          px: { xs: 0.65, sm: 0.75 },
+          py: 0.35,
+          letterSpacing: { xs: '0.04em', sm: '0.06em' },
+          color: ossEligible
+            ? theme.palette.status.merged
+            : theme.palette.text.secondary,
+          backgroundColor: ossEligible
+            ? alpha(theme.palette.status.merged, 0.08)
+            : theme.palette.surface.subtle,
+          lineHeight: 1.2,
+          flexShrink: 0,
+          whiteSpace: 'nowrap',
+        })}
+      >
+        OSS {ossEligible ? 'Eligible' : 'Ineligible'}
+      </Typography>
+      <Typography
+        sx={(theme) => ({
+          fontFamily: FONTS.mono,
+          fontSize: { xs: '0.6rem', sm: '0.65rem' },
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          border: `1px solid ${
+            discoveriesEligible
+              ? alpha(theme.palette.status.merged, 0.45)
+              : theme.palette.border.subtle
+          }`,
+          borderRadius: 1,
+          px: { xs: 0.65, sm: 0.75 },
+          py: 0.35,
+          letterSpacing: { xs: '0.04em', sm: '0.06em' },
+          color: discoveriesEligible
+            ? theme.palette.status.merged
+            : theme.palette.text.secondary,
+          backgroundColor: discoveriesEligible
+            ? alpha(theme.palette.status.merged, 0.08)
+            : theme.palette.surface.subtle,
+          lineHeight: 1.2,
+          flexShrink: 0,
+          whiteSpace: 'nowrap',
+        })}
+      >
+        Issues {discoveriesEligible ? 'Eligible' : 'Ineligible'}
+      </Typography>
+    </>
+  );
 
   return (
     <Card
@@ -129,165 +260,127 @@ export const MinerCard: React.FC<MinerCardProps> = ({
       })}
       elevation={0}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-        }}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-            minWidth: 0,
-          }}
-        >
-          <Avatar
-            src={avatarSrc}
-            sx={(theme) => ({
-              width: 36,
-              height: 36,
-              border: '2px solid',
-              borderColor: isEligible
-                ? alpha(theme.palette.status.merged, 0.3)
-                : theme.palette.border.subtle,
-              filter: isEligible ? 'none' : 'grayscale(100%)',
-              opacity: isEligible ? 1 : INACTIVE_OPACITY,
-              flexShrink: 0,
-            })}
-          />
+      {showDualEligibilityBadges ? (
+        <>
           <Box
             sx={{
-              minWidth: 0,
-              minHeight: 36,
-              display: 'flex',
+              display: { xs: 'flex', sm: 'none' },
               flexDirection: 'column',
-              justifyContent: 'space-between',
-              overflow: 'hidden',
+              gap: 1,
             }}
           >
-            <Typography
-              sx={(theme) => ({
-                fontFamily: FONTS.mono,
-                fontSize: '1rem',
-                fontWeight: 700,
-                color: isEligible
-                  ? theme.palette.text.primary
-                  : theme.palette.text.tertiary,
-                opacity: isEligible ? 1 : INACTIVE_OPACITY,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              })}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 1,
+                minWidth: 0,
+              }}
             >
-              {username}
-            </Typography>
-            <Typography
-              sx={(theme) => ({
-                fontFamily: FONTS.mono,
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                color: isEligible
-                  ? theme.palette.status.merged
-                  : theme.palette.text.tertiary,
-                opacity: isEligible ? 1 : INACTIVE_OPACITY,
-                lineHeight: 1,
-                mt: 0.1,
-              })}
+              {minerIdentity}
+              {miner.githubId && (
+                <WatchlistButton githubId={miner.githubId} size="small" />
+              )}
+            </Box>
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                columnGap: 0.75,
+                rowGap: 0.75,
+              }}
             >
-              #{miner.rank}
-            </Typography>
+              {dualEligibilityPills}
+            </Box>
           </Box>
-        </Box>
+          <Box
+            sx={{
+              display: { xs: 'none', sm: 'flex' },
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 1,
+              width: '100%',
+              minWidth: 0,
+            }}
+          >
+            {minerIdentity}
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                gap: { sm: 0.5, md: 0.75 },
+                flexShrink: 0,
+                flexWrap: 'nowrap',
+                minWidth: 0,
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: { sm: 0.45, md: 0.5 },
+                  flexWrap: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >
+                {dualEligibilityPills}
+              </Box>
+              {miner.githubId && (
+                <WatchlistButton githubId={miner.githubId} size="small" />
+              )}
+            </Box>
+          </Box>
+        </>
+      ) : (
         <Box
           sx={{
             display: 'flex',
-            alignItems: 'center',
-            gap: 0.5,
-            flexShrink: 0,
-            flexWrap: 'wrap',
-            justifyContent: 'flex-end',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: 1,
           }}
         >
-          {showDualEligibilityBadges ? (
-            <>
+          {minerIdentity}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              flexShrink: 0,
+              flexWrap: 'wrap',
+              justifyContent: 'flex-end',
+            }}
+          >
+            {!isEligible ? (
               <Typography
                 sx={(theme) => ({
                   fontFamily: FONTS.mono,
                   fontSize: '0.65rem',
                   fontWeight: 700,
+                  color: theme.palette.text.secondary,
                   textTransform: 'uppercase',
-                  border: `1px solid ${
-                    ossEligible
-                      ? alpha(theme.palette.status.merged, 0.45)
-                      : theme.palette.border.subtle
-                  }`,
+                  border: `1px solid ${theme.palette.border.subtle}`,
                   borderRadius: 1,
                   px: 0.75,
                   py: 0.25,
                   letterSpacing: '0.06em',
-                  color: ossEligible
-                    ? theme.palette.status.merged
-                    : theme.palette.text.secondary,
-                  backgroundColor: ossEligible
-                    ? alpha(theme.palette.status.merged, 0.08)
-                    : theme.palette.surface.subtle,
+                  backgroundColor: theme.palette.surface.subtle,
                 })}
               >
-                OSS {ossEligible ? 'Eligible' : 'Ineligible'}
+                Ineligible
               </Typography>
-              <Typography
-                sx={(theme) => ({
-                  fontFamily: FONTS.mono,
-                  fontSize: '0.65rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  border: `1px solid ${
-                    discoveriesEligible
-                      ? alpha(theme.palette.status.merged, 0.45)
-                      : theme.palette.border.subtle
-                  }`,
-                  borderRadius: 1,
-                  px: 0.75,
-                  py: 0.25,
-                  letterSpacing: '0.06em',
-                  color: discoveriesEligible
-                    ? theme.palette.status.merged
-                    : theme.palette.text.secondary,
-                  backgroundColor: discoveriesEligible
-                    ? alpha(theme.palette.status.merged, 0.08)
-                    : theme.palette.surface.subtle,
-                })}
-              >
-                Issues {discoveriesEligible ? 'Eligible' : 'Ineligible'}
-              </Typography>
-            </>
-          ) : !isEligible ? (
-            <Typography
-              sx={(theme) => ({
-                fontFamily: FONTS.mono,
-                fontSize: '0.65rem',
-                fontWeight: 700,
-                color: theme.palette.text.secondary,
-                textTransform: 'uppercase',
-                border: `1px solid ${theme.palette.border.subtle}`,
-                borderRadius: 1,
-                px: 0.75,
-                py: 0.25,
-                letterSpacing: '0.06em',
-                backgroundColor: theme.palette.surface.subtle,
-              })}
-            >
-              Ineligible
-            </Typography>
-          ) : null}
-          {miner.githubId && (
-            <WatchlistButton githubId={miner.githubId} size="small" />
-          )}
+            ) : null}
+            {miner.githubId && (
+              <WatchlistButton githubId={miner.githubId} size="small" />
+            )}
+          </Box>
         </Box>
-      </Box>
+      )}
 
       <Box
         sx={{
@@ -597,6 +690,38 @@ const CredDonut: React.FC<CredDonutProps> = ({
   size = 48,
 }) => {
   const muiTheme = useTheme();
+  const segmentFingerprint = segments.map((s) => s.value).join(',');
+
+  const chartOption = useMemo(() => {
+    const values =
+      segmentFingerprint === ''
+        ? []
+        : segmentFingerprint.split(',').map((v) => Number(v));
+
+    return {
+      backgroundColor: 'transparent',
+      series: [
+        {
+          type: 'pie' as const,
+          radius: ['65%', '90%'],
+          silent: true,
+          label: { show: false },
+          itemStyle: { borderRadius: 3, borderWidth: 0 },
+          data: values.map((value, i) => ({
+            value,
+            itemStyle: {
+              color: isEligible
+                ? CHART_SEGMENT_COLORS[i]
+                : alpha(
+                    muiTheme.palette.text.secondary,
+                    INACTIVE_OPACITY * CHART_INACTIVE_RATIOS[i],
+                  ),
+            },
+          })),
+        },
+      ],
+    };
+  }, [segmentFingerprint, isEligible, muiTheme]);
 
   return (
     <Box
@@ -616,31 +741,10 @@ const CredDonut: React.FC<CredDonutProps> = ({
         }}
       >
         <ReactECharts
-          option={{
-            backgroundColor: 'transparent',
-            series: [
-              {
-                type: 'pie',
-                radius: ['65%', '90%'],
-                silent: true,
-                label: { show: false },
-                itemStyle: { borderRadius: 3, borderWidth: 0 },
-                data: segments.map((segment, i) => ({
-                  value: segment.value,
-                  itemStyle: {
-                    color: isEligible
-                      ? CHART_SEGMENT_COLORS[i]
-                      : alpha(
-                          muiTheme.palette.text.secondary,
-                          INACTIVE_OPACITY * CHART_INACTIVE_RATIOS[i],
-                        ),
-                  },
-                })),
-              },
-            ],
-          }}
+          option={chartOption}
           style={{ width: '100%', height: '100%' }}
           opts={{ renderer: 'svg' }}
+          lazyUpdate
         />
         <Box
           sx={{
