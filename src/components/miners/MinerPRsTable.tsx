@@ -32,7 +32,12 @@ import { useSearchParams } from 'react-router-dom';
 import { LinkTableRow } from '../common/linkBehavior';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
-import { headerCellStyle, bodyCellStyle, tooltipSlotProps } from '../../theme';
+import {
+  headerCellStyle,
+  bodyCellStyle,
+  tooltipSlotProps,
+  scrollbarSx,
+} from '../../theme';
 
 type PrSortField = 'number' | 'repository' | 'score' | 'lines' | 'date';
 type SortDir = 'asc' | 'desc';
@@ -392,16 +397,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             sx={{
               overflowY: 'auto',
               overflowX: 'auto',
-              '&::-webkit-scrollbar': {
-                width: { xs: '6px', sm: '8px' },
-                height: { xs: '6px', sm: '8px' },
-              },
-              '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: 'border.light',
-                borderRadius: '4px',
-                '&:hover': { backgroundColor: 'border.medium' },
-              },
+              ...scrollbarSx,
             }}
           >
             <Table

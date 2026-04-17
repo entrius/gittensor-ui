@@ -14,7 +14,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { type IssueDetails } from '../../api/models/Issues';
-import { STATUS_COLORS } from '../../theme';
+import { STATUS_COLORS, scrollbarSx } from '../../theme';
 
 import 'github-markdown-css/github-markdown-dark.css';
 
@@ -248,6 +248,7 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                 fontFamily:
                   '-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji"', // GitHub's exact font stack
                 overflowX: 'auto',
+                ...scrollbarSx,
                 // Typography refinements
                 '& > *:first-of-type': { mt: 0 },
                 '& > *:last-child': { mb: 0 },

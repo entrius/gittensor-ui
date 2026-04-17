@@ -41,6 +41,8 @@ const DiscoveriesPage: React.FC = () => {
       uniqueReposCount: parseNumber(stat.uniqueReposCount),
       credibility: parseNumber(stat.issueCredibility),
       isEligible: stat.isIssueEligible ?? false,
+      ossIsEligible: stat.isEligible ?? false,
+      discoveriesIsEligible: stat.isIssueEligible ?? false,
       usdPerDay: parseNumber(stat.usdPerDay),
       totalMergedPrs: parseNumber(stat.totalMergedPrs),
       totalOpenPrs: parseNumber(stat.totalOpenPrs),

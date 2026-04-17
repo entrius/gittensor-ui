@@ -26,6 +26,8 @@ export const mapAllMinersToStats = (
     uniqueReposCount: parseNumber(stat.uniqueReposCount),
     credibility: parseNumber(stat.credibility),
     isEligible: stat.isEligible ?? false,
+    ossIsEligible: stat.isEligible ?? false,
+    discoveriesIsEligible: stat.isIssueEligible ?? false,
     usdPerDay: parseNumber(stat.usdPerDay),
     totalMergedPrs: parseNumber(stat.totalMergedPrs),
     totalOpenPrs: parseNumber(stat.totalOpenPrs),

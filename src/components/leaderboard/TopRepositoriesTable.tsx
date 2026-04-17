@@ -736,7 +736,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 ),
               }}
               sx={{
-                width: '200px',
+                flex: '1 1 300px',
+                minWidth: { xs: '100%', sm: '300px' },
+                maxWidth: { xs: '100%', md: '300px' },
                 '& .MuiOutlinedInput-root': {
                   color: 'text.primary',
                   backgroundColor: 'background.default',

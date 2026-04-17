@@ -13,7 +13,10 @@ import {
 } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import { LinkBox } from '../../../components/common/linkBehavior';
-import theme, { REPO_OWNER_AVATAR_BACKGROUNDS } from '../../../theme';
+import theme, {
+  REPO_OWNER_AVATAR_BACKGROUNDS,
+  scrollbarSx,
+} from '../../../theme';
 import { useAllMiners, useInfiniteCommitLog } from '../../../api';
 import { useWatchlist } from '../../../hooks/useWatchlist';
 
@@ -563,13 +566,7 @@ const LiveCommitLog: React.FC = () => {
               overflowY: 'auto',
               overflowX: 'hidden',
               pr: 1,
-              '&::-webkit-scrollbar': { width: '6px' },
-              '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: theme.palette.border.light,
-                borderRadius: '3px',
-                '&:hover': { backgroundColor: theme.palette.border.medium },
-              },
+              ...scrollbarSx,
             }}
           >
             {showWaitingForActivity ? (
