@@ -3,6 +3,7 @@ export { default as EmptyStateMessage } from './EmptyStateMessage';
 export { default as ExplorerFilterButton } from './ExplorerFilterButton';
 export { default as MinerActivity } from './MinerActivity';
 export { default as MinerInsightsCard } from './MinerInsightsCard';
+export { default as MinerIssuesTable } from './MinerIssuesTable';
 export { default as MinerPRsTable } from './MinerPRsTable';
 export { default as MinerRepositoriesTable } from './MinerRepositoriesTable';
 export { default as MinerScoreBreakdown } from './MinerScoreBreakdown';

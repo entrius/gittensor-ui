@@ -1,5 +1,6 @@
 // Miner API hooks - uses /miners endpoints
 import { useApiQuery } from './ApiUtils';
+import { type IssueBounty } from './models';
 import {
   type GithubMinerData,
   type MinerEvaluation,
@@ -52,6 +53,20 @@ export const useMinerPRs = (githubId: string, enabled?: boolean) =>
   useMinersQuery<CommitLog[]>(
     'useMinerPRs',
     `/${githubId}/prs`,
+    undefined,
+    undefined,
+    enabled,
+  );
+
+/**
+ * Get all discovered issues created by a specific miner
+ * @param githubId - Numeric GitHub ID (e.g., "583231"), NOT username
+ * @param enabled - Optional flag to enable/disable the query
+ */
+export const useMinerIssues = (githubId: string, enabled?: boolean) =>
+  useMinersQuery<IssueBounty[]>(
+    'useMinerIssues',
+    `/${githubId}/issues`,
     undefined,
     undefined,
     enabled,
