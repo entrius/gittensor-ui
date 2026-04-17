@@ -1,7 +1,8 @@
 import React from 'react';
-import { Navigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Box, Tab, Tabs, Typography, alpha } from '@mui/material';
 import { Page } from '../components/layout';
+import { LinkBox } from '../components/common/linkBehavior';
 import {
   BackButton,
   MinerActivity,
@@ -37,7 +38,15 @@ const tabSx = {
 
 const MinerDetailsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const githubId = searchParams.get('githubId');
+
+  const buildModeHref = (mode: ViewMode) => {
+    const p = new URLSearchParams(searchParams);
+    p.set('mode', mode);
+    p.set('tab', 'overview');
+    return `${location.pathname}?${p.toString()}`;
+  };
 
   const modeParam = searchParams.get('mode');
   const viewMode: ViewMode = modeParam === 'issues' ? 'issues' : 'prs';
@@ -49,13 +58,6 @@ const MinerDetailsPage: React.FC = () => {
     tabParam && (tabs as readonly string[]).includes(tabParam)
       ? (tabParam as MinerDetailsTab)
       : 'overview';
-
-  const handleModeChange = (mode: ViewMode) => {
-    const p = new URLSearchParams(searchParams);
-    p.set('mode', mode);
-    p.set('tab', 'overview');
-    setSearchParams(p, { replace: true });
-  };
 
   const handleTabChange = (
     _event: React.SyntheticEvent,
@@ -130,43 +132,41 @@ const MinerDetailsPage: React.FC = () => {
                   { label: 'OSS Contributions', value: 'prs' as const },
                   { label: 'Issue Discovery', value: 'issues' as const },
                 ] as const
-              ).map((option) => (
-                <Box
-                  key={option.value}
-                  onClick={() => handleModeChange(option.value)}
-                  sx={{
-                    px: 2,
-                    py: 0.75,
-                    flex: { xs: 1, sm: 'unset' },
-                    minWidth: 0,
-                    borderRadius: 1.5,
-                    cursor: 'pointer',
-                    backgroundColor:
-                      viewMode === option.value
+              ).map((option) => {
+                const isActive = viewMode === option.value;
+                return (
+                  <LinkBox
+                    key={option.value}
+                    href={buildModeHref(option.value)}
+                    sx={{
+                      px: 2,
+                      py: 0.75,
+                      borderRadius: 1.5,
+                      transition: 'all 0.2s',
+                      cursor: 'pointer',
+                      backgroundColor: isActive
                         ? 'surface.elevated'
                         : 'transparent',
-                    color:
-                      viewMode === option.value
+                      color: isActive
                         ? 'text.primary'
                         : (t) => alpha(t.palette.text.primary, 0.5),
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      backgroundColor: 'surface.elevated',
-                      color: 'text.primary',
-                    },
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      textAlign: 'center',
+                      '&:hover': {
+                        backgroundColor: 'surface.elevated',
+                        color: 'text.primary',
+                      },
                     }}
                   >
-                    {option.label}
-                  </Typography>
-                </Box>
-              ))}
+                    <Typography
+                      sx={{
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {option.label}
+                    </Typography>
+                  </LinkBox>
+                );
+              })}
             </Box>
           </Box>
 

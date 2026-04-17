@@ -38,7 +38,8 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import FilterButton from '../FilterButton';
 import ReactECharts from 'echarts-for-react';
 import type { TooltipComponentFormatterCallbackParams } from 'echarts';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { LinkTableRow } from '../common/linkBehavior';
 import { truncateText } from '../../utils';
 import { RankIcon } from './RankIcon';
 import LeaderboardTableSkeleton from './LeaderboardTableSkeleton';
@@ -77,7 +78,8 @@ type SortDirection = 'asc' | 'desc';
 interface TopRepositoriesTableProps {
   repositories: RepoStats[];
   isLoading?: boolean;
-  onSelectRepository: (repositoryFullName: string) => void;
+  getRepositoryHref: (repositoryFullName: string) => string;
+  linkState?: Record<string, unknown>;
 }
 
 const VALID_SORT_COLUMNS: SortColumn[] = [
@@ -93,8 +95,10 @@ const VALID_ROWS = [10, 25, 50];
 const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   repositories,
   isLoading,
-  onSelectRepository,
+  getRepositoryHref,
+  linkState,
 }) => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Read initial state from URL params, falling back to defaults
@@ -714,7 +718,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && isDirectRepoInput) {
-                  onSelectRepository(trimmedSearch);
+                  navigate(getRepositoryHref(trimmedSearch), {
+                    state: linkState,
+                  });
                 }
               }}
               InputProps={{
@@ -830,12 +836,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((repo) => {
                     return (
-                      <TableRow
+                      <LinkTableRow
                         key={repo.repository}
+                        href={getRepositoryHref(repo.repository || '')}
+                        linkState={linkState}
                         hover
-                        onClick={() =>
-                          onSelectRepository(repo.repository || '')
-                        }
                         sx={{
                           cursor: 'pointer',
                           '&:hover': {
@@ -976,7 +981,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                               : '-'}
                           </Typography>
                         </TableCell>
-                      </TableRow>
+                      </LinkTableRow>
                     );
                   })}
                 {!filteredRepositories.length &&
@@ -1009,7 +1014,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           <Button
                             size="small"
                             variant="outlined"
-                            onClick={() => onSelectRepository(trimmedSearch)}
+                            onClick={() =>
+                              navigate(getRepositoryHref(trimmedSearch), {
+                                state: linkState,
+                              })
+                            }
                             sx={{ textTransform: 'none' }}
                           >
                             Open repository
