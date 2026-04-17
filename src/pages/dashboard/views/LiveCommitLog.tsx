@@ -277,12 +277,7 @@ const CommitLogItem: React.FC<{
         >
           <Stack direction="row" alignItems="center" spacing={0.5}>
             {isWatched && (
-              <StarIcon
-                sx={{
-                  fontSize: 12,
-                  color: 'warning.main',
-                }}
-              />
+              <StarIcon sx={{ fontSize: 12, color: 'warning.main' }} />
             )}
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               by {entry.author}
@@ -331,21 +326,18 @@ const LiveCommitLog: React.FC = () => {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteCommitLog({ refetchInterval: 10000 });
 
-  // Commits come from /dash/commits, which only exposes `author` (login).
-  // Watchlist is keyed by numeric githubId, so bridge the two using the
-  // /miners lookup (already cached elsewhere on the dashboard).
+  // Commits expose `author` (login) but not githubId — bridge via /miners.
   const { data: allMiners } = useAllMiners();
   const { isWatched } = useWatchlist();
-  const authorToGithubId = useMemo(() => {
-    const map = new Map<string, string>();
-    if (!Array.isArray(allMiners)) return map;
-    allMiners.forEach((miner) => {
-      if (miner.githubUsername && miner.githubId) {
-        map.set(miner.githubUsername.toLowerCase(), miner.githubId);
-      }
-    });
-    return map;
-  }, [allMiners]);
+  const authorToGithubId = useMemo(
+    () =>
+      new Map(
+        (Array.isArray(allMiners) ? allMiners : [])
+          .filter((m) => m.githubUsername && m.githubId)
+          .map((m) => [m.githubUsername!.toLowerCase(), m.githubId]),
+      ),
+    [allMiners],
+  );
 
   const [statusFilter, setStatusFilter] = useState<CommitStatusFilter>('all');
   const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
@@ -612,20 +604,15 @@ const LiveCommitLog: React.FC = () => {
               <Stack spacing={isMobile ? 1 : isTablet ? 1.25 : 1}>
                 {visibleEntries.map((entry) => {
                   const entryId = getCommitId(entry);
-                  const isNew = newEntryIds.has(entryId);
-                  const authorGithubId = authorToGithubId.get(
+                  const watchedId = authorToGithubId.get(
                     entry.author.toLowerCase(),
                   );
-                  const entryIsWatched = authorGithubId
-                    ? isWatched(authorGithubId)
-                    : false;
-
                   return (
                     <CommitLogItem
                       key={entryId}
                       entry={entry}
-                      isNew={isNew}
-                      isWatched={entryIsWatched}
+                      isNew={newEntryIds.has(entryId)}
+                      isWatched={!!watchedId && isWatched(watchedId)}
                     />
                   );
                 })}
