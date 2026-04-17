@@ -16,6 +16,9 @@ import { useIssuesStats, useIssues } from '../api';
 
 const TAB_SLUGS = ['available', 'pending', 'history'] as const;
 
+const ISSUE_LINK_STATE = { backLabel: 'Back to Bounties' } as const;
+const getIssueHref = (id: number) => `/bounties/details?id=${id}`;
+
 const IssuesPage: React.FC = () => {
   const navigate = useNavigate();
   const { tab: tabParam } = useParams<{ tab?: string }>();
@@ -134,11 +137,8 @@ const IssuesPage: React.FC = () => {
                 issues={activeIssuesQuery.data || []}
                 isLoading={activeIssuesQuery.isLoading}
                 listType="available"
-                onSelectIssue={(id) =>
-                  navigate(`/bounties/details?id=${id}`, {
-                    state: { backLabel: 'Back to Bounties' },
-                  })
-                }
+                getIssueHref={getIssueHref}
+                linkState={ISSUE_LINK_STATE}
               />
             )}
             {tabIndex === 1 && (
@@ -146,11 +146,8 @@ const IssuesPage: React.FC = () => {
                 issues={registeredIssuesQuery.data || []}
                 isLoading={registeredIssuesQuery.isLoading}
                 listType="pending"
-                onSelectIssue={(id) =>
-                  navigate(`/bounties/details?id=${id}`, {
-                    state: { backLabel: 'Back to Bounties' },
-                  })
-                }
+                getIssueHref={getIssueHref}
+                linkState={ISSUE_LINK_STATE}
               />
             )}
             {tabIndex === 2 && (
@@ -158,11 +155,8 @@ const IssuesPage: React.FC = () => {
                 issues={historyIssuesQuery.data || []}
                 isLoading={historyIssuesQuery.isLoading}
                 listType="history"
-                onSelectIssue={(id) =>
-                  navigate(`/bounties/details?id=${id}`, {
-                    state: { backLabel: 'Back to Bounties' },
-                  })
-                }
+                getIssueHref={getIssueHref}
+                linkState={ISSUE_LINK_STATE}
               />
             )}
           </Box>

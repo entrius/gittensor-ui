@@ -26,8 +26,8 @@ const VISIBLE_QUERY_PARAM = 'visible';
 interface TopMinersTableProps {
   miners: MinerStats[];
   isLoading?: boolean;
-  getHref: (miner: MinerStats) => string;
-  linkState?: unknown;
+  getMinerHref: (miner: MinerStats) => string;
+  linkState?: Record<string, unknown>;
   variant?: LeaderboardVariant;
 }
 
@@ -62,7 +62,7 @@ const getVisibleCountFromQuery = (value: string | null): number => {
 const TopMinersTable: React.FC<TopMinersTableProps> = ({
   miners,
   isLoading,
-  getHref,
+  getMinerHref,
   linkState,
   variant = 'oss',
 }) => {
@@ -284,7 +284,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                 <MinerCard
                   miner={miner}
                   variant={variant}
-                  href={getHref(miner)}
+                  href={getMinerHref(miner)}
                   linkState={linkState}
                 />
               </Grid>
