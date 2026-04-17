@@ -1,7 +1,8 @@
 import React from 'react';
-import { Navigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Box, Tab, Tabs, Typography, alpha } from '@mui/material';
 import { Page } from '../components/layout';
+import { LinkBox } from '../components/common/linkBehavior';
 import {
   BackButton,
   MinerActivity,
@@ -12,6 +13,7 @@ import {
   MinerScoreCard,
   SEO,
 } from '../components';
+import { WatchlistButton } from '../components/common';
 
 type ViewMode = 'prs' | 'issues';
 
@@ -21,13 +23,12 @@ const PR_TABS = [
   'pull-requests',
   'repositories',
 ] as const;
-const ISSUE_TABS = ['overview', 'activity', 'issues', 'repositories'] as const;
+const ISSUE_TABS = ['overview', 'activity', 'repositories'] as const;
 type MinerDetailsTab = (typeof PR_TABS)[number] | (typeof ISSUE_TABS)[number];
 
 const tabSx = {
   '& .MuiTab-root': {
     color: 'text.secondary',
-    fontFamily: '"JetBrains Mono", monospace',
     textTransform: 'none' as const,
     fontSize: '0.83rem',
     fontWeight: 500,
@@ -37,7 +38,15 @@ const tabSx = {
 
 const MinerDetailsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const githubId = searchParams.get('githubId');
+
+  const buildModeHref = (mode: ViewMode) => {
+    const p = new URLSearchParams(searchParams);
+    p.set('mode', mode);
+    p.set('tab', 'overview');
+    return `${location.pathname}?${p.toString()}`;
+  };
 
   const modeParam = searchParams.get('mode');
   const viewMode: ViewMode = modeParam === 'issues' ? 'issues' : 'prs';
@@ -49,13 +58,6 @@ const MinerDetailsPage: React.FC = () => {
     tabParam && (tabs as readonly string[]).includes(tabParam)
       ? (tabParam as MinerDetailsTab)
       : 'overview';
-
-  const handleModeChange = (mode: ViewMode) => {
-    const p = new URLSearchParams(searchParams);
-    p.set('mode', mode);
-    p.set('tab', 'overview');
-    setSearchParams(p, { replace: true });
-  };
 
   const handleTabChange = (
     _event: React.SyntheticEvent,
@@ -102,7 +104,10 @@ const MinerDetailsPage: React.FC = () => {
               justifyContent: 'space-between',
             }}
           >
-            <BackButton to="/top-miners" mb={0} />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <BackButton to="/top-miners" mb={0} />
+              <WatchlistButton githubId={githubId} size="medium" />
+            </Box>
             <Box
               sx={{
                 display: 'flex',
@@ -117,41 +122,41 @@ const MinerDetailsPage: React.FC = () => {
                   { label: 'OSS Contributions', value: 'prs' as const },
                   { label: 'Issue Discovery', value: 'issues' as const },
                 ] as const
-              ).map((option) => (
-                <Box
-                  key={option.value}
-                  onClick={() => handleModeChange(option.value)}
-                  sx={{
-                    px: 2,
-                    py: 0.75,
-                    borderRadius: 1.5,
-                    cursor: 'pointer',
-                    backgroundColor:
-                      viewMode === option.value
+              ).map((option) => {
+                const isActive = viewMode === option.value;
+                return (
+                  <LinkBox
+                    key={option.value}
+                    href={buildModeHref(option.value)}
+                    sx={{
+                      px: 2,
+                      py: 0.75,
+                      borderRadius: 1.5,
+                      transition: 'all 0.2s',
+                      cursor: 'pointer',
+                      backgroundColor: isActive
                         ? 'surface.elevated'
                         : 'transparent',
-                    color:
-                      viewMode === option.value
+                      color: isActive
                         ? 'text.primary'
                         : (t) => alpha(t.palette.text.primary, 0.5),
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      backgroundColor: 'surface.elevated',
-                      color: 'text.primary',
-                    },
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontFamily: '"JetBrains Mono", monospace',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
+                      '&:hover': {
+                        backgroundColor: 'surface.elevated',
+                        color: 'text.primary',
+                      },
                     }}
                   >
-                    {option.label}
-                  </Typography>
-                </Box>
-              ))}
+                    <Typography
+                      sx={{
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {option.label}
+                    </Typography>
+                  </LinkBox>
+                );
+              })}
             </Box>
           </Box>
 
@@ -168,10 +173,9 @@ const MinerDetailsPage: React.FC = () => {
             >
               <Tab value="overview" label="Overview" />
               <Tab value="activity" label="Activity" />
-              <Tab
-                value={viewMode === 'issues' ? 'issues' : 'pull-requests'}
-                label={viewMode === 'issues' ? 'Issues' : 'Pull Requests'}
-              />
+              {viewMode === 'prs' && (
+                <Tab value="pull-requests" label="Pull Requests" />
+              )}
               <Tab value="repositories" label="Repositories" />
             </Tabs>
           </Box>
@@ -180,9 +184,7 @@ const MinerDetailsPage: React.FC = () => {
             {activeTab === 'overview' && (
               <>
                 <MinerInsightsCard githubId={githubId} viewMode={viewMode} />
-                {viewMode === 'prs' && (
-                  <MinerScoreBreakdown githubId={githubId} />
-                )}
+                <MinerScoreBreakdown githubId={githubId} viewMode={viewMode} />
               </>
             )}
 
@@ -191,9 +193,6 @@ const MinerDetailsPage: React.FC = () => {
             )}
             {activeTab === 'pull-requests' && (
               <MinerPRsTable githubId={githubId} />
-            )}
-            {activeTab === 'issues' && (
-              <MinerScoreBreakdown githubId={githubId} viewMode="issues" />
             )}
             {activeTab === 'repositories' && (
               <MinerRepositoriesTable githubId={githubId} />

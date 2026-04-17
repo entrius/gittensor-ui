@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import { useMinerPRs, useReposAndWeights } from '../../api';
-import { useNavigate } from 'react-router-dom';
+import { LinkBox } from '../common/linkBehavior';
 import SortableHeaderCell from './SortableHeaderCell';
 import RankBadge from './RankBadge';
 import EmptyStateMessage from './EmptyStateMessage';
@@ -39,6 +39,7 @@ import {
   sortMinerRepoStats,
   hasActiveFilters,
   getDisplayCount,
+  isOutsideScoringWindow,
 } from '../../utils/ExplorerUtils';
 
 interface MinerRepositoriesTableProps {
@@ -51,7 +52,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   githubId,
 }) => {
   const theme = useTheme();
-  const navigate = useNavigate();
   const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
   const [sortField, setSortField] = useState<RepoSortField>('score');
@@ -162,7 +162,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
               variant="h6"
               sx={{
                 color: 'text.primary',
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: { xs: '0.95rem', sm: '1.1rem' },
                 fontWeight: 500,
               }}
@@ -172,7 +171,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
             <Typography
               sx={{
                 color: (t) => alpha(t.palette.text.primary, 0.5),
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.75rem',
               }}
             >
@@ -302,7 +300,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                       bodyCellStyle={bodyCellStyle}
                       prs={prs}
                       githubId={githubId}
-                      navigate={navigate}
                     />
                   );
                 })}
@@ -331,7 +328,6 @@ interface RepoTableRowProps {
   bodyCellStyle: Record<string, unknown>;
   prs: { author?: string }[] | undefined;
   githubId: string;
-  navigate: ReturnType<typeof useNavigate>;
 }
 
 const RepoTableRow: React.FC<RepoTableRowProps> = ({
@@ -340,36 +336,28 @@ const RepoTableRow: React.FC<RepoTableRowProps> = ({
   bodyCellStyle,
   prs,
   githubId,
-  navigate,
 }) => {
   const owner = repo.repository.split('/')[0];
   const avatarBgColor = getAvatarBgColor(owner);
   const avgPerPr = repo.prs > 0 ? (repo.score / repo.prs).toFixed(4) : '\u2014';
-
+  const isStale = isOutsideScoringWindow(repo.latestPrDate);
   return (
     <TableRow
       sx={{
+        opacity: isStale ? 0.4 : 1,
         '&:hover': {
           backgroundColor: 'surface.light',
         },
-        transition: 'background-color 0.2s',
+        transition: 'background-color 0.2s, opacity 0.2s',
       }}
     >
       <TableCell sx={bodyCellStyle}>
         <RankBadge rank={rank} displayNumber={rank + 1} />
       </TableCell>
       <TableCell sx={bodyCellStyle}>
-        <Box
-          onClick={() =>
-            navigate(
-              `/miners/repository?name=${encodeURIComponent(repo.repository)}`,
-              {
-                state: {
-                  backLabel: `Back to ${prs?.[0]?.author || githubId}`,
-                },
-              },
-            )
-          }
+        <LinkBox
+          href={`/miners/repository?name=${encodeURIComponent(repo.repository)}`}
+          linkState={{ backLabel: `Back to ${prs?.[0]?.author || githubId}` }}
           sx={{
             display: 'flex',
             alignItems: 'center',
@@ -400,7 +388,6 @@ const RepoTableRow: React.FC<RepoTableRowProps> = ({
             component="span"
             title={repo.repository}
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.85rem',
               minWidth: 0,
               flex: 1,
@@ -412,7 +399,7 @@ const RepoTableRow: React.FC<RepoTableRowProps> = ({
           >
             {repo.repository}
           </Typography>
-        </Box>
+        </LinkBox>
       </TableCell>
       <TableCell align="right" sx={bodyCellStyle}>
         {repo.prs}

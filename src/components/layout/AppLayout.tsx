@@ -15,7 +15,7 @@ import useOnNavigate from '../../hooks/useOnNavigate';
 import { Sidebar } from '..';
 import ErrorBoundary from '../ErrorBoundary';
 import GlobalSearchBar from './GlobalSearchBar';
-import theme from '../../theme';
+import theme, { scrollbarSx } from '../../theme';
 import { getRouteForPathname } from '../../routes';
 
 const AppLayout: React.FC = () => {
@@ -126,12 +126,14 @@ const AppLayout: React.FC = () => {
           flexGrow: 1,
           maxWidth: '1920px', // Max content width for ultra-wide screens
           width: '100%',
+          height: { xs: 'calc(100vh - 64px)', md: '100vh' },
+          mt: { xs: '64px', md: 0 },
           overflowY: 'auto',
           overflowX: 'hidden',
           display: 'flex',
           flexDirection: 'column',
           px: { xs: 1, sm: 2, md: 3 },
-          pt: isMobile ? '64px' : 0, // Padding for mobile header
+          ...scrollbarSx,
           alignItems: 'center',
         }}
       >

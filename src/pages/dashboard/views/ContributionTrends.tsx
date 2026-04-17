@@ -90,11 +90,11 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
     const labelInterval = range === '35d' ? 6 : range === '7d' ? 0 : 'auto';
     const tooltipPrimaryColor = theme.palette.text.primary;
     const tooltipSecondaryColor = alpha(theme.palette.text.primary, 0.66);
-    const tooltipFontFamily = theme.typography.mono.fontFamily;
+    const tooltipFontFamily = theme.typography.fontFamily;
     const chartLabelColor = alpha(theme.palette.text.primary, 0.64);
     const chartAxisLineColor = alpha(theme.palette.text.primary, 0.08);
     const chartSplitLineColor = alpha(theme.palette.text.primary, 0.07);
-    const chartFontFamily = theme.typography.mono.fontFamily;
+    const chartFontFamily = theme.typography.fontFamily;
 
     return {
       backgroundColor: 'transparent',
@@ -117,7 +117,7 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
         padding: [10, 12],
         textStyle: {
           color: theme.palette.text.primary,
-          fontFamily: theme.typography.mono.fontFamily,
+          fontFamily: theme.typography.fontFamily,
           fontSize: 11,
         },
         formatter: (
@@ -236,7 +236,6 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
           <Typography
             sx={{
               color: theme.palette.text.primary,
-              fontFamily: theme.typography.mono.fontFamily,
               fontSize: { xs: '1.02rem', sm: '1.1rem' },
               fontWeight: 700,
             }}
@@ -265,7 +264,6 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
               py: 0.24,
               minWidth: 38,
               color: alpha(theme.palette.text.primary, 0.58),
-              fontFamily: theme.typography.mono.fontFamily,
               fontSize: '0.66rem',
               fontWeight: 700,
               letterSpacing: '0.05em',
@@ -370,7 +368,6 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
                       color: isHidden
                         ? alpha(theme.palette.text.primary, 0.46)
                         : alpha(theme.palette.text.primary, 0.72),
-                      fontFamily: theme.typography.mono.fontFamily,
                       fontSize: '0.72rem',
                       lineHeight: 1,
                     }}

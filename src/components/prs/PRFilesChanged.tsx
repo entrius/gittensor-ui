@@ -282,7 +282,6 @@ const FileTreeItem: React.FC<{
           }
           primaryTypographyProps={{
             sx: {
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '12px',
               color: isSelected
                 ? 'text.primary'
@@ -394,7 +393,6 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
         sx={{
           overflowX: 'auto',
           backgroundColor: 'background.paper',
-          fontFamily: '"JetBrains Mono", monospace',
           fontSize: '12px',
         }}
       >
@@ -566,11 +564,7 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
         overflowX: 'auto',
         borderRight: side === 'left' ? '1px solid' : 'none',
         borderColor: 'border.light',
-        '&::-webkit-scrollbar': { height: '8px' },
-        '&::-webkit-scrollbar-thumb': {
-          backgroundColor: 'border.light',
-          borderRadius: '4px',
-        },
+        ...scrollbarSx,
       }}
     >
       <Table
@@ -703,7 +697,6 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
         display: 'flex',
         width: '100%',
         backgroundColor: 'background.paper',
-        fontFamily: '"JetBrains Mono", monospace',
         fontSize: '12px',
       }}
     >
@@ -736,7 +729,6 @@ const UnifiedDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
       sx={{
         overflowX: 'auto',
         backgroundColor: 'background.paper',
-        fontFamily: '"JetBrains Mono", monospace',
         fontSize: '12px',
       }}
     >
@@ -770,7 +762,7 @@ const UnifiedDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                       whiteSpace: 'pre',
                     }}
                   >
-                    {(row as any).content}
+                    {row.content}
                   </TableCell>
                 </TableRow>
               );
@@ -1179,7 +1171,6 @@ const PRFileDiffViewer: React.FC<{
           >
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.9rem',
                 fontWeight: 600,
               }}
@@ -1416,7 +1407,6 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
           >
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.85rem',
                 fontWeight: 600,
                 color: 'text.primary',
@@ -1440,7 +1430,6 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
                   sx={{
                     fontSize: '0.75rem',
                     color: 'status.open',
-                    fontFamily: '"JetBrains Mono", monospace',
                   }}
                 >
                   Wrap Lines
@@ -1462,7 +1451,6 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
                   flex: 1,
                   color: 'status.open',
                   borderColor: 'border.light',
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.75rem',
                   textTransform: 'none',
                   py: 0.5,
