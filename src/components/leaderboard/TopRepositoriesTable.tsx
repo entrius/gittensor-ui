@@ -135,7 +135,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const isInitialMount = useRef(true);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const trimmedSearch = searchQuery.trim();
   const isMobileSearchVisible =
     isMobile && (isMobileSearchOpen || !!trimmedSearch);
