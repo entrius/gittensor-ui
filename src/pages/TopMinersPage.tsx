@@ -1,27 +1,28 @@
 import React, { useMemo } from 'react';
 import { useMediaQuery, Box, Typography, alpha } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import { Page } from '../components/layout';
-import { TopMinersTable, LeaderboardSidebar, SEO } from '../components';
+import {
+  TopMinersTable,
+  LeaderboardSidebar,
+  SEO,
+  type MinerStats,
+} from '../components';
 import { useAllMiners } from '../api';
 import { mapAllMinersToStats } from '../utils/minerMapper';
 import theme, { scrollbarSx } from '../theme';
 
-const TopMinersPage: React.FC = () => {
-  const navigate = useNavigate();
+const MINER_LINK_STATE = { backLabel: 'Back to Leaderboard' } as const;
+const getMinerHref = (miner: MinerStats) =>
+  `/miners/details?githubId=${miner.githubId}`;
 
+const TopMinersPage: React.FC = () => {
   const allMinerStatsQuery = useAllMiners();
   const allMinersStats = allMinerStatsQuery?.data;
   const isLoadingMinerStats = allMinerStatsQuery?.isLoading;
 
-  const handleSelectMiner = (githubId: string) => {
-    navigate(`/miners/details?githubId=${githubId}`, {
-      state: { backLabel: 'Back to Leaderboard' },
-    });
-  };
-
   const minerStats = useMemo(
-    () => mapAllMinersToStats(allMinersStats ?? []),
+    () =>
+      Array.isArray(allMinersStats) ? mapAllMinersToStats(allMinersStats) : [],
     [allMinersStats],
   );
 
@@ -82,10 +83,8 @@ const TopMinersPage: React.FC = () => {
             <TopMinersTable
               miners={minerStats}
               isLoading={isLoadingMinerStats}
-              getHref={(m) =>
-                `/miners/details?githubId=${encodeURIComponent(m.githubId)}`
-              }
-              linkState={{ backLabel: 'Back to Leaderboard' }}
+              getMinerHref={getMinerHref}
+              linkState={MINER_LINK_STATE}
             />
           </Box>
         </Box>
@@ -105,7 +104,8 @@ const TopMinersPage: React.FC = () => {
           {/* Render extracted Sidebar Content here */}
           <LeaderboardSidebar
             miners={minerStats}
-            onSelectMiner={handleSelectMiner}
+            getMinerHref={getMinerHref}
+            linkState={MINER_LINK_STATE}
           />
         </Box>
       </Box>

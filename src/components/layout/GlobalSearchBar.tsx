@@ -5,6 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { scrollbarSx } from '../../theme';
 import {
   Box,
   ButtonBase,
@@ -22,6 +23,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CloseIcon from '@mui/icons-material/Close';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSearchResults } from '../../pages/search/searchData';
+import { useLinkBehavior, linkResetSx } from '../common/linkBehavior';
 
 const QUICK_RESULT_LIMIT = 3;
 const DROPDOWN_CLOSE_DELAY_MS = 150;
@@ -35,6 +37,7 @@ type NavItem = {
   kind: NavItemKind;
   title: string;
   subtitle: string;
+  href?: string;
   onSelect: () => void;
 };
 
@@ -100,6 +103,7 @@ type ResultRowProps = {
   active: boolean;
   rowRef: (el: HTMLButtonElement | null) => void;
   onMouseEnter: () => void;
+  onLinkClick: () => void;
 };
 
 const ResultRow: React.FC<ResultRowProps> = ({
@@ -107,18 +111,28 @@ const ResultRow: React.FC<ResultRowProps> = ({
   active,
   rowRef,
   onMouseEnter,
+  onLinkClick,
 }) => {
   const isAction = item.kind === 'action';
+  const linkProps = useLinkBehavior<HTMLButtonElement>(item.href ?? '', {
+    onClick: onLinkClick,
+  });
+  const linkAnchorProps = item.href
+    ? { component: 'a' as const, ...linkProps }
+    : { onClick: item.onSelect };
   return (
     <ButtonBase
       id={itemIdFromKey(item.key)}
       ref={rowRef}
       role="option"
       aria-selected={active}
-      sx={(theme) => rowSx(theme, active)}
+      sx={(theme) => ({
+        ...(item.href ? linkResetSx : null),
+        ...rowSx(theme, active),
+      })}
       onMouseDown={(e) => e.preventDefault()}
       onMouseEnter={onMouseEnter}
-      onClick={item.onSelect}
+      {...linkAnchorProps}
     >
       <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
         <Typography
@@ -291,49 +305,48 @@ const GlobalSearchBar: React.FC = () => {
   const navItems: NavItem[] = useMemo(() => {
     const items: NavItem[] = [];
     minerResults.forEach((miner) => {
+      const href = `/miners/details?githubId=${encodeURIComponent(miner.githubId)}`;
       items.push({
         key: `miner-${miner.githubId}`,
         kind: 'miner',
         title: miner.githubUsername || miner.githubId,
         subtitle: getMinerSubtitle(miner),
-        onSelect: () =>
-          navigateAndClose(
-            `/miners/details?githubId=${encodeURIComponent(miner.githubId)}`,
-          ),
+        href,
+        onSelect: () => navigateAndClose(href),
       });
     });
     repositoryResults.forEach((repo) => {
+      const href = `/miners/repository?name=${encodeURIComponent(repo.fullName)}`;
       items.push({
         key: `repo-${repo.fullName}`,
         kind: 'repo',
         title: repo.fullName,
         subtitle: repo.owner,
-        onSelect: () =>
-          navigateAndClose(
-            `/miners/repository?name=${encodeURIComponent(repo.fullName)}`,
-          ),
+        href,
+        onSelect: () => navigateAndClose(href),
       });
     });
     prResults.forEach((pr) => {
+      const href = `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`;
       items.push({
         key: `pr-${pr.repository}-${pr.pullRequestNumber}`,
         kind: 'pr',
         title: `${pr.repository} #${pr.pullRequestNumber}`,
         subtitle: pr.pullRequestTitle,
-        onSelect: () =>
-          navigateAndClose(
-            `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
-          ),
+        href,
+        onSelect: () => navigateAndClose(href),
       });
     });
     issueResults.forEach((issue) => {
+      const href = `/bounties/details?id=${issue.id}`;
       items.push({
         key: `issue-${issue.id}`,
         kind: 'issue',
         title:
           issue.title || `${issue.repositoryFullName} #${issue.issueNumber}`,
         subtitle: `${issue.repositoryFullName} · #${issue.issueNumber}`,
-        onSelect: () => navigateAndClose(`/bounties/details?id=${issue.id}`),
+        href,
+        onSelect: () => navigateAndClose(href),
       });
     });
     if (trimmedQuery) {
@@ -606,16 +619,7 @@ const GlobalSearchBar: React.FC = () => {
             backgroundColor: theme.palette.background.default,
             maxHeight: 'min(420px, calc(100vh - 96px))',
             overflowY: 'auto',
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: theme.palette.border.light,
-              borderRadius: 1,
-            },
+            ...scrollbarSx,
           })}
         >
           {isLoading && (
@@ -650,6 +654,7 @@ const GlobalSearchBar: React.FC = () => {
                       active={idx === activeIndex}
                       rowRef={getRowRef(item.key)}
                       onMouseEnter={() => setActiveIndex(idx)}
+                      onLinkClick={closeDropdown}
                     />
                   </React.Fragment>
                 );
