@@ -226,7 +226,7 @@ const SidebarLogoLink: React.FC<{
 const SidebarNavLink: React.FC<{
   path: string;
   label: string;
-  badge?: string;
+  badge?: string | number;
   isActive: boolean;
   onNavigate?: () => void;
 }> = ({ path, label, badge, isActive, onNavigate }) => {
