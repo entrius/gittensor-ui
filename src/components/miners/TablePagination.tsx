@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, IconButton, Typography, alpha } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material';
 import {
   NavigateBefore as PrevIcon,
   NavigateNext as NextIcon,
@@ -11,6 +12,15 @@ interface TablePaginationProps {
   onPageChange: (newPage: number) => void;
 }
 
+const navButtonSx: SxProps<Theme> = {
+  p: 0.25,
+  color: (t) => alpha(t.palette.text.primary, 0.6),
+  '&:hover': { color: 'text.primary' },
+  '&.Mui-disabled': { opacity: 0.3 },
+};
+
+const navIconSx = { fontSize: '1.2rem' };
+
 const TablePagination: React.FC<TablePaginationProps> = ({
   page,
   totalPages,
@@ -19,21 +29,6 @@ const TablePagination: React.FC<TablePaginationProps> = ({
   if (totalPages <= 1) {
     return null;
   }
-
-  const canGoPrev = page > 0;
-  const canGoNext = page < totalPages - 1;
-
-  const handlePrev = () => {
-    if (canGoPrev) {
-      onPageChange(page - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (canGoNext) {
-      onPageChange(page + 1);
-    }
-  };
 
   return (
     <Box
@@ -48,18 +43,13 @@ const TablePagination: React.FC<TablePaginationProps> = ({
       }}
     >
       <IconButton
-        onClick={handlePrev}
-        disabled={!canGoPrev}
+        onClick={() => onPageChange(page - 1)}
+        disabled={page === 0}
         aria-label="Previous page"
         size="small"
-        sx={{
-          p: 0.25,
-          color: (t) => alpha(t.palette.text.primary, 0.6),
-          '&:hover': { color: 'text.primary' },
-          '&.Mui-disabled': { opacity: 0.3 },
-        }}
+        sx={navButtonSx}
       >
-        <PrevIcon sx={{ fontSize: '1.2rem' }} />
+        <PrevIcon sx={navIconSx} />
       </IconButton>
       <Typography
         sx={{
@@ -70,18 +60,13 @@ const TablePagination: React.FC<TablePaginationProps> = ({
         {page + 1} / {totalPages}
       </Typography>
       <IconButton
-        onClick={handleNext}
-        disabled={!canGoNext}
+        onClick={() => onPageChange(page + 1)}
+        disabled={page >= totalPages - 1}
         aria-label="Next page"
         size="small"
-        sx={{
-          p: 0.25,
-          color: (t) => alpha(t.palette.text.primary, 0.6),
-          '&:hover': { color: 'text.primary' },
-          '&.Mui-disabled': { opacity: 0.3 },
-        }}
+        sx={navButtonSx}
       >
-        <NextIcon sx={{ fontSize: '1.2rem' }} />
+        <NextIcon sx={navIconSx} />
       </IconButton>
     </Box>
   );
