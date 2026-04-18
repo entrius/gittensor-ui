@@ -10,6 +10,7 @@ import {
   Chip,
   Stack,
   Tooltip,
+  IconButton,
   alpha,
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -72,6 +73,9 @@ interface StatTileProps {
   rank?: number | null;
   color?: string;
   tooltip?: string;
+  mobileTooltipOpen?: boolean;
+  onMobileTooltipToggle?: () => void;
+  onMobileTooltipClose?: () => void;
 }
 
 const StatTile: React.FC<StatTileProps> = ({
@@ -81,111 +85,146 @@ const StatTile: React.FC<StatTileProps> = ({
   rank,
   color,
   tooltip,
-}) => (
-  <Box
-    sx={{
-      backgroundColor: 'surface.subtle',
-      borderRadius: 2,
-      border: '1px solid',
-      borderColor: 'border.subtle',
-      p: 2,
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 0.5,
-    }}
-  >
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-      {tooltip ? (
-        <Tooltip
-          title={tooltip}
-          arrow
-          placement="top"
-          slotProps={tooltipSlotProps}
-        >
-          <Typography
-            variant="statLabel"
-            sx={{
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.5,
-            }}
-          >
-            {label}
-            <InfoOutlinedIcon sx={{ fontSize: '0.75rem' }} />
-          </Typography>
-        </Tooltip>
-      ) : (
-        <Typography variant="statLabel">{label}</Typography>
-      )}
-      {rank != null && rank > 0 && (
-        <Box
-          sx={{
-            backgroundColor: 'background.default',
-            borderRadius: '2px',
-            width: 18,
-            height: 18,
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: '1px solid',
-            borderColor:
-              rank <= 3
-                ? alpha(
-                    rank === 1
-                      ? RANK_COLORS.first
-                      : rank === 2
-                        ? RANK_COLORS.second
-                        : RANK_COLORS.third,
-                    0.4,
-                  )
-                : 'border.light',
-          }}
-        >
-          <Typography
-            component="span"
-            sx={{
-              fontSize: '0.6rem',
-              fontWeight: 600,
-              color:
-                rank === 1
-                  ? RANK_COLORS.first
-                  : rank === 2
-                    ? RANK_COLORS.second
-                    : rank === 3
-                      ? RANK_COLORS.third
-                      : (t) => alpha(t.palette.text.primary, 0.6),
-            }}
-          >
-            {rank}
-          </Typography>
-        </Box>
-      )}
-    </Box>
-    <Typography
+  mobileTooltipOpen = false,
+  onMobileTooltipToggle,
+  onMobileTooltipClose,
+}) => {
+  const isMobile =
+    typeof window !== 'undefined'
+      ? window.matchMedia(
+          '(max-width: 900px), (hover: none), (pointer: coarse)',
+        ).matches
+      : false;
+
+  return (
+    <Box
       sx={{
-        fontSize: '1.5rem',
-        fontWeight: 600,
-        color: color || 'text.primary',
-        lineHeight: 1.2,
+        backgroundColor: 'surface.subtle',
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: 'border.subtle',
+        p: 2,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0.5,
       }}
     >
-      {value}
-    </Typography>
-    {sub && (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        {tooltip ? (
+          <Tooltip
+            title={tooltip}
+            arrow
+            placement="top"
+            slotProps={tooltipSlotProps}
+            disableHoverListener={isMobile}
+            disableFocusListener={isMobile}
+            disableTouchListener={isMobile}
+            open={isMobile ? mobileTooltipOpen : undefined}
+            onClose={isMobile ? onMobileTooltipClose : undefined}
+          >
+            {isMobile ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography variant="statLabel">{label}</Typography>
+                <IconButton
+                  size="small"
+                  onClick={onMobileTooltipToggle}
+                  aria-label={`Show help for ${label}`}
+                  aria-expanded={mobileTooltipOpen}
+                  sx={{
+                    p: 0.25,
+                    color: (t) => alpha(t.palette.text.primary, 0.65),
+                  }}
+                >
+                  <InfoOutlinedIcon sx={{ fontSize: '0.75rem' }} />
+                </IconButton>
+              </Box>
+            ) : (
+              <Typography
+                variant="statLabel"
+                sx={{
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                }}
+              >
+                {label}
+                <InfoOutlinedIcon sx={{ fontSize: '0.75rem' }} />
+              </Typography>
+            )}
+          </Tooltip>
+        ) : (
+          <Typography variant="statLabel">{label}</Typography>
+        )}
+        {rank != null && rank > 0 && (
+          <Box
+            sx={{
+              backgroundColor: 'background.default',
+              borderRadius: '2px',
+              width: 18,
+              height: 18,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1px solid',
+              borderColor:
+                rank <= 3
+                  ? alpha(
+                      rank === 1
+                        ? RANK_COLORS.first
+                        : rank === 2
+                          ? RANK_COLORS.second
+                          : RANK_COLORS.third,
+                      0.4,
+                    )
+                  : 'border.light',
+            }}
+          >
+            <Typography
+              component="span"
+              sx={{
+                fontSize: '0.6rem',
+                fontWeight: 600,
+                color:
+                  rank === 1
+                    ? RANK_COLORS.first
+                    : rank === 2
+                      ? RANK_COLORS.second
+                      : rank === 3
+                        ? RANK_COLORS.third
+                        : (t) => alpha(t.palette.text.primary, 0.6),
+              }}
+            >
+              {rank}
+            </Typography>
+          </Box>
+        )}
+      </Box>
       <Typography
         sx={{
-          fontSize: '0.75rem',
-          color: (t) => alpha(t.palette.text.primary, 0.4),
-          mt: 0.25,
+          fontSize: '1.5rem',
+          fontWeight: 600,
+          color: color || 'text.primary',
+          lineHeight: 1.2,
         }}
       >
-        {sub}
+        {value}
       </Typography>
-    )}
-  </Box>
-);
+      {sub && (
+        <Typography
+          sx={{
+            fontSize: '0.75rem',
+            color: (t) => alpha(t.palette.text.primary, 0.4),
+            mt: 0.25,
+          }}
+        >
+          {sub}
+        </Typography>
+      )}
+    </Box>
+  );
+};
 
 const COPY_FEEDBACK_MS = 1500;
 
@@ -293,7 +332,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
     : (generalConfig?.repositoryPrScoring?.excessivePrPenaltyThreshold ?? 10);
 
   const rankings = useMemo(() => {
-    if (!allMinersStats || !minerStats) return null;
+    if (!Array.isArray(allMinersStats) || !minerStats) return null;
     const rank = (_key: string, extract: (m: MinerEvaluation) => number) =>
       allMinersStats
         .slice()
@@ -306,12 +345,22 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
   }, [allMinersStats, minerStats, githubId]);
 
   const topPrScore = useMemo(() => {
-    if (!prs || prs.length === 0) return null;
+    if (!Array.isArray(prs) || prs.length === 0) return null;
     return prs.reduce((max, pr) => {
       const s = parseFloat(pr.score || '0');
       return s > max ? s : max;
     }, 0);
   }, [prs]);
+
+  const [mobileTooltipKey, setMobileTooltipKey] = useState<string | null>(null);
+
+  const toggleMobileTooltip = (key: string) => {
+    setMobileTooltipKey((prev) => (prev === key ? null : key));
+  };
+
+  const closeMobileTooltip = () => {
+    setMobileTooltipKey(null);
+  };
 
   if (isLoading) {
     return (
@@ -633,6 +682,9 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               label="Score"
               value={parseNumber(minerStats.issueDiscoveryScore).toFixed(2)}
               tooltip="Aggregate score for issue discovery contributions."
+              mobileTooltipOpen={mobileTooltipKey === 'issues-score'}
+              onMobileTooltipToggle={() => toggleMobileTooltip('issues-score')}
+              onMobileTooltipClose={closeMobileTooltip}
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
@@ -642,6 +694,11 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               sub={`${minerStats.totalSolvedIssues || 0} solved · ${minerStats.totalClosedIssues || 0} closed`}
               color={credibilityColor(Number(minerStats.issueCredibility || 0))}
               tooltip="Credibility = solved / (solved + max(0, closed − 1)). One closed issue is forgiven. 80%+ required for eligibility."
+              mobileTooltipOpen={mobileTooltipKey === 'issues-credibility'}
+              onMobileTooltipToggle={() =>
+                toggleMobileTooltip('issues-credibility')
+              }
+              onMobileTooltipClose={closeMobileTooltip}
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
@@ -650,6 +707,11 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               value={parseNumber(minerStats.issueTokenScore).toFixed(0)}
               sub={`${minerStats.totalValidSolvedIssues || 0} valid (need 7)`}
               tooltip="Sum of solving PR token scores across valid issues. Reflects code quality generated by discovered issues."
+              mobileTooltipOpen={mobileTooltipKey === 'issues-token-score'}
+              onMobileTooltipToggle={() =>
+                toggleMobileTooltip('issues-token-score')
+              }
+              onMobileTooltipClose={closeMobileTooltip}
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
@@ -662,6 +724,9 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               )}
               sub={`${minerStats.totalSolvedIssues || 0} solved · ${minerStats.totalOpenIssues || 0} open`}
               tooltip="Total discovered issues (solved + open + closed). Only solved issues with a qualifying PR contribute to your discovery score."
+              mobileTooltipOpen={mobileTooltipKey === 'issues-count'}
+              onMobileTooltipToggle={() => toggleMobileTooltip('issues-count')}
+              onMobileTooltipClose={closeMobileTooltip}
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
@@ -673,6 +738,11 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                 calculateOpenIssueThreshold(minerStats),
               )}
               tooltip="Open issues count toward spam detection. Exceeding the threshold triggers a full penalty on all discovery scores."
+              mobileTooltipOpen={mobileTooltipKey === 'issues-open-risk'}
+              onMobileTooltipToggle={() =>
+                toggleMobileTooltip('issues-open-risk')
+              }
+              onMobileTooltipClose={closeMobileTooltip}
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
@@ -686,6 +756,11 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                   : undefined
               }
               tooltip="Estimated earnings from issue discovery based on current network incentive distribution."
+              mobileTooltipOpen={mobileTooltipKey === 'issues-earnings'}
+              onMobileTooltipToggle={() =>
+                toggleMobileTooltip('issues-earnings')
+              }
+              onMobileTooltipClose={closeMobileTooltip}
             />
           </Grid>
         </Grid>
