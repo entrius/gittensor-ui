@@ -33,6 +33,17 @@ import { useLanguagesAndWeights } from '../../api';
 type SortField = 'extension' | 'weight' | 'language';
 type SortOrder = 'asc' | 'desc';
 
+/** Match other header labels (primary text); accent only on hover. */
+const languageWeightsSortLabelSx = {
+  color: 'text.primary',
+  '&.Mui-active': {
+    color: 'text.primary',
+  },
+  '&:hover': {
+    color: 'secondary.main',
+  },
+} as const;
+
 const LanguageWeightsTable: React.FC = () => {
   const theme = useTheme();
   const { data: languages, isLoading } = useLanguagesAndWeights();
@@ -393,14 +404,7 @@ const LanguageWeightsTable: React.FC = () => {
                     active={sortField === 'extension'}
                     direction={sortField === 'extension' ? sortOrder : 'asc'}
                     onClick={() => handleSort('extension')}
-                    sx={{
-                      '&:hover': {
-                        color: 'secondary.main',
-                      },
-                      '&.Mui-active': {
-                        color: 'secondary.main',
-                      },
-                    }}
+                    sx={languageWeightsSortLabelSx}
                   >
                     <Typography variant="dataLabel">Extension</Typography>
                   </TableSortLabel>
@@ -419,14 +423,7 @@ const LanguageWeightsTable: React.FC = () => {
                     active={sortField === 'language'}
                     direction={sortField === 'language' ? sortOrder : 'asc'}
                     onClick={() => handleSort('language')}
-                    sx={{
-                      '&:hover': {
-                        color: 'secondary.main',
-                      },
-                      '&.Mui-active': {
-                        color: 'secondary.main',
-                      },
-                    }}
+                    sx={languageWeightsSortLabelSx}
                   >
                     <Typography variant="dataLabel">Language</Typography>
                   </TableSortLabel>
@@ -463,14 +460,7 @@ const LanguageWeightsTable: React.FC = () => {
                     active={sortField === 'weight'}
                     direction={sortField === 'weight' ? sortOrder : 'desc'}
                     onClick={() => handleSort('weight')}
-                    sx={{
-                      '&:hover': {
-                        color: 'secondary.main',
-                      },
-                      '&.Mui-active': {
-                        color: 'secondary.main',
-                      },
-                    }}
+                    sx={languageWeightsSortLabelSx}
                   >
                     <Typography variant="dataLabel">Weight</Typography>
                   </TableSortLabel>
