@@ -10,7 +10,6 @@ import {
 import { useLocation } from 'react-router-dom';
 import { useLinkBehavior } from '../common/linkBehavior';
 import { useWatchlist } from '../../hooks/useWatchlist';
-import { usePulseBoard } from '../../hooks/usePulseBoard';
 
 interface SidebarProps {
   onNavigate?: () => void;
@@ -19,7 +18,6 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
   const location = useLocation();
   const { count: watchlistCount } = useWatchlist();
-  const { pinnedCount } = usePulseBoard();
 
   const navItems = [
     { label: 'dashboard', path: '/dashboard' },
@@ -29,11 +27,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
       label: 'watchlist',
       path: '/watchlist',
       badge: watchlistCount > 0 ? String(watchlistCount) : undefined,
-    },
-    {
-      label: 'compare',
-      path: '/compare',
-      badge: pinnedCount > 0 ? pinnedCount : undefined,
     },
     { label: 'bounties', path: '/bounties' },
     { label: 'repositories', path: '/repositories' },

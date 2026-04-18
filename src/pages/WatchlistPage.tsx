@@ -10,6 +10,8 @@ import {
   DialogActions,
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import { usePulseBoard } from '../hooks/usePulseBoard';
 import { Page } from '../components/layout';
 import { TopMinersTable, SEO } from '../components';
 import { useAllMiners } from '../api';
@@ -18,6 +20,7 @@ import { useWatchlist } from '../hooks/useWatchlist';
 
 const WatchlistPage: React.FC = () => {
   const { ids, count, clear } = useWatchlist();
+  const { pinnedCount } = usePulseBoard();
   const watchedSet = useMemo(() => new Set(ids), [ids]);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -82,19 +85,38 @@ const WatchlistPage: React.FC = () => {
             {count === 1 ? 'miner pinned' : 'miners pinned'}. Stored locally in
             this browser.
           </Typography>
-          {count > 0 && (
-            <Button
-              size="small"
-              onClick={() => setConfirmOpen(true)}
-              sx={{
-                fontSize: '0.75rem',
-                textTransform: 'none',
-                color: 'text.secondary',
-              }}
-            >
-              Clear watchlist
-            </Button>
-          )}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {pinnedCount > 0 && (
+              <Button
+                component={RouterLink}
+                to="/compare"
+                size="small"
+                variant="outlined"
+                startIcon={
+                  <CompareArrowsIcon sx={{ fontSize: '1rem !important' }} />
+                }
+                sx={{
+                  fontSize: '0.75rem',
+                  textTransform: 'none',
+                }}
+              >
+                Compare ({pinnedCount})
+              </Button>
+            )}
+            {count > 0 && (
+              <Button
+                size="small"
+                onClick={() => setConfirmOpen(true)}
+                sx={{
+                  fontSize: '0.75rem',
+                  textTransform: 'none',
+                  color: 'text.secondary',
+                }}
+              >
+                Clear watchlist
+              </Button>
+            )}
+          </Box>
         </Stack>
 
         {isEmpty ? (
