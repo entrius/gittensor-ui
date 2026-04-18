@@ -302,6 +302,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
     return {
       score: rank('score', (m) => Number(m.totalScore)),
       totalPrs: rank('prs', (m) => Number(m.totalPrs)),
+      credibility: rank('credibility', (m) => Number(m.credibility ?? 0)),
+      issueCredibility: rank('issueCredibility', (m) =>
+        Number(m.issueCredibility ?? 0),
+      ),
     };
   }, [allMinersStats, minerStats, githubId]);
 
@@ -580,6 +584,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               value={`${(cred * 100).toFixed(1)}%`}
               sub={`${minerStats.totalMergedPrs || 0} merged · ${minerStats.totalClosedPrs || 0} closed`}
               color={credibilityColor(cred)}
+              rank={rankings?.credibility}
               tooltip="Ratio of merged PRs to total attempts (merged + closed). Higher credibility means a stronger multiplier on your scores."
             />
           </Grid>
@@ -642,6 +647,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               value={`${(parseNumber(minerStats.issueCredibility) * 100).toFixed(1)}%`}
               sub={`${minerStats.totalSolvedIssues || 0} solved · ${minerStats.totalClosedIssues || 0} closed`}
               color={credibilityColor(Number(minerStats.issueCredibility || 0))}
+              rank={rankings?.issueCredibility}
               tooltip="Credibility = solved / (solved + max(0, closed − 1)). One closed issue is forgiven. 80%+ required for eligibility."
             />
           </Grid>
