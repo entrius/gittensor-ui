@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Typography,
@@ -7,6 +7,7 @@ import {
   Tabs,
   Tab,
   Tooltip,
+  ButtonBase,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -14,57 +15,45 @@ import CheckIcon from '@mui/icons-material/Check';
 import { alpha } from '@mui/material/styles';
 import { scrollbarSx, tooltipSlotProps } from '../../theme';
 
-const MONO = '"JetBrains Mono", monospace';
-
-const steps = [
-  {
-    step: 1,
-    title: 'Create Wallet',
-    subtitle: 'Coldkey & Hotkey',
-  },
-  {
-    step: 2,
-    title: 'Register',
-    subtitle: 'To Subnet',
-  },
-  {
-    step: 3,
-    title: 'Create PAT',
-    subtitle: 'GitHub Token',
-  },
-  {
-    step: 4,
-    title: 'Install CLI',
-    subtitle: 'gittensor tools',
-  },
-  {
-    step: 5,
-    title: 'Broadcast',
-    subtitle: 'PAT to Validators',
-  },
-  {
-    step: 6,
-    title: 'Verify',
-    subtitle: 'Check Status',
-  },
-  {
-    step: 7,
-    title: 'Contribute',
-    subtitle: 'Earn Rewards',
-    active: true,
-  },
-];
+const COPY_FEEDBACK_MS = 1500;
 
 const CodeBlock: React.FC<{
   children: string;
   label?: string;
 }> = ({ children, label }) => {
   const [copied, setCopied] = useState(false);
+  const timerRef = useRef<number | null>(null);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(children.trim());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  useEffect(
+    () => () => {
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+      }
+    },
+    [],
+  );
+
+  const handleCopy = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('clipboard-unavailable');
+      }
+
+      await navigator.clipboard.writeText(children.trim());
+      setCopied(true);
+
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+      }
+
+      timerRef.current = window.setTimeout(() => {
+        setCopied(false);
+        timerRef.current = null;
+      }, COPY_FEEDBACK_MS);
+    } catch {
+      // Leave the code text selectable so users can copy manually when
+      // the Clipboard API is unavailable or blocked.
+    }
   };
 
   return (
@@ -111,23 +100,35 @@ const CodeBlock: React.FC<{
         >
           {children.trim()}
         </Typography>
+
         <Tooltip
-          title={copied ? 'Copied!' : 'Copy'}
+          title={copied ? 'Copied!' : 'Copy command'}
           placement="left"
           slotProps={tooltipSlotProps}
         >
-          <Box
+          <ButtonBase
             onClick={handleCopy}
+            aria-label={
+              copied
+                ? 'Command copied to clipboard'
+                : 'Copy command to clipboard'
+            }
+            aria-live="polite"
+            disableRipple
             sx={{
               position: 'absolute',
               top: 8,
               right: 8,
-              cursor: 'pointer',
+              borderRadius: '4px',
               color: copied ? 'success.main' : 'text.tertiary',
+              transition: 'color 0.2s',
               '&:hover': {
                 color: copied ? 'success.main' : 'text.secondary',
               },
-              transition: 'color 0.2s',
+              '&:focus-visible': {
+                outline: (theme) => `2px solid ${theme.palette.primary.main}`,
+                outlineOffset: '2px',
+              },
             }}
           >
             {copied ? (
@@ -135,7 +136,7 @@ const CodeBlock: React.FC<{
             ) : (
               <ContentCopyIcon sx={{ fontSize: 16 }} />
             )}
-          </Box>
+          </ButtonBase>
         </Tooltip>
       </Box>
     </Box>

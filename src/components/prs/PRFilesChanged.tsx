@@ -1067,6 +1067,8 @@ const DiffMinimap: React.FC<{
 // For now, let's keep SplitDiffView self-contained but we need to parse for Minimap in parent?
 // Actually, let's just make a new wrapper component for the file content.
 
+const COPY_FEEDBACK_MS = 1500;
+
 const PRFileDiffViewer: React.FC<{
   file: PRFile;
   viewMode: 'unified' | 'split';
@@ -1080,95 +1082,55 @@ const PRFileDiffViewer: React.FC<{
 
   const [copied, setCopied] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const timerRef = useRef<number | null>(null);
 
-  const handleCopyPath = (e: React.MouseEvent) => {
+  useEffect(
+    () => () => {
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+      }
+    },
+    [],
+  );
+
+  const handleCopyPath = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(file.filename);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('clipboard-unavailable');
+      }
+
+      await navigator.clipboard.writeText(file.filename);
+      setCopied(true);
+
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+      }
+
+      timerRef.current = window.setTimeout(() => {
+        setCopied(false);
+        timerRef.current = null;
+      }, COPY_FEEDBACK_MS);
+    } catch {
+      // Keep the filename visible/selectable so users still have a manual
+      // copy fallback when clipboard access is blocked.
+    }
   };
 
   if (!file.patch) {
     return (
       <Box sx={{ p: 4, textAlign: 'center', color: 'status.open' }}>
-        <Typography sx={{ fontSize: '0.9rem' }}>
-          {file.status === 'renamed'
-            ? 'File renamed without changes.'
-            : 'Binary file or large diff not shown.'}
-        </Typography>
-        <Typography
-          component="a"
-          href={file.blob_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          sx={{
-            color: 'status.info',
-            fontSize: '0.85rem',
-            textDecoration: 'none',
-            '&:hover': { textDecoration: 'underline' },
-            mt: 1,
-            display: 'inline-block',
-          }}
-        >
-          View file
-        </Typography>
+        ...
       </Box>
     );
   }
 
   return (
-    <Paper
-      id={`file-${file.sha}`}
-      elevation={0}
-      sx={{
-        border: '1px solid',
-        borderColor: 'border.light',
-        borderRadius: '6px',
-        backgroundColor: 'background.paper',
-        overflow: 'hidden',
-        scrollMarginTop: '100px',
-        mb: 3,
-      }}
-    >
-      <Accordion
-        defaultExpanded
-        disableGutters
-        sx={{
-          backgroundColor: 'surface.elevated',
-          color: 'text.tertiary',
-          boxShadow: 'none',
-          borderRadius: 0,
-          '&:before': { display: 'none' },
-          '&.Mui-expanded': { margin: 0 },
-        }}
-      >
-        <AccordionSummary
-          expandIcon={<ExpandMoreIcon sx={{ color: 'status.open' }} />}
-          sx={{
-            borderBottom: '1px solid',
-            borderColor: 'border.light',
-            minHeight: '48px',
-            position: 'sticky', // STICKY HEADER
-            top: 0,
-            zIndex: 10,
-            backgroundColor: 'surface.elevated',
-            '& .MuiAccordionSummary-content': {
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              margin: '12px 0',
-              width: '100%',
-            },
-          }}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              overflow: 'hidden',
-            }}
-          >
+    <Paper ...>
+      <Accordion ...>
+        <AccordionSummary ...>
+          <Box ...>
             <Typography
               sx={{
                 fontSize: '0.9rem',
@@ -1188,6 +1150,12 @@ const PRFileDiffViewer: React.FC<{
               <IconButton
                 size="small"
                 onClick={handleCopyPath}
+                aria-label={
+                  copied
+                    ? 'File path copied to clipboard'
+                    : 'Copy file path to clipboard'
+                }
+                aria-live="polite"
                 sx={{ color: 'status.open', ml: 1, p: 0.5 }}
               >
                 {copied ? (
