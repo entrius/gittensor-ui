@@ -10,6 +10,3 @@ yarn.lock
 *.log
 *.tsbuildinfo
 .wrangler
-
-# Local QA evidence (do not commit)
-artifacts/
