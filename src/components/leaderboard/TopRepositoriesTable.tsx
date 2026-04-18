@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useRef,
 } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Box,
   Card,
@@ -20,7 +21,6 @@ import {
   InputAdornment,
   Tooltip,
   IconButton,
-  Collapse,
   TablePagination,
   Select,
   MenuItem,
@@ -36,8 +36,6 @@ import {
   type Theme,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import TableChartIcon from '@mui/icons-material/TableChart';
 import FilterButton from '../FilterButton';
 import ReactECharts from 'echarts-for-react';
 import type { TooltipComponentFormatterCallbackParams } from 'echarts';
@@ -83,6 +81,8 @@ interface TopRepositoriesTableProps {
   isLoading?: boolean;
   getRepositoryHref: (repositoryFullName: string) => string;
   linkState?: Record<string, unknown>;
+  /** When set, the bar chart is rendered into this element (e.g. highlight column on Repositories page). */
+  chartPortalHost?: HTMLElement | null;
 }
 
 const VALID_SORT_COLUMNS: SortColumn[] = [
@@ -100,6 +100,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   isLoading,
   getRepositoryHref,
   linkState,
+  chartPortalHost,
 }) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -124,7 +125,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       ? urlStatusFilter
       : 'all',
   );
-  const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(urlPage >= 0 ? urlPage : 0);
   const [rowsPerPage, setRowsPerPage] = useState(
     VALID_ROWS.includes(urlRows) ? urlRows : 10,
@@ -325,21 +325,23 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
 
     return {
       backgroundColor: 'transparent',
-      title: {
-        text: metric.title,
-        subtext: 'Values match the current table sort and page',
-        left: 'center',
-        top: 20,
-        textStyle: {
-          color: primaryColor,
-          fontSize: 18,
-          fontWeight: 600,
-        },
-        subtextStyle: {
-          color: alpha(white, TEXT_OPACITY.tertiary),
-          fontSize: 12,
-        },
-      },
+      title: chartPortalHost
+        ? { show: false }
+        : {
+            text: metric.title,
+            subtext: 'Values match the current table sort and page',
+            left: 'center',
+            top: 20,
+            textStyle: {
+              color: primaryColor,
+              fontSize: 18,
+              fontWeight: 600,
+            },
+            subtextStyle: {
+              color: alpha(white, TEXT_OPACITY.tertiary),
+              fontSize: 12,
+            },
+          },
       tooltip: {
         trigger: 'axis',
         axisPointer: {
@@ -379,8 +381,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       grid: {
         left: '3%',
         right: '3%',
-        bottom: '18%',
-        top: '18%',
+        bottom: chartPortalHost ? '14%' : '18%',
+        top: chartPortalHost ? '8%' : '18%',
         containLabel: true,
       },
       dataZoom: [
@@ -708,60 +710,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 }}
               />
             </Box>
-            <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
-              <IconButton
-                onClick={() => setShowChart(!showChart)}
-                size="small"
-                sx={{
-                  color: showChart ? 'text.primary' : 'text.tertiary',
-                  border: '1px solid',
-                  borderColor: 'border.light',
-                  borderRadius: 2,
-                  padding: '6px',
-                  '&:hover': {
-                    backgroundColor: 'surface.light',
-                    borderColor: 'border.medium',
-                  },
-                }}
-              >
-                {showChart ? (
-                  <TableChartIcon fontSize="small" />
-                ) : (
-                  <BarChartIcon fontSize="small" />
-                )}
-              </IconButton>
-            </Tooltip>
-
-            {showChart && (
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={useLogScale}
-                    onChange={(e) => setUseLogScale(e.target.checked)}
-                    size="small"
-                    sx={{
-                      '& .MuiSwitch-switchBase.Mui-checked': {
-                        color: 'primary.main',
-                      },
-                      '& .MuiSwitch-track': {
-                        backgroundColor: 'border.medium',
-                      },
-                    }}
-                  />
-                }
-                label={
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontSize: '0.8rem',
-                      color: 'text.secondary',
-                    }}
-                  >
-                    Log Scale
-                  </Typography>
-                }
-              />
-            )}
 
             <FormControl size="small">
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -831,25 +779,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           </Box>
         </Box>
       </Box>
-
-      <Collapse in={showChart}>
-        <Box
-          sx={{
-            p: 2,
-            borderBottom: '1px solid',
-            borderColor: 'border.light',
-            height: '500px',
-            backgroundColor: 'surface.subtle',
-          }}
-        >
-          {showChart && filteredRepositories.length > 0 && (
-            <ReactECharts
-              option={getChartOption()}
-              style={{ height: '100%', width: '100%' }}
-            />
-          )}
-        </Box>
-      </Collapse>
 
       <TableContainer
         sx={{
@@ -1126,6 +1055,86 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           '.MuiTablePagination-displayedRows': {},
         }}
       />
+      {chartPortalHost &&
+        createPortal(
+          <Box
+            sx={{
+              height: '100%',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 0,
+              boxSizing: 'border-box',
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                flexShrink: 0,
+                pb: 0.5,
+              }}
+            >
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={useLogScale}
+                    onChange={(e) => setUseLogScale(e.target.checked)}
+                    size="small"
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': {
+                        color: 'primary.main',
+                      },
+                      '& .MuiSwitch-track': {
+                        backgroundColor: 'border.medium',
+                      },
+                    }}
+                  />
+                }
+                label={
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontSize: '0.75rem',
+                      color: 'text.secondary',
+                    }}
+                  >
+                    Log scale
+                  </Typography>
+                }
+              />
+            </Box>
+            <Box
+              sx={{
+                flex: 1,
+                minHeight: 200,
+                position: 'relative',
+                borderRadius: 1,
+                overflow: 'hidden',
+              }}
+            >
+              {filteredRepositories.length > 0 ? (
+                <ReactECharts
+                  option={getChartOption()}
+                  style={{ height: '100%', width: '100%', minHeight: 220 }}
+                />
+              ) : (
+                <Typography
+                  sx={{
+                    p: 2,
+                    color: 'text.secondary',
+                    fontSize: '0.8rem',
+                    textAlign: 'center',
+                  }}
+                >
+                  No repositories match the current filters.
+                </Typography>
+              )}
+            </Box>
+          </Box>,
+          chartPortalHost,
+        )}
     </Card>
   );
 };

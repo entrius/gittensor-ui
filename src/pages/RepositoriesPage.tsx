@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
 import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
@@ -120,6 +120,13 @@ const getPrHref = (name: string, number: number) =>
   `/miners/pr?repo=${encodeURIComponent(name)}&number=${number}`;
 
 const RepositoriesPage: React.FC = () => {
+  const [chartPortalHost, setChartPortalHost] = useState<HTMLElement | null>(
+    null,
+  );
+  const chartHostRef = useCallback((node: HTMLElement | null) => {
+    setChartPortalHost(node);
+  }, []);
+
   const formatRelativeTime = (date: Date) => {
     const now = new Date();
     if (date > now) return 'just now';
@@ -476,94 +483,115 @@ const RepositoriesPage: React.FC = () => {
             ) : null}
           </Card>
 
-          {/* Recent PRs */}
-          <Card sx={cardSx}>
-            {isLoading || recentPrs.length > 0 ? (
-              <>
-                <SectionHeader>Recent Pull Requests</SectionHeader>
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  {recentPrs.length === 0 && !isLoading ? (
-                    <Typography
-                      sx={(theme) => ({
-                        color: alpha(theme.palette.text.primary, 0.3),
-                        fontSize: '0.8rem',
-                        fontStyle: 'italic',
-                        p: 1,
-                      })}
-                    >
-                      No data available
-                    </Typography>
-                  ) : (
-                    recentPrs.map((pr) => (
-                      <HighlightRow
-                        key={`${pr.name}-${pr.number}`}
-                        href={getPrHref(pr.name, pr.number)}
-                        linkState={REPO_LINK_STATE}
-                        avatar={`https://avatars.githubusercontent.com/${pr.name.split('/')[0]}`}
-                        avatarBg={getAvatarBg(pr.name)}
-                        label={
-                          <Box
-                            sx={{
-                              minWidth: 0,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <Tooltip title={pr.name} arrow placement="top">
-                              <Typography
-                                sx={{
-                                  fontFamily: FONTS.mono,
-                                  fontSize: '0.68rem',
-                                  color: 'text.tertiary',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  lineHeight: 1.2,
-                                }}
-                              >
-                                {pr.name}
-                              </Typography>
-                            </Tooltip>
-                            <Tooltip title={pr.title} arrow placement="top">
-                              <Typography
-                                sx={{
-                                  fontFamily: FONTS.mono,
-                                  fontSize: '0.78rem',
-                                  color: 'text.primary',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  lineHeight: 1.3,
-                                }}
-                              >
-                                {pr.title}
-                              </Typography>
-                            </Tooltip>
-                          </Box>
-                        }
-                        right={
-                          <Typography
-                            sx={(theme) => ({
-                              fontFamily: FONTS.mono,
-                              fontSize: '0.68rem',
-                              color: alpha(theme.palette.text.primary, 0.35),
-                              flexShrink: 0,
-                              whiteSpace: 'nowrap',
-                              ml: 1,
-                            })}
-                          >
-                            {formatRelativeTime(pr.createdAt)}
-                          </Typography>
-                        }
-                      />
-                    ))
-                  )}
-                </Box>
-              </>
-            ) : null}
+          {/* Bar chart for current table page (rendered via portal from TopRepositoriesTable) */}
+          <Card
+            sx={{
+              ...cardSx,
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: { xs: 300, lg: '100%' },
+            }}
+          >
+            <SectionHeader>Repository distribution</SectionHeader>
+            <Box
+              ref={chartHostRef}
+              sx={{
+                flex: 1,
+                minHeight: { xs: 240, lg: 260 },
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            />
           </Card>
         </Box>
+
+        {/* Recent PRs — below highlight grid */}
+        <Card sx={{ ...cardSx, mb: 3, width: '100%' }}>
+          {isLoading || recentPrs.length > 0 ? (
+            <>
+              <SectionHeader>Recent Pull Requests</SectionHeader>
+              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                {recentPrs.length === 0 && !isLoading ? (
+                  <Typography
+                    sx={(theme) => ({
+                      color: alpha(theme.palette.text.primary, 0.3),
+                      fontSize: '0.8rem',
+                      fontStyle: 'italic',
+                      p: 1,
+                    })}
+                  >
+                    No data available
+                  </Typography>
+                ) : (
+                  recentPrs.map((pr) => (
+                    <HighlightRow
+                      key={`${pr.name}-${pr.number}`}
+                      href={getPrHref(pr.name, pr.number)}
+                      linkState={REPO_LINK_STATE}
+                      avatar={`https://avatars.githubusercontent.com/${pr.name.split('/')[0]}`}
+                      avatarBg={getAvatarBg(pr.name)}
+                      label={
+                        <Box
+                          sx={{
+                            minWidth: 0,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Tooltip title={pr.name} arrow placement="top">
+                            <Typography
+                              sx={{
+                                fontFamily: FONTS.mono,
+                                fontSize: '0.68rem',
+                                color: 'text.tertiary',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                lineHeight: 1.2,
+                              }}
+                            >
+                              {pr.name}
+                            </Typography>
+                          </Tooltip>
+                          <Tooltip title={pr.title} arrow placement="top">
+                            <Typography
+                              sx={{
+                                fontFamily: FONTS.mono,
+                                fontSize: '0.78rem',
+                                color: 'text.primary',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                lineHeight: 1.3,
+                              }}
+                            >
+                              {pr.title}
+                            </Typography>
+                          </Tooltip>
+                        </Box>
+                      }
+                      right={
+                        <Typography
+                          sx={(theme) => ({
+                            fontFamily: FONTS.mono,
+                            fontSize: '0.68rem',
+                            color: alpha(theme.palette.text.primary, 0.35),
+                            flexShrink: 0,
+                            whiteSpace: 'nowrap',
+                            ml: 1,
+                          })}
+                        >
+                          {formatRelativeTime(pr.createdAt)}
+                        </Typography>
+                      }
+                    />
+                  ))
+                )}
+              </Box>
+            </>
+          ) : null}
+        </Card>
 
         {/* ── Main Table ────────────────────────────────────────────── */}
         <Card
@@ -581,6 +609,7 @@ const RepositoriesPage: React.FC = () => {
             isLoading={isLoading}
             getRepositoryHref={getRepoHref}
             linkState={REPO_LINK_STATE}
+            chartPortalHost={chartPortalHost}
           />
         </Card>
       </Box>
