@@ -391,7 +391,15 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
                   mb: 0.75,
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.1, minWidth: 0, flex: 1 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 1.1,
+                    minWidth: 0,
+                    flex: 1,
+                  }}
+                >
                   <Box sx={{ color: style.color, mt: 0.15, flexShrink: 0 }}>
                     {style.icon}
                   </Box>
