@@ -6,15 +6,15 @@ import { formatTokenAmount, formatAlphaToUsd } from '../../utils/format';
 import { usePrices } from '../../hooks/usePrices';
 import { STATUS_COLORS } from '../../theme';
 
-interface IssueStatsProps {
+export interface IssueStatsProps {
   stats?: IssuesStats;
   isLoading?: boolean;
 }
 
-const IssueStats: React.FC<IssueStatsProps> = ({
+export function IssueStats({
   stats,
   isLoading = false,
-}) => {
+}: IssueStatsProps) {
   const { taoPrice, alphaPrice, hasPrices } = usePrices();
   const cards = [
     {
@@ -97,6 +97,4 @@ const IssueStats: React.FC<IssueStatsProps> = ({
       ))}
     </Box>
   );
-};
-
-export default IssueStats;
+}

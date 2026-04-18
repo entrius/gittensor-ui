@@ -231,19 +231,26 @@ const IssuesList: React.FC<IssuesListProps> = ({
             '&:hover': {
               color: 'secondary.main',
             },
-            // Keep active (sorted) column same base color as others; sort icon shows direction.
             '&.Mui-active': {
               color: 'text.secondary',
+            },
+            '&.Mui-active:hover': {
+              color: 'secondary.main',
+            },
+            '& .MuiTableSortLabel-icon': {
+              color: 'inherit',
             },
           }}
         >
           <Typography
+            component="span"
             sx={{
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.7rem',
               fontWeight: 600,
               letterSpacing: '0.5px',
               textTransform: 'uppercase',
+              color: 'inherit',
             }}
           >
             {label}
