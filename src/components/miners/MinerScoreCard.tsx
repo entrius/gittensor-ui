@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ButtonBase,
   Card,
   Typography,
   Box,
@@ -10,9 +9,12 @@ import {
   Chip,
   Stack,
   Tooltip,
+  IconButton,
   alpha,
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import CheckIcon from '@mui/icons-material/Check';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import {
   GitHub as GitHubIcon,
   Update as UpdateIcon,
@@ -226,45 +228,69 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
   };
 
   return (
-    <ButtonBase
-      onClick={handleCopy}
-      aria-label={
-        copied ? 'Hotkey copied to clipboard' : 'Copy hotkey to clipboard'
-      }
-      aria-live="polite"
-      disableRipple
+    <Box
       sx={{
-        display: 'block',
-        textAlign: 'left',
-        borderRadius: '4px',
-        color: (t) =>
-          copied
-            ? t.palette.status.success
-            : alpha(t.palette.text.primary, 0.45),
-        transition: 'color 0.15s ease',
-        '&:hover': {
-          color: (t) =>
-            copied
-              ? t.palette.status.success
-              : alpha(t.palette.text.primary, 0.8),
-        },
-        '&:focus-visible': {
-          outline: (t) => `2px solid ${t.palette.primary.main}`,
-          outlineOffset: '2px',
-        },
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 0.25,
+        minWidth: 0,
+        maxWidth: '100%',
       }}
     >
       <Typography
         component="span"
         sx={{
-          color: 'inherit',
+          flex: 1,
+          minWidth: 0,
+          color: (t) => alpha(t.palette.text.primary, 0.45),
           fontSize: { xs: '0.55rem', sm: '0.65rem' },
           wordBreak: 'break-all',
+          lineHeight: 1.35,
+          userSelect: 'text',
         }}
       >
-        {copied ? '✓ Copied to clipboard' : hotkey}
+        {hotkey}
       </Typography>
-    </ButtonBase>
+      <Tooltip
+        title={copied ? 'Copied' : 'Copy hotkey'}
+        arrow
+        placement="top"
+        slotProps={tooltipSlotProps}
+      >
+        <IconButton
+          size="small"
+          onClick={(e) => {
+            e.preventDefault();
+            void handleCopy();
+          }}
+          aria-label={
+            copied ? 'Hotkey copied to clipboard' : 'Copy hotkey to clipboard'
+          }
+          aria-live="polite"
+          sx={{
+            flexShrink: 0,
+            mt: '-2px',
+            color: (t) =>
+              copied
+                ? t.palette.status.success
+                : alpha(t.palette.text.primary, 0.45),
+            '&:hover': {
+              color: (t) =>
+                copied
+                  ? t.palette.status.success
+                  : alpha(t.palette.text.primary, 0.85),
+              backgroundColor: (t) => alpha(t.palette.text.primary, 0.06),
+            },
+          }}
+        >
+          {copied ? (
+            <CheckIcon sx={{ fontSize: '1rem' }} />
+          ) : (
+            <ContentCopyIcon sx={{ fontSize: '1rem' }} />
+          )}
+        </IconButton>
+      </Tooltip>
+    </Box>
   );
 };
 
