@@ -11,10 +11,7 @@ export interface IssueStatsProps {
   isLoading?: boolean;
 }
 
-export function IssueStats({
-  stats,
-  isLoading = false,
-}: IssueStatsProps) {
+export function IssueStats({ stats, isLoading = false }: IssueStatsProps) {
   const { taoPrice, alphaPrice, hasPrices } = usePrices();
   const cards = [
     {
