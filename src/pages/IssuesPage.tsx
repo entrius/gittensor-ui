@@ -9,6 +9,7 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Box, Tabs, Tab, Stack, Typography, alpha } from '@mui/material';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { IssueStats, IssuesList } from '../components/issues';
@@ -102,12 +103,16 @@ const IssuesPage: React.FC = () => {
               </Tabs>
 
               <Typography
+                component="span"
                 sx={{
                   fontSize: '0.72rem',
                   color: (t) => alpha(t.palette.text.primary, 0.35),
-                  pr: 1,
-                  mb: { xs: 1, md: 0 },
-                  textAlign: { xs: 'left', md: 'right' },
+                  pr: 0.5,
+                  mb: 0.5,
+                  textAlign: 'right',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.25,
                 }}
               >
                 Learn more about bounties in the{' '}
@@ -121,10 +126,16 @@ const IssuesPage: React.FC = () => {
                     fontSize: 'inherit',
                     fontFamily: 'inherit',
                     textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.25,
                     '&:hover': { textDecoration: 'underline' },
                   }}
                 >
                   docs
+                  <OpenInNewIcon
+                    sx={{ fontSize: '0.75rem', ml: 0.25 }}
+                  />
                 </Typography>
               </Typography>
             </Box>
