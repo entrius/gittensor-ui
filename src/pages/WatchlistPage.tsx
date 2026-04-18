@@ -3,6 +3,8 @@ import {
   Box,
   Typography,
   Button,
+  Chip,
+  Paper,
   alpha,
   Stack,
   Dialog,
@@ -12,14 +14,19 @@ import {
 import { Link as RouterLink } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { TopMinersTable, SEO } from '../components';
+import { MinerComparisonRadar, COMPARISON_COLORS } from '../components/miners';
 import { useAllMiners } from '../api';
 import { mapAllMinersToStats } from '../utils/minerMapper';
 import { useWatchlist } from '../hooks/useWatchlist';
+
+const MAX_COMPARE = 4;
 
 const WatchlistPage: React.FC = () => {
   const { ids, count, clear } = useWatchlist();
   const watchedSet = useMemo(() => new Set(ids), [ids]);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const allMinerStatsQuery = useAllMiners();
   const allMinersStats = allMinerStatsQuery?.data;
@@ -42,11 +49,44 @@ const WatchlistPage: React.FC = () => {
     [allMinerStats, watchedSet],
   );
 
+  const needsPicker = minerStats.length > MAX_COMPARE;
+
+  const comparisonMiners = useMemo(() => {
+    if (!needsPicker) return minerStats;
+    const picked = selectedIds
+      .map((id) => minerStats.find((m) => m.githubId === id))
+      .filter((m): m is (typeof minerStats)[number] => Boolean(m));
+    if (picked.length === 0) return minerStats.slice(0, MAX_COMPARE);
+    return picked.slice(0, MAX_COMPARE);
+  }, [minerStats, selectedIds, needsPicker]);
+
   const isEmpty = count === 0;
+  const canCompare = minerStats.length >= 2;
 
   const handleClear = () => {
     clear();
     setConfirmOpen(false);
+    setCompareOpen(false);
+    setSelectedIds([]);
+  };
+
+  const toggleSelected = (githubId: string) => {
+    setSelectedIds((prev) => {
+      const current =
+        prev.length > 0
+          ? prev
+          : minerStats.slice(0, MAX_COMPARE).map((m) => m.githubId);
+      if (current.includes(githubId)) {
+        return current.filter((id) => id !== githubId);
+      }
+      if (current.length >= MAX_COMPARE) return current;
+      return [...current, githubId];
+    });
+  };
+
+  const colorForMiner = (githubId: string) => {
+    const idx = comparisonMiners.findIndex((m) => m.githubId === githubId);
+    return idx >= 0 ? COMPARISON_COLORS[idx % COMPARISON_COLORS.length] : null;
   };
 
   return (
@@ -82,20 +122,99 @@ const WatchlistPage: React.FC = () => {
             {count === 1 ? 'miner pinned' : 'miners pinned'}. Stored locally in
             this browser.
           </Typography>
-          {count > 0 && (
-            <Button
-              size="small"
-              onClick={() => setConfirmOpen(true)}
-              sx={{
-                fontSize: '0.75rem',
-                textTransform: 'none',
-                color: 'text.secondary',
-              }}
-            >
-              Clear watchlist
-            </Button>
-          )}
+          <Stack direction="row" spacing={1} alignItems="center">
+            {canCompare && (
+              <Button
+                size="small"
+                variant={compareOpen ? 'contained' : 'outlined'}
+                onClick={() => setCompareOpen((v) => !v)}
+                sx={{ fontSize: '0.75rem', textTransform: 'none' }}
+              >
+                {compareOpen ? 'Hide comparison' : 'Compare'}
+              </Button>
+            )}
+            {count > 0 && (
+              <Button
+                size="small"
+                onClick={() => setConfirmOpen(true)}
+                sx={{
+                  fontSize: '0.75rem',
+                  textTransform: 'none',
+                  color: 'text.secondary',
+                }}
+              >
+                Clear watchlist
+              </Button>
+            )}
+          </Stack>
         </Stack>
+
+        {compareOpen && canCompare && (
+          <Paper
+            variant="outlined"
+            sx={{
+              p: { xs: 2, sm: 2.5 },
+              backgroundColor: 'surface.subtle',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1.5,
+            }}
+          >
+            {needsPicker && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 0.75,
+                  alignItems: 'center',
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: '0.75rem',
+                    color: (t) => alpha(t.palette.text.primary, 0.6),
+                    mr: 0.5,
+                  }}
+                >
+                  Pick up to {MAX_COMPARE}:
+                </Typography>
+                {minerStats.map((m) => {
+                  const color = colorForMiner(m.githubId);
+                  const active = Boolean(color);
+                  return (
+                    <Chip
+                      key={m.githubId}
+                      label={m.author || m.githubId}
+                      size="small"
+                      clickable
+                      onClick={() => toggleSelected(m.githubId)}
+                      sx={{
+                        fontSize: '0.72rem',
+                        height: 24,
+                        borderRadius: 1.5,
+                        border: '1px solid',
+                        borderColor: active
+                          ? color!
+                          : (t) => alpha(t.palette.common.white, 0.15),
+                        backgroundColor: active ? `${color}22` : 'transparent',
+                        color: active ? color! : 'text.secondary',
+                        '&:hover': {
+                          backgroundColor: active
+                            ? `${color}33`
+                            : (t) => alpha(t.palette.common.white, 0.05),
+                        },
+                      }}
+                    />
+                  );
+                })}
+              </Box>
+            )}
+            <MinerComparisonRadar
+              miners={comparisonMiners}
+              allMiners={allMinerStats}
+            />
+          </Paper>
+        )}
 
         {isEmpty ? (
           <Box
