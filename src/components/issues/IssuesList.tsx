@@ -231,8 +231,9 @@ const IssuesList: React.FC<IssuesListProps> = ({
             '&:hover': {
               color: 'secondary.main',
             },
+            // Keep active (sorted) column same base color as others; sort icon shows direction.
             '&.Mui-active': {
-              color: 'secondary.main',
+              color: 'text.secondary',
             },
           }}
         >
