@@ -22,6 +22,13 @@ const navButtonSx: SxProps<Theme> = {
   p: 0.25,
   color: (t) => alpha(t.palette.text.primary, 0.6),
   '&:hover': { color: 'text.primary' },
+  '&.Mui-focusVisible': {
+    backgroundColor: (t) => alpha(t.palette.primary.main, 0.2),
+    outline: '2px solid',
+    outlineColor: 'primary.main',
+    outlineOffset: '-2px',
+    color: 'text.primary',
+  },
   '&.Mui-disabled': { opacity: 0.3 },
 };
 
