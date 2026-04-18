@@ -381,9 +381,9 @@ describe('aggregateIssueDiscoveryByRepository', () => {
 
   it('returns empty when inputs are empty', () => {
     expect(aggregateIssueDiscoveryByRepository([], [], weights)).toEqual([]);
-    expect(aggregateIssueDiscoveryByRepository([], [baseIssue()], weights)).toEqual(
-      [],
-    );
+    expect(
+      aggregateIssueDiscoveryByRepository([], [baseIssue()], weights),
+    ).toEqual([]);
   });
 
   it('aggregates completed bounty matched to miner merged PR', () => {
