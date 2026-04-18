@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, alpha } from '@mui/material';
+import { Box, IconButton, Typography, alpha } from '@mui/material';
 import {
   NavigateBefore as PrevIcon,
   NavigateNext as NextIcon,
@@ -47,19 +47,20 @@ const TablePagination: React.FC<TablePaginationProps> = ({
         borderColor: 'border.subtle',
       }}
     >
-      <Box
+      <IconButton
         onClick={handlePrev}
+        disabled={!canGoPrev}
+        aria-label="Previous page"
+        size="small"
         sx={{
-          cursor: canGoPrev ? 'pointer' : 'default',
-          opacity: canGoPrev ? 1 : 0.3,
-          display: 'flex',
-          alignItems: 'center',
+          p: 0.25,
           color: (t) => alpha(t.palette.text.primary, 0.6),
-          '&:hover': canGoPrev ? { color: 'text.primary' } : {},
+          '&:hover': { color: 'text.primary' },
+          '&.Mui-disabled': { opacity: 0.3 },
         }}
       >
         <PrevIcon sx={{ fontSize: '1.2rem' }} />
-      </Box>
+      </IconButton>
       <Typography
         sx={{
           fontSize: '0.75rem',
@@ -68,19 +69,20 @@ const TablePagination: React.FC<TablePaginationProps> = ({
       >
         {page + 1} / {totalPages}
       </Typography>
-      <Box
+      <IconButton
         onClick={handleNext}
+        disabled={!canGoNext}
+        aria-label="Next page"
+        size="small"
         sx={{
-          cursor: canGoNext ? 'pointer' : 'default',
-          opacity: canGoNext ? 1 : 0.3,
-          display: 'flex',
-          alignItems: 'center',
+          p: 0.25,
           color: (t) => alpha(t.palette.text.primary, 0.6),
-          '&:hover': canGoNext ? { color: 'text.primary' } : {},
+          '&:hover': { color: 'text.primary' },
+          '&.Mui-disabled': { opacity: 0.3 },
         }}
       >
         <NextIcon sx={{ fontSize: '1.2rem' }} />
-      </Box>
+      </IconButton>
     </Box>
   );
 };
