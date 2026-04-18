@@ -258,7 +258,7 @@ const SidebarNavLink: React.FC<{
             fontSize: '0.65rem',
             color: 'secondary.main',
             fontStyle: 'italic',
-            ml: 1,
+            ml: 'auto',
           }}
         >
           {badge}
