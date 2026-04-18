@@ -243,9 +243,13 @@ const SidebarNavLink: React.FC<{
         borderLeft: isActive ? '2px solid #ffffff' : '2px solid transparent',
         borderRadius: 0,
         textAlign: 'left',
-        '&:hover': {
+        '&:hover, &:focus-visible': {
           backgroundColor: 'rgba(255, 255, 255, 0.05)',
           color: 'primary.main',
+        },
+        '&:focus-visible': {
+          outline: '2px solid #ffffff',
+          outlineOffset: '-2px',
         },
       }}
     >
