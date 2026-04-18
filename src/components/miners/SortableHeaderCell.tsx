@@ -1,17 +1,20 @@
 import React from 'react';
 import { TableCell, TableSortLabel } from '@mui/material';
-import { type RepoSortField, type SortOrder } from '../../utils/ExplorerUtils';
+import {
+  type MinerRepoTableSortField,
+  type SortOrder,
+} from '../../utils/ExplorerUtils';
 import { sortLabelSx } from './MinerRepositoriesTable.styles';
 
 interface SortableHeaderCellProps {
-  field: RepoSortField;
+  field: MinerRepoTableSortField;
   label: string;
   align?: 'left' | 'right';
   width?: string;
   defaultDirection: SortOrder;
-  activeField: RepoSortField;
+  activeField: MinerRepoTableSortField;
   activeOrder: SortOrder;
-  onSort: (field: RepoSortField) => void;
+  onSort: (field: MinerRepoTableSortField) => void;
   cellStyle: Record<string, unknown>;
 }
 

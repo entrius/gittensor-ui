@@ -17,7 +17,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
-import { useMinerPRs, useReposAndWeights } from '../../api';
+import { useMinerPRs, useReposAndWeights, useIssues } from '../../api';
 import { LinkBox } from '../common/linkBehavior';
 import SortableHeaderCell from './SortableHeaderCell';
 import RankBadge from './RankBadge';
@@ -31,69 +31,115 @@ import {
 } from './MinerRepositoriesTable.styles';
 import {
   type RepoSortField,
+  type IssueRepoSortField,
+  type MinerRepoTableSortField,
   type SortOrder,
   type RepoStats,
+  type IssueRepoStats,
   buildRepoWeightsMap,
   aggregatePRsByRepository,
+  aggregateIssueDiscoveryByRepository,
   filterBySearch,
   sortMinerRepoStats,
+  sortIssueRepoStats,
   hasActiveFilters,
   getDisplayCount,
   isOutsideScoringWindow,
 } from '../../utils/ExplorerUtils';
+import { formatTokenAmount } from '../../utils/format';
+
+type ViewMode = 'prs' | 'issues';
 
 interface MinerRepositoriesTableProps {
   githubId: string;
+  viewMode?: ViewMode;
 }
 
 const PAGE_SIZE = 20;
 
 const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   githubId,
+  viewMode = 'prs',
 }) => {
+  const isIssueMode = viewMode === 'issues';
   const theme = useTheme();
   const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
+  const { data: issues, isLoading: isLoadingIssues } = useIssues();
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
-  const [sortField, setSortField] = useState<RepoSortField>('score');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [prSortField, setPrSortField] = useState<RepoSortField>('score');
+  const [prSortOrder, setPrSortOrder] = useState<SortOrder>('desc');
+  const [issueSortField, setIssueSortField] =
+    useState<IssueRepoSortField>('issueTokenScore');
+  const [issueSortOrder, setIssueSortOrder] = useState<SortOrder>('desc');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
 
   const headerCellStyle = useMemo(() => getHeaderCellStyle(theme), [theme]);
   const bodyCellStyle = useMemo(() => getBodyCellStyle(theme), [theme]);
 
-  // Build lookup maps from API data
   const repoWeights = useMemo(() => buildRepoWeightsMap(repos), [repos]);
 
-  // Aggregate PRs by repository
   const repoStats = useMemo(
     () => aggregatePRsByRepository(prs || [], repoWeights),
     [prs, repoWeights],
   );
 
-  // Filter and sort repository stats
-  const filteredRepoStats = useMemo(() => {
-    return filterBySearch(repoStats, searchQuery);
-  }, [repoStats, searchQuery]);
-
-  const sortedRepoStats = useMemo(
-    () => sortMinerRepoStats(filteredRepoStats, sortField, sortOrder),
-    [filteredRepoStats, sortField, sortOrder],
+  const issueRepoStats = useMemo(
+    () => aggregateIssueDiscoveryByRepository(prs || [], issues, repoWeights),
+    [prs, issues, repoWeights],
   );
 
-  const pagedRepoStats = useMemo(() => {
+  const filteredRepoStats = useMemo(
+    () => filterBySearch(repoStats, searchQuery),
+    [repoStats, searchQuery],
+  );
+
+  const filteredIssueRepoStats = useMemo(
+    () => filterBySearch(issueRepoStats, searchQuery),
+    [issueRepoStats, searchQuery],
+  );
+
+  const sortedRepoStats = useMemo(
+    () => sortMinerRepoStats(filteredRepoStats, prSortField, prSortOrder),
+    [filteredRepoStats, prSortField, prSortOrder],
+  );
+
+  const sortedIssueRepoStats = useMemo(
+    () =>
+      sortIssueRepoStats(
+        filteredIssueRepoStats,
+        issueSortField,
+        issueSortOrder,
+      ),
+    [filteredIssueRepoStats, issueSortField, issueSortOrder],
+  );
+
+  const activeSorted = isIssueMode ? sortedIssueRepoStats : sortedRepoStats;
+
+  const pagedRows = useMemo(() => {
     const start = page * PAGE_SIZE;
-    return sortedRepoStats.slice(start, start + PAGE_SIZE);
-  }, [sortedRepoStats, page]);
+    return activeSorted.slice(start, start + PAGE_SIZE);
+  }, [activeSorted, page]);
 
-  const totalPages = Math.ceil(sortedRepoStats.length / PAGE_SIZE);
+  const totalPages = Math.ceil(activeSorted.length / PAGE_SIZE);
 
-  const handleSort = (field: RepoSortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+  const handlePrSort = (field: MinerRepoTableSortField) => {
+    const f = field as RepoSortField;
+    if (prSortField === f) {
+      setPrSortOrder(prSortOrder === 'asc' ? 'desc' : 'asc');
     } else {
-      setSortField(field);
-      setSortOrder('desc');
+      setPrSortField(f);
+      setPrSortOrder('desc');
+    }
+  };
+
+  const handleIssueSort = (field: MinerRepoTableSortField) => {
+    const f = field as IssueRepoSortField;
+    if (issueSortField === f) {
+      setIssueSortOrder(issueSortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setIssueSortField(f);
+      setIssueSortOrder('desc');
     }
   };
 
@@ -101,12 +147,13 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
 
   const isFiltered = hasActiveFilters(searchQuery);
   const displayCount = getDisplayCount(
-    sortedRepoStats.length,
-    repoStats.length,
+    activeSorted.length,
+    isIssueMode ? issueRepoStats.length : repoStats.length,
     isFiltered,
   );
 
-  const isLoading = isLoadingPRs || isLoadingRepos;
+  const isLoading =
+    isLoadingPRs || isLoadingRepos || (isIssueMode && isLoadingIssues);
 
   if (isLoading) {
     return (
@@ -125,6 +172,9 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       </Card>
     );
   }
+
+  const emptyPrs = !prs || prs.length === 0;
+  const noIssueDiscoveryRepos = isIssueMode && issueRepoStats.length === 0;
 
   return (
     <Card
@@ -179,7 +229,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
           </Box>
         </Box>
 
-        {/* Search */}
         <TextField
           size="small"
           placeholder="Search repositories..."
@@ -204,9 +253,11 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
         />
       </Box>
 
-      {!prs || prs.length === 0 ? (
+      {!isIssueMode && emptyPrs ? (
         <EmptyStateMessage message="No repository contributions found" />
-      ) : sortedRepoStats.length === 0 ? (
+      ) : isIssueMode && noIssueDiscoveryRepos ? (
+        <EmptyStateMessage message="No repositories with solved bounty issues for this miner" />
+      ) : activeSorted.length === 0 ? (
         <EmptyStateMessage message="No repositories found for the selected filters" />
       ) : (
         <>
@@ -216,93 +267,192 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
               sx={{ tableLayout: 'fixed', minWidth: '700px' }}
             >
               <TableHead>
-                <TableRow>
-                  <SortableHeaderCell
-                    field="rank"
-                    label="Rank"
-                    width="8%"
-                    defaultDirection="desc"
-                    activeField={sortField}
-                    activeOrder={sortOrder}
-                    onSort={handleSort}
-                    cellStyle={headerCellStyle}
-                  />
-                  <SortableHeaderCell
-                    field="repository"
-                    label="Repository"
-                    width="36%"
-                    defaultDirection="asc"
-                    activeField={sortField}
-                    activeOrder={sortOrder}
-                    onSort={handleSort}
-                    cellStyle={headerCellStyle}
-                  />
-                  <SortableHeaderCell
-                    field="prs"
-                    label="PRs"
-                    align="right"
-                    width="8%"
-                    defaultDirection="desc"
-                    activeField={sortField}
-                    activeOrder={sortOrder}
-                    onSort={handleSort}
-                    cellStyle={headerCellStyle}
-                  />
-                  <SortableHeaderCell
-                    field="score"
-                    label="Score"
-                    align="right"
-                    width="12%"
-                    defaultDirection="desc"
-                    activeField={sortField}
-                    activeOrder={sortOrder}
-                    onSort={handleSort}
-                    cellStyle={headerCellStyle}
-                  />
-                  <SortableHeaderCell
-                    field="tokenScore"
-                    label="Token Score"
-                    align="right"
-                    width="12%"
-                    defaultDirection="desc"
-                    activeField={sortField}
-                    activeOrder={sortOrder}
-                    onSort={handleSort}
-                    cellStyle={headerCellStyle}
-                  />
-                  <TableCell
-                    align="right"
-                    sx={{ ...headerCellStyle, width: '12%' }}
-                  >
-                    Avg/PR
-                  </TableCell>
-                  <SortableHeaderCell
-                    field="weight"
-                    label="Weight"
-                    align="right"
-                    width="12%"
-                    defaultDirection="desc"
-                    activeField={sortField}
-                    activeOrder={sortOrder}
-                    onSort={handleSort}
-                    cellStyle={headerCellStyle}
-                  />
-                </TableRow>
+                {isIssueMode ? (
+                  <TableRow>
+                    <SortableHeaderCell
+                      field="rank"
+                      label="Rank"
+                      width="8%"
+                      defaultDirection="desc"
+                      activeField={issueSortField}
+                      activeOrder={issueSortOrder}
+                      onSort={handleIssueSort}
+                      cellStyle={headerCellStyle}
+                    />
+                    <SortableHeaderCell
+                      field="repository"
+                      label="Repository"
+                      width="28%"
+                      defaultDirection="asc"
+                      activeField={issueSortField}
+                      activeOrder={issueSortOrder}
+                      onSort={handleIssueSort}
+                      cellStyle={headerCellStyle}
+                    />
+                    <SortableHeaderCell
+                      field="solved"
+                      label="Solved"
+                      align="right"
+                      width="9%"
+                      defaultDirection="desc"
+                      activeField={issueSortField}
+                      activeOrder={issueSortOrder}
+                      onSort={handleIssueSort}
+                      cellStyle={headerCellStyle}
+                    />
+                    <SortableHeaderCell
+                      field="validSolved"
+                      label="Valid"
+                      align="right"
+                      width="9%"
+                      defaultDirection="desc"
+                      activeField={issueSortField}
+                      activeOrder={issueSortOrder}
+                      onSort={handleIssueSort}
+                      cellStyle={headerCellStyle}
+                    />
+                    <SortableHeaderCell
+                      field="issueTokenScore"
+                      label="Token score"
+                      align="right"
+                      width="12%"
+                      defaultDirection="desc"
+                      activeField={issueSortField}
+                      activeOrder={issueSortOrder}
+                      onSort={handleIssueSort}
+                      cellStyle={headerCellStyle}
+                    />
+                    <SortableHeaderCell
+                      field="bountyEarned"
+                      label="Bounty (α)"
+                      align="right"
+                      width="12%"
+                      defaultDirection="desc"
+                      activeField={issueSortField}
+                      activeOrder={issueSortOrder}
+                      onSort={handleIssueSort}
+                      cellStyle={headerCellStyle}
+                    />
+                    <TableCell
+                      align="right"
+                      sx={{ ...headerCellStyle, width: '10%' }}
+                    >
+                      Avg / solve
+                    </TableCell>
+                    <SortableHeaderCell
+                      field="weight"
+                      label="Weight"
+                      align="right"
+                      width="12%"
+                      defaultDirection="desc"
+                      activeField={issueSortField}
+                      activeOrder={issueSortOrder}
+                      onSort={handleIssueSort}
+                      cellStyle={headerCellStyle}
+                    />
+                  </TableRow>
+                ) : (
+                  <TableRow>
+                    <SortableHeaderCell
+                      field="rank"
+                      label="Rank"
+                      width="8%"
+                      defaultDirection="desc"
+                      activeField={prSortField}
+                      activeOrder={prSortOrder}
+                      onSort={handlePrSort}
+                      cellStyle={headerCellStyle}
+                    />
+                    <SortableHeaderCell
+                      field="repository"
+                      label="Repository"
+                      width="36%"
+                      defaultDirection="asc"
+                      activeField={prSortField}
+                      activeOrder={prSortOrder}
+                      onSort={handlePrSort}
+                      cellStyle={headerCellStyle}
+                    />
+                    <SortableHeaderCell
+                      field="prs"
+                      label="PRs"
+                      align="right"
+                      width="8%"
+                      defaultDirection="desc"
+                      activeField={prSortField}
+                      activeOrder={prSortOrder}
+                      onSort={handlePrSort}
+                      cellStyle={headerCellStyle}
+                    />
+                    <SortableHeaderCell
+                      field="score"
+                      label="Score"
+                      align="right"
+                      width="12%"
+                      defaultDirection="desc"
+                      activeField={prSortField}
+                      activeOrder={prSortOrder}
+                      onSort={handlePrSort}
+                      cellStyle={headerCellStyle}
+                    />
+                    <SortableHeaderCell
+                      field="tokenScore"
+                      label="Token Score"
+                      align="right"
+                      width="12%"
+                      defaultDirection="desc"
+                      activeField={prSortField}
+                      activeOrder={prSortOrder}
+                      onSort={handlePrSort}
+                      cellStyle={headerCellStyle}
+                    />
+                    <TableCell
+                      align="right"
+                      sx={{ ...headerCellStyle, width: '12%' }}
+                    >
+                      Avg/PR
+                    </TableCell>
+                    <SortableHeaderCell
+                      field="weight"
+                      label="Weight"
+                      align="right"
+                      width="12%"
+                      defaultDirection="desc"
+                      activeField={prSortField}
+                      activeOrder={prSortOrder}
+                      onSort={handlePrSort}
+                      cellStyle={headerCellStyle}
+                    />
+                  </TableRow>
+                )}
               </TableHead>
               <TableBody>
-                {pagedRepoStats.map((repo, index) => {
-                  const rank = page * PAGE_SIZE + index;
-                  return (
-                    <RepoTableRow
-                      key={repo.repository}
-                      repo={repo}
-                      rank={rank}
-                      bodyCellStyle={bodyCellStyle}
-                      prs={prs}
-                      githubId={githubId}
-                    />
-                  );
-                })}
+                {isIssueMode
+                  ? (pagedRows as IssueRepoStats[]).map((repo, index) => {
+                      const rank = page * PAGE_SIZE + index;
+                      return (
+                        <IssueRepoTableRow
+                          key={repo.repository}
+                          repo={repo}
+                          rank={rank}
+                          bodyCellStyle={bodyCellStyle}
+                          backLabel={prs?.[0]?.author || githubId}
+                        />
+                      );
+                    })
+                  : (pagedRows as RepoStats[]).map((repo, index) => {
+                      const rank = page * PAGE_SIZE + index;
+                      return (
+                        <RepoTableRow
+                          key={repo.repository}
+                          repo={repo}
+                          rank={rank}
+                          bodyCellStyle={bodyCellStyle}
+                          prs={prs}
+                          githubId={githubId}
+                        />
+                      );
+                    })}
               </TableBody>
             </Table>
           </TableContainer>
@@ -317,10 +467,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     </Card>
   );
 };
-
-// ---------------------------------------------------------------------------
-// Row sub-component
-// ---------------------------------------------------------------------------
 
 interface RepoTableRowProps {
   repo: RepoStats;
@@ -426,9 +572,113 @@ const RepoTableRow: React.FC<RepoTableRowProps> = ({
   );
 };
 
-// ---------------------------------------------------------------------------
-// Avatar background color helper
-// ---------------------------------------------------------------------------
+interface IssueRepoTableRowProps {
+  repo: IssueRepoStats;
+  rank: number;
+  bodyCellStyle: Record<string, unknown>;
+  backLabel: string;
+}
+
+const IssueRepoTableRow: React.FC<IssueRepoTableRowProps> = ({
+  repo,
+  rank,
+  bodyCellStyle,
+  backLabel,
+}) => {
+  const owner = repo.repository.split('/')[0];
+  const avatarBgColor = getAvatarBgColor(owner);
+  const avgPerSolve =
+    repo.solved > 0
+      ? (repo.issueTokenScore / repo.solved).toFixed(2)
+      : '\u2014';
+  const isStale = isOutsideScoringWindow(repo.latestActivityDate);
+  return (
+    <TableRow
+      sx={{
+        opacity: isStale ? 0.4 : 1,
+        '&:hover': {
+          backgroundColor: 'surface.light',
+        },
+        transition: 'background-color 0.2s, opacity 0.2s',
+      }}
+    >
+      <TableCell sx={bodyCellStyle}>
+        <RankBadge rank={rank} displayNumber={rank + 1} />
+      </TableCell>
+      <TableCell sx={bodyCellStyle}>
+        <LinkBox
+          href={`/miners/repository?name=${encodeURIComponent(repo.repository)}`}
+          linkState={{ backLabel: `Back to ${backLabel}` }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            cursor: 'pointer',
+            minWidth: 0,
+            '&:hover': {
+              color: 'primary.main',
+              '& .MuiTypography-root': {
+                textDecoration: 'underline',
+              },
+            },
+            transition: 'color 0.2s',
+          }}
+        >
+          <Avatar
+            src={`https://avatars.githubusercontent.com/${owner}`}
+            alt={owner}
+            sx={{
+              width: 24,
+              height: 24,
+              border: '1px solid',
+              borderColor: 'border.medium',
+              backgroundColor: avatarBgColor,
+            }}
+          />
+          <Typography
+            component="span"
+            title={repo.repository}
+            sx={{
+              fontSize: '0.85rem',
+              minWidth: 0,
+              flex: 1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              transition: 'color 0.2s',
+            }}
+          >
+            {repo.repository}
+          </Typography>
+        </LinkBox>
+      </TableCell>
+      <TableCell align="right" sx={bodyCellStyle}>
+        {repo.solved}
+      </TableCell>
+      <TableCell align="right" sx={bodyCellStyle}>
+        {repo.validSolved}
+      </TableCell>
+      <TableCell align="right" sx={bodyCellStyle}>
+        {repo.issueTokenScore.toFixed(2)}
+      </TableCell>
+      <TableCell align="right" sx={bodyCellStyle}>
+        {formatTokenAmount(repo.bountyEarned)}
+      </TableCell>
+      <TableCell
+        align="right"
+        sx={{
+          ...bodyCellStyle,
+          color: (t) => alpha(t.palette.text.primary, 0.5),
+        }}
+      >
+        {avgPerSolve}
+      </TableCell>
+      <TableCell align="right" sx={bodyCellStyle}>
+        {repo.weight.toFixed(4)}
+      </TableCell>
+    </TableRow>
+  );
+};
 
 const getAvatarBgColor = (owner: string): string => {
   switch (owner) {

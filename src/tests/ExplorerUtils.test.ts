@@ -1,16 +1,21 @@
 import { describe, it, expect } from 'vitest';
+import type { CommitLog } from '../api/models/Dashboard';
+import type { IssueBounty } from '../api/models/Issues';
 import {
   parseNumber,
   calculateDynamicOpenPrThreshold,
   normalizeMinerEvaluations,
   normalizeCommitLogs,
   sortMinerRepoStats,
+  sortIssueRepoStats,
   buildRepoWeightsMap,
   aggregatePRsByRepository,
+  aggregateIssueDiscoveryByRepository,
   hasActiveFilters,
   getDisplayCount,
   filterBySearch,
   type RepoStats,
+  type IssueRepoStats,
 } from '../utils/ExplorerUtils';
 
 describe('parseNumber', () => {
@@ -333,5 +338,113 @@ describe('filterBySearch', () => {
 
   it('returns empty when no match', () => {
     expect(filterBySearch(stats, 'gamma')).toEqual([]);
+  });
+});
+
+const basePr = (): CommitLog => ({
+  pullRequestNumber: 5,
+  hotkey: 'hk',
+  pullRequestTitle: 'fix',
+  additions: 1,
+  deletions: 0,
+  commitCount: 1,
+  repository: 'org/repo',
+  mergedAt: '2025-01-01T00:00:00Z',
+  closedAt: null,
+  prCreatedAt: '2024-12-01T00:00:00Z',
+  prState: 'MERGED',
+  author: 'user',
+  score: '10',
+  tokenScore: 12,
+});
+
+const baseIssue = (over: Partial<IssueBounty> = {}): IssueBounty => ({
+  id: 1,
+  githubUrl: 'https://github.com/org/repo/issues/1',
+  repositoryFullName: 'org/repo',
+  issueNumber: 1,
+  bountyAmount: '1.5',
+  targetBounty: '2',
+  status: 'completed',
+  solverHotkey: null,
+  winningPrNumber: 5,
+  registeredAtBlock: 0,
+  createdAt: '',
+  updatedAt: '',
+  closedAt: null,
+  completedAt: '2025-01-02T00:00:00Z',
+  ...over,
+});
+
+describe('aggregateIssueDiscoveryByRepository', () => {
+  const weights = new Map<string, number>([['org/repo', 0.2]]);
+
+  it('returns empty when inputs are empty', () => {
+    expect(aggregateIssueDiscoveryByRepository([], [], weights)).toEqual([]);
+    expect(aggregateIssueDiscoveryByRepository([], [baseIssue()], weights)).toEqual(
+      [],
+    );
+  });
+
+  it('aggregates completed bounty matched to miner merged PR', () => {
+    const result = aggregateIssueDiscoveryByRepository(
+      [basePr()],
+      [baseIssue()],
+      weights,
+    );
+    expect(result).toHaveLength(1);
+    expect(result[0].repository).toBe('org/repo');
+    expect(result[0].solved).toBe(1);
+    expect(result[0].validSolved).toBe(1);
+    expect(result[0].issueTokenScore).toBe(12);
+    expect(result[0].bountyEarned).toBeCloseTo(1.5);
+    expect(result[0].weight).toBe(0.2);
+  });
+
+  it('does not count when winning PR number does not match', () => {
+    const result = aggregateIssueDiscoveryByRepository(
+      [basePr()],
+      [baseIssue({ winningPrNumber: 99 })],
+      weights,
+    );
+    expect(result).toEqual([]);
+  });
+
+  it('marks valid only when token score meets threshold', () => {
+    const lowTok = { ...basePr(), pullRequestNumber: 7, tokenScore: 3 };
+    const result = aggregateIssueDiscoveryByRepository(
+      [lowTok],
+      [baseIssue({ winningPrNumber: 7 })],
+      weights,
+    );
+    expect(result[0].validSolved).toBe(0);
+  });
+});
+
+describe('sortIssueRepoStats', () => {
+  const rows: IssueRepoStats[] = [
+    {
+      repository: 'a/a',
+      solved: 1,
+      validSolved: 1,
+      issueTokenScore: 10,
+      bountyEarned: 1,
+      weight: 0.1,
+      latestActivityDate: null,
+    },
+    {
+      repository: 'b/b',
+      solved: 2,
+      validSolved: 2,
+      issueTokenScore: 30,
+      bountyEarned: 2,
+      weight: 0.2,
+      latestActivityDate: null,
+    },
+  ];
+
+  it('sorts by issueTokenScore desc', () => {
+    const sorted = sortIssueRepoStats(rows, 'issueTokenScore', 'desc');
+    expect(sorted[0].repository).toBe('b/b');
   });
 });
