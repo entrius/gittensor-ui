@@ -1,6 +1,12 @@
 import React from 'react';
-import { Box, IconButton, Typography, alpha } from '@mui/material';
-import type { SxProps, Theme } from '@mui/material';
+import {
+  Box,
+  IconButton,
+  Typography,
+  alpha,
+  type SxProps,
+  type Theme,
+} from '@mui/material';
 import {
   NavigateBefore as PrevIcon,
   NavigateNext as NextIcon,
