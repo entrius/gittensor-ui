@@ -14,6 +14,7 @@ interface MinerCardProps {
   href: string;
   linkState?: Record<string, unknown>;
   variant?: LeaderboardVariant;
+  showDualEligibilityBadges?: boolean;
 }
 
 const INACTIVE_OPACITY = 0.24;
@@ -53,6 +54,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
   href,
   linkState,
   variant = 'oss',
+  showDualEligibilityBadges = false,
 }) => {
   const linkProps = useLinkBehavior(href, { state: linkState });
   const isNumericId = (value?: string) => !value || /^\d+$/.test(value);
@@ -70,11 +72,19 @@ export const MinerCard: React.FC<MinerCardProps> = ({
 
   const credibilityPercent = (miner.credibility ?? 0) * 100;
   const issueCredPercent = (miner.issueCredibility ?? 0) * 100;
+  const ossEligible = miner.ossIsEligible ?? miner.isEligible ?? false;
+  const discoveriesEligible =
+    miner.discoveriesIsEligible ??
+    miner.isIssueEligible ??
+    (variant === 'discoveries' ? (miner.isEligible ?? false) : false);
   const isWatchlist = variant === 'watchlist';
   const isDiscoveries = variant === 'discoveries';
+  const baseEligible = miner.isEligible ?? false;
   const isEligible = isWatchlist
-    ? (miner.isEligible ?? false) || (miner.isIssueEligible ?? false)
-    : (miner.isEligible ?? false);
+    ? ossEligible || discoveriesEligible || baseEligible
+    : showDualEligibilityBadges
+      ? ossEligible || discoveriesEligible
+      : baseEligible;
 
   const segments = getSegments(miner, variant);
 
@@ -197,9 +207,64 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             alignItems: 'center',
             gap: 0.5,
             flexShrink: 0,
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end',
           }}
         >
-          {!isEligible && (
+          {showDualEligibilityBadges ? (
+            <>
+              <Typography
+                sx={(theme) => ({
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  border: `1px solid ${
+                    ossEligible
+                      ? alpha(theme.palette.status.merged, 0.45)
+                      : theme.palette.border.subtle
+                  }`,
+                  borderRadius: 1,
+                  px: 0.75,
+                  py: 0.25,
+                  letterSpacing: '0.06em',
+                  color: ossEligible
+                    ? theme.palette.status.merged
+                    : theme.palette.text.secondary,
+                  backgroundColor: ossEligible
+                    ? alpha(theme.palette.status.merged, 0.08)
+                    : theme.palette.surface.subtle,
+                })}
+              >
+                OSS {ossEligible ? 'Eligible' : 'Ineligible'}
+              </Typography>
+              <Typography
+                sx={(theme) => ({
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  border: `1px solid ${
+                    discoveriesEligible
+                      ? alpha(theme.palette.status.merged, 0.45)
+                      : theme.palette.border.subtle
+                  }`,
+                  borderRadius: 1,
+                  px: 0.75,
+                  py: 0.25,
+                  letterSpacing: '0.06em',
+                  color: discoveriesEligible
+                    ? theme.palette.status.merged
+                    : theme.palette.text.secondary,
+                  backgroundColor: discoveriesEligible
+                    ? alpha(theme.palette.status.merged, 0.08)
+                    : theme.palette.surface.subtle,
+                })}
+              >
+                Issues {discoveriesEligible ? 'Eligible' : 'Ineligible'}
+              </Typography>
+            </>
+          ) : !isEligible ? (
             <Typography
               sx={(theme) => ({
                 fontFamily: FONTS.mono,
@@ -217,7 +282,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             >
               Ineligible
             </Typography>
-          )}
+          ) : null}
           {miner.githubId && (
             <WatchlistButton githubId={miner.githubId} size="small" />
           )}
@@ -400,7 +465,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
         </Box>
       </Box>
 
-      {(variant === 'discoveries' || variant === 'watchlist') && (
+      {variant === 'watchlist' && (
         <Box
           sx={(theme) => ({
             pt: 0.35,

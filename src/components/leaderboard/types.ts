@@ -20,6 +20,15 @@ export interface MinerStats {
   uniqueReposCount?: number;
   credibility?: number;
   isEligible?: boolean;
+  /**
+   * Program-specific eligibility flags.
+   *
+   * These allow UI surfaces like Watchlist to disambiguate eligibility between
+   * OSS contributions and Issue Discoveries without changing the default
+   * `isEligible` semantics used across leaderboards.
+   */
+  ossIsEligible?: boolean;
+  discoveriesIsEligible?: boolean;
   usdPerDay?: number;
   totalMergedPrs?: number;
   totalOpenPrs?: number;

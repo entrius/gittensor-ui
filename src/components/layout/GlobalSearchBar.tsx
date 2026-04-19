@@ -5,6 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { scrollbarSx } from '../../theme';
 import {
   Box,
   ButtonBase,
@@ -618,16 +619,7 @@ const GlobalSearchBar: React.FC = () => {
             backgroundColor: theme.palette.background.default,
             maxHeight: 'min(420px, calc(100vh - 96px))',
             overflowY: 'auto',
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: theme.palette.border.light,
-              borderRadius: 1,
-            },
+            ...scrollbarSx,
           })}
         >
           {isLoading && (
