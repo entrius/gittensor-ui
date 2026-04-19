@@ -90,12 +90,24 @@ const StatTile: React.FC<StatTileProps> = ({
       borderColor: 'border.subtle',
       p: 2,
       height: '100%',
+      minWidth: 0,
+      maxWidth: '100%',
+      width: '100%',
+      boxSizing: 'border-box',
       display: 'flex',
       flexDirection: 'column',
       gap: 0.5,
     }}
   >
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.5,
+        minWidth: 0,
+        width: '100%',
+      }}
+    >
       {tooltip ? (
         <Tooltip
           title={tooltip}
@@ -110,6 +122,8 @@ const StatTile: React.FC<StatTileProps> = ({
               display: 'flex',
               alignItems: 'center',
               gap: 0.5,
+              minWidth: 0,
+              flexShrink: 1,
             }}
           >
             {label}
@@ -117,7 +131,9 @@ const StatTile: React.FC<StatTileProps> = ({
           </Typography>
         </Tooltip>
       ) : (
-        <Typography variant="statLabel">{label}</Typography>
+        <Typography variant="statLabel" sx={{ minWidth: 0, flexShrink: 1 }}>
+          {label}
+        </Typography>
       )}
       {rank != null && rank > 0 && (
         <Box
@@ -169,6 +185,9 @@ const StatTile: React.FC<StatTileProps> = ({
         fontWeight: 600,
         color: color || 'text.primary',
         lineHeight: 1.2,
+        minWidth: 0,
+        overflowWrap: 'anywhere',
+        wordBreak: 'break-word',
       }}
     >
       {value}
@@ -179,6 +198,9 @@ const StatTile: React.FC<StatTileProps> = ({
           fontSize: '0.75rem',
           color: (t) => alpha(t.palette.text.primary, 0.4),
           mt: 0.25,
+          minWidth: 0,
+          overflowWrap: 'anywhere',
+          wordBreak: 'break-word',
         }}
       >
         {sub}
@@ -237,6 +259,8 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
         display: 'block',
         textAlign: 'left',
         borderRadius: '4px',
+        maxWidth: '100%',
+        minWidth: 0,
         color: (t) =>
           copied
             ? t.palette.status.success
@@ -349,7 +373,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
     : STATUS_COLORS.neutral;
 
   return (
-    <Card sx={{ p: 3, position: 'relative' }} elevation={0}>
+    <Card
+      sx={{ p: 3, position: 'relative', minWidth: 0, maxWidth: '100%' }}
+      elevation={0}
+    >
       {/* Updated chip — desktop */}
       {minerStats.updatedAt && (
         <Chip
@@ -374,7 +401,16 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
       )}
 
       {/* Identity row */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          mb: 3,
+          minWidth: 0,
+          width: '100%',
+        }}
+      >
         <Avatar
           src={`https://avatars.githubusercontent.com/${username}`}
           alt={username}
@@ -392,6 +428,9 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               fontWeight: 700,
               color: 'text.primary',
               mb: 0.5,
+              minWidth: 0,
+              overflowWrap: 'anywhere',
+              wordBreak: 'break-word',
             }}
           >
             {githubData?.name || username}
@@ -403,6 +442,8 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               gap: 1.5,
               flexWrap: 'wrap',
               mb: 0.5,
+              minWidth: 0,
+              width: '100%',
             }}
           >
             <Tooltip
@@ -456,6 +497,8 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               alignItems: 'center',
               gap: 1.5,
               flexWrap: 'wrap',
+              minWidth: 0,
+              width: '100%',
             }}
           >
             <Typography
@@ -470,12 +513,19 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 0.5,
+                minWidth: 0,
+                maxWidth: '100%',
+                overflowWrap: 'anywhere',
+                wordBreak: 'break-word',
                 '&:hover': { textDecoration: 'underline' },
               }}
             >
-              <GitHubIcon sx={{ fontSize: '1rem' }} />@{username}
+              <GitHubIcon sx={{ fontSize: '1rem', flexShrink: 0 }} />
+              {`@${username}`}
             </Typography>
-            <CopyableHotkey hotkey={minerStats.hotkey || ''} />
+            <Box sx={{ minWidth: 0, maxWidth: '100%' }}>
+              <CopyableHotkey hotkey={minerStats.hotkey || ''} />
+            </Box>
           </Box>
 
           {/* Bio / about me */}
@@ -486,6 +536,8 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                 fontSize: '0.8rem',
                 mt: 1,
                 lineHeight: 1.5,
+                overflowWrap: 'anywhere',
+                wordBreak: 'break-word',
               }}
             >
               {githubData.bio}
@@ -561,7 +613,15 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
       </Box>
 
       {viewMode === 'prs' ? (
-        <Grid container spacing={1.5}>
+        <Grid
+          container
+          spacing={1.5}
+          sx={{
+            width: '100%',
+            minWidth: 0,
+            '& > .MuiGrid-item': { minWidth: 0 },
+          }}
+        >
           <Grid item xs={6} sm={4} md={2}>
             <StatTile
               label="Score"
@@ -628,7 +688,15 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           </Grid>
         </Grid>
       ) : (
-        <Grid container spacing={1.5}>
+        <Grid
+          container
+          spacing={1.5}
+          sx={{
+            width: '100%',
+            minWidth: 0,
+            '& > .MuiGrid-item': { minWidth: 0 },
+          }}
+        >
           <Grid item xs={6} sm={4} md={2}>
             <StatTile
               label="Score"
