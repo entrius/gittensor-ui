@@ -12,6 +12,7 @@ import {
   Chip,
 } from '@mui/material';
 import { LinkBox } from '../../../components/common/linkBehavior';
+import { GithubNumberLink } from '../../../components/common';
 import { useInfiniteCommitLog } from '../../../api';
 import theme, {
   REPO_OWNER_AVATAR_BACKGROUNDS,
@@ -211,14 +212,10 @@ const CommitLogItem: React.FC<{
               {entry.repository}
             </Typography>
           </Stack>
-          <Typography
-            variant="caption"
-            sx={{
-              color: 'text.secondary',
-            }}
-          >
-            #{entry.pullRequestNumber}
-          </Typography>
+          <GithubNumberLink
+            href={`https://github.com/${entry.repository}/pull/${entry.pullRequestNumber}`}
+            number={entry.pullRequestNumber}
+          />
         </Stack>
 
         <Box>

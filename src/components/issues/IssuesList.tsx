@@ -12,13 +12,11 @@ import {
   Typography,
   Chip,
   Skeleton,
-  Link,
   Tooltip,
   Avatar,
   alpha,
   useTheme,
 } from '@mui/material';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueBounty } from '../../api/models/Issues';
 import { usePrices } from '../../hooks/usePrices';
 import {
@@ -30,6 +28,7 @@ import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
 import BountyProgress from './BountyProgress';
 import { LinkTableRow } from '../common/linkBehavior';
+import { GithubNumberLink } from '../common';
 
 type ListType = 'available' | 'pending' | 'history';
 type SortDirection = 'asc' | 'desc';
@@ -432,30 +431,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
                           {issue.title}
                         </Typography>
                       )}
-                      <Link
+                      <GithubNumberLink
                         href={issue.githubUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.5,
-                          fontSize: '0.75rem',
-                          color: alpha(
-                            theme.palette.common.white,
-                            TEXT_OPACITY.tertiary,
-                          ),
-                          textDecoration: 'none',
-                          '&:hover': {
-                            color: STATUS_COLORS.info,
-                            textDecoration: 'underline',
-                          },
-                        }}
-                      >
-                        #{issue.issueNumber}
-                        <OpenInNewIcon sx={{ fontSize: 12, opacity: 0.5 }} />
-                      </Link>
+                        number={issue.issueNumber}
+                      />
                     </Box>
                   </TableCell>
 
