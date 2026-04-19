@@ -471,23 +471,30 @@ export const GettingStarted: React.FC = () => {
                 gap: { xs: 1.5, md: 1 },
                 width: { xs: '100%', md: 'auto' },
                 cursor: 'pointer',
-                '&:hover .step-circle': {
-                  borderColor: 'border.medium',
-                },
+                WebkitTapHighlightColor: 'transparent',
+                // Do not dim the circle border on hover when this step is
+                // selected — otherwise touch devices can keep :hover and the
+                // active primary/secondary ring is replaced by border.medium.
+                ...(activeStep !== index
+                  ? {
+                      '@media (hover: hover)': {
+                        '&:hover .step-circle': {
+                          borderColor: 'border.medium',
+                        },
+                      },
+                    }
+                  : {}),
               }}
             >
               <Box
                 className="step-circle"
                 sx={{
+                  position: 'relative',
+                  zIndex: 2,
                   width: 48,
                   height: 48,
                   borderRadius: '50%',
-                  bgcolor: (theme) =>
-                    activeStep === index
-                      ? index === steps.length - 1
-                        ? alpha(theme.palette.secondary.main, 0.15)
-                        : alpha(theme.palette.primary.main, 0.15)
-                      : theme.palette.background.default,
+                  bgcolor: 'background.default',
                   border: '2px solid',
                   borderColor: item.active
                     ? 'secondary.main'
@@ -518,7 +525,13 @@ export const GettingStarted: React.FC = () => {
               >
                 {item.step}
               </Box>
-              <Box sx={{ textAlign: { xs: 'left', md: 'center' } }}>
+              <Box
+                sx={{
+                  textAlign: { xs: 'left', md: 'center' },
+                  minWidth: 0,
+                  flex: { xs: 1, md: 'none' },
+                }}
+              >
                 <Typography
                   sx={{
                     fontFamily: MONO,
