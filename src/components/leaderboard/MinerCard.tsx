@@ -1,9 +1,9 @@
 import React from 'react';
-import { Box, Card, Typography, Avatar } from '@mui/material';
+import { Box, Card, Typography, Avatar, Chip, Tooltip } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
-import { CHART_COLORS, STATUS_COLORS } from '../../theme';
+import { CHART_COLORS, STATUS_COLORS, tooltipSlotProps } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { RowLink, WatchlistButton } from '../common';
 import { type MinerStats, type LeaderboardVariant, FONTS } from './types';
@@ -73,6 +73,14 @@ export const MinerCard: React.FC<MinerCardProps> = ({
   const isEligible = isWatchlist
     ? (miner.isEligible ?? false) || (miner.isIssueEligible ?? false)
     : (miner.isEligible ?? false);
+  const ossEligible = miner.isEligible ?? false;
+  const issuesEligible = miner.isIssueEligible ?? false;
+  const ossEligibilityColor = ossEligible
+    ? STATUS_COLORS.success
+    : STATUS_COLORS.neutral;
+  const issueEligibilityColor = issuesEligible
+    ? STATUS_COLORS.success
+    : STATUS_COLORS.neutral;
 
   const segments = getSegments(miner, variant);
 
@@ -120,14 +128,16 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
+            gap: 1,
           }}
         >
           <Box
             sx={{
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               gap: 1.5,
               minWidth: 0,
+              flex: 1,
             }}
           >
             <Avatar
@@ -147,11 +157,12 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             <Box
               sx={{
                 minWidth: 0,
-                minHeight: 36,
+                flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'space-between',
+                alignItems: 'stretch',
                 overflow: 'hidden',
+                gap: 0.5,
               }}
             >
               <Typography
@@ -170,6 +181,77 @@ export const MinerCard: React.FC<MinerCardProps> = ({
               >
                 {username}
               </Typography>
+              {isWatchlist && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: 0.5,
+                  }}
+                >
+                  <Tooltip
+                    title="Requires 5+ merged PRs with token score >= 5 and 80%+ credibility"
+                    arrow
+                    placement="bottom"
+                    slotProps={tooltipSlotProps}
+                  >
+                    <Chip
+                      variant="outlined"
+                      label={ossEligible ? 'OSS Eligible' : 'OSS Ineligible'}
+                      size="small"
+                      sx={{
+                        height: 22,
+                        maxWidth: '100%',
+                        color: ossEligibilityColor,
+                        borderColor: alpha(ossEligibilityColor, 0.35),
+                        backgroundColor: alpha(ossEligibilityColor, 0.1),
+                        fontSize: '0.58rem',
+                        letterSpacing: '0.04em',
+                        textTransform: 'uppercase',
+                        cursor: 'default',
+                        '& .MuiChip-label': {
+                          px: 0.75,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        },
+                      }}
+                    />
+                  </Tooltip>
+                  <Tooltip
+                    title="Requires 7+ solved issues with token score >= 5 and 80%+ issue credibility"
+                    arrow
+                    placement="bottom"
+                    slotProps={tooltipSlotProps}
+                  >
+                    <Chip
+                      variant="outlined"
+                      label={
+                        issuesEligible
+                          ? 'Issues Eligible'
+                          : 'Issues Ineligible'
+                      }
+                      size="small"
+                      sx={{
+                        height: 22,
+                        maxWidth: '100%',
+                        color: issueEligibilityColor,
+                        borderColor: alpha(issueEligibilityColor, 0.35),
+                        backgroundColor: alpha(issueEligibilityColor, 0.1),
+                        fontSize: '0.58rem',
+                        letterSpacing: '0.04em',
+                        textTransform: 'uppercase',
+                        cursor: 'default',
+                        '& .MuiChip-label': {
+                          px: 0.75,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        },
+                      }}
+                    />
+                  </Tooltip>
+                </Box>
+              )}
               <Typography
                 sx={(theme) => ({
                   fontFamily: FONTS.mono,
@@ -180,7 +262,6 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                     : theme.palette.text.tertiary,
                   opacity: isEligible ? 1 : INACTIVE_OPACITY,
                   lineHeight: 1,
-                  mt: 0.1,
                 })}
               >
                 #{miner.rank}
