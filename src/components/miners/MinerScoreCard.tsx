@@ -349,32 +349,18 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
     : STATUS_COLORS.neutral;
 
   return (
-    <Card sx={{ p: 3, position: 'relative' }} elevation={0}>
-      {/* Updated chip — desktop */}
-      {minerStats.updatedAt && (
-        <Chip
-          icon={<UpdateIcon sx={{ fontSize: '0.9rem' }} />}
-          label={`Updated ${formatTimeAgo(new Date(minerStats.updatedAt))}`}
-          variant="outlined"
-          size="small"
-          sx={{
-            display: { xs: 'none', sm: 'flex' },
-            position: 'absolute',
-            top: 16,
-            right: 16,
-            fontSize: '0.7rem',
-            color: (t) => alpha(t.palette.text.primary, 0.5),
-            borderColor: 'border.light',
-            backgroundColor: 'surface.elevated',
-            '& .MuiChip-icon': {
-              color: (t) => alpha(t.palette.text.primary, 0.4),
-            },
-          }}
-        />
-      )}
-
+    <Card sx={{ p: 3 }} elevation={0}>
       {/* Identity row */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          mb: 3,
+          minWidth: 0,
+          width: '100%',
+        }}
+      >
         <Avatar
           src={`https://avatars.githubusercontent.com/${username}`}
           alt={username}
@@ -386,16 +372,53 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           }}
         />
         <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography
+          <Box
             sx={{
-              fontSize: { xs: '1.15rem', sm: '1.35rem' },
-              fontWeight: 700,
-              color: 'text.primary',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: 1,
+              columnGap: 2,
+              rowGap: 0.5,
               mb: 0.5,
+              width: '100%',
+              minWidth: 0,
             }}
           >
-            {githubData?.name || username}
-          </Typography>
+            <Typography
+              sx={{
+                fontSize: { xs: '1.15rem', sm: '1.35rem' },
+                fontWeight: 700,
+                color: 'text.primary',
+                minWidth: 0,
+                flex: '1 1 0',
+                overflowWrap: 'anywhere',
+                wordBreak: 'break-word',
+              }}
+            >
+              {githubData?.name || username}
+            </Typography>
+            {minerStats.updatedAt && (
+              <Chip
+                icon={<UpdateIcon sx={{ fontSize: '0.9rem' }} />}
+                label={`Updated ${formatTimeAgo(new Date(minerStats.updatedAt))}`}
+                variant="outlined"
+                size="small"
+                sx={{
+                  display: { xs: 'none', sm: 'inline-flex' },
+                  flexShrink: 0,
+                  ml: { sm: 'auto' },
+                  fontSize: '0.7rem',
+                  color: (t) => alpha(t.palette.text.primary, 0.5),
+                  borderColor: 'border.light',
+                  backgroundColor: 'surface.elevated',
+                  '& .MuiChip-icon': {
+                    color: (t) => alpha(t.palette.text.primary, 0.4),
+                  },
+                }}
+              />
+            )}
+          </Box>
           <Box
             sx={{
               display: 'flex',
@@ -403,6 +426,8 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               gap: 1.5,
               flexWrap: 'wrap',
               mb: 0.5,
+              minWidth: 0,
+              width: '100%',
             }}
           >
             <Tooltip
