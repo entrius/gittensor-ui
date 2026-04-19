@@ -107,8 +107,33 @@ const RepositoryContributorsTable: React.FC<
     return null;
   }
 
+  /** PRS/SCORE use minmax(0, …) so they shrink inside the row; overflow hidden on the grid prevents digits painting past the row border. */
+  const rowGridSx = {
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '20px minmax(0, 1fr) minmax(0, 2.75rem) minmax(0, 3.75rem)',
+      sm: '28px minmax(0, 1fr) minmax(0, 3.25rem) minmax(0, 4.5rem)',
+    },
+    columnGap: 1,
+    alignItems: 'center',
+    width: '100%',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box',
+    px: 1.5,
+    overflow: 'hidden',
+  } as const;
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        minWidth: 0,
+        overflow: 'hidden',
+      }}
+    >
       <Box
         sx={{
           display: 'flex',
@@ -133,46 +158,52 @@ const RepositoryContributorsTable: React.FC<
         </Typography>
       </Box>
 
-      {/* Header Row — minmax(0,1fr) prevents the miner column from forcing PRS/SCORE off-alignment */}
+      {/* Full-width shell so underline spans the sidebar; inner grid clips overflowing numerals. */}
       <Box
         sx={{
-          display: 'grid',
-          gridTemplateColumns:
-            '32px minmax(0, 1fr) minmax(3rem, auto) minmax(4.5rem, auto)',
-          columnGap: 1,
-          rowGap: 0,
-          alignItems: 'center',
-          px: 1.5,
+          width: '100%',
+          minWidth: 0,
           py: 1,
           borderBottom: `1px solid ${theme.palette.border.light}`,
+          boxSizing: 'border-box',
         }}
       >
-        <Typography sx={{ fontSize: '11px', color: 'text.secondary' }}>
-          #
-        </Typography>
-        <Typography sx={{ fontSize: '11px', color: 'text.secondary' }}>
-          MINER
-        </Typography>
-        <Typography
-          sx={{
-            fontSize: '11px',
-            color: 'text.secondary',
-            textAlign: 'right',
-            fontVariantNumeric: 'tabular-nums',
-          }}
-        >
-          PRS
-        </Typography>
-        <Typography
-          sx={{
-            fontSize: '11px',
-            color: 'text.secondary',
-            textAlign: 'right',
-            fontVariantNumeric: 'tabular-nums',
-          }}
-        >
-          SCORE
-        </Typography>
+        <Box sx={rowGridSx}>
+          <Typography sx={{ fontSize: '11px', color: 'text.secondary' }}>
+            #
+          </Typography>
+          <Typography sx={{ fontSize: '11px', color: 'text.secondary' }}>
+            MINER
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: '11px',
+              color: 'text.secondary',
+              textAlign: 'right',
+              fontVariantNumeric: 'tabular-nums',
+              minWidth: 0,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            PRS
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: '11px',
+              color: 'text.secondary',
+              textAlign: 'right',
+              fontVariantNumeric: 'tabular-nums',
+              minWidth: 0,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            SCORE
+          </Typography>
+        </Box>
       </Box>
 
       {/* Rows */}
@@ -186,126 +217,132 @@ const RepositoryContributorsTable: React.FC<
             <Box
               key={contributor.githubId}
               sx={{
-                display: 'grid',
-                gridTemplateColumns:
-                  '32px minmax(0, 1fr) minmax(3rem, auto) minmax(4.5rem, auto)',
-                columnGap: 1,
-                rowGap: 0,
-                px: 1.5,
-                py: 1,
-                borderBottom: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
-                alignItems: 'center',
+                width: '100%',
                 minWidth: 0,
+                py: 1,
+                boxSizing: 'border-box',
+                borderBottom: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
                 opacity: isInactive ? 0.5 : 1,
                 '&:hover': {
                   backgroundColor: alpha(theme.palette.common.white, 0.04),
                   opacity: 1,
                 },
-                transition: 'all 0.1s',
+                transition: 'background-color 0.1s, opacity 0.1s',
               }}
             >
-              {/* Rank */}
-              <Box
-                sx={{
-                  fontSize: '12px',
-                  color: index < 3 ? 'text.primary' : STATUS_COLORS.open,
-                  fontWeight: index < 3 ? 600 : 400,
-                }}
-              >
-                {index + 1}
-              </Box>
-
-              {/* Contributor */}
-              <Box
-                onClick={() =>
-                  navigate(`/miners/details?githubId=${contributor.githubId}`, {
-                    state: { backLabel: `Back to ${repositoryFullName}` },
-                  })
-                }
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                  overflow: 'hidden',
-                  cursor: 'pointer',
-                  '&:hover .contributor-name': {
-                    color: STATUS_COLORS.info,
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                <Avatar
-                  src={`https://avatars.githubusercontent.com/${contributor.author}`}
-                  sx={{
-                    width: 20,
-                    height: 20,
-                    border: `1px solid ${theme.palette.border.light}`,
-                  }}
-                />
+              <Box sx={rowGridSx}>
+                {/* Rank */}
                 <Box
                   sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    minWidth: 0,
+                    fontSize: '12px',
+                    color: index < 3 ? 'text.primary' : STATUS_COLORS.open,
+                    fontWeight: index < 3 ? 600 : 400,
                   }}
                 >
-                  <Typography
-                    className="contributor-name"
+                  {index + 1}
+                </Box>
+
+                {/* Contributor */}
+                <Box
+                  onClick={() =>
+                    navigate(
+                      `/miners/details?githubId=${contributor.githubId}`,
+                      {
+                        state: { backLabel: `Back to ${repositoryFullName}` },
+                      },
+                    )
+                  }
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    '&:hover .contributor-name': {
+                      color: STATUS_COLORS.info,
+                      textDecoration: 'underline',
+                    },
+                  }}
+                >
+                  <Avatar
+                    src={`https://avatars.githubusercontent.com/${contributor.author}`}
                     sx={{
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      color: 'text.primary',
-                      fontFamily:
-                        '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      transition: 'color 0.1s',
+                      width: 20,
+                      height: 20,
+                      border: `1px solid ${theme.palette.border.light}`,
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      minWidth: 0,
                     }}
                   >
-                    {contributor.author}
-                  </Typography>
-                  {/* Miner Rank Subtext */}
-                  {minerRank && (
                     <Typography
+                      className="contributor-name"
                       sx={{
-                        fontSize: '10px',
-                        color: STATUS_COLORS.open,
-                        whiteSpace: 'nowrap', // Force single line
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        color: 'text.primary',
+                        fontFamily:
+                          '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+                        whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
+                        transition: 'color 0.1s',
                       }}
                     >
-                      Global Rank #{minerRank}
+                      {contributor.author}
                     </Typography>
-                  )}
+                    {minerRank && (
+                      <Typography
+                        sx={{
+                          fontSize: '10px',
+                          color: STATUS_COLORS.open,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        Global Rank #{minerRank}
+                      </Typography>
+                    )}
+                  </Box>
                 </Box>
-              </Box>
 
-              {/* PRs */}
-              <Box
-                sx={{
-                  textAlign: 'right',
-                  fontSize: '12px',
-                  color: 'text.primary',
-                  fontVariantNumeric: 'tabular-nums',
-                  minWidth: 0,
-                }}
-              >
-                {contributor.prs}
-              </Box>
+                {/* PRs */}
+                <Typography
+                  sx={{
+                    textAlign: 'right',
+                    fontSize: '12px',
+                    color: 'text.primary',
+                    fontVariantNumeric: 'tabular-nums',
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {contributor.prs}
+                </Typography>
 
-              {/* Score */}
-              <Box
-                sx={{
-                  textAlign: 'right',
-                  fontSize: '12px',
-                  color: 'text.primary',
-                  fontVariantNumeric: 'tabular-nums',
-                  minWidth: 0,
-                }}
-              >
-                {contributor.score.toFixed(2)}
+                {/* Score */}
+                <Typography
+                  sx={{
+                    textAlign: 'right',
+                    fontSize: '12px',
+                    color: 'text.primary',
+                    fontVariantNumeric: 'tabular-nums',
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {contributor.score.toFixed(2)}
+                </Typography>
               </Box>
             </Box>
           );
