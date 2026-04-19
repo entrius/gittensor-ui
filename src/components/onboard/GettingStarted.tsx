@@ -479,15 +479,14 @@ export const GettingStarted: React.FC = () => {
               <Box
                 className="step-circle"
                 sx={{
+                  position: 'relative',
+                  zIndex: 2,
                   width: 48,
                   height: 48,
                   borderRadius: '50%',
-                  bgcolor: (theme) =>
-                    activeStep === index
-                      ? index === steps.length - 1
-                        ? alpha(theme.palette.secondary.main, 0.15)
-                        : alpha(theme.palette.primary.main, 0.15)
-                      : theme.palette.background.default,
+                  // Opaque fill so the desktop connector line does not show through
+                  // active steps (semi-transparent tints would reveal the line).
+                  bgcolor: 'background.default',
                   border: '2px solid',
                   borderColor: item.active
                     ? 'secondary.main'
