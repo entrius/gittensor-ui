@@ -29,6 +29,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import { scrollbarSx, TEXT_OPACITY } from '../../theme';
 import { useLanguagesAndWeights } from '../../api';
+import { ChartWrapper } from '../common';
 
 type SortField = 'extension' | 'weight' | 'language';
 type SortOrder = 'asc' | 'desc';
@@ -352,11 +353,17 @@ const LanguageWeightsTable: React.FC = () => {
             backgroundColor: alpha(theme.palette.common.black, 0.2),
           }}
         >
-          {showChart && filteredAndSortedLanguages.length > 0 && (
-            <ReactECharts
-              option={chartOption}
-              style={{ height: '100%', width: '100%' }}
-            />
+          {showChart && (
+            <ChartWrapper
+              data={filteredAndSortedLanguages}
+              emptyMessage="No languages match your search"
+              emptyHint="Try clearing the search term."
+            >
+              <ReactECharts
+                option={chartOption}
+                style={{ height: '100%', width: '100%' }}
+              />
+            </ChartWrapper>
           )}
         </Box>
       </Collapse>

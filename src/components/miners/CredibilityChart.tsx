@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Box, Typography, alpha, useTheme } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
 import { CHART_COLORS, TEXT_OPACITY } from '../../theme';
+import { ChartWrapper } from '../common';
 
 interface CredibilityChartProps {
   merged: number;
@@ -104,11 +105,18 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
       </Typography>
 
       <Box sx={{ height: '190px', width: '100%', mb: 0.75 }}>
-        <ReactECharts
-          option={chartOption}
-          style={{ height: '100%', width: '100%' }}
-          opts={{ renderer: 'svg' }}
-        />
+        <ChartWrapper
+          data={[merged, open, closed]}
+          isEmpty={(d) => d.every((v) => v === 0)}
+          emptyMessage="No PR activity yet"
+          emptyHint="Credibility appears once you have merged or closed PRs."
+        >
+          <ReactECharts
+            option={chartOption}
+            style={{ height: '100%', width: '100%' }}
+            opts={{ renderer: 'svg' }}
+          />
+        </ChartWrapper>
       </Box>
 
       {/* Stats Legend */}

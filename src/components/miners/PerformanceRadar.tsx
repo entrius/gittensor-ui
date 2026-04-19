@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Box, Typography, alpha, useTheme } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { ChartWrapper } from '../common';
 
 interface PerformanceRadarProps {
   credibility: number;
@@ -112,11 +113,25 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
         Performance Profile
       </Typography>
       <Box sx={{ height: '220px', width: '100%' }}>
-        <ReactECharts
-          option={chartOption}
-          style={{ height: '100%', width: '100%' }}
-          opts={{ renderer: 'svg' }}
-        />
+        <ChartWrapper
+          data={[
+            credibility,
+            complexity,
+            issuesSolved,
+            uniqueRepos,
+            totalPRs,
+            avgRepoWeight,
+          ]}
+          isEmpty={(d) => d.every((v) => !v)}
+          emptyMessage="No activity yet"
+          emptyHint="Performance profile appears once the miner has merged PRs."
+        >
+          <ReactECharts
+            option={chartOption}
+            style={{ height: '100%', width: '100%' }}
+            opts={{ renderer: 'svg' }}
+          />
+        </ChartWrapper>
       </Box>
     </Box>
   );

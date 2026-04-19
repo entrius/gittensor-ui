@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { alpha, type Theme, useTheme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
+import { ChartWrapper } from '../../../components/common';
 import {
   type DashboardTrendSeries,
   type TrendSeriesKey,
@@ -402,12 +403,18 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
                 <CircularProgress size={28} />
               </Box>
             ) : (
-              <ReactECharts
-                option={chartOption}
-                notMerge={true}
-                style={{ width: '100%', height: '100%' }}
-                opts={{ renderer: 'svg' }}
-              />
+              <ChartWrapper
+                data={visibleSeries}
+                emptyMessage="No trend data for this range"
+                emptyHint="Try a different time range or series filter."
+              >
+                <ReactECharts
+                  option={chartOption}
+                  notMerge={true}
+                  style={{ width: '100%', height: '100%' }}
+                  opts={{ renderer: 'svg' }}
+                />
+              </ChartWrapper>
             )}
           </Box>
         </CardContent>
