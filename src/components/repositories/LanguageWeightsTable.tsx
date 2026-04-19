@@ -569,16 +569,17 @@ const LanguageWeightsTable: React.FC = () => {
         sx={{
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'flex-end',
           gap: 2,
           pt: 1,
           px: { xs: 0, sm: 2 },
           borderTop: `1px solid ${theme.palette.divider}`,
-          flexWrap: { xs: 'wrap', md: 'nowrap' },
+          flexWrap: 'wrap',
         }}
       >
         <Typography
           variant="body2"
-          color="text.secondary"
+          color="text.primary"
           sx={{
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.8rem',
@@ -592,10 +593,8 @@ const LanguageWeightsTable: React.FC = () => {
           sx={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
             gap: { xs: 0.5, sm: 1 },
-            flex: 1,
-            minWidth: 0,
+            flexShrink: 0,
           }}
         >
           <IconButton
