@@ -285,7 +285,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     };
     const metric = chartMetric[sortColumn] ?? chartMetric.totalScore;
     const effectiveLogScale =
-      useLogScale && sortColumn !== 'totalPRs' && sortColumn !== 'contributors';
+      useLogScale &&
+      sortColumn !== 'weight' &&
+      sortColumn !== 'totalPRs' &&
+      sortColumn !== 'contributors';
 
     const barGradient = {
       type: 'linear',
@@ -426,6 +429,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           fontSize: 11,
           formatter: (value: number) => {
             if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
+            if (sortColumn === 'weight') return value.toFixed(2);
             return value.toFixed(0);
           },
         },
