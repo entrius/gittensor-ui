@@ -10,7 +10,7 @@ import {
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useAllPrs, useAllMiners } from '../../api';
-import { useNavigate } from 'react-router-dom';
+import { LinkBox } from '../common/linkBehavior';
 import { STATUS_COLORS } from '../../theme';
 import { isMergedPr } from '../../utils/prStatus';
 
@@ -22,7 +22,6 @@ const RepositoryContributorsTable: React.FC<
   RepositoryContributorsTableProps
 > = ({ repositoryFullName }) => {
   const theme = useTheme();
-  const navigate = useNavigate();
   const { data: allPRs, isLoading } = useAllPrs();
   const { data: allMinersStats } = useAllMiners();
 
@@ -216,12 +215,11 @@ const RepositoryContributorsTable: React.FC<
               </Box>
 
               {/* Contributor */}
-              <Box
-                onClick={() =>
-                  navigate(`/miners/details?githubId=${contributor.githubId}`, {
-                    state: { backLabel: `Back to ${repositoryFullName}` },
-                  })
-                }
+              <LinkBox
+                href={`/miners/details?githubId=${contributor.githubId}`}
+                linkState={{
+                  backLabel: `Back to ${repositoryFullName}`,
+                }}
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
@@ -280,7 +278,7 @@ const RepositoryContributorsTable: React.FC<
                     </Typography>
                   )}
                 </Box>
-              </Box>
+              </LinkBox>
 
               {/* PRs */}
               <Box

@@ -28,7 +28,10 @@ import {
   Button,
   Switch,
   FormControlLabel,
+  CircularProgress,
   alpha,
+  useMediaQuery,
+  useTheme,
   type SxProps,
   type Theme,
 } from '@mui/material';
@@ -38,7 +41,8 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import FilterButton from '../FilterButton';
 import ReactECharts from 'echarts-for-react';
 import type { TooltipComponentFormatterCallbackParams } from 'echarts';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { LinkTableRow } from '../common/linkBehavior';
 import { truncateText } from '../../utils';
 import { RankIcon } from './RankIcon';
 import LeaderboardTableSkeleton from './LeaderboardTableSkeleton';
@@ -77,7 +81,8 @@ type SortDirection = 'asc' | 'desc';
 interface TopRepositoriesTableProps {
   repositories: RepoStats[];
   isLoading?: boolean;
-  onSelectRepository: (repositoryFullName: string) => void;
+  getRepositoryHref: (repositoryFullName: string) => string;
+  linkState?: Record<string, unknown>;
 }
 
 const VALID_SORT_COLUMNS: SortColumn[] = [
@@ -93,8 +98,10 @@ const VALID_ROWS = [10, 25, 50];
 const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   repositories,
   isLoading,
-  onSelectRepository,
+  getRepositoryHref,
+  linkState,
 }) => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Read initial state from URL params, falling back to defaults
@@ -129,8 +136,13 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     urlDir === 'asc' || urlDir === 'desc' ? urlDir : 'desc',
   );
   const [useLogScale, setUseLogScale] = useState(true);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const isInitialMount = useRef(true);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const trimmedSearch = searchQuery.trim();
+  const isMobileSearchVisible =
+    isMobile && (isMobileSearchOpen || !!trimmedSearch);
   const isDirectRepoInput = /^[^/\s]+\/[^/\s]+$/.test(trimmedSearch);
 
   // Sync filter state to URL params (replace, don't push)
@@ -273,7 +285,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     };
     const metric = chartMetric[sortColumn] ?? chartMetric.totalScore;
     const effectiveLogScale =
-      useLogScale && sortColumn !== 'totalPRs' && sortColumn !== 'contributors';
+      useLogScale &&
+      sortColumn !== 'weight' &&
+      sortColumn !== 'totalPRs' &&
+      sortColumn !== 'contributors';
 
     const barGradient = {
       type: 'linear',
@@ -414,6 +429,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           fontSize: 11,
           formatter: (value: number) => {
             if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
+            if (sortColumn === 'weight') return value.toFixed(2);
             return value.toFixed(0);
           },
         },
@@ -483,6 +499,73 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     syncToUrl({ sort: column, dir: newDir, page: '0' });
   };
 
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && isDirectRepoInput) {
+      navigate(getRepositoryHref(trimmedSearch), {
+        state: linkState,
+      });
+    }
+    if (e.key === 'Escape' && !trimmedSearch) {
+      setIsMobileSearchOpen(false);
+    }
+  };
+
+  const searchAdornment = (
+    <InputAdornment position="start">
+      <SearchIcon
+        sx={{
+          color: 'text.tertiary',
+          fontSize: '1rem',
+        }}
+      />
+    </InputAdornment>
+  );
+
+  const searchFieldBaseSx = {
+    '& .MuiOutlinedInput-root': {
+      color: 'text.primary',
+      fontFamily: '"JetBrains Mono", monospace',
+      backgroundColor: 'background.default',
+      fontSize: '0.8rem',
+      height: '36px',
+      borderRadius: 2,
+      '& fieldset': { borderColor: 'border.light' },
+      '&:hover fieldset': {
+        borderColor: 'border.medium',
+      },
+      '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+    },
+  } as const;
+
+  const searchInput = (
+    <TextField
+      placeholder="Search or enter owner/repo..."
+      size="small"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      onKeyDown={handleSearchKeyDown}
+      onBlur={() => {
+        if (isMobile && !trimmedSearch) {
+          setIsMobileSearchOpen(false);
+        }
+      }}
+      autoFocus={isMobileSearchOpen}
+      InputProps={{
+        startAdornment: searchAdornment,
+      }}
+      sx={{
+        width: '200px',
+        ...(isMobileSearchVisible
+          ? {
+              flexBasis: { xs: '100%', sm: 'auto' },
+              order: { xs: 10, sm: 'initial' },
+            }
+          : {}),
+        ...searchFieldBaseSx,
+      }}
+    />
+  );
+
   const SortableHeader = ({
     column,
     children,
@@ -537,6 +620,20 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     syncToUrl({ search: searchQuery, page: '0' });
   }, [searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (!isMobile) {
+      setIsMobileSearchOpen(false);
+    }
+  }, [isMobile]);
+
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress size={40} sx={{ color: 'primary.main' }} />
+      </Box>
+    );
+  }
+
   return (
     <Card
       sx={{
@@ -573,6 +670,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               gap: 2,
               alignItems: 'center',
               flexWrap: 'wrap',
+              width: '100%',
             }}
           >
             <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
@@ -610,7 +708,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 }}
               />
             </Box>
-
             <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
               <IconButton
                 onClick={() => setShowChart(!showChart)}
@@ -707,44 +804,30 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               </Box>
             </FormControl>
 
-            <TextField
-              placeholder="Search or enter owner/repo..."
-              size="small"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && isDirectRepoInput) {
-                  onSelectRepository(trimmedSearch);
-                }
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon
-                      sx={{
-                        color: 'text.tertiary',
-                        fontSize: '1rem',
-                      }}
-                    />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                width: '200px',
-                '& .MuiOutlinedInput-root': {
-                  color: 'text.primary',
-                  backgroundColor: 'background.default',
-                  fontSize: '0.8rem',
-                  height: '36px',
+            {isMobileSearchVisible ? (
+              searchInput
+            ) : isMobile ? (
+              <IconButton
+                size="small"
+                onClick={() => setIsMobileSearchOpen(true)}
+                sx={{
+                  color: 'text.tertiary',
+                  border: '1px solid',
+                  borderColor: 'border.light',
                   borderRadius: 2,
-                  '& fieldset': { borderColor: 'border.light' },
-                  '&:hover fieldset': {
+                  width: 36,
+                  height: 36,
+                  '&:hover': {
+                    backgroundColor: 'surface.light',
                     borderColor: 'border.medium',
                   },
-                  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                },
-              }}
-            />
+                }}
+              >
+                <SearchIcon sx={{ fontSize: '1rem' }} />
+              </IconButton>
+            ) : (
+              searchInput
+            )}
           </Box>
         </Box>
       </Box>
@@ -830,12 +913,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((repo) => {
                     return (
-                      <TableRow
+                      <LinkTableRow
                         key={repo.repository}
+                        href={getRepositoryHref(repo.repository || '')}
+                        linkState={linkState}
                         hover
-                        onClick={() =>
-                          onSelectRepository(repo.repository || '')
-                        }
                         sx={{
                           cursor: 'pointer',
                           '&:hover': {
@@ -976,7 +1058,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                               : '-'}
                           </Typography>
                         </TableCell>
-                      </TableRow>
+                      </LinkTableRow>
                     );
                   })}
                 {!filteredRepositories.length &&
@@ -1009,7 +1091,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                           <Button
                             size="small"
                             variant="outlined"
-                            onClick={() => onSelectRepository(trimmedSearch)}
+                            onClick={() =>
+                              navigate(getRepositoryHref(trimmedSearch), {
+                                state: linkState,
+                              })
+                            }
                             sx={{ textTransform: 'none' }}
                           >
                             Open repository
