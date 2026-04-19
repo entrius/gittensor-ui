@@ -32,6 +32,15 @@ const PRHeader: React.FC<PRHeaderProps> = ({
   const mergedDateLabel = prDetails.mergedAt
     ? formatDate(prDetails.mergedAt)
     : null;
+  const chipSx = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.75,
+    px: 1,
+    py: 0.5,
+    borderRadius: 1,
+    border: '1px solid',
+  };
   const isOpenPR = prDetails.prState === 'OPEN';
   const isClosed = prDetails.prState === 'CLOSED';
   const collateralScore = parseFloat(prDetails.collateralScore || '0');
@@ -176,22 +185,14 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               {...authorLinkProps}
               sx={{
                 ...linkResetSx,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 0.75,
-                px: 1,
-                py: 0.5,
-                borderRadius: 1,
-                border: '1px solid',
+                ...chipSx,
                 borderColor: 'border.light',
                 backgroundColor: 'surface.subtle',
                 cursor: 'pointer',
                 transition: 'color 0.15s, border-color 0.15s',
                 '&:hover': {
                   borderColor: 'primary.main',
-                  '& .author-login': {
-                    color: 'primary.main',
-                  },
+                  '& .author-login': { color: 'primary.main' },
                 },
               }}
             >
@@ -216,13 +217,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
           {mergedDateLabel && (
             <Box
               sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 0.75,
-                px: 1,
-                py: 0.5,
-                borderRadius: 1,
-                border: '1px solid',
+                ...chipSx,
                 borderColor: alpha(STATUS_COLORS.merged, 0.25),
                 backgroundColor: alpha(STATUS_COLORS.merged, 0.08),
               }}

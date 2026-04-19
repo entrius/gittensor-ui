@@ -18,6 +18,7 @@ import theme, {
   TEXT_OPACITY,
   tooltipSlotProps,
 } from '../../theme';
+import { parseNumber } from '../../utils';
 import { buildMultiplierGrid } from '../../utils/multiplierDefs';
 
 interface PRDetailsCardProps {
@@ -83,10 +84,12 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   const [owner] = repository.split('/');
   const isOpenPR = prDetails.prState === 'OPEN';
   const multipliers = buildMultiplierGrid(prDetails, isOpenPR);
-  const structuralScoreNum = parseFloat(String(prDetails.structuralScore ?? 0));
-  const leafScoreNum = parseFloat(String(prDetails.leafScore ?? 0));
+  const structuralScoreNum = parseNumber(prDetails.structuralScore);
+  const leafScoreNum = parseNumber(prDetails.leafScore);
   const showTokenDonut = structuralScoreNum > 0 || leafScoreNum > 0;
-  const tokenScoreValue = parseFloat(prDetails.tokenScore ?? '0');
+  const tokenScoreValue = parseNumber(prDetails.tokenScore);
+  const scoreSubValue = (raw: unknown, num: number) =>
+    raw != null ? `Score ${num.toFixed(2)}` : undefined;
   type DetailItem = {
     label: string;
     value: string;
@@ -97,10 +100,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     isMonospace?: boolean;
   };
   const detailItems: DetailItem[] = [
-    {
-      label: 'Base Score',
-      value: parseFloat(prDetails.baseScore ?? '0').toFixed(2),
-    },
+    { label: 'Base Score', value: parseNumber(prDetails.baseScore).toFixed(2) },
     {
       label: 'Tokens Scored',
       value: (prDetails.totalNodesScored ?? 0).toLocaleString(),
@@ -109,20 +109,14 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     {
       label: 'Structural',
       value: String(prDetails.structuralCount ?? '-'),
-      subValue:
-        prDetails.structuralScore != null
-          ? `Score ${structuralScoreNum.toFixed(2)}`
-          : undefined,
+      subValue: scoreSubValue(prDetails.structuralScore, structuralScoreNum),
       tooltip:
         'Functions, classes, and modules scored via AST analysis. Structural nodes carry more weight per node because they represent high-value code organization.',
     },
     {
       label: 'Leaf',
       value: String(prDetails.leafCount ?? '-'),
-      subValue:
-        prDetails.leafScore != null
-          ? `Score ${leafScoreNum.toFixed(2)}`
-          : undefined,
+      subValue: scoreSubValue(prDetails.leafScore, leafScoreNum),
       tooltip:
         'Individual statements and expressions scored via AST analysis. More leaf nodes means a larger diff, but structural nodes contribute more score per node.',
     },
