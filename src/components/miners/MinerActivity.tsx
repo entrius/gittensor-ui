@@ -18,6 +18,11 @@ import {
 } from '../../api';
 import ContributionHeatmap from '../ContributionHeatmap';
 import { CHART_COLORS, STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import {
+  echartsItemTooltipChrome,
+  echartsRadarChrome,
+  echartsTransparentBackground,
+} from '../../utils/echarts/gittensorChartTheme';
 import { parseNumber } from '../../utils/ExplorerUtils';
 import TrustBadge from './TrustBadge';
 import CredibilityChart from './CredibilityChart';
@@ -82,7 +87,7 @@ const IssueCredibilityChart: React.FC<{
 
   const chartOption = useMemo(
     () => ({
-      backgroundColor: 'transparent',
+      ...echartsTransparentBackground(),
       title: {
         text: `${(credibility * 100).toFixed(0)}%`,
         subtext: 'Credibility',
@@ -102,12 +107,7 @@ const IssueCredibilityChart: React.FC<{
       tooltip: {
         trigger: 'item',
         formatter: '{b}: {c} ({d}%)',
-        backgroundColor: alpha(theme.palette.common.black, 0.9),
-        borderColor: alpha(theme.palette.common.white, TEXT_OPACITY.ghost),
-        borderWidth: 1,
-        textStyle: {
-          color: theme.palette.text.primary,
-        },
+        ...echartsItemTooltipChrome(theme),
       },
       series: [
         {
@@ -200,8 +200,9 @@ const IssuePerformanceRadar: React.FC<{
 
   const chartOption = useMemo(
     () => ({
-      backgroundColor: 'transparent',
+      ...echartsTransparentBackground(),
       radar: {
+        ...echartsRadarChrome(theme),
         indicator: [
           { name: 'Credibility', max: 100 },
           { name: 'Solve\nRate', max: 100 },
@@ -213,24 +214,6 @@ const IssuePerformanceRadar: React.FC<{
         radius: '50%',
         shape: 'circle',
         splitNumber: 5,
-        axisName: {
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-          fontSize: 9,
-          lineHeight: 12,
-        },
-        splitLine: {
-          lineStyle: {
-            color: Array(5).fill(
-              alpha(theme.palette.common.white, TEXT_OPACITY.ghost * 0.25),
-            ),
-          },
-        },
-        splitArea: { show: false },
-        axisLine: {
-          lineStyle: {
-            color: alpha(theme.palette.common.white, TEXT_OPACITY.ghost * 0.5),
-          },
-        },
       },
       series: [
         {

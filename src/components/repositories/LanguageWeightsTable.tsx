@@ -29,6 +29,14 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import { scrollbarSx, TEXT_OPACITY } from '../../theme';
 import { useLanguagesAndWeights } from '../../api';
+import {
+  echartsAxisTooltipChrome,
+  echartsBarChartTitle,
+  echartsFontFamily,
+  echartsGridBarWithTitle,
+  echartsStrongAxisLabelColor,
+  echartsTransparentBackground,
+} from '../../utils/echarts/gittensorChartTheme';
 
 type SortField = 'extension' | 'weight' | 'language';
 type SortOrder = 'asc' | 'desc';
@@ -118,8 +126,9 @@ const LanguageWeightsTable: React.FC = () => {
 
   const chartOption = useMemo(() => {
     const chartData = filteredAndSortedLanguages;
-    const textColor = alpha(theme.palette.common.white, 0.85);
+    const textColor = echartsStrongAxisLabelColor(theme);
     const gridColor = theme.palette.border.subtle;
+    const font = echartsFontFamily(theme);
 
     const xAxisData = chartData.map((item) => item.extension);
     const seriesData = chartData.map((item) => {
@@ -128,48 +137,24 @@ const LanguageWeightsTable: React.FC = () => {
     });
 
     return {
-      backgroundColor: 'transparent',
-      title: {
-        text: 'Language Weight Distribution',
-        subtext: 'All languages by weight',
-        left: 'center',
-        top: 20,
-        textStyle: {
-          color: theme.palette.text.primary,
-          fontFamily: 'JetBrains Mono',
-          fontSize: 18,
-          fontWeight: 600,
-        },
-        subtextStyle: {
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-          fontFamily: 'JetBrains Mono',
-          fontSize: 12,
-        },
-      },
+      ...echartsTransparentBackground(),
+      title: echartsBarChartTitle(
+        theme,
+        'Language Weight Distribution',
+        'All languages by weight',
+      ),
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
-        backgroundColor: alpha(theme.palette.background.default, 0.95),
-        borderColor: alpha(theme.palette.common.white, 0.15),
-        borderWidth: 1,
-        textStyle: {
-          color: theme.palette.text.primary,
-          fontFamily: 'JetBrains Mono',
-        },
+        ...echartsAxisTooltipChrome(theme),
       },
-      grid: {
-        left: '3%',
-        right: '3%',
-        bottom: '10%',
-        top: '20%',
-        containLabel: true,
-      },
+      grid: echartsGridBarWithTitle(),
       xAxis: {
         type: 'category',
         data: xAxisData,
         axisLabel: {
           color: textColor,
-          fontFamily: 'JetBrains Mono',
+          fontFamily: font,
           rotate: 45,
           interval: 0,
         },
@@ -178,8 +163,8 @@ const LanguageWeightsTable: React.FC = () => {
       yAxis: {
         type: 'value',
         name: 'Weight',
-        nameTextStyle: { color: textColor, fontFamily: 'JetBrains Mono' },
-        axisLabel: { color: textColor, fontFamily: 'JetBrains Mono' },
+        nameTextStyle: { color: textColor, fontFamily: font },
+        axisLabel: { color: textColor, fontFamily: font },
         splitLine: { lineStyle: { color: gridColor, type: 'dashed' } },
       },
       series: [
