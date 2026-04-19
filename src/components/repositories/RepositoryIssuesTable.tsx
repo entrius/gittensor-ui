@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { LinkBox, linkResetSx } from '../common/linkBehavior';
 import {
   Card,
   Typography,
@@ -43,7 +43,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   repositoryFullName,
 }) => {
   const theme = useTheme();
-  const navigate = useNavigate();
   const { data: issues, isLoading } = useRepositoryIssues(repositoryFullName);
   const { data: bounties } = useRepoIssues(repositoryFullName);
   const [filter, setFilter] = useState<'all' | 'open' | 'closed'>('all');
@@ -141,13 +140,10 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
             {bounties.map((bounty) => {
               const meta = getIssueStatusMeta(bounty.status);
               return (
-                <Box
+                <LinkBox
                   key={bounty.id}
-                  onClick={() =>
-                    navigate(`/bounties/details?id=${bounty.id}`, {
-                      state: { backLabel: `Back to ${repositoryFullName}` },
-                    })
-                  }
+                  href={`/bounties/details?id=${bounty.id}`}
+                  linkState={{ backLabel: `Back to ${repositoryFullName}` }}
                   sx={{
                     display: 'flex',
                     alignItems: 'center',
@@ -241,7 +237,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                       }}
                     />
                   </Box>
-                </Box>
+                </LinkBox>
               );
             })}
           </Box>
@@ -351,18 +347,17 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                   return (
                     <TableRow
                       key={`${issue.number}-${index}`}
+                      component="a"
+                      href={`https://github.com/${issue.repositoryFullName}/issues/${issue.number}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       sx={{
+                        ...linkResetSx,
                         cursor: 'pointer',
                         '&:hover': {
                           backgroundColor: 'surface.light',
                         },
                         transition: 'background-color 0.2s',
-                      }}
-                      onClick={() => {
-                        window.open(
-                          `https://github.com/${issue.repositoryFullName}/issues/${issue.number}`,
-                          '_blank',
-                        );
                       }}
                     >
                       <TableCell sx={bodyCellStyle}>

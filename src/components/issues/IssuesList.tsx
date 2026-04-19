@@ -20,11 +20,16 @@ import {
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueBounty } from '../../api/models/Issues';
-import { useStats } from '../../api';
-import { formatTokenAmount, formatDate } from '../../utils/format';
+import { usePrices } from '../../hooks/usePrices';
+import {
+  formatTokenAmount,
+  formatDate,
+  formatAlphaToUsd,
+} from '../../utils/format';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
-import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
 import BountyProgress from './BountyProgress';
+import { LinkTableRow } from '../common/linkBehavior';
 
 type ListType = 'available' | 'pending' | 'history';
 type SortDirection = 'asc' | 'desc';
@@ -42,7 +47,8 @@ interface IssuesListProps {
   issues: IssueBounty[];
   isLoading?: boolean;
   listType: ListType;
-  onSelectIssue?: (id: number) => void;
+  getIssueHref?: (id: number) => string;
+  linkState?: Record<string, unknown>;
 }
 
 /**
@@ -58,25 +64,13 @@ const IssuesList: React.FC<IssuesListProps> = ({
   issues,
   isLoading = false,
   listType,
-  onSelectIssue,
+  getIssueHref,
+  linkState,
 }) => {
   const theme = useTheme();
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const { data: dashStats } = useStats();
-  const taoPrice = dashStats?.prices?.tao?.data?.price ?? 0;
-  const alphaPrice = dashStats?.prices?.alpha?.data?.price ?? 0;
-
-  const toUsd = useCallback(
-    (alphaAmount: string): string | null => {
-      if (taoPrice <= 0 || alphaPrice <= 0) return null;
-      const amount = parseFloat(alphaAmount);
-      if (isNaN(amount) || amount === 0) return null;
-      const usd = amount * alphaPrice * taoPrice;
-      return `~${usd.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`;
-    },
-    [alphaPrice, taoPrice],
-  );
+  const { taoPrice, alphaPrice } = usePrices();
   const headerCellSx = useMemo(
     () => ({
       fontFamily: '"JetBrains Mono", monospace',
@@ -322,7 +316,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
       }}
       elevation={0}
     >
-      <TableContainer>
+      <TableContainer sx={{ ...scrollbarSx }}>
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -371,20 +365,21 @@ const IssuesList: React.FC<IssuesListProps> = ({
           <TableBody>
             {sortedIssues.map((issue) => {
               const statusBadge = getIssueStatusMeta(issue.status);
-              const usdDisplay = toUsd(issue.targetBounty);
-
-              return (
-                <TableRow
-                  key={issue.id}
-                  onClick={() => onSelectIssue?.(issue.id)}
-                  sx={{
-                    cursor: onSelectIssue ? 'pointer' : 'default',
-                    transition: 'background-color 0.2s',
-                    '&:hover': {
-                      backgroundColor: alpha(theme.palette.common.white, 0.03),
-                    },
-                  }}
-                >
+              const href = getIssueHref?.(issue.id);
+              const usdDisplay = formatAlphaToUsd(
+                issue.targetBounty,
+                taoPrice,
+                alphaPrice,
+              );
+              const rowSx = {
+                cursor: href ? 'pointer' : 'default',
+                transition: 'background-color 0.2s',
+                '&:hover': {
+                  backgroundColor: alpha(theme.palette.common.white, 0.03),
+                },
+              };
+              const cells = (
+                <>
                   {/* Common columns */}
                   <TableCell sx={bodyCellSx}>
                     <Typography
@@ -632,6 +627,21 @@ const IssuesList: React.FC<IssuesListProps> = ({
                       </TableCell>
                     </>
                   )}
+                </>
+              );
+
+              return href ? (
+                <LinkTableRow
+                  key={issue.id}
+                  href={href}
+                  linkState={linkState}
+                  sx={rowSx}
+                >
+                  {cells}
+                </LinkTableRow>
+              ) : (
+                <TableRow key={issue.id} sx={rowSx}>
+                  {cells}
                 </TableRow>
               );
             })}

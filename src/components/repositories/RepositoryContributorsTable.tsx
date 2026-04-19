@@ -10,7 +10,7 @@ import {
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useAllPrs, useAllMiners } from '../../api';
-import { useNavigate } from 'react-router-dom';
+import { LinkBox } from '../common/linkBehavior';
 import { STATUS_COLORS } from '../../theme';
 import { isMergedPr } from '../../utils/prStatus';
 
@@ -22,7 +22,6 @@ const RepositoryContributorsTable: React.FC<
   RepositoryContributorsTableProps
 > = ({ repositoryFullName }) => {
   const theme = useTheme();
-  const navigate = useNavigate();
   const { data: allPRs, isLoading } = useAllPrs();
   const { data: allMinersStats } = useAllMiners();
 
@@ -230,9 +229,37 @@ const RepositoryContributorsTable: React.FC<
                 transition: 'background-color 0.1s, opacity 0.1s',
               }}
             >
-              <Box sx={rowGridSx}>
-                {/* Rank */}
-                <Box
+              {/* Rank */}
+              <Box
+                sx={{
+                  fontSize: '12px',
+                  color: index < 3 ? 'text.primary' : STATUS_COLORS.open,
+                  fontWeight: index < 3 ? 600 : 400,
+                }}
+              >
+                {index + 1}
+              </Box>
+
+              {/* Contributor */}
+              <LinkBox
+                href={`/miners/details?githubId=${contributor.githubId}`}
+                linkState={{
+                  backLabel: `Back to ${repositoryFullName}`,
+                }}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  '&:hover .contributor-name': {
+                    color: STATUS_COLORS.info,
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                <Avatar
+                  src={`https://avatars.githubusercontent.com/${contributor.author}`}
                   sx={{
                     fontSize: '12px',
                     color: index < 3 ? 'text.primary' : STATUS_COLORS.open,
@@ -311,6 +338,7 @@ const RepositoryContributorsTable: React.FC<
                     )}
                   </Box>
                 </Box>
+              </LinkBox>
 
                 {/* PRs */}
                 <Typography

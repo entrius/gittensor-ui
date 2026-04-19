@@ -11,8 +11,12 @@ import {
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueDetails } from '../../api/models/Issues';
-import { useStats } from '../../api';
-import { formatTokenAmount, formatDate } from '../../utils/format';
+import {
+  formatTokenAmount,
+  formatDate,
+  formatAlphaToUsd,
+} from '../../utils/format';
+import { usePrices } from '../../hooks/usePrices';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 
@@ -23,17 +27,10 @@ interface IssueHeaderCardProps {
 const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
   const theme = useTheme();
   const statusBadge = getIssueStatusMeta(issue.status);
-  const { data: dashStats } = useStats();
-  const taoPrice = dashStats?.prices?.tao?.data?.price ?? 0;
-  const alphaPrice = dashStats?.prices?.alpha?.data?.price ?? 0;
-
-  const usdEstimate = React.useMemo(() => {
-    if (taoPrice <= 0 || alphaPrice <= 0) return null;
-    const amount = parseFloat(issue.targetBounty);
-    if (isNaN(amount) || amount === 0) return null;
-    const usd = amount * alphaPrice * taoPrice;
-    return `~${usd.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`;
-  }, [issue.targetBounty, taoPrice, alphaPrice]);
+  const { taoPrice, alphaPrice, hasPrices } = usePrices();
+  const usdEstimate = hasPrices
+    ? formatAlphaToUsd(issue.targetBounty, taoPrice, alphaPrice)
+    : null;
 
   return (
     <Card
