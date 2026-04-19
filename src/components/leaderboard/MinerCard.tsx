@@ -423,6 +423,21 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
         p: 1,
       })}
     >
+      {variant === 'watchlist' && (
+        <Typography
+          sx={{
+            fontFamily: FONTS.mono,
+            fontSize: '0.7rem',
+            fontWeight: 700,
+            color: muiTheme.palette.status.open,
+            textTransform: 'uppercase',
+            mb: 0.35,
+            letterSpacing: '0.04em',
+          }}
+        >
+          OSS
+        </Typography>
+      )}
       <Box
         sx={{
           display: 'grid',
