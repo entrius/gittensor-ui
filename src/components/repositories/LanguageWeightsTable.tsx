@@ -8,11 +8,11 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
-  TablePagination,
   TextField,
   Typography,
   Paper,
   InputAdornment,
+  InputBase,
   CircularProgress,
   Select,
   MenuItem,
@@ -23,7 +23,15 @@ import {
   alpha,
   useTheme,
 } from '@mui/material';
-import { Search, Check, Close } from '@mui/icons-material';
+import {
+  Search,
+  Check,
+  Close,
+  FirstPage,
+  LastPage,
+  NavigateBefore,
+  NavigateNext,
+} from '@mui/icons-material';
 import ReactECharts from 'echarts-for-react';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
@@ -42,6 +50,7 @@ const LanguageWeightsTable: React.FC = () => {
   const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [pageInput, setPageInput] = useState('1');
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleSort = (field: SortField) => {
@@ -51,17 +60,6 @@ const LanguageWeightsTable: React.FC = () => {
       setSortField(field);
       setSortOrder(field === 'weight' ? 'desc' : 'asc');
     }
-    setPage(0);
-  };
-
-  const handleChangePage = (_event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
@@ -115,6 +113,51 @@ const LanguageWeightsTable: React.FC = () => {
     const endIndex = startIndex + rowsPerPage;
     return filteredAndSortedLanguages.slice(startIndex, endIndex);
   }, [filteredAndSortedLanguages, page, rowsPerPage]);
+
+  const tableCount = filteredAndSortedLanguages.length;
+  const totalPages = tableCount === 0 ? 0 : Math.ceil(tableCount / rowsPerPage);
+  const rangeFrom = tableCount === 0 ? 0 : page * rowsPerPage + 1;
+  const rangeTo = Math.min(tableCount, (page + 1) * rowsPerPage);
+
+  useEffect(() => {
+    const tp =
+      filteredAndSortedLanguages.length === 0
+        ? 0
+        : Math.ceil(filteredAndSortedLanguages.length / rowsPerPage);
+    if (tp === 0) {
+      if (page !== 0) setPage(0);
+      return;
+    }
+    const maxPage = tp - 1;
+    if (page > maxPage) setPage(maxPage);
+  }, [filteredAndSortedLanguages.length, rowsPerPage, page]);
+
+  useEffect(() => {
+    const tp =
+      filteredAndSortedLanguages.length === 0
+        ? 0
+        : Math.ceil(filteredAndSortedLanguages.length / rowsPerPage);
+    if (tp === 0) {
+      setPageInput('');
+      return;
+    }
+    setPageInput(String(page + 1));
+  }, [page, filteredAndSortedLanguages.length, rowsPerPage]);
+
+  const commitPageInput = () => {
+    if (totalPages === 0) {
+      setPageInput('');
+      return;
+    }
+    const parsed = parseInt(pageInput.trim(), 10);
+    if (Number.isNaN(parsed)) {
+      setPageInput(String(page + 1));
+      return;
+    }
+    const next = Math.min(Math.max(1, parsed), totalPages);
+    setPage(next - 1);
+    setPageInput(String(next));
+  };
 
   const chartOption = useMemo(() => {
     const chartData = filteredAndSortedLanguages;
@@ -275,7 +318,7 @@ const LanguageWeightsTable: React.FC = () => {
               <Select
                 value={rowsPerPage}
                 onChange={(e) => {
-                  setRowsPerPage(e.target.value as number);
+                  setRowsPerPage(Number(e.target.value));
                   setPage(0);
                 }}
                 sx={{
@@ -522,20 +565,147 @@ const LanguageWeightsTable: React.FC = () => {
         </TableContainer>
       )}
 
-      <TablePagination
-        rowsPerPageOptions={[]}
-        component="div"
-        count={filteredAndSortedLanguages.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-        showFirstButton
-        showLastButton
+      <Box
         sx={{
-          '.MuiTablePagination-displayedRows': {},
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          pt: 1,
+          px: { xs: 0, sm: 2 },
+          borderTop: `1px solid ${theme.palette.divider}`,
+          flexWrap: { xs: 'wrap', md: 'nowrap' },
         }}
-      />
+      >
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.8rem',
+            flexShrink: 0,
+          }}
+        >
+          {rangeFrom}-{rangeTo} of {tableCount}
+        </Typography>
+
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: { xs: 0.5, sm: 1 },
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
+          <IconButton
+            size="small"
+            aria-label="first page"
+            disabled={totalPages === 0 || page === 0}
+            onClick={() => setPage(0)}
+            sx={{ color: 'text.secondary' }}
+          >
+            <FirstPage fontSize="small" />
+          </IconButton>
+          <IconButton
+            size="small"
+            aria-label="previous page"
+            disabled={totalPages === 0 || page === 0}
+            onClick={() => setPage((p) => p - 1)}
+            sx={{ color: 'text.secondary' }}
+          >
+            <NavigateBefore fontSize="small" />
+          </IconButton>
+
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.75,
+              mx: { xs: 0.5, sm: 1 },
+            }}
+          >
+            <InputBase
+              inputProps={{
+                'aria-label': 'Go to page',
+                min: 1,
+                max: totalPages || 1,
+                type: 'number',
+                style: { textAlign: 'center' },
+              }}
+              value={pageInput}
+              disabled={totalPages === 0}
+              onChange={(e) => setPageInput(e.target.value)}
+              onBlur={commitPageInput}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  commitPageInput();
+                }
+              }}
+              sx={{
+                width: 52,
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.8rem',
+                color: 'text.primary',
+                '& .MuiInputBase-input': {
+                  py: 0.5,
+                  px: 0.75,
+                  borderRadius: 1,
+                  border: `1px solid ${theme.palette.border.light}`,
+                  backgroundColor: alpha(theme.palette.common.black, 0.4),
+                  '&:focus': {
+                    borderColor: 'primary.main',
+                  },
+                  '&:disabled': {
+                    opacity: 0.5,
+                  },
+                },
+              }}
+            />
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.8rem',
+              }}
+            >
+              /
+            </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.8rem',
+                minWidth: 24,
+              }}
+            >
+              {totalPages === 0 ? '0' : totalPages}
+            </Typography>
+          </Box>
+
+          <IconButton
+            size="small"
+            aria-label="next page"
+            disabled={totalPages === 0 || page >= totalPages - 1}
+            onClick={() => setPage((p) => p + 1)}
+            sx={{ color: 'text.secondary' }}
+          >
+            <NavigateNext fontSize="small" />
+          </IconButton>
+          <IconButton
+            size="small"
+            aria-label="last page"
+            disabled={totalPages === 0 || page >= totalPages - 1}
+            onClick={() => setPage(totalPages - 1)}
+            sx={{ color: 'text.secondary' }}
+          >
+            <LastPage fontSize="small" />
+          </IconButton>
+        </Box>
+      </Box>
 
       {filteredAndSortedLanguages.length === 0 && !isLoading && (
         <Box sx={{ textAlign: 'center', py: 4 }}>
