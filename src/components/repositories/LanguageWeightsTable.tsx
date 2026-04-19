@@ -375,6 +375,16 @@ const LanguageWeightsTable: React.FC = () => {
           <Table stickyHeader>
             <TableHead>
               <TableRow>
+                <TableCell
+                  align="right"
+                  sx={{
+                    ...headerCellStyle,
+                    width: '1%',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <Typography variant="dataLabel">#</Typography>
+                </TableCell>
                 <TableCell sx={headerCellStyle}>
                   <TableSortLabel
                     active={sortField === 'extension'}
@@ -434,8 +444,16 @@ const LanguageWeightsTable: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {paginatedLanguages.map((lang) => (
+              {paginatedLanguages.map((lang, rowIndex) => (
                 <TableRow key={lang.extension} hover>
+                  <TableCell align="right" sx={bodyCellStyle}>
+                    <Typography
+                      variant="dataValue"
+                      sx={{ fontVariantNumeric: 'tabular-nums' }}
+                    >
+                      {page * rowsPerPage + rowIndex + 1}
+                    </Typography>
+                  </TableCell>
                   <TableCell sx={bodyCellStyle}>{lang.extension}</TableCell>
                   <TableCell
                     sx={{
