@@ -153,7 +153,11 @@ const WatchlistPage: React.FC = () => {
       </Box>
 
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>Clear all {count} pinned miners?</DialogTitle>
+        <DialogTitle>
+          {count === 1
+            ? 'Clear the pinned miner?'
+            : `Clear all ${count} pinned miners?`}
+        </DialogTitle>
         <DialogActions>
           <Button
             onClick={() => setConfirmOpen(false)}
