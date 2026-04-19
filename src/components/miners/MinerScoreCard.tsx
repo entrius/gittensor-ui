@@ -98,23 +98,29 @@ const StatTile: React.FC<StatTileProps> = ({
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
       {tooltip ? (
         <Tooltip
-          title={tooltip}
+          title={<Box sx={{ whiteSpace: 'pre-line' }}>{tooltip}</Box>}
           arrow
           placement="top"
+          disableInteractive
           slotProps={tooltipSlotProps}
         >
-          <Typography
-            variant="statLabel"
+          <Box
+            component="span"
             sx={{
-              cursor: 'pointer',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
               gap: 0.5,
+              cursor: 'default',
             }}
           >
-            {label}
-            <InfoOutlinedIcon sx={{ fontSize: '0.75rem' }} />
-          </Typography>
+            <Typography
+              variant="statLabel"
+              sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+            >
+              {label}
+              <InfoOutlinedIcon sx={{ fontSize: '0.75rem' }} />
+            </Typography>
+          </Box>
         </Tooltip>
       ) : (
         <Typography variant="statLabel">{label}</Typography>
