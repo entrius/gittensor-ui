@@ -15,7 +15,14 @@ import {
   Chip,
   Stack,
   alpha,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import RadioButtonUncheckedRoundedIcon from '@mui/icons-material/RadioButtonUncheckedRounded';
+import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
+import CropSquareOutlinedIcon from '@mui/icons-material/CropSquareOutlined';
 
 type PrSortField =
   | 'pullRequestNumber'
@@ -43,6 +50,22 @@ interface RepositoryPRsTableProps {
   state?: 'open' | 'closed' | 'merged' | 'all';
 }
 
+/** PR filter accent colors */
+const PR_FILTER_COLORS = {
+  open: '#2da44e',
+  merged: '#388bfd',
+  closed: '#f85149',
+  all: '#e6edf3',
+} as const;
+
+/** Selected chip: pale foreground (label, icon, count) — same idea as white‑mint Open */
+const PR_FILTER_ACTIVE_FG = {
+  open: '#c4f2d4',
+  merged: '#c9e2ff',
+  closed: '#ffd8de',
+  all: '#f0f6fc',
+} as const;
+
 const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   repositoryFullName,
   state = 'all',
@@ -50,6 +73,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   const [filter, setFilter] = useState<PrStatusFilter>(state);
   const [sortField, setSortField] = useState<PrSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleSort = (field: PrSortField) => {
     if (sortField === field) {
@@ -78,10 +102,29 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     return getPrStatusCounts(allPRs);
   }, [allPRs]);
 
-  const filteredPRs = useMemo(
+  const prsInActiveFilter = useMemo(
     () => filterPrs(allPRs ?? [], { statusFilter: filter }),
     [allPRs, filter],
   );
+
+  const filteredPRs = useMemo(() => {
+    const statusFiltered = prsInActiveFilter;
+    const normalized = searchQuery.trim().toLowerCase();
+    if (!normalized) return statusFiltered;
+
+    return statusFiltered.filter((pr) => {
+      const title = pr.pullRequestTitle?.toLowerCase() ?? '';
+      const author = pr.author?.toLowerCase() ?? '';
+      const labels = pr.label?.toLowerCase() ?? '';
+      const number = String(pr.pullRequestNumber);
+      return (
+        title.includes(normalized) ||
+        author.includes(normalized) ||
+        labels.includes(normalized) ||
+        number.includes(normalized)
+      );
+    });
+  }, [prsInActiveFilter, searchQuery]);
 
   const sortedPRs = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -144,34 +187,46 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           >
             Pull Requests
           </Typography>
-          <Stack direction="row" spacing={1}>
-            <FilterButton
-              label="All"
-              isActive={filter === 'all'}
-              onClick={() => setFilter('all')}
-              count={counts.all}
-              color={theme.palette.status.neutral}
-            />
+          <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: 'wrap' }}>
             <FilterButton
               label="Open"
               isActive={filter === 'open'}
               onClick={() => setFilter('open')}
               count={counts.open}
-              color={theme.palette.status.open}
+              color={PR_FILTER_COLORS.open}
+              activeTextColor={PR_FILTER_ACTIVE_FG.open}
+              inactiveAppearance="full-accent"
+              icon={<RadioButtonUncheckedRoundedIcon sx={{ fontSize: 14 }} />}
             />
             <FilterButton
               label="Merged"
               isActive={filter === 'merged'}
               onClick={() => setFilter('merged')}
               count={counts.merged}
-              color={theme.palette.status.merged}
+              color={PR_FILTER_COLORS.merged}
+              activeTextColor={PR_FILTER_ACTIVE_FG.merged}
+              inactiveAppearance="full-accent"
+              icon={<CheckCircleOutlineRoundedIcon sx={{ fontSize: 14 }} />}
             />
             <FilterButton
               label="Closed"
               isActive={filter === 'closed'}
               onClick={() => setFilter('closed')}
               count={counts.closed}
-              color={theme.palette.status.closed}
+              color={PR_FILTER_COLORS.closed}
+              activeTextColor={PR_FILTER_ACTIVE_FG.closed}
+              inactiveAppearance="full-accent"
+              icon={<CancelOutlinedIcon sx={{ fontSize: 14 }} />}
+            />
+            <FilterButton
+              label="All"
+              isActive={filter === 'all'}
+              onClick={() => setFilter('all')}
+              count={counts.all}
+              color={PR_FILTER_COLORS.all}
+              activeTextColor={PR_FILTER_ACTIVE_FG.all}
+              inactiveAppearance="full-accent"
+              icon={<CropSquareOutlinedIcon sx={{ fontSize: 14 }} />}
             />
           </Stack>
         </Box>
@@ -198,51 +253,111 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           p: 3,
           borderBottom: `1px solid ${theme.palette.border.light}`,
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
+          flexDirection: 'column',
           gap: 2,
         }}
       >
-        <Typography
-          variant="h6"
+        <Box
           sx={{
-            color: 'text.primary',
-            fontSize: '1.1rem',
-            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 2,
+            width: '100%',
           }}
         >
-          Pull Requests ({sortedPRs.length})
-        </Typography>
-
-        <Stack direction="row" spacing={1}>
-          <FilterButton
-            label="All"
-            isActive={filter === 'all'}
-            onClick={() => setFilter('all')}
-            count={counts.all}
-            color={theme.palette.status.neutral}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 1.5,
+              minWidth: 0,
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                color: 'text.primary',
+                fontSize: '1.1rem',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {searchQuery.trim()
+                ? `Pull Requests (${filteredPRs.length} of ${prsInActiveFilter.length})`
+                : `Pull Requests (${prsInActiveFilter.length})`}
+            </Typography>
+          </Box>
+          <TextField
+            size="small"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search PRs"
+            sx={{
+              minWidth: { xs: '100%', sm: 200 },
+              maxWidth: { sm: 320 },
+              flex: { xs: '1 1 100%', sm: '0 0 auto' },
+              '& .MuiOutlinedInput-root': {
+                fontSize: '0.82rem',
+                borderRadius: '8px',
+                backgroundColor: 'surface.subtle',
+                '& fieldset': {
+                  borderColor: theme.palette.border.light,
+                },
+              },
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'text.secondary', fontSize: 16 }} />
+                </InputAdornment>
+              ),
+            }}
           />
+        </Box>
+
+        <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: 'wrap' }}>
           <FilterButton
             label="Open"
             isActive={filter === 'open'}
             onClick={() => setFilter('open')}
             count={counts.open}
-            color={theme.palette.status.open}
+            color={PR_FILTER_COLORS.open}
+            activeTextColor={PR_FILTER_ACTIVE_FG.open}
+            inactiveAppearance="full-accent"
+            icon={<RadioButtonUncheckedRoundedIcon sx={{ fontSize: 14 }} />}
           />
           <FilterButton
             label="Merged"
             isActive={filter === 'merged'}
             onClick={() => setFilter('merged')}
             count={counts.merged}
-            color={theme.palette.status.merged}
+            color={PR_FILTER_COLORS.merged}
+            activeTextColor={PR_FILTER_ACTIVE_FG.merged}
+            inactiveAppearance="full-accent"
+            icon={<CheckCircleOutlineRoundedIcon sx={{ fontSize: 14 }} />}
           />
           <FilterButton
             label="Closed"
             isActive={filter === 'closed'}
             onClick={() => setFilter('closed')}
             count={counts.closed}
-            color={theme.palette.status.closed}
+            color={PR_FILTER_COLORS.closed}
+            activeTextColor={PR_FILTER_ACTIVE_FG.closed}
+            inactiveAppearance="full-accent"
+            icon={<CancelOutlinedIcon sx={{ fontSize: 14 }} />}
+          />
+          <FilterButton
+            label="All"
+            isActive={filter === 'all'}
+            onClick={() => setFilter('all')}
+            count={counts.all}
+            color={PR_FILTER_COLORS.all}
+            activeTextColor={PR_FILTER_ACTIVE_FG.all}
+            inactiveAppearance="full-accent"
+            icon={<CropSquareOutlinedIcon sx={{ fontSize: 14 }} />}
           />
         </Stack>
       </Box>
