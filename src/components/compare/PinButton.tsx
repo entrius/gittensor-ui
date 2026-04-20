@@ -1,5 +1,11 @@
 import React from 'react';
-import { IconButton, Tooltip, type SxProps, type Theme } from '@mui/material';
+import {
+  IconButton,
+  Tooltip,
+  alpha,
+  type SxProps,
+  type Theme,
+} from '@mui/material';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import { usePulseBoard } from '../../hooks/usePulseBoard';
@@ -41,20 +47,20 @@ export const PinButton: React.FC<PinButtonProps> = ({
           disabled={disabled}
           aria-label={label}
           aria-pressed={pinned}
-          sx={{
+          sx={(theme) => ({
             color: pinned ? 'primary.main' : 'text.tertiary',
             transition: 'color 0.15s, transform 0.15s',
             '&:hover': {
               color: 'primary.light',
               transform: 'scale(1.08)',
-              backgroundColor: 'rgba(255,255,255,0.06)',
+              backgroundColor: alpha(theme.palette.text.primary, 0.06),
             },
             '&.Mui-disabled': {
               color: 'text.tertiary',
               opacity: 0.4,
             },
-            ...sx,
-          }}
+            ...(sx as object),
+          })}
         >
           {pinned ? (
             <PushPinIcon fontSize={size === 'medium' ? 'medium' : 'small'} />

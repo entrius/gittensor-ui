@@ -124,8 +124,7 @@ export const StrategyFingerprint: React.FC<StrategyFingerprintProps> = ({
       ],
       tooltip: {
         trigger: 'item',
-        backgroundColor:
-          theme.palette.surface?.tooltip ?? 'rgba(10,10,12,0.95)',
+        backgroundColor: theme.palette.surface.tooltip,
         borderColor: alpha(theme.palette.common.white, 0.15),
         borderWidth: 1,
         textStyle: {
@@ -136,11 +135,13 @@ export const StrategyFingerprint: React.FC<StrategyFingerprintProps> = ({
         formatter: (params: any) => {
           const fp = normalizedData.find((d) => d.author === params.name);
           if (!fp) return '';
+          const labelColor = alpha(theme.palette.text.primary, 0.7);
+          const valueColor = theme.palette.text.primary;
           return `<div style="font-family: 'JetBrains Mono', monospace;">
             <div style="font-weight:700;margin-bottom:6px;">${fp.author}</div>
             ${AXES.map(
               (axis, i) =>
-                `<div style="font-size:11px;color:rgba(255,255,255,0.7);">${axis.label}: <span style="color:#fff;font-weight:600;">${fp.raw[i].toFixed(1)} ${axis.unit}</span></div>`,
+                `<div style="font-size:11px;color:${labelColor};">${axis.label}: <span style="color:${valueColor};font-weight:600;">${fp.raw[i].toFixed(1)} ${axis.unit}</span></div>`,
             ).join('')}
           </div>`;
         },
