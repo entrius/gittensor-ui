@@ -59,6 +59,14 @@ export const CHART_COLORS = {
   merged: '#3fb950', // Green - successful merges
   open: '#8b949e', // Grey - pending/open
   closed: '#ef4444', // Red - closed without merge
+  // Distinct per-series palette for overlaid/multi-series charts
+  // (e.g. watchlist comparison radar). Indices map to series order.
+  series: [
+    STATUS_COLORS.merged, // Green
+    STATUS_COLORS.info, // Blue
+    STATUS_COLORS.warning, // Amber
+    '#a78bfa', // Purple
+  ],
 } as const;
 
 export const scrollbarSx = {

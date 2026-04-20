@@ -14,7 +14,8 @@ import {
 import { Link as RouterLink } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { TopMinersTable, SEO } from '../components';
-import { MinerComparisonRadar, COMPARISON_COLORS } from '../components/miners';
+import { MinerComparisonRadar } from '../components/miners';
+import { CHART_COLORS } from '../theme';
 import { useAllMiners } from '../api';
 import { mapAllMinersToStats } from '../utils/minerMapper';
 import { useWatchlist } from '../hooks/useWatchlist';
@@ -86,7 +87,9 @@ const WatchlistPage: React.FC = () => {
 
   const colorForMiner = (githubId: string) => {
     const idx = comparisonMiners.findIndex((m) => m.githubId === githubId);
-    return idx >= 0 ? COMPARISON_COLORS[idx % COMPARISON_COLORS.length] : null;
+    return idx >= 0
+      ? CHART_COLORS.series[idx % CHART_COLORS.series.length]
+      : null;
   };
 
   return (

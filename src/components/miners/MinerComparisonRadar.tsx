@@ -1,15 +1,8 @@
 import React, { useMemo } from 'react';
 import { Box, alpha, useTheme } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
-import { TEXT_OPACITY } from '../../theme';
+import { CHART_COLORS, TEXT_OPACITY } from '../../theme';
 import { type MinerStats } from '../leaderboard/types';
-
-export const COMPARISON_COLORS = [
-  '#3fb950',
-  '#58a6ff',
-  '#f59e0b',
-  '#a78bfa',
-] as const;
 
 interface Metric {
   label: string;
@@ -92,7 +85,7 @@ const MinerComparisonRadar: React.FC<MinerComparisonRadarProps> = ({
     const rawByMiner = miners.map((miner) => METRICS.map((m) => m.get(miner)));
 
     const data = miners.map((miner, i) => {
-      const color = COMPARISON_COLORS[i % COMPARISON_COLORS.length];
+      const color = CHART_COLORS.series[i % CHART_COLORS.series.length];
       return {
         name: displayName(miner),
         value: rawByMiner[i].map((v, j) => (v / maxes[j]) * 100),
