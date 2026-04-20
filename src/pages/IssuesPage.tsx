@@ -9,6 +9,7 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Box, Tabs, Tab, Stack, Typography, alpha } from '@mui/material';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { IssueStats, IssuesList } from '../components/issues';
@@ -106,6 +107,7 @@ const IssuesPage: React.FC = () => {
                   fontSize: '0.72rem',
                   color: (t) => alpha(t.palette.text.primary, 0.35),
                   pr: 1,
+                  mt: { xs: 0.5, md: 0 },
                   mb: { xs: 1, md: 0 },
                   textAlign: { xs: 'left', md: 'right' },
                 }}
@@ -121,10 +123,17 @@ const IssuesPage: React.FC = () => {
                     fontSize: 'inherit',
                     fontFamily: 'inherit',
                     textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.25,
                     '&:hover': { textDecoration: 'underline' },
                   }}
                 >
                   docs
+                  <OpenInNewIcon
+                    sx={{ fontSize: '0.85em' }}
+                    aria-hidden="true"
+                  />
                 </Typography>
               </Typography>
             </Box>
