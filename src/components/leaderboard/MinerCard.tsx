@@ -350,13 +350,13 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             <CredDonut
               segments={getPrSegments(miner)}
               percent={credibilityPercent}
-              isEligible={miner.isEligible ?? false}
+              isEligible={ossEligible}
               label="PRs"
             />
             <CredDonut
               segments={getIssueSegments(miner)}
               percent={issueCredPercent}
-              isEligible={miner.isIssueEligible ?? false}
+              isEligible={discoveriesEligible}
               label="Issues"
             />
           </Box>
