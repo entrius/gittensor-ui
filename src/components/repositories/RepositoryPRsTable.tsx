@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import {
   Card,
   Typography,
@@ -15,7 +15,30 @@ import {
   Chip,
   Stack,
   alpha,
+  TextField,
+  InputAdornment,
+  Button,
+  Menu,
+  MenuItem,
+  Checkbox,
+  ListItemText,
+  Divider,
 } from '@mui/material';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import SearchIcon from '@mui/icons-material/Search';
+import ViewColumnIcon from '@mui/icons-material/ViewColumn';
+
+import { useAllPrs, type CommitLog } from '../../api';
+import { LinkTableRow } from '../common/linkBehavior';
+import theme, {
+  TEXT_OPACITY,
+  scrollbarSx,
+  headerCellStyle,
+  bodyCellStyle,
+} from '../../theme';
+import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
+import FilterButton from '../FilterButton';
+import type { Theme } from '@mui/material/styles';
 
 type PrSortField =
   | 'pullRequestNumber'
@@ -27,16 +50,166 @@ type PrSortField =
   | 'status'
   | 'mergedAt';
 type SortOrder = 'asc' | 'desc';
-import { useAllPrs } from '../../api';
-import { LinkTableRow } from '../common/linkBehavior';
-import theme, {
-  TEXT_OPACITY,
-  scrollbarSx,
-  headerCellStyle,
-  bodyCellStyle,
-} from '../../theme';
-import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
-import FilterButton from '../FilterButton';
+
+const COLUMN_MENU_OPTIONS: { key: PrSortField; label: string }[] = [
+  { key: 'pullRequestNumber', label: 'PR #' },
+  { key: 'pullRequestTitle', label: 'Title' },
+  { key: 'author', label: 'Author' },
+  { key: 'commitCount', label: 'Commits' },
+  { key: 'lines', label: '+/-' },
+  { key: 'score', label: 'Score' },
+  { key: 'status', label: 'Status' },
+  { key: 'mergedAt', label: 'Merged' },
+];
+
+const DEFAULT_COLUMN_VISIBILITY = COLUMN_MENU_OPTIONS.reduce(
+  (acc, { key }) => {
+    acc[key] = true;
+    return acc;
+  },
+  {} as Record<PrSortField, boolean>,
+);
+
+/** Avoid allocating rank maps inside every sort comparison. */
+const PR_STATE_RANK: Record<string, number> = {
+  OPEN: 0,
+  MERGED: 1,
+  CLOSED: 2,
+};
+
+const COLUMNS_MENU_PAPER_SX = {
+  mt: 1,
+  minWidth: 240,
+  maxHeight: 400,
+  borderRadius: 2,
+  border: `1px solid ${theme.palette.border.light}`,
+  backgroundImage: 'none',
+} as const;
+
+const PR_TABLE_ROW_SX = {
+  cursor: 'pointer',
+  '&:hover': {
+    backgroundColor: 'surface.light',
+  },
+  transition: 'background-color 0.2s',
+} as const;
+
+type RepositoryPrTableRowProps = {
+  pr: CommitLog;
+  columnVisibility: Record<PrSortField, boolean>;
+  rowHref: string;
+  linkState: { backLabel: string };
+};
+
+const RepositoryPrTableRow = memo(function RepositoryPrTableRow({
+  pr,
+  columnVisibility,
+  rowHref,
+  linkState,
+}: RepositoryPrTableRowProps) {
+  const statusLabel =
+    pr.prState?.toUpperCase() || (pr.mergedAt ? 'MERGED' : 'OPEN');
+  let statusColor = theme.palette.status.neutral;
+  if (statusLabel === 'MERGED') statusColor = theme.palette.status.merged;
+  else if (statusLabel === 'OPEN') statusColor = theme.palette.status.open;
+  else if (statusLabel === 'CLOSED') statusColor = theme.palette.status.closed;
+
+  return (
+    <LinkTableRow href={rowHref} linkState={linkState} sx={PR_TABLE_ROW_SX}>
+      {columnVisibility.pullRequestNumber && (
+        <TableCell sx={bodyCellStyle}>
+          <a
+            href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: theme.palette.text.primary,
+              textDecoration: 'none',
+              fontWeight: 500,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            #{pr.pullRequestNumber}
+          </a>
+        </TableCell>
+      )}
+      {columnVisibility.pullRequestTitle && (
+        <TableCell sx={bodyCellStyle}>
+          <Box
+            sx={{
+              maxWidth: '300px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {pr.pullRequestTitle}
+          </Box>
+        </TableCell>
+      )}
+      {columnVisibility.author && (
+        <TableCell sx={bodyCellStyle}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
+            <Avatar
+              src={`https://avatars.githubusercontent.com/${pr.author}`}
+              alt={pr.author}
+              sx={{ width: 20, height: 20 }}
+            />
+            {pr.author}
+          </Box>
+        </TableCell>
+      )}
+      {columnVisibility.commitCount && (
+        <TableCell align="right" sx={bodyCellStyle}>
+          {pr.commitCount}
+        </TableCell>
+      )}
+      {columnVisibility.lines && (
+        <TableCell align="right" sx={bodyCellStyle}>
+          <Box
+            component="span"
+            sx={{ color: theme.palette.diff.additions, mr: 1 }}
+          >
+            +{pr.additions}
+          </Box>
+          <Box component="span" sx={{ color: theme.palette.diff.deletions }}>
+            -{pr.deletions}
+          </Box>
+        </TableCell>
+      )}
+      {columnVisibility.score && (
+        <TableCell align="right" sx={bodyCellStyle}>
+          <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+            {parseFloat(pr.score || '0').toFixed(4)}
+          </Typography>
+        </TableCell>
+      )}
+      {columnVisibility.status && (
+        <TableCell sx={bodyCellStyle}>
+          <Chip
+            variant="status"
+            label={statusLabel}
+            sx={{
+              color: statusColor,
+              borderColor: statusColor,
+            }}
+          />
+        </TableCell>
+      )}
+      {columnVisibility.mergedAt && (
+        <TableCell align="right" sx={bodyCellStyle}>
+          {pr.mergedAt ? new Date(pr.mergedAt).toLocaleDateString() : '-'}
+        </TableCell>
+      )}
+    </LinkTableRow>
+  );
+});
 
 interface RepositoryPRsTableProps {
   repositoryFullName: string;
@@ -48,39 +221,97 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   state = 'all',
 }) => {
   const [filter, setFilter] = useState<PrStatusFilter>(state);
+  const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<PrSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [columnVisibility, setColumnVisibility] = useState<
+    Record<PrSortField, boolean>
+  >(() => ({ ...DEFAULT_COLUMN_VISIBILITY }));
+  const [columnsMenuAnchor, setColumnsMenuAnchor] =
+    useState<null | HTMLElement>(null);
 
-  const handleSort = (field: PrSortField) => {
-    if (sortField === field) {
-      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortField(field);
-      setSortOrder(
-        field === 'pullRequestTitle' || field === 'author' ? 'asc' : 'desc',
-      );
+  const visibleColumnCount = useMemo(() => {
+    let n = 0;
+    for (const { key } of COLUMN_MENU_OPTIONS) {
+      if (columnVisibility[key]) n++;
     }
-  };
+    return n;
+  }, [columnVisibility]);
+
+  const toggleColumn = useCallback((key: PrSortField) => {
+    setColumnVisibility((prev) => {
+      const wasVisible = prev[key];
+      let visible = 0;
+      for (const { key: k } of COLUMN_MENU_OPTIONS) {
+        if (prev[k]) visible++;
+      }
+      if (wasVisible && visible <= 1) return prev;
+      return { ...prev, [key]: !wasVisible };
+    });
+  }, []);
+
+  const handleSort = useCallback(
+    (field: PrSortField) => {
+      if (sortField === field) {
+        setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+      } else {
+        setSortField(field);
+        setSortOrder(
+          field === 'pullRequestTitle' || field === 'author' ? 'asc' : 'desc',
+        );
+      }
+    },
+    [sortField],
+  );
 
   // Fetch ALL PRs at once to enable client-side filtering and accurate counts
   // This avoids server roundtrips on filter change and provides instant UI feedback
   const { data: allMinerPRs, isLoading } = useAllPrs();
 
   const allPRs = useMemo(() => {
-    if (!allMinerPRs) return [];
-    return allMinerPRs.filter(
-      (pr) => pr.repository.toLowerCase() === repositoryFullName.toLowerCase(),
-    );
+    if (!allMinerPRs?.length) return [];
+    const repoLc = repositoryFullName.toLowerCase();
+    return allMinerPRs.filter((pr) => pr.repository.toLowerCase() === repoLc);
   }, [allMinerPRs, repositoryFullName]);
+
+  const prListBackLinkState = useMemo(
+    () => ({ backLabel: `Back to ${repositoryFullName}` }),
+    [repositoryFullName],
+  );
+
+  const searchFieldInputProps = useMemo(
+    () => ({
+      startAdornment: (
+        <InputAdornment position="start">
+          <SearchIcon
+            sx={{
+              color: (t: Theme) => alpha(t.palette.text.primary, 0.35),
+              fontSize: '1.05rem',
+            }}
+          />
+        </InputAdornment>
+      ),
+    }),
+    [],
+  );
 
   const counts = useMemo(() => {
     if (!allPRs) return { all: 0, open: 0, merged: 0, closed: 0 };
     return getPrStatusCounts(allPRs);
   }, [allPRs]);
 
-  const filteredPRs = useMemo(
+  const statusFilteredOnly = useMemo(
     () => filterPrs(allPRs ?? [], { statusFilter: filter }),
     [allPRs, filter],
+  );
+
+  const filteredPRs = useMemo(
+    () =>
+      filterPrs(statusFilteredOnly, {
+        searchQuery,
+        includeNumber: true,
+      }),
+    [statusFilteredOnly, searchQuery],
   );
 
   const sortedPRs = useMemo(() => {
@@ -89,9 +320,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     const cmpNum = (a = 0, b = 0) => (a - b) * dir;
     const stateRank = (pr: (typeof filteredPRs)[number]) => {
       const s = pr.prState?.toUpperCase() || (pr.mergedAt ? 'MERGED' : 'OPEN');
-      return (
-        ({ OPEN: 0, MERGED: 1, CLOSED: 2 } as Record<string, number>)[s] ?? 3
-      );
+      return PR_STATE_RANK[s] ?? 3;
     };
 
     return [...filteredPRs].sort((a, b) => {
@@ -212,7 +441,8 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
             fontWeight: 500,
           }}
         >
-          Pull Requests ({sortedPRs.length})
+          Pull Requests ({filteredPRs.length}
+          {searchQuery.trim() ? ` of ${statusFilteredOnly.length}` : ''})
         </Typography>
 
         <Stack direction="row" spacing={1}>
@@ -247,6 +477,124 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         </Stack>
       </Box>
 
+      <Box
+        sx={{
+          px: 3,
+          py: 2,
+          borderBottom: `1px solid ${theme.palette.border.light}`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          flexWrap: { xs: 'wrap', lg: 'nowrap' },
+        }}
+      >
+        <TextField
+          size="small"
+          fullWidth
+          placeholder="Search pull requests by title, author, or PR number..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          autoComplete="off"
+          InputProps={searchFieldInputProps}
+          sx={{
+            flex: '1 1 auto',
+            minWidth: { xs: '100%', sm: 220 },
+            maxWidth: { lg: 'none' },
+            '& .MuiOutlinedInput-root': {
+              fontSize: '0.8rem',
+              color: 'text.primary',
+              minHeight: 40,
+              backgroundColor: 'surface.subtle',
+              borderRadius: '999px',
+              pl: 1,
+              '& fieldset': { borderColor: 'border.light' },
+              '&:hover fieldset': { borderColor: 'border.medium' },
+              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+            },
+          }}
+        />
+
+        <Stack
+          direction="row"
+          sx={{
+            flex: { xs: '1 1 100%', lg: '0 0 auto' },
+            justifyContent: { xs: 'stretch', lg: 'flex-end' },
+            minWidth: 0,
+          }}
+        >
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={(e) => setColumnsMenuAnchor(e.currentTarget)}
+            startIcon={
+              <ViewColumnIcon sx={{ fontSize: '1.1rem !important' }} />
+            }
+            endIcon={<ArrowDropDownIcon />}
+            aria-haspopup="true"
+            aria-expanded={Boolean(columnsMenuAnchor)}
+            sx={{
+              flex: { xs: 1, lg: 'none' },
+              alignSelf: { xs: 'stretch', lg: 'center' },
+              minHeight: 40,
+              px: 2,
+              borderRadius: '999px',
+              textTransform: 'none',
+              fontSize: '0.8rem',
+              color: 'text.primary',
+              borderColor: 'border.light',
+              backgroundColor: 'surface.subtle',
+              '&:hover': {
+                borderColor: 'border.medium',
+                backgroundColor: 'surface.light',
+              },
+            }}
+          >
+            Columns
+            {visibleColumnCount < COLUMN_MENU_OPTIONS.length
+              ? ` (${visibleColumnCount})`
+              : ''}
+          </Button>
+        </Stack>
+      </Box>
+
+      <Menu
+        anchorEl={columnsMenuAnchor}
+        open={Boolean(columnsMenuAnchor)}
+        onClose={() => setColumnsMenuAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{ sx: COLUMNS_MENU_PAPER_SX }}
+      >
+        <MenuItem
+          dense
+          onClick={() => {
+            setColumnVisibility({ ...DEFAULT_COLUMN_VISIBILITY });
+            setColumnsMenuAnchor(null);
+          }}
+        >
+          <ListItemText
+            primary="Show all"
+            primaryTypographyProps={{ fontSize: '0.875rem' }}
+          />
+        </MenuItem>
+        <Divider />
+        {COLUMN_MENU_OPTIONS.map(({ key, label }) => (
+          <MenuItem key={key} dense onClick={() => toggleColumn(key)}>
+            <Checkbox
+              size="small"
+              checked={columnVisibility[key]}
+              tabIndex={-1}
+              disableRipple
+              sx={{ py: 0, mr: 1, pointerEvents: 'none' }}
+            />
+            <ListItemText
+              primary={label}
+              primaryTypographyProps={{ fontSize: '0.875rem' }}
+            />
+          </MenuItem>
+        ))}
+      </Menu>
+
       {sortedPRs.length === 0 ? (
         <Box sx={{ p: 4, textAlign: 'center' }}>
           <Typography
@@ -255,7 +603,9 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
               fontSize: '0.9rem',
             }}
           >
-            No pull requests found
+            {searchQuery.trim() && statusFilteredOnly.length > 0
+              ? 'No pull requests match your search'
+              : 'No pull requests found'}
           </Typography>
         </Box>
       ) : (
@@ -269,203 +619,111 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell sx={headerCellStyle}>
-                  <TableSortLabel
-                    active={sortField === 'pullRequestNumber'}
-                    direction={
-                      sortField === 'pullRequestNumber' ? sortOrder : 'desc'
-                    }
-                    onClick={() => handleSort('pullRequestNumber')}
-                  >
-                    PR #
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell sx={headerCellStyle}>
-                  <TableSortLabel
-                    active={sortField === 'pullRequestTitle'}
-                    direction={
-                      sortField === 'pullRequestTitle' ? sortOrder : 'asc'
-                    }
-                    onClick={() => handleSort('pullRequestTitle')}
-                  >
-                    Title
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell sx={headerCellStyle}>
-                  <TableSortLabel
-                    active={sortField === 'author'}
-                    direction={sortField === 'author' ? sortOrder : 'asc'}
-                    onClick={() => handleSort('author')}
-                  >
-                    Author
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="right" sx={headerCellStyle}>
-                  <TableSortLabel
-                    active={sortField === 'commitCount'}
-                    direction={sortField === 'commitCount' ? sortOrder : 'desc'}
-                    onClick={() => handleSort('commitCount')}
-                  >
-                    Commits
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="right" sx={headerCellStyle}>
-                  <TableSortLabel
-                    active={sortField === 'lines'}
-                    direction={sortField === 'lines' ? sortOrder : 'desc'}
-                    onClick={() => handleSort('lines')}
-                  >
-                    +/-
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="right" sx={headerCellStyle}>
-                  <TableSortLabel
-                    active={sortField === 'score'}
-                    direction={sortField === 'score' ? sortOrder : 'desc'}
-                    onClick={() => handleSort('score')}
-                  >
-                    Score
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell sx={headerCellStyle}>
-                  <TableSortLabel
-                    active={sortField === 'status'}
-                    direction={sortField === 'status' ? sortOrder : 'asc'}
-                    onClick={() => handleSort('status')}
-                  >
-                    Status
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="right" sx={headerCellStyle}>
-                  <TableSortLabel
-                    active={sortField === 'mergedAt'}
-                    direction={sortField === 'mergedAt' ? sortOrder : 'desc'}
-                    onClick={() => handleSort('mergedAt')}
-                  >
-                    Merged
-                  </TableSortLabel>
-                </TableCell>
+                {columnVisibility.pullRequestNumber && (
+                  <TableCell sx={headerCellStyle}>
+                    <TableSortLabel
+                      active={sortField === 'pullRequestNumber'}
+                      direction={
+                        sortField === 'pullRequestNumber' ? sortOrder : 'desc'
+                      }
+                      onClick={() => handleSort('pullRequestNumber')}
+                    >
+                      PR #
+                    </TableSortLabel>
+                  </TableCell>
+                )}
+                {columnVisibility.pullRequestTitle && (
+                  <TableCell sx={headerCellStyle}>
+                    <TableSortLabel
+                      active={sortField === 'pullRequestTitle'}
+                      direction={
+                        sortField === 'pullRequestTitle' ? sortOrder : 'asc'
+                      }
+                      onClick={() => handleSort('pullRequestTitle')}
+                    >
+                      Title
+                    </TableSortLabel>
+                  </TableCell>
+                )}
+                {columnVisibility.author && (
+                  <TableCell sx={headerCellStyle}>
+                    <TableSortLabel
+                      active={sortField === 'author'}
+                      direction={sortField === 'author' ? sortOrder : 'asc'}
+                      onClick={() => handleSort('author')}
+                    >
+                      Author
+                    </TableSortLabel>
+                  </TableCell>
+                )}
+                {columnVisibility.commitCount && (
+                  <TableCell align="right" sx={headerCellStyle}>
+                    <TableSortLabel
+                      active={sortField === 'commitCount'}
+                      direction={
+                        sortField === 'commitCount' ? sortOrder : 'desc'
+                      }
+                      onClick={() => handleSort('commitCount')}
+                    >
+                      Commits
+                    </TableSortLabel>
+                  </TableCell>
+                )}
+                {columnVisibility.lines && (
+                  <TableCell align="right" sx={headerCellStyle}>
+                    <TableSortLabel
+                      active={sortField === 'lines'}
+                      direction={sortField === 'lines' ? sortOrder : 'desc'}
+                      onClick={() => handleSort('lines')}
+                    >
+                      +/-
+                    </TableSortLabel>
+                  </TableCell>
+                )}
+                {columnVisibility.score && (
+                  <TableCell align="right" sx={headerCellStyle}>
+                    <TableSortLabel
+                      active={sortField === 'score'}
+                      direction={sortField === 'score' ? sortOrder : 'desc'}
+                      onClick={() => handleSort('score')}
+                    >
+                      Score
+                    </TableSortLabel>
+                  </TableCell>
+                )}
+                {columnVisibility.status && (
+                  <TableCell sx={headerCellStyle}>
+                    <TableSortLabel
+                      active={sortField === 'status'}
+                      direction={sortField === 'status' ? sortOrder : 'asc'}
+                      onClick={() => handleSort('status')}
+                    >
+                      Status
+                    </TableSortLabel>
+                  </TableCell>
+                )}
+                {columnVisibility.mergedAt && (
+                  <TableCell align="right" sx={headerCellStyle}>
+                    <TableSortLabel
+                      active={sortField === 'mergedAt'}
+                      direction={sortField === 'mergedAt' ? sortOrder : 'desc'}
+                      onClick={() => handleSort('mergedAt')}
+                    >
+                      Merged
+                    </TableSortLabel>
+                  </TableCell>
+                )}
               </TableRow>
             </TableHead>
             <TableBody>
               {sortedPRs.map((pr) => (
-                <LinkTableRow
+                <RepositoryPrTableRow
                   key={`${pr.repository}-${pr.pullRequestNumber}`}
-                  href={`/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`}
-                  linkState={{ backLabel: `Back to ${repositoryFullName}` }}
-                  sx={{
-                    cursor: 'pointer',
-                    '&:hover': {
-                      backgroundColor: 'surface.light',
-                    },
-                    transition: 'background-color 0.2s',
-                  }}
-                >
-                  <TableCell sx={bodyCellStyle}>
-                    <a
-                      href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        color: theme.palette.text.primary,
-                        textDecoration: 'none',
-                        fontWeight: 500,
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      #{pr.pullRequestNumber}
-                    </a>
-                  </TableCell>
-                  <TableCell sx={bodyCellStyle}>
-                    <Box
-                      sx={{
-                        maxWidth: '300px',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {pr.pullRequestTitle}
-                    </Box>
-                  </TableCell>
-
-                  <TableCell sx={bodyCellStyle}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                      }}
-                    >
-                      <Avatar
-                        src={`https://avatars.githubusercontent.com/${pr.author}`}
-                        alt={pr.author}
-                        sx={{ width: 20, height: 20 }}
-                      />
-                      {pr.author}
-                    </Box>
-                  </TableCell>
-                  <TableCell align="right" sx={bodyCellStyle}>
-                    {pr.commitCount}
-                  </TableCell>
-                  <TableCell align="right" sx={bodyCellStyle}>
-                    <Box
-                      component="span"
-                      sx={{ color: theme.palette.diff.additions, mr: 1 }}
-                    >
-                      +{pr.additions}
-                    </Box>
-                    <Box
-                      component="span"
-                      sx={{ color: theme.palette.diff.deletions }}
-                    >
-                      -{pr.deletions}
-                    </Box>
-                  </TableCell>
-                  <TableCell align="right" sx={bodyCellStyle}>
-                    <Typography
-                      sx={{
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {parseFloat(pr.score || '0').toFixed(4)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell sx={bodyCellStyle}>
-                    {(() => {
-                      const state =
-                        pr.prState?.toUpperCase() ||
-                        (pr.mergedAt ? 'MERGED' : 'OPEN');
-                      let color = theme.palette.status.neutral;
-                      const label = state;
-
-                      if (state === 'MERGED') {
-                        color = theme.palette.status.merged;
-                      } else if (state === 'OPEN') {
-                        color = theme.palette.status.open;
-                      } else if (state === 'CLOSED') {
-                        color = theme.palette.status.closed;
-                      }
-
-                      return (
-                        <Chip
-                          variant="status"
-                          label={label}
-                          sx={{
-                            color,
-                            borderColor: color,
-                          }}
-                        />
-                      );
-                    })()}
-                  </TableCell>
-                  <TableCell align="right" sx={bodyCellStyle}>
-                    {pr.mergedAt
-                      ? new Date(pr.mergedAt).toLocaleDateString()
-                      : '-'}
-                  </TableCell>
-                </LinkTableRow>
+                  pr={pr}
+                  columnVisibility={columnVisibility}
+                  rowHref={`/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`}
+                  linkState={prListBackLinkState}
+                />
               ))}
             </TableBody>
           </Table>
