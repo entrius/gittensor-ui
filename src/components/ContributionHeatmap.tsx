@@ -22,6 +22,8 @@ interface ContributionHeatmapProps {
   emptyTitle?: string;
   emptySubtitle?: string;
   bare?: boolean;
+  selectedDate?: string;
+  onDayClick?: (date: string) => void;
 }
 
 const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
@@ -33,11 +35,14 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
   emptyTitle = 'No contributions yet',
   emptySubtitle = 'Activity will appear here once PRs are merged',
   bare = false,
+  selectedDate,
+  onDayClick,
 }) => {
   const theme = useTheme();
   const heatmapLevels = [...CONTRIBUTION_HEATMAP_SCALE];
   const heatmapTheme = { light: heatmapLevels, dark: heatmapLevels };
   const isEmpty = data.length === 0;
+  const interactive = !!onDayClick;
 
   const content = (
     <>
@@ -126,26 +131,49 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
             fontSize={11}
             style={{ color: theme.palette.text.primary }}
             showWeekdayLabels={false}
-            renderBlock={(block, activity) => (
-              <Tooltip
-                title={`${activity.count} contribution${activity.count !== 1 ? 's' : ''} on ${new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
-                arrow
-                placement="top"
-                enterDelay={0}
-                enterNextDelay={0}
-                leaveDelay={0}
-                disableInteractive
-                slotProps={{
-                  popper: {
-                    sx: {
-                      zIndex: theme.zIndex.tooltip,
+            renderBlock={(block, activity) => {
+              const clickable = interactive;
+              const isSelected = selectedDate === activity.date;
+              const highlighted =
+                clickable && isSelected
+                  ? React.cloneElement(block as React.ReactElement, {
+                      stroke: theme.palette.text.primary,
+                      strokeWidth: 1.5,
+                    })
+                  : block;
+              const wrapped = clickable ? (
+                <g
+                  onClick={() => onDayClick?.(activity.date)}
+                  style={{ cursor: 'pointer' }}
+                  role="button"
+                  aria-label={`View ${activity.count} contribution${activity.count !== 1 ? 's' : ''} on ${activity.date}`}
+                >
+                  {highlighted}
+                </g>
+              ) : (
+                highlighted
+              );
+              return (
+                <Tooltip
+                  title={`${activity.count} contribution${activity.count !== 1 ? 's' : ''} on ${new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}${clickable ? ' — click to view PRs' : ''}`}
+                  arrow
+                  placement="top"
+                  enterDelay={0}
+                  enterNextDelay={0}
+                  leaveDelay={0}
+                  disableInteractive
+                  slotProps={{
+                    popper: {
+                      sx: {
+                        zIndex: theme.zIndex.tooltip,
+                      },
                     },
-                  },
-                }}
-              >
-                {block}
-              </Tooltip>
-            )}
+                  }}
+                >
+                  {wrapped}
+                </Tooltip>
+              );
+            }}
           />
         )}
       </Box>

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Card,
@@ -17,6 +17,7 @@ import {
   useAllMiners,
 } from '../../api';
 import ContributionHeatmap from '../ContributionHeatmap';
+import DayPRsPanel from '../DayPRsPanel';
 import { CHART_COLORS, STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { parseNumber } from '../../utils/ExplorerUtils';
 import TrustBadge from './TrustBadge';
@@ -295,6 +296,16 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
   const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
   const { data: repos } = useReposAndWeights();
   const { data: allMinerStats } = useAllMiners();
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+
+  useEffect(() => {
+    setSelectedDate(todayStr);
+  }, [githubId, viewMode, todayStr]);
+
+  const handleDayClick = (date: string) => {
+    setSelectedDate(date);
+  };
 
   // Calculate contribution heatmap data
   const { contributionData, contributionsLast30Days, totalDaysShown } =
@@ -471,141 +482,152 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
     : null;
 
   return (
-    <Card sx={{ p: 0, overflow: 'hidden' }}>
-      <Box
-        sx={{
-          p: 2.5,
-          borderBottom: '1px solid',
-          borderColor: 'border.light',
-          backgroundColor: 'surface.subtle',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <Typography variant="sectionTitle">
-          {isIssueMode ? 'Issue Discovery Activity' : 'Developer Activity'}
-        </Typography>
-        <TrustBadge
-          credibility={
-            isIssueMode
-              ? (issueData?.issueCred ?? 0)
-              : minerStats.credibility || 0
-          }
-          totalPRs={
-            isIssueMode ? (issueData?.solved ?? 0) : minerStats.totalPrs || 0
-          }
-        />
-      </Box>
-
-      {isIssueMode ? (
-        <Grid container>
-          <Grid
-            item
-            xs={12}
-            md={6}
-            sx={{
-              p: 3,
-              borderRight: { md: '1px solid' },
-              borderRightColor: { md: 'border.light' },
-              borderBottom: { xs: '1px solid', md: 'none' },
-              borderBottomColor: { xs: 'border.light', md: 'transparent' },
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-            }}
-          >
-            <IssueCredibilityChart
-              solved={issueData!.solved}
-              open={issueData!.openIssues}
-              closed={issueData!.closedIssues}
-              credibility={issueData!.issueCred}
-            />
-          </Grid>
-
-          <Grid
-            item
-            xs={12}
-            md={6}
-            sx={{
-              p: 3,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-            }}
-          >
-            {issueRadarValues && (
-              <IssuePerformanceRadar {...issueRadarValues} />
-            )}
-          </Grid>
-        </Grid>
-      ) : isLoadingPRs ? (
-        <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
-          <CircularProgress size={30} />
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Card sx={{ p: 0, overflow: 'hidden' }}>
+        <Box
+          sx={{
+            p: 2.5,
+            borderBottom: '1px solid',
+            borderColor: 'border.light',
+            backgroundColor: 'surface.subtle',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Typography variant="sectionTitle">
+            {isIssueMode ? 'Issue Discovery Activity' : 'Developer Activity'}
+          </Typography>
+          <TrustBadge
+            credibility={
+              isIssueMode
+                ? (issueData?.issueCred ?? 0)
+                : minerStats.credibility || 0
+            }
+            totalPRs={
+              isIssueMode ? (issueData?.solved ?? 0) : minerStats.totalPrs || 0
+            }
+          />
         </Box>
-      ) : (
-        <Grid container>
-          <Grid
-            item
-            xs={12}
-            md={6}
-            sx={{
-              p: 3,
-              borderRight: { md: '1px solid' },
-              borderRightColor: { md: 'border.light' },
-              borderBottom: { xs: '1px solid', md: 'none' },
-              borderBottomColor: { xs: 'border.light', md: 'transparent' },
-            }}
-          >
-            <ContributionHeatmap
-              data={contributionData}
-              contributionsLast30Days={contributionsLast30Days}
-              totalDaysShown={totalDaysShown}
-              subtitle="contributions in the last 30 days"
-              footerText="* Activity based on merged PRs in Gittensor-tracked repositories"
-              bare
-            />
-          </Grid>
 
-          <Grid
-            item
-            xs={12}
-            md={3}
-            sx={{
-              p: 3,
-              borderRight: { md: '1px solid' },
-              borderRightColor: { md: 'border.light' },
-              borderBottom: { xs: '1px solid', md: 'none' },
-              borderBottomColor: { xs: 'border.light', md: 'transparent' },
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-            }}
-          >
-            <CredibilityChart
-              merged={minerStats.totalMergedPrs || 0}
-              open={minerStats.totalOpenPrs || 0}
-              closed={minerStats.totalClosedPrs || 0}
-              credibility={minerStats.credibility || 0}
-            />
-          </Grid>
+        {isIssueMode ? (
+          <Grid container>
+            <Grid
+              item
+              xs={12}
+              md={6}
+              sx={{
+                p: 3,
+                borderRight: { md: '1px solid' },
+                borderRightColor: { md: 'border.light' },
+                borderBottom: { xs: '1px solid', md: 'none' },
+                borderBottomColor: { xs: 'border.light', md: 'transparent' },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
+              <IssueCredibilityChart
+                solved={issueData!.solved}
+                open={issueData!.openIssues}
+                closed={issueData!.closedIssues}
+                credibility={issueData!.issueCred}
+              />
+            </Grid>
 
-          <Grid
-            item
-            xs={12}
-            md={3}
-            sx={{
-              p: 3,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-            }}
-          >
-            {prRadarValues && <PerformanceRadar {...prRadarValues} />}
+            <Grid
+              item
+              xs={12}
+              md={6}
+              sx={{
+                p: 3,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
+              {issueRadarValues && (
+                <IssuePerformanceRadar {...issueRadarValues} />
+              )}
+            </Grid>
           </Grid>
-        </Grid>
+        ) : isLoadingPRs ? (
+          <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
+            <CircularProgress size={30} />
+          </Box>
+        ) : (
+          <Grid container>
+            <Grid
+              item
+              xs={12}
+              md={6}
+              sx={{
+                p: 3,
+                borderRight: { md: '1px solid' },
+                borderRightColor: { md: 'border.light' },
+                borderBottom: { xs: '1px solid', md: 'none' },
+                borderBottomColor: { xs: 'border.light', md: 'transparent' },
+              }}
+            >
+              <ContributionHeatmap
+                data={contributionData}
+                contributionsLast30Days={contributionsLast30Days}
+                totalDaysShown={totalDaysShown}
+                subtitle="contributions in the last 30 days"
+                footerText="* Activity based on merged PRs in Gittensor-tracked repositories"
+                bare
+                selectedDate={selectedDate}
+                onDayClick={handleDayClick}
+              />
+            </Grid>
+
+            <Grid
+              item
+              xs={12}
+              md={3}
+              sx={{
+                p: 3,
+                borderRight: { md: '1px solid' },
+                borderRightColor: { md: 'border.light' },
+                borderBottom: { xs: '1px solid', md: 'none' },
+                borderBottomColor: { xs: 'border.light', md: 'transparent' },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
+              <CredibilityChart
+                merged={minerStats.totalMergedPrs || 0}
+                open={minerStats.totalOpenPrs || 0}
+                closed={minerStats.totalClosedPrs || 0}
+                credibility={minerStats.credibility || 0}
+              />
+            </Grid>
+
+            <Grid
+              item
+              xs={12}
+              md={3}
+              sx={{
+                p: 3,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
+              {prRadarValues && <PerformanceRadar {...prRadarValues} />}
+            </Grid>
+          </Grid>
+        )}
+      </Card>
+      {!isIssueMode && !isLoadingPRs && (
+        <DayPRsPanel
+          date={selectedDate}
+          prs={prs ?? []}
+          username={prs?.[0]?.author || githubId}
+        />
       )}
-    </Card>
+    </Box>
   );
 };
 
