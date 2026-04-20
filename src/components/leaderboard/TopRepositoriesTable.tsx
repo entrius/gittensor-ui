@@ -22,6 +22,7 @@ import {
   IconButton,
   Collapse,
   TablePagination,
+  TableSortLabel,
   Select,
   MenuItem,
   FormControl,
@@ -576,40 +577,24 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     children: React.ReactNode;
     align?: 'left' | 'right';
     sx?: SxProps<Theme>;
-  }) => (
-    <TableCell
-      align={align}
-      sx={{
-        ...headerCellStyle,
-        ...(sx || {}),
-        cursor: 'pointer',
-        userSelect: 'none',
-        '&:hover': {
-          backgroundColor: 'surface.light',
-        },
-      }}
-      onClick={() => handleSort(column)}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
-          gap: 0.5,
-        }}
+  }) => {
+    const isActive = sortColumn === column;
+    return (
+      <TableCell
+        align={align}
+        sortDirection={isActive ? sortDirection : false}
+        sx={{ ...headerCellStyle, ...(sx || {}) }}
       >
-        {children}
-        {sortColumn === column && (
-          <Typography
-            component="span"
-            sx={{ fontSize: '0.7rem', opacity: 0.7 }}
-          >
-            {sortDirection === 'asc' ? '▲' : '▼'}
-          </Typography>
-        )}
-      </Box>
-    </TableCell>
-  );
+        <TableSortLabel
+          active={isActive}
+          direction={isActive ? sortDirection : 'asc'}
+          onClick={() => handleSort(column)}
+        >
+          {children}
+        </TableSortLabel>
+      </TableCell>
+    );
+  };
 
   useEffect(() => {
     if (isInitialMount.current) {
