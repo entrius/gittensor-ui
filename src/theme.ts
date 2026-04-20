@@ -35,6 +35,26 @@ export const STATUS_COLORS = {
   award: '#f59e0b', // Amber - winner/trophy highlights
 } as const;
 
+/** Repository PR tab filter chips (GitHub-style). Merged uses blue, not STATUS_COLORS.merged. */
+export const REPOSITORY_PR_FILTER_COLORS = {
+  open: '#2da44e',
+  merged: '#388bfd',
+  closed: '#f85149',
+  all: '#e6edf3',
+} as const;
+
+/** One opacity for PR status chips + Repository Stats open/merged/closed accents (avoid drift). */
+export const REPOSITORY_PR_ACCENT_ALPHA = 0.98;
+
+export const REPOSITORY_PR_STATUS_CHIP = {
+  open: alpha(REPOSITORY_PR_FILTER_COLORS.open, REPOSITORY_PR_ACCENT_ALPHA),
+  merged: alpha(REPOSITORY_PR_FILTER_COLORS.merged, REPOSITORY_PR_ACCENT_ALPHA),
+  closed: alpha(REPOSITORY_PR_FILTER_COLORS.closed, REPOSITORY_PR_ACCENT_ALPHA),
+} as const;
+
+/** Repository Stats “Bounties” row (gift icon + label + count). */
+export const REPOSITORY_STATS_BOUNTY_ACCENT = '#fbbf24';
+
 export const CREDIBILITY_COLORS = {
   excellent: '#4ade80', // Green - 90%+
   good: '#a3e635', // Lime - 70-89%

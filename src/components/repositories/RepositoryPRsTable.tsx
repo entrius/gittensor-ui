@@ -27,6 +27,10 @@ import {
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import SearchIcon from '@mui/icons-material/Search';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
+import RadioButtonUncheckedRoundedIcon from '@mui/icons-material/RadioButtonUncheckedRounded';
+import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
+import CropSquareOutlinedIcon from '@mui/icons-material/CropSquareOutlined';
 
 import { useAllPrs, type CommitLog } from '../../api';
 import { LinkTableRow } from '../common/linkBehavior';
@@ -35,10 +39,15 @@ import theme, {
   scrollbarSx,
   headerCellStyle,
   bodyCellStyle,
+  REPOSITORY_PR_FILTER_COLORS,
 } from '../../theme';
-import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
+import {
+  filterPrs,
+  getPrStatusChipColor,
+  getPrStatusCounts,
+  type PrStatusFilter,
+} from '../../utils';
 import FilterButton from '../FilterButton';
-import type { Theme } from '@mui/material/styles';
 
 type PrSortField =
   | 'pullRequestNumber'
@@ -94,6 +103,16 @@ const PR_TABLE_ROW_SX = {
   transition: 'background-color 0.2s',
 } as const;
 
+const PR_FILTER_COLORS = REPOSITORY_PR_FILTER_COLORS;
+
+/** Selected chip: pale foreground (label, icon, count) — GitHub-style */
+const PR_FILTER_ACTIVE_FG = {
+  open: '#c4f2d4',
+  merged: '#c9e2ff',
+  closed: '#ffd8de',
+  all: '#f0f6fc',
+} as const;
+
 type RepositoryPrTableRowProps = {
   pr: CommitLog;
   columnVisibility: Record<PrSortField, boolean>;
@@ -109,10 +128,10 @@ const RepositoryPrTableRow = memo(function RepositoryPrTableRow({
 }: RepositoryPrTableRowProps) {
   const statusLabel =
     pr.prState?.toUpperCase() || (pr.mergedAt ? 'MERGED' : 'OPEN');
-  let statusColor = theme.palette.status.neutral;
-  if (statusLabel === 'MERGED') statusColor = theme.palette.status.merged;
-  else if (statusLabel === 'OPEN') statusColor = theme.palette.status.open;
-  else if (statusLabel === 'CLOSED') statusColor = theme.palette.status.closed;
+  const statusColor = getPrStatusChipColor(
+    statusLabel,
+    theme.palette.status.neutral,
+  );
 
   return (
     <LinkTableRow href={rowHref} linkState={linkState} sx={PR_TABLE_ROW_SX}>
@@ -264,8 +283,12 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     [sortField],
   );
 
+  const filterOpen = useCallback(() => setFilter('open'), []);
+  const filterMerged = useCallback(() => setFilter('merged'), []);
+  const filterClosed = useCallback(() => setFilter('closed'), []);
+  const filterAll = useCallback(() => setFilter('all'), []);
+
   // Fetch ALL PRs at once to enable client-side filtering and accurate counts
-  // This avoids server roundtrips on filter change and provides instant UI feedback
   const { data: allMinerPRs, isLoading } = useAllPrs();
 
   const allPRs = useMemo(() => {
@@ -279,29 +302,10 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     [repositoryFullName],
   );
 
-  const searchFieldInputProps = useMemo(
-    () => ({
-      startAdornment: (
-        <InputAdornment position="start">
-          <SearchIcon
-            sx={{
-              color: (t: Theme) => alpha(t.palette.text.primary, 0.35),
-              fontSize: '1.05rem',
-            }}
-          />
-        </InputAdornment>
-      ),
-    }),
-    [],
-  );
-
-  const counts = useMemo(() => {
-    if (!allPRs) return { all: 0, open: 0, merged: 0, closed: 0 };
-    return getPrStatusCounts(allPRs);
-  }, [allPRs]);
+  const counts = useMemo(() => getPrStatusCounts(allPRs), [allPRs]);
 
   const statusFilteredOnly = useMemo(
-    () => filterPrs(allPRs ?? [], { statusFilter: filter }),
+    () => filterPrs(allPRs, { statusFilter: filter }),
     [allPRs, filter],
   );
 
@@ -352,6 +356,55 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     });
   }, [filteredPRs, sortField, sortOrder]);
 
+  const titleText = searchQuery.trim()
+    ? `Pull Requests (${filteredPRs.length} of ${statusFilteredOnly.length})`
+    : `Pull Requests (${statusFilteredOnly.length})`;
+
+  const filterStack = (
+    <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: 'wrap' }}>
+      <FilterButton
+        label="Open"
+        isActive={filter === 'open'}
+        onClick={filterOpen}
+        count={counts.open}
+        color={PR_FILTER_COLORS.open}
+        activeTextColor={PR_FILTER_ACTIVE_FG.open}
+        inactiveAppearance="full-accent"
+        icon={<RadioButtonUncheckedRoundedIcon sx={{ fontSize: 14 }} />}
+      />
+      <FilterButton
+        label="Merged"
+        isActive={filter === 'merged'}
+        onClick={filterMerged}
+        count={counts.merged}
+        color={PR_FILTER_COLORS.merged}
+        activeTextColor={PR_FILTER_ACTIVE_FG.merged}
+        inactiveAppearance="full-accent"
+        icon={<CheckCircleOutlineRoundedIcon sx={{ fontSize: 14 }} />}
+      />
+      <FilterButton
+        label="Closed"
+        isActive={filter === 'closed'}
+        onClick={filterClosed}
+        count={counts.closed}
+        color={PR_FILTER_COLORS.closed}
+        activeTextColor={PR_FILTER_ACTIVE_FG.closed}
+        inactiveAppearance="full-accent"
+        icon={<CancelOutlinedIcon sx={{ fontSize: 14 }} />}
+      />
+      <FilterButton
+        label="All"
+        isActive={filter === 'all'}
+        onClick={filterAll}
+        count={counts.all}
+        color={PR_FILTER_COLORS.all}
+        activeTextColor={PR_FILTER_ACTIVE_FG.all}
+        inactiveAppearance="full-accent"
+        icon={<CropSquareOutlinedIcon sx={{ fontSize: 14 }} />}
+      />
+    </Stack>
+  );
+
   if (isLoading) {
     return (
       <Card
@@ -373,36 +426,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           >
             Pull Requests
           </Typography>
-          <Stack direction="row" spacing={1}>
-            <FilterButton
-              label="All"
-              isActive={filter === 'all'}
-              onClick={() => setFilter('all')}
-              count={counts.all}
-              color={theme.palette.status.neutral}
-            />
-            <FilterButton
-              label="Open"
-              isActive={filter === 'open'}
-              onClick={() => setFilter('open')}
-              count={counts.open}
-              color={theme.palette.status.open}
-            />
-            <FilterButton
-              label="Merged"
-              isActive={filter === 'merged'}
-              onClick={() => setFilter('merged')}
-              count={counts.merged}
-              color={theme.palette.status.merged}
-            />
-            <FilterButton
-              label="Closed"
-              isActive={filter === 'closed'}
-              onClick={() => setFilter('closed')}
-              count={counts.closed}
-              color={theme.palette.status.closed}
-            />
-          </Stack>
+          {filterStack}
         </Box>
         <CircularProgress size={40} sx={{ color: 'primary.main' }} />
       </Card>
@@ -427,54 +451,61 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           p: 3,
           borderBottom: `1px solid ${theme.palette.border.light}`,
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
+          flexDirection: 'column',
           gap: 2,
         }}
       >
-        <Typography
-          variant="h6"
+        <Box
           sx={{
-            color: 'text.primary',
-            fontSize: '1.1rem',
-            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 2,
+            width: '100%',
           }}
         >
-          Pull Requests ({filteredPRs.length}
-          {searchQuery.trim() ? ` of ${statusFilteredOnly.length}` : ''})
-        </Typography>
+          <Typography
+            variant="h6"
+            sx={{
+              color: 'text.primary',
+              fontSize: '1.1rem',
+              fontWeight: 600,
+              minWidth: 0,
+            }}
+          >
+            {titleText}
+          </Typography>
+          <TextField
+            size="small"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search PRs"
+            autoComplete="off"
+            sx={{
+              minWidth: { xs: '100%', sm: 200 },
+              maxWidth: { sm: 320 },
+              flex: { xs: '1 1 100%', sm: '0 0 auto' },
+              '& .MuiOutlinedInput-root': {
+                fontSize: '0.82rem',
+                borderRadius: '8px',
+                backgroundColor: 'surface.subtle',
+                '& fieldset': {
+                  borderColor: theme.palette.border.light,
+                },
+              },
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'text.secondary', fontSize: 16 }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Box>
 
-        <Stack direction="row" spacing={1}>
-          <FilterButton
-            label="All"
-            isActive={filter === 'all'}
-            onClick={() => setFilter('all')}
-            count={counts.all}
-            color={theme.palette.status.neutral}
-          />
-          <FilterButton
-            label="Open"
-            isActive={filter === 'open'}
-            onClick={() => setFilter('open')}
-            count={counts.open}
-            color={theme.palette.status.open}
-          />
-          <FilterButton
-            label="Merged"
-            isActive={filter === 'merged'}
-            onClick={() => setFilter('merged')}
-            count={counts.merged}
-            color={theme.palette.status.merged}
-          />
-          <FilterButton
-            label="Closed"
-            isActive={filter === 'closed'}
-            onClick={() => setFilter('closed')}
-            count={counts.closed}
-            color={theme.palette.status.closed}
-          />
-        </Stack>
+        {filterStack}
       </Box>
 
       <Box
@@ -484,77 +515,39 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           borderBottom: `1px solid ${theme.palette.border.light}`,
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'flex-end',
           gap: 1.5,
-          flexWrap: { xs: 'wrap', lg: 'nowrap' },
+          flexWrap: 'wrap',
         }}
       >
-        <TextField
+        <Button
           size="small"
-          fullWidth
-          placeholder="Search pull requests by title, author, or PR number..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          autoComplete="off"
-          InputProps={searchFieldInputProps}
+          variant="outlined"
+          onClick={(e) => setColumnsMenuAnchor(e.currentTarget)}
+          startIcon={<ViewColumnIcon sx={{ fontSize: '1.1rem !important' }} />}
+          endIcon={<ArrowDropDownIcon />}
+          aria-haspopup="true"
+          aria-expanded={Boolean(columnsMenuAnchor)}
           sx={{
-            flex: '1 1 auto',
-            minWidth: { xs: '100%', sm: 220 },
-            maxWidth: { lg: 'none' },
-            '& .MuiOutlinedInput-root': {
-              fontSize: '0.8rem',
-              color: 'text.primary',
-              minHeight: 40,
-              backgroundColor: 'surface.subtle',
-              borderRadius: '999px',
-              pl: 1,
-              '& fieldset': { borderColor: 'border.light' },
-              '&:hover fieldset': { borderColor: 'border.medium' },
-              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+            minHeight: 40,
+            px: 2,
+            borderRadius: '999px',
+            textTransform: 'none',
+            fontSize: '0.8rem',
+            color: 'text.primary',
+            borderColor: 'border.light',
+            backgroundColor: 'surface.subtle',
+            '&:hover': {
+              borderColor: 'border.medium',
+              backgroundColor: 'surface.light',
             },
           }}
-        />
-
-        <Stack
-          direction="row"
-          sx={{
-            flex: { xs: '1 1 100%', lg: '0 0 auto' },
-            justifyContent: { xs: 'stretch', lg: 'flex-end' },
-            minWidth: 0,
-          }}
         >
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={(e) => setColumnsMenuAnchor(e.currentTarget)}
-            startIcon={
-              <ViewColumnIcon sx={{ fontSize: '1.1rem !important' }} />
-            }
-            endIcon={<ArrowDropDownIcon />}
-            aria-haspopup="true"
-            aria-expanded={Boolean(columnsMenuAnchor)}
-            sx={{
-              flex: { xs: 1, lg: 'none' },
-              alignSelf: { xs: 'stretch', lg: 'center' },
-              minHeight: 40,
-              px: 2,
-              borderRadius: '999px',
-              textTransform: 'none',
-              fontSize: '0.8rem',
-              color: 'text.primary',
-              borderColor: 'border.light',
-              backgroundColor: 'surface.subtle',
-              '&:hover': {
-                borderColor: 'border.medium',
-                backgroundColor: 'surface.light',
-              },
-            }}
-          >
-            Columns
-            {visibleColumnCount < COLUMN_MENU_OPTIONS.length
-              ? ` (${visibleColumnCount})`
-              : ''}
-          </Button>
-        </Stack>
+          Columns
+          {visibleColumnCount < COLUMN_MENU_OPTIONS.length
+            ? ` (${visibleColumnCount})`
+            : ''}
+        </Button>
       </Box>
 
       <Menu

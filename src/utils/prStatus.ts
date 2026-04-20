@@ -1,6 +1,22 @@
+import { REPOSITORY_PR_STATUS_CHIP } from '../theme';
+
 export interface PrStatusLike {
   mergedAt?: string | null;
   prState?: string | null;
+}
+
+/** Table status chip color (aligned with Repository Stats / filter accents). */
+export function getPrStatusChipColor(state: string, neutral: string): string {
+  switch (state) {
+    case 'MERGED':
+      return REPOSITORY_PR_STATUS_CHIP.merged;
+    case 'OPEN':
+      return REPOSITORY_PR_STATUS_CHIP.open;
+    case 'CLOSED':
+      return REPOSITORY_PR_STATUS_CHIP.closed;
+    default:
+      return neutral;
+  }
 }
 
 export const isOpenPr = (pr: PrStatusLike): boolean =>
