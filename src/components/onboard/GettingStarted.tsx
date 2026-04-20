@@ -11,7 +11,7 @@ import {
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
-import { alpha } from '@mui/material/styles';
+import { alpha, darken } from '@mui/material/styles';
 import { scrollbarSx, tooltipSlotProps } from '../../theme';
 
 const MONO = '"JetBrains Mono", monospace';
@@ -443,8 +443,8 @@ export const GettingStarted: React.FC = () => {
           sx={{
             position: 'absolute',
             top: 24,
-            left: '3%',
-            right: '3%',
+            left: '5%',
+            right: '5%',
             height: 2,
             background: (theme) =>
               `linear-gradient(90deg, ${theme.palette.border.subtle} 0%, ${theme.palette.border.medium} 50%, ${theme.palette.border.subtle} 100%)`,
@@ -485,8 +485,8 @@ export const GettingStarted: React.FC = () => {
                   bgcolor: (theme) =>
                     activeStep === index
                       ? index === steps.length - 1
-                        ? alpha(theme.palette.secondary.main, 0.15)
-                        : alpha(theme.palette.primary.main, 0.15)
+                        ? darken(theme.palette.secondary.main, 0.85)
+                        : darken(theme.palette.primary.main, 0.85)
                       : theme.palette.background.default,
                   border: '2px solid',
                   borderColor: item.active
