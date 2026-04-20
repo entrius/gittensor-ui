@@ -387,6 +387,19 @@ const LanguageWeightsTable: React.FC = () => {
                     ),
                     backdropFilter: 'blur(8px)',
                     borderBottom: `1px solid ${theme.palette.border.light}`,
+                    width: '72px',
+                  }}
+                >
+                  <Typography variant="dataLabel">No</Typography>
+                </TableCell>
+                <TableCell
+                  sx={{
+                    backgroundColor: alpha(
+                      theme.palette.background.paper,
+                      0.95,
+                    ),
+                    backdropFilter: 'blur(8px)',
+                    borderBottom: `1px solid ${theme.palette.border.light}`,
                   }}
                 >
                   <TableSortLabel
@@ -478,8 +491,13 @@ const LanguageWeightsTable: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {paginatedLanguages.map((lang) => (
+              {paginatedLanguages.map((lang, index) => (
                 <TableRow key={lang.extension} hover>
+                  <TableCell>
+                    <Typography variant="body2" color="text.secondary">
+                      {page * rowsPerPage + index + 1}
+                    </Typography>
+                  </TableCell>
                   <TableCell>
                     <Typography variant="body1" fontWeight="medium">
                       {lang.extension}
