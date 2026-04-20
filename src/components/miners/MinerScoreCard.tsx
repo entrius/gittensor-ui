@@ -101,20 +101,23 @@ const StatTile: React.FC<StatTileProps> = ({
           title={tooltip}
           arrow
           placement="top"
+          disableInteractive
           slotProps={tooltipSlotProps}
         >
-          <Typography
-            variant="statLabel"
-            sx={{
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.5,
-            }}
-          >
-            {label}
-            <InfoOutlinedIcon sx={{ fontSize: '0.75rem' }} />
-          </Typography>
+          <Box component="span" sx={{ display: 'inline-flex' }}>
+            <Typography
+              variant="statLabel"
+              sx={{
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+              }}
+            >
+              {label}
+              <InfoOutlinedIcon sx={{ fontSize: '0.75rem' }} />
+            </Typography>
+          </Box>
         </Tooltip>
       ) : (
         <Typography variant="statLabel">{label}</Typography>
@@ -580,7 +583,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               value={`${(cred * 100).toFixed(1)}%`}
               sub={`${minerStats.totalMergedPrs || 0} merged · ${minerStats.totalClosedPrs || 0} closed`}
               color={credibilityColor(cred)}
-              tooltip="Ratio of merged PRs to total attempts (merged + closed). Higher credibility means a stronger multiplier on your scores."
+              tooltip={
+                'Ratio of merged PRs to total attempts (merged + closed).\n' +
+                'Higher credibility means a stronger multiplier on your scores.'
+              }
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
