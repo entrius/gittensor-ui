@@ -383,42 +383,71 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
                 display: 'flex',
                 alignItems: 'flex-start',
                 gap: 1.1,
+                minWidth: 0,
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+                overflow: 'hidden',
               }}
             >
-              <Box sx={{ color: style.color, mt: 0.15 }}>{style.icon}</Box>
-              <Box sx={{ flexGrow: 1 }}>
-                <Typography
+              <Box sx={{ color: style.color, mt: 0.15, flexShrink: 0 }}>
+                {style.icon}
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 0, maxWidth: '100%' }}>
+                <Box
                   sx={{
-                    color: style.color,
-                    fontSize: '0.83rem',
-                    fontWeight: 600,
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    columnGap: 1,
+                    rowGap: 0.75,
                   }}
                 >
-                  {insight.title}
-                </Typography>
+                  <Typography
+                    sx={{
+                      color: style.color,
+                      fontSize: '0.83rem',
+                      fontWeight: 600,
+                      flex: '1 1 0',
+                      minWidth: 0,
+                      pr: { xs: 0, sm: 0.5 },
+                    }}
+                  >
+                    {insight.title}
+                  </Typography>
+                  <Chip
+                    size="small"
+                    label={insight.type}
+                    sx={{
+                      textTransform: 'uppercase',
+                      fontSize: '0.62rem',
+                      color: style.color,
+                      backgroundColor: alpha(style.color, 0.12),
+                      border: `1px solid ${alpha(style.color, 0.35)}`,
+                      height: 22,
+                      flexShrink: 0,
+                      alignSelf: 'flex-start',
+                      maxWidth: '100%',
+                      '& .MuiChip-label': {
+                        px: 0.75,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      },
+                    }}
+                  />
+                </Box>
                 <Typography
                   sx={{
                     color: (t) => alpha(t.palette.text.primary, 0.68),
                     fontSize: '0.8rem',
                     mt: 0.4,
                     lineHeight: 1.45,
+                    wordBreak: 'break-word',
                   }}
                 >
                   {insight.description}
                 </Typography>
               </Box>
-              <Chip
-                size="small"
-                label={insight.type}
-                sx={{
-                  textTransform: 'uppercase',
-                  fontSize: '0.62rem',
-                  color: style.color,
-                  backgroundColor: alpha(style.color, 0.12),
-                  border: `1px solid ${alpha(style.color, 0.35)}`,
-                  height: 22,
-                }}
-              />
             </Box>
           );
         })}
