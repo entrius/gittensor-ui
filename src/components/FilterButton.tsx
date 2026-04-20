@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Button, Box, alpha } from '@mui/material';
 
 export type FilterButtonInactiveAppearance =
@@ -27,7 +27,7 @@ const BADGE_INACTIVE_LABEL = alpha('#ffffff', 0.46);
 const activeBadgeLabelColor = (accent: string) =>
   `color-mix(in srgb, ${accent} 26%, #ffffff 74%)`;
 
-const FilterButton: React.FC<FilterButtonProps> = ({
+const FilterButton = memo(function FilterButton({
   label,
   isActive,
   onClick,
@@ -36,7 +36,7 @@ const FilterButton: React.FC<FilterButtonProps> = ({
   activeTextColor = '',
   icon,
   inactiveAppearance = 'muted',
-}) => {
+}: FilterButtonProps) {
   const activeForeground = isActive && activeTextColor ? activeTextColor : null;
 
   const inactiveBorder =
@@ -77,14 +77,14 @@ const FilterButton: React.FC<FilterButtonProps> = ({
         fontSize: '0.82rem',
         fontWeight: isActive ? 700 : 500,
         alignItems: 'center',
-        border: isActive
-          ? `1px solid ${color}`
-          : `1px solid ${inactiveBorder}`,
+        border: isActive ? `1px solid ${color}` : `1px solid ${inactiveBorder}`,
         boxShadow: isActive
           ? `0 0 0 1px ${alpha(color, 0.35)}, 0 2px 8px ${alpha(color, 0.12)}`
           : 'none',
         '&:hover': {
-          backgroundColor: isActive ? alpha(color, 0.28) : alpha('#ffffff', 0.04),
+          backgroundColor: isActive
+            ? alpha(color, 0.28)
+            : alpha('#ffffff', 0.04),
           borderColor: isActive ? color : alpha('#ffffff', 0.2),
         },
       }}
@@ -103,7 +103,16 @@ const FilterButton: React.FC<FilterButtonProps> = ({
           {icon}
         </Box>
       ) : null}
-      {label}
+      <Box
+        component="span"
+        sx={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          lineHeight: 1,
+        }}
+      >
+        {label}
+      </Box>
       {count !== undefined && (
         <Box
           component="span"
@@ -116,11 +125,13 @@ const FilterButton: React.FC<FilterButtonProps> = ({
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
+            alignSelf: 'center',
+            verticalAlign: 'middle',
             borderRadius: '10px',
             fontSize: '0.6875rem',
             fontWeight: isActive ? 700 : 600,
             fontVariantNumeric: 'tabular-nums',
-            lineHeight: `${20}px`,
+            lineHeight: 1,
             color: isActive
               ? activeForeground
                 ? `color-mix(in srgb, ${activeForeground} 82%, #ffffff 18%)`
@@ -136,6 +147,6 @@ const FilterButton: React.FC<FilterButtonProps> = ({
       )}
     </Button>
   );
-};
+});
 
 export default FilterButton;

@@ -11,7 +11,7 @@ import {
 import AnchorOutlined from '@mui/icons-material/AnchorOutlined';
 import EmojiEventsOutlined from '@mui/icons-material/EmojiEventsOutlined';
 import MergeTypeOutlined from '@mui/icons-material/MergeTypeOutlined';
-import WatchLaterOutlined from '@mui/icons-material/WatchLaterOutlined';
+import CloseOutlined from '@mui/icons-material/CloseOutlined';
 import CardGiftcardOutlined from '@mui/icons-material/CardGiftcardOutlined';
 import PaymentsOutlined from '@mui/icons-material/PaymentsOutlined';
 import {
@@ -22,7 +22,10 @@ import {
   useRepositoryConfig,
 } from '../../api';
 import {
-  REPOSITORY_PR_FILTER_COLORS,
+  UI_COLORS,
+  REPOSITORY_PR_ACCENT_ALPHA,
+  REPOSITORY_PR_STATUS_CHIP,
+  REPOSITORY_STATS_BOUNTY_ACCENT,
   STATUS_COLORS,
 } from '../../theme';
 import { formatTokenAmount } from '../../utils/format';
@@ -45,11 +48,10 @@ const StatRow: React.FC<{
   labelColor: labelColorProp,
   valueColor: valueColorProp,
 }) => {
-  const theme = useTheme();
-  const labelColor =
-    labelColorProp ?? alpha(theme.palette.common.white, 0.88);
-  const valueColor =
-    valueColorProp ?? alpha(theme.palette.common.white, 0.96);
+  const labelColor = labelColorProp ?? alpha(UI_COLORS.white, 0.88);
+  const valueColor = valueColorProp ?? alpha(UI_COLORS.white, 0.96);
+
+  const rowLinePx = 20;
 
   return (
     <Box
@@ -58,6 +60,7 @@ const StatRow: React.FC<{
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: 1.5,
+        minHeight: rowLinePx,
       }}
     >
       <Box
@@ -69,27 +72,45 @@ const StatRow: React.FC<{
           flex: 1,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', lineHeight: 0 }}>
+        <Box
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: rowLinePx,
+            height: rowLinePx,
+            flexShrink: 0,
+            overflow: 'visible',
+          }}
+        >
           {icon}
         </Box>
         <Typography
+          component="span"
           variant="body2"
           sx={{
             fontSize: '13px',
+            lineHeight: `${rowLinePx}px`,
             color: labelColor,
             fontWeight: 400,
+            display: 'flex',
+            alignItems: 'center',
           }}
         >
           {label}
         </Typography>
       </Box>
       <Typography
+        component="span"
         variant="body2"
         sx={{
           fontSize: '13px',
+          lineHeight: `${rowLinePx}px`,
           color: valueColor,
           fontWeight: 600,
           flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
         }}
       >
         {value}
@@ -152,29 +173,38 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
       })
     : '—';
 
-  const cardSx = {
-    mb: 3,
-    p: 2,
-    borderRadius: '12px',
-    border: `1px solid ${theme.palette.border.light}`,
-    backgroundColor: alpha(theme.palette.common.black, 0.35),
-  } as const;
+  const cardSx = useMemo(
+    () => ({
+      mb: 3,
+      p: 2,
+      borderRadius: '12px',
+      border: `1px solid ${theme.palette.border.light}`,
+      backgroundColor: alpha(UI_COLORS.black, 0.35),
+    }),
+    [theme.palette.border.light],
+  );
 
-  /** Icons + labels soft; accents slightly lifted (bounty: brighter gold) */
-  const tone = {
-    valueLight: alpha(theme.palette.common.white, 0.96),
-    iconMuted: alpha(theme.palette.common.white, 0.77),
-    merged: alpha(REPOSITORY_PR_FILTER_COLORS.merged, 0.98),
-    closedStat: alpha(REPOSITORY_PR_FILTER_COLORS.closed, 0.98),
-    bounty: '#fbbf24',
-    success: alpha(STATUS_COLORS.success, 0.98),
-  } as const;
+  const tone = useMemo(
+    () => ({
+      valueLight: alpha(UI_COLORS.white, 0.96),
+      iconMuted: alpha(UI_COLORS.white, 0.77),
+      merged: REPOSITORY_PR_STATUS_CHIP.merged,
+      closedStat: REPOSITORY_PR_STATUS_CHIP.closed,
+      bounty: REPOSITORY_STATS_BOUNTY_ACCENT,
+      success: alpha(STATUS_COLORS.success, REPOSITORY_PR_ACCENT_ALPHA),
+    }),
+    [],
+  );
 
-  const neutralIconSx = {
-    fontSize: 20,
-    color: tone.iconMuted,
-    flexShrink: 0,
-  } as const;
+  const neutralIconSx = useMemo(
+    () =>
+      ({
+        fontSize: 20,
+        color: tone.iconMuted,
+        flexShrink: 0,
+      }) as const,
+    [tone.iconMuted],
+  );
 
   if (isLoadingRepos || isLoadingPRs || isLoadingIssues) {
     return (
@@ -254,8 +284,12 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
 
           <StatRow
             icon={
-              <WatchLaterOutlined
-                sx={{ ...neutralIconSx, color: tone.closedStat }}
+              <CloseOutlined
+                sx={{
+                  ...neutralIconSx,
+                  color: tone.closedStat,
+                  fontSize: 22,
+                }}
               />
             }
             label="Closed Issues"
@@ -297,7 +331,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
                       sx={{
                         fontSize: 20,
                         flexShrink: 0,
-                        color: alpha(theme.palette.common.white, 0.88),
+                        color: alpha(UI_COLORS.white, 0.88),
                       }}
                     />
                   }
@@ -317,7 +351,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
                   variant="body2"
                   sx={{
                     fontSize: '13px',
-                    color: alpha(theme.palette.common.white, 0.88),
+                    color: alpha(UI_COLORS.white, 0.88),
                     fontWeight: 500,
                   }}
                 >
@@ -339,7 +373,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
                         fontSize: '12px',
                         height: '24px',
                         bgcolor: 'surface.light',
-                        color: alpha(theme.palette.common.white, 0.9),
+                        color: alpha(UI_COLORS.white, 0.9),
                         border: `1px solid ${theme.palette.border.light}`,
                       }}
                     />
