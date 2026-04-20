@@ -106,7 +106,11 @@ const MinerDetailsPage: React.FC = () => {
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <BackButton to="/top-miners" mb={0} />
-              <WatchlistButton githubId={githubId} size="medium" />
+              <WatchlistButton
+                category="miners"
+                itemKey={githubId}
+                size="medium"
+              />
             </Box>
             <Box
               sx={{
