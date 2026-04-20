@@ -10,7 +10,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { useRepositoryMaintainers } from '../../api';
-import { STATUS_COLORS } from '../../theme';
 
 interface RepositoryMaintainersProps {
   repositoryFullName: string;
@@ -29,7 +28,9 @@ const RepositoryMaintainers: React.FC<RepositoryMaintainersProps> = ({
         <Typography
           variant="subtitle2"
           sx={{
-            color: 'text.secondary',
+            color: 'text.primary',
+            fontWeight: 700,
+            fontSize: '15px',
             mb: 2,
           }}
         >
@@ -53,17 +54,13 @@ const RepositoryMaintainers: React.FC<RepositoryMaintainersProps> = ({
       <Typography
         variant="subtitle2"
         sx={{
-          color: 'text.secondary',
+          color: 'text.primary',
+          fontWeight: 700,
+          fontSize: '15px',
           mb: 2,
         }}
       >
-        Maintainers{' '}
-        <Typography
-          component="span"
-          sx={{ color: STATUS_COLORS.open, fontSize: '0.8em' }}
-        >
-          ({maintainers.length})
-        </Typography>
+        Maintainers ({maintainers.length})
       </Typography>
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>

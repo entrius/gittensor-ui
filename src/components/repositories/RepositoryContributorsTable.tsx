@@ -119,16 +119,12 @@ const RepositoryContributorsTable: React.FC<
         <Typography
           variant="subtitle2"
           sx={{
-            color: 'text.secondary',
+            color: 'text.primary',
+            fontWeight: 700,
+            fontSize: '15px',
           }}
         >
-          Top Miner Contributors{' '}
-          <Typography
-            component="span"
-            sx={{ color: STATUS_COLORS.open, fontSize: '0.8em' }}
-          >
-            ({contributors.length})
-          </Typography>
+          Top Miner Contributors ({contributors.length})
         </Typography>
       </Box>
 
@@ -150,7 +146,7 @@ const RepositoryContributorsTable: React.FC<
           #
         </Typography>
         <Typography sx={{ fontSize: '11px', color: 'text.secondary' }}>
-          MINER
+          Miner
         </Typography>
         <Typography
           sx={{
@@ -160,7 +156,7 @@ const RepositoryContributorsTable: React.FC<
             fontVariantNumeric: 'tabular-nums',
           }}
         >
-          PRS
+          PRs
         </Typography>
         <Typography
           sx={{
@@ -170,7 +166,7 @@ const RepositoryContributorsTable: React.FC<
             fontVariantNumeric: 'tabular-nums',
           }}
         >
-          SCORE
+          Score
         </Typography>
       </Box>
 
@@ -208,7 +204,7 @@ const RepositoryContributorsTable: React.FC<
                 sx={{
                   fontSize: '12px',
                   color: index < 3 ? 'text.primary' : STATUS_COLORS.open,
-                  fontWeight: index < 3 ? 600 : 400,
+                  fontWeight: index < 3 ? 700 : 400,
                 }}
               >
                 {index + 1}
@@ -286,6 +282,7 @@ const RepositoryContributorsTable: React.FC<
                   textAlign: 'right',
                   fontSize: '12px',
                   color: 'text.primary',
+                  fontWeight: 700,
                   fontVariantNumeric: 'tabular-nums',
                   minWidth: 0,
                 }}
@@ -299,6 +296,7 @@ const RepositoryContributorsTable: React.FC<
                   textAlign: 'right',
                   fontSize: '12px',
                   color: 'text.primary',
+                  fontWeight: 700,
                   fontVariantNumeric: 'tabular-nums',
                   minWidth: 0,
                 }}

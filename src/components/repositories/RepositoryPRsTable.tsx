@@ -41,6 +41,7 @@ import theme, {
   scrollbarSx,
   headerCellStyle,
   bodyCellStyle,
+  REPOSITORY_PR_FILTER_COLORS,
 } from '../../theme';
 import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
 import FilterButton from '../FilterButton';
@@ -50,13 +51,7 @@ interface RepositoryPRsTableProps {
   state?: 'open' | 'closed' | 'merged' | 'all';
 }
 
-/** PR filter accent colors */
-const PR_FILTER_COLORS = {
-  open: '#2da44e',
-  merged: '#388bfd',
-  closed: '#f85149',
-  all: '#e6edf3',
-} as const;
+const PR_FILTER_COLORS = REPOSITORY_PR_FILTER_COLORS;
 
 /** Selected chip: pale foreground (label, icon, count) — same idea as white‑mint Open */
 const PR_FILTER_ACTIVE_FG = {
@@ -64,6 +59,13 @@ const PR_FILTER_ACTIVE_FG = {
   merged: '#c9e2ff',
   closed: '#ffd8de',
   all: '#f0f6fc',
+} as const;
+
+/** Status column — matches Repository Stats merged/closed/open accents */
+const PR_STATUS_CHIP_COLOR = {
+  open: alpha(REPOSITORY_PR_FILTER_COLORS.open, 0.96),
+  merged: alpha(REPOSITORY_PR_FILTER_COLORS.merged, 0.96),
+  closed: alpha(REPOSITORY_PR_FILTER_COLORS.closed, 0.96),
 } as const;
 
 const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
@@ -556,11 +558,11 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                       const label = state;
 
                       if (state === 'MERGED') {
-                        color = theme.palette.status.merged;
+                        color = PR_STATUS_CHIP_COLOR.merged;
                       } else if (state === 'OPEN') {
-                        color = theme.palette.status.open;
+                        color = PR_STATUS_CHIP_COLOR.open;
                       } else if (state === 'CLOSED') {
-                        color = theme.palette.status.closed;
+                        color = PR_STATUS_CHIP_COLOR.closed;
                       }
 
                       return (

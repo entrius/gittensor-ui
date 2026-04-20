@@ -35,6 +35,14 @@ export const STATUS_COLORS = {
   award: '#f59e0b', // Amber - winner/trophy highlights
 } as const;
 
+/** Repository PR tab filter chips (GitHub-style). Merged uses blue, not STATUS_COLORS.merged. */
+export const REPOSITORY_PR_FILTER_COLORS = {
+  open: '#2da44e',
+  merged: '#388bfd',
+  closed: '#f85149',
+  all: '#e6edf3',
+} as const;
+
 export const CREDIBILITY_COLORS = {
   excellent: '#4ade80', // Green - 90%+
   good: '#a3e635', // Lime - 70-89%

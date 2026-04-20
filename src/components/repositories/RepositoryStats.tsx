@@ -6,7 +6,14 @@ import {
   Divider,
   Chip,
   useTheme,
+  alpha,
 } from '@mui/material';
+import AnchorOutlined from '@mui/icons-material/AnchorOutlined';
+import EmojiEventsOutlined from '@mui/icons-material/EmojiEventsOutlined';
+import MergeTypeOutlined from '@mui/icons-material/MergeTypeOutlined';
+import WatchLaterOutlined from '@mui/icons-material/WatchLaterOutlined';
+import CardGiftcardOutlined from '@mui/icons-material/CardGiftcardOutlined';
+import PaymentsOutlined from '@mui/icons-material/PaymentsOutlined';
 import {
   useReposAndWeights,
   useAllPrs,
@@ -14,13 +21,82 @@ import {
   useRepoBountySummary,
   useRepositoryConfig,
 } from '../../api';
-import { RANK_COLORS, STATUS_COLORS } from '../../theme';
+import {
+  REPOSITORY_PR_FILTER_COLORS,
+  STATUS_COLORS,
+} from '../../theme';
 import { formatTokenAmount } from '../../utils/format';
 import { isMergedPr } from '../../utils/prStatus';
 
 interface RepositoryStatsProps {
   repositoryFullName: string;
 }
+
+const StatRow: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+  labelColor?: string;
+  valueColor?: string;
+}> = ({
+  icon,
+  label,
+  value,
+  labelColor: labelColorProp,
+  valueColor: valueColorProp,
+}) => {
+  const theme = useTheme();
+  const labelColor =
+    labelColorProp ?? alpha(theme.palette.common.white, 0.88);
+  const valueColor =
+    valueColorProp ?? alpha(theme.palette.common.white, 0.96);
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 1.5,
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.25,
+          minWidth: 0,
+          flex: 1,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', lineHeight: 0 }}>
+          {icon}
+        </Box>
+        <Typography
+          variant="body2"
+          sx={{
+            fontSize: '13px',
+            color: labelColor,
+            fontWeight: 400,
+          }}
+        >
+          {label}
+        </Typography>
+      </Box>
+      <Typography
+        variant="body2"
+        sx={{
+          fontSize: '13px',
+          color: valueColor,
+          fontWeight: 600,
+          flexShrink: 0,
+        }}
+      >
+        {value}
+      </Typography>
+    </Box>
+  );
+};
 
 const RepositoryStats: React.FC<RepositoryStatsProps> = ({
   repositoryFullName,
@@ -69,24 +145,55 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
     };
   }, [issues]);
 
+  const weightDisplay = repository
+    ? parseFloat(repository.weight).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+    : '—';
+
+  const cardSx = {
+    mb: 3,
+    p: 2,
+    borderRadius: '12px',
+    border: `1px solid ${theme.palette.border.light}`,
+    backgroundColor: alpha(theme.palette.common.black, 0.35),
+  } as const;
+
+  /** Icons + labels soft; accents slightly lifted (bounty: brighter gold) */
+  const tone = {
+    valueLight: alpha(theme.palette.common.white, 0.96),
+    iconMuted: alpha(theme.palette.common.white, 0.77),
+    merged: alpha(REPOSITORY_PR_FILTER_COLORS.merged, 0.98),
+    closedStat: alpha(REPOSITORY_PR_FILTER_COLORS.closed, 0.98),
+    bounty: '#fbbf24',
+    success: alpha(STATUS_COLORS.success, 0.98),
+  } as const;
+
+  const neutralIconSx = {
+    fontSize: 20,
+    color: tone.iconMuted,
+    flexShrink: 0,
+  } as const;
+
   if (isLoadingRepos || isLoadingPRs || isLoadingIssues) {
     return (
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 3 }}>
         <Typography
           variant="subtitle2"
           sx={{
             color: 'text.primary',
-            fontWeight: 600,
+            fontWeight: 700,
             mb: 2,
-            fontSize: '14px',
+            fontSize: '15px',
           }}
         >
           Repository Stats
         </Typography>
         <Skeleton
           variant="rectangular"
-          height={160}
-          sx={{ bgcolor: 'surface.light', borderRadius: 2 }}
+          height={200}
+          sx={{ ...cardSx, bgcolor: 'surface.light' }}
         />
       </Box>
     );
@@ -96,243 +203,151 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
     return null;
   }
 
+  const showBountyBlock =
+    bountySummary &&
+    (bountySummary.totalBounties > 0 ||
+      bountySummary.activeBounties > 0 ||
+      bountySummary.completedBounties > 0);
+
   return (
-    <Box sx={{ mb: 4 }}>
+    <Box sx={{ mb: 3 }}>
       <Typography
         variant="subtitle2"
-        sx={{ color: 'text.primary', fontWeight: 600, mb: 2, fontSize: '14px' }}
+        sx={{
+          color: 'text.primary',
+          fontWeight: 700,
+          mb: 2,
+          fontSize: '15px',
+        }}
       >
         Repository Stats
       </Typography>
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        {/* Weight */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
-          >
-            Weight
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              color: 'text.primary',
-              fontSize: '13px',
-            }}
-          >
-            {repository.weight}
-          </Typography>
-        </Box>
+      <Box sx={cardSx}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.75 }}>
+          <StatRow
+            icon={<AnchorOutlined sx={neutralIconSx} />}
+            label="Weight"
+            value={weightDisplay}
+            valueColor={tone.valueLight}
+          />
 
-        <Divider sx={{ borderColor: 'border.light', my: 0.5 }} />
-
-        {/* Total Score */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
-          >
-            Total Score
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              color: 'text.primary',
-              fontSize: '13px',
-            }}
-          >
-            {stats.totalScore.toLocaleString(undefined, {
+          <StatRow
+            icon={<EmojiEventsOutlined sx={neutralIconSx} />}
+            label="Total Score"
+            value={stats.totalScore.toLocaleString(undefined, {
               maximumFractionDigits: 0,
             })}
-          </Typography>
-        </Box>
+            valueColor={tone.valueLight}
+          />
 
-        {/* Merged PRs */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
-          >
-            Merged PRs
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              color: 'text.primary',
-              fontSize: '13px',
-            }}
-          >
-            {stats.mergedPRs}
-          </Typography>
-        </Box>
+          <StatRow
+            icon={
+              <MergeTypeOutlined
+                sx={{ ...neutralIconSx, color: tone.merged }}
+              />
+            }
+            label="Merged PRs"
+            value={stats.mergedPRs}
+            valueColor={tone.merged}
+          />
 
-        {/* Closed Issues */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
-          >
-            Closed Issues
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              color: 'text.primary',
-              fontSize: '13px',
-            }}
-          >
-            {issueStats.closedIssues}
-          </Typography>
-        </Box>
+          <StatRow
+            icon={
+              <WatchLaterOutlined
+                sx={{ ...neutralIconSx, color: tone.closedStat }}
+              />
+            }
+            label="Closed Issues"
+            value={issueStats.closedIssues}
+            valueColor={tone.closedStat}
+          />
 
-        {/* Bounties */}
-        {bountySummary && bountySummary.totalBounties > 0 && (
-          <>
-            <Divider sx={{ borderColor: 'border.light', my: 0.5 }} />
+          {showBountyBlock && (
+            <>
+              <Divider sx={{ borderColor: 'border.light', my: 0.25 }} />
 
-            {/* Total Bounties */}
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <Typography
-                variant="body2"
-                sx={{ fontSize: '13px', color: RANK_COLORS.first }}
-              >
-                Bounties
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{
-                  color: RANK_COLORS.first,
-                  fontSize: '13px',
-                  fontWeight: 600,
-                }}
-              >
-                {bountySummary.totalBounties}
-              </Typography>
-            </Box>
+              {bountySummary.totalBounties > 0 && (
+                <StatRow
+                  icon={
+                    <CardGiftcardOutlined
+                      sx={{ ...neutralIconSx, color: tone.bounty }}
+                    />
+                  }
+                  label="Bounties"
+                  value={bountySummary.totalBounties}
+                  labelColor={tone.bounty}
+                  valueColor={tone.bounty}
+                />
+              )}
 
-            {/* Available Rewards */}
-            {bountySummary.activeBounties > 0 && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Typography
-                  variant="body2"
-                  sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
-                >
-                  Available Rewards
-                </Typography>
+              {bountySummary.activeBounties > 0 && (
+                <StatRow
+                  icon={<PaymentsOutlined sx={neutralIconSx} />}
+                  label="Available Rewards"
+                  value={`${formatTokenAmount(bountySummary.totalAvailable, 2)} α`}
+                  valueColor={tone.valueLight}
+                />
+              )}
+
+              {bountySummary.completedBounties > 0 && (
+                <StatRow
+                  icon={
+                    <PaymentsOutlined
+                      sx={{
+                        fontSize: 20,
+                        flexShrink: 0,
+                        color: alpha(theme.palette.common.white, 0.88),
+                      }}
+                    />
+                  }
+                  label="Total Paid Out"
+                  value={`${formatTokenAmount(bountySummary.totalPaidOut, 2)} α`}
+                  valueColor={tone.success}
+                />
+              )}
+            </>
+          )}
+
+          {repoConfig?.additionalAcceptableBranches &&
+            repoConfig.additionalAcceptableBranches.length > 0 && (
+              <>
+                <Divider sx={{ borderColor: 'border.light', my: 0.25 }} />
                 <Typography
                   variant="body2"
                   sx={{
-                    color: 'text.primary',
                     fontSize: '13px',
-                  }}
-                >
-                  {formatTokenAmount(bountySummary.totalAvailable, 2)} α
-                </Typography>
-              </Box>
-            )}
-
-            {/* Total Paid Out */}
-            {bountySummary.completedBounties > 0 && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Typography
-                  variant="body2"
-                  sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
-                >
-                  Total Paid Out
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: STATUS_COLORS.merged,
-                    fontSize: '13px',
+                    color: alpha(theme.palette.common.white, 0.88),
                     fontWeight: 500,
                   }}
                 >
-                  {formatTokenAmount(bountySummary.totalPaidOut, 2)} α
+                  Scorable Branches
                 </Typography>
-              </Box>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 0.75,
+                  }}
+                >
+                  {repoConfig.additionalAcceptableBranches.map((branch) => (
+                    <Chip
+                      key={branch}
+                      label={branch}
+                      size="small"
+                      sx={{
+                        fontSize: '12px',
+                        height: '24px',
+                        bgcolor: 'surface.light',
+                        color: alpha(theme.palette.common.white, 0.9),
+                        border: `1px solid ${theme.palette.border.light}`,
+                      }}
+                    />
+                  ))}
+                </Box>
+              </>
             )}
-          </>
-        )}
-
-        {/* Additional Acceptable Branches */}
-        {repoConfig?.additionalAcceptableBranches &&
-          repoConfig.additionalAcceptableBranches.length > 0 && (
-            <>
-              <Divider sx={{ borderColor: 'border.light', my: 0.5 }} />
-              <Typography
-                variant="body2"
-                sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
-              >
-                Scorable Branches
-              </Typography>
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 0.75,
-                }}
-              >
-                {repoConfig.additionalAcceptableBranches.map((branch) => (
-                  <Chip
-                    key={branch}
-                    label={branch}
-                    size="small"
-                    sx={{
-                      fontSize: '12px',
-                      height: '24px',
-                      bgcolor: 'surface.light',
-                      color: 'text.primary',
-                      border: `1px solid ${theme.palette.border.light}`,
-                    }}
-                  />
-                ))}
-              </Box>
-            </>
-          )}
+        </Box>
       </Box>
     </Box>
   );
