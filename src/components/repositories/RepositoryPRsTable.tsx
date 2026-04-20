@@ -360,8 +360,45 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     ? `Pull Requests (${filteredPRs.length} of ${statusFilteredOnly.length})`
     : `Pull Requests (${statusFilteredOnly.length})`;
 
-  const filterStack = (
-    <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: 'wrap' }}>
+  const columnsButton = (
+    <Button
+      size="small"
+      variant="outlined"
+      onClick={(e) => setColumnsMenuAnchor(e.currentTarget)}
+      startIcon={<ViewColumnIcon sx={{ fontSize: '1.1rem !important' }} />}
+      endIcon={<ArrowDropDownIcon />}
+      aria-haspopup="true"
+      aria-expanded={Boolean(columnsMenuAnchor)}
+      sx={{
+        flexShrink: 0,
+        minHeight: 40,
+        px: 2,
+        borderRadius: '999px',
+        textTransform: 'none',
+        fontSize: '0.8rem',
+        color: 'text.primary',
+        borderColor: 'border.light',
+        backgroundColor: 'surface.subtle',
+        '&:hover': {
+          borderColor: 'border.medium',
+          backgroundColor: 'surface.light',
+        },
+      }}
+    >
+      Columns
+      {visibleColumnCount < COLUMN_MENU_OPTIONS.length
+        ? ` (${visibleColumnCount})`
+        : ''}
+    </Button>
+  );
+
+  const statusFilterStack = (
+    <Stack
+      direction="row"
+      spacing={2}
+      useFlexGap
+      sx={{ flexWrap: 'wrap', flex: '1 1 auto', minWidth: 0 }}
+    >
       <FilterButton
         label="Open"
         isActive={filter === 'open'}
@@ -405,6 +442,23 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     </Stack>
   );
 
+  const filtersAndColumnsRow = (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 2,
+        width: '100%',
+      }}
+    >
+      {statusFilterStack}
+      {columnsButton}
+    </Box>
+  );
+
   if (isLoading) {
     return (
       <Card
@@ -417,7 +471,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         }}
         elevation={0}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
           <Typography
             variant="h6"
             sx={{
@@ -426,7 +480,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           >
             Pull Requests
           </Typography>
-          {filterStack}
+          {statusFilterStack}
         </Box>
         <CircularProgress size={40} sx={{ color: 'primary.main' }} />
       </Card>
@@ -505,49 +559,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           />
         </Box>
 
-        {filterStack}
-      </Box>
-
-      <Box
-        sx={{
-          px: 3,
-          py: 2,
-          borderBottom: `1px solid ${theme.palette.border.light}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          gap: 1.5,
-          flexWrap: 'wrap',
-        }}
-      >
-        <Button
-          size="small"
-          variant="outlined"
-          onClick={(e) => setColumnsMenuAnchor(e.currentTarget)}
-          startIcon={<ViewColumnIcon sx={{ fontSize: '1.1rem !important' }} />}
-          endIcon={<ArrowDropDownIcon />}
-          aria-haspopup="true"
-          aria-expanded={Boolean(columnsMenuAnchor)}
-          sx={{
-            minHeight: 40,
-            px: 2,
-            borderRadius: '999px',
-            textTransform: 'none',
-            fontSize: '0.8rem',
-            color: 'text.primary',
-            borderColor: 'border.light',
-            backgroundColor: 'surface.subtle',
-            '&:hover': {
-              borderColor: 'border.medium',
-              backgroundColor: 'surface.light',
-            },
-          }}
-        >
-          Columns
-          {visibleColumnCount < COLUMN_MENU_OPTIONS.length
-            ? ` (${visibleColumnCount})`
-            : ''}
-        </Button>
+        {filtersAndColumnsRow}
       </Box>
 
       <Menu
