@@ -1,33 +1,33 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Avatar,
   Box,
   Card,
-  Chip,
-  Link,
   Skeleton,
   Tooltip,
   Typography,
   alpha,
   useTheme,
 } from '@mui/material';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueBounty } from '../../api/models/Issues';
 import { usePrices } from '../../hooks/usePrices';
-import {
-  formatTokenAmount,
-  formatDate,
-  formatAlphaToUsd,
-} from '../../utils/format';
-import { getIssueStatusMeta } from '../../utils/issueStatus';
+import { formatDate } from '../../utils/format';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
 import BountyProgress from './BountyProgress';
-import { LinkTableRow } from '../common/linkBehavior';
-import { WatchlistButton } from '../common';
+import {
+  getIssueSortValue,
+  issueBountyColumn,
+  issueRepositoryColumn,
+  issueStatusColumn,
+  issueTitleColumn,
+  issueWatchColumn,
+  parseBountyAmount,
+  sortIssues,
+  type IssueSortBasis,
+} from './issueColumns';
 
 type ListType = 'available' | 'pending' | 'history';
 type SortDirection = 'asc' | 'desc';
@@ -67,14 +67,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const { taoPrice, alphaPrice } = usePrices();
 
-  const parseAmount = (value: string | null | undefined): number => {
-    const parsed = Number.parseFloat(value ?? '0');
-    return Number.isFinite(parsed) ? parsed : 0;
-  };
-
-  const getLowerText = (value: string | null | undefined): string =>
-    (value ?? '').toLowerCase();
-
   // String columns feel natural ascending by default, numeric/date desc.
   const getDefaultSortDirection = useCallback(
     (key: SortKey): SortDirection =>
@@ -110,54 +102,32 @@ const IssuesList: React.FC<IssuesListProps> = ({
     [getDefaultSortDirection, sortKey, visibleSortKeys],
   );
 
-  const sortedIssues = useMemo(() => {
-    const directionFactor = sortDirection === 'asc' ? 1 : -1;
-    const collator = new Intl.Collator(undefined, {
-      sensitivity: 'base',
-      numeric: true,
-    });
-    const decorated = issues.map((issue) => {
-      let value: number | string;
-      switch (sortKey) {
+  const getSortValue = useCallback(
+    (issue: IssueBounty, key: SortKey): number | string => {
+      switch (key) {
         case 'id':
-          value = issue.id;
-          break;
-        case 'repository':
-          value = getLowerText(issue.repositoryFullName);
-          break;
-        case 'issue':
-          value = `${getLowerText(issue.title)}::${String(issue.issueNumber).padStart(10, '0')}`;
-          break;
-        case 'bounty':
-          value = parseAmount(issue.targetBounty);
-          break;
-        case 'status':
-          value = getIssueStatusMeta(issue.status).text;
-          break;
+          return issue.id;
         case 'funding': {
-          const target = parseAmount(issue.targetBounty);
-          value = target > 0 ? parseAmount(issue.bountyAmount) / target : 0;
-          break;
+          const target = parseBountyAmount(issue.targetBounty);
+          return target > 0
+            ? parseBountyAmount(issue.bountyAmount) / target
+            : 0;
         }
         case 'solver':
-          value = getLowerText(issue.solverHotkey);
-          break;
+          return (issue.solverHotkey ?? '').toLowerCase();
         case 'date':
-          value = new Date(issue.completedAt || issue.updatedAt || 0).getTime();
-          break;
+          return new Date(issue.completedAt || issue.updatedAt || 0).getTime();
+        default:
+          return getIssueSortValue(issue, key as IssueSortBasis);
       }
-      return { issue, value };
-    });
-    decorated.sort((a, b) => {
-      if (typeof a.value === 'number' && typeof b.value === 'number') {
-        return (a.value - b.value) * directionFactor;
-      }
-      return (
-        collator.compare(String(a.value), String(b.value)) * directionFactor
-      );
-    });
-    return decorated.map((item) => item.issue);
-  }, [issues, sortDirection, sortKey]);
+    },
+    [],
+  );
+
+  const sortedIssues = useMemo(
+    () => sortIssues(issues, getSortValue, sortKey, sortDirection),
+    [issues, getSortValue, sortKey, sortDirection],
+  );
 
   const columns = useMemo<DataTableColumn<IssueBounty, SortKey>[]>(() => {
     const idColumn: DataTableColumn<IssueBounty, SortKey> = {
@@ -176,134 +146,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
         </Typography>
       ),
     };
-
-    const repositoryColumn: DataTableColumn<IssueBounty, SortKey> = {
-      key: 'repository',
-      header: 'Repository',
-      width: '220px',
-      sortKey: 'repository',
-      renderCell: (issue) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Avatar
-            src={`https://avatars.githubusercontent.com/${issue.repositoryFullName.split('/')[0]}`}
-            sx={{ width: 24, height: 24, borderRadius: 1 }}
-          />
-          <Typography sx={{ fontSize: '0.85rem', color: STATUS_COLORS.info }}>
-            {issue.repositoryFullName}
-          </Typography>
-        </Box>
-      ),
-    };
-
-    const issueColumn: DataTableColumn<IssueBounty, SortKey> = {
-      key: 'issue',
-      header: 'Issue',
-      sortKey: 'issue',
-      renderCell: (issue) => (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          {issue.title && (
-            <Typography
-              sx={{
-                fontSize: '0.85rem',
-                color: 'text.primary',
-                fontWeight: 500,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                maxWidth: '600px',
-              }}
-            >
-              {issue.title}
-            </Typography>
-          )}
-          <Link
-            href={issue.githubUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.5,
-              fontSize: '0.75rem',
-              color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-              textDecoration: 'none',
-              '&:hover': {
-                color: STATUS_COLORS.info,
-                textDecoration: 'underline',
-              },
-            }}
-          >
-            #{issue.issueNumber}
-            <OpenInNewIcon sx={{ fontSize: 12, opacity: 0.5 }} />
-          </Link>
-        </Box>
-      ),
-    };
-
-    const bountyColumn = (
-      label: string,
-      colorOverride?: (issue: IssueBounty) => string,
-    ): DataTableColumn<IssueBounty, SortKey> => ({
-      key: 'bounty',
-      header: label,
-      width: listType === 'available' ? '120px' : undefined,
-      align: 'right',
-      sortKey: 'bounty',
-      renderCell: (issue) => {
-        const usdDisplay = formatAlphaToUsd(
-          issue.targetBounty,
-          taoPrice,
-          alphaPrice,
-        );
-        const color =
-          colorOverride?.(issue) ??
-          (listType === 'pending' ? STATUS_COLORS.award : STATUS_COLORS.merged);
-        return (
-          <>
-            <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color }}>
-              {formatTokenAmount(issue.targetBounty)} ل
-            </Typography>
-            {usdDisplay && (
-              <Typography
-                sx={{
-                  fontSize: '0.7rem',
-                  color: alpha(theme.palette.common.white, 0.35),
-                }}
-              >
-                {usdDisplay}
-              </Typography>
-            )}
-          </>
-        );
-      },
-    });
-
-    const statusColumn = (
-      width?: string,
-    ): DataTableColumn<IssueBounty, SortKey> => ({
-      key: 'status',
-      header: 'Status',
-      width,
-      align: 'center',
-      sortKey: 'status',
-      renderCell: (issue) => {
-        const statusBadge = getIssueStatusMeta(issue.status);
-        return (
-          <Chip
-            label={statusBadge.text}
-            size="small"
-            sx={{
-              fontSize: '0.7rem',
-              fontWeight: 600,
-              backgroundColor: statusBadge.bgColor,
-              color: statusBadge.color,
-              border: `1px solid ${statusBadge.color}40`,
-            }}
-          />
-        );
-      },
-    });
 
     const fundingColumn: DataTableColumn<IssueBounty, SortKey> = {
       key: 'funding',
@@ -366,37 +208,48 @@ const IssuesList: React.FC<IssuesListProps> = ({
       ),
     };
 
+    const common = [
+      idColumn,
+      issueRepositoryColumn<SortKey>('repository'),
+      issueTitleColumn<SortKey>('issue', theme),
+    ];
+
     if (listType === 'available') {
       return [
-        idColumn,
-        repositoryColumn,
-        issueColumn,
-        bountyColumn('Bounty'),
-        statusColumn('100px'),
+        ...common,
+        issueBountyColumn<SortKey>('bounty', taoPrice, alphaPrice, theme, {
+          label: 'Bounty',
+          width: '120px',
+        }),
+        issueStatusColumn<SortKey>('status', '100px'),
+        issueWatchColumn<SortKey>(),
       ];
     }
     if (listType === 'pending') {
       return [
-        idColumn,
-        repositoryColumn,
-        issueColumn,
-        bountyColumn('Target Bounty'),
+        ...common,
+        issueBountyColumn<SortKey>('bounty', taoPrice, alphaPrice, theme, {
+          label: 'Target Bounty',
+          color: STATUS_COLORS.award,
+        }),
         fundingColumn,
-        statusColumn(),
+        issueStatusColumn<SortKey>('status'),
+        issueWatchColumn<SortKey>(),
       ];
     }
     return [
-      idColumn,
-      repositoryColumn,
-      issueColumn,
-      bountyColumn('Payout', (issue) =>
-        issue.status === 'completed'
-          ? STATUS_COLORS.merged
-          : alpha(theme.palette.common.white, TEXT_OPACITY.muted),
-      ),
+      ...common,
+      issueBountyColumn<SortKey>('bounty', taoPrice, alphaPrice, theme, {
+        label: 'Payout',
+        color: (issue) =>
+          issue.status === 'completed'
+            ? STATUS_COLORS.merged
+            : alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+      }),
       solverColumn,
-      statusColumn(),
+      issueStatusColumn<SortKey>('status'),
       dateColumn,
+      issueWatchColumn<SortKey>(),
     ];
   }, [listType, theme, taoPrice, alphaPrice]);
 

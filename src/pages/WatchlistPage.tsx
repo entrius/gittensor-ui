@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Box,
+  Card,
   Typography,
   Button,
   alpha,
@@ -11,11 +12,13 @@ import {
   Tab,
   Tabs,
   Badge,
+  useTheme,
 } from '@mui/material';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { TopMinersTable, SEO, WatchlistButton } from '../components';
 import { LinkBox } from '../components/common/linkBehavior';
+import { DataTable } from '../components/common/DataTable';
 import { useAllMiners, useAllPrs, useReposAndWeights, useIssues } from '../api';
 import { mapAllMinersToStats } from '../utils/minerMapper';
 import {
@@ -24,9 +27,20 @@ import {
   serializePRKey,
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
+import { usePrices } from '../hooks/usePrices';
 import { isMergedPr, isClosedUnmergedPr } from '../utils/prStatus';
 import { STATUS_COLORS } from '../theme';
-import WatchlistBountiesTable from '../components/watchlist/WatchlistBountiesTable';
+import { IssueBounty } from '../api/models/Issues';
+import {
+  getIssueSortValue,
+  issueBountyColumn,
+  issueRepositoryColumn,
+  issueStatusColumn,
+  issueTitleColumn,
+  issueWatchColumn,
+  sortIssues,
+  type IssueSortBasis,
+} from '../components/issues/issueColumns';
 
 const TAB_ORDER: readonly WatchlistCategory[] = [
   'miners',
@@ -465,6 +479,11 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
 const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: allIssues } = useIssues();
+  const theme = useTheme();
+  const { taoPrice, alphaPrice } = usePrices();
+  const [sortKey, setSortKey] = useState<IssueSortBasis>('bounty');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
   const items = useMemo(() => {
     if (!allIssues) return [];
     // Stored keys and issue ids are compared as strings to avoid any
@@ -473,12 +492,58 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     return allIssues.filter((issue) => set.has(String(issue.id)));
   }, [allIssues, itemKeys]);
 
+  const handleSort = useCallback(
+    (key: IssueSortBasis) => {
+      if (sortKey === key) {
+        setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+        return;
+      }
+      setSortKey(key);
+      setSortOrder(key === 'bounty' ? 'desc' : 'asc');
+    },
+    [sortKey],
+  );
+
+  const sortedIssues = useMemo(
+    () => sortIssues(items, getIssueSortValue, sortKey, sortOrder),
+    [items, sortKey, sortOrder],
+  );
+
+  const columns = useMemo(
+    () => [
+      issueRepositoryColumn<IssueSortBasis>('repository'),
+      issueTitleColumn<IssueSortBasis>('issue', theme),
+      issueBountyColumn<IssueSortBasis>('bounty', taoPrice, alphaPrice, theme, {
+        label: 'Bounty',
+        width: '140px',
+      }),
+      issueStatusColumn<IssueSortBasis>('status', '110px'),
+      issueWatchColumn<IssueSortBasis>('56px'),
+    ],
+    [theme, taoPrice, alphaPrice],
+  );
+
   return (
-    <WatchlistBountiesTable
-      issues={items}
-      getIssueHref={(id) => `/bounties/details?id=${id}`}
-      linkState={{ backLabel: 'Back to Watchlist' }}
-    />
+    <Card
+      sx={{
+        backgroundColor: 'background.default',
+        border: `1px solid ${theme.palette.border.light}`,
+        borderRadius: 3,
+        overflow: 'hidden',
+        width: '100%',
+        '& .MuiTableCell-root': { py: 1.5 },
+      }}
+      elevation={0}
+    >
+      <DataTable<IssueBounty, IssueSortBasis>
+        columns={columns}
+        rows={sortedIssues}
+        getRowKey={(issue) => issue.id}
+        getRowHref={(issue) => `/bounties/details?id=${issue.id}`}
+        linkState={{ backLabel: 'Back to Watchlist' }}
+        sort={{ field: sortKey, order: sortOrder, onChange: handleSort }}
+      />
+    </Card>
   );
 };
 
