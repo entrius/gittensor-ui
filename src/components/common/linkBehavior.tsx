@@ -81,24 +81,72 @@ export const LinkBox = forwardRef<HTMLAnchorElement, BoxProps & LinkProps>(
 LinkBox.displayName = 'LinkBox';
 
 /**
- * A `TableRow` that renders as `<a href>`. Drop-in replacement for any
- * `<TableRow onClick={() => navigate(...)}>` row.
+ * A keyboard-accessible `TableRow` with SPA navigation behavior.
+ * Keeps valid table semantics (`tbody > tr > td`) while still acting like a link.
  */
 export const LinkTableRow = forwardRef<
-  HTMLAnchorElement,
+  HTMLTableRowElement,
   TableRowProps & LinkProps
->(({ href, linkState, sx, ...rest }, ref) => {
-  const linkProps = useLinkBehavior<HTMLAnchorElement>(href, {
-    state: linkState,
-  });
-  return (
-    <TableRow
-      component="a"
-      ref={ref}
-      {...linkProps}
-      sx={mergeSx(linkResetSx, sx)}
-      {...rest}
-    />
-  );
-});
+>(
+  (
+    { href, linkState, sx, onClick, onKeyDown, onAuxClick, ...rest },
+    ref,
+  ) => {
+    const navigate = useNavigate();
+    const openInNewTab = useCallback(() => {
+      window.open(href, '_blank', 'noopener,noreferrer');
+    }, [href]);
+
+    const handleClick = useCallback(
+      (e: React.MouseEvent<HTMLTableRowElement>) => {
+        onClick?.(e);
+        if (e.defaultPrevented) return;
+        if (isModifiedEvent(e)) {
+          openInNewTab();
+          return;
+        }
+        navigate(href, { state: linkState });
+      },
+      [href, linkState, navigate, onClick, openInNewTab],
+    );
+
+    const handleKeyDown = useCallback(
+      (e: React.KeyboardEvent<HTMLTableRowElement>) => {
+        onKeyDown?.(e);
+        if (e.defaultPrevented) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          navigate(href, { state: linkState });
+        }
+      },
+      [href, linkState, navigate, onKeyDown],
+    );
+
+    const handleAuxClick = useCallback(
+      (e: React.MouseEvent<HTMLTableRowElement>) => {
+        onAuxClick?.(e);
+        if (e.defaultPrevented) return;
+        if (e.button === 1) {
+          e.preventDefault();
+          openInNewTab();
+        }
+      },
+      [onAuxClick, openInNewTab],
+    );
+
+    return (
+      <TableRow
+        component="tr"
+        ref={ref}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        onAuxClick={handleAuxClick}
+        role="link"
+        tabIndex={0}
+        sx={mergeSx(linkResetSx, sx)}
+        {...rest}
+      />
+    );
+  },
+);
 LinkTableRow.displayName = 'LinkTableRow';
