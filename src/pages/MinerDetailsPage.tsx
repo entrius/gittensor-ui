@@ -26,13 +26,23 @@ const PR_TABS = [
 const ISSUE_TABS = ['overview', 'activity', 'repositories'] as const;
 type MinerDetailsTab = (typeof PR_TABS)[number] | (typeof ISSUE_TABS)[number];
 
-const tabSx = {
+/**
+ * Align first tab label with Card body content (MinerInsightsCard `p: 3` — same edge as
+ * "Insights & Next Actions" and insight row borders, not inner `px: 1.5` text).
+ * Padding lives on the tab flex row, not the scroll buttons: with scroll arrows, the
+ * first tab was shifted right by the left arrow width.
+ */
+const tabsAlignSx = {
+  '& .MuiTabs-flexContainer': {
+    pl: 3,
+  },
   '& .MuiTab-root': {
     color: 'text.secondary',
     textTransform: 'none' as const,
     fontSize: '0.83rem',
     fontWeight: 500,
     '&.Mui-selected': { color: 'primary.main' },
+    '&:first-of-type': { pl: 0 },
   },
 };
 
@@ -178,9 +188,8 @@ const MinerDetailsPage: React.FC = () => {
               value={activeTab}
               onChange={handleTabChange}
               variant="scrollable"
-              scrollButtons="auto"
-              allowScrollButtonsMobile
-              sx={tabSx}
+              scrollButtons={false}
+              sx={tabsAlignSx}
             >
               <Tab value="overview" label="Overview" />
               <Tab value="activity" label="Activity" />

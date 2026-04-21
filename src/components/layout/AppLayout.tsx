@@ -142,13 +142,16 @@ const AppLayout: React.FC = () => {
             <Box
               sx={{
                 width: '100%',
-                maxWidth: 1200,
-                pt: { xs: 1, md: 2 },
-                px: { xs: 1, md: 0 },
+                pt: { xs: 1, md: 1.5 },
+                pb: { xs: 1, md: 1.5 },
+                px: { xs: 2, md: 3 },
                 position: 'sticky',
                 top: 0,
                 zIndex: 500,
                 backgroundColor: 'background.default',
+                borderBottom: `1px solid ${theme.palette.border.light}`,
+                display: 'flex',
+                justifyContent: 'center',
               }}
             >
               <GlobalSearchBar />
