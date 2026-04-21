@@ -25,9 +25,8 @@ import {
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
 import { isMergedPr, isClosedUnmergedPr } from '../utils/prStatus';
-import { getIssueStatusMeta } from '../utils/issueStatus';
-import { formatTokenAmount } from '../utils/format';
 import { STATUS_COLORS } from '../theme';
+import WatchlistBountiesTable from '../components/watchlist/WatchlistBountiesTable';
 
 const TAB_ORDER: readonly WatchlistCategory[] = [
   'miners',
@@ -435,39 +434,11 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   }, [allIssues, itemKeys]);
 
   return (
-    <Stack spacing={0.5} sx={{ width: '100%' }}>
-      {items.map((issue) => {
-        const meta = getIssueStatusMeta(issue.status);
-        return (
-          <WatchedItemRow
-            key={issue.id}
-            href={`/bounties/details?id=${issue.id}`}
-            primary={
-              issue.title || `${issue.repositoryFullName} #${issue.issueNumber}`
-            }
-            secondary={`${issue.repositoryFullName} #${issue.issueNumber}`}
-            actions={
-              <>
-                <StatusPill
-                  label={meta.text}
-                  color={meta.color}
-                  background={meta.bgColor}
-                />
-                <Typography
-                  sx={{ fontSize: '0.75rem', color: 'status.success' }}
-                >
-                  {formatTokenAmount(issue.bountyAmount)} ل
-                </Typography>
-                <WatchlistButton
-                  category="bounties"
-                  itemKey={String(issue.id)}
-                />
-              </>
-            }
-          />
-        );
-      })}
-    </Stack>
+    <WatchlistBountiesTable
+      issues={items}
+      getIssueHref={(id) => `/bounties/details?id=${id}`}
+      linkState={{ backLabel: 'Back to Watchlist' }}
+    />
   );
 };
 
