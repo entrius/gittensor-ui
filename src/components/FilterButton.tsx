@@ -122,16 +122,16 @@ const FilterButton = memo(function FilterButton({
             minWidth: 20,
             height: 20,
             px: '7px',
-            display: 'inline-flex',
+            display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             alignSelf: 'center',
-            verticalAlign: 'middle',
+            flexShrink: 0,
             borderRadius: '10px',
             fontSize: '0.6875rem',
             fontWeight: isActive ? 700 : 600,
             fontVariantNumeric: 'tabular-nums',
-            lineHeight: 1,
+            lineHeight: '20px',
             color: isActive
               ? activeForeground
                 ? `color-mix(in srgb, ${activeForeground} 82%, #ffffff 18%)`
@@ -140,6 +140,7 @@ const FilterButton = memo(function FilterButton({
             backgroundColor: isActive
               ? alpha(color, activeForeground ? 0.24 : 0.22)
               : BADGE_INACTIVE_BG,
+            textAlign: 'center',
           }}
         >
           {count}
