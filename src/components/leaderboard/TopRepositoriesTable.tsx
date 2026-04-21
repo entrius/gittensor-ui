@@ -63,6 +63,7 @@ import ReactECharts from 'echarts-for-react';
 import type { TooltipComponentFormatterCallbackParams } from 'echarts';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { LinkTableRow } from '../common/linkBehavior';
+import { WatchlistButton } from '../common';
 import { truncateText } from '../../utils';
 import { RankIcon } from './RankIcon';
 import LeaderboardTableSkeleton from './LeaderboardTableSkeleton';
@@ -1128,6 +1129,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 >
                   Contributors
                 </SortableHeader>
+                <TableCell
+                  align="center"
+                  sx={{ ...headerCellStyle, width: '52px' }}
+                >
+                  {'\u2605'}
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -1285,6 +1292,18 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                               : '-'}
                           </Typography>
                         </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{ ...bodyCellStyle, width: '52px', p: 0 }}
+                        >
+                          {repo.repository && (
+                            <WatchlistButton
+                              category="repos"
+                              itemKey={repo.repository}
+                              size="small"
+                            />
+                          )}
+                        </TableCell>
                       </LinkTableRow>
                     );
                   })}
@@ -1292,7 +1311,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     trimmedSearch &&
                     isDirectRepoInput && (
                       <TableRow hover>
-                        <TableCell colSpan={6} sx={{ ...bodyCellStyle, py: 2 }}>
+                        <TableCell colSpan={7} sx={{ ...bodyCellStyle, py: 2 }}>
                           <Box
                             sx={{
                               display: 'flex',
