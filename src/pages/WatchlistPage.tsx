@@ -539,11 +539,14 @@ const prStatusMeta = (pr: CommitLog) => {
   return { label, color };
 };
 
+const prCellSx = { py: 1.5 } as const;
+
 const prColumns: DataTableColumn<CommitLog>[] = [
   {
     key: 'pr',
     header: 'PR',
     width: '70px',
+    cellSx: prCellSx,
     renderCell: (pr) => (
       <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
         #{pr.pullRequestNumber}
@@ -554,6 +557,7 @@ const prColumns: DataTableColumn<CommitLog>[] = [
     key: 'title',
     header: 'Title',
     width: '30%',
+    cellSx: prCellSx,
     renderCell: (pr) => (
       <Typography
         sx={{
@@ -572,6 +576,7 @@ const prColumns: DataTableColumn<CommitLog>[] = [
     key: 'repo',
     header: 'Repository',
     width: '20%',
+    cellSx: prCellSx,
     renderCell: (pr) => (
       <Typography
         sx={{
@@ -590,6 +595,7 @@ const prColumns: DataTableColumn<CommitLog>[] = [
     key: 'author',
     header: 'Author',
     width: '14%',
+    cellSx: prCellSx,
     renderCell: (pr) => (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
         <Avatar
@@ -614,6 +620,7 @@ const prColumns: DataTableColumn<CommitLog>[] = [
     header: 'Status',
     width: '90px',
     align: 'center',
+    cellSx: prCellSx,
     renderCell: (pr) => {
       const { label, color } = prStatusMeta(pr);
       return (
@@ -630,6 +637,7 @@ const prColumns: DataTableColumn<CommitLog>[] = [
     header: 'Score',
     width: '80px',
     align: 'right',
+    cellSx: prCellSx,
     renderCell: (pr) => (
       <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
         {parseFloat(pr.score || '0').toFixed(2)}
@@ -671,10 +679,9 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         borderColor: 'border.light',
         backgroundColor: 'transparent',
         overflow: 'hidden',
-        maxHeight: '75vh',
+        maxHeight: '85vh',
         display: 'flex',
         flexDirection: 'column',
-        p: { xs: 1, sm: 2 },
         '& .MuiTableContainer-root': {
           flex: 1,
           overflowY: 'auto',
