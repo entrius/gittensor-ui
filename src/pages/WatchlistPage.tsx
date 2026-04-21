@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import {
+  Avatar,
   Box,
+  Chip,
   Typography,
   Button,
   alpha,
@@ -11,10 +13,15 @@ import {
   Tab,
   Tabs,
   Badge,
+  Card,
 } from '@mui/material';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { TopMinersTable, SEO, WatchlistButton } from '../components';
+import {
+  DataTable,
+  type DataTableColumn,
+} from '../components/common/DataTable';
 import { LinkBox } from '../components/common/linkBehavior';
 import { useAllMiners, useAllPrs, useReposAndWeights, useIssues } from '../api';
 import { mapAllMinersToStats } from '../utils/minerMapper';
@@ -27,7 +34,8 @@ import {
 import { isMergedPr, isClosedUnmergedPr } from '../utils/prStatus';
 import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatTokenAmount } from '../utils/format';
-import { STATUS_COLORS } from '../theme';
+import { STATUS_COLORS, scrollbarSx } from '../theme';
+import type { CommitLog } from '../api/models/Dashboard';
 
 const TAB_ORDER: readonly WatchlistCategory[] = [
   'miners',
@@ -171,17 +179,23 @@ const WatchlistPage: React.FC = () => {
             onChange={handleTabChange}
             variant="scrollable"
             scrollButtons="auto"
-            sx={{
-              minHeight: 40,
+            sx={(theme) => ({
+              minHeight: 48,
               '& .MuiTab-root': {
-                minHeight: 40,
-                fontSize: '0.83rem',
-                fontWeight: 500,
+                minHeight: 48,
+                fontSize: '0.85rem',
+                fontWeight: 600,
                 textTransform: 'none',
-                color: 'text.secondary',
-                '&.Mui-selected': { color: 'primary.main' },
+                color: theme.palette.text.secondary,
+                '&.Mui-selected': {
+                  color: theme.palette.text.primary,
+                },
               },
-            }}
+              '& .MuiTabs-indicator': {
+                backgroundColor: theme.palette.text.primary,
+                height: 2,
+              },
+            })}
           >
             {TAB_ORDER.map((cat) => (
               <Tab
@@ -513,6 +527,131 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   );
 };
 
+const prStatusMeta = (pr: CommitLog) => {
+  const merged = isMergedPr(pr);
+  const closed = isClosedUnmergedPr(pr);
+  const label = merged ? 'MERGED' : closed ? 'CLOSED' : 'OPEN';
+  const color = merged
+    ? STATUS_COLORS.merged
+    : closed
+      ? STATUS_COLORS.closed
+      : STATUS_COLORS.open;
+  return { label, color };
+};
+
+const prColumns: DataTableColumn<CommitLog>[] = [
+  {
+    key: 'pr',
+    header: 'PR',
+    width: '70px',
+    renderCell: (pr) => (
+      <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+        #{pr.pullRequestNumber}
+      </Typography>
+    ),
+  },
+  {
+    key: 'title',
+    header: 'Title',
+    width: '30%',
+    renderCell: (pr) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 500,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {pr.pullRequestTitle}
+      </Typography>
+    ),
+  },
+  {
+    key: 'repo',
+    header: 'Repository',
+    width: '20%',
+    renderCell: (pr) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          color: 'text.secondary',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {pr.repository}
+      </Typography>
+    ),
+  },
+  {
+    key: 'author',
+    header: 'Author',
+    width: '14%',
+    renderCell: (pr) => (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+        <Avatar
+          src={`https://avatars.githubusercontent.com/${pr.author}`}
+          sx={{ width: 20, height: 20, flexShrink: 0 }}
+        />
+        <Typography
+          sx={{
+            fontSize: '0.75rem',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {pr.author}
+        </Typography>
+      </Box>
+    ),
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    width: '90px',
+    align: 'center',
+    renderCell: (pr) => {
+      const { label, color } = prStatusMeta(pr);
+      return (
+        <Chip
+          variant="status"
+          label={label}
+          sx={{ color, borderColor: color }}
+        />
+      );
+    },
+  },
+  {
+    key: 'score',
+    header: 'Score',
+    width: '80px',
+    align: 'right',
+    renderCell: (pr) => (
+      <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+        {parseFloat(pr.score || '0').toFixed(2)}
+      </Typography>
+    ),
+  },
+  {
+    key: 'watch',
+    header: '\u2605',
+    width: '52px',
+    align: 'center',
+    cellSx: { p: 0 },
+    renderCell: (pr) => (
+      <WatchlistButton
+        category="prs"
+        itemKey={serializePRKey(pr.repository, pr.pullRequestNumber)}
+        size="small"
+      />
+    ),
+  },
+];
+
 const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: allPrs } = useAllPrs();
   const items = useMemo(() => {
@@ -524,42 +663,38 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   }, [allPrs, itemKeys]);
 
   return (
-    <Stack spacing={0.5} sx={{ width: '100%' }}>
-      {items.map((pr) => {
-        const key = serializePRKey(pr.repository, pr.pullRequestNumber);
-        const merged = isMergedPr(pr);
-        const closed = isClosedUnmergedPr(pr);
-        const statusLabel = merged ? 'Merged' : closed ? 'Closed' : 'Open';
-        const statusColor = merged
-          ? STATUS_COLORS.merged
-          : closed
-            ? STATUS_COLORS.closed
-            : STATUS_COLORS.open;
-        return (
-          <WatchedItemRow
-            key={key}
-            href={`/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`}
-            primary={`#${pr.pullRequestNumber} ${pr.pullRequestTitle}`}
-            secondary={`${pr.repository} · ${pr.author}`}
-            actions={
-              <>
-                <StatusPill
-                  label={statusLabel}
-                  color={statusColor}
-                  background={alpha(statusColor, 0.12)}
-                />
-                <Typography
-                  sx={{ fontSize: '0.75rem', color: 'text.secondary' }}
-                >
-                  {parseFloat(pr.score || '0').toFixed(2)}
-                </Typography>
-                <WatchlistButton category="prs" itemKey={key} />
-              </>
-            }
-          />
-        );
-      })}
-    </Stack>
+    <Card
+      elevation={0}
+      sx={{
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'border.light',
+        backgroundColor: 'transparent',
+        overflow: 'hidden',
+        maxHeight: '75vh',
+        display: 'flex',
+        flexDirection: 'column',
+        p: { xs: 1, sm: 2 },
+        '& .MuiTableContainer-root': {
+          flex: 1,
+          overflowY: 'auto',
+          ...scrollbarSx,
+        },
+      }}
+    >
+      <DataTable<CommitLog>
+        columns={prColumns}
+        rows={items}
+        getRowKey={(pr) => serializePRKey(pr.repository, pr.pullRequestNumber)}
+        getRowHref={(pr) =>
+          `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`
+        }
+        linkState={{ backLabel: 'Back to Watchlist' }}
+        minWidth="750px"
+        stickyHeader
+        emptyLabel="No watched pull requests found."
+      />
+    </Card>
   );
 };
 
