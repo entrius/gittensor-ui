@@ -97,8 +97,7 @@ const MobileRepoHeading = memo(function MobileRepoHeading({
   const [preferSuffixOnly, setPreferSuffixOnly] = useState(false);
 
   const slash = repo.indexOf('/');
-  const suffixOnlyLabel =
-    slash >= 0 ? `\u2026${repo.slice(slash)}` : repo;
+  const suffixOnlyLabel = slash >= 0 ? `\u2026${repo.slice(slash)}` : repo;
 
   useLayoutEffect(() => {
     const wrap = wrapRef.current;
@@ -378,7 +377,11 @@ const RepositoryDetailsPage: React.FC = () => {
         <Container maxWidth="xl">
           <Box sx={{ pt: { xs: 1.5, md: 3 }, pb: 0 }}>
             <Box sx={{ mb: { xs: 0, md: 2 } }}>
-              <BackButton to="/repositories" label="Back to Repositories" mb={0} />
+              <BackButton
+                to="/repositories"
+                label="Back to Repositories"
+                mb={0}
+              />
             </Box>
 
             <Grid
