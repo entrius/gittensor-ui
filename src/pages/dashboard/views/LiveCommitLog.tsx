@@ -365,7 +365,7 @@ const LiveCommitLog: React.FC = () => {
 
       return [...updatedLog, ...novelItems];
     });
-  }, [apiCommits]);
+  }, [apiCommits, clear, schedule]);
 
   const visibleEntries = useMemo(
     () =>
