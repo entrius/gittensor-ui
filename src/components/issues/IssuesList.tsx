@@ -622,17 +622,8 @@ const IssuesList: React.FC<IssuesListProps> = ({
     );
   }
 
-  return (
-    <Card
-      sx={{
-        backgroundColor: 'background.default',
-        border: `1px solid ${theme.palette.border.light}`,
-        borderRadius: 3,
-        overflow: 'hidden',
-      }}
-      elevation={0}
-    >
-      {/* Header toolbar */}
+  const headerToolbar = (
+    <>
       <Box
         sx={{
           px: 2,
@@ -785,7 +776,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
         </Box>
       </Box>
 
-      {/* Chart */}
       <Collapse in={showChart}>
         <Box
           sx={{
@@ -803,40 +793,47 @@ const IssuesList: React.FC<IssuesListProps> = ({
           )}
         </Box>
       </Collapse>
+    </>
+  );
 
-      {filteredIssues.length === 0 ? (
-        <Box sx={{ p: 4, textAlign: 'center' }}>
-          <Typography
-            sx={{
-              color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-            }}
-          >
-            {searchQuery ? 'No issues match your search' : 'No issues found'}
-          </Typography>
-        </Box>
-      ) : (
-        <>
-          <DataTable<IssueBounty, SortKey>
-            columns={columns}
-            rows={paginatedIssues}
-            getRowKey={(issue) => issue.id}
-            getRowHref={
-              getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
-            }
-            linkState={linkState}
-            minWidth={
-              filterType === 'history'
-                ? '1000px'
-                : filterType === 'pending'
-                  ? '900px'
-                  : '750px'
-            }
-            sort={{
-              field: sortKey,
-              order: sortDirection,
-              onChange: handleSort,
-            }}
-          />
+  return (
+    <Card
+      sx={{
+        backgroundColor: 'background.default',
+        border: `1px solid ${theme.palette.border.light}`,
+        borderRadius: 3,
+        overflow: 'hidden',
+      }}
+      elevation={0}
+    >
+      <DataTable<IssueBounty, SortKey>
+        columns={columns}
+        rows={paginatedIssues}
+        getRowKey={(issue) => issue.id}
+        getRowHref={
+          getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
+        }
+        linkState={linkState}
+        minWidth={
+          filterType === 'history'
+            ? '1000px'
+            : filterType === 'pending'
+              ? '900px'
+              : '750px'
+        }
+        header={headerToolbar}
+        emptyState={
+          <Box sx={{ p: 4, textAlign: 'center' }}>
+            <Typography
+              sx={{
+                color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+              }}
+            >
+              {searchQuery ? 'No issues match your search' : 'No issues found'}
+            </Typography>
+          </Box>
+        }
+        pagination={
           <TablePagination
             rowsPerPageOptions={[]}
             component="div"
@@ -848,8 +845,13 @@ const IssuesList: React.FC<IssuesListProps> = ({
             showFirstButton
             showLastButton
           />
-        </>
-      )}
+        }
+        sort={{
+          field: sortKey,
+          order: sortDirection,
+          onChange: handleSort,
+        }}
+      />
     </Card>
   );
 };
