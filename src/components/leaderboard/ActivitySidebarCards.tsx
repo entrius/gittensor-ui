@@ -3,13 +3,14 @@ import { Box, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { SectionCard } from './SectionCard';
 import { STATUS_COLORS, DIFF_COLORS, CREDIBILITY_COLORS } from '../../theme';
+import { credibilityColor } from '../../utils/format';
 import { type MinerStats, FONTS } from './types';
 
-interface WatchlistSidebarProps {
+interface ActivitySidebarCardsProps {
   miners: MinerStats[];
 }
 
-export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
+export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
   miners,
 }) => {
   const ossUsdPerDay = useMemo(
@@ -90,23 +91,11 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
         ? CREDIBILITY_COLORS.moderate
         : STATUS_COLORS.closed;
 
-  const credibilityColor =
-    codeStats.avgCredibility >= 90
-      ? CREDIBILITY_COLORS.excellent
-      : codeStats.avgCredibility >= 70
-        ? CREDIBILITY_COLORS.good
-        : codeStats.avgCredibility >= 50
-          ? CREDIBILITY_COLORS.moderate
-          : codeStats.avgCredibility >= 30
-            ? CREDIBILITY_COLORS.low
-            : CREDIBILITY_COLORS.poor;
-
   return (
-    <Stack spacing={2} sx={{ height: '100%', overflow: 'auto', pr: 1 }}>
+    <>
       {/* CARD 1: PR Activity */}
       <SectionCard title="PR Activity" sx={{ flexShrink: 0 }}>
         <Box sx={{ px: 2, pt: 1, pb: 2 }}>
-          {/* Three-column PR breakdown */}
           <Box
             sx={(theme) => ({
               display: 'grid',
@@ -134,7 +123,6 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
             />
           </Box>
 
-          {/* Merge Rate */}
           <Box
             sx={{
               display: 'flex',
@@ -152,7 +140,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
               Merge Rate
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <MergeRateBar rate={prStats.mergeRate} color={mergeRateColor} />
+              <RateBar rate={prStats.mergeRate} color={mergeRateColor} />
               <Typography
                 sx={{
                   fontFamily: FONTS.mono,
@@ -168,8 +156,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
             </Box>
           </Box>
 
-          {/* Total $/day */}
-          <ImpactRow
+          <StatRow
             label="Total $/day"
             value={`$${Math.round(ossUsdPerDay).toLocaleString()}`}
             valueColor={STATUS_COLORS.merged}
@@ -207,7 +194,6 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
             />
           </Box>
 
-          {/* Solve Rate */}
           <Box
             sx={{
               display: 'flex',
@@ -225,10 +211,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
               Solve Rate
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <MergeRateBar
-                rate={issueStats.solveRate}
-                color={solveRateColor}
-              />
+              <RateBar rate={issueStats.solveRate} color={solveRateColor} />
               <Typography
                 sx={{
                   fontFamily: FONTS.mono,
@@ -244,8 +227,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
             </Box>
           </Box>
 
-          {/* Total $/day */}
-          <ImpactRow
+          <StatRow
             label="Total $/day"
             value={`$${Math.round(issueUsdPerDay).toLocaleString()}`}
             valueColor={STATUS_COLORS.merged}
@@ -265,17 +247,17 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
             gap: 2,
           }}
         >
-          <ImpactRow
+          <StatRow
             label="Lines Added"
-            value={`+${prStats.merged === 0 && codeStats.linesAdded === 0 ? '0' : codeStats.linesAdded.toLocaleString()}`}
+            value={`+${codeStats.linesAdded.toLocaleString()}`}
             valueColor={DIFF_COLORS.additions}
           />
-          <ImpactRow
+          <StatRow
             label="Lines Deleted"
             value={`-${codeStats.linesDeleted.toLocaleString()}`}
             valueColor={DIFF_COLORS.deletions}
           />
-          <ImpactRow
+          <StatRow
             label="Repos Touched"
             value={codeStats.reposTouched.toLocaleString()}
           />
@@ -296,16 +278,16 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
               Avg Credibility
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <MergeRateBar
+              <RateBar
                 rate={codeStats.avgCredibility}
-                color={credibilityColor}
+                color={credibilityColor(codeStats.avgCredibility / 100)}
               />
               <Typography
                 sx={{
                   fontFamily: FONTS.mono,
                   fontWeight: 600,
                   fontSize: '1.1rem',
-                  color: credibilityColor,
+                  color: credibilityColor(codeStats.avgCredibility / 100),
                   minWidth: 40,
                   textAlign: 'right',
                 }}
@@ -316,11 +298,51 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
           </Box>
         </Box>
       </SectionCard>
-    </Stack>
+    </>
   );
 };
 
-// ── Sub-components ──────────────────────────────────────────────
+// ── Shared sub-components ────────────────────────────────────────
+
+export interface StatRowProps {
+  label: string;
+  value: number | string;
+  valueColor?: string;
+}
+
+export const StatRow: React.FC<StatRowProps> = ({
+  label,
+  value,
+  valueColor,
+}) => (
+  <Box
+    sx={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    }}
+  >
+    <Typography
+      sx={{
+        fontFamily: FONTS.mono,
+        fontSize: '0.85rem',
+        color: STATUS_COLORS.open,
+      }}
+    >
+      {label}
+    </Typography>
+    <Typography
+      sx={(theme) => ({
+        fontFamily: FONTS.mono,
+        fontWeight: 600,
+        fontSize: '1.1rem',
+        color: valueColor ?? theme.palette.text.primary,
+      })}
+    >
+      {value}
+    </Typography>
+  </Box>
+);
 
 interface PRColumnProps {
   label: string;
@@ -360,12 +382,12 @@ const PRColumn: React.FC<PRColumnProps> = ({ label, value, color }) => (
   </Box>
 );
 
-interface MergeRateBarProps {
+interface RateBarProps {
   rate: number;
   color: string;
 }
 
-const MergeRateBar: React.FC<MergeRateBarProps> = ({ rate, color }) => (
+const RateBar: React.FC<RateBarProps> = ({ rate, color }) => (
   <Box
     sx={(theme) => ({
       width: 64,
@@ -384,41 +406,5 @@ const MergeRateBar: React.FC<MergeRateBarProps> = ({ rate, color }) => (
         transition: 'width 0.4s ease',
       }}
     />
-  </Box>
-);
-
-interface ImpactRowProps {
-  label: string;
-  value: string;
-  valueColor?: string;
-}
-
-const ImpactRow: React.FC<ImpactRowProps> = ({ label, value, valueColor }) => (
-  <Box
-    sx={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    }}
-  >
-    <Typography
-      sx={{
-        fontFamily: FONTS.mono,
-        fontSize: '0.85rem',
-        color: STATUS_COLORS.open,
-      }}
-    >
-      {label}
-    </Typography>
-    <Typography
-      sx={(theme) => ({
-        fontFamily: FONTS.mono,
-        fontWeight: 600,
-        fontSize: '1.1rem',
-        color: valueColor ?? theme.palette.text.primary,
-      })}
-    >
-      {value}
-    </Typography>
   </Box>
 );

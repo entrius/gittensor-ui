@@ -17,7 +17,7 @@ import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
 import {
   TopMinersTable,
-  WatchlistSidebar,
+  ActivitySidebarCards,
   SEO,
   WatchlistButton,
 } from '../components';
@@ -309,7 +309,7 @@ const WatchlistPage: React.FC = () => {
               gap: 2,
             }}
           >
-            <WatchlistSidebar miners={minerStats} />
+            <ActivitySidebarCards miners={minerStats} />
           </Box>
         )}
       </Box>
