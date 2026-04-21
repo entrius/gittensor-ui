@@ -213,10 +213,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
               {issue.title}
             </Typography>
           )}
-          <GithubNumberLink
-            href={issue.githubUrl}
-            number={issue.issueNumber}
-          />
+          <GithubNumberLink href={issue.githubUrl} number={issue.issueNumber} />
         </Box>
       ),
     };
