@@ -315,10 +315,11 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
         display: 'flex',
         alignItems: 'center',
         py: 1,
+        px: 2,
+        mx: -2,
         cursor: 'pointer',
         '&:hover': {
           backgroundColor: alpha(theme.palette.text.primary, 0.03),
-          borderRadius: 1,
         },
       })}
     >
