@@ -301,7 +301,6 @@ const WatchlistPage: React.FC = () => {
       >
         <DialogTitle
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.9rem',
             fontWeight: 600,
             p: 0,
@@ -314,16 +313,16 @@ const WatchlistPage: React.FC = () => {
           <Button
             onClick={() => setConfirmOpen(false)}
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               textTransform: 'none',
               fontSize: '0.8rem',
-              color: 'rgba(255, 255, 255, 0.7)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '8px',
+              color: (t) => alpha(t.palette.text.primary, 0.7),
+              border: '1px solid',
+              borderColor: 'border.light',
+              borderRadius: 2,
               px: 2,
               '&:hover': {
-                color: '#ffffff',
-                borderColor: 'rgba(255, 255, 255, 0.2)',
+                color: 'text.primary',
+                borderColor: 'border.medium',
               },
             }}
           >
@@ -332,12 +331,11 @@ const WatchlistPage: React.FC = () => {
           <Button
             onClick={handleClear}
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               textTransform: 'none',
               fontSize: '0.8rem',
-              color: '#ffffff',
+              color: 'common.white',
               backgroundColor: 'error.main',
-              borderRadius: '8px',
+              borderRadius: 2,
               px: 2,
               '&:hover': {
                 backgroundColor: 'error.dark',
