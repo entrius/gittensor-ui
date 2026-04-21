@@ -37,6 +37,7 @@ import {
   ContributingViewer,
   RepositoryMaintainers,
   RepositoryCheckTab,
+  WatchlistButton,
 } from '../components';
 
 interface TabPanelProps {
@@ -91,9 +92,9 @@ const RepositoryDetailsPage: React.FC = () => {
 
   const owner = repo ? repo.split('/')[0] : '';
 
-  // If no repo is provided, redirect to miners page
+  // If no repo is provided, redirect to repository list (registered route)
   if (!repo) {
-    navigate('/miners');
+    navigate('/repositories', { replace: true });
     return null;
   }
 
@@ -210,6 +211,7 @@ const RepositoryDetailsPage: React.FC = () => {
                   >
                     {repo}
                   </Typography>
+                  <WatchlistButton category="repos" itemKey={repo} />
                   <Chip variant="info" label="Public" />
                   <Chip
                     label="Tracked"

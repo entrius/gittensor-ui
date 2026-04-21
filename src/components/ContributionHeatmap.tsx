@@ -1,7 +1,11 @@
 import React from 'react';
 import { Box, Card, Typography, Tooltip, alpha, useTheme } from '@mui/material';
 import { ActivityCalendar } from 'react-activity-calendar';
-import { CONTRIBUTION_HEATMAP_SCALE, TEXT_OPACITY } from '../theme';
+import {
+  CONTRIBUTION_HEATMAP_SCALE,
+  TEXT_OPACITY,
+  scrollbarSx,
+} from '../theme';
 
 interface ContributionData {
   date: string;
@@ -60,7 +64,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
         </Typography>
       </Box>
 
-      <Box sx={{ width: '100%', overflowX: 'auto', mb: 1 }}>
+      <Box sx={{ width: '100%', overflowX: 'auto', mb: 1, ...scrollbarSx }}>
         {isEmpty ? (
           <Box
             sx={{

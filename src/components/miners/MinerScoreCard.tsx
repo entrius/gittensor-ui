@@ -386,6 +386,16 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           }}
         />
         <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography
+            sx={{
+              fontSize: { xs: '1.15rem', sm: '1.35rem' },
+              fontWeight: 700,
+              color: 'text.primary',
+              mb: 0.5,
+            }}
+          >
+            {githubData?.name || username}
+          </Typography>
           <Box
             sx={{
               display: 'flex',
@@ -395,15 +405,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               mb: 0.5,
             }}
           >
-            <Typography
-              sx={{
-                fontSize: { xs: '1.15rem', sm: '1.35rem' },
-                fontWeight: 700,
-                color: 'text.primary',
-              }}
-            >
-              {githubData?.name || username}
-            </Typography>
             <Tooltip
               title="Requires 5+ merged PRs with token score >= 5 and 80%+ credibility"
               arrow
@@ -586,8 +587,8 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             <StatTile
               label="Token Score"
               value={parseNumber(minerStats.totalTokenScore).toFixed(0)}
-              sub={`${parseNumber(minerStats.totalNodesScored).toLocaleString()} tokens`}
-              tooltip="Sum of token-level scores from merged PRs. Each scored code element (function, class, etc.) contributes to this."
+              sub={`${parseNumber(minerStats.totalNodesScored).toLocaleString()} tokens · ${parseNumber(minerStats.totalStructuralCount)} structural · ${parseNumber(minerStats.totalLeafCount)} leaf`}
+              tooltip="Token score is the sum of all scored AST elements from your merged PRs. Structural nodes (functions, classes, modules) carry more weight per node because they represent high-value code organization. Leaf nodes (statements, expressions) are scored individually. A higher structural-to-leaf ratio generally means better-organized contributions."
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>

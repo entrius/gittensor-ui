@@ -3,7 +3,7 @@ import { Box, Button, Stack, Typography } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import HomeIcon from '@mui/icons-material/Home';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { STATUS_COLORS } from '../theme';
+import { STATUS_COLORS, scrollbarSx } from '../theme';
 
 interface ErrorFallbackProps {
   variant: 'fullPage' | 'inline';
@@ -84,6 +84,7 @@ const ErrorFallback: React.FC<ErrorFallbackProps> = ({
             overflow: 'auto',
             maxHeight: 120,
             whiteSpace: 'pre-wrap',
+            ...scrollbarSx,
             wordBreak: 'break-word',
           }}
         >

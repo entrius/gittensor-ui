@@ -20,6 +20,15 @@ export interface MinerStats {
   uniqueReposCount?: number;
   credibility?: number;
   isEligible?: boolean;
+  /**
+   * Program-specific eligibility flags.
+   *
+   * These allow UI surfaces like Watchlist to disambiguate eligibility between
+   * OSS contributions and Issue Discoveries without changing the default
+   * `isEligible` semantics used across leaderboards.
+   */
+  ossIsEligible?: boolean;
+  discoveriesIsEligible?: boolean;
   usdPerDay?: number;
   totalMergedPrs?: number;
   totalOpenPrs?: number;
@@ -30,6 +39,16 @@ export interface MinerStats {
   issueDiscoveryScore?: number;
   issueCredibility?: number;
   isIssueEligible?: boolean;
+}
+
+export interface RepoStats {
+  repository: string;
+  totalScore: number;
+  totalPRs: number;
+  uniqueMiners: Set<string>;
+  weight: number;
+  rank?: number;
+  inactiveAt?: string | null;
 }
 
 export type LeaderboardVariant = 'oss' | 'discoveries' | 'watchlist';

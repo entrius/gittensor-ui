@@ -1,4 +1,5 @@
 import React from 'react';
+import { scrollbarSx } from '../../theme';
 import {
   Alert,
   Box,
@@ -69,19 +70,10 @@ const searchTableCardSx = (theme: Theme) => ({
   overflow: 'hidden',
 });
 
-const searchTableContainerSx = (theme: Theme) => ({
+const searchTableContainerSx = {
   overflowX: 'auto',
-  '&::-webkit-scrollbar': {
-    height: 8,
-  },
-  '&::-webkit-scrollbar-track': {
-    backgroundColor: theme.palette.surface.subtle,
-  },
-  '&::-webkit-scrollbar-thumb': {
-    backgroundColor: theme.palette.border.light,
-    borderRadius: 1,
-  },
-});
+  ...scrollbarSx,
+};
 
 const searchTableSx = {
   tableLayout: 'fixed',
