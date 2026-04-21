@@ -9,11 +9,7 @@
  */
 import { type CommitLog, type MinerEvaluation } from '../../api';
 import { type IssueBounty } from '../../api/models/Issues';
-import {
-  getIssueStatusLabel,
-  getPrStatusLabel,
-  parseNumber,
-} from '../../utils';
+import { getPrStatusLabel, parseNumber } from '../../utils';
 
 export type PresetTimeRange = '1d' | '7d' | '35d';
 export type TrendTimeRange = PresetTimeRange | 'all';
@@ -295,7 +291,12 @@ const getPrOverviewMetrics = (prs: CommitLog[], window: WindowBounds) => {
     const normalizedState = getPrStatusLabel(pr);
     const createdInWindow = isWithinWindow(toTimestamp(pr.prCreatedAt), window);
     const mergedInWindow = isWithinWindow(toTimestamp(pr.mergedAt), window);
-    const closedInWindow = isWithinWindow(toTimestamp(pr.closedAt), window);
+    // API does not currently return closedAt for PRs — fall back to
+    // prCreatedAt so closed PRs are still tracked within the window.
+    const closedInWindow = isWithinWindow(
+      toTimestamp(pr.closedAt ?? pr.prCreatedAt),
+      window,
+    );
 
     if (createdInWindow) {
       statusCounts.open += 1;
@@ -321,50 +322,24 @@ const getPrOverviewMetrics = (prs: CommitLog[], window: WindowBounds) => {
   };
 };
 
-const getIssueOverviewMetrics = (
-  issues: IssueBounty[],
-  window: WindowBounds,
-) => {
-  const statusCounts = {
-    total: 0,
-    solved: 0,
-    open: 0,
-    closed: 0,
-  };
-
-  issues.forEach((issue) => {
-    const normalizedStatus = getIssueStatusLabel(issue);
-    const createdInWindow = isWithinWindow(
-      toTimestamp(issue.createdAt),
-      window,
-    );
-    const solvedInWindow = isWithinWindow(
-      toTimestamp(issue.completedAt),
-      window,
-    );
-    const closedInWindow = isWithinWindow(toTimestamp(issue.closedAt), window);
-
-    if (createdInWindow) {
-      statusCounts.open += 1;
-      statusCounts.total += 1;
-    }
-
-    if (normalizedStatus === 'Solved' && solvedInWindow) {
-      statusCounts.solved += 1;
-      statusCounts.total += 1;
-    }
-
-    if (normalizedStatus === 'Closed' && closedInWindow) {
-      statusCounts.closed += 1;
-      statusCounts.total += 1;
-    }
+// Issue discovery metrics are sourced from per-miner aggregates (which
+// reflect every discovered issue) rather than the /issues endpoint (which
+// only returns bounty-backed issues — far fewer). Aggregates are all-time
+// totals, so the Issue Discoveries card is not windowed by the range filter.
+const getIssueOverviewMetricsFromMiners = (miners: MinerEvaluation[]) => {
+  let solved = 0;
+  let closed = 0;
+  let open = 0;
+  miners.forEach((miner) => {
+    solved += miner.totalSolvedIssues ?? 0;
+    closed += miner.totalClosedIssues ?? 0;
+    open += miner.totalOpenIssues ?? 0;
   });
-
   return {
-    total: statusCounts.total,
-    solved: statusCounts.solved,
-    open: statusCounts.open,
-    closed: statusCounts.closed,
+    total: solved + open + closed,
+    solved,
+    open,
+    closed,
   };
 };
 
@@ -375,7 +350,7 @@ const formatCenterPercent = (resolved: number, total: number) => {
 
 export const buildDashboardOverview = (
   prs: CommitLog[],
-  issues: IssueBounty[],
+  miners: MinerEvaluation[],
   range: TrendTimeRange,
   now = new Date(),
 ): DashboardOverviewSection[] => {
@@ -386,10 +361,7 @@ export const buildDashboardOverview = (
   const previousPrMetrics = previousWindow
     ? getPrOverviewMetrics(prs, previousWindow)
     : null;
-  const currentIssueMetrics = getIssueOverviewMetrics(issues, currentWindow);
-  const previousIssueMetrics = previousWindow
-    ? getIssueOverviewMetrics(issues, previousWindow)
-    : null;
+  const currentIssueMetrics = getIssueOverviewMetricsFromMiners(miners);
   const getMetricDelta = (currentValue: number, previousValue?: number) =>
     range === 'all' || previousValue === undefined
       ? '0%'
@@ -405,7 +377,7 @@ export const buildDashboardOverview = (
       ],
       chartCenterLabel: formatCenterPercent(
         currentPrMetrics.merged,
-        currentPrMetrics.total,
+        currentPrMetrics.merged + currentPrMetrics.closed,
       ),
       metrics: [
         {
@@ -448,40 +420,30 @@ export const buildDashboardOverview = (
       ],
       chartCenterLabel: formatCenterPercent(
         currentIssueMetrics.solved,
-        currentIssueMetrics.total,
+        currentIssueMetrics.solved + currentIssueMetrics.closed,
       ),
+      // Issue metrics come from per-miner aggregates (all-time totals), so
+      // there is no previous-window comparison available — deltas are '0%'.
       metrics: [
         {
           label: 'Total',
           value: currentIssueMetrics.total,
-          delta: getMetricDelta(
-            currentIssueMetrics.total,
-            previousIssueMetrics?.total,
-          ),
+          delta: '0%',
         },
         {
           label: 'Solved',
           value: currentIssueMetrics.solved,
-          delta: getMetricDelta(
-            currentIssueMetrics.solved,
-            previousIssueMetrics?.solved,
-          ),
+          delta: '0%',
         },
         {
           label: 'Open',
           value: currentIssueMetrics.open,
-          delta: getMetricDelta(
-            currentIssueMetrics.open,
-            previousIssueMetrics?.open,
-          ),
+          delta: '0%',
         },
         {
           label: 'Closed',
           value: currentIssueMetrics.closed,
-          delta: getMetricDelta(
-            currentIssueMetrics.closed,
-            previousIssueMetrics?.closed,
-          ),
+          delta: '0%',
         },
       ],
     },
