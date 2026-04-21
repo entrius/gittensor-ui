@@ -65,6 +65,79 @@ const openPrColor = (open: number, threshold: number) => {
   return undefined;
 };
 
+/**
+ * Prefer API per-program USD when provided; otherwise apportion combined
+ * estimates by OSS score vs issue discovery score.
+ */
+const getEarningsForViewMode = (
+  miner: MinerEvaluation,
+  mode: 'prs' | 'issues',
+): { usdPerDay: number; lifetimeUsd: number; tooltipExtra: string } => {
+  const combinedUsd = miner.usdPerDay ?? 0;
+  const combinedLife = miner.lifetimeUsd ?? 0;
+
+  const hasExplicitOss =
+    miner.ossUsdPerDay != null && Number.isFinite(Number(miner.ossUsdPerDay));
+  const hasExplicitIssue =
+    miner.issueUsdPerDay != null &&
+    Number.isFinite(Number(miner.issueUsdPerDay));
+
+  if (hasExplicitOss && hasExplicitIssue) {
+    if (mode === 'prs') {
+      return {
+        usdPerDay: Number(miner.ossUsdPerDay),
+        lifetimeUsd: Number(miner.ossLifetimeUsd ?? 0),
+        tooltipExtra: '',
+      };
+    }
+    return {
+      usdPerDay: Number(miner.issueUsdPerDay),
+      lifetimeUsd: Number(miner.issueLifetimeUsd ?? 0),
+      tooltipExtra: '',
+    };
+  }
+
+  const ossScore = Math.max(0, parseNumber(miner.totalScore));
+  const issueScore = Math.max(0, parseNumber(miner.issueDiscoveryScore));
+  const sum = ossScore + issueScore;
+
+  if (sum <= 0) {
+    if (mode === 'prs') {
+      return {
+        usdPerDay: combinedUsd,
+        lifetimeUsd: combinedLife,
+        tooltipExtra: '',
+      };
+    }
+    return {
+      usdPerDay: 0,
+      lifetimeUsd: 0,
+      tooltipExtra:
+        ' No issue discovery score yet; issue-track earnings are shown as zero.',
+    };
+  }
+
+  const ossShare = ossScore / sum;
+  const issueShare = issueScore / sum;
+  const blendedNote =
+    ossScore > 0 && issueScore > 0
+      ? ' Estimates split by OSS score vs issue discovery score when the API does not return per-program USD.'
+      : '';
+
+  if (mode === 'prs') {
+    return {
+      usdPerDay: combinedUsd * ossShare,
+      lifetimeUsd: combinedLife * ossShare,
+      tooltipExtra: blendedNote,
+    };
+  }
+  return {
+    usdPerDay: combinedUsd * issueShare,
+    lifetimeUsd: combinedLife * issueShare,
+    tooltipExtra: blendedNote,
+  };
+};
+
 interface StatTileProps {
   label: string;
   value: string;
@@ -313,6 +386,13 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
     }, 0);
   }, [prs]);
 
+  const earnings = useMemo(() => {
+    if (!minerStats) {
+      return { usdPerDay: 0, lifetimeUsd: 0, tooltipExtra: '' };
+    }
+    return getEarningsForViewMode(minerStats, viewMode);
+  }, [minerStats, viewMode]);
+
   if (isLoading) {
     return (
       <Card sx={{ p: 4, textAlign: 'center' }} elevation={0}>
@@ -347,6 +427,11 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
   const issueEligibilityColor = isIssueEligible
     ? STATUS_COLORS.success
     : STATUS_COLORS.neutral;
+
+  const earningsTooltipExtra = earnings.tooltipExtra.trim();
+  const earningsTooltipSuffix = earningsTooltipExtra
+    ? ` ${earningsTooltipExtra}`
+    : '';
 
   return (
     <Card sx={{ p: 3, position: 'relative' }} elevation={0}>
@@ -616,14 +701,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           <Grid item xs={6} sm={4} md={2}>
             <StatTile
               label="Earnings"
-              value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
-              sub={`$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
-              color={
-                (minerStats.usdPerDay ?? 0) > 0
-                  ? STATUS_COLORS.success
-                  : undefined
-              }
-              tooltip="Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus."
+              value={`$${Math.round(earnings.usdPerDay).toLocaleString()}/d`}
+              sub={`$${Math.round(earnings.usdPerDay * 30).toLocaleString()}/mo · $${Math.round(earnings.lifetimeUsd).toLocaleString()} total`}
+              color={earnings.usdPerDay > 0 ? STATUS_COLORS.success : undefined}
+              tooltip={`Estimated OSS-track earnings based on current network incentive distribution. Actual payouts depend on validator consensus.${earningsTooltipSuffix}`}
             />
           </Grid>
         </Grid>
@@ -679,14 +760,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           <Grid item xs={6} sm={4} md={2}>
             <StatTile
               label="Earnings"
-              value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
-              sub={`$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
-              color={
-                (minerStats.usdPerDay ?? 0) > 0
-                  ? STATUS_COLORS.success
-                  : undefined
-              }
-              tooltip="Estimated earnings from issue discovery based on current network incentive distribution."
+              value={`$${Math.round(earnings.usdPerDay).toLocaleString()}/d`}
+              sub={`$${Math.round(earnings.usdPerDay * 30).toLocaleString()}/mo · $${Math.round(earnings.lifetimeUsd).toLocaleString()} total`}
+              color={earnings.usdPerDay > 0 ? STATUS_COLORS.success : undefined}
+              tooltip={`Estimated issue-discovery earnings based on current network incentive distribution.${earningsTooltipSuffix}`}
             />
           </Grid>
         </Grid>

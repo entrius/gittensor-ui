@@ -165,6 +165,11 @@ export type MinerEvaluation = {
   lifetimeAlpha?: number;
   lifetimeTao?: number;
   lifetimeUsd?: number;
+  /** When present, per-program USD; UI prefers these over score-based split. */
+  ossUsdPerDay?: number;
+  issueUsdPerDay?: number;
+  ossLifetimeUsd?: number;
+  issueLifetimeUsd?: number;
 };
 
 export type GithubMinerData = {
