@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { LinkBox, linkResetSx } from '../common/linkBehavior';
 import {
   Card,
   Typography,
@@ -12,8 +12,9 @@ import {
   TableRow,
   CircularProgress,
   Chip,
-  Button,
   Stack,
+  alpha,
+  useTheme,
 } from '@mui/material';
 import { useRepositoryIssues, useRepoIssues } from '../../api';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -21,7 +22,18 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { formatTokenAmount } from '../../utils/format';
-import { STATUS_COLORS } from '../../theme';
+import {
+  getIssueStatusMeta,
+  getBountyAmountColor,
+} from '../../utils/issueStatus';
+import {
+  STATUS_COLORS,
+  TEXT_OPACITY,
+  scrollbarSx,
+  headerCellStyle,
+  bodyCellStyle,
+} from '../../theme';
+import FilterButton from '../FilterButton';
 
 interface RepositoryIssuesTableProps {
   repositoryFullName: string;
@@ -30,7 +42,7 @@ interface RepositoryIssuesTableProps {
 const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   repositoryFullName,
 }) => {
-  const navigate = useNavigate();
+  const theme = useTheme();
   const { data: issues, isLoading } = useRepositoryIssues(repositoryFullName);
   const { data: bounties } = useRepoIssues(repositoryFullName);
   const [filter, setFilter] = useState<'all' | 'open' | 'closed'>('all');
@@ -63,52 +75,12 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     [filteredIssues],
   );
 
-  const FilterButton = ({
-    label,
-    value,
-    count,
-    color,
-  }: {
-    label: string;
-    value: typeof filter;
-    count?: number;
-    color: string;
-  }) => (
-    <Button
-      size="small"
-      onClick={() => setFilter(value)}
-      sx={{
-        color: filter === value ? 'text.primary' : 'rgba(255,255,255,0.5)',
-        backgroundColor:
-          filter === value ? 'rgba(255,255,255,0.1)' : 'transparent',
-        borderRadius: '6px',
-        px: 2,
-        minWidth: 'auto',
-        textTransform: 'none',
-        fontFamily: '"JetBrains Mono", monospace',
-        fontSize: '0.8rem',
-        border:
-          filter === value ? `1px solid ${color}` : '1px solid transparent',
-        '&:hover': {
-          backgroundColor: 'rgba(255,255,255,0.15)',
-        },
-      }}
-    >
-      {label}{' '}
-      {count !== undefined && (
-        <span style={{ opacity: 0.6, marginLeft: '6px', fontSize: '0.75rem' }}>
-          {count}
-        </span>
-      )}
-    </Button>
-  );
-
   if (isLoading) {
     return (
       <Card
         sx={{
           borderRadius: 3,
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: `1px solid ${theme.palette.border.light}`,
           backgroundColor: 'transparent',
           p: 4,
           textAlign: 'center',
@@ -120,7 +92,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
             variant="h6"
             sx={{
               color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
             }}
           >
             Issues
@@ -134,222 +105,150 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Bounties Section */}
-      {bounties &&
-        bounties.length > 0 &&
-        (() => {
-          const getStatusColor = (status: string) => {
-            switch (status) {
-              case 'active':
-                return {
-                  bg: 'rgba(88, 166, 255, 0.15)',
-                  border: 'rgba(88, 166, 255, 0.4)',
-                  text: STATUS_COLORS.info,
-                };
-              case 'completed':
-                return {
-                  bg: 'rgba(63, 185, 80, 0.15)',
-                  border: 'rgba(63, 185, 80, 0.4)',
-                  text: STATUS_COLORS.merged,
-                };
-              case 'registered':
-                return {
-                  bg: 'rgba(245, 158, 11, 0.15)',
-                  border: 'rgba(245, 158, 11, 0.4)',
-                  text: STATUS_COLORS.warning,
-                };
-              case 'cancelled':
-                return {
-                  bg: 'rgba(239, 68, 68, 0.15)',
-                  border: 'rgba(239, 68, 68, 0.4)',
-                  text: STATUS_COLORS.error,
-                };
-              default:
-                return {
-                  bg: 'rgba(139, 148, 158, 0.15)',
-                  border: 'rgba(139, 148, 158, 0.4)',
-                  text: STATUS_COLORS.open,
-                };
-            }
-          };
-          const getStatusLabel = (status: string) => {
-            switch (status) {
-              case 'active':
-                return 'Available';
-              case 'completed':
-                return 'Completed';
-              case 'registered':
-                return 'Pending';
-              case 'cancelled':
-                return 'Cancelled';
-              default:
-                return status;
-            }
-          };
-          const getBountyAmountColor = (status: string) => {
-            switch (status) {
-              case 'active':
-                return STATUS_COLORS.merged;
-              case 'registered':
-                return STATUS_COLORS.warning;
-              case 'completed':
-                return STATUS_COLORS.merged;
-              case 'cancelled':
-                return 'rgba(255, 255, 255, 0.4)';
-              default:
-                return 'rgba(255, 255, 255, 0.6)';
-            }
-          };
-          return (
-            <Card
+      {bounties && bounties.length > 0 && (
+        <Card
+          sx={{
+            borderRadius: 3,
+            border: `1px solid ${theme.palette.border.light}`,
+            backgroundColor: 'transparent',
+            p: 0,
+            overflow: 'hidden',
+          }}
+          elevation={0}
+        >
+          <Box
+            sx={{
+              p: 3,
+              borderBottom: `1px solid ${theme.palette.border.light}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Typography
+              variant="h6"
               sx={{
-                borderRadius: 3,
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                backgroundColor: 'transparent',
-                p: 0,
-                overflow: 'hidden',
+                color: 'text.primary',
+                fontSize: '1.1rem',
+                fontWeight: 500,
               }}
-              elevation={0}
             >
-              <Box
-                sx={{
-                  p: 3,
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Typography
-                  variant="h6"
+              Bounties ({bounties.length})
+            </Typography>
+          </Box>
+          <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {bounties.map((bounty) => {
+              const meta = getIssueStatusMeta(bounty.status);
+              return (
+                <LinkBox
+                  key={bounty.id}
+                  href={`/bounties/details?id=${bounty.id}`}
+                  linkState={{ backLabel: `Back to ${repositoryFullName}` }}
                   sx={{
-                    color: 'text.primary',
-                    fontFamily: '"JetBrains Mono", monospace',
-                    fontSize: '1.1rem',
-                    fontWeight: 500,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    p: 2,
+                    borderRadius: 2,
+                    border: `1px solid ${alpha(theme.palette.common.white, 0.06)}`,
+                    backgroundColor: 'surface.subtle',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: 'surface.light',
+                      borderColor: alpha(theme.palette.common.white, 0.15),
+                      transform: 'translateX(2px)',
+                    },
                   }}
                 >
-                  Bounties ({bounties.length})
-                </Typography>
-              </Box>
-              <Box
-                sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}
-              >
-                {bounties.map((bounty) => {
-                  const statusColors = getStatusColor(bounty.status);
-                  return (
-                    <Box
-                      key={bounty.id}
-                      onClick={() =>
-                        navigate(`/bounties/details?id=${bounty.id}`, {
-                          state: { backLabel: `Back to ${repositoryFullName}` },
-                        })
-                      }
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      minWidth: 0,
+                    }}
+                  >
+                    <Chip
+                      label={meta.text}
+                      size="small"
                       sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        p: 2,
-                        borderRadius: 2,
-                        border: '1px solid rgba(255, 255, 255, 0.06)',
-                        backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                          borderColor: 'rgba(255, 255, 255, 0.15)',
-                          transform: 'translateX(2px)',
-                        },
+                        backgroundColor: meta.bgColor,
+                        color: meta.color,
+                        border: `1px solid ${meta.borderColor}`,
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        height: '22px',
+                        '& .MuiChip-label': { px: 1 },
+                      }}
+                    />
+                    <Typography
+                      sx={{
+                        color: STATUS_COLORS.open,
+                        fontSize: '0.8rem',
+                        whiteSpace: 'nowrap',
                       }}
                     >
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1.5,
-                          minWidth: 0,
-                        }}
-                      >
-                        <Chip
-                          label={getStatusLabel(bounty.status)}
-                          size="small"
-                          sx={{
-                            backgroundColor: statusColors.bg,
-                            color: statusColors.text,
-                            border: `1px solid ${statusColors.border}`,
-                            fontSize: '0.65rem',
-                            fontWeight: 700,
-                            fontFamily: '"JetBrains Mono", monospace',
-                            height: '22px',
-                            '& .MuiChip-label': { px: 1 },
-                          }}
-                        />
-                        <Typography
-                          sx={{
-                            color: STATUS_COLORS.open,
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: '0.8rem',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          #{bounty.issueNumber}
-                        </Typography>
-                        <Typography
-                          sx={{
-                            color: 'rgba(255, 255, 255, 0.85)',
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: '0.85rem',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {issues?.find(
-                            (i) =>
-                              i.number === bounty.issueNumber &&
-                              i.repositoryFullName ===
-                                bounty.repositoryFullName,
-                          )?.title ||
-                            `${repositoryFullName}#${bounty.issueNumber}`}
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 2,
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            color: getBountyAmountColor(bounty.status),
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                          }}
-                        >
-                          {`${formatTokenAmount(bounty.targetBounty)} ل`}
-                        </Typography>
-                        <ArrowForwardIcon
-                          sx={{
-                            color: 'rgba(255, 255, 255, 0.2)',
-                            fontSize: 16,
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </Box>
-            </Card>
-          );
-        })()}
+                      #{bounty.issueNumber}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        color: 'text.primary',
+                        fontSize: '0.85rem',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {issues?.find(
+                        (i) =>
+                          i.number === bounty.issueNumber &&
+                          i.repositoryFullName === bounty.repositoryFullName,
+                      )?.title || `${repositoryFullName}#${bounty.issueNumber}`}
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        color: getBountyAmountColor(
+                          bounty.status,
+                          alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+                        ),
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {`${formatTokenAmount(bounty.targetBounty)} ل`}
+                    </Typography>
+                    <ArrowForwardIcon
+                      sx={{
+                        color: alpha(
+                          theme.palette.common.white,
+                          TEXT_OPACITY.ghost,
+                        ),
+                        fontSize: 16,
+                      }}
+                    />
+                  </Box>
+                </LinkBox>
+              );
+            })}
+          </Box>
+        </Card>
+      )}
 
       {/* GitHub Issues Table */}
       <Card
         sx={{
           borderRadius: 3,
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: `1px solid ${theme.palette.border.light}`,
           backgroundColor: 'transparent',
           p: 0,
           display: 'flex',
@@ -361,7 +260,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         <Box
           sx={{
             p: 3,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            borderBottom: `1px solid ${theme.palette.border.light}`,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -373,7 +272,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
             variant="h6"
             sx={{
               color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '1.1rem',
               fontWeight: 500,
             }}
@@ -384,21 +282,27 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
           <Stack direction="row" spacing={1}>
             <FilterButton
               label="All"
-              value="all"
+              isActive={filter === 'all'}
+              onClick={() => setFilter('all')}
               count={counts.total}
               color={STATUS_COLORS.open}
+              activeTextColor="text.primary"
             />
             <FilterButton
               label="Open"
-              value="open"
+              isActive={filter === 'open'}
+              onClick={() => setFilter('open')}
               count={counts.open}
               color={STATUS_COLORS.open}
+              activeTextColor="text.primary"
             />
             <FilterButton
               label="Closed"
-              value="closed"
+              isActive={filter === 'closed'}
+              onClick={() => setFilter('closed')}
               count={counts.closed}
               color={STATUS_COLORS.merged}
+              activeTextColor="text.primary"
             />
           </Stack>
         </Box>
@@ -407,8 +311,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
           <Box sx={{ p: 4, textAlign: 'center' }}>
             <Typography
               sx={{
-                color: 'rgba(255, 255, 255, 0.5)',
-                fontFamily: '"JetBrains Mono", monospace',
+                color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
                 fontSize: '0.9rem',
               }}
             >
@@ -420,20 +323,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
             sx={{
               maxHeight: '500px',
               overflow: 'auto',
-              '&::-webkit-scrollbar': {
-                width: '8px',
-                height: '8px',
-              },
-              '&::-webkit-scrollbar-track': {
-                backgroundColor: 'transparent',
-              },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                borderRadius: '4px',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                },
-              },
+              ...scrollbarSx,
             }}
           >
             <Table stickyHeader>
@@ -457,18 +347,17 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                   return (
                     <TableRow
                       key={`${issue.number}-${index}`}
+                      component="a"
+                      href={`https://github.com/${issue.repositoryFullName}/issues/${issue.number}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       sx={{
+                        ...linkResetSx,
                         cursor: 'pointer',
                         '&:hover': {
-                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          backgroundColor: 'surface.light',
                         },
                         transition: 'background-color 0.2s',
-                      }}
-                      onClick={() => {
-                        window.open(
-                          `https://github.com/${issue.repositoryFullName}/issues/${issue.number}`,
-                          '_blank',
-                        );
                       }}
                     >
                       <TableCell sx={bodyCellStyle}>
@@ -536,7 +425,14 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                             #{issue.prNumber}
                           </a>
                         ) : (
-                          <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>
+                          <span
+                            style={{
+                              color: alpha(
+                                theme.palette.common.white,
+                                TEXT_OPACITY.faint,
+                              ),
+                            }}
+                          >
                             -
                           </span>
                         )}
@@ -561,25 +457,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       </Card>
     </Box>
   );
-};
-
-const headerCellStyle = {
-  backgroundColor: 'rgba(18, 18, 20, 0.95)',
-  backdropFilter: 'blur(8px)',
-  color: 'rgba(255, 255, 255, 0.7)',
-  fontFamily: '"JetBrains Mono", monospace',
-  fontWeight: 500,
-  fontSize: '0.75rem',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.5px',
-};
-
-const bodyCellStyle = {
-  color: 'text.primary',
-  fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  fontSize: '0.85rem',
 };
 
 export default RepositoryIssuesTable;

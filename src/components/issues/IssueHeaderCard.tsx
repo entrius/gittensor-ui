@@ -1,81 +1,42 @@
 import React from 'react';
-import { Box, Card, Typography, Chip, Link, Stack } from '@mui/material';
+import {
+  Box,
+  Card,
+  Typography,
+  Chip,
+  Link,
+  Stack,
+  alpha,
+  useTheme,
+} from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IssueDetails } from '../../api/models/Issues';
-import { useStats } from '../../api';
-import { formatTokenAmount } from '../../utils/format';
-import { STATUS_COLORS } from '../../theme';
-
-const getStatusBadge = (
-  status: string,
-): { color: string; bgColor: string; text: string } => {
-  switch (status) {
-    case 'registered':
-      return {
-        color: STATUS_COLORS.warning,
-        bgColor: 'rgba(245, 158, 11, 0.15)',
-        text: 'Pending',
-      };
-    case 'active':
-      return {
-        color: STATUS_COLORS.info,
-        bgColor: 'rgba(88, 166, 255, 0.15)',
-        text: 'Available',
-      };
-    case 'completed':
-      return {
-        color: STATUS_COLORS.merged,
-        bgColor: 'rgba(63, 185, 80, 0.15)',
-        text: 'Completed',
-      };
-    case 'cancelled':
-      return {
-        color: STATUS_COLORS.error,
-        bgColor: 'rgba(239, 68, 68, 0.15)',
-        text: 'Cancelled',
-      };
-    default:
-      return {
-        color: STATUS_COLORS.open,
-        bgColor: 'rgba(139, 148, 158, 0.15)',
-        text: status,
-      };
-  }
-};
-
-const formatDate = (dateStr: string | null | undefined): string => {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
+import {
+  formatTokenAmount,
+  formatDate,
+  formatAlphaToUsd,
+} from '../../utils/format';
+import { usePrices } from '../../hooks/usePrices';
+import { getIssueStatusMeta } from '../../utils/issueStatus';
+import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 
 interface IssueHeaderCardProps {
   issue: IssueDetails;
 }
 
 const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
-  const statusBadge = getStatusBadge(issue.status);
-  const { data: dashStats } = useStats();
-  const taoPrice = dashStats?.prices?.tao?.data?.price ?? 0;
-  const alphaPrice = dashStats?.prices?.alpha?.data?.price ?? 0;
-
-  const usdEstimate = React.useMemo(() => {
-    if (taoPrice <= 0 || alphaPrice <= 0) return null;
-    const amount = parseFloat(issue.targetBounty);
-    if (isNaN(amount) || amount === 0) return null;
-    const usd = amount * alphaPrice * taoPrice;
-    return `~${usd.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`;
-  }, [issue.targetBounty, taoPrice, alphaPrice]);
+  const theme = useTheme();
+  const statusBadge = getIssueStatusMeta(issue.status);
+  const { taoPrice, alphaPrice, hasPrices } = usePrices();
+  const usdEstimate = hasPrices
+    ? formatAlphaToUsd(issue.targetBounty, taoPrice, alphaPrice)
+    : null;
 
   return (
     <Card
       sx={{
-        backgroundColor: '#000000',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'background.default',
+        border: `1px solid ${theme.palette.border.light}`,
         borderRadius: 3,
         p: 3,
       }}
@@ -99,7 +60,6 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
               display: 'flex',
               alignItems: 'center',
               gap: 0.5,
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '1rem',
               color: STATUS_COLORS.info,
               textDecoration: 'none',
@@ -115,7 +75,6 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             label={statusBadge.text}
             size="small"
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.75rem',
               fontWeight: 600,
               backgroundColor: statusBadge.bgColor,
@@ -133,7 +92,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                 '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
               fontSize: '1.5rem',
               fontWeight: 600,
-              color: '#ffffff',
+              color: 'text.primary',
             }}
           >
             {issue.title}
@@ -152,9 +111,8 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
           <Box>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.7rem',
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
                 mb: 0.5,
@@ -172,7 +130,6 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
               >
                 <Typography
                   sx={{
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '1.25rem',
                     fontWeight: 600,
                     color: STATUS_COLORS.warning,
@@ -182,9 +139,11 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                 </Typography>
                 <Typography
                   sx={{
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.9rem',
-                    color: 'rgba(255, 255, 255, 0.5)',
+                    color: alpha(
+                      theme.palette.common.white,
+                      TEXT_OPACITY.tertiary,
+                    ),
                   }}
                 >
                   / {formatTokenAmount(issue.targetBounty)} ل
@@ -193,7 +152,6 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             ) : issue.status === 'completed' ? (
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '1.25rem',
                   fontWeight: 600,
                   color: STATUS_COLORS.merged,
@@ -204,13 +162,12 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             ) : (
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '1.25rem',
                   fontWeight: 600,
                   color:
                     issue.status === 'active'
                       ? STATUS_COLORS.merged
-                      : 'rgba(255, 255, 255, 0.6)',
+                      : alpha(theme.palette.common.white, 0.6),
                 }}
               >
                 {formatTokenAmount(issue.targetBounty)} ل
@@ -219,9 +176,8 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             {usdEstimate && (
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.8rem',
-                  color: 'rgba(255, 255, 255, 0.4)',
+                  color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
                   mt: 0.25,
                 }}
               >
@@ -234,9 +190,11 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             <Box>
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.7rem',
-                  color: 'rgba(255, 255, 255, 0.5)',
+                  color: alpha(
+                    theme.palette.common.white,
+                    TEXT_OPACITY.tertiary,
+                  ),
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
                   mb: 0.5,
@@ -246,9 +204,8 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
               </Typography>
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.9rem',
-                  color: '#ffffff',
+                  color: 'text.primary',
                 }}
               >
                 {issue.authorLogin}
@@ -259,9 +216,8 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
           <Box>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.7rem',
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
                 mb: 0.5,
@@ -271,9 +227,8 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             </Typography>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.9rem',
-                color: '#ffffff',
+                color: 'text.primary',
               }}
             >
               {formatDate(issue.createdAt)}
@@ -290,10 +245,9 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                 label={label}
                 size="small"
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.7rem',
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  color: '#ffffff',
+                  backgroundColor: alpha(theme.palette.common.white, 0.1),
+                  color: 'text.primary',
                 }}
               />
             ))}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Stack, Typography, alpha } from '@mui/material';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { useMonthlyRewards } from '../hooks/useMonthlyRewards';
@@ -30,22 +30,24 @@ const HomePage: React.FC = () => {
           justifyContent="center"
           gap={{ xs: 2, sm: 3 }}
         >
-          <img
+          <Box
+            component="img"
             src="/gt-logo.svg"
             alt="Gittensor"
-            style={{
+            sx={(theme) => ({
               height: window.innerWidth < 600 ? '96px' : '128px',
               width: 'auto',
-              filter:
-                'grayscale(100%) invert(1) drop-shadow(0 0 12px rgba(255, 255, 255, 0.8))',
-            }}
+              filter: `grayscale(100%) invert(1) drop-shadow(0 0 12px ${alpha(
+                theme.palette.text.primary,
+                0.8,
+              )})`,
+            })}
           />
           <Typography
             variant="h1"
-            color="#ffffff"
+            color="text.primary"
             fontWeight="bold"
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: { xs: '2rem', sm: '3rem', md: '4rem' },
               textAlign: 'center',
             }}
@@ -67,28 +69,29 @@ const HomePage: React.FC = () => {
           {/* Monthly Rewards Banner */}
           {monthlyRewards && (
             <Box
-              sx={{
+              sx={(theme) => ({
                 mt: { xs: 4, sm: 5 },
                 px: { xs: 3, sm: 5, md: 7 },
                 py: { xs: 2.5, sm: 3.5 },
                 borderRadius: 2,
-                background: 'rgba(0, 0, 0, 0.4)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
+                background: alpha(theme.palette.background.default, 0.4),
+                border: '1px solid',
+                borderColor: theme.palette.border.light,
                 backdropFilter: 'blur(10px)',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+                boxShadow: `0 8px 32px ${alpha(theme.palette.background.default, 0.3)}`,
                 transition: 'all 0.3s ease-in-out',
                 '&:hover': {
-                  border: '1px solid rgba(255, 255, 255, 0.25)',
-                  boxShadow: '0 12px 48px rgba(0, 0, 0, 0.4)',
+                  borderColor: theme.palette.border.medium,
+                  boxShadow: `0 12px 48px ${alpha(theme.palette.background.default, 0.4)}`,
                   transform: 'translateY(-2px)',
                 },
-              }}
+              })}
             >
               <Stack alignItems="center" gap={{ xs: 1, sm: 1.5 }}>
                 <Typography
                   variant="body2"
-                  color="rgba(255, 255, 255, 0.5)"
                   sx={{
+                    color: (theme) => theme.palette.text.secondary,
                     fontSize: { xs: '0.7rem', sm: '0.75rem' },
                     textTransform: 'uppercase',
                     letterSpacing: '0.15em',
@@ -99,10 +102,9 @@ const HomePage: React.FC = () => {
                 </Typography>
                 <Typography
                   variant="h2"
-                  color="#ffffff"
                   fontWeight="600"
                   sx={{
-                    fontFamily: '"JetBrains Mono", monospace',
+                    color: (theme) => theme.palette.text.primary,
                     fontSize: { xs: '2rem', sm: '2.75rem', md: '3.5rem' },
                     letterSpacing: '-0.02em',
                   }}
@@ -115,8 +117,8 @@ const HomePage: React.FC = () => {
                 </Typography>
                 <Typography
                   variant="body2"
-                  color="rgba(255, 255, 255, 0.4)"
                   sx={{
+                    color: (theme) => theme.palette.text.tertiary,
                     fontSize: { xs: '0.75rem', sm: '0.85rem' },
                     textAlign: 'center',
                     maxWidth: '400px',

@@ -1,14 +1,21 @@
 import React from 'react';
-import { Box, Typography, Grid, Button, Stack } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Grid,
+  Button,
+  Stack,
+  alpha,
+  useTheme,
+} from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CodeIcon from '@mui/icons-material/Code';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-import { Page } from '../components/layout';
-import { SEO } from '../components';
-import { useMonthlyRewards } from '../hooks/useMonthlyRewards';
+import { useMonthlyRewards } from '../../hooks/useMonthlyRewards';
 
 export const AboutContent: React.FC = () => {
+  const theme = useTheme();
   const monthlyRewards = useMonthlyRewards();
 
   return (
@@ -34,8 +41,7 @@ export const AboutContent: React.FC = () => {
             fontWeight="bold"
             sx={{
               mb: 3,
-              fontFamily: '"JetBrains Mono", monospace',
-              color: '#fff',
+              color: 'text.primary',
             }}
           >
             The Marketplace for Open Source
@@ -45,7 +51,7 @@ export const AboutContent: React.FC = () => {
               <Typography
                 variant="body1"
                 sx={{
-                  color: 'rgba(255, 255, 255, 0.8)',
+                  color: alpha(theme.palette.common.white, 0.8),
                   lineHeight: 1.8,
                   fontSize: '1.05rem',
                   mb: 2,
@@ -59,7 +65,7 @@ export const AboutContent: React.FC = () => {
               <Typography
                 variant="body1"
                 sx={{
-                  color: 'rgba(255, 255, 255, 0.8)',
+                  color: alpha(theme.palette.common.white, 0.8),
                   lineHeight: 1.8,
                   fontSize: '1.05rem',
                 }}
@@ -67,7 +73,9 @@ export const AboutContent: React.FC = () => {
                 Submit Pull Requests to whitelisted repositories and earn when
                 they merge. Discover open issues that others later solve and
                 earn from a separate pool. Two ways to earn, one network:{' '}
-                <strong style={{ color: 'white' }}>Code, Merge, Earn.</strong>
+                <strong style={{ color: theme.palette.text.primary }}>
+                  Code, Merge, Earn.
+                </strong>
               </Typography>
             </Grid>
             <Grid item xs={12} md={6}>
@@ -75,9 +83,8 @@ export const AboutContent: React.FC = () => {
                 sx={{
                   p: 3,
                   borderRadius: 4,
-                  background:
-                    'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  background: `linear-gradient(135deg, ${alpha(theme.palette.common.white, 0.05)} 0%, ${alpha(theme.palette.common.white, 0.02)} 100%)`,
+                  border: `1px solid ${theme.palette.border.light}`,
                 }}
               >
                 <Typography
@@ -153,8 +160,8 @@ export const AboutContent: React.FC = () => {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       },
-                    )} monthly reward pool by making open source contributions.`
-                  : 'Stop coding for free. Get paid in TAO for your open source contributions.',
+                    )} monthly reward pool through OSS contributions or Issue Discovery.`
+                  : 'Stop coding for free. Earn alpha tokens through two tracks: merge PRs to OSS repositories or discover issues for others to solve.',
               },
               {
                 icon: <VerifiedUserIcon fontSize="large" />,
@@ -173,8 +180,9 @@ export const AboutContent: React.FC = () => {
                     p: 4,
                     height: '100%',
                     borderRadius: 4,
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: alpha(theme.palette.common.white, 0.02),
+                    border: '1px solid',
+                    borderColor: 'border.subtle',
                   }}
                 >
                   <Box sx={{ color: 'secondary.main', mb: 2 }}>{card.icon}</Box>
@@ -182,7 +190,7 @@ export const AboutContent: React.FC = () => {
                     variant="h6"
                     fontWeight="bold"
                     gutterBottom
-                    sx={{ color: '#fff' }}
+                    sx={{ color: 'text.primary' }}
                   >
                     {card.title}
                   </Typography>
@@ -205,9 +213,8 @@ export const AboutContent: React.FC = () => {
             textAlign: 'center',
             p: 6,
             borderRadius: 4,
-            background:
-              'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(255,255,255,0.03) 100%)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            background: `linear-gradient(180deg, transparent 0%, ${alpha(theme.palette.common.white, 0.03)} 100%)`,
+            border: `1px solid ${theme.palette.border.light}`,
             mb: 8,
           }}
         >
@@ -236,7 +243,7 @@ export const AboutContent: React.FC = () => {
               fontSize: '1.1rem',
               fontWeight: 'bold',
               borderRadius: '50px',
-              boxShadow: '0 0 20px rgba(0, 0, 0, 0.3)',
+              boxShadow: `0 0 20px ${alpha(theme.palette.common.black, 0.3)}`,
               textTransform: 'none',
             }}
           >
@@ -250,8 +257,8 @@ export const AboutContent: React.FC = () => {
             mt: { xs: 4, sm: 5, md: 6 },
             p: { xs: 3, sm: 4 },
             borderRadius: 3,
-            backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backgroundColor: alpha(theme.palette.common.black, 0.3),
+            border: `1px solid ${theme.palette.border.light}`,
             position: 'relative',
             overflow: 'hidden',
             width: '100%',
@@ -264,8 +271,7 @@ export const AboutContent: React.FC = () => {
             sx={{
               mb: 2.5,
               fontSize: { xs: '1.2rem', sm: '1.3rem' },
-              color: '#ffffff',
-              fontFamily: '"JetBrains Mono", monospace',
+              color: 'text.primary',
               letterSpacing: '0.02em',
             }}
           >
@@ -274,7 +280,7 @@ export const AboutContent: React.FC = () => {
           <Typography
             variant="body1"
             lineHeight={1.8}
-            color="rgba(255, 255, 255, 0.9)"
+            color={alpha(theme.palette.common.white, 0.9)}
             fontSize={{ xs: '0.95rem', sm: '1rem' }}
             sx={{ mb: 2 }}
           >
@@ -300,7 +306,7 @@ export const AboutContent: React.FC = () => {
           <Typography
             variant="body1"
             lineHeight={1.8}
-            color="rgba(255, 255, 255, 0.9)"
+            color={alpha(theme.palette.common.white, 0.9)}
             fontSize={{ xs: '0.95rem', sm: '1rem' }}
           >
             Review our codebase and get started mining by checking out the
@@ -328,23 +334,3 @@ export const AboutContent: React.FC = () => {
     </Box>
   );
 };
-
-const AboutPage: React.FC = () => (
-  <Page title="About">
-    <SEO
-      title="About Gittensor"
-      description="Learn about Gittensor's mission to transform software into a global public resource. Understand how miners, validators, and the community work together."
-    />
-    <Box
-      sx={{
-        minHeight: { xs: 'auto', md: 'calc(100vh - 80px)' },
-        py: { xs: 4, sm: 5, md: 6 },
-        display: 'flex',
-      }}
-    >
-      <AboutContent />
-    </Box>
-  </Page>
-);
-
-export default AboutPage;

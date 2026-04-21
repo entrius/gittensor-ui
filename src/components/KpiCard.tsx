@@ -6,10 +6,11 @@ import {
   type SxProps,
   type Theme,
   useMediaQuery,
+  useTheme,
 } from '@mui/material';
-import theme from '../../theme';
+import theme from '../theme';
 
-interface KpiCardProps {
+export interface KpiCardProps {
   title: string;
   value?: string | number;
   subtitle?: string;
@@ -24,11 +25,12 @@ const KpiCard: React.FC<KpiCardProps> = ({
   variant = 'medium',
   sx,
 }) => {
+  const muiTheme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isLarge = variant === 'large';
   const padding = isLarge
-    ? { py: isMobile ? 2 : 2.5 }
-    : { py: isMobile ? 1.5 : 2 };
+    ? { py: isMobile ? 1.6 : 2 }
+    : { py: isMobile ? 1.1 : 1.35 };
   const valueVariant = isLarge ? 'h2' : 'h4';
   const titleSize = isLarge ? (isMobile ? 14 : 16) : isMobile ? 12 : 14;
 
@@ -36,7 +38,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
     value !== undefined && value !== null
       ? typeof value === 'string' &&
         (value.startsWith('$') || value.includes('ل') || value.includes(','))
-        ? value // Already formatted with currency/token symbol or commas
+        ? value
         : typeof value === 'number' || typeof value === 'string'
           ? Number(value).toLocaleString()
           : value
@@ -46,7 +48,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: `1px solid ${muiTheme.palette.border.light}`,
         backgroundColor: 'transparent',
         height: '100%',
         ...sx,
@@ -63,26 +65,27 @@ const KpiCard: React.FC<KpiCardProps> = ({
         <Typography
           variant="dataLabel"
           fontSize={titleSize}
-          color="#ffffff"
           gutterBottom
-          sx={{ mb: isLarge ? 1 : 0.5 }}
+          sx={{
+            color: (muiTheme) => muiTheme.palette.text.primary,
+            mb: isLarge ? 0.8 : 0.35,
+          }}
         >
           {title}
         </Typography>
         <Typography
           variant={valueVariant}
-          color="text.primary"
           fontWeight="bold"
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
-            my: isLarge ? (isMobile ? 0.5 : 1) : 0.5,
+            color: (muiTheme) => muiTheme.palette.text.primary,
+            my: isLarge ? (isMobile ? 0.45 : 0.8) : 0.35,
             fontSize: isLarge
               ? isMobile
                 ? '2rem'
                 : undefined
               : isMobile
-                ? '1.25rem'
-                : '1.5rem',
+                ? '1.2rem'
+                : '1.42rem',
           }}
         >
           {formattedValue ?? '-'}
@@ -90,9 +93,9 @@ const KpiCard: React.FC<KpiCardProps> = ({
         {subtitle && (
           <Typography
             variant="body2"
-            color="rgba(255, 255, 255, 0.5)"
             sx={{
-              mt: isLarge ? 0.5 : 0.25,
+              color: (muiTheme) => muiTheme.palette.text.tertiary,
+              mt: isLarge ? 0.4 : 0.15,
               fontSize: isLarge ? (isMobile ? 12 : 14) : isMobile ? 11 : 12,
             }}
           >

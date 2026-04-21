@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ButtonBase,
   Card,
   Typography,
   Box,
@@ -31,13 +32,15 @@ import {
 import {
   RANK_COLORS,
   STATUS_COLORS,
-  CREDIBILITY_COLORS,
   RISK_COLORS,
+  tooltipSlotProps,
 } from '../../theme';
 import {
   calculateDynamicOpenPrThreshold,
+  calculateOpenIssueThreshold,
   parseNumber,
 } from '../../utils/ExplorerUtils';
+import { credibilityColor } from '../../utils/format';
 
 const formatTimeAgo = (date: Date): string => {
   const now = new Date();
@@ -55,36 +58,11 @@ const formatTimeAgo = (date: Date): string => {
   return `${diffDays} days ago`;
 };
 
-const credibilityColor = (cred: number) => {
-  if (cred >= 0.9) return CREDIBILITY_COLORS.excellent;
-  if (cred >= 0.7) return CREDIBILITY_COLORS.good;
-  if (cred >= 0.5) return CREDIBILITY_COLORS.moderate;
-  if (cred >= 0.3) return CREDIBILITY_COLORS.low;
-  return CREDIBILITY_COLORS.poor;
-};
-
 const openPrColor = (open: number, threshold: number) => {
   if (open >= threshold) return RISK_COLORS.exceeded;
   if (open >= threshold - 1) return RISK_COLORS.critical;
   if (open >= threshold - 2) return RISK_COLORS.approaching;
   return undefined;
-};
-
-const tooltipSlotProps = {
-  tooltip: {
-    sx: {
-      backgroundColor: 'surface.tooltip',
-      color: 'text.primary',
-      fontSize: '0.75rem',
-      fontFamily: '"JetBrains Mono", monospace',
-      padding: '8px 12px',
-      borderRadius: '6px',
-      border: '1px solid',
-      borderColor: 'border.light',
-      maxWidth: 260,
-    },
-  },
-  arrow: { sx: { color: 'surface.tooltip' } },
 };
 
 interface StatTileProps {
@@ -168,7 +146,6 @@ const StatTile: React.FC<StatTileProps> = ({
           <Typography
             component="span"
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.6rem',
               fontWeight: 600,
               color:
@@ -188,7 +165,6 @@ const StatTile: React.FC<StatTileProps> = ({
     </Box>
     <Typography
       sx={{
-        fontFamily: '"JetBrains Mono", monospace',
         fontSize: '1.5rem',
         fontWeight: 600,
         color: color || 'text.primary',
@@ -200,7 +176,6 @@ const StatTile: React.FC<StatTileProps> = ({
     {sub && (
       <Typography
         sx={{
-          fontFamily: '"JetBrains Mono", monospace',
           fontSize: '0.75rem',
           color: (t) => alpha(t.palette.text.primary, 0.4),
           mt: 0.25,
@@ -212,11 +187,96 @@ const StatTile: React.FC<StatTileProps> = ({
   </Box>
 );
 
+const COPY_FEEDBACK_MS = 1500;
+
+const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
+  const [copied, setCopied] = useState(false);
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+      }
+    },
+    [],
+  );
+
+  if (!hotkey) return null;
+
+  const handleCopy = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('clipboard-unavailable');
+      }
+      await navigator.clipboard.writeText(hotkey);
+      setCopied(true);
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+      }
+      timerRef.current = window.setTimeout(() => {
+        setCopied(false);
+        timerRef.current = null;
+      }, COPY_FEEDBACK_MS);
+    } catch {
+      // The ss58 text remains selectable, so users can copy manually if
+      // the Clipboard API is unavailable (e.g. http:// or a restricted
+      // iframe).
+    }
+  };
+
+  return (
+    <ButtonBase
+      onClick={handleCopy}
+      aria-label={
+        copied ? 'Hotkey copied to clipboard' : 'Copy hotkey to clipboard'
+      }
+      aria-live="polite"
+      disableRipple
+      sx={{
+        display: 'block',
+        textAlign: 'left',
+        borderRadius: '4px',
+        color: (t) =>
+          copied
+            ? t.palette.status.success
+            : alpha(t.palette.text.primary, 0.45),
+        transition: 'color 0.15s ease',
+        '&:hover': {
+          color: (t) =>
+            copied
+              ? t.palette.status.success
+              : alpha(t.palette.text.primary, 0.8),
+        },
+        '&:focus-visible': {
+          outline: (t) => `2px solid ${t.palette.primary.main}`,
+          outlineOffset: '2px',
+        },
+      }}
+    >
+      <Typography
+        component="span"
+        sx={{
+          color: 'inherit',
+          fontSize: { xs: '0.55rem', sm: '0.65rem' },
+          wordBreak: 'break-all',
+        }}
+      >
+        {copied ? '✓ Copied to clipboard' : hotkey}
+      </Typography>
+    </ButtonBase>
+  );
+};
+
 interface MinerScoreCardProps {
   githubId: string;
+  viewMode?: 'prs' | 'issues';
 }
 
-const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
+const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
+  githubId,
+  viewMode = 'prs',
+}) => {
   const { data: minerStats, isLoading, error } = useMinerStats(githubId);
   const { data: prs } = useMinerPRs(githubId);
   const { data: githubData } = useMinerGithubData(githubId);
@@ -267,7 +327,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
         <Typography
           sx={{
             color: alpha(STATUS_COLORS.error, 0.9),
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.9rem',
           }}
         >
@@ -303,7 +362,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             position: 'absolute',
             top: 16,
             right: 16,
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.7rem',
             color: (t) => alpha(t.palette.text.primary, 0.5),
             borderColor: 'border.light',
@@ -328,6 +386,16 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
           }}
         />
         <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography
+            sx={{
+              fontSize: { xs: '1.15rem', sm: '1.35rem' },
+              fontWeight: 700,
+              color: 'text.primary',
+              mb: 0.5,
+            }}
+          >
+            {githubData?.name || username}
+          </Typography>
           <Box
             sx={{
               display: 'flex',
@@ -337,16 +405,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
               mb: 0.5,
             }}
           >
-            <Typography
-              sx={{
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: { xs: '1.15rem', sm: '1.35rem' },
-                fontWeight: 700,
-                color: 'text.primary',
-              }}
-            >
-              {githubData?.name || username}
-            </Typography>
             <Tooltip
               title="Requires 5+ merged PRs with token score >= 5 and 80%+ credibility"
               arrow
@@ -361,7 +419,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                   color: eligibilityColor,
                   borderColor: alpha(eligibilityColor, 0.35),
                   backgroundColor: alpha(eligibilityColor, 0.1),
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.7rem',
                   letterSpacing: '0.5px',
                   textTransform: 'uppercase',
@@ -385,7 +442,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                   color: issueEligibilityColor,
                   borderColor: alpha(issueEligibilityColor, 0.35),
                   backgroundColor: alpha(issueEligibilityColor, 0.1),
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.7rem',
                   letterSpacing: '0.5px',
                   textTransform: 'uppercase',
@@ -409,7 +465,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
               rel="noopener noreferrer"
               sx={{
                 color: 'primary.main',
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.9rem',
                 textDecoration: 'none',
                 display: 'inline-flex',
@@ -420,16 +475,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             >
               <GitHubIcon sx={{ fontSize: '1rem' }} />@{username}
             </Typography>
-            <Typography
-              sx={{
-                color: (t) => alpha(t.palette.text.primary, 0.45),
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: { xs: '0.55rem', sm: '0.65rem' },
-                wordBreak: 'break-all',
-              }}
-            >
-              {minerStats.hotkey || ''}
-            </Typography>
+            <CopyableHotkey hotkey={minerStats.hotkey || ''} />
           </Box>
 
           {/* Bio / about me */}
@@ -437,7 +483,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
             <Typography
               sx={{
                 color: (t) => alpha(t.palette.text.primary, 0.7),
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.8rem',
                 mt: 1,
                 lineHeight: 1.5,
@@ -476,6 +521,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
                       : `https://${githubData.blog}`
                   }
                   target="_blank"
+                  rel="noopener noreferrer"
                   icon={<WebsiteIcon />}
                   label="Website"
                   clickable
@@ -501,7 +547,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
               sx={{
                 display: { xs: 'flex', sm: 'none' },
                 mt: 1,
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.65rem',
                 color: (t) => alpha(t.palette.text.primary, 0.5),
                 borderColor: 'border.light',
@@ -515,72 +560,137 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({ githubId }) => {
         </Box>
       </Box>
 
-      {/* Stat tiles */}
-      <Grid container spacing={1.5}>
-        <Grid item xs={6} sm={4} md={2}>
-          <StatTile
-            label="Score"
-            value={Number(minerStats.totalScore).toFixed(2)}
-            sub={
-              topPrScore != null
-                ? `Best PR: ${topPrScore.toFixed(2)}`
-                : undefined
-            }
-            rank={rankings?.score}
-          />
+      {viewMode === 'prs' ? (
+        <Grid container spacing={1.5}>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Score"
+              value={parseNumber(minerStats.totalScore).toFixed(2)}
+              sub={
+                topPrScore != null
+                  ? `Best PR: ${topPrScore.toFixed(2)}`
+                  : undefined
+              }
+              rank={rankings?.score}
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Credibility"
+              value={`${(cred * 100).toFixed(1)}%`}
+              sub={`${minerStats.totalMergedPrs || 0} merged · ${minerStats.totalClosedPrs || 0} closed`}
+              color={credibilityColor(cred)}
+              tooltip="Ratio of merged PRs to total attempts (merged + closed). Higher credibility means a stronger multiplier on your scores."
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Token Score"
+              value={parseNumber(minerStats.totalTokenScore).toFixed(0)}
+              sub={`${parseNumber(minerStats.totalNodesScored).toLocaleString()} tokens · ${parseNumber(minerStats.totalStructuralCount)} structural · ${parseNumber(minerStats.totalLeafCount)} leaf`}
+              tooltip="Token score is the sum of all scored AST elements from your merged PRs. Structural nodes (functions, classes, modules) carry more weight per node because they represent high-value code organization. Leaf nodes (statements, expressions) are scored individually. A higher structural-to-leaf ratio generally means better-organized contributions."
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="PRs"
+              value={String(minerStats.totalPrs || 0)}
+              sub={`${(parseNumber(minerStats.totalAdditions) + parseNumber(minerStats.totalDeletions)).toLocaleString()} lines`}
+              rank={rankings?.totalPrs}
+              tooltip="Total pull requests submitted. Lines count includes both additions and deletions across all PRs."
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Open Risk"
+              value={`${openPrs} / ${openPrThreshold}`}
+              sub={
+                collateral > 0
+                  ? `Collateral: -${collateral.toFixed(2)}`
+                  : 'No collateral'
+              }
+              color={openPrColor(openPrs, openPrThreshold)}
+              tooltip={`Open PRs have collateral deducted from score. Exceeding ${openPrThreshold} triggers a full penalty. Threshold scales with token score (+1 per 300).`}
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Earnings"
+              value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
+              sub={`$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
+              color={
+                (minerStats.usdPerDay ?? 0) > 0
+                  ? STATUS_COLORS.success
+                  : undefined
+              }
+              tooltip="Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus."
+            />
+          </Grid>
         </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <StatTile
-            label="Credibility"
-            value={`${(cred * 100).toFixed(1)}%`}
-            sub={`${minerStats.totalMergedPrs || 0} merged · ${minerStats.totalClosedPrs || 0} closed`}
-            color={credibilityColor(cred)}
-            tooltip="Ratio of merged PRs to total attempts (merged + closed). Higher credibility means a stronger multiplier on your scores."
-          />
+      ) : (
+        <Grid container spacing={1.5}>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Score"
+              value={parseNumber(minerStats.issueDiscoveryScore).toFixed(2)}
+              tooltip="Aggregate score for issue discovery contributions."
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Credibility"
+              value={`${(parseNumber(minerStats.issueCredibility) * 100).toFixed(1)}%`}
+              sub={`${minerStats.totalSolvedIssues || 0} solved · ${minerStats.totalClosedIssues || 0} closed`}
+              color={credibilityColor(Number(minerStats.issueCredibility || 0))}
+              tooltip="Credibility = solved / (solved + max(0, closed − 1)). One closed issue is forgiven. 80%+ required for eligibility."
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Token Score"
+              value={parseNumber(minerStats.issueTokenScore).toFixed(0)}
+              sub={`${minerStats.totalValidSolvedIssues || 0} valid (need 7)`}
+              tooltip="Sum of solving PR token scores across valid issues. Reflects code quality generated by discovered issues."
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Issues"
+              value={String(
+                (minerStats.totalSolvedIssues || 0) +
+                  (minerStats.totalOpenIssues || 0) +
+                  (minerStats.totalClosedIssues || 0),
+              )}
+              sub={`${minerStats.totalSolvedIssues || 0} solved · ${minerStats.totalOpenIssues || 0} open`}
+              tooltip="Total discovered issues (solved + open + closed). Only solved issues with a qualifying PR contribute to your discovery score."
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Open Risk"
+              value={`${minerStats.totalOpenIssues || 0} / ${calculateOpenIssueThreshold(minerStats)}`}
+              color={openPrColor(
+                parseNumber(minerStats.totalOpenIssues),
+                calculateOpenIssueThreshold(minerStats),
+              )}
+              tooltip="Open issues count toward spam detection. Exceeding the threshold triggers a full penalty on all discovery scores."
+            />
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <StatTile
+              label="Earnings"
+              value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
+              sub={`$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
+              color={
+                (minerStats.usdPerDay ?? 0) > 0
+                  ? STATUS_COLORS.success
+                  : undefined
+              }
+              tooltip="Estimated earnings from issue discovery based on current network incentive distribution."
+            />
+          </Grid>
         </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <StatTile
-            label="Token Score"
-            value={Number(minerStats.totalTokenScore || 0).toFixed(0)}
-            sub={`${Number(minerStats.totalNodesScored || 0).toLocaleString()} tokens`}
-            tooltip="Sum of token-level scores from merged PRs. Each scored code element (function, class, etc.) contributes to this."
-          />
-        </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <StatTile
-            label="PRs"
-            value={String(minerStats.totalPrs || 0)}
-            sub={`${Number((minerStats.totalAdditions ?? 0) + (minerStats.totalDeletions ?? 0)).toLocaleString()} lines`}
-            rank={rankings?.totalPrs}
-          />
-        </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <StatTile
-            label="Open Risk"
-            value={`${openPrs} / ${openPrThreshold}`}
-            sub={
-              collateral > 0
-                ? `Collateral: -${collateral.toFixed(2)}`
-                : 'No collateral'
-            }
-            color={openPrColor(openPrs, openPrThreshold)}
-            tooltip={`Open PRs have collateral deducted from score. Exceeding ${openPrThreshold} triggers a full penalty. Threshold scales with token score (+1 per 300).`}
-          />
-        </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <StatTile
-            label="Earnings"
-            value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
-            sub={`$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
-            color={
-              (minerStats.usdPerDay ?? 0) > 0
-                ? STATUS_COLORS.success
-                : undefined
-            }
-            tooltip="Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus."
-          />
-        </Grid>
-      </Grid>
+      )}
     </Card>
   );
 };

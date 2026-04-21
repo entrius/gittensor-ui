@@ -5,17 +5,58 @@ import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS, STATUS_COLORS } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
-import { type MinerStats, FONTS } from './types';
+import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
+import { WatchlistButton } from '../common';
+import { type MinerStats, type LeaderboardVariant, FONTS } from './types';
 
 interface MinerCardProps {
   miner: MinerStats;
-  onClick: () => void;
+  href: string;
+  linkState?: Record<string, unknown>;
+  variant?: LeaderboardVariant;
+  showDualEligibilityBadges?: boolean;
 }
 
 const INACTIVE_OPACITY = 0.24;
 
-export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
-  const muiTheme = useTheme();
+const CHART_SEGMENT_COLORS = [
+  CHART_COLORS.merged,
+  CHART_COLORS.open,
+  CHART_COLORS.closed,
+];
+const CHART_INACTIVE_RATIOS = [2 / 3, 1, 1 / 2];
+
+interface Segment {
+  label: string;
+  value: number;
+}
+
+const getPrSegments = (miner: MinerStats): Segment[] => [
+  { label: 'Merged', value: miner.totalMergedPrs ?? 0 },
+  { label: 'Open', value: miner.totalOpenPrs ?? 0 },
+  { label: 'Closed', value: miner.totalClosedPrs ?? 0 },
+];
+
+const getIssueSegments = (miner: MinerStats): Segment[] => [
+  { label: 'Solved', value: miner.totalSolvedIssues ?? 0 },
+  { label: 'Open', value: miner.totalOpenIssues ?? 0 },
+  { label: 'Closed', value: miner.totalClosedIssues ?? 0 },
+];
+
+const getSegments = (
+  miner: MinerStats,
+  variant: LeaderboardVariant,
+): Segment[] =>
+  variant === 'discoveries' ? getIssueSegments(miner) : getPrSegments(miner);
+
+export const MinerCard: React.FC<MinerCardProps> = ({
+  miner,
+  href,
+  linkState,
+  variant = 'oss',
+  showDualEligibilityBadges = false,
+}) => {
+  const linkProps = useLinkBehavior(href, { state: linkState });
   const isNumericId = (value?: string) => !value || /^\d+$/.test(value);
   const shouldFetch = !!miner.githubId && isNumericId(miner.author);
   const { data: githubData } = useMinerGithubData(miner.githubId, shouldFetch);
@@ -30,12 +71,29 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
   const avatarSrc = githubData?.avatarUrl || getGithubAvatarSrc(username);
 
   const credibilityPercent = (miner.credibility ?? 0) * 100;
-  const isEligible = miner.isEligible ?? false;
+  const issueCredPercent = (miner.issueCredibility ?? 0) * 100;
+  const ossEligible = miner.ossIsEligible ?? miner.isEligible ?? false;
+  const discoveriesEligible =
+    miner.discoveriesIsEligible ??
+    miner.isIssueEligible ??
+    (variant === 'discoveries' ? (miner.isEligible ?? false) : false);
+  const isWatchlist = variant === 'watchlist';
+  const isDiscoveries = variant === 'discoveries';
+  const baseEligible = miner.isEligible ?? false;
+  const isEligible = isWatchlist
+    ? ossEligible || discoveriesEligible || baseEligible
+    : showDualEligibilityBadges
+      ? ossEligible || discoveriesEligible
+      : baseEligible;
+
+  const segments = getSegments(miner, variant);
 
   return (
     <Card
-      onClick={onClick}
+      component="a"
+      {...linkProps}
       sx={(theme) => ({
+        ...linkResetSx,
         p: 1,
         backgroundColor: isEligible
           ? theme.palette.background.default
@@ -79,7 +137,12 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
         }}
       >
         <Box
-          sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            minWidth: 0,
+          }}
         >
           <Avatar
             src={avatarSrc}
@@ -138,26 +201,96 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
             </Typography>
           </Box>
         </Box>
-        {!isEligible && (
-          <Typography
-            sx={(theme) => ({
-              fontFamily: FONTS.mono,
-              fontSize: '0.65rem',
-              fontWeight: 700,
-              color: theme.palette.text.secondary,
-              textTransform: 'uppercase',
-              border: `1px solid ${theme.palette.border.subtle}`,
-              borderRadius: 1,
-              px: 0.75,
-              py: 0.25,
-              letterSpacing: '0.06em',
-              flexShrink: 0,
-              backgroundColor: theme.palette.surface.subtle,
-            })}
-          >
-            Ineligible
-          </Typography>
-        )}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            flexShrink: 0,
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end',
+          }}
+        >
+          {showDualEligibilityBadges ? (
+            <>
+              <Typography
+                sx={(theme) => ({
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  border: `1px solid ${
+                    ossEligible
+                      ? alpha(theme.palette.status.merged, 0.45)
+                      : theme.palette.border.subtle
+                  }`,
+                  borderRadius: 1,
+                  px: 0.75,
+                  py: 0.25,
+                  letterSpacing: '0.06em',
+                  color: ossEligible
+                    ? theme.palette.status.merged
+                    : theme.palette.text.secondary,
+                  backgroundColor: ossEligible
+                    ? alpha(theme.palette.status.merged, 0.08)
+                    : theme.palette.surface.subtle,
+                })}
+              >
+                OSS {ossEligible ? 'Eligible' : 'Ineligible'}
+              </Typography>
+              <Typography
+                sx={(theme) => ({
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  border: `1px solid ${
+                    discoveriesEligible
+                      ? alpha(theme.palette.status.merged, 0.45)
+                      : theme.palette.border.subtle
+                  }`,
+                  borderRadius: 1,
+                  px: 0.75,
+                  py: 0.25,
+                  letterSpacing: '0.06em',
+                  color: discoveriesEligible
+                    ? theme.palette.status.merged
+                    : theme.palette.text.secondary,
+                  backgroundColor: discoveriesEligible
+                    ? alpha(theme.palette.status.merged, 0.08)
+                    : theme.palette.surface.subtle,
+                })}
+              >
+                Issues {discoveriesEligible ? 'Eligible' : 'Ineligible'}
+              </Typography>
+            </>
+          ) : !isEligible ? (
+            <Typography
+              sx={(theme) => ({
+                fontFamily: FONTS.mono,
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                color: theme.palette.text.secondary,
+                textTransform: 'uppercase',
+                border: `1px solid ${theme.palette.border.subtle}`,
+                borderRadius: 1,
+                px: 0.75,
+                py: 0.25,
+                letterSpacing: '0.06em',
+                backgroundColor: theme.palette.surface.subtle,
+              })}
+            >
+              Ineligible
+            </Typography>
+          ) : null}
+          {miner.githubId && (
+            <WatchlistButton
+              category="miners"
+              itemKey={miner.githubId}
+              size="small"
+            />
+          )}
+        </Box>
       </Box>
 
       <Box
@@ -212,161 +345,104 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
           </Typography>
         </Box>
 
-        <Box
-          sx={{
-            position: 'relative',
-            width: 56,
-            height: 56,
-            flexShrink: 0,
-            opacity: isEligible ? 1 : INACTIVE_OPACITY,
-          }}
-        >
-          <ReactECharts
-            option={{
-              backgroundColor: 'transparent',
-              series: [
-                {
-                  type: 'pie',
-                  radius: ['65%', '90%'],
-                  silent: true,
-                  label: { show: false },
-                  itemStyle: {
-                    borderRadius: 3,
-                    borderWidth: 0,
-                  },
-                  data: [
-                    {
-                      value: miner.totalMergedPrs ?? 0,
-                      itemStyle: {
-                        color: isEligible
-                          ? CHART_COLORS.merged
-                          : alpha(
-                              muiTheme.palette.text.secondary,
-                              (INACTIVE_OPACITY * 2) / 3,
-                            ),
-                      },
-                    },
-                    {
-                      value: miner.totalOpenPrs ?? 0,
-                      itemStyle: {
-                        color: isEligible
-                          ? CHART_COLORS.open
-                          : alpha(
-                              muiTheme.palette.text.secondary,
-                              INACTIVE_OPACITY,
-                            ),
-                      },
-                    },
-                    {
-                      value: miner.totalClosedPrs ?? 0,
-                      itemStyle: {
-                        color: isEligible
-                          ? CHART_COLORS.closed
-                          : alpha(
-                              muiTheme.palette.text.secondary,
-                              INACTIVE_OPACITY / 2,
-                            ),
-                      },
-                    },
-                  ],
-                },
-              ],
-            }}
-            style={{ width: '100%', height: '100%' }}
-            opts={{ renderer: 'svg' }}
-          />
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Typography
-              sx={(theme) => ({
-                fontFamily: FONTS.mono,
-                fontSize: '0.75rem',
-                color: isEligible
-                  ? credibilityPercent >= 80
-                    ? STATUS_COLORS.merged
-                    : STATUS_COLORS.open
-                  : theme.palette.text.tertiary,
-                fontWeight: 700,
-              })}
-            >
-              {credibilityPercent.toFixed(0)}%
-            </Typography>
+        {isWatchlist ? (
+          <Box sx={{ display: 'flex', gap: 1.5, flexShrink: 0 }}>
+            <CredDonut
+              segments={getPrSegments(miner)}
+              percent={credibilityPercent}
+              isEligible={miner.isEligible ?? false}
+              label="PRs"
+            />
+            <CredDonut
+              segments={getIssueSegments(miner)}
+              percent={issueCredPercent}
+              isEligible={miner.isIssueEligible ?? false}
+              label="Issues"
+            />
           </Box>
-        </Box>
+        ) : (
+          <CredDonut
+            segments={segments}
+            percent={isDiscoveries ? issueCredPercent : credibilityPercent}
+            isEligible={isEligible}
+            size={56}
+          />
+        )}
       </Box>
 
+      <MinerCardFooter
+        miner={miner}
+        totalScore={miner.totalScore}
+        segments={segments}
+        isEligible={isEligible}
+        variant={variant}
+      />
+    </Card>
+  );
+};
+
+interface MinerCardFooterProps {
+  miner: MinerStats;
+  totalScore: number;
+  segments: Segment[];
+  isEligible: boolean;
+  variant: LeaderboardVariant;
+}
+
+const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
+  miner,
+  totalScore,
+  segments,
+  isEligible,
+  variant,
+}) => {
+  const muiTheme = useTheme();
+  const inactiveColor = alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY);
+
+  const statColors = isEligible
+    ? [
+        STATUS_COLORS.merged,
+        alpha(muiTheme.palette.text.primary, 0.84),
+        muiTheme.palette.status.closed,
+      ]
+    : [inactiveColor, inactiveColor, inactiveColor];
+
+  const issueSegments = getIssueSegments(miner);
+  const issueTotal =
+    (miner.totalSolvedIssues ?? 0) +
+    (miner.totalOpenIssues ?? 0) +
+    (miner.totalClosedIssues ?? 0);
+
+  return (
+    <Box
+      sx={(theme) => ({
+        display: 'flex',
+        flexDirection: 'column',
+        gap: variant === 'discoveries' || variant === 'watchlist' ? 0.75 : 0,
+        backgroundColor: isEligible
+          ? alpha(theme.palette.background.default, 0.2)
+          : theme.palette.surface.subtle,
+        opacity: isEligible ? 1 : 0.62,
+        borderRadius: 1.5,
+        p: 1,
+      })}
+    >
       <Box
-        sx={(theme) => ({
+        sx={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr 1fr auto',
+          gridTemplateColumns: '1fr 1fr 1fr 4.5rem',
           gap: 1,
-          backgroundColor: isEligible
-            ? alpha(theme.palette.background.default, 0.2)
-            : theme.palette.surface.subtle,
-          opacity: isEligible ? 1 : 0.62,
-          borderRadius: 1.5,
-          p: 1,
           alignItems: 'center',
-        })}
+        }}
       >
-        {[
-          {
-            label: 'Merged',
-            value: miner.totalMergedPrs ?? 0,
-            color: isEligible
-              ? STATUS_COLORS.merged
-              : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
-          },
-          {
-            label: 'Open',
-            value: miner.totalOpenPrs ?? 0,
-            color: isEligible
-              ? alpha(muiTheme.palette.text.primary, 0.84)
-              : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
-          },
-          {
-            label: 'Closed',
-            value: miner.totalClosedPrs ?? 0,
-            color: isEligible
-              ? muiTheme.palette.status.closed
-              : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
-          },
-        ].map(({ label, value, color }) => (
-          <Box key={label}>
-            <Typography
-              sx={(theme) => ({
-                fontFamily: FONTS.mono,
-                fontSize: '0.6rem',
-                color: isEligible
-                  ? theme.palette.status.open
-                  : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
-                textTransform: 'uppercase',
-                mb: 0.2,
-              })}
-            >
-              {label}
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: FONTS.mono,
-                fontSize: '0.85rem',
-                color,
-                fontWeight: 600,
-              }}
-            >
-              {value}
-            </Typography>
-          </Box>
+        {segments.map((segment, i) => (
+          <StatCell
+            key={segment.label}
+            label={segment.label}
+            value={segment.value}
+            color={statColors[i]}
+            isEligible={isEligible}
+          />
         ))}
         <Box
           sx={(theme) => ({
@@ -379,33 +455,239 @@ export const MinerCard: React.FC<MinerCardProps> = ({ miner, onClick }) => {
             pl: 1.5,
           })}
         >
-          <Typography
-            sx={(theme) => ({
-              fontFamily: FONTS.mono,
-              fontSize: '0.6rem',
-              color: isEligible
-                ? theme.palette.status.open
-                : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
-              textTransform: 'uppercase',
-              mb: 0.2,
-            })}
-          >
-            Score
-          </Typography>
+          <StatLabel isEligible={isEligible}>Score</StatLabel>
           <Typography
             sx={{
               fontFamily: FONTS.mono,
               fontSize: '0.9rem',
-              color: isEligible
-                ? muiTheme.palette.text.primary
-                : alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY),
+              color: isEligible ? muiTheme.palette.text.primary : inactiveColor,
               fontWeight: 700,
             }}
           >
-            {Number(miner.totalScore).toFixed(2)}
+            {Number(totalScore).toFixed(2)}
           </Typography>
         </Box>
       </Box>
-    </Card>
+
+      {variant === 'watchlist' && (
+        <Box
+          sx={(theme) => ({
+            pt: 0.35,
+            borderTop: `1px solid ${theme.palette.border.light}`,
+          })}
+        >
+          <Typography
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              color: muiTheme.palette.status.open,
+              textTransform: 'uppercase',
+              mb: 0.35,
+              letterSpacing: '0.04em',
+            }}
+          >
+            Issues
+          </Typography>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr 1fr 4.5rem',
+              gap: 1,
+              alignItems: 'center',
+            }}
+          >
+            {issueSegments.map((segment, i) => (
+              <StatCell
+                key={segment.label}
+                label={segment.label}
+                value={segment.value}
+                color={statColors[i]}
+                isEligible={isEligible}
+              />
+            ))}
+            <Box
+              sx={(theme) => ({
+                textAlign: 'right',
+                borderLeft: `1px solid ${
+                  isEligible
+                    ? theme.palette.border.light
+                    : theme.palette.border.subtle
+                }`,
+                pl: 1.5,
+              })}
+            >
+              <StatLabel isEligible={isEligible}>Total</StatLabel>
+              <Typography
+                sx={{
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.9rem',
+                  color: isEligible
+                    ? muiTheme.palette.text.primary
+                    : inactiveColor,
+                  fontWeight: 700,
+                }}
+              >
+                {issueTotal}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+interface StatCellProps {
+  label: string;
+  value: number;
+  color: string;
+  isEligible: boolean;
+}
+
+const StatCell: React.FC<StatCellProps> = ({
+  label,
+  value,
+  color,
+  isEligible,
+}) => (
+  <Box>
+    <StatLabel isEligible={isEligible}>{label}</StatLabel>
+    <Typography
+      sx={{
+        fontFamily: FONTS.mono,
+        fontSize: '0.85rem',
+        color,
+        fontWeight: 600,
+      }}
+    >
+      {value}
+    </Typography>
+  </Box>
+);
+
+const StatLabel: React.FC<{
+  isEligible: boolean;
+  children: React.ReactNode;
+}> = ({ isEligible, children }) => (
+  <Typography
+    sx={(theme) => ({
+      fontFamily: FONTS.mono,
+      fontSize: '0.6rem',
+      color: isEligible
+        ? theme.palette.status.open
+        : alpha(theme.palette.text.tertiary, INACTIVE_OPACITY),
+      textTransform: 'uppercase',
+      mb: 0.2,
+    })}
+  >
+    {children}
+  </Typography>
+);
+
+interface CredDonutProps {
+  segments: Segment[];
+  percent: number;
+  isEligible: boolean;
+  label?: string;
+  size?: number;
+}
+
+const CredDonut: React.FC<CredDonutProps> = ({
+  segments,
+  percent,
+  isEligible,
+  label,
+  size = 48,
+}) => {
+  const muiTheme = useTheme();
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        flexShrink: 0,
+      }}
+    >
+      <Box
+        sx={{
+          position: 'relative',
+          width: size,
+          height: size,
+          opacity: isEligible ? 1 : INACTIVE_OPACITY,
+        }}
+      >
+        <ReactECharts
+          option={{
+            backgroundColor: 'transparent',
+            series: [
+              {
+                type: 'pie',
+                radius: ['65%', '90%'],
+                silent: true,
+                label: { show: false },
+                itemStyle: { borderRadius: 3, borderWidth: 0 },
+                data: segments.map((segment, i) => ({
+                  value: segment.value,
+                  itemStyle: {
+                    color: isEligible
+                      ? CHART_SEGMENT_COLORS[i]
+                      : alpha(
+                          muiTheme.palette.text.secondary,
+                          INACTIVE_OPACITY * CHART_INACTIVE_RATIOS[i],
+                        ),
+                  },
+                })),
+              },
+            ],
+          }}
+          style={{ width: '100%', height: '100%' }}
+          opts={{ renderer: 'svg' }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Typography
+            sx={(theme) => ({
+              fontFamily: FONTS.mono,
+              fontSize: size <= 48 ? '0.65rem' : '0.75rem',
+              color: isEligible
+                ? percent >= 80
+                  ? STATUS_COLORS.merged
+                  : STATUS_COLORS.open
+                : theme.palette.text.tertiary,
+              fontWeight: 700,
+            })}
+          >
+            {percent.toFixed(0)}%
+          </Typography>
+        </Box>
+      </Box>
+      {label && (
+        <Typography
+          sx={(theme) => ({
+            fontFamily: FONTS.mono,
+            fontSize: '0.55rem',
+            color: theme.palette.status.open,
+            textTransform: 'uppercase',
+            mt: 0.25,
+            letterSpacing: '0.04em',
+          })}
+        >
+          {label}
+        </Typography>
+      )}
+    </Box>
   );
 };

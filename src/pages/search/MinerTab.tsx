@@ -141,7 +141,8 @@ type MinerTabProps = {
   minerResults: MinerSearchData[];
   onPageChange: (newPage: number) => void;
   onRowsPerPageChange: (rowsPerPage: number) => void;
-  onSelectMiner: (githubId: string) => void;
+  getMinerHref: (miner: MinerSearchData) => string;
+  linkState?: Record<string, unknown>;
   page: number;
   paginatedMinerResults: MinerSearchData[];
   rowsPerPage: number;
@@ -154,7 +155,8 @@ const MinerTab: React.FC<MinerTabProps> = ({
   minerResults,
   onPageChange,
   onRowsPerPageChange,
-  onSelectMiner,
+  getMinerHref,
+  linkState,
   page,
   paginatedMinerResults,
   rowsPerPage,
@@ -169,7 +171,8 @@ const MinerTab: React.FC<MinerTabProps> = ({
     isLoading={isLoading}
     minWidth={980}
     onPageChange={onPageChange}
-    onRowClick={(miner: MinerSearchData) => onSelectMiner(miner.githubId)}
+    getRowHref={getMinerHref}
+    linkState={linkState}
     onRowsPerPageChange={onRowsPerPageChange}
     page={page}
     rows={paginatedMinerResults}

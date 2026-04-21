@@ -11,8 +11,9 @@ import {
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { usePullRequestDetails } from '../../api';
-import { useNavigate } from 'react-router-dom';
-import theme, { RANK_COLORS, STATUS_COLORS } from '../../theme';
+import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
+import theme, { RANK_COLORS, STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { buildMultiplierGrid } from '../../utils/multiplierDefs';
 
 interface PRDetailsCardProps {
   repository: string;
@@ -25,18 +26,27 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   pullRequestNumber,
   hideHeader = false,
 }) => {
-  const navigate = useNavigate();
   // Fetch detailed PR data directly
   const { data: prDetails, isLoading: isDetailsLoading } =
     usePullRequestDetails(repository, pullRequestNumber);
+
+  const repoLinkProps = useLinkBehavior<HTMLAnchorElement>(
+    `/miners/repository?name=${encodeURIComponent(repository)}`,
+    { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
+  );
+  const authorLinkProps = useLinkBehavior<HTMLAnchorElement>(
+    `/miners/details?githubId=${prDetails?.githubId ?? ''}`,
+    { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
+  );
 
   if (isDetailsLoading) {
     return (
       <Card
         sx={{
-          backgroundColor: 'rgba(255, 255, 255, 0.02)',
+          backgroundColor: alpha(theme.palette.common.white, 0.02),
           borderRadius: '8px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid',
+          borderColor: 'border.subtle',
           p: 4,
           textAlign: 'center',
         }}
@@ -51,16 +61,16 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     return (
       <Card
         sx={{
-          backgroundColor: 'rgba(255, 255, 255, 0.02)',
+          backgroundColor: alpha(theme.palette.common.white, 0.02),
           borderRadius: '8px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid',
+          borderColor: 'border.subtle',
           p: 4,
         }}
       >
         <Typography
           sx={{
             color: alpha(STATUS_COLORS.error, 0.9),
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.9rem',
           }}
         >
@@ -80,7 +90,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
       label: 'Base Score',
       value: parseFloat(prDetails.baseScore ?? '0').toFixed(2),
       rank: null,
-      color: 'rgba(255, 255, 255, 0.7)',
+      color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
     },
     {
       label: 'Tokens Scored',
@@ -91,6 +101,26 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
       label: 'Token Score',
       value: parseFloat(prDetails.tokenScore ?? '0').toFixed(2),
       rank: null,
+    },
+    {
+      label: 'Structural',
+      value:
+        prDetails.structuralCount != null
+          ? `${prDetails.structuralCount} (${parseFloat(String(prDetails.structuralScore ?? 0)).toFixed(2)})`
+          : '-',
+      rank: null,
+      tooltip:
+        'Functions, classes, and modules scored via AST analysis. Structural nodes carry more weight per node because they represent high-value code organization.',
+    },
+    {
+      label: 'Leaf',
+      value:
+        prDetails.leafCount != null
+          ? `${prDetails.leafCount} (${parseFloat(String(prDetails.leafScore ?? 0)).toFixed(2)})`
+          : '-',
+      rank: null,
+      tooltip:
+        'Individual statements and expressions scored via AST analysis. More leaf nodes means a larger diff, but structural nodes contribute more score per node.',
     },
     {
       label: 'Changes',
@@ -106,56 +136,13 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     },
   ];
 
-  // For OPEN PRs: collateral = base_score × repo_weight × issue_multiplier × 20%
-  // Only show applicable multipliers
-  const multipliers: Array<{
-    label: string;
-    value: string;
-    isCredibility?: boolean;
-  }> = isOpenPR
-    ? [
-        {
-          label: 'Repo Weight',
-          value: `${parseFloat(prDetails.repoWeightMultiplier ?? '0').toFixed(2)}x`,
-        },
-        {
-          label: 'Issue Bonus',
-          value: `${parseFloat(prDetails.issueMultiplier ?? '0').toFixed(2)}x`,
-        },
-        {
-          label: 'Collateral %',
-          value: '20%',
-        },
-      ]
-    : [
-        {
-          label: 'Repo Weight',
-          value: `${parseFloat(prDetails.repoWeightMultiplier ?? '0').toFixed(2)}x`,
-        },
-        {
-          label: 'Issue Bonus',
-          value: `${parseFloat(prDetails.issueMultiplier ?? '0').toFixed(2)}x`,
-        },
-        {
-          label: 'Credibility',
-          value: `${parseFloat(prDetails.credibilityMultiplier ?? '0').toFixed(2)}x`,
-          isCredibility: true,
-        },
-        {
-          label: 'Review Quality',
-          value: `${parseFloat(prDetails.reviewQualityMultiplier ?? '0').toFixed(2)}x`,
-        },
-        {
-          label: 'Time Decay',
-          value: `${parseFloat(prDetails.timeDecayMultiplier ?? '0').toFixed(2)}x`,
-        },
-      ];
+  const multipliers = buildMultiplierGrid(prDetails, isOpenPR);
 
   return (
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: `1px solid ${theme.palette.border.light}`,
         backgroundColor: 'transparent',
         p: 3,
       }}
@@ -165,13 +152,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
       {!hideHeader && (
         <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box
-            onClick={() =>
-              navigate(
-                `/miners/repository?name=${encodeURIComponent(repository)}`,
-                { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
-              )
-            }
+            component="a"
+            {...repoLinkProps}
             sx={{
+              ...linkResetSx,
               cursor: 'pointer',
               transition: 'transform 0.2s',
               '&:hover': {
@@ -185,10 +169,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               sx={{
                 width: 64,
                 height: 64,
-                border: '2px solid rgba(255, 255, 255, 0.2)',
+                border: `2px solid ${alpha(theme.palette.common.white, 0.2)}`,
                 backgroundColor:
                   owner === 'opentensor'
-                    ? '#ffffff'
+                    ? theme.palette.common.white
                     : owner === 'bitcoin'
                       ? '#F7931A'
                       : 'transparent',
@@ -202,8 +186,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               <Typography
                 variant="h5"
                 sx={{
-                  color: '#ffffff',
-                  fontFamily: '"JetBrains Mono", monospace',
+                  color: 'text.primary',
                   fontSize: '1.3rem',
                   fontWeight: 500,
                 }}
@@ -245,7 +228,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             </Box>
             <Typography
               sx={{
-                color: '#ffffff',
+                color: 'text.primary',
                 fontSize: '1rem',
                 fontWeight: 400,
                 mb: 0.5,
@@ -255,17 +238,14 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography
-                onClick={() =>
-                  navigate(
-                    `/miners/repository?name=${encodeURIComponent(repository)}`,
-                    {
-                      state: { backLabel: `Back to PR #${pullRequestNumber}` },
-                    },
-                  )
-                }
+                component="a"
+                {...repoLinkProps}
                 sx={{
-                  color: 'rgba(255, 255, 255, 0.5)',
-                  fontFamily: '"JetBrains Mono", monospace',
+                  ...linkResetSx,
+                  color: alpha(
+                    theme.palette.common.white,
+                    TEXT_OPACITY.tertiary,
+                  ),
                   fontSize: '0.85rem',
                   cursor: 'pointer',
                   transition: 'color 0.2s',
@@ -290,7 +270,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               sx={{
                 backgroundColor: 'transparent',
                 borderRadius: 3,
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                border: `1px solid ${theme.palette.border.light}`,
                 p: 2.5,
                 height: '100%',
                 display: 'flex',
@@ -308,20 +288,53 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               >
                 <Typography
                   sx={{
-                    color: 'rgba(255, 255, 255, 0.5)',
-                    fontFamily: '"JetBrains Mono", monospace',
+                    color: alpha(
+                      theme.palette.common.white,
+                      TEXT_OPACITY.tertiary,
+                    ),
                     fontSize: '0.7rem',
                     textTransform: 'uppercase',
                     letterSpacing: '1px',
                     fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
                   }}
                 >
                   {item.label}
+                  {item.tooltip && (
+                    <Tooltip
+                      title={item.tooltip}
+                      arrow
+                      slotProps={{
+                        tooltip: {
+                          sx: {
+                            backgroundColor: 'surface.tooltip',
+                            color: 'text.primary',
+                            fontSize: '0.7rem',
+                            maxWidth: 280,
+                            p: 1.5,
+                            border: '1px solid',
+                            borderColor: 'border.light',
+                          },
+                        },
+                        arrow: { sx: { color: 'surface.tooltip' } },
+                      }}
+                    >
+                      <InfoOutlinedIcon
+                        sx={{
+                          fontSize: '0.7rem',
+                          cursor: 'help',
+                          opacity: 0.5,
+                        }}
+                      />
+                    </Tooltip>
+                  )}
                 </Typography>
                 {item.rank && (
                   <Box
                     sx={{
-                      backgroundColor: '#000000',
+                      backgroundColor: 'background.default',
                       borderRadius: '2px',
                       width: '20px',
                       height: '20px',
@@ -337,7 +350,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                             ? alpha(RANK_COLORS.second, 0.4)
                             : item.rank === 3
                               ? alpha(RANK_COLORS.third, 0.4)
-                              : 'rgba(255, 255, 255, 0.15)',
+                              : alpha(theme.palette.common.white, 0.15),
                       boxShadow:
                         item.rank === 1
                           ? `0 0 12px ${alpha(RANK_COLORS.first, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.first, 0.2)}`
@@ -358,8 +371,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                               ? RANK_COLORS.second
                               : item.rank === 3
                                 ? RANK_COLORS.third
-                                : 'rgba(255, 255, 255, 0.6)',
-                        fontFamily: '"JetBrains Mono", monospace',
+                                : alpha(theme.palette.common.white, 0.6),
                         fontSize: '0.6rem',
                         fontWeight: 600,
                         lineHeight: 1,
@@ -379,7 +391,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                     component="span"
                     sx={{
                       color: alpha(theme.palette.diff.additions, 0.8),
-                      fontFamily: '"JetBrains Mono", monospace',
                       fontSize: '1.5rem',
                       fontWeight: 600,
                     }}
@@ -389,8 +400,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                   <Typography
                     component="span"
                     sx={{
-                      color: 'rgba(255, 255, 255, 0.4)',
-                      fontFamily: '"JetBrains Mono", monospace',
+                      color: alpha(
+                        theme.palette.common.white,
+                        TEXT_OPACITY.muted,
+                      ),
                       fontSize: '1.5rem',
                       fontWeight: 400,
                     }}
@@ -401,7 +414,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                     component="span"
                     sx={{
                       color: alpha(theme.palette.diff.deletions, 0.8),
-                      fontFamily: '"JetBrains Mono", monospace',
                       fontSize: '1.5rem',
                       fontWeight: 600,
                     }}
@@ -412,8 +424,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               ) : (
                 <Typography
                   sx={{
-                    color: item.color || '#ffffff',
-                    fontFamily: '"JetBrains Mono", monospace',
+                    color: item.color || theme.palette.text.primary,
                     fontSize: '1.5rem',
                     fontWeight: 600,
                     wordBreak: 'break-all',
@@ -431,8 +442,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
       <Box sx={{ mb: 3 }}>
         <Typography
           sx={{
-            color: 'rgba(255, 255, 255, 0.7)',
-            fontFamily: '"JetBrains Mono", monospace',
+            color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
             fontSize: '0.8rem',
             textTransform: 'uppercase',
             letterSpacing: '1px',
@@ -449,9 +459,9 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             const content = (
               <Box
                 sx={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                  backgroundColor: alpha(theme.palette.common.white, 0.03),
                   borderRadius: 2,
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  border: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
                   p: 2,
                   display: 'flex',
                   flexDirection: 'column',
@@ -463,7 +473,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               >
                 <Typography
                   sx={{
-                    color: 'rgba(255, 255, 255, 0.5)',
+                    color: alpha(
+                      theme.palette.common.white,
+                      TEXT_OPACITY.tertiary,
+                    ),
                     fontSize: '0.7rem',
                     mb: 0.5,
                     display: 'flex',
@@ -478,8 +491,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                 </Typography>
                 <Typography
                   sx={{
-                    color: '#ffffff',
-                    fontFamily: '"JetBrains Mono", monospace',
+                    color: 'text.primary',
                     fontSize: '1.1rem',
                     fontWeight: 600,
                   }}
@@ -503,7 +515,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                         <Typography
                           sx={{
                             fontSize: '0.7rem',
-                            color: 'rgba(255, 255, 255, 0.9)',
+                            color: alpha(theme.palette.common.white, 0.9),
                           }}
                         >
                           This multiplier is based on your PR success rate,
@@ -516,15 +528,15 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                     slotProps={{
                       tooltip: {
                         sx: {
-                          backgroundColor: 'rgba(20, 20, 20, 0.98)',
-                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          backgroundColor: 'surface.tooltip',
+                          border: `1px solid ${alpha(theme.palette.common.white, 0.15)}`,
                           borderRadius: '8px',
                           maxWidth: 280,
                         },
                       },
                       arrow: {
                         sx: {
-                          color: 'rgba(20, 20, 20, 0.98)',
+                          color: 'surface.tooltip',
                         },
                       },
                     }}
@@ -548,15 +560,14 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             sx={{
               backgroundColor: 'transparent',
               borderRadius: 3,
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              border: `1px solid ${theme.palette.border.light}`,
               p: 2.5,
               height: '100%',
             }}
           >
             <Typography
               sx={{
-                color: 'rgba(255, 255, 255, 0.5)',
-                fontFamily: '"JetBrains Mono", monospace',
+                color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
                 fontSize: '0.7rem',
                 textTransform: 'uppercase',
                 letterSpacing: '1px',
@@ -567,12 +578,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               Author
             </Typography>
             <Box
-              onClick={() =>
-                navigate(`/miners/details?githubId=${prDetails.githubId}`, {
-                  state: { backLabel: `Back to PR #${pullRequestNumber}` },
-                })
-              }
+              component="a"
+              {...authorLinkProps}
               sx={{
+                ...linkResetSx,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1.5,
@@ -593,8 +602,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               />
               <Typography
                 sx={{
-                  color: '#ffffff',
-                  fontFamily: '"JetBrains Mono", monospace',
+                  color: 'text.primary',
                   fontSize: '0.95rem',
                   fontWeight: 500,
                   transition: 'color 0.2s',
@@ -612,15 +620,14 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             sx={{
               backgroundColor: 'transparent',
               borderRadius: 3,
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              border: `1px solid ${theme.palette.border.light}`,
               p: 2.5,
               height: '100%',
             }}
           >
             <Typography
               sx={{
-                color: 'rgba(255, 255, 255, 0.5)',
-                fontFamily: '"JetBrains Mono", monospace',
+                color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
                 fontSize: '0.7rem',
                 textTransform: 'uppercase',
                 letterSpacing: '1px',
@@ -632,8 +639,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             </Typography>
             <Typography
               sx={{
-                color: '#ffffff',
-                fontFamily: '"JetBrains Mono", monospace',
+                color: 'text.primary',
                 fontSize: '0.95rem',
                 fontWeight: 500,
               }}
@@ -656,14 +662,16 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               sx={{
                 backgroundColor: 'transparent',
                 borderRadius: 3,
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                border: `1px solid ${theme.palette.border.light}`,
                 p: 2.5,
               }}
             >
               <Typography
                 sx={{
-                  color: 'rgba(255, 255, 255, 0.5)',
-                  fontFamily: '"JetBrains Mono", monospace',
+                  color: alpha(
+                    theme.palette.common.white,
+                    TEXT_OPACITY.tertiary,
+                  ),
                   fontSize: '0.7rem',
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
@@ -675,7 +683,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               </Typography>
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.85rem',
                   wordBreak: 'break-all',
                 }}
@@ -692,7 +699,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             sx={{
               backgroundColor: 'transparent',
               borderRadius: 3,
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              border: `1px solid ${theme.palette.border.light}`,
               p: 2.5,
               display: 'flex',
               alignItems: 'center',
@@ -701,8 +708,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
           >
             <Typography
               sx={{
-                color: 'rgba(255, 255, 255, 0.7)',
-                fontFamily: '"JetBrains Mono", monospace',
+                color: alpha(
+                  theme.palette.common.white,
+                  TEXT_OPACITY.secondary,
+                ),
                 fontSize: '0.85rem',
               }}
             >
@@ -715,7 +724,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               style={{
                 color: STATUS_COLORS.info,
                 textDecoration: 'none',
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.85rem',
                 fontWeight: 500,
               }}

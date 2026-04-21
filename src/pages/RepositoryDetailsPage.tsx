@@ -7,6 +7,7 @@ import React, {
   useState,
 } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { formatDate } from '../utils/format';
 import {
   Alert,
   Box,
@@ -45,6 +46,7 @@ import {
   ContributingViewer,
   RepositoryMaintainers,
   RepositoryCheckTab,
+  WatchlistButton,
 } from '../components';
 
 interface TabPanelProps {
@@ -73,7 +75,7 @@ const repoDetailTabsSx = {
     minHeight: '48px',
     fontSize: '14px',
     '&.Mui-selected': {
-      color: '#fff',
+      color: 'text.primary',
       fontWeight: 600,
     },
   },
@@ -184,14 +186,32 @@ function CustomTabPanel(props: TabPanelProps) {
   );
 }
 
+/** Synced to the `tab` query param so back navigation from PR details restores the active tab. */
+const REPO_TAB_KEYS = [
+  'readme',
+  'code',
+  'issues',
+  'pull-requests',
+  'contributing',
+  'repo-check',
+] as const;
+
+function tabIndexFromSearchParam(tab: string | null): number {
+  if (!tab) return 0;
+  const idx = REPO_TAB_KEYS.indexOf(tab as (typeof REPO_TAB_KEYS)[number]);
+  return idx >= 0 ? idx : 0;
+}
+
 const RepositoryDetailsPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const repo = searchParams.get('name');
-  const [tabValue, setTabValue] = useState(0);
+  const tabValue = tabIndexFromSearchParam(searchParams.get('tab'));
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
   const { data: bountySummary } = useRepoBountySummary(repo || '');
-  const trackedRepo = repos?.find((r) => r.fullName === repo);
+  const trackedRepo = repos?.find(
+    (r) => r.fullName.toLowerCase() === (repo ?? '').toLowerCase(),
+  );
   const isTrackedRepository = Boolean(trackedRepo);
 
   const theme = useTheme();
@@ -201,15 +221,28 @@ const RepositoryDetailsPage: React.FC = () => {
 
   const handleTabChange = useCallback(
     (_event: React.SyntheticEvent, newValue: number) => {
-      setTabValue(newValue);
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (!repo) return next;
+          next.set('name', repo);
+          if (newValue === 0) {
+            next.delete('tab');
+          } else {
+            next.set('tab', REPO_TAB_KEYS[newValue]);
+          }
+          return next;
+        },
+        { replace: true },
+      );
     },
-    [],
+    [repo, setSearchParams],
   );
 
   const statusChips = useMemo(() => {
     const inactiveAt = trackedRepo?.inactiveAt;
     const inactiveLabel = inactiveAt
-      ? `Inactive since ${new Date(inactiveAt).toLocaleDateString()}`
+      ? `Inactive since ${formatDate(inactiveAt)}`
       : null;
 
     return (
@@ -276,9 +309,9 @@ const RepositoryDetailsPage: React.FC = () => {
     );
   }, [bountySummary]);
 
-  // If no repo is provided, redirect to miners page
+  // If no repo is provided, redirect to repository list (registered route)
   if (!repo) {
-    navigate('/miners');
+    navigate('/repositories', { replace: true });
     return null;
   }
 
@@ -305,13 +338,14 @@ const RepositoryDetailsPage: React.FC = () => {
           <BackButton to="/repositories" label="Back to Repositories" />
           <Alert
             severity="warning"
-            sx={{
+            sx={(theme) => ({
               mt: 2,
-              backgroundColor: 'rgba(245, 124, 0, 0.08)',
-              border: '1px solid rgba(255, 183, 77, 0.3)',
-              color: '#ffcc80',
-              '& .MuiAlert-icon': { color: '#ffb74d' },
-            }}
+              backgroundColor: alpha(STATUS_COLORS.warningOrange, 0.08),
+              border: '1px solid',
+              borderColor: alpha(STATUS_COLORS.warningOrange, 0.3),
+              color: alpha(theme.palette.text.primary, 0.8),
+              '& .MuiAlert-icon': { color: theme.palette.status.warningOrange },
+            })}
           >
             <Typography sx={{ fontWeight: 600, mb: 0.5 }}>
               This repository is not tracked by Gittensor.
@@ -335,10 +369,11 @@ const RepositoryDetailsPage: React.FC = () => {
 
       {/* Header Section */}
       <Box
-        sx={{
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
-          backgroundColor: 'rgba(0,0,0,0.2)',
-        }}
+        sx={(theme) => ({
+          borderBottom: '1px solid',
+          borderColor: theme.palette.border.light,
+          backgroundColor: theme.palette.surface.subtle,
+        })}
       >
         <Container maxWidth="xl">
           <Box sx={{ pt: { xs: 1.5, md: 3 }, pb: 0 }}>
@@ -432,6 +467,7 @@ const RepositoryDetailsPage: React.FC = () => {
                           gap: 1,
                         }}
                       >
+                        <WatchlistButton category="repos" itemKey={repo} />
                         {statusChips}
                       </Box>
                     </Box>
@@ -444,28 +480,29 @@ const RepositoryDetailsPage: React.FC = () => {
                     <Avatar
                       src={`https://avatars.githubusercontent.com/${owner}`}
                       variant="rounded"
-                      sx={{
+                      sx={(theme) => ({
                         width: 32,
                         height: 32,
                         borderRadius: '4px',
                         backgroundColor:
                           owner === 'opentensor'
-                            ? '#ffffff'
+                            ? theme.palette.text.primary
                             : owner === 'bitcoin'
-                              ? '#F7931A'
-                              : 'transparent',
-                      }}
+                              ? theme.palette.status.warningOrange
+                              : theme.palette.surface.transparent,
+                      })}
                     />
                     <Typography
                       variant="h4"
-                      sx={{
+                      sx={(theme) => ({
                         fontFamily: '"JetBrains Mono", monospace',
                         fontWeight: 600,
-                        color: '#fff',
-                      }}
+                        color: theme.palette.text.primary,
+                      })}
                     >
                       {repo}
                     </Typography>
+                    <WatchlistButton category="repos" itemKey={repo} />
                     {statusChips}
                   </Box>
                 </Box>
@@ -484,12 +521,13 @@ const RepositoryDetailsPage: React.FC = () => {
                   startIcon={<GitHubIcon />}
                   href={`https://github.com/${repo}`}
                   target="_blank"
-                  sx={{
-                    borderColor: 'rgba(255,255,255,0.2)',
-                    color: '#fff',
+                  rel="noopener noreferrer"
+                  sx={(theme) => ({
+                    borderColor: theme.palette.border.medium,
+                    color: theme.palette.text.primary,
                     width: { xs: '100%', md: 'auto' },
-                    '&:hover': { borderColor: 'primary.main' },
-                  }}
+                    '&:hover': { borderColor: theme.palette.primary.main },
+                  })}
                 >
                   View on GitHub
                 </Button>

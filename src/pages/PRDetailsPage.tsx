@@ -9,8 +9,10 @@ import {
   BackButton,
   SEO,
   PRComments,
+  WatchlistButton,
 } from '../components';
 import { usePullRequestDetails } from '../api';
+import { serializePRKey } from '../hooks/useWatchlist';
 import { STATUS_COLORS } from '../theme';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CodeIcon from '@mui/icons-material/Code';
@@ -29,10 +31,10 @@ const PRDetailsPage: React.FC = () => {
     pullRequestNumber ? parseInt(pullRequestNumber) : 0,
   );
 
-  // If no repo or PR number is provided, redirect to miners page
+  // If no repo or PR number is provided, redirect to OSS contributors (registered route)
   if (!repository || !pullRequestNumber) {
     if (typeof window !== 'undefined') {
-      navigate('/miners?tab=prs');
+      navigate('/top-miners', { replace: true });
     }
     return null;
   }
@@ -100,19 +102,36 @@ const PRDetailsPage: React.FC = () => {
             <BackButton to="/repositories" label="Back to Repositories" />
 
             {/* Header always visible */}
-            <PRHeader
-              repository={repository}
-              pullRequestNumber={parseInt(pullRequestNumber)}
-              prDetails={prDetails}
-            />
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <PRHeader
+                  repository={repository}
+                  pullRequestNumber={parseInt(pullRequestNumber)}
+                  prDetails={prDetails}
+                />
+              </Box>
+              <WatchlistButton
+                category="prs"
+                itemKey={serializePRKey(
+                  repository,
+                  parseInt(pullRequestNumber),
+                )}
+                size="medium"
+              />
+            </Box>
 
             {/* Tabs */}
-            <Box sx={{ borderBottom: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+            <Box
+              sx={(theme) => ({
+                borderBottom: 1,
+                borderColor: theme.palette.border.light,
+              })}
+            >
               <Tabs
                 value={tabValue}
                 onChange={handleTabChange}
                 aria-label="pr details tabs"
-                sx={{
+                sx={(theme) => ({
                   '& .MuiTab-root': {
                     color: STATUS_COLORS.open,
                     fontFamily:
@@ -122,16 +141,16 @@ const PRDetailsPage: React.FC = () => {
                     minHeight: '48px',
                     fontSize: '14px',
                     '&.Mui-selected': {
-                      color: '#fff',
+                      color: theme.palette.text.primary,
                       fontWeight: 600,
                     },
                   },
                   '& .MuiTabs-indicator': {
-                    backgroundColor: 'primary.main',
+                    backgroundColor: theme.palette.primary.main,
                     height: '3px',
                     borderRadius: '3px 3px 0 0',
                   },
-                }}
+                })}
               >
                 <Tab
                   label="Overview"

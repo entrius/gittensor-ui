@@ -1,9 +1,11 @@
 import {
   type CommitLog,
+  type IssueBounty,
   type MinerEvaluation,
   type Repository,
   type RepositoryPrScoring,
 } from '../api';
+import { isMergedPr } from './prStatus';
 
 export const getGithubAvatarSrc = (username?: string | null) => {
   if (username) {
@@ -24,6 +26,30 @@ export const parseNumber = (value: unknown, fallback = 0): number => {
   return fallback;
 };
 
+export const getPrStatusLabel = (
+  pr: Pick<CommitLog, 'prState' | 'mergedAt'>,
+): 'Merged' | 'Open' | 'Closed' => {
+  const state = (pr.prState || '').toUpperCase();
+  if (state === 'MERGED' || pr.mergedAt) return 'Merged';
+  if (state === 'OPEN' || (!state && !pr.mergedAt)) return 'Open';
+  return 'Closed';
+};
+
+export const getIssueStatusLabel = (
+  issue: Pick<IssueBounty, 'status'>,
+): 'Solved' | 'Open' | 'Closed' => {
+  switch (issue.status) {
+    case 'completed':
+      return 'Solved';
+    case 'cancelled':
+      return 'Closed';
+    case 'active':
+    case 'registered':
+    default:
+      return 'Open';
+  }
+};
+
 export const calculateDynamicOpenPrThreshold = (
   minerStats: MinerEvaluation,
   prScoring: RepositoryPrScoring | undefined,
@@ -40,6 +66,13 @@ export const calculateDynamicOpenPrThreshold = (
   const bonus = Math.floor(tokenScore / tokenScorePer);
 
   return Math.min(baseThreshold + bonus, maxThreshold);
+};
+
+export const calculateOpenIssueThreshold = (
+  minerStats: MinerEvaluation,
+): number => {
+  const issueTokenScore = parseNumber(minerStats.issueTokenScore);
+  return Math.min(5 + Math.floor(issueTokenScore / 300), 30);
 };
 
 const isMinerEvaluationLike = (value: unknown): value is MinerEvaluation => {
@@ -102,14 +135,13 @@ export const normalizeCommitLogs = (payload: unknown): CommitLog[] => {
   return [];
 };
 
-export type MinerStatusFilter = 'all' | 'open' | 'merged' | 'closed';
-
 export interface RepoStats {
   repository: string;
   prs: number;
   score: number;
   tokenScore: number;
   weight: number;
+  latestPrDate?: string | null;
 }
 
 export type RepoSortField =
@@ -155,6 +187,21 @@ export const sortMinerRepoStats = (
 };
 
 // ---------------------------------------------------------------------------
+// Scoring window staleness check
+// ---------------------------------------------------------------------------
+
+export const SCORING_WINDOW_DAYS = 35;
+
+export const isOutsideScoringWindow = (
+  date: string | null | undefined,
+): boolean => {
+  if (!date) return false;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - SCORING_WINDOW_DAYS);
+  return new Date(date) < cutoff;
+};
+
+// ---------------------------------------------------------------------------
 // Map builders – extract lookup maps from API data
 // ---------------------------------------------------------------------------
 
@@ -190,11 +237,18 @@ export const aggregatePRsByRepository = (
       score: 0,
       tokenScore: 0,
       weight: repoWeights.get(pr.repository) || 0,
+      latestPrDate: null as string | null,
     };
     existing.prs += 1;
     existing.score += parseFloat(pr.score || '0');
-    if (pr.prState === 'MERGED') {
+    if (isMergedPr(pr)) {
       existing.tokenScore += parseFloat(String(pr.tokenScore ?? '0'));
+    }
+    if (
+      pr.mergedAt &&
+      (!existing.latestPrDate || pr.mergedAt > existing.latestPrDate)
+    ) {
+      existing.latestPrDate = pr.mergedAt;
     }
     statsMap.set(pr.repository, existing);
   }

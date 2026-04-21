@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { LinkBox, LinkTableRow } from '../common/linkBehavior';
 import {
   Box,
   Card,
@@ -13,37 +13,29 @@ import {
   TableHead,
   TableRow,
   useTheme,
+  alpha,
 } from '@mui/material';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { IssueSubmission } from '../../api/models/Issues';
-import { STATUS_COLORS } from '../../theme';
-
-const formatDate = (dateStr: string | null | undefined): string => {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
+import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
+import { formatDate } from '../../utils/format';
 
 const headerCellSx = {
-  fontFamily: '"JetBrains Mono", monospace',
   fontSize: '0.7rem',
   fontWeight: 600,
   letterSpacing: '0.5px',
   textTransform: 'uppercase' as const,
-  color: 'rgba(255, 255, 255, 0.3)',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  color: 'text.secondary',
+  borderBottom: '1px solid',
+  borderColor: 'border.light',
   py: 1.5,
 };
 
 const bodyCellSx = {
-  fontFamily: '"JetBrains Mono", monospace',
   fontSize: '0.85rem',
-  color: '#ffffff',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+  color: 'text.primary',
+  borderBottom: '1px solid',
+  borderBottomColor: 'border.subtle',
   py: 1.5,
 };
 
@@ -58,14 +50,13 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
   isLoading,
   backLabel,
 }) => {
-  const navigate = useNavigate();
   const theme = useTheme();
 
   return (
     <Card
       sx={{
-        backgroundColor: '#000000',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'background.default',
+        border: `1px solid ${theme.palette.border.light}`,
         borderRadius: 3,
         overflow: 'hidden',
       }}
@@ -74,10 +65,9 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
       <Box sx={{ p: 3, pb: 2 }}>
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.8rem',
             fontWeight: 600,
-            color: 'rgba(255, 255, 255, 0.5)',
+            color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
           }}
@@ -94,7 +84,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
         <Box sx={{ p: 4, pt: 2, textAlign: 'center' }}>
           <Typography
             sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
+              color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
               fontSize: '0.9rem',
             }}
           >
@@ -102,7 +92,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
           </Typography>
         </Box>
       ) : (
-        <TableContainer>
+        <TableContainer sx={{ ...scrollbarSx }}>
           <Table size="small">
             <TableHead>
               <TableRow>
@@ -122,19 +112,15 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
             </TableHead>
             <TableBody>
               {submissions.map((submission) => (
-                <TableRow
+                <LinkTableRow
                   key={`${submission.repositoryFullName}-${submission.number}`}
-                  onClick={() =>
-                    navigate(
-                      `/miners/pr?repo=${encodeURIComponent(submission.repositoryFullName)}&number=${submission.number}`,
-                      backLabel ? { state: { backLabel } } : undefined,
-                    )
-                  }
+                  href={`/miners/pr?repo=${encodeURIComponent(submission.repositoryFullName)}&number=${submission.number}`}
+                  linkState={backLabel ? { backLabel } : undefined}
                   sx={{
                     cursor: 'pointer',
                     transition: 'background-color 0.2s',
                     '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      backgroundColor: alpha(theme.palette.common.white, 0.03),
                     },
                   }}
                 >
@@ -167,17 +153,12 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                   </TableCell>
                   <TableCell sx={bodyCellSx}>
                     {submission.authorGithubId ? (
-                      <Typography
-                        component="span"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(
-                            `/miners/details?githubId=${submission.authorGithubId}`,
-                            backLabel ? { state: { backLabel } } : undefined,
-                          );
-                        }}
+                      <LinkBox
+                        component={Typography}
+                        href={`/miners/details?githubId=${submission.authorGithubId}`}
+                        linkState={backLabel ? { backLabel } : undefined}
+                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
                         sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.85rem',
                           color: STATUS_COLORS.info,
                           cursor: 'pointer',
@@ -187,11 +168,10 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                         }}
                       >
                         {submission.authorLogin}
-                      </Typography>
+                      </LinkBox>
                     ) : (
                       <Typography
                         sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
                           fontSize: '0.85rem',
                           color: STATUS_COLORS.info,
                         }}
@@ -207,14 +187,12 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                         : submission.prState === 'OPEN'
                           ? 'OPEN'
                           : 'CLOSED';
-                      let color = theme.palette.status.neutral;
-                      if (state === 'MERGED') {
-                        color = theme.palette.status.merged;
-                      } else if (state === 'OPEN') {
-                        color = theme.palette.status.open;
-                      } else if (state === 'CLOSED') {
-                        color = theme.palette.status.closed;
-                      }
+                      const color =
+                        state === 'MERGED'
+                          ? theme.palette.status.merged
+                          : state === 'OPEN'
+                            ? theme.palette.status.open
+                            : theme.palette.status.closed;
                       return (
                         <Chip
                           variant="status"
@@ -230,10 +208,9 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                   <TableCell sx={{ ...bodyCellSx, textAlign: 'right' }}>
                     <Typography
                       sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.85rem',
                         fontWeight: 600,
-                        color: '#ffffff',
+                        color: 'text.primary',
                       }}
                     >
                       {Number(submission.tokenScore).toLocaleString()}
@@ -242,15 +219,14 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                   <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
                     <Typography
                       sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.8rem',
-                        color: 'rgba(255, 255, 255, 0.6)',
+                        color: alpha(theme.palette.common.white, 0.6),
                       }}
                     >
                       {formatDate(submission.prCreatedAt)}
                     </Typography>
                   </TableCell>
-                </TableRow>
+                </LinkTableRow>
               ))}
             </TableBody>
           </Table>

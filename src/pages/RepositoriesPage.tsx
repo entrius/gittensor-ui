@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
 
 import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
+import { alpha, type Theme } from '@mui/material/styles';
 
-import { useNavigate } from 'react-router-dom';
+import { LinkBox } from '../components/common/linkBehavior';
 import { Page } from '../components/layout';
 import { TopRepositoriesTable, SEO } from '../components';
 import { useAllPrs, useReposAndWeights } from '../api';
@@ -14,99 +15,111 @@ const FONTS = { mono: '"JetBrains Mono", monospace' } as const;
 const ROW_HEIGHT = 40; // px – keeps every row exactly the same across cards
 
 const HighlightRow: React.FC<{
-  onClick: () => void;
+  href: string;
+  linkState?: Record<string, unknown>;
   avatar: string;
-  avatarBg?: string;
+  avatarBg?: (theme: Theme) => string;
   label: React.ReactNode;
   right: React.ReactNode;
-}> = ({ onClick, avatar, avatarBg = 'transparent', label, right }) => (
-  <Box
-    onClick={onClick}
-    sx={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      height: ROW_HEIGHT,
-      py: 0,
-      px: 1,
-      borderRadius: 1,
-      cursor: 'pointer',
-      transition: 'background 0.15s',
-      mx: -1,
-      '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
-    }}
-  >
-    <Box
+}> = ({ href, linkState, avatar, avatarBg = 'transparent', label, right }) => {
+  return (
+    <LinkBox
+      href={href}
+      linkState={linkState}
       sx={{
         display: 'flex',
         alignItems: 'center',
-        gap: 1.5,
-        overflow: 'hidden',
-        mr: 2,
-        flex: 1,
+        justifyContent: 'space-between',
+        height: ROW_HEIGHT,
+        py: 0,
+        px: 1,
+        borderRadius: 1,
+        cursor: 'pointer',
+        transition: 'background 0.15s',
+        mx: -1,
+        '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
       }}
     >
-      <Avatar
-        src={avatar}
+      <Box
         sx={{
-          width: 24,
-          height: 24,
-          flexShrink: 0,
-          border: '1px solid rgba(255,255,255,0.1)',
-          backgroundColor: avatarBg,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          overflow: 'hidden',
+          mr: 2,
+          flex: 1,
         }}
-      />
-      {label}
-    </Box>
-    {right}
-  </Box>
-);
+      >
+        <Avatar
+          src={avatar}
+          sx={{
+            width: 24,
+            height: 24,
+            flexShrink: 0,
+            border: '1px solid rgba(255,255,255,0.1)',
+            backgroundColor: avatarBg,
+          }}
+        />
+        {label}
+      </Box>
+      {right}
+    </LinkBox>
+  );
+};
 
 const getAvatarBg = (name: string) => {
   const owner = name.split('/')[0];
-  if (owner === 'opentensor') return '#ffffff';
-  if (owner === 'bitcoin') return '#F7931A';
-  return 'transparent';
+  if (owner === 'opentensor')
+    return (theme: Theme) => theme.palette.text.primary;
+  if (owner === 'bitcoin')
+    return (theme: Theme) => theme.palette.status.warningOrange;
+  return (theme: Theme) => theme.palette.surface.transparent;
 };
 
 const SectionHeader: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => (
   <Typography
-    sx={{
+    sx={(theme) => ({
       fontFamily: FONTS.mono,
       fontSize: '0.75rem',
       fontWeight: 600,
-      color: 'rgba(255,255,255,0.5)',
+      color: theme.palette.text.secondary,
       textTransform: 'uppercase',
       letterSpacing: '0.05em',
       mb: 1.5,
       pb: 1,
-      borderBottom: '1px solid rgba(255,255,255,0.05)',
-    }}
+      borderBottom: '1px solid',
+      borderColor: theme.palette.border.subtle,
+    })}
   >
     {children}
   </Typography>
 );
 
-const cardSx = {
+const cardSx = (theme: Theme) => ({
   p: 2,
   borderRadius: 2,
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  backgroundColor: 'transparent',
+  border: '1px solid',
+  borderColor: theme.palette.border.light,
+  backgroundColor: theme.palette.surface.transparent,
   display: 'flex',
   flexDirection: 'column' as const,
   transition: 'all 0.2s',
   '&:hover': {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: theme.palette.surface.light,
+    borderColor: theme.palette.border.medium,
   },
-};
+});
 
 // ── Page ────────────────────────────────────────────────────────────────────
-const RepositoriesPage: React.FC = () => {
-  const navigate = useNavigate();
+const REPO_LINK_STATE = { backLabel: 'Back to Repositories' } as const;
+const getRepoHref = (name: string) =>
+  `/miners/repository?name=${encodeURIComponent(name)}`;
+const getPrHref = (name: string, number: number) =>
+  `/miners/pr?repo=${encodeURIComponent(name)}&number=${number}`;
 
+const RepositoriesPage: React.FC = () => {
   const formatRelativeTime = (date: Date) => {
     const now = new Date();
     if (date > now) return 'just now';
@@ -127,13 +140,6 @@ const RepositoriesPage: React.FC = () => {
     useReposAndWeights();
 
   const isLoading = isLoadingPRs || isLoadingRepos;
-
-  const handleSelectRepository = (repositoryFullName: string) => {
-    navigate(
-      `/miners/repository?name=${encodeURIComponent(repositoryFullName)}`,
-      { state: { backLabel: 'Back to Repositories' } },
-    );
-  };
 
   // ── Main table stats ────────────────────────────────────────────────────
   const repoStats = useMemo(() => {
@@ -195,8 +201,9 @@ const RepositoriesPage: React.FC = () => {
       const prDate = pr.mergedAt;
       if (!pr?.repository || !prDate) return;
       const score = parseFloat(pr.score || '0');
+      const repoKey = pr.repository.toLowerCase();
 
-      const cur = repoScores.get(pr.repository) || {
+      const cur = repoScores.get(repoKey) || {
         recentScore: 0,
         priorScore: 0,
         recentPRs: 0,
@@ -208,18 +215,19 @@ const RepositoriesPage: React.FC = () => {
       } else {
         cur.priorScore += score;
       }
-      repoScores.set(pr.repository, cur);
+      repoScores.set(repoKey, cur);
     });
 
-    const repoMap = new Map(reposWithWeights.map((r) => [r.fullName, r]));
+    const repoMap = new Map(
+      reposWithWeights.map((r) => [r.fullName.toLowerCase(), r]),
+    );
 
     return Array.from(repoScores.entries())
       .filter(
-        ([name, s]) =>
-          repoMap.has(name) && s.recentScore > 0 && s.priorScore > 0,
+        ([key, s]) => repoMap.has(key) && s.recentScore > 0 && s.priorScore > 0,
       )
-      .map(([name, s]) => ({
-        name,
+      .map(([key, s]) => ({
+        name: repoMap.get(key)!.fullName,
         recentScore: s.recentScore,
         priorScore: s.priorScore,
         pctIncrease: (s.recentScore / s.priorScore) * 100,
@@ -233,7 +241,9 @@ const RepositoriesPage: React.FC = () => {
   const topCollateralRepos = useMemo(() => {
     if (!allPRs || !reposWithWeights) return [];
 
-    const repoMap = new Map(reposWithWeights.map((r) => [r.fullName, r]));
+    const repoMap = new Map(
+      reposWithWeights.map((r) => [r.fullName.toLowerCase(), r]),
+    );
 
     // Sum collateral from open PRs per repo
     const repoCollateral = new Map<
@@ -243,22 +253,23 @@ const RepositoriesPage: React.FC = () => {
 
     allPRs.forEach((pr: CommitLog) => {
       if (!pr?.repository || pr.prState !== 'OPEN') return;
-      if (!repoMap.has(pr.repository)) return;
+      const repoKey = pr.repository.toLowerCase();
+      if (!repoMap.has(repoKey)) return;
       const collateral = parseFloat(pr.collateralScore || '0');
       if (collateral <= 0) return;
 
-      const cur = repoCollateral.get(pr.repository) || {
+      const cur = repoCollateral.get(repoKey) || {
         totalCollateral: 0,
         openPRs: 0,
       };
       cur.totalCollateral += collateral;
       cur.openPRs += 1;
-      repoCollateral.set(pr.repository, cur);
+      repoCollateral.set(repoKey, cur);
     });
 
     return Array.from(repoCollateral.entries())
-      .map(([name, data]) => ({
-        name,
+      .map(([key, data]) => ({
+        name: repoMap.get(key)!.fullName,
         collateral: data.totalCollateral,
         openPRs: data.openPRs,
       }))
@@ -270,7 +281,9 @@ const RepositoriesPage: React.FC = () => {
   const recentPrs = useMemo(() => {
     if (!allPRs || !reposWithWeights) return [];
 
-    const repoMap = new Map(reposWithWeights.map((r) => [r.fullName, r]));
+    const repoMap = new Map(
+      reposWithWeights.map((r) => [r.fullName.toLowerCase(), r]),
+    );
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -280,7 +293,7 @@ const RepositoriesPage: React.FC = () => {
         (pr) =>
           pr.repository &&
           pr.mergedAt &&
-          repoMap.has(pr.repository) &&
+          repoMap.has(pr.repository.toLowerCase()) &&
           new Date(pr.mergedAt) >= today,
       )
       .sort((a, b) => {
@@ -289,10 +302,10 @@ const RepositoriesPage: React.FC = () => {
         if (scoreB !== scoreA) return scoreB - scoreA;
         // Tiebreak by repo weight
         const weightA = parseFloat(
-          String(repoMap.get(a.repository)?.weight || '0'),
+          String(repoMap.get(a.repository?.toLowerCase() ?? '')?.weight || '0'),
         );
         const weightB = parseFloat(
-          String(repoMap.get(b.repository)?.weight || '0'),
+          String(repoMap.get(b.repository?.toLowerCase() ?? '')?.weight || '0'),
         );
         return weightB - weightA;
       })
@@ -339,12 +352,12 @@ const RepositoriesPage: React.FC = () => {
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                   {trendingRepos.length === 0 && !isLoading ? (
                     <Typography
-                      sx={{
-                        color: 'rgba(255,255,255,0.3)',
+                      sx={(theme) => ({
+                        color: alpha(theme.palette.text.primary, 0.3),
                         fontSize: '0.8rem',
                         fontStyle: 'italic',
                         p: 1,
-                      }}
+                      })}
                     >
                       No data available
                     </Typography>
@@ -352,7 +365,8 @@ const RepositoriesPage: React.FC = () => {
                     trendingRepos.map((repo) => (
                       <HighlightRow
                         key={repo.name}
-                        onClick={() => handleSelectRepository(repo.name)}
+                        href={getRepoHref(repo.name)}
+                        linkState={REPO_LINK_STATE}
                         avatar={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
                         avatarBg={getAvatarBg(repo.name)}
                         label={
@@ -361,7 +375,7 @@ const RepositoriesPage: React.FC = () => {
                               sx={{
                                 fontFamily: FONTS.mono,
                                 fontSize: '0.82rem',
-                                color: 'rgba(255,255,255,0.9)',
+                                color: 'text.primary',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -373,17 +387,20 @@ const RepositoriesPage: React.FC = () => {
                         }
                         right={
                           <Typography
-                            sx={{
+                            sx={(theme) => ({
                               fontFamily: FONTS.mono,
                               fontSize: '0.75rem',
                               fontWeight: 600,
-                              color: '#51cf66',
+                              color: theme.palette.status.success,
                               flexShrink: 0,
-                              backgroundColor: 'rgba(81, 207, 102, 0.1)',
+                              backgroundColor: alpha(
+                                theme.palette.status.success,
+                                0.1,
+                              ),
                               px: 0.75,
                               py: 0.25,
                               borderRadius: '4px',
-                            }}
+                            })}
                           >
                             +{repo.pctIncrease.toFixed(0)}%
                           </Typography>
@@ -404,12 +421,12 @@ const RepositoriesPage: React.FC = () => {
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                   {topCollateralRepos.length === 0 && !isLoading ? (
                     <Typography
-                      sx={{
-                        color: 'rgba(255,255,255,0.3)',
+                      sx={(theme) => ({
+                        color: alpha(theme.palette.text.primary, 0.3),
                         fontSize: '0.8rem',
                         fontStyle: 'italic',
                         p: 1,
-                      }}
+                      })}
                     >
                       No collateral data available
                     </Typography>
@@ -417,7 +434,8 @@ const RepositoriesPage: React.FC = () => {
                     topCollateralRepos.map((repo) => (
                       <HighlightRow
                         key={repo.name}
-                        onClick={() => handleSelectRepository(repo.name)}
+                        href={getRepoHref(repo.name)}
+                        linkState={REPO_LINK_STATE}
                         avatar={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
                         avatarBg={getAvatarBg(repo.name)}
                         label={
@@ -426,7 +444,7 @@ const RepositoriesPage: React.FC = () => {
                               sx={{
                                 fontFamily: FONTS.mono,
                                 fontSize: '0.82rem',
-                                color: 'rgba(255,255,255,0.9)',
+                                color: 'text.primary',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -441,7 +459,7 @@ const RepositoriesPage: React.FC = () => {
                             sx={{
                               fontFamily: FONTS.mono,
                               fontSize: '0.72rem',
-                              color: 'rgba(255,255,255,0.7)',
+                              color: 'text.secondary',
                               flexShrink: 0,
                               whiteSpace: 'nowrap',
                             }}
@@ -466,12 +484,12 @@ const RepositoriesPage: React.FC = () => {
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                   {recentPrs.length === 0 && !isLoading ? (
                     <Typography
-                      sx={{
-                        color: 'rgba(255,255,255,0.3)',
+                      sx={(theme) => ({
+                        color: alpha(theme.palette.text.primary, 0.3),
                         fontSize: '0.8rem',
                         fontStyle: 'italic',
                         p: 1,
-                      }}
+                      })}
                     >
                       No data available
                     </Typography>
@@ -479,12 +497,8 @@ const RepositoriesPage: React.FC = () => {
                     recentPrs.map((pr) => (
                       <HighlightRow
                         key={`${pr.name}-${pr.number}`}
-                        onClick={() =>
-                          navigate(
-                            `/miners/pr?repo=${encodeURIComponent(pr.name)}&number=${pr.number}`,
-                            { state: { backLabel: 'Back to Repositories' } },
-                          )
-                        }
+                        href={getPrHref(pr.name, pr.number)}
+                        linkState={REPO_LINK_STATE}
                         avatar={`https://avatars.githubusercontent.com/${pr.name.split('/')[0]}`}
                         avatarBg={getAvatarBg(pr.name)}
                         label={
@@ -501,7 +515,7 @@ const RepositoriesPage: React.FC = () => {
                                 sx={{
                                   fontFamily: FONTS.mono,
                                   fontSize: '0.68rem',
-                                  color: 'rgba(255,255,255,0.45)',
+                                  color: 'text.tertiary',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
                                   whiteSpace: 'nowrap',
@@ -516,7 +530,7 @@ const RepositoriesPage: React.FC = () => {
                                 sx={{
                                   fontFamily: FONTS.mono,
                                   fontSize: '0.78rem',
-                                  color: 'rgba(255,255,255,0.9)',
+                                  color: 'text.primary',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
                                   whiteSpace: 'nowrap',
@@ -530,14 +544,14 @@ const RepositoriesPage: React.FC = () => {
                         }
                         right={
                           <Typography
-                            sx={{
+                            sx={(theme) => ({
                               fontFamily: FONTS.mono,
                               fontSize: '0.68rem',
-                              color: 'rgba(255,255,255,0.35)',
+                              color: alpha(theme.palette.text.primary, 0.35),
                               flexShrink: 0,
                               whiteSpace: 'nowrap',
                               ml: 1,
-                            }}
+                            })}
                           >
                             {formatRelativeTime(pr.createdAt)}
                           </Typography>
@@ -553,18 +567,20 @@ const RepositoriesPage: React.FC = () => {
 
         {/* ── Main Table ────────────────────────────────────────────── */}
         <Card
-          sx={{
+          sx={(theme) => ({
             borderRadius: 3,
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            backgroundColor: 'transparent',
+            border: '1px solid',
+            borderColor: theme.palette.border.light,
+            backgroundColor: theme.palette.surface.transparent,
             overflow: 'hidden',
-          }}
+          })}
           elevation={0}
         >
           <TopRepositoriesTable
             repositories={repoStats}
             isLoading={isLoading}
-            onSelectRepository={handleSelectRepository}
+            getRepositoryHref={getRepoHref}
+            linkState={REPO_LINK_STATE}
           />
         </Card>
       </Box>

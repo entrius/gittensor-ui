@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   Box,
   Card,
+  Grid,
   Typography,
   Tooltip,
   Stack,
@@ -9,6 +10,7 @@ import {
   Collapse,
   IconButton,
   Button,
+  useTheme,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -16,29 +18,35 @@ import {
   GitHub as GitHubIcon,
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
-import { useMinerPRs, usePullRequestDetails, type CommitLog } from '../../api';
-import { STATUS_COLORS } from '../../theme';
+import { useSearchParams } from 'react-router-dom';
+import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
+import {
+  useMinerStats,
+  useMinerPRs,
+  usePullRequestDetails,
+  type CommitLog,
+} from '../../api';
+import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
+import {
+  parseNumber,
+  calculateOpenIssueThreshold,
+  isOutsideScoringWindow,
+} from '../../utils/ExplorerUtils';
+import { credibilityColor } from '../../utils/format';
+import { buildMergedPillDefs } from '../../utils/multiplierDefs';
+import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
+import FilterButton from '../FilterButton';
+
+type ViewMode = 'prs' | 'issues';
 
 interface MinerScoreBreakdownProps {
   githubId: string;
+  viewMode?: ViewMode;
 }
 
-const tooltipSlotProps = {
-  tooltip: {
-    sx: {
-      backgroundColor: 'surface.tooltip',
-      color: 'text.primary',
-      fontSize: '0.72rem',
-      fontFamily: '"JetBrains Mono", monospace',
-      padding: '8px 12px',
-      borderRadius: '6px',
-      border: '1px solid',
-      borderColor: 'border.light',
-      maxWidth: 280,
-    },
-  },
-  arrow: { sx: { color: 'surface.tooltip' } },
+const tipProps = {
+  ...tooltipSlotProps,
+  tooltip: { sx: { ...tooltipSlotProps.tooltip.sx, maxWidth: 280 } },
 };
 
 interface MultiplierPillProps {
@@ -70,11 +78,11 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
     format === 'percent'
       ? `${(value * 100).toFixed(1)}%`
       : format === 'value'
-        ? Number(value).toFixed(2)
-        : `×${Number(value).toFixed(2)}`;
+        ? parseNumber(value).toFixed(2)
+        : `×${parseNumber(value).toFixed(2)}`;
 
   return (
-    <Tooltip title={tooltip} arrow placement="top" slotProps={tooltipSlotProps}>
+    <Tooltip title={tooltip} arrow placement="top" slotProps={tipProps}>
       <Box
         sx={{
           display: 'inline-flex',
@@ -90,7 +98,6 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
       >
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.62rem',
             color: STATUS_COLORS.neutral,
             textTransform: 'uppercase',
@@ -100,7 +107,6 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
         </Typography>
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.72rem',
             fontWeight: 600,
             color,
@@ -115,11 +121,13 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
 
 interface PrScoreRowProps {
   pr: CommitLog;
-  onNavigateToPr: (repo: string, prNumber: number) => void;
 }
 
-const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
+const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr }) => {
   const [expanded, setExpanded] = useState(false);
+  const prLinkProps = useLinkBehavior<HTMLAnchorElement>(
+    `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
+  );
 
   // Fetch full PR details (with all multipliers) — cached by React Query
   const { data: prDetails } = usePullRequestDetails(
@@ -133,6 +141,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
   const isClosed = pr.prState === 'CLOSED' && !pr.mergedAt;
   const isOpen = !pr.mergedAt && pr.prState !== 'CLOSED';
   const collateral = parseFloat(pr.collateralScore || '0');
+  const isStale = isMerged && isOutsideScoringWindow(pr.mergedAt);
 
   const statusColor = isMerged
     ? STATUS_COLORS.merged
@@ -169,7 +178,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.78rem',
                 fontWeight: 600,
                 color: 'text.primary',
@@ -180,7 +188,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
             </Typography>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.72rem',
                 color: (t) => alpha(t.palette.text.primary, 0.6),
                 overflow: 'hidden',
@@ -194,7 +201,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.25 }}>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.62rem',
                 color: (t) => alpha(t.palette.text.primary, 0.5),
               }}
@@ -212,7 +218,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
             />
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.62rem',
                 color: statusColor,
               }}
@@ -225,7 +230,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
         {/* Score */}
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.9rem',
             fontWeight: 600,
             color: isClosed
@@ -233,6 +237,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
               : isOpen
                 ? STATUS_COLORS.warningOrange
                 : 'text.primary',
+            opacity: isStale ? 0.4 : 1,
             flexShrink: 0,
           }}
         >
@@ -268,7 +273,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
           }}
         >
           {/* Score multiplier chips — sourced from PR details API */}
-          {isMerged && (
+          {isMerged && prDetails && (
             <Box
               sx={{
                 display: 'flex',
@@ -277,109 +282,24 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
                 alignItems: 'center',
               }}
             >
-              {prDetails?.credibilityMultiplier != null && (
+              {buildMergedPillDefs(prDetails).map((def) => (
                 <MultiplierPill
-                  label="cred"
-                  value={parseFloat(prDetails.credibilityMultiplier)}
+                  key={def.key}
+                  label={def.label}
+                  value={def.value}
+                  format={def.format}
                   tooltip={
                     <Stack direction="column">
                       <Typography variant="tooltipLabel">
-                        Credibility{' '}
-                        {Number(prDetails.credibilityMultiplier).toFixed(4)}×
+                        {def.tooltipTitle}
                       </Typography>
                       <Typography variant="tooltipDesc">
-                        Based on your PR success rate, scaled to reward
-                        consistency.
+                        {def.tooltipDesc}
                       </Typography>
                     </Stack>
                   }
                 />
-              )}
-              {prDetails?.repoWeightMultiplier != null && (
-                <MultiplierPill
-                  label="repo wt"
-                  value={parseFloat(prDetails.repoWeightMultiplier)}
-                  tooltip={
-                    <Stack direction="column">
-                      <Typography variant="tooltipLabel">
-                        Repo Weight{' '}
-                        {Number(prDetails.repoWeightMultiplier).toFixed(4)}×
-                      </Typography>
-                      <Typography variant="tooltipDesc">
-                        Based on repository weight and activity.
-                      </Typography>
-                    </Stack>
-                  }
-                />
-              )}
-              {prDetails?.issueMultiplier != null && (
-                <MultiplierPill
-                  label="issue"
-                  value={parseFloat(prDetails.issueMultiplier)}
-                  tooltip={
-                    <Stack direction="column">
-                      <Typography variant="tooltipLabel">
-                        Issue {Number(prDetails.issueMultiplier).toFixed(4)}×
-                      </Typography>
-                      <Typography variant="tooltipDesc">
-                        Bonus for PRs linked to issues.
-                      </Typography>
-                    </Stack>
-                  }
-                />
-              )}
-              {prDetails?.timeDecayMultiplier != null && (
-                <MultiplierPill
-                  label="decay"
-                  value={parseFloat(prDetails.timeDecayMultiplier)}
-                  tooltip={
-                    <Stack direction="column">
-                      <Typography variant="tooltipLabel">
-                        Time Decay{' '}
-                        {Number(prDetails.timeDecayMultiplier).toFixed(4)}×
-                      </Typography>
-                      <Typography variant="tooltipDesc">
-                        Recent PRs score higher.
-                      </Typography>
-                    </Stack>
-                  }
-                />
-              )}
-              {prDetails?.openPrSpamMultiplier != null && (
-                <MultiplierPill
-                  label="spam"
-                  value={parseFloat(prDetails.openPrSpamMultiplier)}
-                  tooltip={
-                    <Stack direction="column">
-                      <Typography variant="tooltipLabel">
-                        Open PR Spam{' '}
-                        {Number(prDetails.openPrSpamMultiplier).toFixed(4)}×
-                      </Typography>
-                      <Typography variant="tooltipDesc">
-                        Penalty for excessive open PRs.
-                      </Typography>
-                    </Stack>
-                  }
-                />
-              )}
-              {prDetails?.reviewQualityMultiplier != null && (
-                <MultiplierPill
-                  label="review"
-                  value={parseFloat(prDetails.reviewQualityMultiplier)}
-                  tooltip={
-                    <Stack direction="column">
-                      <Typography variant="tooltipLabel">
-                        Review Quality{' '}
-                        {Number(prDetails.reviewQualityMultiplier).toFixed(4)}×
-                      </Typography>
-                      <Typography variant="tooltipDesc">
-                        Multiplier based on the amount of requested changes the
-                        PR required.
-                      </Typography>
-                    </Stack>
-                  }
-                />
-              )}
+              ))}
             </Box>
           )}
 
@@ -397,10 +317,16 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
               `+${pr.additions} / -${pr.deletions}`,
               `${pr.commitCount} commit${pr.commitCount !== 1 ? 's' : ''}`,
               pr.tokenScore != null &&
-                `tokens ${Number(pr.tokenScore).toFixed(2)}`,
+                `tokens ${parseNumber(pr.tokenScore).toFixed(2)}`,
               pr.totalNodesScored != null &&
-                Number(pr.totalNodesScored) > 0 &&
+                parseNumber(pr.totalNodesScored) > 0 &&
                 `${pr.totalNodesScored} nodes`,
+              pr.structuralCount != null &&
+                parseNumber(pr.structuralCount) > 0 &&
+                `${pr.structuralCount} structural (${parseNumber(pr.structuralScore).toFixed(2)})`,
+              pr.leafCount != null &&
+                parseNumber(pr.leafCount) > 0 &&
+                `${pr.leafCount} leaf (${parseNumber(pr.leafScore).toFixed(2)})`,
             ]
               .filter(Boolean)
               .map((stat, i, arr) => (
@@ -408,7 +334,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
                   <Typography
                     component="span"
                     sx={{
-                      fontFamily: '"JetBrains Mono", monospace',
                       fontSize: '0.65rem',
                       color: (t) => alpha(t.palette.text.primary, 0.4),
                     }}
@@ -419,7 +344,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
                     <Typography
                       component="span"
                       sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.65rem',
                         color: (t) => alpha(t.palette.text.primary, 0.2),
                         mx: 0.25,
@@ -435,7 +359,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
                 <Typography
                   component="span"
                   sx={{
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.65rem',
                     color: (t) => alpha(t.palette.text.primary, 0.2),
                     mx: 0.25,
@@ -446,7 +369,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
                 <Typography
                   component="span"
                   sx={{
-                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.65rem',
                     color: STATUS_COLORS.warningOrange,
                   }}
@@ -462,12 +384,14 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
             <Button
               size="small"
               startIcon={<OpenInNewIcon sx={{ fontSize: '0.85rem' }} />}
+              component="a"
+              {...prLinkProps}
               onClick={(e) => {
                 e.stopPropagation();
-                onNavigateToPr(pr.repository, pr.pullRequestNumber);
+                prLinkProps.onClick(e);
               }}
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
+                ...linkResetSx,
                 fontSize: '0.65rem',
                 textTransform: 'none',
                 color: 'primary.main',
@@ -488,7 +412,6 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.65rem',
                 textTransform: 'none',
                 color: (t) => alpha(t.palette.text.primary, 0.5),
@@ -510,29 +433,235 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
   );
 };
 
-const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
-  githubId,
-}) => {
-  const navigate = useNavigate();
+// ---------------------------------------------------------------------------
+// Issue-mode breakdown sub-components
+// ---------------------------------------------------------------------------
+
+const MetricRow: React.FC<{
+  label: string;
+  value: string;
+  color?: string;
+  sub?: string;
+}> = ({ label, value, color, sub }) => (
+  <Box
+    sx={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      py: 1.2,
+      borderBottom: '1px solid',
+      borderColor: (t) => alpha(t.palette.text.primary, 0.06),
+    }}
+  >
+    <Box>
+      <Typography
+        sx={{
+          fontSize: '0.82rem',
+          color: 'text.primary',
+        }}
+      >
+        {label}
+      </Typography>
+      {sub && (
+        <Typography
+          sx={{
+            fontSize: '0.7rem',
+            color: (t) => alpha(t.palette.text.primary, 0.4),
+            mt: 0.25,
+          }}
+        >
+          {sub}
+        </Typography>
+      )}
+    </Box>
+    <Typography
+      sx={{
+        fontSize: '0.95rem',
+        fontWeight: 600,
+        color: color || 'text.primary',
+      }}
+    >
+      {value}
+    </Typography>
+  </Box>
+);
+
+const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
+  const { data: minerStats } = useMinerStats(githubId);
+
+  if (!minerStats) return null;
+
+  const discoveryScore = parseNumber(minerStats.issueDiscoveryScore);
+  const issueCred = parseNumber(minerStats.issueCredibility);
+  const issueTokenScore = parseNumber(minerStats.issueTokenScore);
+  const solved = parseNumber(minerStats.totalSolvedIssues);
+  const validSolved = parseNumber(minerStats.totalValidSolvedIssues);
+  const closedIssues = parseNumber(minerStats.totalClosedIssues);
+  const openIssues = parseNumber(minerStats.totalOpenIssues);
+  const isEligible = minerStats.isIssueEligible ?? false;
+  const openThreshold = calculateOpenIssueThreshold(minerStats);
+
+  const hasAnyData = solved > 0 || openIssues > 0 || closedIssues > 0;
+
+  return (
+    <Card
+      sx={{
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'border.light',
+        backgroundColor: 'transparent',
+        p: 3,
+      }}
+      elevation={0}
+    >
+      <Typography
+        sx={{
+          color: 'text.primary',
+          fontSize: '1.1rem',
+          fontWeight: 600,
+          mb: 0.8,
+        }}
+      >
+        Issue Discovery Breakdown
+      </Typography>
+      <Typography
+        sx={{
+          color: (t) => alpha(t.palette.text.primary, 0.55),
+          fontSize: '0.85rem',
+          mb: 2,
+        }}
+      >
+        Aggregate issue discovery stats from existing evaluations.
+      </Typography>
+
+      {!hasAnyData ? (
+        <Box
+          sx={{
+            py: 4,
+            textAlign: 'center',
+            borderRadius: 2,
+            backgroundColor: (t) => alpha(t.palette.text.primary, 0.03),
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: '0.85rem',
+              color: (t) => alpha(t.palette.text.primary, 0.4),
+            }}
+          >
+            No issue discovery data yet
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: (t) => alpha(t.palette.text.primary, 0.3),
+              mt: 0.5,
+            }}
+          >
+            Start discovering issues to see your breakdown here
+          </Typography>
+        </Box>
+      ) : (
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <MetricRow
+              label="Discovery Score"
+              value={discoveryScore.toFixed(2)}
+            />
+            <MetricRow
+              label="Issue Token Score"
+              value={issueTokenScore.toFixed(0)}
+              sub="Sum of solving PR token scores"
+            />
+            <MetricRow
+              label="Issue Credibility"
+              value={`${(issueCred * 100).toFixed(1)}%`}
+              color={credibilityColor(issueCred)}
+              sub="Solved / (solved + max(0, closed − 1))"
+            />
+            <MetricRow
+              label="Eligibility"
+              value={isEligible ? 'Eligible' : 'Ineligible'}
+              color={isEligible ? STATUS_COLORS.success : STATUS_COLORS.neutral}
+              sub="Requires 7 valid solved issues"
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <MetricRow
+              label="Total Solved"
+              value={String(solved)}
+              sub={`${validSolved} valid (token score \u2265 5)`}
+            />
+            <MetricRow
+              label="Closed Issues"
+              value={String(closedIssues)}
+              sub="Discovered issues closed without solve"
+            />
+            <MetricRow
+              label="Open Issues"
+              value={String(openIssues)}
+              color={
+                openIssues >= openThreshold ? STATUS_COLORS.error : undefined
+              }
+              sub={`Threshold: ${openThreshold}`}
+            />
+          </Grid>
+        </Grid>
+      )}
+    </Card>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// PR-mode breakdown
+// ---------------------------------------------------------------------------
+
+const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
+  const theme = useTheme();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
-  const [page, setPage] = useState(0);
+  const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
   const PAGE_SIZE = 10;
 
-  const handleNavigateToPr = (repo: string, prNumber: number) => {
-    navigate(`/miners/pr?repo=${encodeURIComponent(repo)}&number=${prNumber}`);
+  const page = parseInt(searchParams.get('scorePage') || '0', 10);
+  const setPage = useCallback(
+    (updater: number | ((prev: number) => number)) => {
+      const next = typeof updater === 'function' ? updater(page) : updater;
+      setSearchParams(
+        (prev) => {
+          const p = new URLSearchParams(prev);
+          if (next === 0) p.delete('scorePage');
+          else p.set('scorePage', String(next));
+          return p;
+        },
+        { replace: true },
+      );
+    },
+    [page, setSearchParams],
+  );
+
+  const handleFilterChange = (next: PrStatusFilter) => {
+    setStatusFilter(next);
+    setPage(0);
   };
+
+  const statusCounts = useMemo(() => getPrStatusCounts(prs ?? []), [prs]);
 
   const sortedPrs = useMemo(() => {
     if (!prs) return [];
-    return [...prs].sort(
+    return [...filterPrs(prs, { statusFilter })].sort(
       (a, b) => parseFloat(b.score || '0') - parseFloat(a.score || '0'),
     );
-  }, [prs]);
+  }, [prs, statusFilter]);
 
   if (isLoading || !prs || prs.length === 0) return null;
 
-  const totalPages = Math.ceil(sortedPrs.length / PAGE_SIZE);
-  const displayPrs = sortedPrs.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(sortedPrs.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const displayPrs = sortedPrs.slice(
+    safePage * PAGE_SIZE,
+    (safePage + 1) * PAGE_SIZE,
+  );
 
   return (
     <Card sx={{ p: 0, overflow: 'hidden' }} elevation={0}>
@@ -542,14 +671,15 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
           borderBottom: '1px solid',
           borderColor: 'border.subtle',
           display: 'flex',
+          flexWrap: 'wrap',
           justifyContent: 'space-between',
           alignItems: 'center',
+          gap: 1.5,
         }}
       >
         <Box>
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '1rem',
               fontWeight: 600,
               color: 'text.primary',
@@ -559,7 +689,6 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
           </Typography>
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.72rem',
               color: (t) => alpha(t.palette.text.primary, 0.45),
               mt: 0.25,
@@ -568,17 +697,59 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
             Click any PR to see multiplier details
           </Typography>
         </Box>
+        <Stack direction="row" spacing={1} flexWrap="wrap">
+          <FilterButton
+            label="All"
+            isActive={statusFilter === 'all'}
+            onClick={() => handleFilterChange('all')}
+            count={statusCounts.all}
+            color={theme.palette.status.neutral}
+          />
+          <FilterButton
+            label="Open"
+            isActive={statusFilter === 'open'}
+            onClick={() => handleFilterChange('open')}
+            count={statusCounts.open}
+            color={theme.palette.status.open}
+          />
+          <FilterButton
+            label="Merged"
+            isActive={statusFilter === 'merged'}
+            onClick={() => handleFilterChange('merged')}
+            count={statusCounts.merged}
+            color={theme.palette.status.merged}
+          />
+          <FilterButton
+            label="Closed"
+            isActive={statusFilter === 'closed'}
+            onClick={() => handleFilterChange('closed')}
+            count={statusCounts.closed}
+            color={theme.palette.status.closed}
+          />
+        </Stack>
       </Box>
 
       {/* PR list */}
       <Box>
-        {displayPrs.map((pr, i) => (
-          <PrScoreRow
-            key={`${pr.repository}-${pr.pullRequestNumber}-${i}`}
-            pr={pr}
-            onNavigateToPr={handleNavigateToPr}
-          />
-        ))}
+        {displayPrs.length === 0 ? (
+          <Typography
+            sx={{
+              fontSize: '0.8rem',
+              color: (t) => alpha(t.palette.text.primary, 0.5),
+              textAlign: 'center',
+              py: 4,
+            }}
+          >
+            No {statusFilter === 'all' ? '' : statusFilter} PRs to show.
+          </Typography>
+        ) : (
+          displayPrs.map((pr, i) => (
+            <PrScoreRow
+              key={`${pr.repository}-${pr.pullRequestNumber}-${i}`}
+              pr={pr}
+            />
+          ))
+        )}
       </Box>
 
       {/* Pagination */}
@@ -597,41 +768,40 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
           <Typography
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.72rem',
               color:
-                page === 0
+                safePage === 0
                   ? (t) => alpha(t.palette.text.primary, 0.2)
                   : 'primary.main',
-              cursor: page === 0 ? 'default' : 'pointer',
+              cursor: safePage === 0 ? 'default' : 'pointer',
               userSelect: 'none',
-              '&:hover': page > 0 ? { textDecoration: 'underline' } : {},
+              '&:hover': safePage > 0 ? { textDecoration: 'underline' } : {},
             }}
           >
             ← Prev
           </Typography>
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.72rem',
               color: (t) => alpha(t.palette.text.primary, 0.5),
             }}
           >
-            {page + 1} / {totalPages}
+            {safePage + 1} / {totalPages}
           </Typography>
           <Typography
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.72rem',
               color:
-                page >= totalPages - 1
+                safePage >= totalPages - 1
                   ? (t) => alpha(t.palette.text.primary, 0.2)
                   : 'primary.main',
-              cursor: page >= totalPages - 1 ? 'default' : 'pointer',
+              cursor: safePage >= totalPages - 1 ? 'default' : 'pointer',
               userSelect: 'none',
               '&:hover':
-                page < totalPages - 1 ? { textDecoration: 'underline' } : {},
+                safePage < totalPages - 1
+                  ? { textDecoration: 'underline' }
+                  : {},
             }}
           >
             Next →
@@ -640,6 +810,20 @@ const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
       )}
     </Card>
   );
+};
+
+// ---------------------------------------------------------------------------
+// Main component — dispatches to PR or Issue view
+// ---------------------------------------------------------------------------
+
+const MinerScoreBreakdown: React.FC<MinerScoreBreakdownProps> = ({
+  githubId,
+  viewMode = 'prs',
+}) => {
+  if (viewMode === 'issues') {
+    return <IssueBreakdownView githubId={githubId} />;
+  }
+  return <PrBreakdownView githubId={githubId} />;
 };
 
 export default MinerScoreBreakdown;

@@ -1,6 +1,11 @@
 import React from 'react';
-import { Box, Card, Typography, Tooltip } from '@mui/material';
+import { Box, Card, Typography, Tooltip, alpha, useTheme } from '@mui/material';
 import { ActivityCalendar } from 'react-activity-calendar';
+import {
+  CONTRIBUTION_HEATMAP_SCALE,
+  TEXT_OPACITY,
+  scrollbarSx,
+} from '../theme';
 
 interface ContributionData {
   date: string;
@@ -19,11 +24,6 @@ interface ContributionHeatmapProps {
   bare?: boolean;
 }
 
-const HEATMAP_THEME = {
-  light: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
-  dark: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
-};
-
 const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
   data,
   contributionsLast30Days,
@@ -34,6 +34,9 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
   emptySubtitle = 'Activity will appear here once PRs are merged',
   bare = false,
 }) => {
+  const theme = useTheme();
+  const heatmapLevels = [...CONTRIBUTION_HEATMAP_SCALE];
+  const heatmapTheme = { light: heatmapLevels, dark: heatmapLevels };
   const isEmpty = data.length === 0;
 
   const content = (
@@ -41,8 +44,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
       <Box sx={{ mb: 2.5 }}>
         <Typography
           sx={{
-            color: '#fff',
-            fontFamily: '"JetBrains Mono", monospace',
+            color: 'text.primary',
             fontWeight: 700,
             fontSize: '2.5rem',
             lineHeight: 1,
@@ -53,8 +55,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
         <Typography
           variant="body2"
           sx={{
-            color: 'rgba(255, 255, 255, 0.4)',
-            fontFamily: '"JetBrains Mono", monospace',
+            color: alpha(theme.palette.common.white, TEXT_OPACITY.faint),
             fontSize: '0.85rem',
             mt: 0.5,
           }}
@@ -63,7 +64,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
         </Typography>
       </Box>
 
-      <Box sx={{ width: '100%', overflowX: 'auto', mb: 1 }}>
+      <Box sx={{ width: '100%', overflowX: 'auto', mb: 1, ...scrollbarSx }}>
         {isEmpty ? (
           <Box
             sx={{
@@ -77,8 +78,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
           >
             <Typography
               sx={{
-                color: 'rgba(255, 255, 255, 0.5)',
-                fontFamily: '"JetBrains Mono", monospace',
+                color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
                 fontSize: '0.85rem',
                 textAlign: 'center',
               }}
@@ -88,8 +88,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
             {emptySubtitle && (
               <Typography
                 sx={{
-                  color: 'rgba(255, 255, 255, 0.3)',
-                  fontFamily: '"JetBrains Mono", monospace',
+                  color: alpha(theme.palette.common.white, TEXT_OPACITY.ghost),
                   fontSize: '0.75rem',
                   textAlign: 'center',
                   mt: 0.5,
@@ -102,7 +101,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
         ) : (
           <ActivityCalendar
             data={data}
-            theme={HEATMAP_THEME}
+            theme={heatmapTheme}
             labels={{
               legend: { less: 'Less', more: 'More' },
               months: [
@@ -125,13 +124,24 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
             blockSize={11}
             blockMargin={3}
             fontSize={11}
-            style={{ color: '#fff' }}
+            style={{ color: theme.palette.text.primary }}
             showWeekdayLabels={false}
             renderBlock={(block, activity) => (
               <Tooltip
                 title={`${activity.count} contribution${activity.count !== 1 ? 's' : ''} on ${new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
                 arrow
                 placement="top"
+                enterDelay={0}
+                enterNextDelay={0}
+                leaveDelay={0}
+                disableInteractive
+                slotProps={{
+                  popper: {
+                    sx: {
+                      zIndex: theme.zIndex.tooltip,
+                    },
+                  },
+                }}
               >
                 {block}
               </Tooltip>
@@ -144,7 +154,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
         <Typography
           variant="caption"
           sx={{
-            color: 'rgba(255, 255, 255, 0.25)',
+            color: alpha(theme.palette.common.white, 0.25),
             display: 'block',
             fontStyle: 'italic',
             fontSize: '0.7rem',

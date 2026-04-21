@@ -1,10 +1,18 @@
 import React, { useMemo, useState } from 'react';
-import { Box, Typography, CircularProgress, Avatar } from '@mui/material';
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Avatar,
+  alpha,
+  useTheme,
+} from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useAllPrs, useAllMiners } from '../../api';
-import { useNavigate } from 'react-router-dom';
+import { LinkBox } from '../common/linkBehavior';
 import { STATUS_COLORS } from '../../theme';
+import { isMergedPr } from '../../utils/prStatus';
 
 interface RepositoryContributorsTableProps {
   repositoryFullName: string;
@@ -13,7 +21,7 @@ interface RepositoryContributorsTableProps {
 const RepositoryContributorsTable: React.FC<
   RepositoryContributorsTableProps
 > = ({ repositoryFullName }) => {
-  const navigate = useNavigate();
+  const theme = useTheme();
   const { data: allPRs, isLoading } = useAllPrs();
   const { data: allMinersStats } = useAllMiners();
 
@@ -45,7 +53,7 @@ const RepositoryContributorsTable: React.FC<
       (pr) =>
         pr.repository.toLowerCase() === repositoryFullName.toLowerCase() &&
         pr.githubId &&
-        pr.prState === 'MERGED',
+        isMergedPr(pr),
     );
 
     const contributorsMap = new Map<
@@ -112,7 +120,6 @@ const RepositoryContributorsTable: React.FC<
           variant="subtitle2"
           sx={{
             color: 'text.secondary',
-            fontFamily: '"JetBrains Mono", monospace',
           }}
         >
           Top Miner Contributors{' '}
@@ -125,15 +132,18 @@ const RepositoryContributorsTable: React.FC<
         </Typography>
       </Box>
 
-      {/* Header Row */}
+      {/* Header Row — minmax(0,1fr) prevents the miner column from forcing PRS/SCORE off-alignment */}
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: '32px 1fr 48px 75px',
-          gap: 1,
+          gridTemplateColumns:
+            '32px minmax(0, 1fr) minmax(3rem, auto) minmax(4.5rem, auto)',
+          columnGap: 1,
+          rowGap: 0,
+          alignItems: 'center',
           px: 1.5,
           py: 1,
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          borderBottom: `1px solid ${theme.palette.border.light}`,
         }}
       >
         <Typography sx={{ fontSize: '11px', color: 'text.secondary' }}>
@@ -147,6 +157,7 @@ const RepositoryContributorsTable: React.FC<
             fontSize: '11px',
             color: 'text.secondary',
             textAlign: 'right',
+            fontVariantNumeric: 'tabular-nums',
           }}
         >
           PRS
@@ -156,6 +167,7 @@ const RepositoryContributorsTable: React.FC<
             fontSize: '11px',
             color: 'text.secondary',
             textAlign: 'right',
+            fontVariantNumeric: 'tabular-nums',
           }}
         >
           SCORE
@@ -174,15 +186,18 @@ const RepositoryContributorsTable: React.FC<
               key={contributor.githubId}
               sx={{
                 display: 'grid',
-                gridTemplateColumns: '32px 1fr 48px 75px',
-                gap: 1,
+                gridTemplateColumns:
+                  '32px minmax(0, 1fr) minmax(3rem, auto) minmax(4.5rem, auto)',
+                columnGap: 1,
+                rowGap: 0,
                 px: 1.5,
                 py: 1,
-                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                borderBottom: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
                 alignItems: 'center',
+                minWidth: 0,
                 opacity: isInactive ? 0.5 : 1,
                 '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.04)',
+                  backgroundColor: alpha(theme.palette.common.white, 0.04),
                   opacity: 1,
                 },
                 transition: 'all 0.1s',
@@ -191,9 +206,8 @@ const RepositoryContributorsTable: React.FC<
               {/* Rank */}
               <Box
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '12px',
-                  color: index < 3 ? '#fff' : STATUS_COLORS.open,
+                  color: index < 3 ? 'text.primary' : STATUS_COLORS.open,
                   fontWeight: index < 3 ? 600 : 400,
                 }}
               >
@@ -201,12 +215,11 @@ const RepositoryContributorsTable: React.FC<
               </Box>
 
               {/* Contributor */}
-              <Box
-                onClick={() =>
-                  navigate(`/miners/details?githubId=${contributor.githubId}`, {
-                    state: { backLabel: `Back to ${repositoryFullName}` },
-                  })
-                }
+              <LinkBox
+                href={`/miners/details?githubId=${contributor.githubId}`}
+                linkState={{
+                  backLabel: `Back to ${repositoryFullName}`,
+                }}
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
@@ -224,7 +237,7 @@ const RepositoryContributorsTable: React.FC<
                   sx={{
                     width: 20,
                     height: 20,
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    border: `1px solid ${theme.palette.border.light}`,
                   }}
                 />
                 <Box
@@ -239,7 +252,7 @@ const RepositoryContributorsTable: React.FC<
                     sx={{
                       fontSize: '13px',
                       fontWeight: 500,
-                      color: '#c9d1d9',
+                      color: 'text.primary',
                       fontFamily:
                         '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
                       whiteSpace: 'nowrap',
@@ -265,15 +278,16 @@ const RepositoryContributorsTable: React.FC<
                     </Typography>
                   )}
                 </Box>
-              </Box>
+              </LinkBox>
 
               {/* PRs */}
               <Box
                 sx={{
                   textAlign: 'right',
                   fontSize: '12px',
-                  color: '#c9d1d9',
-                  fontFamily: '"JetBrains Mono", monospace',
+                  color: 'text.primary',
+                  fontVariantNumeric: 'tabular-nums',
+                  minWidth: 0,
                 }}
               >
                 {contributor.prs}
@@ -284,8 +298,9 @@ const RepositoryContributorsTable: React.FC<
                 sx={{
                   textAlign: 'right',
                   fontSize: '12px',
-                  color: '#c9d1d9',
-                  fontFamily: '"JetBrains Mono", monospace',
+                  color: 'text.primary',
+                  fontVariantNumeric: 'tabular-nums',
+                  minWidth: 0,
                 }}
               >
                 {contributor.score.toFixed(2)}
@@ -308,8 +323,8 @@ const RepositoryContributorsTable: React.FC<
               color: STATUS_COLORS.open,
               fontSize: '12px',
               '&:hover': {
-                color: '#fff',
-                backgroundColor: 'rgba(255,255,255,0.02)',
+                color: 'text.primary',
+                backgroundColor: 'surface.subtle',
               },
               transition: 'all 0.1s',
             }}

@@ -1,6 +1,21 @@
-import { createTheme } from '@mui/material/styles';
+import {
+  createTheme,
+  alpha,
+  type Theme,
+  type SxProps,
+} from '@mui/material/styles';
 
 // Shared Color Constants (exported for use outside MUI components)
+export const UI_COLORS = {
+  white: '#ffffff',
+  black: '#000000',
+  primary: '#1d37fc',
+  textSecondary: '#7d7d7d',
+  textTertiary: 'rgba(201, 209, 217, 0.64)',
+  surfaceElevated: '#161b22',
+  surfaceTooltip: 'rgba(30, 30, 30, 0.95)',
+} as const;
+
 export const RANK_COLORS = {
   first: '#FFD700',
   second: '#C0C0C0',
@@ -9,7 +24,7 @@ export const RANK_COLORS = {
 
 export const STATUS_COLORS = {
   merged: '#3fb950', // Green - merged PRs
-  open: '#8b949e', // Gray - open PRs
+  open: alpha(UI_COLORS.white, 0.6), // Preserve prior white-on-dark appearance
   closed: '#ff7b72', // Red - closed PRs
   neutral: '#9ca3af', // Grey - default/neutral state
   success: '#4ade80', // Green - success states
@@ -46,6 +61,38 @@ export const CHART_COLORS = {
   closed: '#ef4444', // Red - closed without merge
 } as const;
 
+export const scrollbarSx = {
+  '&::-webkit-scrollbar': {
+    width: '8px',
+    height: '8px',
+  },
+  '&::-webkit-scrollbar-track': {
+    backgroundColor: 'transparent',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: '4px',
+    '&:hover': {
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    },
+  },
+} as const;
+
+/** Git-style contribution calendar levels (empty → most active) */
+export const CONTRIBUTION_HEATMAP_SCALE = [
+  '#161b22',
+  '#0e4429',
+  '#006d32',
+  '#26a641',
+  '#39d353',
+] as const;
+
+/** Known org avatars on GitHub that need a non-transparent backdrop */
+export const REPO_OWNER_AVATAR_BACKGROUNDS = {
+  opentensor: '#ffffff',
+  bitcoin: '#F7931A',
+} as const;
+
 export const TEXT_OPACITY = {
   primary: 1,
   secondary: 0.7,
@@ -54,6 +101,137 @@ export const TEXT_OPACITY = {
   faint: 0.3,
   ghost: 0.2,
 } as const;
+
+/** Theme-driven markdown document body (README, CONTRIBUTING, etc.). */
+export const markdownDocumentPaperSx = (theme: Theme): SxProps<Theme> => ({
+  p: { xs: 2, md: 5 },
+  pt: { xs: 2, md: 0 },
+  maxWidth: '900px',
+  mx: 'auto',
+  backgroundColor: 'transparent',
+  color: theme.palette.text.tertiary,
+  fontFamily:
+    '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+  lineHeight: 1.6,
+  '& h1': {
+    fontSize: '2em',
+    borderBottom: `1px solid ${theme.palette.border.light}`,
+    pb: 0.3,
+    mb: 3,
+    mt: 1,
+    fontWeight: 600,
+    color: theme.palette.text.primary,
+  },
+  '& h2': {
+    fontSize: '1.5em',
+    borderBottom: `1px solid ${theme.palette.border.light}`,
+    pb: 0.3,
+    mb: 3,
+    mt: 2,
+    fontWeight: 600,
+    color: theme.palette.text.primary,
+  },
+  '& h3': {
+    fontSize: '1.25em',
+    mb: 2,
+    mt: 3,
+    fontWeight: 600,
+    color: theme.palette.text.primary,
+  },
+  '& p': { marginBottom: '16px', fontSize: '16px' },
+  '& a': {
+    color: STATUS_COLORS.info,
+    textDecoration: 'none',
+    '&:hover': { textDecoration: 'underline' },
+  },
+  '& ul, & ol': { marginBottom: '16px', paddingLeft: '2em' },
+  '& li': { marginBottom: '4px' },
+  '& blockquote': {
+    borderLeft: `4px solid ${theme.palette.border.light}`,
+    padding: '0 1em',
+    color: STATUS_COLORS.open,
+    marginLeft: 0,
+    marginBottom: '16px',
+  },
+  '& code': {
+    backgroundColor: alpha(theme.palette.grey[500], 0.4),
+    padding: '0.2em 0.4em',
+    borderRadius: '6px',
+    fontSize: '85%',
+    fontFamily: '"JetBrains Mono", monospace',
+  },
+  '& pre': {
+    backgroundColor: theme.palette.surface.elevated,
+    padding: '16px',
+    overflow: 'auto',
+    borderRadius: '6px',
+    marginBottom: '16px',
+    '& code': {
+      backgroundColor: 'transparent',
+      padding: 0,
+      fontSize: '100%',
+      color: theme.palette.text.tertiary,
+    },
+  },
+  '& table': {
+    borderCollapse: 'collapse',
+    width: '100%',
+    marginBottom: '16px',
+    display: 'block',
+    overflowX: 'auto',
+  },
+  '& th': {
+    fontWeight: 600,
+    border: `1px solid ${theme.palette.border.light}`,
+    padding: '6px 13px',
+    textAlign: 'left',
+  },
+  '& td': {
+    border: `1px solid ${theme.palette.border.light}`,
+    padding: '6px 13px',
+  },
+  '& tr:nth-of-type(2n)': {
+    backgroundColor: theme.palette.surface.elevated,
+  },
+  '& img': { backgroundColor: 'transparent' },
+});
+
+export const headerCellStyle = {
+  backgroundColor: 'surface.tooltip',
+  backdropFilter: 'blur(8px)',
+  color: 'text.secondary',
+  fontFamily: '"JetBrains Mono", monospace',
+  fontWeight: 500,
+  fontSize: '0.75rem',
+  borderBottom: '1px solid',
+  borderColor: 'border.light',
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.5px',
+};
+
+export const bodyCellStyle = {
+  color: 'text.primary',
+  fontFamily: '"JetBrains Mono", monospace',
+  borderBottom: '1px solid',
+  borderColor: 'border.light',
+  fontSize: '0.85rem',
+};
+
+export const tooltipSlotProps = {
+  tooltip: {
+    sx: {
+      backgroundColor: 'surface.tooltip',
+      color: 'text.primary',
+      fontSize: '0.72rem',
+      padding: '8px 12px',
+      borderRadius: '6px',
+      border: '1px solid',
+      borderColor: 'border.light',
+      maxWidth: 260,
+    },
+  },
+  arrow: { sx: { color: 'surface.tooltip' } },
+};
 
 // Module Augmentation for Custom Theme Properties
 declare module '@mui/material/styles' {
@@ -223,21 +401,21 @@ const theme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#1d37fc',
+      main: UI_COLORS.primary,
     },
     secondary: {
       main: '#fff30d',
     },
     background: {
-      default: '#000000',
+      default: UI_COLORS.black,
       paper: '#0a0f1f',
     },
     text: {
-      primary: '#ffffff',
-      secondary: '#7d7d7d',
-      tertiary: 'rgba(201, 209, 217, 0.64)',
+      primary: UI_COLORS.white,
+      secondary: UI_COLORS.textSecondary,
+      tertiary: UI_COLORS.textTertiary,
     },
-    divider: '#ffffff',
+    divider: UI_COLORS.white,
     // Rank podium colors (1st/2nd/3rd)
     rank: {
       first: RANK_COLORS.first,
@@ -278,69 +456,39 @@ const theme = createTheme({
     },
     // Border colors
     border: {
-      subtle: 'rgba(255, 255, 255, 0.05)',
-      light: 'rgba(255, 255, 255, 0.1)',
-      medium: 'rgba(255, 255, 255, 0.2)',
+      subtle: alpha(UI_COLORS.white, 0.08),
+      light: alpha(UI_COLORS.white, 0.1),
+      medium: alpha(UI_COLORS.white, 0.2),
     },
     // Surface colors
     surface: {
       transparent: 'transparent',
-      subtle: 'rgba(255, 255, 255, 0.02)',
-      light: 'rgba(255, 255, 255, 0.05)',
-      elevated: '#161b22',
-      tooltip: 'rgba(30, 30, 30, 0.95)',
+      subtle: alpha(UI_COLORS.white, 0.02),
+      light: alpha(UI_COLORS.white, 0.05),
+      elevated: UI_COLORS.surfaceElevated,
+      tooltip: UI_COLORS.surfaceTooltip,
     },
   },
   typography: {
-    fontFamily:
-      '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    h1: {
-      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
-    },
-    h2: {
-      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
-    },
-    h3: {
-      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
-    },
-    h4: {
-      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
-    },
-    h5: {
-      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
-    },
-    h6: {
-      fontFamily: '"Inter", "Helvetica Neue", sans-serif',
-    },
-    body1: {
-      fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-    },
-    body2: {
-      fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-    },
-    button: {
-      fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-    },
+    // JetBrains Mono is the app-wide default — every component inherits it
+    // without needing an explicit fontFamily prop.
+    fontFamily: '"JetBrains Mono", monospace',
     dataValue: {
-      fontFamily: '"JetBrains Mono", "Courier New", monospace',
       fontWeight: 500,
       letterSpacing: '0.02em',
     },
     dataLabel: {
-      fontFamily: '"JetBrains Mono", "Courier New", monospace',
       fontSize: '0.75rem',
       fontWeight: 400,
       letterSpacing: '0.05em',
       textTransform: 'uppercase',
     },
-    // Base monospace style
+    // Base monospace weight
     mono: {
-      fontFamily: '"JetBrains Mono", monospace',
       fontWeight: 500,
     },
-    // Small monospace for labels
+    // Small uppercase label style
     monoSmall: {
-      fontFamily: '"JetBrains Mono", monospace',
       fontSize: '0.7rem',
       fontWeight: 600,
       letterSpacing: '0.5px',
@@ -348,14 +496,12 @@ const theme = createTheme({
     },
     // Section titles
     sectionTitle: {
-      fontFamily: '"JetBrains Mono", monospace',
       fontSize: '1rem',
       fontWeight: 600,
       color: '#fff',
     },
     // Table headers
     tableHeader: {
-      fontFamily: '"JetBrains Mono", monospace',
       fontSize: '0.7rem',
       fontWeight: 600,
       letterSpacing: '0.5px',
@@ -364,14 +510,12 @@ const theme = createTheme({
     },
     // Large stat values
     statValue: {
-      fontFamily: '"JetBrains Mono", monospace',
       fontSize: '1.1rem',
       fontWeight: 600,
       color: '#fff',
     },
     // Stat labels
     statLabel: {
-      fontFamily: '"JetBrains Mono", monospace',
       fontSize: '0.7rem',
       fontWeight: 500,
       textTransform: 'uppercase',
@@ -379,13 +523,11 @@ const theme = createTheme({
     },
     // Tooltip heading — multiplier name + value
     tooltipLabel: {
-      fontFamily: '"JetBrains Mono", monospace',
       fontSize: '0.72rem',
       fontWeight: 600,
     },
     // Tooltip supporting description
     tooltipDesc: {
-      fontFamily: '"JetBrains Mono", monospace',
       fontSize: '0.72rem',
       fontWeight: 400,
       opacity: 0.7,
@@ -396,8 +538,7 @@ const theme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          fontFamily:
-            '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: '"JetBrains Mono", monospace',
         },
       },
     },

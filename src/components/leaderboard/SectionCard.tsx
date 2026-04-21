@@ -23,8 +23,9 @@ export const SectionCard: React.FC<{
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        backgroundColor: '#000000',
+        border: '1px solid',
+        borderColor: 'border.light',
+        backgroundColor: 'background.default',
         display: 'flex',
         flexDirection: 'column',
         ...sx,
@@ -46,13 +47,14 @@ export const SectionCard: React.FC<{
           {title && (
             <Grid
               item
-              xs={hasAction ? 6 : 12}
+              xs={12}
+              sm={hasAction ? 6 : 12}
               lg={hasCenter ? 3 : hasAction ? 6 : 12}
+              order={{ xs: 1, lg: 1 }}
             >
               <Typography
                 variant="h6"
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '1.25rem',
                   fontWeight: 600,
                 }}
@@ -71,7 +73,7 @@ export const SectionCard: React.FC<{
               order={{ xs: 3, lg: 2 }}
               sx={{
                 display: 'flex',
-                justifyContent: 'center',
+                justifyContent: { xs: 'flex-start', lg: 'center' },
                 mt: { xs: 2, lg: 0 }, // Add margin on mobile when stacked
               }}
             >
@@ -83,15 +85,17 @@ export const SectionCard: React.FC<{
           {hasAction && (
             <Grid
               item
-              xs={6}
+              xs={12}
+              sm={6}
               lg={hasCenter ? 3 : 6}
               order={{ xs: 2, lg: 3 }}
               sx={{
                 display: 'flex',
-                justifyContent: 'flex-end',
+                justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+                mt: { xs: 1, sm: 0 },
               }}
             >
-              <Box>{action}</Box>
+              <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>{action}</Box>
             </Grid>
           )}
         </Grid>

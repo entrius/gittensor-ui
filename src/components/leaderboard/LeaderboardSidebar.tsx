@@ -2,8 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { Box, Stack, Typography, Avatar } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { SectionCard } from './SectionCard';
-import { STATUS_COLORS } from '../../theme';
+import { STATUS_COLORS, scrollbarSx } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
+import { LinkBox } from '../common/linkBehavior';
 import { type MinerStats, FONTS } from './types';
 
 // Re-export MinerStats for backward compatibility
@@ -11,13 +12,15 @@ export type { MinerStats } from './types';
 
 interface LeaderboardSidebarProps {
   miners: MinerStats[];
-  onSelectMiner: (githubId: string) => void;
+  getMinerHref: (miner: MinerStats) => string;
+  linkState?: Record<string, unknown>;
   variant?: 'oss' | 'discoveries';
 }
 
 export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
   miners,
-  onSelectMiner,
+  getMinerHref,
+  linkState,
   variant = 'oss',
 }) => {
   // State for toggling lists
@@ -37,9 +40,13 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
   const mostActive = useMemo(
     () =>
       [...miners]
-        .sort((a, b) => (b.totalPRs || 0) - (a.totalPRs || 0))
+        .sort((a, b) =>
+          variant === 'discoveries'
+            ? (b.totalIssues || 0) - (a.totalIssues || 0)
+            : (b.totalPRs || 0) - (a.totalPRs || 0),
+        )
         .slice(0, 5),
-    [miners],
+    [miners, variant],
   );
 
   // Network Stats Data
@@ -48,13 +55,17 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
       totalMiners: miners.length,
       eligible: miners.filter((m) => m.isEligible).length,
       totalPRs: miners.reduce((acc, m) => acc + (m.totalPRs || 0), 0),
+      totalIssues: miners.reduce((acc, m) => acc + (m.totalIssues || 0), 0),
       dailyPool: miners.reduce((acc, m) => acc + (m.usdPerDay || 0), 0),
     }),
     [miners],
   );
 
   return (
-    <Stack spacing={2} sx={{ height: '100%', overflow: 'auto', pr: 1 }}>
+    <Stack
+      spacing={2}
+      sx={{ height: '100%', overflow: 'auto', pr: 1, ...scrollbarSx }}
+    >
       {/* CARD 1: Network Stats */}
       <SectionCard title="Network Stats" sx={{ flexShrink: 0 }}>
         <Box
@@ -74,7 +85,11 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
           />
           <StatRow
             label={variant === 'discoveries' ? 'Total Issues' : 'Total PRs'}
-            value={networkStats.totalPRs}
+            value={
+              variant === 'discoveries'
+                ? networkStats.totalIssues
+                : networkStats.totalPRs
+            }
           />
           <StatRow
             label="Daily Pool"
@@ -105,9 +120,9 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
                 miner={miner}
                 rank={i + 1}
                 type={leaderboardType}
-                onClick={() =>
-                  onSelectMiner(miner.githubId || miner.author || '')
-                }
+                variant={variant}
+                href={getMinerHref(miner)}
+                linkState={linkState}
               />
             ),
           )}
@@ -279,78 +294,87 @@ interface LeaderboardRowProps {
   miner: MinerStats;
   rank: number;
   type: 'earners' | 'active';
-  onClick: () => void;
+  variant?: 'oss' | 'discoveries';
+  href: string;
+  linkState?: Record<string, unknown>;
 }
 
 const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
   miner,
   rank,
   type,
-  onClick,
-}) => (
-  <Box
-    onClick={onClick}
-    sx={(theme) => ({
-      display: 'flex',
-      alignItems: 'center',
-      py: 1,
-      cursor: 'pointer',
-      '&:hover': {
-        backgroundColor: alpha(theme.palette.text.primary, 0.03),
-        borderRadius: 1,
-      },
-    })}
-  >
-    <Typography
-      sx={{
-        fontFamily: FONTS.mono,
-        fontSize: '0.85rem',
-        color: STATUS_COLORS.open,
-        width: 24,
-      }}
-    >
-      {rank}
-    </Typography>
-    <Box
-      sx={{
+  variant = 'oss',
+  href,
+  linkState,
+}) => {
+  return (
+    <LinkBox
+      href={href}
+      linkState={linkState}
+      sx={(theme) => ({
         display: 'flex',
         alignItems: 'center',
-        gap: 1,
-        flex: 1,
-        minWidth: 0,
-      }}
+        py: 1,
+        cursor: 'pointer',
+        '&:hover': {
+          backgroundColor: alpha(theme.palette.text.primary, 0.03),
+          borderRadius: 1,
+        },
+      })}
     >
-      <Avatar
-        src={getGithubAvatarSrc(miner.author || miner.githubId)}
-        sx={{ width: 20, height: 20 }}
-      />
+      <Typography
+        sx={{
+          fontFamily: FONTS.mono,
+          fontSize: '0.85rem',
+          color: STATUS_COLORS.open,
+          width: 24,
+        }}
+      >
+        {rank}
+      </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
+        <Avatar
+          src={getGithubAvatarSrc(miner.author || miner.githubId)}
+          sx={{ width: 20, height: 20 }}
+        />
+        <Typography
+          sx={(theme) => ({
+            fontFamily: FONTS.mono,
+            fontSize: '0.85rem',
+            color: theme.palette.text.tertiary,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          })}
+        >
+          {miner.author || miner.githubId}
+        </Typography>
+      </Box>
       <Typography
         sx={(theme) => ({
           fontFamily: FONTS.mono,
-          fontSize: '0.85rem',
-          color: theme.palette.text.tertiary,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
+          fontSize: '0.95rem',
+          color:
+            type === 'earners'
+              ? STATUS_COLORS.merged
+              : theme.palette.text.primary,
+          fontWeight: 600,
         })}
       >
-        {miner.author || miner.githubId}
+        {type === 'earners'
+          ? `$${Math.round(miner.usdPerDay || 0).toLocaleString()}`
+          : variant === 'discoveries'
+            ? miner.totalIssues
+            : miner.totalPRs}
       </Typography>
-    </Box>
-    <Typography
-      sx={(theme) => ({
-        fontFamily: FONTS.mono,
-        fontSize: '0.95rem',
-        color:
-          type === 'earners'
-            ? STATUS_COLORS.merged
-            : theme.palette.text.primary,
-        fontWeight: 600,
-      })}
-    >
-      {type === 'earners'
-        ? `$${Math.round(miner.usdPerDay || 0).toLocaleString()}`
-        : miner.totalPRs}
-    </Typography>
-  </Box>
-);
+    </LinkBox>
+  );
+};

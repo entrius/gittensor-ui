@@ -14,7 +14,7 @@ const formatPrScore = (pr: CommitLog) => {
   if (pr.prState === 'CLOSED' && !pr.mergedAt) return '-';
   if (!pr.score) return '-';
 
-  return Number(pr.score).toFixed(4);
+  return parseFloat(pr.score).toFixed(4);
 };
 
 const formatPrDateOrStatus = (pr: CommitLog) => {
@@ -44,7 +44,6 @@ const prColumns: SearchResultsTableColumn<CommitLog>[] = [
         <SearchTruncatedText
           tooltip={prTitle}
           sx={(theme) => ({
-            fontFamily: theme.typography.mono.fontFamily,
             color: theme.palette.text.primary,
           })}
           text={prTitle}
@@ -93,7 +92,6 @@ const prColumns: SearchResultsTableColumn<CommitLog>[] = [
           component="span"
           sx={(theme) => ({
             color: theme.palette.diff.additions,
-            fontFamily: theme.typography.mono.fontFamily,
           })}
         >
           +{pr.additions || 0}
@@ -102,7 +100,6 @@ const prColumns: SearchResultsTableColumn<CommitLog>[] = [
           component="span"
           sx={(theme) => ({
             color: theme.palette.diff.deletions,
-            fontFamily: theme.typography.mono.fontFamily,
           })}
         >
           -{pr.deletions || 0}
@@ -137,7 +134,8 @@ type PullRequestsTabProps = {
   isLoading: boolean;
   onPageChange: (newPage: number) => void;
   onRowsPerPageChange: (rowsPerPage: number) => void;
-  onSelectPr: (repository: string, pullRequestNumber: number) => void;
+  getPrHref: (pr: CommitLog) => string;
+  linkState?: Record<string, unknown>;
   page: number;
   paginatedPrResults: CommitLog[];
   prResults: CommitLog[];
@@ -150,7 +148,8 @@ const PullRequestsTab: React.FC<PullRequestsTabProps> = ({
   isLoading,
   onPageChange,
   onRowsPerPageChange,
-  onSelectPr,
+  getPrHref,
+  linkState,
   page,
   paginatedPrResults,
   prResults,
@@ -166,9 +165,8 @@ const PullRequestsTab: React.FC<PullRequestsTabProps> = ({
     isLoading={isLoading}
     minWidth={960}
     onPageChange={onPageChange}
-    onRowClick={(pr: CommitLog) =>
-      onSelectPr(pr.repository, pr.pullRequestNumber)
-    }
+    getRowHref={getPrHref}
+    linkState={linkState}
     onRowsPerPageChange={onRowsPerPageChange}
     page={page}
     rows={paginatedPrResults}

@@ -9,15 +9,34 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableSortLabel,
   CircularProgress,
   Avatar,
   Chip,
   Stack,
-  Button,
+  alpha,
 } from '@mui/material';
+
+type PrSortField =
+  | 'pullRequestNumber'
+  | 'pullRequestTitle'
+  | 'author'
+  | 'commitCount'
+  | 'lines'
+  | 'score'
+  | 'status'
+  | 'mergedAt';
+type SortOrder = 'asc' | 'desc';
 import { useAllPrs } from '../../api';
-import { useNavigate } from 'react-router-dom';
-import theme from '../../theme';
+import { LinkTableRow } from '../common/linkBehavior';
+import theme, {
+  TEXT_OPACITY,
+  scrollbarSx,
+  headerCellStyle,
+  bodyCellStyle,
+} from '../../theme';
+import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
+import FilterButton from '../FilterButton';
 
 interface RepositoryPRsTableProps {
   repositoryFullName: string;
@@ -28,10 +47,20 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   repositoryFullName,
   state = 'all',
 }) => {
-  const navigate = useNavigate();
-  const [filter, setFilter] = useState<'all' | 'open' | 'closed' | 'merged'>(
-    state,
-  );
+  const [filter, setFilter] = useState<PrStatusFilter>(state);
+  const [sortField, setSortField] = useState<PrSortField>('score');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+
+  const handleSort = (field: PrSortField) => {
+    if (sortField === field) {
+      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder(
+        field === 'pullRequestTitle' || field === 'author' ? 'asc' : 'desc',
+      );
+    }
+  };
 
   // Fetch ALL PRs at once to enable client-side filtering and accurate counts
   // This avoids server roundtrips on filter change and provides instant UI feedback
@@ -46,86 +75,60 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
 
   const counts = useMemo(() => {
     if (!allPRs) return { all: 0, open: 0, merged: 0, closed: 0 };
-    return {
-      all: allPRs.length,
-      open: allPRs.filter(
-        (pr) => pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
-      ).length,
-      merged: allPRs.filter((pr) => pr.prState === 'MERGED' || !!pr.mergedAt)
-        .length,
-      closed: allPRs.filter((pr) => pr.prState === 'CLOSED' && !pr.mergedAt)
-        .length,
-    };
+    return getPrStatusCounts(allPRs);
   }, [allPRs]);
 
-  const filteredPRs = useMemo(() => {
-    if (!allPRs) return [];
-    if (filter === 'all') return allPRs;
-    if (filter === 'merged')
-      return allPRs.filter((pr) => pr.prState === 'MERGED' || !!pr.mergedAt);
-    if (filter === 'open')
-      return allPRs.filter(
-        (pr) => pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt),
+  const filteredPRs = useMemo(
+    () => filterPrs(allPRs ?? [], { statusFilter: filter }),
+    [allPRs, filter],
+  );
+
+  const sortedPRs = useMemo(() => {
+    const dir = sortOrder === 'asc' ? 1 : -1;
+    const cmpStr = (a = '', b = '') => a.localeCompare(b) * dir;
+    const cmpNum = (a = 0, b = 0) => (a - b) * dir;
+    const stateRank = (pr: (typeof filteredPRs)[number]) => {
+      const s = pr.prState?.toUpperCase() || (pr.mergedAt ? 'MERGED' : 'OPEN');
+      return (
+        ({ OPEN: 0, MERGED: 1, CLOSED: 2 } as Record<string, number>)[s] ?? 3
       );
-    if (filter === 'closed')
-      return allPRs.filter((pr) => pr.prState === 'CLOSED' && !pr.mergedAt);
-    return allPRs;
-  }, [allPRs, filter]);
+    };
 
-  const sortedPRs = useMemo(
-    () =>
-      [...filteredPRs].sort(
-        (a, b) => parseFloat(b.score || '0') - parseFloat(a.score || '0'),
-      ),
-    [filteredPRs],
-  );
-
-  const FilterButton = ({
-    label,
-    value,
-    count,
-    color,
-  }: {
-    label: string;
-    value: typeof filter;
-    count?: number;
-    color: string;
-  }) => (
-    <Button
-      size="small"
-      onClick={() => setFilter(value)}
-      sx={{
-        color: filter === value ? '#fff' : 'rgba(255,255,255,0.5)',
-        backgroundColor:
-          filter === value ? 'rgba(255,255,255,0.1)' : 'transparent',
-        borderRadius: '6px',
-        px: 2,
-        minWidth: 'auto',
-        textTransform: 'none',
-        fontFamily: '"JetBrains Mono", monospace',
-        fontSize: '0.8rem',
-        border:
-          filter === value ? `1px solid ${color}` : '1px solid transparent',
-        '&:hover': {
-          backgroundColor: 'rgba(255,255,255,0.15)',
-        },
-      }}
-    >
-      {label}{' '}
-      {count !== undefined && (
-        <span style={{ opacity: 0.6, marginLeft: '6px', fontSize: '0.75rem' }}>
-          {count}
-        </span>
-      )}
-    </Button>
-  );
+    return [...filteredPRs].sort((a, b) => {
+      switch (sortField) {
+        case 'pullRequestNumber':
+          return cmpNum(a.pullRequestNumber, b.pullRequestNumber);
+        case 'pullRequestTitle':
+          return cmpStr(a.pullRequestTitle, b.pullRequestTitle);
+        case 'author':
+          return cmpStr(a.author, b.author);
+        case 'commitCount':
+          return cmpNum(a.commitCount, b.commitCount);
+        case 'lines':
+          return cmpNum(
+            (a.additions ?? 0) + (a.deletions ?? 0),
+            (b.additions ?? 0) + (b.deletions ?? 0),
+          );
+        case 'status':
+          return (stateRank(a) - stateRank(b)) * dir;
+        case 'mergedAt':
+          return cmpNum(
+            a.mergedAt ? new Date(a.mergedAt).getTime() : 0,
+            b.mergedAt ? new Date(b.mergedAt).getTime() : 0,
+          );
+        case 'score':
+        default:
+          return cmpNum(parseFloat(a.score || '0'), parseFloat(b.score || '0'));
+      }
+    });
+  }, [filteredPRs, sortField, sortOrder]);
 
   if (isLoading) {
     return (
       <Card
         sx={{
           borderRadius: 3,
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: `1px solid ${theme.palette.border.light}`,
           backgroundColor: 'transparent',
           p: 4,
           textAlign: 'center',
@@ -135,32 +138,38 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
           <Typography
             variant="h6"
-            sx={{ color: '#fff', fontFamily: '"JetBrains Mono", monospace' }}
+            sx={{
+              color: 'text.primary',
+            }}
           >
             Pull Requests
           </Typography>
           <Stack direction="row" spacing={1}>
             <FilterButton
               label="All"
-              value="all"
+              isActive={filter === 'all'}
+              onClick={() => setFilter('all')}
               count={counts.all}
               color={theme.palette.status.neutral}
             />
             <FilterButton
               label="Open"
-              value="open"
+              isActive={filter === 'open'}
+              onClick={() => setFilter('open')}
               count={counts.open}
               color={theme.palette.status.open}
             />
             <FilterButton
               label="Merged"
-              value="merged"
+              isActive={filter === 'merged'}
+              onClick={() => setFilter('merged')}
               count={counts.merged}
               color={theme.palette.status.merged}
             />
             <FilterButton
               label="Closed"
-              value="closed"
+              isActive={filter === 'closed'}
+              onClick={() => setFilter('closed')}
               count={counts.closed}
               color={theme.palette.status.closed}
             />
@@ -175,7 +184,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     <Card
       sx={{
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: `1px solid ${theme.palette.border.light}`,
         backgroundColor: 'transparent',
         p: 0,
         display: 'flex',
@@ -187,7 +196,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       <Box
         sx={{
           p: 3,
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          borderBottom: `1px solid ${theme.palette.border.light}`,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -198,8 +207,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         <Typography
           variant="h6"
           sx={{
-            color: '#ffffff',
-            fontFamily: '"JetBrains Mono", monospace',
+            color: 'text.primary',
             fontSize: '1.1rem',
             fontWeight: 500,
           }}
@@ -210,25 +218,29 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         <Stack direction="row" spacing={1}>
           <FilterButton
             label="All"
-            value="all"
+            isActive={filter === 'all'}
+            onClick={() => setFilter('all')}
             count={counts.all}
             color={theme.palette.status.neutral}
           />
           <FilterButton
             label="Open"
-            value="open"
+            isActive={filter === 'open'}
+            onClick={() => setFilter('open')}
             count={counts.open}
             color={theme.palette.status.open}
           />
           <FilterButton
             label="Merged"
-            value="merged"
+            isActive={filter === 'merged'}
+            onClick={() => setFilter('merged')}
             count={counts.merged}
             color={theme.palette.status.merged}
           />
           <FilterButton
             label="Closed"
-            value="closed"
+            isActive={filter === 'closed'}
+            onClick={() => setFilter('closed')}
             count={counts.closed}
             color={theme.palette.status.closed}
           />
@@ -239,8 +251,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         <Box sx={{ p: 4, textAlign: 'center' }}>
           <Typography
             sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
-              fontFamily: '"JetBrains Mono", monospace',
+              color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
               fontSize: '0.9rem',
             }}
           >
@@ -252,57 +263,100 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           sx={{
             maxHeight: '500px',
             overflow: 'auto',
-            '&::-webkit-scrollbar': {
-              width: '8px',
-              height: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '4px',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              },
-            },
+            ...scrollbarSx,
           }}
         >
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell sx={headerCellStyle}>PR #</TableCell>
-                <TableCell sx={headerCellStyle}>Title</TableCell>
-                <TableCell sx={headerCellStyle}>Author</TableCell>
-                <TableCell align="right" sx={headerCellStyle}>
-                  Commits
+                <TableCell sx={headerCellStyle}>
+                  <TableSortLabel
+                    active={sortField === 'pullRequestNumber'}
+                    direction={
+                      sortField === 'pullRequestNumber' ? sortOrder : 'desc'
+                    }
+                    onClick={() => handleSort('pullRequestNumber')}
+                  >
+                    PR #
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={headerCellStyle}>
+                  <TableSortLabel
+                    active={sortField === 'pullRequestTitle'}
+                    direction={
+                      sortField === 'pullRequestTitle' ? sortOrder : 'asc'
+                    }
+                    onClick={() => handleSort('pullRequestTitle')}
+                  >
+                    Title
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={headerCellStyle}>
+                  <TableSortLabel
+                    active={sortField === 'author'}
+                    direction={sortField === 'author' ? sortOrder : 'asc'}
+                    onClick={() => handleSort('author')}
+                  >
+                    Author
+                  </TableSortLabel>
                 </TableCell>
                 <TableCell align="right" sx={headerCellStyle}>
-                  +/-
+                  <TableSortLabel
+                    active={sortField === 'commitCount'}
+                    direction={sortField === 'commitCount' ? sortOrder : 'desc'}
+                    onClick={() => handleSort('commitCount')}
+                  >
+                    Commits
+                  </TableSortLabel>
                 </TableCell>
                 <TableCell align="right" sx={headerCellStyle}>
-                  Score
+                  <TableSortLabel
+                    active={sortField === 'lines'}
+                    direction={sortField === 'lines' ? sortOrder : 'desc'}
+                    onClick={() => handleSort('lines')}
+                  >
+                    +/-
+                  </TableSortLabel>
                 </TableCell>
-                <TableCell sx={headerCellStyle}>Status</TableCell>
                 <TableCell align="right" sx={headerCellStyle}>
-                  Merged
+                  <TableSortLabel
+                    active={sortField === 'score'}
+                    direction={sortField === 'score' ? sortOrder : 'desc'}
+                    onClick={() => handleSort('score')}
+                  >
+                    Score
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={headerCellStyle}>
+                  <TableSortLabel
+                    active={sortField === 'status'}
+                    direction={sortField === 'status' ? sortOrder : 'asc'}
+                    onClick={() => handleSort('status')}
+                  >
+                    Status
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell align="right" sx={headerCellStyle}>
+                  <TableSortLabel
+                    active={sortField === 'mergedAt'}
+                    direction={sortField === 'mergedAt' ? sortOrder : 'desc'}
+                    onClick={() => handleSort('mergedAt')}
+                  >
+                    Merged
+                  </TableSortLabel>
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortedPRs.map((pr, index) => (
-                <TableRow
-                  key={`${pr.pullRequestNumber}-${index}`}
-                  onClick={() => {
-                    navigate(
-                      `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
-                      { state: { backLabel: `Back to ${repositoryFullName}` } },
-                    );
-                  }}
+              {sortedPRs.map((pr) => (
+                <LinkTableRow
+                  key={`${pr.repository}-${pr.pullRequestNumber}`}
+                  href={`/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`}
+                  linkState={{ backLabel: `Back to ${repositoryFullName}` }}
                   sx={{
                     cursor: 'pointer',
                     '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      backgroundColor: 'surface.light',
                     },
                     transition: 'background-color 0.2s',
                   }}
@@ -313,7 +367,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
-                        color: '#ffffff',
+                        color: theme.palette.text.primary,
                         textDecoration: 'none',
                         fontWeight: 500,
                       }}
@@ -371,7 +425,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                   <TableCell align="right" sx={bodyCellStyle}>
                     <Typography
                       sx={{
-                        fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.75rem',
                         fontWeight: 600,
                       }}
@@ -412,7 +465,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
                       ? new Date(pr.mergedAt).toLocaleDateString()
                       : '-'}
                   </TableCell>
-                </TableRow>
+                </LinkTableRow>
               ))}
             </TableBody>
           </Table>
@@ -420,25 +473,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       )}
     </Card>
   );
-};
-
-const headerCellStyle = {
-  backgroundColor: 'rgba(18, 18, 20, 0.95)',
-  backdropFilter: 'blur(8px)',
-  color: 'rgba(255, 255, 255, 0.7)',
-  fontFamily: '"JetBrains Mono", monospace',
-  fontWeight: 500,
-  fontSize: '0.75rem',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.5px',
-};
-
-const bodyCellStyle = {
-  color: '#ffffff',
-  fontFamily: '"JetBrains Mono", monospace',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  fontSize: '0.85rem',
 };
 
 export default RepositoryPRsTable;

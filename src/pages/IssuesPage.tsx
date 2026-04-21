@@ -8,13 +8,16 @@
  */
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Box, Tabs, Tab, Stack } from '@mui/material';
+import { Box, Tabs, Tab, Stack, Typography, alpha } from '@mui/material';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { IssueStats, IssuesList } from '../components/issues';
 import { useIssuesStats, useIssues } from '../api';
 
 const TAB_SLUGS = ['available', 'pending', 'history'] as const;
+
+const ISSUE_LINK_STATE = { backLabel: 'Back to Bounties' } as const;
+const getIssueHref = (id: number) => `/bounties/details?id=${id}`;
 
 const IssuesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -59,35 +62,72 @@ const IssuesPage: React.FC = () => {
 
           {/* Tabs Navigation */}
           <Box
-            sx={{
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-            }}
+            sx={(theme) => ({
+              borderBottom: '1px solid',
+              borderColor: theme.palette.border.light,
+            })}
           >
-            <Tabs
-              value={tabIndex}
-              onChange={handleTabChange}
+            <Box
               sx={{
-                '& .MuiTab-root': {
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  color: 'rgba(255, 255, 255, 0.5)',
-                  minHeight: 48,
-                  '&.Mui-selected': {
-                    color: '#ffffff',
-                  },
-                },
-                '& .MuiTabs-indicator': {
-                  backgroundColor: '#ffffff',
-                  height: 2,
-                },
+                display: 'flex',
+                alignItems: 'flex-end',
+                justifyContent: 'space-between',
+                gap: 2,
+                flexWrap: 'wrap',
               }}
             >
-              <Tab label="Available Issues" />
-              <Tab label="Pending Issues" />
-              <Tab label="History" />
-            </Tabs>
+              <Tabs
+                value={tabIndex}
+                onChange={handleTabChange}
+                sx={(theme) => ({
+                  '& .MuiTab-root': {
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    color: theme.palette.text.secondary,
+                    minHeight: 48,
+                    '&.Mui-selected': {
+                      color: theme.palette.text.primary,
+                    },
+                  },
+                  '& .MuiTabs-indicator': {
+                    backgroundColor: theme.palette.text.primary,
+                    height: 2,
+                  },
+                })}
+              >
+                <Tab label="Available Issues" />
+                <Tab label="Pending Issues" />
+                <Tab label="History" />
+              </Tabs>
+
+              <Typography
+                sx={{
+                  fontSize: '0.72rem',
+                  color: (t) => alpha(t.palette.text.primary, 0.35),
+                  pr: 1,
+                  mb: { xs: 1, md: 0 },
+                  textAlign: { xs: 'left', md: 'right' },
+                }}
+              >
+                Learn more about bounties in the{' '}
+                <Typography
+                  component="a"
+                  href="https://docs.gittensor.io/issue-bounties.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{
+                    color: 'primary.main',
+                    fontSize: 'inherit',
+                    fontFamily: 'inherit',
+                    textDecoration: 'none',
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  docs
+                </Typography>
+              </Typography>
+            </Box>
           </Box>
 
           {/* Tab Content */}
@@ -97,11 +137,8 @@ const IssuesPage: React.FC = () => {
                 issues={activeIssuesQuery.data || []}
                 isLoading={activeIssuesQuery.isLoading}
                 listType="available"
-                onSelectIssue={(id) =>
-                  navigate(`/bounties/details?id=${id}`, {
-                    state: { backLabel: 'Back to Bounties' },
-                  })
-                }
+                getIssueHref={getIssueHref}
+                linkState={ISSUE_LINK_STATE}
               />
             )}
             {tabIndex === 1 && (
@@ -109,11 +146,8 @@ const IssuesPage: React.FC = () => {
                 issues={registeredIssuesQuery.data || []}
                 isLoading={registeredIssuesQuery.isLoading}
                 listType="pending"
-                onSelectIssue={(id) =>
-                  navigate(`/bounties/details?id=${id}`, {
-                    state: { backLabel: 'Back to Bounties' },
-                  })
-                }
+                getIssueHref={getIssueHref}
+                linkState={ISSUE_LINK_STATE}
               />
             )}
             {tabIndex === 2 && (
@@ -121,11 +155,8 @@ const IssuesPage: React.FC = () => {
                 issues={historyIssuesQuery.data || []}
                 isLoading={historyIssuesQuery.isLoading}
                 listType="history"
-                onSelectIssue={(id) =>
-                  navigate(`/bounties/details?id=${id}`, {
-                    state: { backLabel: 'Back to Bounties' },
-                  })
-                }
+                getIssueHref={getIssueHref}
+                linkState={ISSUE_LINK_STATE}
               />
             )}
           </Box>

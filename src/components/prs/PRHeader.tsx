@@ -1,10 +1,11 @@
 import React from 'react';
 import { Box, Typography, Avatar, Tooltip, alpha } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { useNavigate } from 'react-router-dom';
+import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import { formatUsdEstimate } from '../../utils';
 import { type PullRequestDetails } from '../../api/models/Dashboard';
-import theme, { STATUS_COLORS } from '../../theme';
+import { STATUS_COLORS } from '../../theme';
+import { getRepositoryOwnerAvatarBackground } from '../leaderboard/types';
 interface PRHeaderProps {
   repository: string;
   pullRequestNumber: number;
@@ -16,25 +17,32 @@ const PRHeader: React.FC<PRHeaderProps> = ({
   pullRequestNumber,
   prDetails,
 }) => {
-  const navigate = useNavigate();
   const [owner] = repository.split('/');
+  const repoLinkProps = useLinkBehavior<HTMLAnchorElement>(
+    `/miners/repository?name=${encodeURIComponent(repository)}`,
+    { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
+  );
 
   const isOpenPR = prDetails.prState === 'OPEN';
   const isClosed = prDetails.prState === 'CLOSED';
   const collateralScore = parseFloat(prDetails.collateralScore || '0');
   const earnedScore = parseFloat(prDetails.earnedScore || '0');
   const predictedUsdPerDay = prDetails.predictedUsdPerDay;
+  const ownerAvatarBackground = getRepositoryOwnerAvatarBackground(owner);
+  const statusColor =
+    prDetails.prState === 'CLOSED'
+      ? STATUS_COLORS.closed
+      : prDetails.prState === 'MERGED'
+        ? STATUS_COLORS.merged
+        : STATUS_COLORS.open;
 
   return (
     <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-start', gap: 2 }}>
       <Box
-        onClick={() =>
-          navigate(
-            `/miners/repository?name=${encodeURIComponent(repository)}`,
-            { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
-          )
-        }
+        component="a"
+        {...repoLinkProps}
         sx={{
+          ...linkResetSx,
           cursor: 'pointer',
           transition: 'transform 0.2s',
           '&:hover': {
@@ -48,13 +56,9 @@ const PRHeader: React.FC<PRHeaderProps> = ({
           sx={{
             width: 64,
             height: 64,
-            border: '2px solid rgba(255, 255, 255, 0.2)',
-            backgroundColor:
-              owner === 'opentensor'
-                ? '#ffffff'
-                : owner === 'bitcoin'
-                  ? '#F7931A'
-                  : 'transparent',
+            border: '2px solid',
+            borderColor: 'border.medium',
+            backgroundColor: ownerAvatarBackground,
           }}
         />
       </Box>
@@ -63,50 +67,39 @@ const PRHeader: React.FC<PRHeaderProps> = ({
           <Typography
             variant="h5"
             sx={{
-              color: '#ffffff',
-              fontFamily: '"JetBrains Mono", monospace',
+              color: 'text.primary',
               fontSize: '1.3rem',
               fontWeight: 500,
             }}
           >
             #{pullRequestNumber}
           </Typography>
-          {(() => {
-            const statusColor =
-              prDetails.prState === 'CLOSED'
-                ? theme.palette.status.closed
-                : prDetails.prState === 'MERGED'
-                  ? theme.palette.status.merged
-                  : theme.palette.status.open;
-            return (
-              <Box
-                sx={{
-                  display: 'inline-block',
-                  px: 1,
-                  py: 0.25,
-                  borderRadius: 1,
-                  backgroundColor: alpha(statusColor, 0.2),
-                  border: '1px solid',
-                  borderColor: alpha(statusColor, 0.4),
-                }}
-              >
-                <Typography
-                  sx={{
-                    color: statusColor,
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    textTransform: 'capitalize',
-                  }}
-                >
-                  {prDetails.prState}
-                </Typography>
-              </Box>
-            );
-          })()}
+          <Box
+            sx={{
+              display: 'inline-block',
+              px: 1,
+              py: 0.25,
+              borderRadius: 1,
+              backgroundColor: alpha(statusColor, 0.2),
+              border: '1px solid',
+              borderColor: alpha(statusColor, 0.4),
+            }}
+          >
+            <Typography
+              sx={{
+                color: statusColor,
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                textTransform: 'capitalize',
+              }}
+            >
+              {prDetails.prState}
+            </Typography>
+          </Box>
         </Box>
         <Typography
           sx={{
-            color: '#ffffff',
+            color: 'text.primary',
             fontSize: '1rem',
             fontWeight: 400,
             mb: 0.5,
@@ -116,15 +109,11 @@ const PRHeader: React.FC<PRHeaderProps> = ({
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Typography
-            onClick={() =>
-              navigate(
-                `/miners/repository?name=${encodeURIComponent(repository)}`,
-                { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
-              )
-            }
+            component="a"
+            {...repoLinkProps}
             sx={{
-              color: 'rgba(255, 255, 255, 0.5)',
-              fontFamily: '"JetBrains Mono", monospace',
+              ...linkResetSx,
+              color: 'text.tertiary',
               fontSize: '0.85rem',
               cursor: 'pointer',
               transition: 'color 0.2s',
@@ -160,27 +149,26 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                 slotProps={{
                   tooltip: {
                     sx: {
-                      backgroundColor: 'rgba(30, 30, 30, 0.95)',
-                      color: '#ffffff',
+                      backgroundColor: 'surface.tooltip',
+                      color: 'text.primary',
                       fontSize: '0.75rem',
-                      fontFamily: '"JetBrains Mono", monospace',
                       padding: '8px 12px',
                       borderRadius: '6px',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      border: '1px solid',
+                      borderColor: 'border.light',
                       maxWidth: 280,
                     },
                   },
                   arrow: {
                     sx: {
-                      color: 'rgba(30, 30, 30, 0.95)',
+                      color: 'surface.tooltip',
                     },
                   },
                 }}
               >
                 <Typography
                   sx={{
-                    color: 'rgba(255, 255, 255, 0.5)',
-                    fontFamily: '"JetBrains Mono", monospace',
+                    color: 'text.tertiary',
                     fontSize: '0.75rem',
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px',
@@ -198,11 +186,10 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               </Tooltip>
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '2.25rem',
                   fontWeight: 700,
                   lineHeight: 1,
-                  color: 'rgba(255, 255, 255, 0.6)',
+                  color: 'text.secondary',
                 }}
               >
                 {(collateralScore * 5).toFixed(2)}
@@ -214,7 +201,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               sx={{
                 width: '1px',
                 height: '55px',
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                backgroundColor: 'border.light',
                 mt: 0.5,
               }}
             />
@@ -228,27 +215,26 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                 slotProps={{
                   tooltip: {
                     sx: {
-                      backgroundColor: 'rgba(30, 30, 30, 0.95)',
-                      color: '#ffffff',
+                      backgroundColor: 'surface.tooltip',
+                      color: 'text.primary',
                       fontSize: '0.75rem',
-                      fontFamily: '"JetBrains Mono", monospace',
                       padding: '8px 12px',
                       borderRadius: '6px',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      border: '1px solid',
+                      borderColor: 'border.light',
                       maxWidth: 240,
                     },
                   },
                   arrow: {
                     sx: {
-                      color: 'rgba(30, 30, 30, 0.95)',
+                      color: 'surface.tooltip',
                     },
                   },
                 }}
               >
                 <Typography
                   sx={{
-                    color: 'rgba(255, 255, 255, 0.5)',
-                    fontFamily: '"JetBrains Mono", monospace',
+                    color: 'text.tertiary',
                     fontSize: '0.75rem',
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px',
@@ -266,14 +252,11 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               </Tooltip>
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '2.25rem',
                   fontWeight: 700,
                   lineHeight: 1,
                   color:
-                    collateralScore > 0
-                      ? 'rgba(248, 113, 113, 0.9)'
-                      : 'rgba(255, 255, 255, 0.4)',
+                    collateralScore > 0 ? 'risk.exceeded' : 'text.secondary',
                 }}
               >
                 {collateralScore > 0
@@ -287,8 +270,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
           <Box sx={{ textAlign: 'right' }}>
             <Typography
               sx={{
-                color: 'rgba(255, 255, 255, 0.5)',
-                fontFamily: '"JetBrains Mono", monospace',
+                color: 'text.tertiary',
                 fontSize: '0.75rem',
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
@@ -299,11 +281,10 @@ const PRHeader: React.FC<PRHeaderProps> = ({
             </Typography>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '2.25rem',
                 fontWeight: 700,
                 lineHeight: 1,
-                color: isClosed ? 'rgba(255, 255, 255, 0.4)' : '#ffffff',
+                color: isClosed ? 'text.secondary' : 'text.primary',
               }}
             >
               {earnedScore.toFixed(2)}
@@ -318,28 +299,28 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                   slotProps={{
                     tooltip: {
                       sx: {
-                        backgroundColor: 'rgba(30, 30, 30, 0.95)',
-                        color: '#ffffff',
+                        backgroundColor: 'surface.tooltip',
+                        color: 'text.primary',
                         fontSize: '0.75rem',
-                        fontFamily: '"JetBrains Mono", monospace',
                         padding: '8px 12px',
                         borderRadius: '6px',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        border: '1px solid',
+                        borderColor: 'border.light',
                         maxWidth: 280,
                       },
                     },
                     arrow: {
                       sx: {
-                        color: 'rgba(30, 30, 30, 0.95)',
+                        color: 'surface.tooltip',
                       },
                     },
                   }}
                 >
                   <Typography
                     sx={{
-                      fontFamily: '"JetBrains Mono", monospace',
                       fontSize: '0.95rem',
-                      color: alpha(STATUS_COLORS.success, 0.8),
+                      color: 'status.success',
+                      opacity: 0.8,
                       mt: 0.5,
                       cursor: 'pointer',
                     }}

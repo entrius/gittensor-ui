@@ -1,23 +1,24 @@
 import React, { useMemo } from 'react';
 import { useMediaQuery, Box, Typography, alpha } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import { Page } from '../components/layout';
-import { TopMinersTable, LeaderboardSidebar, SEO } from '../components';
+import {
+  TopMinersTable,
+  LeaderboardSidebar,
+  SEO,
+  type MinerStats,
+} from '../components';
 import { useAllMiners } from '../api';
-import theme from '../theme';
+import theme, { scrollbarSx } from '../theme';
+import { parseNumber } from '../utils/ExplorerUtils';
+
+const MINER_LINK_STATE = { backLabel: 'Back to Discoveries' } as const;
+const getMinerHref = (miner: MinerStats) =>
+  `/miners/details?githubId=${miner.githubId}&mode=issues`;
 
 const DiscoveriesPage: React.FC = () => {
-  const navigate = useNavigate();
-
   const allMinerStatsQuery = useAllMiners();
   const allMinersStats = allMinerStatsQuery?.data;
   const isLoadingMinerStats = allMinerStatsQuery?.isLoading;
-
-  const handleSelectMiner = (githubId: string) => {
-    navigate(`/discoveries/details?githubId=${githubId}`, {
-      state: { backLabel: 'Back to Discoveries' },
-    });
-  };
 
   // Process miner stats for TopMinersTable, using issue discovery fields
   const minerStats = useMemo(() => {
@@ -26,23 +27,29 @@ const DiscoveriesPage: React.FC = () => {
       id: String(stat.id),
       githubId: stat.githubId || '',
       author: stat.githubUsername || undefined,
-      totalScore: Number(stat.issueDiscoveryScore) || 0,
-      baseTotalScore: Number(stat.baseTotalScore) || 0,
-      totalPRs:
-        (Number(stat.totalSolvedIssues) || 0) +
-        (Number(stat.totalClosedIssues) || 0),
-      linesChanged: Number(stat.totalNodesScored) || 0,
-      linesAdded: Number(stat.totalAdditions) || 0,
-      linesDeleted: Number(stat.totalDeletions) || 0,
+      totalScore: parseNumber(stat.issueDiscoveryScore),
+      baseTotalScore: parseNumber(stat.baseTotalScore),
+      totalPRs: parseNumber(stat.totalPrs),
+      totalIssues:
+        parseNumber(stat.totalSolvedIssues) +
+        parseNumber(stat.totalOpenIssues) +
+        parseNumber(stat.totalClosedIssues),
+      linesChanged: parseNumber(stat.totalNodesScored),
+      linesAdded: parseNumber(stat.totalAdditions),
+      linesDeleted: parseNumber(stat.totalDeletions),
       hotkey: stat.hotkey || 'N/A',
-      uniqueReposCount: Number(stat.uniqueReposCount) || 0,
-      credibility: Number(stat.issueCredibility) || 0,
+      uniqueReposCount: parseNumber(stat.uniqueReposCount),
+      issueCredibility: parseNumber(stat.issueCredibility),
       isEligible: stat.isIssueEligible ?? false,
-      usdPerDay: Number(stat.usdPerDay) || 0,
-      // Issue counts mapped to PR status fields
-      totalMergedPrs: Number(stat.totalSolvedIssues) || 0,
-      totalOpenPrs: Number(stat.totalOpenIssues) || 0,
-      totalClosedPrs: Number(stat.totalClosedIssues) || 0,
+      ossIsEligible: stat.isEligible ?? false,
+      discoveriesIsEligible: stat.isIssueEligible ?? false,
+      usdPerDay: parseNumber(stat.usdPerDay),
+      totalMergedPrs: parseNumber(stat.totalMergedPrs),
+      totalOpenPrs: parseNumber(stat.totalOpenPrs),
+      totalClosedPrs: parseNumber(stat.totalClosedPrs),
+      totalSolvedIssues: parseNumber(stat.totalSolvedIssues),
+      totalOpenIssues: parseNumber(stat.totalOpenIssues),
+      totalClosedIssues: parseNumber(stat.totalClosedIssues),
     }));
   }, [allMinersStats]);
 
@@ -91,24 +98,11 @@ const DiscoveriesPage: React.FC = () => {
             overflow: showSidebarRight ? 'auto' : 'visible',
             minWidth: 0,
             pr: showSidebarRight ? 1 : 0,
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '4px',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              },
-            },
+            ...scrollbarSx,
           }}
         >
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.8rem',
               color: (t) => alpha(t.palette.text.primary, 0.5),
               lineHeight: 1.6,
@@ -121,8 +115,9 @@ const DiscoveriesPage: React.FC = () => {
             <TopMinersTable
               miners={sortedMinerStats}
               isLoading={isLoadingMinerStats}
-              onSelectMiner={handleSelectMiner}
-              activityLabel="Issues"
+              getMinerHref={getMinerHref}
+              linkState={MINER_LINK_STATE}
+              variant="discoveries"
             />
           </Box>
         </Box>
@@ -141,7 +136,8 @@ const DiscoveriesPage: React.FC = () => {
         >
           <LeaderboardSidebar
             miners={minerStats}
-            onSelectMiner={handleSelectMiner}
+            getMinerHref={getMinerHref}
+            linkState={MINER_LINK_STATE}
             variant="discoveries"
           />
         </Box>

@@ -9,7 +9,7 @@ import {
   Tab,
 } from '@mui/material';
 import { Page } from '../components/layout';
-import { BackButton, SEO } from '../components';
+import { BackButton, SEO, WatchlistButton } from '../components';
 import {
   IssueHeaderCard,
   IssueSubmissionsTable,
@@ -90,15 +90,29 @@ const IssueDetailsPage: React.FC = () => {
         >
           <Stack spacing={3}>
             <BackButton to="/bounties" label="Back to Bounties" mb={0} />
-            <IssueHeaderCard issue={issue} />
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <IssueHeaderCard issue={issue} />
+              </Box>
+              <WatchlistButton
+                category="bounties"
+                itemKey={String(issue.id)}
+                size="medium"
+              />
+            </Box>
 
             {/* Tabs */}
-            <Box sx={{ borderBottom: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+            <Box
+              sx={(theme) => ({
+                borderBottom: 1,
+                borderColor: theme.palette.border.light,
+              })}
+            >
               <Tabs
                 value={tabValue}
                 onChange={handleTabChange}
                 aria-label="issue details tabs"
-                sx={{
+                sx={(theme) => ({
                   '& .MuiTab-root': {
                     color: STATUS_COLORS.open,
                     fontFamily:
@@ -108,16 +122,16 @@ const IssueDetailsPage: React.FC = () => {
                     minHeight: '48px',
                     fontSize: '14px',
                     '&.Mui-selected': {
-                      color: 'text.primary',
+                      color: theme.palette.text.primary,
                       fontWeight: 600,
                     },
                   },
                   '& .MuiTabs-indicator': {
-                    backgroundColor: 'primary.main',
+                    backgroundColor: theme.palette.primary.main,
                     height: '3px',
                     borderRadius: '3px 3px 0 0',
                   },
-                }}
+                })}
               >
                 <Tab
                   label="Issue"
