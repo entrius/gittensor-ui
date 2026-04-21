@@ -949,14 +949,6 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         borderColor: 'border.light',
         backgroundColor: 'transparent',
         overflow: 'hidden',
-        maxHeight: '85vh',
-        display: 'flex',
-        flexDirection: 'column',
-        '& .MuiTableContainer-root': {
-          flex: 1,
-          overflowY: 'auto',
-          ...scrollbarSx,
-        },
       }}
     >
       {/* Toolbar */}
