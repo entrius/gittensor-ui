@@ -113,8 +113,9 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
 
   const toggleColumn = useCallback((key: PrSortField) => {
     setColumnVisibility((prev) => {
-      const visibleCount = COLUMN_MENU_OPTIONS.filter(({ key: k }) => prev[k])
-        .length;
+      const visibleCount = COLUMN_MENU_OPTIONS.filter(
+        ({ key: k }) => prev[k],
+      ).length;
       if (prev[key] && visibleCount <= 1) {
         return prev;
       }
@@ -294,149 +295,133 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     </Stack>
   );
 
-  if (isLoading) {
-    return (
-      <Card
-        sx={{
-          borderRadius: 3,
-          border: `1px solid ${theme.palette.border.light}`,
-          backgroundColor: 'transparent',
-          p: 4,
-          textAlign: 'center',
-        }}
-        elevation={0}
-      >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-          <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600 }}>
-            Pull Requests
-          </Typography>
-          {filterButtons}
-        </Box>
-        <CircularProgress size={40} sx={{ color: 'primary.main' }} />
-      </Card>
-    );
-  }
-
-  const columns: DataTableColumn<CommitLog, PrSortField>[] = [
-    {
-      key: 'pullRequestNumber',
-      header: 'PR #',
-      sortKey: 'pullRequestNumber',
-      renderCell: (pr) => (
-        // Native <a> to GitHub — `onRowClick` (no row-as-anchor) keeps this valid HTML.
-        <a
-          href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            color: theme.palette.text.primary,
-            textDecoration: 'none',
-            fontWeight: 500,
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          #{pr.pullRequestNumber}
-        </a>
-      ),
-    },
-    {
-      key: 'pullRequestTitle',
-      header: 'Title',
-      sortKey: 'pullRequestTitle',
-      renderCell: (pr) => (
-        <Box
-          sx={{
-            maxWidth: '300px',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {pr.pullRequestTitle}
-        </Box>
-      ),
-    },
-    {
-      key: 'author',
-      header: 'Author',
-      sortKey: 'author',
-      renderCell: (pr) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Avatar
-            src={`https://avatars.githubusercontent.com/${pr.author}`}
-            alt={pr.author}
-            sx={{ width: 20, height: 20 }}
-          />
-          {pr.author}
-        </Box>
-      ),
-    },
-    {
-      key: 'commitCount',
-      header: 'Commits',
-      align: 'right',
-      sortKey: 'commitCount',
-      renderCell: (pr) => pr.commitCount,
-    },
-    {
-      key: 'lines',
-      header: '+/-',
-      align: 'right',
-      sortKey: 'lines',
-      renderCell: (pr) => (
-        <>
-          <Box
-            component="span"
-            sx={{ color: theme.palette.diff.additions, mr: 1 }}
+  const columns = useMemo<DataTableColumn<CommitLog, PrSortField>[]>(
+    () => [
+      {
+        key: 'pullRequestNumber',
+        header: 'PR #',
+        sortKey: 'pullRequestNumber',
+        renderCell: (pr) => (
+          // Native <a> to GitHub — `onRowClick` (no row-as-anchor) keeps this valid HTML.
+          <a
+            href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: theme.palette.text.primary,
+              textDecoration: 'none',
+              fontWeight: 500,
+            }}
+            onClick={(e) => e.stopPropagation()}
           >
-            +{pr.additions}
-          </Box>
-          <Box component="span" sx={{ color: theme.palette.diff.deletions }}>
-            -{pr.deletions}
-          </Box>
-        </>
-      ),
-    },
-    {
-      key: 'score',
-      header: 'Score',
-      align: 'right',
-      sortKey: 'score',
-      renderCell: (pr) => (
-        <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
-          {parseFloat(pr.score || '0').toFixed(4)}
-        </Typography>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      sortKey: 'status',
-      renderCell: (pr) => {
-        const state =
-          pr.prState?.toUpperCase() || (pr.mergedAt ? 'MERGED' : 'OPEN');
-        const color = getPrStatusChipColor(state, theme.palette.status.neutral);
-        return (
-          <Chip
-            variant="status"
-            label={state}
-            sx={{ color, borderColor: color }}
-          />
-        );
+            #{pr.pullRequestNumber}
+          </a>
+        ),
       },
-    },
-    {
-      key: 'mergedAt',
-      header: 'Merged',
-      align: 'right',
-      sortKey: 'mergedAt',
-      renderCell: (pr) =>
-        pr.mergedAt ? new Date(pr.mergedAt).toLocaleDateString() : '-',
-    },
-  ];
+      {
+        key: 'pullRequestTitle',
+        header: 'Title',
+        sortKey: 'pullRequestTitle',
+        renderCell: (pr) => (
+          <Box
+            sx={{
+              maxWidth: '300px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {pr.pullRequestTitle}
+          </Box>
+        ),
+      },
+      {
+        key: 'author',
+        header: 'Author',
+        sortKey: 'author',
+        renderCell: (pr) => (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Avatar
+              src={`https://avatars.githubusercontent.com/${pr.author}`}
+              alt={pr.author}
+              sx={{ width: 20, height: 20 }}
+            />
+            {pr.author}
+          </Box>
+        ),
+      },
+      {
+        key: 'commitCount',
+        header: 'Commits',
+        align: 'right',
+        sortKey: 'commitCount',
+        renderCell: (pr) => pr.commitCount,
+      },
+      {
+        key: 'lines',
+        header: '+/-',
+        align: 'right',
+        sortKey: 'lines',
+        renderCell: (pr) => (
+          <>
+            <Box
+              component="span"
+              sx={{ color: theme.palette.diff.additions, mr: 1 }}
+            >
+              +{pr.additions}
+            </Box>
+            <Box component="span" sx={{ color: theme.palette.diff.deletions }}>
+              -{pr.deletions}
+            </Box>
+          </>
+        ),
+      },
+      {
+        key: 'score',
+        header: 'Score',
+        align: 'right',
+        sortKey: 'score',
+        renderCell: (pr) => (
+          <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+            {parseFloat(pr.score || '0').toFixed(4)}
+          </Typography>
+        ),
+      },
+      {
+        key: 'status',
+        header: 'Status',
+        sortKey: 'status',
+        renderCell: (pr) => {
+          const state =
+            pr.prState?.toUpperCase() || (pr.mergedAt ? 'MERGED' : 'OPEN');
+          const color = getPrStatusChipColor(
+            state,
+            theme.palette.status.neutral,
+          );
+          return (
+            <Chip
+              variant="status"
+              label={state}
+              sx={{ color, borderColor: color }}
+            />
+          );
+        },
+      },
+      {
+        key: 'mergedAt',
+        header: 'Merged',
+        align: 'right',
+        sortKey: 'mergedAt',
+        renderCell: (pr) =>
+          pr.mergedAt ? new Date(pr.mergedAt).toLocaleDateString() : '-',
+      },
+    ],
+    [],
+  );
 
   const visibleColumns = useMemo(
-    () => columns.filter((column) => columnVisibility[column.key as PrSortField]),
+    () =>
+      columns.filter((column) => columnVisibility[column.key as PrSortField]),
     [columns, columnVisibility],
   );
 
@@ -510,6 +495,32 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       </Box>
     </Box>
   );
+
+  if (isLoading) {
+    return (
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: `1px solid ${theme.palette.border.light}`,
+          backgroundColor: 'transparent',
+          p: 4,
+          textAlign: 'center',
+        }}
+        elevation={0}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+          <Typography
+            variant="h6"
+            sx={{ color: 'text.primary', fontWeight: 600 }}
+          >
+            Pull Requests
+          </Typography>
+          {filterButtons}
+        </Box>
+        <CircularProgress size={40} sx={{ color: 'primary.main' }} />
+      </Card>
+    );
+  }
 
   return (
     <Card
