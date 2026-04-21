@@ -44,7 +44,11 @@ const IssuesPage: React.FC = () => {
       }
     }
     return result;
-  }, [activeIssuesQuery.data, registeredIssuesQuery.data, historyIssuesQuery.data]);
+  }, [
+    activeIssuesQuery.data,
+    registeredIssuesQuery.data,
+    historyIssuesQuery.data,
+  ]);
 
   // Show loading skeleton only while no data is available yet
   const isLoading =
