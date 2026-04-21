@@ -561,7 +561,6 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
               data={contributionData}
               contributionsLast30Days={contributionsLast30Days}
               totalDaysShown={totalDaysShown}
-              subtitle="contributions in the last 30 days"
               footerText="* Activity based on merged PRs in Gittensor-tracked repositories"
               bare
             />

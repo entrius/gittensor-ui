@@ -6,6 +6,7 @@ import {
   TEXT_OPACITY,
   scrollbarSx,
 } from '../theme';
+import { formatCountLabel, formatNounLabel, type CountCopyStyle } from '../utils';
 
 interface ContributionData {
   date: string;
@@ -18,6 +19,9 @@ interface ContributionHeatmapProps {
   contributionsLast30Days: number;
   totalDaysShown: number;
   subtitle?: string;
+  nounSingular?: string;
+  nounPlural?: string;
+  copyStyle?: CountCopyStyle;
   footerText?: string;
   emptyTitle?: string;
   emptySubtitle?: string;
@@ -28,7 +32,10 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
   data,
   contributionsLast30Days,
   totalDaysShown,
-  subtitle = 'network contributions in the last 30 days',
+  subtitle,
+  nounSingular = 'contribution',
+  nounPlural,
+  copyStyle = 'compact',
   footerText,
   emptyTitle = 'No contributions yet',
   emptySubtitle = 'Activity will appear here once PRs are merged',
@@ -38,6 +45,12 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
   const heatmapLevels = [...CONTRIBUTION_HEATMAP_SCALE];
   const heatmapTheme = { light: heatmapLevels, dark: heatmapLevels };
   const isEmpty = data.length === 0;
+  const nounLabel = formatNounLabel({
+    singular: nounSingular,
+    plural: nounPlural,
+    style: copyStyle,
+  });
+  const resolvedSubtitle = subtitle ?? `${nounLabel} in the last 30 days`;
 
   const content = (
     <>
@@ -60,7 +73,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
             mt: 0.5,
           }}
         >
-          {subtitle}
+          {resolvedSubtitle}
         </Typography>
       </Box>
 
@@ -118,7 +131,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
                 'Nov',
                 'Dec',
               ],
-              totalCount: `{{count}} contributions in the last ${totalDaysShown} day(s)`,
+              totalCount: `{{count}} ${nounLabel} in the last ${totalDaysShown} day(s)`,
               weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
             }}
             blockSize={11}
@@ -128,7 +141,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
             showWeekdayLabels={false}
             renderBlock={(block, activity) => (
               <Tooltip
-                title={`${activity.count} contribution${activity.count !== 1 ? 's' : ''} on ${new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
+                title={`${formatCountLabel({ count: activity.count, singular: nounSingular, plural: nounPlural, style: copyStyle })} on ${new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
                 arrow
                 placement="top"
                 enterDelay={0}
