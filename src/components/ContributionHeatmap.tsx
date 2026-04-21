@@ -50,6 +50,12 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
     plural: nounPlural,
     style: copyStyle,
   });
+  // ActivityCalendar's totalCount supports a string template only, so keep this
+  // label in compact form to avoid singular/plural mismatches at runtime.
+  const totalCountNounLabel = formatNounLabel({
+    singular: nounSingular,
+    style: 'compact',
+  });
   const resolvedSubtitle = subtitle ?? `${nounLabel} in the last 30 days`;
 
   const content = (
@@ -131,7 +137,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
                 'Nov',
                 'Dec',
               ],
-              totalCount: `{{count}} ${nounLabel} in the last ${totalDaysShown} day(s)`,
+              totalCount: `{{count}} ${totalCountNounLabel} in the last ${totalDaysShown} day(s)`,
               weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
             }}
             blockSize={11}
