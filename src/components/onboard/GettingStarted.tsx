@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Box,
   Typography,
@@ -13,6 +13,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
 import { alpha } from '@mui/material/styles';
 import { scrollbarSx, tooltipSlotProps } from '../../theme';
+import { useManagedTimeout } from '../../hooks/useManagedTimeout';
 
 const MONO = '"JetBrains Mono", monospace';
 
@@ -60,11 +61,17 @@ const CodeBlock: React.FC<{
   label?: string;
 }> = ({ children, label }) => {
   const [copied, setCopied] = useState(false);
+  const copyTimerRef = useRef<number | null>(null);
+  const { schedule, clear } = useManagedTimeout();
 
   const handleCopy = () => {
     navigator.clipboard.writeText(children.trim());
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    clear(copyTimerRef.current);
+    copyTimerRef.current = schedule(() => {
+      setCopied(false);
+      copyTimerRef.current = null;
+    }, 2000);
   };
 
   return (

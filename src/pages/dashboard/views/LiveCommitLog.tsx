@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { LinkBox } from '../../../components/common/linkBehavior';
 import { useInfiniteCommitLog } from '../../../api';
+import { useManagedTimeout } from '../../../hooks/useManagedTimeout';
 import theme, {
   REPO_OWNER_AVATAR_BACKGROUNDS,
   scrollbarSx,
@@ -93,6 +94,7 @@ const COMMIT_STATUS_FILTERS: CommitStatusFilter[] = [
   'open',
   'closed',
 ];
+const NEW_ENTRY_HIGHLIGHT_MS = 2000;
 
 const getCommitId = (entry: CommitLogEntry) =>
   `${entry.repository}-${entry.pullRequestNumber}`;
@@ -318,6 +320,8 @@ const LiveCommitLog: React.FC = () => {
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
   const logContainerRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLAnchorElement>(null);
+  const highlightResetTimerRef = useRef<number | null>(null);
+  const { schedule, clear } = useManagedTimeout();
 
   const apiCommits = useMemo<CommitLogEntry[]>(
     () => data?.pages.flat() ?? [],
@@ -351,7 +355,11 @@ const LiveCommitLog: React.FC = () => {
 
       if (isHeadUpdate) {
         setNewEntryIds(new Set(novelItems.map(getCommitId)));
-        setTimeout(() => setNewEntryIds(new Set()), 2000);
+        clear(highlightResetTimerRef.current);
+        highlightResetTimerRef.current = schedule(() => {
+          setNewEntryIds(new Set());
+          highlightResetTimerRef.current = null;
+        }, NEW_ENTRY_HIGHLIGHT_MS);
         return [...novelItems, ...updatedLog];
       }
 

@@ -45,6 +45,7 @@ import IconButton from '@mui/material/IconButton';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
 import { STATUS_COLORS, DIFF_COLORS, scrollbarSx } from '../../theme';
+import { useManagedTimeout } from '../../hooks/useManagedTimeout';
 
 interface PRFile {
   sha: string;
@@ -1080,12 +1081,18 @@ const PRFileDiffViewer: React.FC<{
 
   const [copied, setCopied] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const copyTimerRef = useRef<number | null>(null);
+  const { schedule, clear } = useManagedTimeout();
 
   const handleCopyPath = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard.writeText(file.filename);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    clear(copyTimerRef.current);
+    copyTimerRef.current = schedule(() => {
+      setCopied(false);
+      copyTimerRef.current = null;
+    }, 2000);
   };
 
   if (!file.patch) {

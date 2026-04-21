@@ -22,6 +22,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CloseIcon from '@mui/icons-material/Close';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useManagedTimeout } from '../../hooks/useManagedTimeout';
 import { useSearchResults } from '../../pages/search/searchData';
 import { useLinkBehavior, linkResetSx } from '../common/linkBehavior';
 
@@ -214,6 +215,7 @@ const GlobalSearchBar: React.FC = () => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const rowRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const blurTimerRef = useRef<number | null>(null);
+  const { schedule, clear } = useManagedTimeout();
 
   // Activate dataset loading after first interaction (or immediately on /search).
   const [isSearchActivated, setIsSearchActivated] = useState(isSearchPage);
@@ -274,12 +276,10 @@ const GlobalSearchBar: React.FC = () => {
   );
 
   const closeDropdown = useCallback(() => {
-    if (blurTimerRef.current !== null) {
-      window.clearTimeout(blurTimerRef.current);
-      blurTimerRef.current = null;
-    }
+    clear(blurTimerRef.current);
+    blurTimerRef.current = null;
     setIsDropdownOpen(false);
-  }, []);
+  }, [clear]);
 
   const navigateAndClose = useCallback(
     (path: string) => {
@@ -512,10 +512,8 @@ const GlobalSearchBar: React.FC = () => {
           setIsDropdownOpen(true);
         }}
         onBlur={() => {
-          if (blurTimerRef.current !== null) {
-            window.clearTimeout(blurTimerRef.current);
-          }
-          blurTimerRef.current = window.setTimeout(() => {
+          clear(blurTimerRef.current);
+          blurTimerRef.current = schedule(() => {
             setIsDropdownOpen(false);
             blurTimerRef.current = null;
           }, DROPDOWN_CLOSE_DELAY_MS);
