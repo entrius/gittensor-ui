@@ -12,8 +12,8 @@ import {
 import { useTheme } from '@mui/material/styles';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
 import { type IssueDetails } from '../../api/models/Issues';
+import { safeMarkdownRehypePlugins } from '../common';
 import { STATUS_COLORS, scrollbarSx } from '../../theme';
 
 import 'github-markdown-css/github-markdown-dark.css';
@@ -344,7 +344,7 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
               <div className="markdown-body" style={{ fontSize: '14px' }}>
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeRaw]}
+                  rehypePlugins={safeMarkdownRehypePlugins}
                 >
                   {item.body}
                 </ReactMarkdown>

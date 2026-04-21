@@ -9,8 +9,8 @@ import {
 } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
 import axios from 'axios';
+import { safeMarkdownRehypePlugins } from '../common';
 import { resolveRelativeUrl } from './MarkdownRenderers';
 import { markdownDocumentPaperSx } from '../../theme';
 
@@ -100,7 +100,7 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
     <Paper elevation={0} sx={markdownDocumentPaperSx(theme)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
+        rehypePlugins={safeMarkdownRehypePlugins}
         components={{
           a: ({
             href,
