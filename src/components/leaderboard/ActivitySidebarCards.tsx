@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { SectionCard } from './SectionCard';
 import { STATUS_COLORS, DIFF_COLORS, CREDIBILITY_COLORS } from '../../theme';
