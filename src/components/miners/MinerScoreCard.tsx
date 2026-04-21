@@ -211,6 +211,14 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
 
   if (!hotkey) return null;
 
+  const hotkeyTextSx = {
+    color: 'inherit',
+    fontSize: { xs: '0.55rem', sm: '0.65rem' },
+    fontFamily: '"JetBrains Mono", monospace',
+    wordBreak: 'normal',
+    lineHeight: 1,
+  } as const;
+
   const handleCopy = async () => {
     try {
       if (!navigator.clipboard?.writeText) {
@@ -241,9 +249,13 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
       aria-live="polite"
       disableRipple
       sx={{
-        display: 'block',
+        display: 'inline-flex',
+        alignItems: 'center',
         textAlign: 'left',
         borderRadius: '4px',
+        lineHeight: 1,
+        p: 0,
+        m: 0,
         color: (t) =>
           copied
             ? t.palette.status.success
@@ -261,16 +273,26 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
         },
       }}
     >
-      <Typography
+      <Box
         component="span"
         sx={{
-          color: 'inherit',
-          fontSize: { xs: '0.55rem', sm: '0.65rem' },
-          wordBreak: 'normal',
+          ...hotkeyTextSx,
+          display: copied ? 'inline' : { xs: 'inline', sm: 'none' },
         }}
       >
         {copied ? '✓ Copied to clipboard' : formatHotkeyPreview(hotkey)}
-      </Typography>
+      </Box>
+      {!copied ? (
+        <Box
+          component="span"
+          sx={{
+            ...hotkeyTextSx,
+            display: { xs: 'none', sm: 'inline' },
+          }}
+        >
+          {hotkey}
+        </Box>
+      ) : null}
     </ButtonBase>
   );
 };
@@ -354,59 +376,78 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
   const issueEligibilityColor = isIssueEligible
     ? STATUS_COLORS.success
     : STATUS_COLORS.neutral;
-  const eligibilityChips = (
+  const eligibilityChipSx = (color: string) => ({
+    color,
+    borderColor: alpha(color, 0.35),
+    backgroundColor: alpha(color, 0.1),
+    fontSize: '0.7rem',
+    letterSpacing: '0.5px',
+    textTransform: 'uppercase',
+    cursor: 'pointer',
+  });
+
+  const eligibilityItems = [
+    {
+      key: 'oss',
+      title:
+        'Requires 5+ merged PRs with token score >= 5 and 80%+ credibility',
+      label: isEligible ? 'OSS Eligible' : 'OSS Ineligible',
+      color: eligibilityColor,
+    },
+    {
+      key: 'issues',
+      title:
+        'Requires 7+ solved issues with token score >= 5 and 80%+ issue credibility',
+      label: isIssueEligible ? 'Issues Eligible' : 'Issues Ineligible',
+      color: issueEligibilityColor,
+    },
+  ] as const;
+
+  const eligibilityChipsContent = (
+    <>
+      {eligibilityItems.map((item) => (
+        <Tooltip
+          key={item.key}
+          title={item.title}
+          arrow
+          placement="bottom"
+          slotProps={tooltipSlotProps}
+        >
+          <Chip
+            variant="outlined"
+            label={item.label}
+            size="small"
+            sx={eligibilityChipSx(item.color)}
+          />
+        </Tooltip>
+      ))}
+    </>
+  );
+
+  const renderEligibilityChips = (
+    display: { xs: 'none' | 'flex'; sm: 'none' | 'flex' },
+    mb = 0,
+  ) => (
     <Box
       sx={{
-        display: 'flex',
+        display,
         alignItems: 'center',
         gap: 1,
         flexWrap: 'wrap',
-        mb: { xs: 1, sm: 0.5 },
+        mb,
       }}
     >
-      <Tooltip
-        title="Requires 5+ merged PRs with token score >= 5 and 80%+ credibility"
-        arrow
-        placement="bottom"
-        slotProps={tooltipSlotProps}
-      >
-        <Chip
-          variant="outlined"
-          label={isEligible ? 'OSS Eligible' : 'OSS Ineligible'}
-          size="small"
-          sx={{
-            color: eligibilityColor,
-            borderColor: alpha(eligibilityColor, 0.35),
-            backgroundColor: alpha(eligibilityColor, 0.1),
-            fontSize: '0.7rem',
-            letterSpacing: '0.5px',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-          }}
-        />
-      </Tooltip>
-      <Tooltip
-        title="Requires 7+ solved issues with token score >= 5 and 80%+ issue credibility"
-        arrow
-        placement="bottom"
-        slotProps={tooltipSlotProps}
-      >
-        <Chip
-          variant="outlined"
-          label={isIssueEligible ? 'Issues Eligible' : 'Issues Ineligible'}
-          size="small"
-          sx={{
-            color: issueEligibilityColor,
-            borderColor: alpha(issueEligibilityColor, 0.35),
-            backgroundColor: alpha(issueEligibilityColor, 0.1),
-            fontSize: '0.7rem',
-            letterSpacing: '0.5px',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-          }}
-        />
-      </Tooltip>
+      {eligibilityChipsContent}
     </Box>
+  );
+
+  const eligibilityChipsInline = renderEligibilityChips(
+    { xs: 'none', sm: 'flex' },
+    0,
+  );
+  const eligibilityChipsMobile = renderEligibilityChips(
+    { xs: 'flex', sm: 'none' },
+    1,
   );
 
   return (
@@ -434,7 +475,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
         />
       )}
 
-      {eligibilityChips}
+      {eligibilityChipsMobile}
 
       {/* Row 2: avatar + identity details */}
       <Box
@@ -456,22 +497,34 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           }}
         />
         <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography
-            sx={{
-              fontSize: { xs: '1.15rem', sm: '1.35rem' },
-              fontWeight: 700,
-              color: 'text.primary',
-              mb: 0.5,
-            }}
-          >
-            {githubData?.name || username}
-          </Typography>
           <Box
             sx={{
               display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              gap: 0.35,
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              justifyContent: 'flex-start',
+              gap: 1.5,
+              flexWrap: 'wrap',
+              mb: 0.5,
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: { xs: '1.15rem', sm: '1.35rem' },
+                fontWeight: 700,
+                color: 'text.primary',
+              }}
+            >
+              {githubData?.name || username}
+            </Typography>
+            {eligibilityChipsInline}
+          </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              gap: { xs: 0.35, sm: 1 },
+              flexWrap: 'wrap',
             }}
           >
             <Typography
