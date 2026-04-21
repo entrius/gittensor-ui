@@ -801,7 +801,6 @@ const PRCard: React.FC<{ pr: CommitLog }> = ({ pr }) => {
           />
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.72rem',
               color: 'text.secondary',
               overflow: 'hidden',
@@ -840,7 +839,6 @@ const PRCard: React.FC<{ pr: CommitLog }> = ({ pr }) => {
       >
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.85rem',
             fontWeight: 600,
             color: 'text.primary',
@@ -873,7 +871,6 @@ const PRCard: React.FC<{ pr: CommitLog }> = ({ pr }) => {
             />
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.72rem',
                 color: 'text.secondary',
               }}
@@ -885,7 +882,6 @@ const PRCard: React.FC<{ pr: CommitLog }> = ({ pr }) => {
             <Stack direction="row" spacing={0.5} alignItems="center">
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.7rem',
                   color: 'diff.additions',
                   fontWeight: 600,
@@ -895,7 +891,6 @@ const PRCard: React.FC<{ pr: CommitLog }> = ({ pr }) => {
               </Typography>
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.7rem',
                   color: 'text.tertiary',
                 }}
@@ -904,7 +899,6 @@ const PRCard: React.FC<{ pr: CommitLog }> = ({ pr }) => {
               </Typography>
               <Typography
                 sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.7rem',
                   color: 'diff.deletions',
                   fontWeight: 600,
@@ -915,7 +909,6 @@ const PRCard: React.FC<{ pr: CommitLog }> = ({ pr }) => {
             </Stack>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.75rem',
                 fontWeight: 700,
                 color: 'text.primary',
@@ -1114,7 +1107,6 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             width: '220px',
             '& .MuiOutlinedInput-root': {
               color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
               backgroundColor: 'background.default',
               fontSize: '0.8rem',
               height: '36px',
