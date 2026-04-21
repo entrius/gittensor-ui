@@ -6,7 +6,7 @@ import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 interface PerformanceRadarProps {
   credibility: number;
   complexity: number;
-  issuesSolved: number;
+  mergedPrs: number;
   uniqueRepos: number;
   totalPRs: number;
   avgRepoWeight: number;
@@ -15,7 +15,7 @@ interface PerformanceRadarProps {
 const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
   credibility,
   complexity,
-  issuesSolved,
+  mergedPrs,
   uniqueRepos,
   totalPRs,
   avgRepoWeight,
@@ -29,7 +29,7 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
         indicator: [
           { name: 'Credibility', max: 100 },
           { name: 'Complexity', max: 100 },
-          { name: 'Issues\nSolved', max: 100 },
+          { name: 'Merged\nPRs', max: 100 },
           { name: 'Unique\nRepos', max: 100 },
           { name: 'Total\nPRs', max: 100 },
           { name: 'Avg Repo\nWeight', max: 100 },
@@ -68,7 +68,7 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
               value: [
                 credibility,
                 complexity,
-                issuesSolved,
+                mergedPrs,
                 uniqueRepos,
                 totalPRs,
                 avgRepoWeight,
@@ -85,7 +85,7 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
     [
       credibility,
       complexity,
-      issuesSolved,
+      mergedPrs,
       uniqueRepos,
       totalPRs,
       avgRepoWeight,
