@@ -284,7 +284,11 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             </Typography>
           ) : null}
           {miner.githubId && (
-            <WatchlistButton githubId={miner.githubId} size="small" />
+            <WatchlistButton
+              category="miners"
+              itemKey={miner.githubId}
+              size="small"
+            />
           )}
         </Box>
       </Box>
@@ -465,7 +469,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
         </Box>
       </Box>
 
-      {(variant === 'discoveries' || variant === 'watchlist') && (
+      {variant === 'watchlist' && (
         <Box
           sx={(theme) => ({
             pt: 0.35,

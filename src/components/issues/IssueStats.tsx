@@ -1,22 +1,10 @@
 import React from 'react';
 import { Skeleton, Box } from '@mui/material';
 import { IssuesStats } from '../../api/models/Issues';
-import { useStats } from '../../api';
 import KpiCard from '../KpiCard';
-import { formatTokenAmount } from '../../utils/format';
+import { formatTokenAmount, formatAlphaToUsd } from '../../utils/format';
+import { usePrices } from '../../hooks/usePrices';
 import { STATUS_COLORS } from '../../theme';
-
-const formatUsd = (
-  alphaAmount: string | undefined,
-  taoPrice: number,
-  alphaPrice: number,
-): string | undefined => {
-  if (!alphaAmount) return undefined;
-  const amount = parseFloat(alphaAmount);
-  if (isNaN(amount) || amount === 0) return undefined;
-  const usd = amount * alphaPrice * taoPrice;
-  return `~${usd.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`;
-};
 
 interface IssueStatsProps {
   stats?: IssuesStats;
@@ -27,10 +15,7 @@ const IssueStats: React.FC<IssueStatsProps> = ({
   stats,
   isLoading = false,
 }) => {
-  const { data: dashStats } = useStats();
-  const taoPrice = dashStats?.prices?.tao?.data?.price ?? 0;
-  const alphaPrice = dashStats?.prices?.alpha?.data?.price ?? 0;
-  const hasPrices = taoPrice > 0 && alphaPrice > 0;
+  const { taoPrice, alphaPrice, hasPrices } = usePrices();
   const cards = [
     {
       title: 'Total Issues',
@@ -38,7 +23,7 @@ const IssueStats: React.FC<IssueStatsProps> = ({
       subtitle: 'All registered issues',
     },
     {
-      title: 'Active Issues',
+      title: 'Available Issues',
       value: stats?.activeIssues ?? 0,
       subtitle: 'Available for solving',
     },
@@ -46,7 +31,7 @@ const IssueStats: React.FC<IssueStatsProps> = ({
       title: 'Bounty Pool',
       value: `${formatTokenAmount(stats?.totalBountyPool)} ل`,
       subtitle: hasPrices
-        ? (formatUsd(stats?.totalBountyPool, taoPrice, alphaPrice) ??
+        ? (formatAlphaToUsd(stats?.totalBountyPool, taoPrice, alphaPrice) ??
           'Total available')
         : 'Total available',
     },
@@ -54,7 +39,7 @@ const IssueStats: React.FC<IssueStatsProps> = ({
       title: 'Total Payouts',
       value: `${formatTokenAmount(stats?.totalPayouts)} ل`,
       subtitle: hasPrices
-        ? (formatUsd(stats?.totalPayouts, taoPrice, alphaPrice) ??
+        ? (formatAlphaToUsd(stats?.totalPayouts, taoPrice, alphaPrice) ??
           'Paid to solvers')
         : 'Paid to solvers',
       sx: {
