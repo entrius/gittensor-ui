@@ -136,13 +136,11 @@ const LanguageWeightsTable: React.FC = () => {
         top: 20,
         textStyle: {
           color: theme.palette.text.primary,
-          fontFamily: 'JetBrains Mono',
           fontSize: 18,
           fontWeight: 600,
         },
         subtextStyle: {
           color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-          fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
       },
@@ -154,7 +152,6 @@ const LanguageWeightsTable: React.FC = () => {
         borderWidth: 1,
         textStyle: {
           color: theme.palette.text.primary,
-          fontFamily: 'JetBrains Mono',
         },
       },
       grid: {
@@ -169,7 +166,6 @@ const LanguageWeightsTable: React.FC = () => {
         data: xAxisData,
         axisLabel: {
           color: textColor,
-          fontFamily: 'JetBrains Mono',
           rotate: 45,
           interval: 0,
         },
@@ -178,8 +174,6 @@ const LanguageWeightsTable: React.FC = () => {
       yAxis: {
         type: 'value',
         name: 'Weight',
-        nameTextStyle: { color: textColor, fontFamily: 'JetBrains Mono' },
-        axisLabel: { color: textColor, fontFamily: 'JetBrains Mono' },
         splitLine: { lineStyle: { color: gridColor, type: 'dashed' } },
       },
       series: [
@@ -266,7 +260,6 @@ const LanguageWeightsTable: React.FC = () => {
                     theme.palette.common.white,
                     TEXT_OPACITY.secondary,
                   ),
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.8rem',
                 }}
               >
@@ -280,7 +273,6 @@ const LanguageWeightsTable: React.FC = () => {
                 }}
                 sx={{
                   color: theme.palette.text.primary,
-                  fontFamily: '"JetBrains Mono", monospace',
                   backgroundColor: alpha(theme.palette.common.black, 0.4),
                   fontSize: '0.8rem',
                   height: '36px',
@@ -327,7 +319,6 @@ const LanguageWeightsTable: React.FC = () => {
               width: '200px',
               '& .MuiOutlinedInput-root': {
                 color: theme.palette.text.primary,
-                fontFamily: '"JetBrains Mono", monospace',
                 backgroundColor: alpha(theme.palette.common.black, 0.4),
                 fontSize: '0.8rem',
                 height: '36px',
