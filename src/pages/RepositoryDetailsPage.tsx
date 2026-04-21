@@ -1,4 +1,11 @@
-import React, { useState } from 'react';
+import React, {
+  memo,
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Alert,
@@ -13,6 +20,8 @@ import {
   Chip,
   Avatar,
   alpha,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import CodeIcon from '@mui/icons-material/Code';
@@ -44,6 +53,121 @@ interface TabPanelProps {
   value: number;
 }
 
+const mobileRepoTitleFontSx = {
+  fontFamily:
+    '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+  fontWeight: 700,
+  fontSize: 'clamp(1.45rem, 5.5vw, 1.9rem)',
+  lineHeight: 1.25,
+  color: '#fff',
+  m: 0,
+};
+
+const repoDetailTabsSx = {
+  '& .MuiTab-root': {
+    color: STATUS_COLORS.open,
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+    textTransform: 'none',
+    fontWeight: 500,
+    minHeight: '48px',
+    fontSize: '14px',
+    '&.Mui-selected': {
+      color: '#fff',
+      fontWeight: 600,
+    },
+  },
+  '& .MuiTabs-indicator': {
+    backgroundColor: 'primary.main',
+    height: '3px',
+    borderRadius: '3px 3px 0 0',
+  },
+} as const;
+
+/** Full path when it fits; otherwise …/repo-name only (never …rius/gittensor). */
+const MobileRepoHeading = memo(function MobileRepoHeading({
+  repo,
+}: {
+  repo: string;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const measureFullRef = useRef<HTMLSpanElement>(null);
+  const [preferSuffixOnly, setPreferSuffixOnly] = useState(false);
+
+  const slash = repo.indexOf('/');
+  const suffixOnlyLabel =
+    slash >= 0 ? `\u2026${repo.slice(slash)}` : repo;
+
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+
+    if (slash < 0) {
+      setPreferSuffixOnly(false);
+      return;
+    }
+
+    const measure = measureFullRef.current;
+    if (!measure) return;
+
+    const update = () => {
+      const fullWidth = measure.scrollWidth;
+      const available = wrap.clientWidth;
+      const next = fullWidth > available;
+      setPreferSuffixOnly((prev) => (prev === next ? prev : next));
+    };
+
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(wrap);
+    return () => ro.disconnect();
+  }, [repo, slash]);
+
+  const displayText =
+    slash < 0 ? repo : preferSuffixOnly ? suffixOnlyLabel : repo;
+
+  return (
+    <Box sx={{ width: '100%', minWidth: 0, position: 'relative' }}>
+      {slash >= 0 ? (
+        <Typography
+          ref={measureFullRef}
+          variant="h4"
+          component="span"
+          aria-hidden
+          sx={{
+            ...mobileRepoTitleFontSx,
+            position: 'absolute',
+            visibility: 'hidden',
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none',
+            left: 0,
+            top: 0,
+          }}
+        >
+          {repo}
+        </Typography>
+      ) : null}
+
+      <Box ref={wrapRef} aria-label={repo} title={repo} sx={{ minWidth: 0 }}>
+        <Typography
+          variant="h4"
+          component="div"
+          role="heading"
+          aria-level={1}
+          sx={{
+            ...mobileRepoTitleFontSx,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {displayText}
+        </Typography>
+      </Box>
+    </Box>
+  );
+});
+
 function CustomTabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
 
@@ -70,7 +194,87 @@ const RepositoryDetailsPage: React.FC = () => {
   const trackedRepo = repos?.find((r) => r.fullName === repo);
   const isTrackedRepository = Boolean(trackedRepo);
 
+  const theme = useTheme();
+  const isBelowMd = useMediaQuery(theme.breakpoints.down('md'));
+
   const owner = repo ? repo.split('/')[0] : '';
+
+  const handleTabChange = useCallback(
+    (_event: React.SyntheticEvent, newValue: number) => {
+      setTabValue(newValue);
+    },
+    [],
+  );
+
+  const statusChips = useMemo(() => {
+    const inactiveAt = trackedRepo?.inactiveAt;
+    const inactiveLabel = inactiveAt
+      ? `Inactive since ${new Date(inactiveAt).toLocaleDateString()}`
+      : null;
+
+    return (
+      <>
+        <Chip variant="info" label="Public" />
+        <Chip
+          label="Tracked"
+          sx={{
+            backgroundColor: 'rgba(46, 125, 50, 0.15)',
+            color: '#66bb6a',
+            border: '1px solid rgba(102, 187, 106, 0.35)',
+            fontSize: '0.75rem',
+            height: '24px',
+            fontWeight: 600,
+          }}
+        />
+        {inactiveLabel ? (
+          <Chip
+            label={inactiveLabel}
+            sx={{
+              backgroundColor: 'rgba(211, 47, 47, 0.1)',
+              color: '#ff5252',
+              border: '1px solid rgba(255, 82, 82, 0.3)',
+              fontSize: '0.75rem',
+              height: '24px',
+              fontWeight: 600,
+            }}
+          />
+        ) : null}
+      </>
+    );
+  }, [trackedRepo?.inactiveAt]);
+
+  const issuesTabLabel = useMemo(() => {
+    const openBounties =
+      bountySummary &&
+      bountySummary.totalBounties - bountySummary.completedBounties > 0
+        ? bountySummary.totalBounties - bountySummary.completedBounties
+        : 0;
+
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        Issues
+        {openBounties > 0 ? (
+          <Box
+            component="span"
+            sx={{
+              backgroundColor: alpha(RANK_COLORS.first, 0.15),
+              color: RANK_COLORS.first,
+              border: `1px solid ${alpha(RANK_COLORS.first, 0.3)}`,
+              fontSize: '0.65rem',
+              fontWeight: 700,
+              px: 0.8,
+              py: 0.1,
+              borderRadius: '10px',
+              fontFamily: '"JetBrains Mono", monospace',
+              lineHeight: 1.4,
+            }}
+          >
+            {openBounties} {openBounties === 1 ? 'bounty' : 'bounties'}
+          </Box>
+        ) : null}
+      </Box>
+    );
+  }, [bountySummary]);
 
   // If no repo is provided, redirect to miners page
   if (!repo) {
@@ -122,10 +326,6 @@ const RepositoryDetailsPage: React.FC = () => {
     );
   }
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  };
-
   return (
     <Page title={`Repository - ${repo} `}>
       <SEO
@@ -141,74 +341,133 @@ const RepositoryDetailsPage: React.FC = () => {
         }}
       >
         <Container maxWidth="xl">
-          <Box sx={{ pt: 3, pb: 0 }}>
-            <BackButton to="/repositories" label="Back to Repositories" />
+          <Box sx={{ pt: { xs: 1.5, md: 3 }, pb: 0 }}>
+            <Box sx={{ mb: { xs: 0, md: 2 } }}>
+              <BackButton to="/repositories" label="Back to Repositories" mb={0} />
+            </Box>
 
             <Grid
               container
-              spacing={4}
-              sx={{ mt: 1, mb: 3 }}
+              spacing={{ xs: 2, md: 4 }}
+              sx={{ mt: { xs: 0.5, md: 1 }, mb: { xs: 2, md: 3 } }}
               alignItems="center"
             >
               <Grid item xs={12} md={8}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Avatar
-                    src={`https://avatars.githubusercontent.com/${owner}`}
-                    variant="rounded"
+                {/* Mobile only — desktop layout unchanged below */}
+                <Box sx={{ display: { xs: 'block', md: 'none' }, minWidth: 0 }}>
+                  <Box
                     sx={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: '4px',
-                      backgroundColor:
-                        owner === 'opentensor'
-                          ? '#ffffff'
-                          : owner === 'bitcoin'
-                            ? '#F7931A'
-                            : 'transparent',
-                    }}
-                  />
-                  <Typography
-                    variant="h4"
-                    sx={{
-                      fontFamily: '"JetBrains Mono", monospace',
-                      fontWeight: 600,
-                      color: '#fff',
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'stretch',
+                      gap: 2,
+                      minWidth: 0,
                     }}
                   >
-                    {repo}
-                  </Typography>
-                  <Chip variant="info" label="Public" />
-                  <Chip
-                    label="Tracked"
-                    sx={{
-                      backgroundColor: 'rgba(46, 125, 50, 0.15)',
-                      color: '#66bb6a',
-                      border: '1px solid rgba(102, 187, 106, 0.35)',
-                      fontSize: '0.75rem',
-                      height: '24px',
-                      fontWeight: 600,
-                    }}
-                  />
-                  {(() => {
-                    const currentRepo = trackedRepo;
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Avatar
+                        src={`https://avatars.githubusercontent.com/${owner}?s=128`}
+                        alt=""
+                        variant="rounded"
+                        imgProps={{ loading: 'lazy', decoding: 'async' }}
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: '4px',
+                          border: 'none',
+                          outline: 'none',
+                          boxShadow: 'none',
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: '0.8125rem',
+                          fontWeight: 700,
+                          '& img': {
+                            objectFit: 'cover',
+                            filter: 'none',
+                            boxShadow: 'none',
+                          },
+                          backgroundColor:
+                            owner === 'opentensor'
+                              ? '#ffffff'
+                              : owner === 'bitcoin'
+                                ? '#F7931A'
+                                : 'surface.subtle',
+                          color:
+                            owner === 'opentensor' || owner === 'bitcoin'
+                              ? '#121212'
+                              : 'text.secondary',
+                        }}
+                      >
+                        {(owner.slice(0, 2) || '?').toUpperCase()}
+                      </Avatar>
+                    </Box>
+                    <Box
+                      sx={{
+                        flex: 1,
+                        minWidth: 0,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 1,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: '100%',
+                          minWidth: 0,
+                          flex: '1 1 auto',
+                        }}
+                      >
+                        <MobileRepoHeading repo={repo} />
+                      </Box>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          alignItems: 'center',
+                          gap: 1,
+                        }}
+                      >
+                        {statusChips}
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
 
-                    if (currentRepo?.inactiveAt) {
-                      return (
-                        <Chip
-                          label={`Inactive since ${new Date(currentRepo.inactiveAt).toLocaleDateString()}`}
-                          sx={{
-                            backgroundColor: 'rgba(211, 47, 47, 0.1)',
-                            color: '#ff5252',
-                            border: '1px solid rgba(255, 82, 82, 0.3)',
-                            fontSize: '0.75rem',
-                            height: '24px',
-                            fontWeight: 600,
-                          }}
-                        />
-                      );
-                    }
-                    return null;
-                  })()}
+                {/* Desktop (md+) — original single-row header */}
+                <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Avatar
+                      src={`https://avatars.githubusercontent.com/${owner}`}
+                      variant="rounded"
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '4px',
+                        backgroundColor:
+                          owner === 'opentensor'
+                            ? '#ffffff'
+                            : owner === 'bitcoin'
+                              ? '#F7931A'
+                              : 'transparent',
+                      }}
+                    />
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontWeight: 600,
+                        color: '#fff',
+                      }}
+                    >
+                      {repo}
+                    </Typography>
+                    {statusChips}
+                  </Box>
                 </Box>
               </Grid>
               <Grid
@@ -217,7 +476,7 @@ const RepositoryDetailsPage: React.FC = () => {
                 md={4}
                 sx={{
                   display: 'flex',
-                  justifyContent: { xs: 'flex-start', md: 'flex-end' },
+                  justifyContent: { xs: 'stretch', md: 'flex-end' },
                 }}
               >
                 <Button
@@ -228,6 +487,7 @@ const RepositoryDetailsPage: React.FC = () => {
                   sx={{
                     borderColor: 'rgba(255,255,255,0.2)',
                     color: '#fff',
+                    width: { xs: '100%', md: 'auto' },
                     '&:hover': { borderColor: 'primary.main' },
                   }}
                 >
@@ -240,26 +500,10 @@ const RepositoryDetailsPage: React.FC = () => {
               value={tabValue}
               onChange={handleTabChange}
               aria-label="repository tabs"
-              sx={{
-                '& .MuiTab-root': {
-                  color: STATUS_COLORS.open,
-                  fontFamily:
-                    '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
-                  textTransform: 'none',
-                  fontWeight: 500,
-                  minHeight: '48px',
-                  fontSize: '14px',
-                  '&.Mui-selected': {
-                    color: '#fff',
-                    fontWeight: 600,
-                  },
-                },
-                '& .MuiTabs-indicator': {
-                  backgroundColor: 'primary.main',
-                  height: '3px',
-                  borderRadius: '3px 3px 0 0',
-                },
-              }}
+              variant={isBelowMd ? 'scrollable' : 'standard'}
+              scrollButtons={isBelowMd ? 'auto' : false}
+              allowScrollButtonsMobile={isBelowMd}
+              sx={repoDetailTabsSx}
             >
               <Tab
                 icon={<ArticleIcon sx={{ fontSize: 16, mb: 0, mr: 1 }} />}
@@ -276,40 +520,7 @@ const RepositoryDetailsPage: React.FC = () => {
               <Tab
                 icon={<BugReportIcon sx={{ fontSize: 16, mb: 0, mr: 1 }} />}
                 iconPosition="start"
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    Issues
-                    {bountySummary &&
-                      bountySummary.totalBounties -
-                        bountySummary.completedBounties >
-                        0 &&
-                      (() => {
-                        const openBounties =
-                          bountySummary.totalBounties -
-                          bountySummary.completedBounties;
-                        return (
-                          <Box
-                            component="span"
-                            sx={{
-                              backgroundColor: alpha(RANK_COLORS.first, 0.15),
-                              color: RANK_COLORS.first,
-                              border: `1px solid ${alpha(RANK_COLORS.first, 0.3)}`,
-                              fontSize: '0.65rem',
-                              fontWeight: 700,
-                              px: 0.8,
-                              py: 0.1,
-                              borderRadius: '10px',
-                              fontFamily: '"JetBrains Mono", monospace',
-                              lineHeight: 1.4,
-                            }}
-                          >
-                            {openBounties}{' '}
-                            {openBounties === 1 ? 'bounty' : 'bounties'}
-                          </Box>
-                        );
-                      })()}
-                  </Box>
-                }
+                label={issuesTabLabel}
                 disableRipple
               />
               <Tab
