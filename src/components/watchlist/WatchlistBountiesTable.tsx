@@ -51,7 +51,6 @@ const WatchlistBountiesTable: React.FC<WatchlistBountiesTableProps> = ({
 
   const headerCellSx = useMemo(
     () => ({
-      fontFamily: '"JetBrains Mono", monospace',
       fontSize: '0.7rem',
       fontWeight: 600,
       letterSpacing: '0.5px',
@@ -165,7 +164,6 @@ const WatchlistBountiesTable: React.FC<WatchlistBountiesTableProps> = ({
         >
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.7rem',
               fontWeight: 600,
               letterSpacing: '0.5px',
