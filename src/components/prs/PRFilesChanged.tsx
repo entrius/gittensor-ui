@@ -1,11 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-  useRef,
-  useCallback,
-  memo,
-} from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -15,6 +8,7 @@ import {
   AccordionSummary,
   AccordionDetails,
   Chip,
+  Grid,
   List,
   ListItemButton,
   ListItemIcon,
@@ -28,8 +22,6 @@ import {
   TableContainer,
   TableRow,
   alpha,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -39,9 +31,6 @@ import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import ViewAgendaIcon from '@mui/icons-material/ViewAgenda'; // Unified
 import ViewColumnIcon from '@mui/icons-material/ViewColumn'; // Split
-import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrowLeft';
-import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import axios from 'axios';
 
 import parseDiff, {
@@ -82,8 +71,6 @@ interface PRFilesChangedProps {
   pullRequestNumber: number;
   headSha?: string; // Optional SHA to fetch full tree from
 }
-
-type GitTreeEntry = { path: string; type: 'blob' | 'tree' };
 
 // Tree types
 interface TreeNode {
@@ -177,7 +164,7 @@ const FileTreeItem: React.FC<{
   level: number;
   onSelect: (file: PRFile) => void;
   selectedParams: { filename: string | null };
-}> = memo(function FileTreeItem({ node, level, onSelect, selectedParams }) {
+}> = ({ node, level, onSelect, selectedParams }) => {
   // Auto-expand if it has changes, otherwise collapse to reduce noise in full tree
   const [open, setOpen] = useState(!!node.hasChanges);
   const hasChildren = Object.keys(node.children).length > 0;
@@ -338,7 +325,7 @@ const FileTreeItem: React.FC<{
       )}
     </>
   );
-});
+};
 
 // Split View Component
 const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
@@ -586,8 +573,6 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
           width: '100%',
           minWidth: 'max-content',
           tableLayout: 'auto',
-          borderCollapse: 'separate',
-          borderSpacing: 0,
         }}
       >
         <TableBody>
@@ -615,17 +600,13 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                       color: 'status.open',
                       fontFamily: 'inherit',
                       fontSize: '12px',
-                      zIndex: 5,
-                      isolation: 'isolate',
-                      transform: 'translateZ(0)',
+                      zIndex: 2,
                     }}
                   >
                     ...
                   </TableCell>
                   <TableCell
                     sx={{
-                      position: 'relative',
-                      zIndex: 0,
                       color: 'status.open',
                       borderBottom: '1px solid',
                       borderColor: 'border.light',
@@ -662,10 +643,8 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                     left: 0,
                     width: '50px',
                     minWidth: '50px',
-                    backgroundColor: 'background.paper',
-                    ...(bg !== 'transparent' && {
-                      backgroundImage: `linear-gradient(${bg}, ${bg})`,
-                    }),
+                    backgroundColor:
+                      bg === 'transparent' ? 'background.paper' : bg,
                     color: 'status.open',
                     borderRight: '1px solid',
                     borderColor: 'border.light',
@@ -677,17 +656,13 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                     fontFamily: 'inherit',
                     fontSize: '12px',
                     lineHeight: '24px',
-                    zIndex: 5,
-                    isolation: 'isolate',
-                    transform: 'translateZ(0)',
+                    zIndex: 2,
                   }}
                 >
                   {ln}
                 </TableCell>
                 <TableCell
                   sx={{
-                    position: 'relative',
-                    zIndex: 0,
                     backgroundColor: bg,
                     color: 'text.primary',
                     borderBottom: 'none',
@@ -698,7 +673,6 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                     fontSize: '12px',
                     lineHeight: '24px',
                     width: 'auto',
-                    isolation: 'auto',
                   }}
                 >
                   {item
@@ -1097,7 +1071,7 @@ const PRFileDiffViewer: React.FC<{
   file: PRFile;
   viewMode: 'unified' | 'split';
   lineWrap: boolean;
-}> = memo(function PRFileDiffViewer({ file, viewMode, lineWrap }) {
+}> = ({ file, viewMode, lineWrap }) => {
   // Memoize parseDiff result
   const parsedDiff = useMemo(() => {
     if (!file.patch) return [];
@@ -1181,12 +1155,9 @@ const PRFileDiffViewer: React.FC<{
             '& .MuiAccordionSummary-content': {
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'flex-start',
-              flexWrap: 'wrap',
-              gap: 1,
+              justifyContent: 'space-between',
               margin: '12px 0',
               width: '100%',
-              minWidth: 0,
             },
           }}
         >
@@ -1195,8 +1166,6 @@ const PRFileDiffViewer: React.FC<{
               display: 'flex',
               alignItems: 'center',
               gap: 1,
-              minWidth: 0,
-              flex: '1 1 auto',
               overflow: 'hidden',
             }}
           >
@@ -1219,7 +1188,7 @@ const PRFileDiffViewer: React.FC<{
               <IconButton
                 size="small"
                 onClick={handleCopyPath}
-                sx={{ color: 'status.open', ml: 0.5, p: 0.5, flexShrink: 0 }}
+                sx={{ color: 'status.open', ml: 1, p: 0.5 }}
               >
                 {copied ? (
                   <CheckIcon sx={{ fontSize: 14, color: 'status.success' }} />
@@ -1228,33 +1197,35 @@ const PRFileDiffViewer: React.FC<{
                 )}
               </IconButton>
             </Tooltip>
-            <Box
+          </Box>
+
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              mr: 1,
+              flexShrink: 0,
+            }}
+          >
+            <Typography
               sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.25,
-                flexShrink: 0,
+                color: 'diff.additions',
+                fontSize: '0.85rem',
+                fontWeight: 600,
               }}
             >
-              <Typography
-                sx={{
-                  color: 'diff.additions',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                }}
-              >
-                +{file.additions}
-              </Typography>
-              <Typography
-                sx={{
-                  color: 'diff.deletions',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                }}
-              >
-                -{file.deletions}
-              </Typography>
-            </Box>
+              +{file.additions}
+            </Typography>
+            <Typography
+              sx={{
+                color: 'diff.deletions',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+              }}
+            >
+              -{file.deletions}
+            </Typography>
           </Box>
         </AccordionSummary>
 
@@ -1272,7 +1243,7 @@ const PRFileDiffViewer: React.FC<{
             ref={scrollContainerRef}
             sx={{
               flex: 1,
-              overflowX: viewMode === 'split' ? 'hidden' : 'auto',
+              overflowX: 'auto',
               overflowY: 'auto',
               mr: '16px',
               ...scrollbarSx,
@@ -1294,7 +1265,7 @@ const PRFileDiffViewer: React.FC<{
       </Accordion>
     </Paper>
   );
-});
+};
 
 const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
   repository,
@@ -1303,36 +1274,30 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
 }) => {
   // ... existing state ...
   const [files, setFiles] = useState<PRFile[]>([]);
-  const [fullTreeData, setFullTreeData] = useState<GitTreeEntry[]>([]);
+  const [fullTreeData, setFullTreeData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'unified' | 'split'>('split');
   const [lineWrap, setLineWrap] = useState(false);
-  const [fileListCollapsed, setFileListCollapsed] = useState(false);
 
+  // ... existing useEffect ... (keep it)
   useEffect(() => {
-    if (!repository || !pullRequestNumber) return;
-
-    let stale = false;
-
     const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const filesResponse = await axios.get<PRFile[]>(
+        const filesResponse = await axios.get(
           `https://api.github.com/repos/${repository}/pulls/${pullRequestNumber}/files?per_page=100`,
         );
         const changedFiles = filesResponse.data;
-        if (stale) return;
         setFiles(changedFiles);
 
         const treeSha = headSha || 'main';
         try {
-          const treeResponse = await axios.get<{ tree: GitTreeEntry[] }>(
+          const treeResponse = await axios.get(
             `https://api.github.com/repos/${repository}/git/trees/${treeSha}?recursive=1`,
           );
-          if (stale) return;
           if (treeResponse.data.tree) {
             setFullTreeData(treeResponse.data.tree);
           }
@@ -1341,9 +1306,8 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
             'Failed to fetch full tree, falling back to sparse tree',
             treeErr,
           );
-          if (stale) return;
           setFullTreeData(
-            changedFiles.map((f) => ({
+            changedFiles.map((f: PRFile) => ({
               path: f.filename,
               type: 'blob' as const,
             })),
@@ -1351,20 +1315,15 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
         }
       } catch (err: unknown) {
         console.error('Failed to fetch PR data', err);
-        if (!stale) {
-          setError('Failed to load data.');
-        }
+        setError('Failed to load data.');
       } finally {
-        if (!stale) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
-    void fetchData();
-    return () => {
-      stale = true;
-    };
+    if (repository && pullRequestNumber) {
+      fetchData();
+    }
   }, [repository, pullRequestNumber, headSha]);
 
   const fileTree = useMemo(
@@ -1372,67 +1331,22 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
     [fullTreeData, files],
   );
 
-  const handleFileSelect = useCallback((file: PRFile) => {
+  const handleFileSelect = (file: PRFile) => {
     setSelectedFile(file.filename);
     const element = document.getElementById(`file-${file.sha}`);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, []);
+  };
 
-  const handleViewModeChange = useCallback(
-    (
-      _event: React.MouseEvent<HTMLElement>,
-      newMode: 'unified' | 'split' | null,
-    ) => {
-      if (newMode !== null) {
-        setViewMode(newMode);
-      }
-    },
-    [],
-  );
-
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const sidebarWidthTransition = theme.transitions.create(
-    ['width', 'max-width', 'min-width', 'padding'],
-    {
-      duration: theme.transitions.duration.shortest,
-      easing: theme.transitions.easing.easeInOut,
-    },
-  );
-
-  const sortedFileTreeRoots = useMemo(() => {
-    return Object.values(fileTree).sort((a, b) => {
-      const aIsFolder = Object.keys(a.children).length > 0;
-      const bIsFolder = Object.keys(b.children).length > 0;
-      if (aIsFolder && !bIsFolder) return -1;
-      if (!aIsFolder && bIsFolder) return 1;
-      return a.name.localeCompare(b.name);
-    });
-  }, [fileTree]);
-
-  const treeSelectedParams = useMemo(
-    () => ({ filename: selectedFile }),
-    [selectedFile],
-  );
-
-  const fileListTree = useMemo(
-    () => (
-      <List component="nav" dense disablePadding>
-        {sortedFileTreeRoots.map((node) => (
-          <FileTreeItem
-            key={node.path}
-            node={node}
-            level={0}
-            onSelect={handleFileSelect}
-            selectedParams={treeSelectedParams}
-          />
-        ))}
-      </List>
-    ),
-    [sortedFileTreeRoots, handleFileSelect, treeSelectedParams],
-  );
+  const handleViewModeChange = (
+    _event: React.MouseEvent<HTMLElement>,
+    newMode: 'unified' | 'split' | null,
+  ) => {
+    if (newMode !== null) {
+      setViewMode(newMode);
+    }
+  };
 
   if (loading) {
     return (
@@ -1459,220 +1373,36 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
     );
   }
 
-  const fileListTitleRow = (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 1,
-        width: '100%',
-      }}
-    >
-      <Typography
-        sx={{
-          fontSize: '0.85rem',
-          fontWeight: 600,
-          color: 'text.primary',
-          minWidth: 0,
-        }}
-      >
-        Files Changed ({files.length})
-      </Typography>
-      <Tooltip title="Hide file list">
-        <IconButton
-          size="small"
-          onClick={() => setFileListCollapsed(true)}
-          aria-label="Hide file list"
-          sx={{ color: 'status.open', flexShrink: 0 }}
-        >
-          {isMobile ? (
-            <ExpandLessIcon fontSize="small" />
-          ) : (
-            <KeyboardDoubleArrowLeftIcon fontSize="small" />
-          )}
-        </IconButton>
-      </Tooltip>
-    </Box>
-  );
-
-  const fileListDiffOptions = (
-    <>
-      <FormControlLabel
-        control={
-          <Switch
-            checked={lineWrap}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setLineWrap(e.target.checked)
-            }
-            size="small"
-          />
-        }
-        label={
-          <Typography
-            sx={{
-              fontSize: '0.75rem',
-              color: 'status.open',
-            }}
-          >
-            Wrap Lines
-          </Typography>
-        }
-        sx={{ m: 0 }}
-      />
-
-      <ToggleButtonGroup
-        value={viewMode}
-        exclusive
-        onChange={handleViewModeChange}
-        aria-label="diff view mode"
-        size="small"
-        sx={{
-          width: '100%',
-          '& .MuiToggleButton-root': {
-            flex: 1,
-            color: 'status.open',
+  return (
+    <Grid container spacing={3}>
+      {/* Sidebar - File Tree */}
+      <Grid item xs={12} md={3}>
+        <Box
+          sx={{
+            position: 'sticky',
+            top: 24,
+            maxHeight: 'calc(100vh - 100px)',
+            overflowY: 'auto',
+            backgroundColor: 'background.paper',
+            borderRadius: '8px',
+            border: '1px solid',
             borderColor: 'border.light',
-            fontSize: '0.75rem',
-            textTransform: 'none',
-            py: 0.5,
-            '&.Mui-selected': {
-              color: 'text.primary',
-              backgroundColor: selectedFileBackground,
-              borderColor: 'status.info',
-            },
-            '&:hover': {
-              backgroundColor: 'surface.light',
-            },
-          },
-        }}
-      >
-        <ToggleButton value="unified" aria-label="unified view">
-          <ViewAgendaIcon sx={{ fontSize: 16, mr: 1 }} />
-          Unified
-        </ToggleButton>
-        <ToggleButton value="split" aria-label="split view">
-          <ViewColumnIcon sx={{ fontSize: 16, mr: 1 }} />
-          Split
-        </ToggleButton>
-      </ToggleButtonGroup>
-    </>
-  );
-
-  const fileListControls = (
-    <Box
-      sx={{
-        px: 2,
-        py: 1.5,
-        borderBottom: '1px solid',
-        borderColor: 'border.light',
-        mb: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 2,
-        flexShrink: 0,
-        backgroundColor: 'background.paper',
-      }}
-    >
-      {fileListTitleRow}
-      {fileListDiffOptions}
-    </Box>
-  );
-
-  /** Desktop: header fixed, only the tree scrolls inside the capped sidebar. */
-  const fileListExpandedBody = (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        width: '100%',
-        flex: { xs: 'none', md: 1 },
-        minHeight: { xs: 0, md: 0 },
-        maxHeight: { xs: 'none', md: 'none' },
-        overflow: { xs: 'visible', md: 'hidden' },
-      }}
-    >
-      {fileListControls}
-      <Box
-        sx={{
-          flex: { xs: 'none', md: 1 },
-          minHeight: { xs: 0, md: 0 },
-          overflowY: { xs: 'visible', md: 'auto' },
-          ...(isMobile ? {} : scrollbarSx),
-        }}
-      >
-        {fileListTree}
-      </Box>
-    </Box>
-  );
-
-  const diffColumn = (
-    <Box
-      sx={{
-        flex: { md: '1 1 0%' },
-        minWidth: 0,
-        width: { xs: '100%', md: 'auto' },
-      }}
-    >
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pb: 20 }}>
-        {files.map((file) => (
-          <PRFileDiffViewer
-            key={file.sha}
-            file={file}
-            viewMode={viewMode}
-            lineWrap={lineWrap}
-          />
-        ))}
-      </Box>
-    </Box>
-  );
-
-  /** Mobile: explorer + diffs scroll with the page (no sticky file-list chrome). */
-  if (isMobile) {
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          width: '100%',
-          alignSelf: 'stretch',
-          gap: 3,
-          touchAction: 'pan-y',
-        }}
-      >
-        {fileListCollapsed ? (
+            p: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            ...scrollbarSx,
+          }}
+        >
           <Box
-            component="button"
-            type="button"
-            onClick={() => setFileListCollapsed(false)}
-            aria-expanded={false}
-            aria-label="Show files changed"
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 1,
-              width: '100%',
-              py: 1.25,
               px: 2,
-              cursor: 'pointer',
-              border: 'none',
-              borderRadius: 1,
-              backgroundColor: 'surface.elevated',
-              color: 'text.primary',
-              font: 'inherit',
-              textAlign: 'left',
-              touchAction: 'manipulation',
-              transition: theme.transitions.create(
-                ['background-color', 'transform'],
-                { duration: theme.transitions.duration.shortest },
-              ),
-              '&:hover': {
-                backgroundColor: 'surface.light',
-              },
-              '&:active': {
-                transform: 'scale(0.98)',
-              },
+              py: 1.5,
+              borderBottom: '1px solid',
+              borderColor: 'border.light',
+              mb: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
             }}
           >
             <Typography
@@ -1680,131 +1410,107 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
                 fontSize: '0.85rem',
                 fontWeight: 600,
                 color: 'text.primary',
-                minWidth: 0,
-                textAlign: 'left',
               }}
             >
               Files Changed ({files.length})
             </Typography>
-            <ExpandMoreIcon
-              sx={{
-                color: 'status.open',
-                flexShrink: 0,
-              }}
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={lineWrap}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setLineWrap(e.target.checked)
+                  }
+                  size="small"
+                />
+              }
+              label={
+                <Typography
+                  sx={{
+                    fontSize: '0.75rem',
+                    color: 'status.open',
+                  }}
+                >
+                  Wrap Lines
+                </Typography>
+              }
+              sx={{ m: 0 }}
             />
-          </Box>
-        ) : null}
-        {!fileListCollapsed ? (
-          <Box
-            sx={{
-              border: '1px solid',
-              borderColor: 'border.light',
-              borderRadius: '8px',
-              backgroundColor: 'background.paper',
-              touchAction: 'pan-y',
-            }}
-          >
-            <Box
-              sx={{
-                flexShrink: 0,
-                backgroundColor: 'background.paper',
-                borderBottom: '1px solid',
-                borderColor: 'border.light',
-                borderRadius: '8px 8px 0 0',
-              }}
-            >
-              <Box
-                sx={{
-                  px: 2,
-                  py: 1.5,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 2,
-                }}
-              >
-                {fileListTitleRow}
-                {fileListDiffOptions}
-              </Box>
-            </Box>
-            <Box
-              sx={{
-                backgroundColor: 'background.paper',
-                borderRadius: '0 0 8px 8px',
-                px: 2,
-                py: 0.5,
-                maxHeight: 'min(42vh, 320px)',
-                overflowY: 'auto',
-                ...scrollbarSx,
-              }}
-            >
-              {fileListTree}
-            </Box>
-          </Box>
-        ) : null}
-        {diffColumn}
-      </Box>
-    );
-  }
 
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'row',
-        gap: 3,
-        alignItems: 'flex-start',
-      }}
-    >
-      {/* Sidebar - File Tree (desktop) */}
-      <Box
-        sx={{
-          position: 'sticky',
-          top: 24,
-          alignSelf: fileListCollapsed ? 'flex-start' : 'stretch',
-          width: fileListCollapsed ? 48 : '25%',
-          minWidth: fileListCollapsed ? 48 : undefined,
-          maxWidth: fileListCollapsed ? 48 : '25%',
-          flexShrink: 0,
-          maxHeight: fileListCollapsed ? 'none' : 'calc(100vh - 100px)',
-          minHeight: fileListCollapsed ? undefined : 0,
-          overflowY: fileListCollapsed ? 'visible' : 'hidden',
-          overflowX: fileListCollapsed ? undefined : 'hidden',
-          backgroundColor: 'background.paper',
-          borderRadius: '8px',
-          border: '1px solid',
-          borderColor: 'border.light',
-          p: fileListCollapsed ? 0.25 : 1,
-          display: 'flex',
-          flexDirection: 'column',
-          transition: sidebarWidthTransition,
-        }}
-      >
-        {fileListCollapsed ? (
-          <Tooltip title="Show file list">
-            <IconButton
+            {/* View Mode Toggle */}
+            <ToggleButtonGroup
+              value={viewMode}
+              exclusive
+              onChange={handleViewModeChange}
+              aria-label="diff view mode"
               size="small"
-              onClick={() => setFileListCollapsed(false)}
-              aria-label="Show file list"
               sx={{
-                alignSelf: 'center',
-                color: 'status.open',
-                p: 0.5,
-                m: 0,
-                transition: theme.transitions.create('transform', {
-                  duration: theme.transitions.duration.shortest,
-                }),
+                width: '100%',
+                '& .MuiToggleButton-root': {
+                  flex: 1,
+                  color: 'status.open',
+                  borderColor: 'border.light',
+                  fontSize: '0.75rem',
+                  textTransform: 'none',
+                  py: 0.5,
+                  '&.Mui-selected': {
+                    color: 'text.primary',
+                    backgroundColor: selectedFileBackground,
+                    borderColor: 'status.info',
+                  },
+                  '&:hover': {
+                    backgroundColor: 'surface.light',
+                  },
+                },
               }}
             >
-              <KeyboardDoubleArrowRightIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        ) : (
-          fileListExpandedBody
-        )}
-      </Box>
+              <ToggleButton value="unified" aria-label="unified view">
+                <ViewAgendaIcon sx={{ fontSize: 16, mr: 1 }} />
+                Unified
+              </ToggleButton>
+              <ToggleButton value="split" aria-label="split view">
+                <ViewColumnIcon sx={{ fontSize: 16, mr: 1 }} />
+                Split
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+          <List component="nav" dense disablePadding>
+            {Object.values(fileTree)
+              .sort((a, b) => {
+                const aIsFolder = Object.keys(a.children).length > 0;
+                const bIsFolder = Object.keys(b.children).length > 0;
+                if (aIsFolder && !bIsFolder) return -1;
+                if (!aIsFolder && bIsFolder) return 1;
+                return a.name.localeCompare(b.name);
+              })
+              .map((node) => (
+                <FileTreeItem
+                  key={node.path}
+                  node={node}
+                  level={0}
+                  onSelect={handleFileSelect}
+                  selectedParams={{ filename: selectedFile }}
+                />
+              ))}
+          </List>
+        </Box>
+      </Grid>
 
-      {diffColumn}
-    </Box>
+      {/* Content - File Diffs */}
+      <Grid item xs={12} md={9}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pb: 20 }}>
+          {files.map((file) => (
+            <PRFileDiffViewer
+              key={file.sha}
+              file={file}
+              viewMode={viewMode}
+              lineWrap={lineWrap}
+            />
+          ))}
+        </Box>
+      </Grid>
+    </Grid>
   );
 };
 
