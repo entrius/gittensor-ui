@@ -119,7 +119,11 @@ export const MinersList: React.FC<MinersListProps> = ({
       cellSx: { p: 0 },
       renderCell: (miner) =>
         miner.githubId ? (
-          <WatchlistButton githubId={miner.githubId} size="small" />
+          <WatchlistButton
+            category="miners"
+            itemKey={miner.githubId}
+            size="small"
+          />
         ) : null,
     },
   ];
