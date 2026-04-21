@@ -100,9 +100,9 @@ const MinerDetailsPage: React.FC = () => {
           <Box
             sx={{
               display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
               alignItems: { xs: 'stretch', sm: 'center' },
               justifyContent: 'space-between',
+              flexDirection: { xs: 'column', sm: 'row' },
               gap: { xs: 1.25, sm: 0 },
             }}
           >
@@ -115,7 +115,11 @@ const MinerDetailsPage: React.FC = () => {
               }}
             >
               <BackButton to="/top-miners" mb={0} />
-              <WatchlistButton githubId={githubId} size="medium" />
+              <WatchlistButton
+                category="miners"
+                itemKey={githubId}
+                size="medium"
+              />
             </Box>
             <Box
               sx={{
@@ -139,17 +143,19 @@ const MinerDetailsPage: React.FC = () => {
                     key={option.value}
                     href={buildModeHref(option.value)}
                     sx={{
-                      px: 2,
+                      px: { xs: 1.25, sm: 2 },
                       py: 0.75,
                       borderRadius: 1.5,
-                      transition: 'all 0.2s',
                       cursor: 'pointer',
+                      minWidth: 0,
+                      flex: { xs: 1, sm: '0 0 auto' },
                       backgroundColor: isActive
                         ? 'surface.elevated'
                         : 'transparent',
                       color: isActive
                         ? 'text.primary'
                         : (t) => alpha(t.palette.text.primary, 0.5),
+                      transition: 'all 0.2s',
                       '&:hover': {
                         backgroundColor: 'surface.elevated',
                         color: 'text.primary',
@@ -158,8 +164,10 @@ const MinerDetailsPage: React.FC = () => {
                   >
                     <Typography
                       sx={{
-                        fontSize: '0.8rem',
+                        fontSize: { xs: '0.74rem', sm: '0.8rem' },
                         fontWeight: 600,
+                        textAlign: 'center',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {option.label}
