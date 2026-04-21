@@ -1,20 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  Avatar,
   Box,
   Card,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
-  Typography,
   Chip,
-  Skeleton,
   Link,
+  Skeleton,
   Tooltip,
-  Avatar,
+  Typography,
   alpha,
   useTheme,
 } from '@mui/material';
@@ -27,9 +20,12 @@ import {
   formatAlphaToUsd,
 } from '../../utils/format';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
-import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
+import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import {
+  DataTable,
+  type DataTableColumn,
+} from '../../components/common/DataTable';
 import BountyProgress from './BountyProgress';
-import { LinkTableRow } from '../common/linkBehavior';
 
 type ListType = 'available' | 'pending' | 'history';
 type SortDirection = 'asc' | 'desc';
@@ -51,9 +47,6 @@ interface IssuesListProps {
   linkState?: Record<string, unknown>;
 }
 
-/**
- * Truncate wallet address for display
- */
 const truncateAddress = (address: string | null): string => {
   if (!address) return '-';
   if (address.length <= 12) return address;
@@ -71,28 +64,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const { taoPrice, alphaPrice } = usePrices();
-  const headerCellSx = useMemo(
-    () => ({
-      fontFamily: '"JetBrains Mono", monospace',
-      fontSize: '0.7rem',
-      fontWeight: 600,
-      letterSpacing: '0.5px',
-      textTransform: 'uppercase' as const,
-      color: 'text.secondary',
-      borderBottom: '1px solid',
-      borderColor: 'border.light',
-      py: 1.5,
-    }),
-    [],
-  );
-
-  const bodyCellSx = {
-    fontSize: '0.85rem',
-    color: 'text.primary',
-    borderBottom: '1px solid',
-    borderBottomColor: 'border.subtle',
-    py: 1.5,
-  };
 
   const parseAmount = (value: string | null | undefined): number => {
     const parsed = Number.parseFloat(value ?? '0');
@@ -102,6 +73,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const getLowerText = (value: string | null | undefined): string =>
     (value ?? '').toLowerCase();
 
+  // String columns feel natural ascending by default, numeric/date desc.
   const getDefaultSortDirection = useCallback(
     (key: SortKey): SortDirection =>
       key === 'id' || key === 'bounty' || key === 'date' ? 'desc' : 'asc',
@@ -126,14 +98,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const handleSort = useCallback(
     (key: SortKey) => {
       if (!visibleSortKeys.includes(key)) return;
-
       if (sortKey === key) {
-        setSortDirection((prevDirection) =>
-          prevDirection === 'asc' ? 'desc' : 'asc',
-        );
+        setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
         return;
       }
-
       setSortKey(key);
       setSortDirection(getDefaultSortDirection(key));
     },
@@ -146,10 +114,8 @@ const IssuesList: React.FC<IssuesListProps> = ({
       sensitivity: 'base',
       numeric: true,
     });
-
     const decorated = issues.map((issue) => {
       let value: number | string;
-
       switch (sortKey) {
         case 'id':
           value = issue.id;
@@ -178,10 +144,8 @@ const IssuesList: React.FC<IssuesListProps> = ({
           value = new Date(issue.completedAt || issue.updatedAt || 0).getTime();
           break;
       }
-
       return { issue, value };
     });
-
     decorated.sort((a, b) => {
       if (typeof a.value === 'number' && typeof b.value === 'number') {
         return (a.value - b.value) * directionFactor;
@@ -190,68 +154,249 @@ const IssuesList: React.FC<IssuesListProps> = ({
         collator.compare(String(a.value), String(b.value)) * directionFactor
       );
     });
-
     return decorated.map((item) => item.issue);
   }, [issues, sortDirection, sortKey]);
 
-  const renderSortableHeader = useCallback(
-    (
-      label: string,
-      key: SortKey,
-      align: 'left' | 'center' | 'right' = 'left',
-      width?: string,
-    ) => (
-      <TableCell
-        onClick={() => handleSort(key)}
-        sx={{
-          ...headerCellSx,
-          textAlign: align,
-          width,
-          cursor: 'pointer',
-          userSelect: 'none',
-          '&:hover .MuiTableSortLabel-root': {
-            color: 'secondary.main',
-          },
-        }}
-      >
-        <TableSortLabel
-          active={sortKey === key}
-          direction={sortKey === key ? sortDirection : 'asc'}
-          onClick={(event) => event.preventDefault()}
-          hideSortIcon={sortKey !== key}
+  const columns = useMemo<DataTableColumn<IssueBounty, SortKey>[]>(() => {
+    const idColumn: DataTableColumn<IssueBounty, SortKey> = {
+      key: 'id',
+      header: 'ID',
+      width: '60px',
+      sortKey: 'id',
+      renderCell: (issue) => (
+        <Typography
           sx={{
-            color: 'text.secondary',
-            width: '100%',
-            justifyContent:
-              align === 'right'
-                ? 'flex-end'
-                : align === 'center'
-                  ? 'center'
-                  : 'flex-start',
-            '&:hover': {
-              color: 'secondary.main',
-            },
-            '&.Mui-active': {
-              color: 'secondary.main',
-            },
+            fontSize: '0.8rem',
+            color: alpha(theme.palette.common.white, 0.6),
           }}
         >
-          <Typography
+          #{issue.id}
+        </Typography>
+      ),
+    };
+
+    const repositoryColumn: DataTableColumn<IssueBounty, SortKey> = {
+      key: 'repository',
+      header: 'Repository',
+      width: '220px',
+      sortKey: 'repository',
+      renderCell: (issue) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Avatar
+            src={`https://avatars.githubusercontent.com/${issue.repositoryFullName.split('/')[0]}`}
+            sx={{ width: 24, height: 24, borderRadius: 1 }}
+          />
+          <Typography sx={{ fontSize: '0.85rem', color: STATUS_COLORS.info }}>
+            {issue.repositoryFullName}
+          </Typography>
+        </Box>
+      ),
+    };
+
+    const issueColumn: DataTableColumn<IssueBounty, SortKey> = {
+      key: 'issue',
+      header: 'Issue',
+      sortKey: 'issue',
+      renderCell: (issue) => (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          {issue.title && (
+            <Typography
+              sx={{
+                fontSize: '0.85rem',
+                color: 'text.primary',
+                fontWeight: 500,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '600px',
+              }}
+            >
+              {issue.title}
+            </Typography>
+          )}
+          <Link
+            href={issue.githubUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: '0.7rem',
-              fontWeight: 600,
-              letterSpacing: '0.5px',
-              textTransform: 'uppercase',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              fontSize: '0.75rem',
+              color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+              textDecoration: 'none',
+              '&:hover': {
+                color: STATUS_COLORS.info,
+                textDecoration: 'underline',
+              },
             }}
           >
-            {label}
+            #{issue.issueNumber}
+            <OpenInNewIcon sx={{ fontSize: 12, opacity: 0.5 }} />
+          </Link>
+        </Box>
+      ),
+    };
+
+    const bountyColumn = (
+      label: string,
+      colorOverride?: (issue: IssueBounty) => string,
+    ): DataTableColumn<IssueBounty, SortKey> => ({
+      key: 'bounty',
+      header: label,
+      width: listType === 'available' ? '120px' : undefined,
+      align: 'right',
+      sortKey: 'bounty',
+      renderCell: (issue) => {
+        const usdDisplay = formatAlphaToUsd(
+          issue.targetBounty,
+          taoPrice,
+          alphaPrice,
+        );
+        const color =
+          colorOverride?.(issue) ??
+          (listType === 'pending' ? STATUS_COLORS.award : STATUS_COLORS.merged);
+        return (
+          <>
+            <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color }}>
+              {formatTokenAmount(issue.targetBounty)} ل
+            </Typography>
+            {usdDisplay && (
+              <Typography
+                sx={{
+                  fontSize: '0.7rem',
+                  color: alpha(theme.palette.common.white, 0.35),
+                }}
+              >
+                {usdDisplay}
+              </Typography>
+            )}
+          </>
+        );
+      },
+    });
+
+    const statusColumn = (
+      width?: string,
+    ): DataTableColumn<IssueBounty, SortKey> => ({
+      key: 'status',
+      header: 'Status',
+      width,
+      align: 'center',
+      sortKey: 'status',
+      renderCell: (issue) => {
+        const statusBadge = getIssueStatusMeta(issue.status);
+        return (
+          <Chip
+            label={statusBadge.text}
+            size="small"
+            sx={{
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              backgroundColor: statusBadge.bgColor,
+              color: statusBadge.color,
+              border: `1px solid ${statusBadge.color}40`,
+            }}
+          />
+        );
+      },
+    });
+
+    const fundingColumn: DataTableColumn<IssueBounty, SortKey> = {
+      key: 'funding',
+      header: 'Funding',
+      width: '140px',
+      align: 'center',
+      sortKey: 'funding',
+      renderCell: (issue) => (
+        <BountyProgress
+          bountyAmount={issue.bountyAmount}
+          targetBounty={issue.targetBounty}
+        />
+      ),
+    };
+
+    const solverColumn: DataTableColumn<IssueBounty, SortKey> = {
+      key: 'solver',
+      header: 'Solver',
+      align: 'center',
+      sortKey: 'solver',
+      renderCell: (issue) =>
+        issue.solverHotkey ? (
+          <Tooltip title={issue.solverHotkey} arrow>
+            <Typography
+              sx={{
+                fontSize: '0.8rem',
+                color: STATUS_COLORS.info,
+                cursor: 'pointer',
+              }}
+            >
+              {truncateAddress(issue.solverHotkey)}
+            </Typography>
+          </Tooltip>
+        ) : (
+          <Typography
+            sx={{
+              fontSize: '0.8rem',
+              color: alpha(theme.palette.common.white, TEXT_OPACITY.faint),
+            }}
+          >
+            -
           </Typography>
-        </TableSortLabel>
-      </TableCell>
-    ),
-    [handleSort, headerCellSx, sortDirection, sortKey],
-  );
+        ),
+    };
+
+    const dateColumn: DataTableColumn<IssueBounty, SortKey> = {
+      key: 'date',
+      header: 'Date',
+      align: 'center',
+      sortKey: 'date',
+      renderCell: (issue) => (
+        <Typography
+          sx={{
+            fontSize: '0.8rem',
+            color: alpha(theme.palette.common.white, 0.6),
+          }}
+        >
+          {formatDate(issue.completedAt || issue.updatedAt)}
+        </Typography>
+      ),
+    };
+
+    if (listType === 'available') {
+      return [
+        idColumn,
+        repositoryColumn,
+        issueColumn,
+        bountyColumn('Bounty'),
+        statusColumn('100px'),
+      ];
+    }
+    if (listType === 'pending') {
+      return [
+        idColumn,
+        repositoryColumn,
+        issueColumn,
+        bountyColumn('Target Bounty'),
+        fundingColumn,
+        statusColumn(),
+      ];
+    }
+    return [
+      idColumn,
+      repositoryColumn,
+      issueColumn,
+      bountyColumn('Payout', (issue) =>
+        issue.status === 'completed'
+          ? STATUS_COLORS.merged
+          : alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+      ),
+      solverColumn,
+      statusColumn(),
+      dateColumn,
+    ];
+  }, [listType, theme, taoPrice, alphaPrice]);
 
   if (isLoading) {
     return (
@@ -313,341 +458,26 @@ const IssuesList: React.FC<IssuesListProps> = ({
         border: `1px solid ${theme.palette.border.light}`,
         borderRadius: 3,
         overflow: 'hidden',
+        // Original IssuesList used `py: 1.5` (12px) on every cell;
+        // restore the original row spacing on top of `size="small"`.
+        '& .MuiTableCell-root': { py: 1.5 },
       }}
       elevation={0}
     >
-      <TableContainer sx={{ ...scrollbarSx }}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              {renderSortableHeader('ID', 'id', 'left', '60px')}
-              {renderSortableHeader(
-                'Repository',
-                'repository',
-                'left',
-                '220px',
-              )}
-              {renderSortableHeader('Issue', 'issue')}
-
-              {/* Available Issues columns */}
-              {listType === 'available' && (
-                <>
-                  {renderSortableHeader('Bounty', 'bounty', 'right', '120px')}
-                  {renderSortableHeader('Status', 'status', 'center', '100px')}
-                </>
-              )}
-
-              {/* Pending Issues columns */}
-              {listType === 'pending' && (
-                <>
-                  {renderSortableHeader('Target Bounty', 'bounty', 'right')}
-                  {renderSortableHeader(
-                    'Funding',
-                    'funding',
-                    'center',
-                    '140px',
-                  )}
-                  {renderSortableHeader('Status', 'status', 'center')}
-                </>
-              )}
-
-              {/* History columns */}
-              {listType === 'history' && (
-                <>
-                  {renderSortableHeader('Payout', 'bounty', 'right')}
-                  {renderSortableHeader('Solver', 'solver', 'center')}
-                  {renderSortableHeader('Status', 'status', 'center')}
-                  {renderSortableHeader('Date', 'date', 'center')}
-                </>
-              )}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortedIssues.map((issue) => {
-              const statusBadge = getIssueStatusMeta(issue.status);
-              const href = getIssueHref?.(issue.id);
-              const usdDisplay = formatAlphaToUsd(
-                issue.targetBounty,
-                taoPrice,
-                alphaPrice,
-              );
-              const rowSx = {
-                cursor: href ? 'pointer' : 'default',
-                transition: 'background-color 0.2s',
-                '&:hover': {
-                  backgroundColor: alpha(theme.palette.common.white, 0.03),
-                },
-              };
-              const cells = (
-                <>
-                  {/* Common columns */}
-                  <TableCell sx={bodyCellSx}>
-                    <Typography
-                      sx={{
-                        fontSize: '0.8rem',
-                        color: alpha(theme.palette.common.white, 0.6),
-                      }}
-                    >
-                      #{issue.id}
-                    </Typography>
-                  </TableCell>
-                  <TableCell sx={bodyCellSx}>
-                    <Box
-                      sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}
-                    >
-                      <Avatar
-                        src={`https://avatars.githubusercontent.com/${issue.repositoryFullName.split('/')[0]}`}
-                        sx={{ width: 24, height: 24, borderRadius: 1 }}
-                      />
-                      <Typography
-                        sx={{
-                          fontSize: '0.85rem',
-                          color: STATUS_COLORS.info,
-                        }}
-                      >
-                        {issue.repositoryFullName}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={bodyCellSx}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 0.5,
-                      }}
-                    >
-                      {issue.title && (
-                        <Typography
-                          sx={{
-                            fontSize: '0.85rem',
-                            color: 'text.primary',
-                            fontWeight: 500,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            maxWidth: '600px',
-                          }}
-                        >
-                          {issue.title}
-                        </Typography>
-                      )}
-                      <Link
-                        href={issue.githubUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.5,
-                          fontSize: '0.75rem',
-                          color: alpha(
-                            theme.palette.common.white,
-                            TEXT_OPACITY.tertiary,
-                          ),
-                          textDecoration: 'none',
-                          '&:hover': {
-                            color: STATUS_COLORS.info,
-                            textDecoration: 'underline',
-                          },
-                        }}
-                      >
-                        #{issue.issueNumber}
-                        <OpenInNewIcon sx={{ fontSize: 12, opacity: 0.5 }} />
-                      </Link>
-                    </Box>
-                  </TableCell>
-
-                  {/* Available Issues columns */}
-                  {listType === 'available' && (
-                    <>
-                      <TableCell sx={{ ...bodyCellSx, textAlign: 'right' }}>
-                        <Typography
-                          sx={{
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            color: STATUS_COLORS.merged,
-                          }}
-                        >
-                          {formatTokenAmount(issue.targetBounty)} ل
-                        </Typography>
-                        {usdDisplay && (
-                          <Typography
-                            sx={{
-                              fontSize: '0.7rem',
-                              color: alpha(theme.palette.common.white, 0.35),
-                            }}
-                          >
-                            {usdDisplay}
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
-                        <Chip
-                          label={statusBadge.text}
-                          size="small"
-                          sx={{
-                            fontSize: '0.7rem',
-                            fontWeight: 600,
-                            backgroundColor: statusBadge.bgColor,
-                            color: statusBadge.color,
-                            border: `1px solid ${statusBadge.color}40`,
-                          }}
-                        />
-                      </TableCell>
-                    </>
-                  )}
-
-                  {/* Pending Issues columns */}
-                  {listType === 'pending' && (
-                    <>
-                      <TableCell sx={{ ...bodyCellSx, textAlign: 'right' }}>
-                        <Typography
-                          sx={{
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            color: STATUS_COLORS.award,
-                          }}
-                        >
-                          {formatTokenAmount(issue.targetBounty)} ل
-                        </Typography>
-                        {usdDisplay && (
-                          <Typography
-                            sx={{
-                              fontSize: '0.7rem',
-                              color: alpha(theme.palette.common.white, 0.35),
-                            }}
-                          >
-                            {usdDisplay}
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
-                        <BountyProgress
-                          bountyAmount={issue.bountyAmount}
-                          targetBounty={issue.targetBounty}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
-                        <Chip
-                          label={statusBadge.text}
-                          size="small"
-                          sx={{
-                            fontSize: '0.7rem',
-                            fontWeight: 600,
-                            backgroundColor: statusBadge.bgColor,
-                            color: statusBadge.color,
-                            border: `1px solid ${statusBadge.color}40`,
-                          }}
-                        />
-                      </TableCell>
-                    </>
-                  )}
-
-                  {/* History columns */}
-                  {listType === 'history' && (
-                    <>
-                      <TableCell sx={{ ...bodyCellSx, textAlign: 'right' }}>
-                        <Typography
-                          sx={{
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            color:
-                              issue.status === 'completed'
-                                ? STATUS_COLORS.merged
-                                : alpha(
-                                    theme.palette.common.white,
-                                    TEXT_OPACITY.muted,
-                                  ),
-                          }}
-                        >
-                          {`${formatTokenAmount(issue.targetBounty)} ل`}
-                        </Typography>
-                        {usdDisplay && (
-                          <Typography
-                            sx={{
-                              fontSize: '0.7rem',
-                              color: alpha(theme.palette.common.white, 0.35),
-                            }}
-                          >
-                            {usdDisplay}
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
-                        {issue.solverHotkey ? (
-                          <Tooltip title={issue.solverHotkey} arrow>
-                            <Typography
-                              sx={{
-                                fontSize: '0.8rem',
-                                color: STATUS_COLORS.info,
-                                cursor: 'pointer',
-                              }}
-                            >
-                              {truncateAddress(issue.solverHotkey)}
-                            </Typography>
-                          </Tooltip>
-                        ) : (
-                          <Typography
-                            sx={{
-                              fontSize: '0.8rem',
-                              color: alpha(
-                                theme.palette.common.white,
-                                TEXT_OPACITY.faint,
-                              ),
-                            }}
-                          >
-                            -
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
-                        <Chip
-                          label={statusBadge.text}
-                          size="small"
-                          sx={{
-                            fontSize: '0.7rem',
-                            fontWeight: 600,
-                            backgroundColor: statusBadge.bgColor,
-                            color: statusBadge.color,
-                            border: `1px solid ${statusBadge.color}40`,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
-                        <Typography
-                          sx={{
-                            fontSize: '0.8rem',
-                            color: alpha(theme.palette.common.white, 0.6),
-                          }}
-                        >
-                          {formatDate(issue.completedAt || issue.updatedAt)}
-                        </Typography>
-                      </TableCell>
-                    </>
-                  )}
-                </>
-              );
-
-              return href ? (
-                <LinkTableRow
-                  key={issue.id}
-                  href={href}
-                  linkState={linkState}
-                  sx={rowSx}
-                >
-                  {cells}
-                </LinkTableRow>
-              ) : (
-                <TableRow key={issue.id} sx={rowSx}>
-                  {cells}
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <DataTable<IssueBounty, SortKey>
+        columns={columns}
+        rows={sortedIssues}
+        getRowKey={(issue) => issue.id}
+        getRowHref={
+          getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
+        }
+        linkState={linkState}
+        sort={{
+          field: sortKey,
+          order: sortDirection,
+          onChange: handleSort,
+        }}
+      />
     </Card>
   );
 };

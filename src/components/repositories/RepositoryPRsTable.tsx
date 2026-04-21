@@ -1,52 +1,22 @@
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
-  Card,
-  Typography,
-  Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
-  CircularProgress,
   Avatar,
+  Box,
+  Card,
   Chip,
+  CircularProgress,
   Stack,
+  Typography,
   alpha,
-  TextField,
-  InputAdornment,
-  Button,
-  Menu,
-  MenuItem,
-  Checkbox,
-  ListItemText,
-  Divider,
 } from '@mui/material';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import SearchIcon from '@mui/icons-material/Search';
-import ViewColumnIcon from '@mui/icons-material/ViewColumn';
-import RadioButtonUncheckedRoundedIcon from '@mui/icons-material/RadioButtonUncheckedRounded';
-import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
-import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
-import CropSquareOutlinedIcon from '@mui/icons-material/CropSquareOutlined';
-
+import { useNavigate } from 'react-router-dom';
 import { useAllPrs, type CommitLog } from '../../api';
-import { LinkTableRow } from '../common/linkBehavior';
-import theme, {
-  TEXT_OPACITY,
-  scrollbarSx,
-  headerCellStyle,
-  bodyCellStyle,
-  REPOSITORY_PR_FILTER_COLORS,
-} from '../../theme';
 import {
-  filterPrs,
-  getPrStatusChipColor,
-  getPrStatusCounts,
-  type PrStatusFilter,
-} from '../../utils';
+  DataTable,
+  type DataTableColumn,
+} from '../../components/common/DataTable';
+import theme, { TEXT_OPACITY, scrollbarSx } from '../../theme';
+import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
 import FilterButton from '../FilterButton';
 
 type PrSortField =
@@ -60,176 +30,6 @@ type PrSortField =
   | 'mergedAt';
 type SortOrder = 'asc' | 'desc';
 
-const COLUMN_MENU_OPTIONS: { key: PrSortField; label: string }[] = [
-  { key: 'pullRequestNumber', label: 'PR #' },
-  { key: 'pullRequestTitle', label: 'Title' },
-  { key: 'author', label: 'Author' },
-  { key: 'commitCount', label: 'Commits' },
-  { key: 'lines', label: '+/-' },
-  { key: 'score', label: 'Score' },
-  { key: 'status', label: 'Status' },
-  { key: 'mergedAt', label: 'Merged' },
-];
-
-const DEFAULT_COLUMN_VISIBILITY = COLUMN_MENU_OPTIONS.reduce(
-  (acc, { key }) => {
-    acc[key] = true;
-    return acc;
-  },
-  {} as Record<PrSortField, boolean>,
-);
-
-/** Avoid allocating rank maps inside every sort comparison. */
-const PR_STATE_RANK: Record<string, number> = {
-  OPEN: 0,
-  MERGED: 1,
-  CLOSED: 2,
-};
-
-const COLUMNS_MENU_PAPER_SX = {
-  mt: 1,
-  minWidth: 240,
-  maxHeight: 400,
-  borderRadius: 2,
-  border: `1px solid ${theme.palette.border.light}`,
-  backgroundImage: 'none',
-} as const;
-
-const PR_TABLE_ROW_SX = {
-  cursor: 'pointer',
-  '&:hover': {
-    backgroundColor: 'surface.light',
-  },
-  transition: 'background-color 0.2s',
-} as const;
-
-const PR_FILTER_COLORS = REPOSITORY_PR_FILTER_COLORS;
-
-/** Selected chip: pale foreground (label, icon, count) — GitHub-style */
-const PR_FILTER_ACTIVE_FG = {
-  open: '#c4f2d4',
-  merged: '#c9e2ff',
-  closed: '#ffd8de',
-  all: '#f0f6fc',
-} as const;
-
-type RepositoryPrTableRowProps = {
-  pr: CommitLog;
-  columnVisibility: Record<PrSortField, boolean>;
-  rowHref: string;
-  linkState: { backLabel: string };
-};
-
-const RepositoryPrTableRow = memo(function RepositoryPrTableRow({
-  pr,
-  columnVisibility,
-  rowHref,
-  linkState,
-}: RepositoryPrTableRowProps) {
-  const statusLabel =
-    pr.prState?.toUpperCase() || (pr.mergedAt ? 'MERGED' : 'OPEN');
-  const statusColor = getPrStatusChipColor(
-    statusLabel,
-    theme.palette.status.neutral,
-  );
-
-  return (
-    <LinkTableRow href={rowHref} linkState={linkState} sx={PR_TABLE_ROW_SX}>
-      {columnVisibility.pullRequestNumber && (
-        <TableCell sx={bodyCellStyle}>
-          <a
-            href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              color: theme.palette.text.primary,
-              textDecoration: 'none',
-              fontWeight: 500,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            #{pr.pullRequestNumber}
-          </a>
-        </TableCell>
-      )}
-      {columnVisibility.pullRequestTitle && (
-        <TableCell sx={bodyCellStyle}>
-          <Box
-            sx={{
-              maxWidth: '300px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {pr.pullRequestTitle}
-          </Box>
-        </TableCell>
-      )}
-      {columnVisibility.author && (
-        <TableCell sx={bodyCellStyle}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-            }}
-          >
-            <Avatar
-              src={`https://avatars.githubusercontent.com/${pr.author}`}
-              alt={pr.author}
-              sx={{ width: 20, height: 20 }}
-            />
-            {pr.author}
-          </Box>
-        </TableCell>
-      )}
-      {columnVisibility.commitCount && (
-        <TableCell align="right" sx={bodyCellStyle}>
-          {pr.commitCount}
-        </TableCell>
-      )}
-      {columnVisibility.lines && (
-        <TableCell align="right" sx={bodyCellStyle}>
-          <Box
-            component="span"
-            sx={{ color: theme.palette.diff.additions, mr: 1 }}
-          >
-            +{pr.additions}
-          </Box>
-          <Box component="span" sx={{ color: theme.palette.diff.deletions }}>
-            -{pr.deletions}
-          </Box>
-        </TableCell>
-      )}
-      {columnVisibility.score && (
-        <TableCell align="right" sx={bodyCellStyle}>
-          <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
-            {parseFloat(pr.score || '0').toFixed(4)}
-          </Typography>
-        </TableCell>
-      )}
-      {columnVisibility.status && (
-        <TableCell sx={bodyCellStyle}>
-          <Chip
-            variant="status"
-            label={statusLabel}
-            sx={{
-              color: statusColor,
-              borderColor: statusColor,
-            }}
-          />
-        </TableCell>
-      )}
-      {columnVisibility.mergedAt && (
-        <TableCell align="right" sx={bodyCellStyle}>
-          {pr.mergedAt ? new Date(pr.mergedAt).toLocaleDateString() : '-'}
-        </TableCell>
-      )}
-    </LinkTableRow>
-  );
-});
-
 interface RepositoryPRsTableProps {
   repositoryFullName: string;
   state?: 'open' | 'closed' | 'merged' | 'all';
@@ -239,83 +39,40 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   repositoryFullName,
   state = 'all',
 }) => {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<PrStatusFilter>(state);
-  const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<PrSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [columnVisibility, setColumnVisibility] = useState<
-    Record<PrSortField, boolean>
-  >(() => ({ ...DEFAULT_COLUMN_VISIBILITY }));
-  const [columnsMenuAnchor, setColumnsMenuAnchor] =
-    useState<null | HTMLElement>(null);
 
-  const visibleColumnCount = useMemo(() => {
-    let n = 0;
-    for (const { key } of COLUMN_MENU_OPTIONS) {
-      if (columnVisibility[key]) n++;
+  const handleSort = (field: PrSortField) => {
+    if (sortField === field) {
+      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder(
+        field === 'pullRequestTitle' || field === 'author' ? 'asc' : 'desc',
+      );
     }
-    return n;
-  }, [columnVisibility]);
+  };
 
-  const toggleColumn = useCallback((key: PrSortField) => {
-    setColumnVisibility((prev) => {
-      const wasVisible = prev[key];
-      let visible = 0;
-      for (const { key: k } of COLUMN_MENU_OPTIONS) {
-        if (prev[k]) visible++;
-      }
-      if (wasVisible && visible <= 1) return prev;
-      return { ...prev, [key]: !wasVisible };
-    });
-  }, []);
-
-  const handleSort = useCallback(
-    (field: PrSortField) => {
-      if (sortField === field) {
-        setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
-      } else {
-        setSortField(field);
-        setSortOrder(
-          field === 'pullRequestTitle' || field === 'author' ? 'asc' : 'desc',
-        );
-      }
-    },
-    [sortField],
-  );
-
-  const filterOpen = useCallback(() => setFilter('open'), []);
-  const filterMerged = useCallback(() => setFilter('merged'), []);
-  const filterClosed = useCallback(() => setFilter('closed'), []);
-  const filterAll = useCallback(() => setFilter('all'), []);
-
-  // Fetch ALL PRs at once to enable client-side filtering and accurate counts
+  // Fetch ALL PRs at once for instant client-side filtering + accurate counts.
   const { data: allMinerPRs, isLoading } = useAllPrs();
 
   const allPRs = useMemo(() => {
-    if (!allMinerPRs?.length) return [];
-    const repoLc = repositoryFullName.toLowerCase();
-    return allMinerPRs.filter((pr) => pr.repository.toLowerCase() === repoLc);
+    if (!allMinerPRs) return [];
+    return allMinerPRs.filter(
+      (pr) => pr.repository.toLowerCase() === repositoryFullName.toLowerCase(),
+    );
   }, [allMinerPRs, repositoryFullName]);
 
-  const prListBackLinkState = useMemo(
-    () => ({ backLabel: `Back to ${repositoryFullName}` }),
-    [repositoryFullName],
-  );
-
-  const counts = useMemo(() => getPrStatusCounts(allPRs), [allPRs]);
-
-  const statusFilteredOnly = useMemo(
-    () => filterPrs(allPRs, { statusFilter: filter }),
-    [allPRs, filter],
-  );
+  const counts = useMemo(() => {
+    if (!allPRs) return { all: 0, open: 0, merged: 0, closed: 0 };
+    return getPrStatusCounts(allPRs);
+  }, [allPRs]);
 
   const filteredPRs = useMemo(
-    () =>
-      filterPrs(statusFilteredOnly, {
-        searchQuery,
-        includeNumber: true,
-      }),
-    [statusFilteredOnly, searchQuery],
+    () => filterPrs(allPRs ?? [], { statusFilter: filter }),
+    [allPRs, filter],
   );
 
   const sortedPRs = useMemo(() => {
@@ -324,7 +81,9 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     const cmpNum = (a = 0, b = 0) => (a - b) * dir;
     const stateRank = (pr: (typeof filteredPRs)[number]) => {
       const s = pr.prState?.toUpperCase() || (pr.mergedAt ? 'MERGED' : 'OPEN');
-      return PR_STATE_RANK[s] ?? 3;
+      return (
+        ({ OPEN: 0, MERGED: 1, CLOSED: 2 } as Record<string, number>)[s] ?? 3
+      );
     };
 
     return [...filteredPRs].sort((a, b) => {
@@ -356,107 +115,47 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     });
   }, [filteredPRs, sortField, sortOrder]);
 
-  const titleText = searchQuery.trim()
-    ? `Pull Requests (${filteredPRs.length} of ${statusFilteredOnly.length})`
-    : `Pull Requests (${statusFilteredOnly.length})`;
-
-  const columnsButton = (
-    <Button
-      size="small"
-      variant="outlined"
-      onClick={(e) => setColumnsMenuAnchor(e.currentTarget)}
-      startIcon={<ViewColumnIcon sx={{ fontSize: '1.1rem !important' }} />}
-      endIcon={<ArrowDropDownIcon />}
-      aria-haspopup="true"
-      aria-expanded={Boolean(columnsMenuAnchor)}
-      sx={{
-        flexShrink: 0,
-        minHeight: 40,
-        px: 2,
-        borderRadius: '999px',
-        textTransform: 'none',
-        fontSize: '0.8rem',
-        color: 'text.primary',
-        borderColor: 'border.light',
-        backgroundColor: 'surface.subtle',
-        '&:hover': {
-          borderColor: 'border.medium',
-          backgroundColor: 'surface.light',
-        },
-      }}
-    >
-      Columns
-      {visibleColumnCount < COLUMN_MENU_OPTIONS.length
-        ? ` (${visibleColumnCount})`
-        : ''}
-    </Button>
+  const handleRowClick = useCallback(
+    (pr: CommitLog) => {
+      navigate(
+        `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
+        { state: { backLabel: `Back to ${repositoryFullName}` } },
+      );
+    },
+    [navigate, repositoryFullName],
   );
 
-  const statusFilterStack = (
-    <Stack
-      direction="row"
-      spacing={2}
-      useFlexGap
-      sx={{ flexWrap: 'wrap', flex: '1 1 auto', minWidth: 0 }}
-    >
+  const filterButtons = (
+    <Stack direction="row" spacing={1}>
+      <FilterButton
+        label="All"
+        isActive={filter === 'all'}
+        onClick={() => setFilter('all')}
+        count={counts.all}
+        color={theme.palette.status.neutral}
+      />
       <FilterButton
         label="Open"
         isActive={filter === 'open'}
-        onClick={filterOpen}
+        onClick={() => setFilter('open')}
         count={counts.open}
-        color={PR_FILTER_COLORS.open}
-        activeTextColor={PR_FILTER_ACTIVE_FG.open}
-        inactiveAppearance="full-accent"
-        icon={<RadioButtonUncheckedRoundedIcon sx={{ fontSize: 14 }} />}
+        color={theme.palette.status.open}
       />
       <FilterButton
         label="Merged"
         isActive={filter === 'merged'}
-        onClick={filterMerged}
+        onClick={() => setFilter('merged')}
         count={counts.merged}
-        color={PR_FILTER_COLORS.merged}
-        activeTextColor={PR_FILTER_ACTIVE_FG.merged}
-        inactiveAppearance="full-accent"
-        icon={<CheckCircleOutlineRoundedIcon sx={{ fontSize: 14 }} />}
+        color={theme.palette.status.merged}
       />
       <FilterButton
         label="Closed"
         isActive={filter === 'closed'}
-        onClick={filterClosed}
+        onClick={() => setFilter('closed')}
         count={counts.closed}
-        color={PR_FILTER_COLORS.closed}
-        activeTextColor={PR_FILTER_ACTIVE_FG.closed}
-        inactiveAppearance="full-accent"
-        icon={<CancelOutlinedIcon sx={{ fontSize: 14 }} />}
-      />
-      <FilterButton
-        label="All"
-        isActive={filter === 'all'}
-        onClick={filterAll}
-        count={counts.all}
-        color={PR_FILTER_COLORS.all}
-        activeTextColor={PR_FILTER_ACTIVE_FG.all}
-        inactiveAppearance="full-accent"
-        icon={<CropSquareOutlinedIcon sx={{ fontSize: 14 }} />}
+        color={theme.palette.status.closed}
       />
     </Stack>
-  );
-
-  const filtersAndColumnsRow = (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 2,
-        width: '100%',
-      }}
-    >
-      {statusFilterStack}
-      {columnsButton}
-    </Box>
   );
 
   if (isLoading) {
@@ -471,21 +170,159 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         }}
         elevation={0}
       >
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
-          <Typography
-            variant="h6"
-            sx={{
-              color: 'text.primary',
-            }}
-          >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+          <Typography variant="h6" sx={{ color: 'text.primary' }}>
             Pull Requests
           </Typography>
-          {statusFilterStack}
+          {filterButtons}
         </Box>
         <CircularProgress size={40} sx={{ color: 'primary.main' }} />
       </Card>
     );
   }
+
+  const columns: DataTableColumn<CommitLog, PrSortField>[] = [
+    {
+      key: 'pullRequestNumber',
+      header: 'PR #',
+      sortKey: 'pullRequestNumber',
+      renderCell: (pr) => (
+        // Native <a> to GitHub — `onRowClick` (no row-as-anchor) keeps this valid HTML.
+        <a
+          href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            color: theme.palette.text.primary,
+            textDecoration: 'none',
+            fontWeight: 500,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          #{pr.pullRequestNumber}
+        </a>
+      ),
+    },
+    {
+      key: 'pullRequestTitle',
+      header: 'Title',
+      sortKey: 'pullRequestTitle',
+      renderCell: (pr) => (
+        <Box
+          sx={{
+            maxWidth: '300px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {pr.pullRequestTitle}
+        </Box>
+      ),
+    },
+    {
+      key: 'author',
+      header: 'Author',
+      sortKey: 'author',
+      renderCell: (pr) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Avatar
+            src={`https://avatars.githubusercontent.com/${pr.author}`}
+            alt={pr.author}
+            sx={{ width: 20, height: 20 }}
+          />
+          {pr.author}
+        </Box>
+      ),
+    },
+    {
+      key: 'commitCount',
+      header: 'Commits',
+      align: 'right',
+      sortKey: 'commitCount',
+      renderCell: (pr) => pr.commitCount,
+    },
+    {
+      key: 'lines',
+      header: '+/-',
+      align: 'right',
+      sortKey: 'lines',
+      renderCell: (pr) => (
+        <>
+          <Box
+            component="span"
+            sx={{ color: theme.palette.diff.additions, mr: 1 }}
+          >
+            +{pr.additions}
+          </Box>
+          <Box component="span" sx={{ color: theme.palette.diff.deletions }}>
+            -{pr.deletions}
+          </Box>
+        </>
+      ),
+    },
+    {
+      key: 'score',
+      header: 'Score',
+      align: 'right',
+      sortKey: 'score',
+      renderCell: (pr) => (
+        <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+          {parseFloat(pr.score || '0').toFixed(4)}
+        </Typography>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      sortKey: 'status',
+      renderCell: (pr) => {
+        const state =
+          pr.prState?.toUpperCase() || (pr.mergedAt ? 'MERGED' : 'OPEN');
+        let color = theme.palette.status.neutral;
+        if (state === 'MERGED') color = theme.palette.status.merged;
+        else if (state === 'OPEN') color = theme.palette.status.open;
+        else if (state === 'CLOSED') color = theme.palette.status.closed;
+        return (
+          <Chip
+            variant="status"
+            label={state}
+            sx={{ color, borderColor: color }}
+          />
+        );
+      },
+    },
+    {
+      key: 'mergedAt',
+      header: 'Merged',
+      align: 'right',
+      sortKey: 'mergedAt',
+      renderCell: (pr) =>
+        pr.mergedAt ? new Date(pr.mergedAt).toLocaleDateString() : '-',
+    },
+  ];
+
+  const headerToolbar = (
+    <Box
+      sx={{
+        p: 3,
+        borderBottom: `1px solid ${theme.palette.border.light}`,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 2,
+      }}
+    >
+      <Typography
+        variant="h6"
+        sx={{ color: 'text.primary', fontSize: '1.1rem', fontWeight: 500 }}
+      >
+        Pull Requests ({sortedPRs.length})
+      </Typography>
+      {filterButtons}
+    </Box>
+  );
 
   return (
     <Card
@@ -497,243 +334,41 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
+        // Bounded scroll ancestor for the sticky header inside DataTable.
+        '& .MuiTableContainer-root': {
+          maxHeight: '500px',
+          overflow: 'auto',
+          ...scrollbarSx,
+        },
       }}
       elevation={0}
     >
-      <Box
-        sx={{
-          p: 3,
-          borderBottom: `1px solid ${theme.palette.border.light}`,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
+      <DataTable<CommitLog, PrSortField>
+        columns={columns}
+        rows={sortedPRs}
+        getRowKey={(pr) => `${pr.repository}-${pr.pullRequestNumber}`}
+        stickyHeader
+        size="medium"
+        header={headerToolbar}
+        emptyState={
+          <Box sx={{ p: 4, textAlign: 'center' }}>
+            <Typography
+              sx={{
+                color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+                fontSize: '0.9rem',
+              }}
+            >
+              No pull requests found
+            </Typography>
+          </Box>
+        }
+        onRowClick={handleRowClick}
+        sort={{
+          field: sortField,
+          order: sortOrder,
+          onChange: handleSort,
         }}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 2,
-            width: '100%',
-          }}
-        >
-          <Typography
-            variant="h6"
-            sx={{
-              color: 'text.primary',
-              fontSize: '1.1rem',
-              fontWeight: 600,
-              minWidth: 0,
-            }}
-          >
-            {titleText}
-          </Typography>
-          <TextField
-            size="small"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search PRs"
-            autoComplete="off"
-            sx={{
-              minWidth: { xs: '100%', sm: 200 },
-              maxWidth: { sm: 320 },
-              flex: { xs: '1 1 100%', sm: '0 0 auto' },
-              '& .MuiOutlinedInput-root': {
-                fontSize: '0.82rem',
-                borderRadius: '8px',
-                backgroundColor: 'surface.subtle',
-                '& fieldset': {
-                  borderColor: theme.palette.border.light,
-                },
-              },
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ color: 'text.secondary', fontSize: 16 }} />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Box>
-
-        {filtersAndColumnsRow}
-      </Box>
-
-      <Menu
-        anchorEl={columnsMenuAnchor}
-        open={Boolean(columnsMenuAnchor)}
-        onClose={() => setColumnsMenuAnchor(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        PaperProps={{ sx: COLUMNS_MENU_PAPER_SX }}
-      >
-        <MenuItem
-          dense
-          onClick={() => {
-            setColumnVisibility({ ...DEFAULT_COLUMN_VISIBILITY });
-            setColumnsMenuAnchor(null);
-          }}
-        >
-          <ListItemText
-            primary="Show all"
-            primaryTypographyProps={{ fontSize: '0.875rem' }}
-          />
-        </MenuItem>
-        <Divider />
-        {COLUMN_MENU_OPTIONS.map(({ key, label }) => (
-          <MenuItem key={key} dense onClick={() => toggleColumn(key)}>
-            <Checkbox
-              size="small"
-              checked={columnVisibility[key]}
-              tabIndex={-1}
-              disableRipple
-              sx={{ py: 0, mr: 1, pointerEvents: 'none' }}
-            />
-            <ListItemText
-              primary={label}
-              primaryTypographyProps={{ fontSize: '0.875rem' }}
-            />
-          </MenuItem>
-        ))}
-      </Menu>
-
-      {sortedPRs.length === 0 ? (
-        <Box sx={{ p: 4, textAlign: 'center' }}>
-          <Typography
-            sx={{
-              color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-              fontSize: '0.9rem',
-            }}
-          >
-            {searchQuery.trim() && statusFilteredOnly.length > 0
-              ? 'No pull requests match your search'
-              : 'No pull requests found'}
-          </Typography>
-        </Box>
-      ) : (
-        <TableContainer
-          sx={{
-            maxHeight: '500px',
-            overflow: 'auto',
-            ...scrollbarSx,
-          }}
-        >
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow>
-                {columnVisibility.pullRequestNumber && (
-                  <TableCell sx={headerCellStyle}>
-                    <TableSortLabel
-                      active={sortField === 'pullRequestNumber'}
-                      direction={
-                        sortField === 'pullRequestNumber' ? sortOrder : 'desc'
-                      }
-                      onClick={() => handleSort('pullRequestNumber')}
-                    >
-                      PR #
-                    </TableSortLabel>
-                  </TableCell>
-                )}
-                {columnVisibility.pullRequestTitle && (
-                  <TableCell sx={headerCellStyle}>
-                    <TableSortLabel
-                      active={sortField === 'pullRequestTitle'}
-                      direction={
-                        sortField === 'pullRequestTitle' ? sortOrder : 'asc'
-                      }
-                      onClick={() => handleSort('pullRequestTitle')}
-                    >
-                      Title
-                    </TableSortLabel>
-                  </TableCell>
-                )}
-                {columnVisibility.author && (
-                  <TableCell sx={headerCellStyle}>
-                    <TableSortLabel
-                      active={sortField === 'author'}
-                      direction={sortField === 'author' ? sortOrder : 'asc'}
-                      onClick={() => handleSort('author')}
-                    >
-                      Author
-                    </TableSortLabel>
-                  </TableCell>
-                )}
-                {columnVisibility.commitCount && (
-                  <TableCell align="right" sx={headerCellStyle}>
-                    <TableSortLabel
-                      active={sortField === 'commitCount'}
-                      direction={
-                        sortField === 'commitCount' ? sortOrder : 'desc'
-                      }
-                      onClick={() => handleSort('commitCount')}
-                    >
-                      Commits
-                    </TableSortLabel>
-                  </TableCell>
-                )}
-                {columnVisibility.lines && (
-                  <TableCell align="right" sx={headerCellStyle}>
-                    <TableSortLabel
-                      active={sortField === 'lines'}
-                      direction={sortField === 'lines' ? sortOrder : 'desc'}
-                      onClick={() => handleSort('lines')}
-                    >
-                      +/-
-                    </TableSortLabel>
-                  </TableCell>
-                )}
-                {columnVisibility.score && (
-                  <TableCell align="right" sx={headerCellStyle}>
-                    <TableSortLabel
-                      active={sortField === 'score'}
-                      direction={sortField === 'score' ? sortOrder : 'desc'}
-                      onClick={() => handleSort('score')}
-                    >
-                      Score
-                    </TableSortLabel>
-                  </TableCell>
-                )}
-                {columnVisibility.status && (
-                  <TableCell sx={headerCellStyle}>
-                    <TableSortLabel
-                      active={sortField === 'status'}
-                      direction={sortField === 'status' ? sortOrder : 'asc'}
-                      onClick={() => handleSort('status')}
-                    >
-                      Status
-                    </TableSortLabel>
-                  </TableCell>
-                )}
-                {columnVisibility.mergedAt && (
-                  <TableCell align="right" sx={headerCellStyle}>
-                    <TableSortLabel
-                      active={sortField === 'mergedAt'}
-                      direction={sortField === 'mergedAt' ? sortOrder : 'desc'}
-                      onClick={() => handleSort('mergedAt')}
-                    >
-                      Merged
-                    </TableSortLabel>
-                  </TableCell>
-                )}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {sortedPRs.map((pr) => (
-                <RepositoryPrTableRow
-                  key={`${pr.repository}-${pr.pullRequestNumber}`}
-                  pr={pr}
-                  columnVisibility={columnVisibility}
-                  rowHref={`/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`}
-                  linkState={prListBackLinkState}
-                />
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+      />
     </Card>
   );
 };
