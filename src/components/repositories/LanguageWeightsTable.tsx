@@ -268,19 +268,29 @@ const LanguageWeightsTable: React.FC = () => {
       <Box
         sx={{
           display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 2,
+          alignItems: { xs: 'stretch', md: 'center' },
+          gap: { xs: 1.25, md: 2 },
           mb: 3,
         }}
       >
-        <Box sx={{ flex: 1 }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="body2" color="text.secondary">
             Programming language multipliers used in scoring calculations
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: { xs: 'space-between', md: 'flex-end' },
+            flexWrap: 'wrap',
+            gap: 1,
+            width: { xs: '100%', md: 'auto' },
+          }}
+        >
           <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
             <IconButton
               onClick={() => setShowChart(!showChart)}
@@ -370,11 +380,11 @@ const LanguageWeightsTable: React.FC = () => {
               ),
             }}
             sx={{
-              width: '200px',
+              width: { xs: '100%', sm: '200px' },
               '& .MuiOutlinedInput-root': {
                 color: theme.palette.text.primary,
                 backgroundColor: alpha(theme.palette.common.black, 0.4),
-                fontSize: '0.8rem',
+                fontSize: { xs: '0.75rem', sm: '0.8rem' },
                 height: '36px',
                 borderRadius: 2,
                 '& fieldset': { borderColor: theme.palette.border.light },
