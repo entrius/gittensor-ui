@@ -58,4 +58,39 @@ module.exports = {
     // Arrow function style
     'arrow-parens': ['error', 'always'],
   },
+  overrides: [
+    {
+      files: ['src/**/*.tsx'],
+      rules: {
+        'no-restricted-globals': [
+          'error',
+          {
+            name: 'setTimeout',
+            message:
+              'Use useManagedTimeout in React components to ensure unmount-safe timer cleanup.',
+          },
+          {
+            name: 'clearTimeout',
+            message:
+              'Use useManagedTimeout in React components to ensure unmount-safe timer cleanup.',
+          },
+        ],
+        'no-restricted-properties': [
+          'error',
+          {
+            object: 'window',
+            property: 'setTimeout',
+            message:
+              'Use useManagedTimeout in React components to ensure unmount-safe timer cleanup.',
+          },
+          {
+            object: 'window',
+            property: 'clearTimeout',
+            message:
+              'Use useManagedTimeout in React components to ensure unmount-safe timer cleanup.',
+          },
+        ],
+      },
+    },
+  ],
 };

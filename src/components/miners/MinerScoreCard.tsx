@@ -41,6 +41,7 @@ import {
   parseNumber,
 } from '../../utils/ExplorerUtils';
 import { credibilityColor } from '../../utils/format';
+import { useManagedTimeout } from '../../hooks/useManagedTimeout';
 
 const formatTimeAgo = (date: Date): string => {
   const now = new Date();
@@ -192,15 +193,7 @@ const COPY_FEEDBACK_MS = 1500;
 const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
   const [copied, setCopied] = useState(false);
   const timerRef = useRef<number | null>(null);
-
-  useEffect(
-    () => () => {
-      if (timerRef.current !== null) {
-        window.clearTimeout(timerRef.current);
-      }
-    },
-    [],
-  );
+  const { schedule, clear } = useManagedTimeout();
 
   if (!hotkey) return null;
 
@@ -211,10 +204,8 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
       }
       await navigator.clipboard.writeText(hotkey);
       setCopied(true);
-      if (timerRef.current !== null) {
-        window.clearTimeout(timerRef.current);
-      }
-      timerRef.current = window.setTimeout(() => {
+      clear(timerRef.current);
+      timerRef.current = schedule(() => {
         setCopied(false);
         timerRef.current = null;
       }, COPY_FEEDBACK_MS);
