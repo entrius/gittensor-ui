@@ -32,6 +32,8 @@ import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ReactECharts from 'echarts-for-react';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
@@ -42,7 +44,7 @@ import {
 } from '../components/common/DataTable';
 import { LinkBox } from '../components/common/linkBehavior';
 import { useAllMiners, useAllPrs, useReposAndWeights, useIssues } from '../api';
-import type { Repository } from '../api/models/Dashboard';
+import type { CommitLog, Repository } from '../api/models/Dashboard';
 import { mapAllMinersToStats } from '../utils/minerMapper';
 import {
   useWatchlist,
@@ -429,11 +431,23 @@ const MinersList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   );
 };
 
+type WatchedRepoStats = Repository & {
+  totalScore: number;
+  totalPRs: number;
+  uniqueMiners: Set<string>;
+};
+
 const isRepoActive = (repo: Repository): boolean => !repo.inactiveAt;
 
 type RepoStatusFilter = 'all' | 'active' | 'inactive';
 
-type RepoSortKey = 'name' | 'weight' | 'status';
+type RepoSortKey =
+  | 'name'
+  | 'weight'
+  | 'status'
+  | 'totalScore'
+  | 'totalPRs'
+  | 'contributors';
 
 const repoCellSx = { py: 1.5 } as const;
 
@@ -448,11 +462,11 @@ const repoStatusMeta = (repo: Repository) => {
 const getRepoHref = (repo: Repository) =>
   `/miners/repository?name=${encodeURIComponent(repo.fullName)}`;
 
-const repoColumns: DataTableColumn<Repository, RepoSortKey>[] = [
+const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   {
     key: 'name',
     header: 'Repository',
-    width: '50%',
+    width: '32%',
     sortKey: 'name',
     cellSx: repoCellSx,
     renderCell: (repo) => (
@@ -485,13 +499,70 @@ const repoColumns: DataTableColumn<Repository, RepoSortKey>[] = [
   {
     key: 'weight',
     header: 'Weight',
-    width: '120px',
+    width: '100px',
     align: 'right',
     sortKey: 'weight',
     cellSx: repoCellSx,
     renderCell: (repo) => (
       <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
         {parseFloat(String(repo.weight)).toFixed(2)}
+      </Typography>
+    ),
+  },
+  {
+    key: 'totalScore',
+    header: 'Total Score',
+    width: '110px',
+    align: 'right',
+    sortKey: 'totalScore',
+    cellSx: repoCellSx,
+    renderCell: (repo) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color: repo.totalScore > 0 ? 'text.primary' : 'text.secondary',
+        }}
+      >
+        {formatRepoMetric(repo.totalScore, 2)}
+      </Typography>
+    ),
+  },
+  {
+    key: 'totalPRs',
+    header: 'PRs',
+    width: '70px',
+    align: 'right',
+    sortKey: 'totalPRs',
+    cellSx: repoCellSx,
+    renderCell: (repo) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color: repo.totalPRs > 0 ? 'text.primary' : 'text.secondary',
+        }}
+      >
+        {formatRepoMetric(repo.totalPRs)}
+      </Typography>
+    ),
+  },
+  {
+    key: 'contributors',
+    header: 'Contributors',
+    width: '110px',
+    align: 'right',
+    sortKey: 'contributors',
+    cellSx: repoCellSx,
+    renderCell: (repo) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color: repo.uniqueMiners.size > 0 ? 'text.primary' : 'text.secondary',
+        }}
+      >
+        {formatRepoMetric(repo.uniqueMiners.size)}
       </Typography>
     ),
   },
@@ -586,153 +657,219 @@ const ReposViewModeToggle: React.FC<{
   );
 };
 
-const RepoCard: React.FC<{ repo: Repository }> = ({ repo }) => {
+const formatRepoMetric = (value: number, decimals = 0): string =>
+  value > 0 ? (decimals > 0 ? value.toFixed(decimals) : String(value)) : '-';
+
+const RepoMetricCell: React.FC<{ label: string; value: string }> = ({
+  label,
+  value,
+}) => (
+  <Box
+    sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      minWidth: 0,
+    }}
+  >
+    <Typography
+      sx={(theme) => ({
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: '0.65rem',
+        color: theme.palette.text.tertiary,
+        textTransform: 'uppercase',
+        letterSpacing: '0.04em',
+        whiteSpace: 'nowrap',
+      })}
+    >
+      {label}
+    </Typography>
+    <Typography
+      sx={{
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: '0.9rem',
+        fontWeight: 600,
+        color: value === '-' ? 'text.secondary' : 'text.primary',
+        lineHeight: 1.2,
+      }}
+    >
+      {value}
+    </Typography>
+  </Box>
+);
+
+const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
+  repo,
+  maxWeight,
+}) => {
   const { label, color } = repoStatusMeta(repo);
   const owner = repo.fullName.split('/')[0] || '';
+  const weight = parseFloat(String(repo.weight)) || 0;
+  const isInactive = !!repo.inactiveAt;
+  const weightPct =
+    maxWeight > 0 ? Math.max(0, Math.min(100, (weight / maxWeight) * 100)) : 0;
+
   return (
     <Card
       elevation={0}
       sx={(theme) => ({
-        p: 1,
-        backgroundColor: theme.palette.background.default,
-        backdropFilter: 'blur(12px)',
-        border: '1px solid',
-        borderColor: alpha(color, 0.3),
-        borderRadius: 2,
-        cursor: 'pointer',
-        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        p: 2,
         height: '100%',
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: theme.palette.border.light,
+        backgroundColor: theme.palette.surface.transparent,
         display: 'flex',
         flexDirection: 'column',
-        gap: 1,
-        boxShadow: `0 2px 8px ${alpha(theme.palette.background.default, 0.1)}`,
+        gap: 1.5,
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        opacity: isInactive ? 0.5 : 1,
         '&:hover': {
-          backgroundColor: theme.palette.surface.elevated,
-          borderColor: alpha(color, 0.5),
-          transform: 'translateY(-2px)',
-          boxShadow: `0 8px 24px -6px ${alpha(theme.palette.background.default, 0.6)}`,
+          backgroundColor: theme.palette.surface.light,
+          borderColor: theme.palette.border.medium,
         },
       })}
     >
-      {/* Row 1: owner avatar + status + star */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-        }}
-      >
-        <Stack
-          direction="row"
-          alignItems="center"
-          spacing={1}
-          sx={{ minWidth: 0 }}
+      {/* Header: avatar + full name + status pill + star */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+        <Avatar
+          src={`https://avatars.githubusercontent.com/${owner}`}
+          alt={owner}
+          sx={(theme) => ({
+            width: 28,
+            height: 28,
+            flexShrink: 0,
+            border: '1px solid',
+            borderColor: theme.palette.border.medium,
+            backgroundColor: getRepositoryOwnerAvatarBackground(owner),
+          })}
+        />
+        <LinkBox
+          href={getRepoHref(repo)}
+          linkState={{ backLabel: 'Back to Watchlist' }}
+          sx={{ flex: 1, minWidth: 0, display: 'block' }}
         >
-          <Avatar
-            src={`https://avatars.githubusercontent.com/${owner}`}
-            sx={{
-              width: 20,
-              height: 20,
-              flexShrink: 0,
-              border: '1px solid',
-              borderColor: 'border.medium',
-              backgroundColor: getRepositoryOwnerAvatarBackground(owner),
-            }}
-          />
-          <Typography
-            sx={{
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: '0.72rem',
-              color: 'text.secondary',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {owner}
-          </Typography>
-        </Stack>
-        <Stack
-          direction="row"
-          alignItems="center"
-          spacing={0.5}
-          sx={{ flexShrink: 0 }}
+          <Tooltip title={repo.fullName} placement="top" arrow>
+            <Typography
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.85rem',
+                fontWeight: 500,
+                color: 'text.primary',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {repo.fullName}
+            </Typography>
+          </Tooltip>
+        </LinkBox>
+        <Typography
+          component="span"
+          sx={(theme) => ({
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.65rem',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+            px: 0.75,
+            py: 0.25,
+            borderRadius: '4px',
+            flexShrink: 0,
+            color,
+            backgroundColor: alpha(
+              isInactive
+                ? theme.palette.status.closed
+                : theme.palette.status.success,
+              0.12,
+            ),
+          })}
         >
-          <Chip
-            variant="status"
-            label={label}
-            size="small"
-            sx={{
-              color,
-              borderColor: alpha(color, 0.3),
-              backgroundColor: alpha(color, 0.08),
-            }}
-          />
-          <WatchlistButton
-            category="repos"
-            itemKey={repo.fullName}
-            size="small"
-          />
-        </Stack>
+          {label === 'ACTIVE' ? 'Active' : 'Inactive'}
+        </Typography>
+        <WatchlistButton
+          category="repos"
+          itemKey={repo.fullName}
+          size="small"
+        />
       </Box>
 
-      {/* Row 2: full name (linkable) */}
-      <LinkBox
-        href={getRepoHref(repo)}
-        linkState={{ backLabel: 'Back to Watchlist' }}
-        sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}
-      >
-        <Typography
-          sx={{
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            color: 'text.primary',
-            lineHeight: 1.4,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}
-        >
-          {repo.fullName}
-        </Typography>
-
-        {/* Row 3: footer stats */}
+      {/* Weight + progress bar */}
+      <Box>
         <Box
-          sx={(theme) => ({
-            mt: 'auto',
-            backgroundColor: alpha(theme.palette.background.default, 0.2),
-            borderRadius: 1.5,
-            p: 1,
+          sx={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-          })}
+            mb: 0.5,
+          }}
         >
           <Typography
-            sx={{
+            sx={(theme) => ({
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.65rem',
-              color: 'text.tertiary',
+              color: theme.palette.text.tertiary,
               textTransform: 'uppercase',
               letterSpacing: '0.04em',
-            }}
+            })}
           >
             Weight
           </Typography>
           <Typography
             sx={{
               fontFamily: '"JetBrains Mono", monospace',
-              fontSize: '0.8rem',
-              fontWeight: 700,
+              fontSize: '0.75rem',
+              fontWeight: 600,
               color: 'text.primary',
             }}
           >
-            {parseFloat(String(repo.weight)).toFixed(2)}
+            {weight.toFixed(2)}
           </Typography>
         </Box>
-      </LinkBox>
+        <Box
+          aria-hidden="true"
+          sx={(theme) => ({
+            position: 'relative',
+            height: 4,
+            borderRadius: 2,
+            backgroundColor: alpha(theme.palette.text.primary, 0.08),
+            overflow: 'hidden',
+          })}
+        >
+          <Box
+            sx={(theme) => ({
+              position: 'absolute',
+              inset: 0,
+              width: `${weightPct}%`,
+              backgroundColor: theme.palette.primary.main,
+              borderRadius: 2,
+              transition: 'width 0.3s ease',
+            })}
+          />
+        </Box>
+      </Box>
+
+      {/* Metrics grid */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: '1.4fr 0.6fr 1fr',
+          gap: 1.5,
+          pt: 0.5,
+        }}
+      >
+        <RepoMetricCell
+          label="Total Score"
+          value={formatRepoMetric(repo.totalScore, 2)}
+        />
+        <RepoMetricCell label="PRs" value={formatRepoMetric(repo.totalPRs)} />
+        <RepoMetricCell
+          label="Contributors"
+          value={formatRepoMetric(repo.uniqueMiners.size)}
+        />
+      </Box>
     </Card>
   );
 };
@@ -741,6 +878,7 @@ const REPO_ROWS_OPTIONS = [10, 25, 50] as const;
 
 const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: repos } = useReposAndWeights();
+  const { data: allPrs } = useAllPrs();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<RepoStatusFilter>('all');
   const [viewMode, setViewMode] = useState<ReposViewMode>('list');
@@ -761,11 +899,43 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     setPage(0);
   };
 
-  const items = useMemo(() => {
+  const items = useMemo<WatchedRepoStats[]>(() => {
     if (!repos) return [];
     const set = new Set(itemKeys.map((k) => k.toLowerCase()));
-    return repos.filter((r) => set.has(r.fullName.toLowerCase()));
-  }, [repos, itemKeys]);
+
+    const prStatsMap = new Map<
+      string,
+      { totalScore: number; totalPRs: number; uniqueMiners: Set<string> }
+    >();
+    if (allPrs) {
+      allPrs.forEach((pr: CommitLog) => {
+        if (!pr?.repository) return;
+        if (!pr.mergedAt) return;
+        const key = pr.repository.toLowerCase();
+        const cur = prStatsMap.get(key) || {
+          totalScore: 0,
+          totalPRs: 0,
+          uniqueMiners: new Set<string>(),
+        };
+        cur.totalScore += parseFloat(pr.score || '0');
+        cur.totalPRs += 1;
+        if (pr.author) cur.uniqueMiners.add(pr.author);
+        prStatsMap.set(key, cur);
+      });
+    }
+
+    return repos
+      .filter((r) => set.has(r.fullName.toLowerCase()))
+      .map((r) => {
+        const s = prStatsMap.get(r.fullName.toLowerCase());
+        return {
+          ...r,
+          totalScore: s?.totalScore || 0,
+          totalPRs: s?.totalPRs || 0,
+          uniqueMiners: s?.uniqueMiners || new Set<string>(),
+        };
+      });
+  }, [repos, allPrs, itemKeys]);
 
   const counts = useMemo(
     () => ({
@@ -804,6 +974,12 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           );
         case 'status':
           return cmpNum(isRepoActive(a) ? 1 : 0, isRepoActive(b) ? 1 : 0);
+        case 'totalScore':
+          return cmpNum(a.totalScore, b.totalScore);
+        case 'totalPRs':
+          return cmpNum(a.totalPRs, b.totalPRs);
+        case 'contributors':
+          return cmpNum(a.uniqueMiners.size, b.uniqueMiners.size);
         default:
           return 0;
       }
@@ -813,6 +989,12 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const paged = useMemo(
     () => sorted.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
     [sorted, page, rowsPerPage],
+  );
+
+  const maxWeight = useMemo(
+    () =>
+      items.reduce((m, r) => Math.max(m, parseFloat(String(r.weight)) || 0), 0),
+    [items],
   );
 
   const chartOption = useMemo(() => {
@@ -1100,6 +1282,87 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         </Box>
       </Box>
 
+      {viewMode === 'cards' && (
+        <Box
+          sx={{
+            px: 2,
+            pb: 2,
+            pt: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: 1,
+            borderBottom: '1px solid',
+            borderColor: 'border.light',
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
+          >
+            Sort:
+          </Typography>
+          <Select
+            size="small"
+            value={sortField}
+            onChange={(e) => {
+              const next = e.target.value as RepoSortKey;
+              setSortField(next);
+              setSortOrder(next === 'name' ? 'asc' : 'desc');
+              setPage(0);
+            }}
+            sx={{
+              color: 'text.primary',
+              backgroundColor: 'background.default',
+              fontSize: '0.8rem',
+              height: '36px',
+              borderRadius: 2,
+              minWidth: '140px',
+              '& fieldset': { borderColor: 'border.light' },
+              '&:hover fieldset': { borderColor: 'border.medium' },
+              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+              '& .MuiSelect-select': { py: 0.75 },
+            }}
+          >
+            <MenuItem value="weight">Weight</MenuItem>
+            <MenuItem value="totalScore">Total Score</MenuItem>
+            <MenuItem value="totalPRs">PRs</MenuItem>
+            <MenuItem value="contributors">Contributors</MenuItem>
+            <MenuItem value="name">Repository</MenuItem>
+            <MenuItem value="status">Status</MenuItem>
+          </Select>
+          <Tooltip title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}>
+            <IconButton
+              onClick={() => {
+                setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+                setPage(0);
+              }}
+              size="small"
+              aria-label={
+                sortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'
+              }
+              sx={{
+                color: 'text.primary',
+                border: '1px solid',
+                borderColor: 'border.light',
+                borderRadius: 2,
+                padding: '6px',
+                '&:hover': {
+                  backgroundColor: 'surface.light',
+                  borderColor: 'border.medium',
+                },
+              }}
+            >
+              {sortOrder === 'asc' ? (
+                <ArrowUpwardIcon fontSize="small" />
+              ) : (
+                <ArrowDownwardIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
+        </Box>
+      )}
+
       <Collapse in={showChart}>
         <Box
           sx={{
@@ -1122,13 +1385,13 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
       {/* Content */}
       {viewMode === 'list' ? (
-        <DataTable<Repository, RepoSortKey>
+        <DataTable<WatchedRepoStats, RepoSortKey>
           columns={repoColumns}
           rows={paged}
           getRowKey={(repo) => repo.fullName}
           getRowHref={getRepoHref}
           linkState={{ backLabel: 'Back to Watchlist' }}
-          minWidth="600px"
+          minWidth="900px"
           stickyHeader
           emptyLabel="No watched repositories found."
           sort={{
@@ -1168,7 +1431,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                   sx={{ display: 'flex' }}
                 >
                   <Box sx={{ width: '100%' }}>
-                    <RepoCard repo={repo} />
+                    <RepoCard repo={repo} maxWeight={maxWeight} />
                   </Box>
                 </Grid>
               ))}
