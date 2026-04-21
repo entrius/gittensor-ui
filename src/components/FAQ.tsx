@@ -1,5 +1,10 @@
-import React, { useState } from 'react';
-import { Box, Collapse, Stack, Typography } from '@mui/material';
+import React from 'react';
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Typography,
+} from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
 
 export interface FAQProps {
@@ -7,49 +12,38 @@ export interface FAQProps {
   answer: React.ReactNode;
 }
 
-export const FAQ: React.FC<FAQProps> = ({ question, answer }) => {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <Box
+export const FAQ: React.FC<FAQProps> = ({ question, answer }) => (
+  <Accordion
+    disableGutters
+    elevation={0}
+    sx={{
+      borderRadius: 3,
+      backgroundColor: 'surface.transparent',
+      border: '1px solid',
+      borderColor: 'border.light',
+      overflow: 'hidden',
+      transition: 'border-color 0.2s ease-in-out',
+      '&:before': { display: 'none' },
+      '&:hover': { borderColor: 'border.medium' },
+    }}
+  >
+    <AccordionSummary
+      expandIcon={<ExpandMore sx={{ color: 'text.secondary' }} />}
       sx={{
         p: 3,
-        borderRadius: 3,
-        backgroundColor: 'surface.transparent',
-        border: '1px solid',
-        borderColor: 'border.light',
-        cursor: 'pointer',
-        transition: 'all 0.2s ease-in-out',
-        '&:hover': {
-          borderColor: 'border.medium',
-        },
+        '& .MuiAccordionSummary-content': { my: 0 },
       }}
-      onClick={() => setExpanded(!expanded)}
     >
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        sx={{ mb: expanded ? 1.5 : 0 }}
-      >
-        <Typography variant="h6" fontWeight="bold">
-          {question}
-        </Typography>
-        <ExpandMore
-          sx={{
-            transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.3s ease-in-out',
-            color: 'text.secondary',
-          }}
-        />
-      </Stack>
-      <Collapse in={expanded}>
-        <Typography variant="body1" lineHeight={1.8} color="text.secondary">
-          {answer}
-        </Typography>
-      </Collapse>
-    </Box>
-  );
-};
+      <Typography variant="h6" fontWeight="bold">
+        {question}
+      </Typography>
+    </AccordionSummary>
+    <AccordionDetails sx={{ px: 3, pt: 0, pb: 3 }}>
+      <Typography variant="body1" lineHeight={1.8} color="text.secondary">
+        {answer}
+      </Typography>
+    </AccordionDetails>
+  </Accordion>
+);
 
 export default FAQ;
