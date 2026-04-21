@@ -469,7 +469,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           <Box
             sx={{
               display: 'flex',
-                flexDirection: 'column',
+              flexDirection: 'column',
               alignItems: 'flex-start',
               gap: 0.35,
             }}
