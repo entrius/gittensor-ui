@@ -27,7 +27,12 @@ import { Search, Check, Close } from '@mui/icons-material';
 import ReactECharts from 'echarts-for-react';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
-import { scrollbarSx, TEXT_OPACITY } from '../../theme';
+import {
+  scrollbarSx,
+  TEXT_OPACITY,
+  headerCellStyle,
+  bodyCellStyle,
+} from '../../theme';
 import { useLanguagesAndWeights } from '../../api';
 
 type SortField = 'extension' | 'weight' | 'language';
@@ -370,16 +375,7 @@ const LanguageWeightsTable: React.FC = () => {
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell
-                  sx={{
-                    backgroundColor: alpha(
-                      theme.palette.background.paper,
-                      0.95,
-                    ),
-                    backdropFilter: 'blur(8px)',
-                    borderBottom: `1px solid ${theme.palette.border.light}`,
-                  }}
-                >
+                <TableCell sx={headerCellStyle}>
                   <TableSortLabel
                     active={sortField === 'extension'}
                     direction={sortField === 'extension' ? sortOrder : 'asc'}
@@ -393,19 +389,10 @@ const LanguageWeightsTable: React.FC = () => {
                       },
                     }}
                   >
-                    <Typography variant="dataLabel">Extension</Typography>
+                    Extension
                   </TableSortLabel>
                 </TableCell>
-                <TableCell
-                  sx={{
-                    backgroundColor: alpha(
-                      theme.palette.background.paper,
-                      0.95,
-                    ),
-                    backdropFilter: 'blur(8px)',
-                    borderBottom: `1px solid ${theme.palette.border.light}`,
-                  }}
-                >
+                <TableCell sx={headerCellStyle}>
                   <TableSortLabel
                     active={sortField === 'language'}
                     direction={sortField === 'language' ? sortOrder : 'asc'}
@@ -419,37 +406,15 @@ const LanguageWeightsTable: React.FC = () => {
                       },
                     }}
                   >
-                    <Typography variant="dataLabel">Language</Typography>
+                    Language
                   </TableSortLabel>
                 </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{
-                    backgroundColor: alpha(
-                      theme.palette.background.paper,
-                      0.95,
-                    ),
-                    backdropFilter: 'blur(8px)',
-                    borderBottom: `1px solid ${theme.palette.border.light}`,
-                  }}
-                >
+                <TableCell align="center" sx={headerCellStyle}>
                   <Tooltip title="Indicates if this extension supports token-based scoring. Token scoring uses AST parsing for more accurate contribution measurement.">
-                    <Typography variant="dataLabel" sx={{ cursor: 'pointer' }}>
-                      Token Scoring
-                    </Typography>
+                    <span>Token Scoring</span>
                   </Tooltip>
                 </TableCell>
-                <TableCell
-                  align="right"
-                  sx={{
-                    backgroundColor: alpha(
-                      theme.palette.background.paper,
-                      0.95,
-                    ),
-                    backdropFilter: 'blur(8px)',
-                    borderBottom: `1px solid ${theme.palette.border.light}`,
-                  }}
-                >
+                <TableCell align="right" sx={headerCellStyle}>
                   <TableSortLabel
                     active={sortField === 'weight'}
                     direction={sortField === 'weight' ? sortOrder : 'desc'}
@@ -463,7 +428,7 @@ const LanguageWeightsTable: React.FC = () => {
                       },
                     }}
                   >
-                    <Typography variant="dataLabel">Weight</Typography>
+                    Weight
                   </TableSortLabel>
                 </TableCell>
               </TableRow>
@@ -471,22 +436,16 @@ const LanguageWeightsTable: React.FC = () => {
             <TableBody>
               {paginatedLanguages.map((lang) => (
                 <TableRow key={lang.extension} hover>
-                  <TableCell>
-                    <Typography variant="body1" fontWeight="medium">
-                      {lang.extension}
-                    </Typography>
+                  <TableCell sx={bodyCellStyle}>{lang.extension}</TableCell>
+                  <TableCell
+                    sx={{
+                      ...bodyCellStyle,
+                      color: lang.language ? 'text.primary' : 'text.disabled',
+                    }}
+                  >
+                    {lang.language || '-'}
                   </TableCell>
-                  <TableCell>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: lang.language ? 'text.primary' : 'text.disabled',
-                      }}
-                    >
-                      {lang.language || '-'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="center">
+                  <TableCell align="center" sx={bodyCellStyle}>
                     {lang.language ? (
                       <Check
                         sx={{
@@ -503,8 +462,8 @@ const LanguageWeightsTable: React.FC = () => {
                       />
                     )}
                   </TableCell>
-                  <TableCell align="right">
-                    <Typography variant="dataValue">{lang.weight}</Typography>
+                  <TableCell align="right" sx={bodyCellStyle}>
+                    {lang.weight}
                   </TableCell>
                 </TableRow>
               ))}
