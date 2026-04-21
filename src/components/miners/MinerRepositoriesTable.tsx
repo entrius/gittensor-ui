@@ -321,7 +321,9 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
         color: (theme) => alpha(theme.palette.text.primary, 0.5),
       },
       renderCell: (repo) =>
-        repo.solved > 0 ? (repo.issueTokenScore / repo.solved).toFixed(2) : '\u2014',
+        repo.solved > 0
+          ? (repo.issueTokenScore / repo.solved).toFixed(2)
+          : '\u2014',
     },
     {
       key: 'weight',
