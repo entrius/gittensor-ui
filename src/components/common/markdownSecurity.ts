@@ -1,5 +1,6 @@
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
+import type { PluggableList } from 'unified';
 
 const markdownSanitizeSchema = {
   ...defaultSchema,
@@ -23,7 +24,7 @@ const markdownSanitizeSchema = {
  * Shared, sanitized markdown pipeline for user/repository-sourced content.
  * Raw HTML is parsed, then constrained by a strict schema.
  */
-export const safeMarkdownRehypePlugins = [
+export const safeMarkdownRehypePlugins: PluggableList = [
   rehypeRaw,
   [rehypeSanitize, markdownSanitizeSchema],
 ];
