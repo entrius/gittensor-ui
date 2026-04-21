@@ -55,18 +55,28 @@ export const sortIssues = <Row, Key extends string>(
 
 export const issueRepositoryColumn = <K extends string>(
   sortKey: K,
+  width: string = '200px',
 ): DataTableColumn<IssueBounty, K> => ({
   key: 'repository',
   header: 'Repository',
-  width: '220px',
+  width,
   sortKey,
+  cellSx: { overflow: 'hidden' },
   renderCell: (issue) => (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
       <Avatar
         src={`https://avatars.githubusercontent.com/${issue.repositoryFullName.split('/')[0]}`}
-        sx={{ width: 24, height: 24, borderRadius: 1 }}
+        sx={{ width: 24, height: 24, borderRadius: 1, flexShrink: 0 }}
       />
-      <Typography sx={{ fontSize: '0.85rem', color: STATUS_COLORS.info }}>
+      <Typography
+        sx={{
+          fontSize: '0.85rem',
+          color: STATUS_COLORS.info,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
         {issue.repositoryFullName}
       </Typography>
     </Box>
@@ -91,7 +101,6 @@ export const issueTitleColumn = <K extends string>(
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
-            maxWidth: '600px',
           }}
         >
           {issue.title}
