@@ -96,11 +96,18 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
   const handleFilterChange = useCallback(
     (f: FilterType) => {
-      if (f === 'all') {
-        setSearchParams({}, { replace: true });
-      } else {
-        setSearchParams({ filter: f }, { replace: true });
-      }
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (f === 'all') {
+            next.delete('filter');
+          } else {
+            next.set('filter', f);
+          }
+          return next;
+        },
+        { replace: true },
+      );
     },
     [setSearchParams],
   );
