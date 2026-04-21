@@ -280,7 +280,11 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             >
               {minerIdentity}
               {miner.githubId && (
-                <WatchlistButton githubId={miner.githubId} size="small" />
+                <WatchlistButton
+                  category="miners"
+                  itemKey={miner.githubId}
+                  size="small"
+                />
               )}
             </Box>
             <Box
@@ -331,7 +335,11 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                 {dualEligibilityPills}
               </Box>
               {miner.githubId && (
-                <WatchlistButton githubId={miner.githubId} size="small" />
+                <WatchlistButton
+                  category="miners"
+                  itemKey={miner.githubId}
+                  size="small"
+                />
               )}
             </Box>
           </Box>
@@ -376,7 +384,11 @@ export const MinerCard: React.FC<MinerCardProps> = ({
               </Typography>
             ) : null}
             {miner.githubId && (
-              <WatchlistButton githubId={miner.githubId} size="small" />
+              <WatchlistButton
+                category="miners"
+                itemKey={miner.githubId}
+                size="small"
+              />
             )}
           </Box>
         </Box>
