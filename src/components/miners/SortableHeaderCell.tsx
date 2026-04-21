@@ -1,21 +1,21 @@
-import React from 'react';
+// TODO: remove after MinerRepositoriesTable migrates to DataTable (its only caller).
 import { TableCell, TableSortLabel } from '@mui/material';
-import { type RepoSortField, type SortOrder } from '../../utils/ExplorerUtils';
+import { type SortOrder } from '../../utils/ExplorerUtils';
 import { sortLabelSx } from './MinerRepositoriesTable.styles';
 
-interface SortableHeaderCellProps {
-  field: RepoSortField;
+interface SortableHeaderCellProps<TField extends string> {
+  field: TField;
   label: string;
   align?: 'left' | 'right';
   width?: string;
   defaultDirection: SortOrder;
-  activeField: RepoSortField;
+  activeField: TField;
   activeOrder: SortOrder;
-  onSort: (field: RepoSortField) => void;
+  onSort: (field: TField) => void;
   cellStyle: Record<string, unknown>;
 }
 
-const SortableHeaderCell: React.FC<SortableHeaderCellProps> = ({
+const SortableHeaderCell = <TField extends string>({
   field,
   label,
   align,
@@ -25,7 +25,7 @@ const SortableHeaderCell: React.FC<SortableHeaderCellProps> = ({
   activeOrder,
   onSort,
   cellStyle,
-}) => {
+}: SortableHeaderCellProps<TField>) => {
   const isActive = activeField === field;
   const direction = isActive ? activeOrder : defaultDirection;
 
