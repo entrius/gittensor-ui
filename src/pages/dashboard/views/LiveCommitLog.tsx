@@ -102,6 +102,36 @@ const COMMIT_STATUS_FILTERS: CommitStatusFilter[] = [
   'closed',
 ];
 
+const LIVE_ACTIVITY_STATUS_FILTER_STORAGE_KEY =
+  'gittensor.dashboard.liveActivity.statusFilter';
+
+const readPersistedStatusFilter = (): CommitStatusFilter => {
+  if (typeof window === 'undefined') return 'all';
+  try {
+    const raw = window.sessionStorage.getItem(
+      LIVE_ACTIVITY_STATUS_FILTER_STORAGE_KEY,
+    );
+    if (!raw) return 'all';
+    return COMMIT_STATUS_FILTERS.includes(raw as CommitStatusFilter)
+      ? (raw as CommitStatusFilter)
+      : 'all';
+  } catch {
+    return 'all';
+  }
+};
+
+const persistStatusFilter = (value: CommitStatusFilter) => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(
+      LIVE_ACTIVITY_STATUS_FILTER_STORAGE_KEY,
+      value,
+    );
+  } catch {
+    // Ignore storage errors (e.g. blocked in private mode).
+  }
+};
+
 const getCommitId = (entry: CommitLogEntry) =>
   `${entry.repository}-${entry.pullRequestNumber}`;
 
@@ -373,7 +403,9 @@ const LiveCommitLog: React.FC = () => {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteCommitLog({ refetchInterval: 10000 });
 
-  const [statusFilter, setStatusFilter] = useState<CommitStatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<CommitStatusFilter>(() =>
+    readPersistedStatusFilter(),
+  );
   const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
   const [, setRelativeTimeTick] = useState(0);
@@ -381,12 +413,16 @@ const LiveCommitLog: React.FC = () => {
   const loadMoreRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
-    const id = window.setInterval(
-      () => setRelativeTimeTick((n) => n + 1),
-      60_000,
-    );
-    return () => window.clearInterval(id);
+    const intervalId = window.setInterval(() => {
+      setRelativeTimeTick((tick) => tick + 1);
+    }, 30_000);
+
+    return () => window.clearInterval(intervalId);
   }, []);
+
+  useEffect(() => {
+    persistStatusFilter(statusFilter);
+  }, [statusFilter]);
 
   const apiCommits = useMemo<CommitLogEntry[]>(
     () => data?.pages.flat() ?? [],
