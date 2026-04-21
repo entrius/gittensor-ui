@@ -205,7 +205,9 @@ const WatchlistBountiesTable: React.FC<WatchlistBountiesTableProps> = ({
               <TableCell
                 sx={{ ...headerCellSx, textAlign: 'center', width: '56px' }}
                 aria-label="Watchlist action"
-              />
+              >
+                {'★'}
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
