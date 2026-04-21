@@ -189,6 +189,7 @@ const StatTile: React.FC<StatTileProps> = ({
 
 const COPY_FEEDBACK_MS = 1500;
 const HOTKEY_VISIBLE_EDGE_CHARS = 5;
+const STATS_GRID_SX = { mt: { xs: 0, sm: 1.5 } } as const;
 
 const formatHotkeyPreview = (hotkey: string): string => {
   if (!hotkey) return '';
@@ -449,6 +450,17 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
     { xs: 'flex', sm: 'none' },
     1,
   );
+  const renderEarningsTile = (tooltip: string) => (
+    <StatTile
+      label="Earnings"
+      value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
+      sub={`$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
+      color={
+        (minerStats.usdPerDay ?? 0) > 0 ? STATUS_COLORS.success : undefined
+      }
+      tooltip={tooltip}
+    />
+  );
 
   return (
     <Card sx={{ p: 3, position: 'relative' }} elevation={0}>
@@ -613,7 +625,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
       <Typography
         sx={{
           display: { xs: 'block', sm: 'none' },
-          mb: 2,
+          mb: 1,
           fontSize: '0.75rem',
           lineHeight: 1.4,
           color: (t) => alpha(t.palette.text.primary, 0.5),
@@ -626,7 +638,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
       </Typography>
 
       {viewMode === 'prs' ? (
-        <Grid container spacing={1.5}>
+        <Grid container spacing={1.5} sx={STATS_GRID_SX}>
           <Grid item xs={6} sm={4} md={2}>
             <StatTile
               label="Score"
@@ -679,21 +691,13 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
-            <StatTile
-              label="Earnings"
-              value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
-              sub={`$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
-              color={
-                (minerStats.usdPerDay ?? 0) > 0
-                  ? STATUS_COLORS.success
-                  : undefined
-              }
-              tooltip="Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus."
-            />
+            {renderEarningsTile(
+              'Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus.',
+            )}
           </Grid>
         </Grid>
       ) : (
-        <Grid container spacing={1.5}>
+        <Grid container spacing={1.5} sx={STATS_GRID_SX}>
           <Grid item xs={6} sm={4} md={2}>
             <StatTile
               label="Score"
@@ -742,17 +746,9 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
-            <StatTile
-              label="Earnings"
-              value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
-              sub={`$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
-              color={
-                (minerStats.usdPerDay ?? 0) > 0
-                  ? STATUS_COLORS.success
-                  : undefined
-              }
-              tooltip="Estimated earnings from issue discovery based on current network incentive distribution."
-            />
+            {renderEarningsTile(
+              'Estimated earnings from issue discovery based on current network incentive distribution.',
+            )}
           </Grid>
         </Grid>
       )}
