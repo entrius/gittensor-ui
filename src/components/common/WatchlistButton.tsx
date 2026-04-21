@@ -2,28 +2,30 @@ import React from 'react';
 import { IconButton, Tooltip, type SxProps, type Theme } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
-import { useWatchlist } from '../../hooks/useWatchlist';
+import { useWatchlist, type WatchlistCategory } from '../../hooks/useWatchlist';
 
 interface WatchlistButtonProps {
-  githubId: string;
+  category: WatchlistCategory;
+  itemKey: string;
   size?: 'small' | 'medium';
   sx?: SxProps<Theme>;
 }
 
 export const WatchlistButton: React.FC<WatchlistButtonProps> = ({
-  githubId,
+  category,
+  itemKey,
   size = 'small',
   sx,
 }) => {
-  const { isWatched, toggle } = useWatchlist();
-  const watched = isWatched(githubId);
+  const { isWatched, toggle } = useWatchlist(category);
+  const watched = itemKey ? isWatched(itemKey) : false;
   const label = watched ? 'Remove from watchlist' : 'Add to watchlist';
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
-    if (!githubId) return;
-    toggle(githubId);
+    if (!itemKey) return;
+    toggle(itemKey);
   };
 
   return (

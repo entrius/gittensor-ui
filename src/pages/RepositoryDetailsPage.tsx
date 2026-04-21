@@ -37,6 +37,7 @@ import {
   ContributingViewer,
   RepositoryMaintainers,
   RepositoryCheckTab,
+  WatchlistButton,
 } from '../components';
 
 interface TabPanelProps {
@@ -210,6 +211,7 @@ const RepositoryDetailsPage: React.FC = () => {
                   >
                     {repo}
                   </Typography>
+                  <WatchlistButton category="repos" itemKey={repo} />
                   <Chip variant="info" label="Public" />
                   <Chip
                     label="Tracked"
