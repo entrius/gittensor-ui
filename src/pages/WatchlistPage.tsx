@@ -254,21 +254,61 @@ const WatchlistPage: React.FC = () => {
         )}
       </Box>
 
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>
+      <Dialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        PaperProps={{
+          sx: (t) => ({
+            backgroundColor: t.palette.background.default,
+            border: `1px solid ${t.palette.border.light}`,
+            borderRadius: 3,
+            backgroundImage: 'none',
+            p: 3,
+          }),
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontSize: '0.9rem',
+            fontWeight: 600,
+            p: 0,
+            mb: 3,
+          }}
+        >
           Clear all {count} pinned {count === 1 ? noun.single : noun.plural}?
         </DialogTitle>
-        <DialogActions>
+        <DialogActions sx={{ p: 0 }}>
           <Button
             onClick={() => setConfirmOpen(false)}
-            sx={{ textTransform: 'none' }}
+            sx={{
+              textTransform: 'none',
+              fontSize: '0.8rem',
+              color: (t) => alpha(t.palette.text.primary, 0.7),
+              border: '1px solid',
+              borderColor: 'border.light',
+              borderRadius: 2,
+              px: 2,
+              '&:hover': {
+                color: 'text.primary',
+                borderColor: 'border.medium',
+              },
+            }}
           >
             Cancel
           </Button>
           <Button
             onClick={handleClear}
-            color="error"
-            sx={{ textTransform: 'none' }}
+            sx={{
+              textTransform: 'none',
+              fontSize: '0.8rem',
+              color: 'common.white',
+              backgroundColor: 'error.main',
+              borderRadius: 2,
+              px: 2,
+              '&:hover': {
+                backgroundColor: 'error.dark',
+              },
+            }}
           >
             Clear {noun.plural}
           </Button>
