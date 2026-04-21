@@ -30,6 +30,7 @@ import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
 import BountyProgress from './BountyProgress';
 import { LinkTableRow } from '../common/linkBehavior';
+import { WatchlistButton } from '../common';
 
 type ListType = 'available' | 'pending' | 'history';
 type SortDirection = 'asc' | 'desc';
@@ -360,6 +361,13 @@ const IssuesList: React.FC<IssuesListProps> = ({
                   {renderSortableHeader('Date', 'date', 'center')}
                 </>
               )}
+
+              {/* Watchlist action */}
+              <TableCell
+                sx={{ ...headerCellSx, textAlign: 'center', width: '56px' }}
+              >
+                {'★'}
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -627,6 +635,14 @@ const IssuesList: React.FC<IssuesListProps> = ({
                       </TableCell>
                     </>
                   )}
+
+                  {/* Watchlist action */}
+                  <TableCell sx={{ ...bodyCellSx, textAlign: 'center', p: 0 }}>
+                    <WatchlistButton
+                      category="bounties"
+                      itemKey={String(issue.id)}
+                    />
+                  </TableCell>
                 </>
               );
 
