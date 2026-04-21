@@ -8,6 +8,10 @@ import {
 } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
 
+const openHrefInNewTab = (href: string) => {
+  window.open(href, '_blank', 'noopener,noreferrer');
+};
+
 type LinkState = Record<string, unknown> | undefined;
 
 const isModifiedEvent = (e: React.MouseEvent): boolean =>
@@ -85,23 +89,65 @@ export const LinkBox = forwardRef<HTMLAnchorElement, BoxProps & LinkProps>(
 LinkBox.displayName = 'LinkBox';
 
 /**
- * A `TableRow` that renders as `<a href>`. Drop-in replacement for any
- * `<TableRow onClick={() => navigate(...)}>` row.
+ * A clickable `TableRow` (`<tr>`) that navigates like a link.
+ *
+ * **Important:** `TableRow` must not use `component="a"` — table rows must be
+ * `<tr>`, with `<td>` only inside `<tr>`. Wrapping cells in `<a>` breaks
+ * `validateDOMNesting` in React. This component uses a real `<tr>` plus
+ * click / aux-click / keyboard handling.
  */
 export const LinkTableRow = forwardRef<
-  HTMLAnchorElement,
+  HTMLTableRowElement,
   TableRowProps & LinkProps
->(({ href, linkState, sx, ...rest }, ref) => {
-  const linkProps = useLinkBehavior<HTMLAnchorElement>(href, {
-    state: linkState,
-  });
+>(({ href, linkState, sx, onClick, onKeyDown, ...rest }, ref) => {
+  const navigate = useNavigate();
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLTableRowElement>) => {
+      onClick?.(e);
+      if (e.defaultPrevented) return;
+      if (isModifiedEvent(e)) {
+        openHrefInNewTab(href);
+        return;
+      }
+      e.preventDefault();
+      navigate(href, { state: linkState });
+    },
+    [href, linkState, navigate, onClick],
+  );
+
+  const handleAuxClick = useCallback(
+    (e: React.MouseEvent<HTMLTableRowElement>) => {
+      if (e.button === 1) {
+        e.preventDefault();
+        openHrefInNewTab(href);
+      }
+    },
+    [href],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTableRowElement>) => {
+      onKeyDown?.(e);
+      if (e.defaultPrevented) return;
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        navigate(href, { state: linkState });
+      }
+    },
+    [href, linkState, navigate, onKeyDown],
+  );
+
   return (
     <TableRow
-      component="a"
       ref={ref}
-      {...linkProps}
-      sx={mergeSx(linkResetSx, sx)}
+      role="link"
+      tabIndex={0}
       {...rest}
+      onClick={handleClick}
+      onAuxClick={handleAuxClick}
+      onKeyDown={handleKeyDown}
+      sx={mergeSx({ cursor: 'pointer', ...linkResetSx } as SxProps<Theme>, sx)}
     />
   );
 });
