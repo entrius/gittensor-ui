@@ -116,7 +116,14 @@ const MinerDetailsPage: React.FC = () => {
               gap: { xs: 1.25, sm: 0 },
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 1,
+              }}
+            >
               <BackButton to="/top-miners" mb={0} />
               <WatchlistButton
                 category="miners"
@@ -127,11 +134,11 @@ const MinerDetailsPage: React.FC = () => {
             <Box
               sx={{
                 display: 'flex',
+                width: { xs: '100%', sm: 'auto' },
                 gap: 0.5,
                 backgroundColor: 'surface.subtle',
                 p: 0.5,
                 borderRadius: 2,
-                width: { xs: '100%', sm: 'auto' },
               }}
             >
               {(
