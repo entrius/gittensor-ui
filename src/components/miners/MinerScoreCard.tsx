@@ -188,6 +188,14 @@ const StatTile: React.FC<StatTileProps> = ({
 );
 
 const COPY_FEEDBACK_MS = 1500;
+const HOTKEY_VISIBLE_EDGE_CHARS = 5;
+const STATS_GRID_SX = { mt: { xs: 0, sm: 1.5 } } as const;
+
+const formatHotkeyPreview = (hotkey: string): string => {
+  if (!hotkey) return '';
+  if (hotkey.length <= HOTKEY_VISIBLE_EDGE_CHARS * 2 + 3) return hotkey;
+  return `${hotkey.slice(0, HOTKEY_VISIBLE_EDGE_CHARS)}...${hotkey.slice(-HOTKEY_VISIBLE_EDGE_CHARS)}`;
+};
 
 const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
   const [copied, setCopied] = useState(false);
@@ -203,6 +211,14 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
   );
 
   if (!hotkey) return null;
+
+  const hotkeyTextSx = {
+    color: 'inherit',
+    fontSize: { xs: '0.55rem', sm: '0.65rem' },
+    fontFamily: '"JetBrains Mono", monospace',
+    wordBreak: 'normal',
+    lineHeight: 1,
+  } as const;
 
   const handleCopy = async () => {
     try {
@@ -234,9 +250,13 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
       aria-live="polite"
       disableRipple
       sx={{
-        display: 'block',
+        display: 'inline-flex',
+        alignItems: 'center',
         textAlign: 'left',
         borderRadius: '4px',
+        lineHeight: 1,
+        p: 0,
+        m: 0,
         color: (t) =>
           copied
             ? t.palette.status.success
@@ -254,16 +274,26 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
         },
       }}
     >
-      <Typography
+      <Box
         component="span"
         sx={{
-          color: 'inherit',
-          fontSize: { xs: '0.55rem', sm: '0.65rem' },
-          wordBreak: 'break-all',
+          ...hotkeyTextSx,
+          display: copied ? 'inline' : { xs: 'inline', sm: 'none' },
         }}
       >
-        {copied ? '✓ Copied to clipboard' : hotkey}
-      </Typography>
+        {copied ? '✓ Copied to clipboard' : formatHotkeyPreview(hotkey)}
+      </Box>
+      {!copied ? (
+        <Box
+          component="span"
+          sx={{
+            ...hotkeyTextSx,
+            display: { xs: 'none', sm: 'inline' },
+          }}
+        >
+          {hotkey}
+        </Box>
+      ) : null}
     </ButtonBase>
   );
 };
@@ -347,6 +377,90 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
   const issueEligibilityColor = isIssueEligible
     ? STATUS_COLORS.success
     : STATUS_COLORS.neutral;
+  const eligibilityChipSx = (color: string) => ({
+    color,
+    borderColor: alpha(color, 0.35),
+    backgroundColor: alpha(color, 0.1),
+    fontSize: '0.7rem',
+    letterSpacing: '0.5px',
+    textTransform: 'uppercase',
+    cursor: 'pointer',
+  });
+
+  const eligibilityItems = [
+    {
+      key: 'oss',
+      title:
+        'Requires 5+ merged PRs with token score >= 5 and 80%+ credibility',
+      label: isEligible ? 'OSS Eligible' : 'OSS Ineligible',
+      color: eligibilityColor,
+    },
+    {
+      key: 'issues',
+      title:
+        'Requires 7+ solved issues with token score >= 5 and 80%+ issue credibility',
+      label: isIssueEligible ? 'Issues Eligible' : 'Issues Ineligible',
+      color: issueEligibilityColor,
+    },
+  ] as const;
+
+  const eligibilityChipsContent = (
+    <>
+      {eligibilityItems.map((item) => (
+        <Tooltip
+          key={item.key}
+          title={item.title}
+          arrow
+          placement="bottom"
+          slotProps={tooltipSlotProps}
+        >
+          <Chip
+            variant="outlined"
+            label={item.label}
+            size="small"
+            sx={eligibilityChipSx(item.color)}
+          />
+        </Tooltip>
+      ))}
+    </>
+  );
+
+  const renderEligibilityChips = (
+    display: { xs: 'none' | 'flex'; sm: 'none' | 'flex' },
+    mb = 0,
+  ) => (
+    <Box
+      sx={{
+        display,
+        alignItems: 'center',
+        gap: 1,
+        flexWrap: 'wrap',
+        mb,
+      }}
+    >
+      {eligibilityChipsContent}
+    </Box>
+  );
+
+  const eligibilityChipsInline = renderEligibilityChips(
+    { xs: 'none', sm: 'flex' },
+    0,
+  );
+  const eligibilityChipsMobile = renderEligibilityChips(
+    { xs: 'flex', sm: 'none' },
+    1,
+  );
+  const renderEarningsTile = (tooltip: string) => (
+    <StatTile
+      label="Earnings"
+      value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
+      sub={`$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
+      color={
+        (minerStats.usdPerDay ?? 0) > 0 ? STATUS_COLORS.success : undefined
+      }
+      tooltip={tooltip}
+    />
+  );
 
   return (
     <Card sx={{ p: 3, position: 'relative' }} elevation={0}>
@@ -373,88 +487,55 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
         />
       )}
 
-      {/* Identity row */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+      {eligibilityChipsMobile}
+
+      {/* Row 2: avatar + identity details */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: 2,
+          mb: 1,
+        }}
+      >
         <Avatar
           src={`https://avatars.githubusercontent.com/${username}`}
           alt={username}
           sx={{
-            width: 64,
-            height: 64,
+            width: { xs: 72, sm: 64 },
+            height: { xs: 72, sm: 64 },
             border: '2px solid',
             borderColor: 'border.light',
           }}
         />
         <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography
-            sx={{
-              fontSize: { xs: '1.15rem', sm: '1.35rem' },
-              fontWeight: 700,
-              color: 'text.primary',
-              mb: 0.5,
-            }}
-          >
-            {githubData?.name || username}
-          </Typography>
           <Box
             sx={{
               display: 'flex',
-              alignItems: 'center',
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              justifyContent: 'flex-start',
               gap: 1.5,
               flexWrap: 'wrap',
               mb: 0.5,
             }}
           >
-            <Tooltip
-              title="Requires 5+ merged PRs with token score >= 5 and 80%+ credibility"
-              arrow
-              placement="bottom"
-              slotProps={tooltipSlotProps}
+            <Typography
+              sx={{
+                fontSize: { xs: '1.15rem', sm: '1.35rem' },
+                fontWeight: 700,
+                color: 'text.primary',
+              }}
             >
-              <Chip
-                variant="outlined"
-                label={isEligible ? 'OSS Eligible' : 'OSS Ineligible'}
-                size="small"
-                sx={{
-                  color: eligibilityColor,
-                  borderColor: alpha(eligibilityColor, 0.35),
-                  backgroundColor: alpha(eligibilityColor, 0.1),
-                  fontSize: '0.7rem',
-                  letterSpacing: '0.5px',
-                  textTransform: 'uppercase',
-                  cursor: 'pointer',
-                }}
-              />
-            </Tooltip>
-            <Tooltip
-              title="Requires 7+ solved issues with token score >= 5 and 80%+ issue credibility"
-              arrow
-              placement="bottom"
-              slotProps={tooltipSlotProps}
-            >
-              <Chip
-                variant="outlined"
-                label={
-                  isIssueEligible ? 'Issues Eligible' : 'Issues Ineligible'
-                }
-                size="small"
-                sx={{
-                  color: issueEligibilityColor,
-                  borderColor: alpha(issueEligibilityColor, 0.35),
-                  backgroundColor: alpha(issueEligibilityColor, 0.1),
-                  fontSize: '0.7rem',
-                  letterSpacing: '0.5px',
-                  textTransform: 'uppercase',
-                  cursor: 'pointer',
-                }}
-              />
-            </Tooltip>
+              {githubData?.name || username}
+            </Typography>
+            {eligibilityChipsInline}
           </Box>
           <Box
             sx={{
               display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              gap: { xs: 0.35, sm: 1 },
               flexWrap: 'wrap',
             }}
           >
@@ -492,7 +573,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             </Typography>
           )}
 
-          {/* GitHub meta — compact inline chips */}
+          {/* Row 3: role/location/followers chips */}
           {githubData && (
             <Stack direction="row" gap={1} flexWrap="wrap" sx={{ mt: 1 }}>
               {githubData.company && (
@@ -533,35 +614,31 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                 icon={<FollowersIcon />}
                 label={`${githubData.followers} followers`}
                 size="small"
+                sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
               />
             </Stack>
-          )}
-
-          {/* Updated chip — mobile */}
-          {minerStats.updatedAt && (
-            <Chip
-              icon={<UpdateIcon sx={{ fontSize: '0.8rem' }} />}
-              label={`Updated ${formatTimeAgo(new Date(minerStats.updatedAt))}`}
-              variant="outlined"
-              size="small"
-              sx={{
-                display: { xs: 'flex', sm: 'none' },
-                mt: 1,
-                fontSize: '0.65rem',
-                color: (t) => alpha(t.palette.text.primary, 0.5),
-                borderColor: 'border.light',
-                backgroundColor: 'surface.elevated',
-                '& .MuiChip-icon': {
-                  color: (t) => alpha(t.palette.text.primary, 0.4),
-                },
-              }}
-            />
           )}
         </Box>
       </Box>
 
+      {/* Row 4 (mobile): followers + updated ago */}
+      <Typography
+        sx={{
+          display: { xs: 'block', sm: 'none' },
+          mb: 1,
+          fontSize: '0.75rem',
+          lineHeight: 1.4,
+          color: (t) => alpha(t.palette.text.primary, 0.5),
+        }}
+      >
+        {githubData?.followers ?? 0} followers
+        {minerStats.updatedAt
+          ? ` • Updated ${formatTimeAgo(new Date(minerStats.updatedAt))}`
+          : ''}
+      </Typography>
+
       {viewMode === 'prs' ? (
-        <Grid container spacing={1.5}>
+        <Grid container spacing={1.5} sx={STATS_GRID_SX}>
           <Grid item xs={6} sm={4} md={2}>
             <StatTile
               label="Score"
@@ -614,21 +691,13 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
-            <StatTile
-              label="Earnings"
-              value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
-              sub={`$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
-              color={
-                (minerStats.usdPerDay ?? 0) > 0
-                  ? STATUS_COLORS.success
-                  : undefined
-              }
-              tooltip="Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus."
-            />
+            {renderEarningsTile(
+              'Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus.',
+            )}
           </Grid>
         </Grid>
       ) : (
-        <Grid container spacing={1.5}>
+        <Grid container spacing={1.5} sx={STATS_GRID_SX}>
           <Grid item xs={6} sm={4} md={2}>
             <StatTile
               label="Score"
@@ -677,17 +746,9 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
-            <StatTile
-              label="Earnings"
-              value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
-              sub={`$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
-              color={
-                (minerStats.usdPerDay ?? 0) > 0
-                  ? STATUS_COLORS.success
-                  : undefined
-              }
-              tooltip="Estimated earnings from issue discovery based on current network incentive distribution."
-            />
+            {renderEarningsTile(
+              'Estimated earnings from issue discovery based on current network incentive distribution.',
+            )}
           </Grid>
         </Grid>
       )}
