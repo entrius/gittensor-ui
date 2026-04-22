@@ -131,7 +131,11 @@ interface PoolColumnProps {
   isEligible: boolean;
 }
 
-const PoolColumn: React.FC<PoolColumnProps> = ({ sectionTitle, pool, isEligible }) => {
+const PoolColumn: React.FC<PoolColumnProps> = ({
+  sectionTitle,
+  pool,
+  isEligible,
+}) => {
   const theme = useTheme();
   const monoFontFamily = theme.typography.fontFamily;
 
@@ -159,8 +163,12 @@ const PoolColumn: React.FC<PoolColumnProps> = ({ sectionTitle, pool, isEligible 
           px: 0.75,
           py: 0.2,
           border: `1px solid ${isEligible ? alpha(theme.palette.status.merged, 0.45) : theme.palette.border.subtle}`,
-          color: isEligible ? theme.palette.status.merged : theme.palette.text.secondary,
-          backgroundColor: isEligible ? alpha(theme.palette.status.merged, 0.08) : theme.palette.surface.subtle,
+          color: isEligible
+            ? theme.palette.status.merged
+            : theme.palette.text.secondary,
+          backgroundColor: isEligible
+            ? alpha(theme.palette.status.merged, 0.08)
+            : theme.palette.surface.subtle,
         }}
       >
         {isEligible ? 'Eligible' : 'Not Eligible'}
@@ -177,14 +185,24 @@ const PoolColumn: React.FC<PoolColumnProps> = ({ sectionTitle, pool, isEligible 
         }}
       >
         <ReactECharts
-          option={buildStatusChartOption(theme, pool.chartCenterLabel, pool.chartSegments)}
+          option={buildStatusChartOption(
+            theme,
+            pool.chartCenterLabel,
+            pool.chartSegments,
+          )}
           style={{ width: '100%', height: '100%' }}
           opts={{ renderer: 'svg' }}
         />
       </Box>
 
       {/* Legend */}
-      <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap" justifyContent="center">
+      <Stack
+        direction="row"
+        spacing={0.75}
+        useFlexGap
+        flexWrap="wrap"
+        justifyContent="center"
+      >
         {pool.chartSegments.map((segment) => (
           <Stack
             key={`${sectionTitle}-${isEligible}-${segment.label}`}
@@ -226,7 +244,11 @@ const PoolColumn: React.FC<PoolColumnProps> = ({ sectionTitle, pool, isEligible 
               borderTop: `1px solid ${alpha(theme.palette.text.primary, 0.06)}`,
             }}
           >
-            <Stack direction="row" justifyContent="space-between" alignItems="baseline">
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="baseline"
+            >
               <Box>
                 <Typography
                   sx={{

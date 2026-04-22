@@ -362,24 +362,36 @@ export const buildDashboardOverview = (
   const eligibleIds = new Set(
     miners.filter((m) => m.isEligible).map((m) => m.githubId),
   );
-  const eligiblePrs = prs.filter((pr) => pr.githubId && eligibleIds.has(pr.githubId));
-  const ineligiblePrs = prs.filter((pr) => !pr.githubId || !eligibleIds.has(pr.githubId));
+  const eligiblePrs = prs.filter(
+    (pr) => pr.githubId && eligibleIds.has(pr.githubId),
+  );
+  const ineligiblePrs = prs.filter(
+    (pr) => !pr.githubId || !eligibleIds.has(pr.githubId),
+  );
 
   const eligibleMiners = miners.filter((m) => m.isIssueEligible);
   const ineligibleMiners = miners.filter((m) => !m.isIssueEligible);
 
-  const currentEligiblePrMetrics = getPrOverviewMetrics(eligiblePrs, currentWindow);
+  const currentEligiblePrMetrics = getPrOverviewMetrics(
+    eligiblePrs,
+    currentWindow,
+  );
   const previousEligiblePrMetrics = previousWindow
     ? getPrOverviewMetrics(eligiblePrs, previousWindow)
     : null;
 
-  const currentIneligiblePrMetrics = getPrOverviewMetrics(ineligiblePrs, currentWindow);
+  const currentIneligiblePrMetrics = getPrOverviewMetrics(
+    ineligiblePrs,
+    currentWindow,
+  );
   const previousIneligiblePrMetrics = previousWindow
     ? getPrOverviewMetrics(ineligiblePrs, previousWindow)
     : null;
 
-  const eligibleIssueMetrics = getIssueOverviewMetricsFromMiners(eligibleMiners);
-  const ineligibleIssueMetrics = getIssueOverviewMetricsFromMiners(ineligibleMiners);
+  const eligibleIssueMetrics =
+    getIssueOverviewMetricsFromMiners(eligibleMiners);
+  const ineligibleIssueMetrics =
+    getIssueOverviewMetricsFromMiners(ineligibleMiners);
 
   const getMetricDelta = (currentValue: number, previousValue?: number) =>
     range === 'all' || previousValue === undefined
@@ -395,12 +407,31 @@ export const buildDashboardOverview = (
       { label: 'Open', value: current.open },
       { label: 'Closed', value: current.closed },
     ],
-    chartCenterLabel: formatCenterPercent(current.merged, current.merged + current.closed),
+    chartCenterLabel: formatCenterPercent(
+      current.merged,
+      current.merged + current.closed,
+    ),
     metrics: [
-      { label: 'Total', value: current.total, delta: getMetricDelta(current.total, previous?.total) },
-      { label: 'Merged', value: current.merged, delta: getMetricDelta(current.merged, previous?.merged) },
-      { label: 'Open', value: current.open, delta: getMetricDelta(current.open, previous?.open) },
-      { label: 'Closed', value: current.closed, delta: getMetricDelta(current.closed, previous?.closed) },
+      {
+        label: 'Total',
+        value: current.total,
+        delta: getMetricDelta(current.total, previous?.total),
+      },
+      {
+        label: 'Merged',
+        value: current.merged,
+        delta: getMetricDelta(current.merged, previous?.merged),
+      },
+      {
+        label: 'Open',
+        value: current.open,
+        delta: getMetricDelta(current.open, previous?.open),
+      },
+      {
+        label: 'Closed',
+        value: current.closed,
+        delta: getMetricDelta(current.closed, previous?.closed),
+      },
     ],
   });
 
@@ -412,7 +443,10 @@ export const buildDashboardOverview = (
       { label: 'Open', value: issueMetrics.open },
       { label: 'Closed', value: issueMetrics.closed },
     ],
-    chartCenterLabel: formatCenterPercent(issueMetrics.solved, issueMetrics.solved + issueMetrics.closed),
+    chartCenterLabel: formatCenterPercent(
+      issueMetrics.solved,
+      issueMetrics.solved + issueMetrics.closed,
+    ),
     // Issue metrics come from per-miner aggregates (all-time totals), so
     // there is no previous-window comparison available — deltas are '0%'.
     metrics: [
@@ -426,8 +460,14 @@ export const buildDashboardOverview = (
   return [
     {
       title: 'OSS Contributions',
-      eligible: buildPrPool(currentEligiblePrMetrics, previousEligiblePrMetrics),
-      ineligible: buildPrPool(currentIneligiblePrMetrics, previousIneligiblePrMetrics),
+      eligible: buildPrPool(
+        currentEligiblePrMetrics,
+        previousEligiblePrMetrics,
+      ),
+      ineligible: buildPrPool(
+        currentIneligiblePrMetrics,
+        previousIneligiblePrMetrics,
+      ),
     },
     {
       title: 'Issue Discoveries',
