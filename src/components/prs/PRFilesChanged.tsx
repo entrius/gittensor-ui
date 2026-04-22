@@ -573,6 +573,8 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
           width: '100%',
           minWidth: 'max-content',
           tableLayout: 'auto',
+          borderCollapse: 'separate',
+          borderSpacing: 0,
         }}
       >
         <TableBody>
@@ -600,7 +602,8 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                       color: 'status.open',
                       fontFamily: 'inherit',
                       fontSize: '12px',
-                      zIndex: 2,
+                      zIndex: 5,
+                      isolation: 'isolate',
                     }}
                   >
                     ...
@@ -643,8 +646,11 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                     left: 0,
                     width: '50px',
                     minWidth: '50px',
-                    backgroundColor:
-                      bg === 'transparent' ? 'background.paper' : bg,
+                    backgroundColor: 'background.paper',
+                    // Isolated sticky cells paint their own layer, so preserve diff tint via a same-color gradient.
+                    ...(bg !== 'transparent' && {
+                      backgroundImage: `linear-gradient(${bg}, ${bg})`,
+                    }),
                     color: 'status.open',
                     borderRight: '1px solid',
                     borderColor: 'border.light',
@@ -656,7 +662,8 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                     fontFamily: 'inherit',
                     fontSize: '12px',
                     lineHeight: '24px',
-                    zIndex: 2,
+                    zIndex: 5,
+                    isolation: 'isolate',
                   }}
                 >
                   {ln}
