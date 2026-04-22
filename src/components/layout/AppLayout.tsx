@@ -191,7 +191,7 @@ const AppLayout: React.FC = () => {
               top: 12,
               left: SIDEBAR_WIDTH - 36,
               zIndex: 1300,
-              cursor: 'w-resize',
+              cursor: 'pointer',
               color: theme.palette.text.secondary,
               '&:hover': { color: theme.palette.text.primary },
             }}
@@ -228,7 +228,7 @@ const AppLayout: React.FC = () => {
               '& .sidebar-toggle-logo': { display: 'flex' },
               '& .sidebar-toggle-chevron': { display: 'none' },
               '&:hover': {
-                cursor: 'e-resize',
+                cursor: 'pointer',
                 backgroundColor: alpha(theme.palette.text.primary, 0.08),
                 color: theme.palette.text.primary,
                 '& .sidebar-toggle-logo': { display: 'none' },
