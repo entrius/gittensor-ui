@@ -215,8 +215,9 @@ const PoolColumn: React.FC<PoolColumnProps> = ({
                 width: 6,
                 height: 6,
                 borderRadius: '50%',
-                backgroundColor: getSegmentColor(theme, segment.label),
                 flexShrink: 0,
+                mt: '1px',
+                backgroundColor: getSegmentColor(theme, segment.label),
               }}
             />
             <Typography
@@ -224,6 +225,7 @@ const PoolColumn: React.FC<PoolColumnProps> = ({
                 color: alpha(theme.palette.text.primary, 0.55),
                 fontFamily: monoFontFamily,
                 fontSize: '0.6rem',
+                lineHeight: 1,
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
               }}
@@ -263,7 +265,9 @@ const PoolColumn: React.FC<PoolColumnProps> = ({
                 </Typography>
                 <Typography
                   sx={{
-                    color: getDeltaColor(theme, metric.delta),
+                    color: isEligible
+                      ? getDeltaColor(theme, metric.delta)
+                      : alpha(theme.palette.text.primary, 0.25),
                     fontFamily: monoFontFamily,
                     fontSize: '0.62rem',
                   }}
@@ -273,7 +277,9 @@ const PoolColumn: React.FC<PoolColumnProps> = ({
               </Box>
               <Typography
                 sx={{
-                  color: getMetricTone(theme, metric.label),
+                  color: isEligible
+                    ? getMetricTone(theme, metric.label)
+                    : alpha(theme.palette.text.primary, 0.4),
                   fontFamily: monoFontFamily,
                   fontSize: '0.9rem',
                   fontWeight: 700,
