@@ -562,6 +562,31 @@ const RepositoriesPage: React.FC = () => {
                 </Box>
               </>
             ) : null}
+            {!isLoading && recentPrs.length === 0 ? (
+              <>
+                <SectionHeader>Recent Pull Requests</SectionHeader>
+                <Box
+                  sx={{
+                    flex: 1,
+                    minHeight: ROW_HEIGHT * 5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Typography
+                    sx={(theme) => ({
+                      color: alpha(theme.palette.text.primary, 0.3),
+                      fontSize: '0.8rem',
+                      p: 1,
+                      textAlign: 'center',
+                    })}
+                  >
+                    No merged PRs today
+                  </Typography>
+                </Box>
+              </>
+            ) : null}
           </Card>
         </Box>
 
