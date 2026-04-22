@@ -284,12 +284,12 @@ uv pip install -e .`}</CodeBlock>
           </Typography>
           <NetworkTabs network={network} onChange={setNetwork} />
           {network === 'mainnet' ? (
-            <CodeBlock label="mainnet">{`gitt miner post --pat <YOUR_PAT> \\
+            <CodeBlock label="mainnet (subnet 74)">{`gitt miner post --pat <YOUR_PAT> \\
   --wallet <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
   --netuid 74`}</CodeBlock>
           ) : (
-            <CodeBlock label="testnet">{`gitt miner post --pat <YOUR_PAT> \\
+            <CodeBlock label="testnet (subnet 422)">{`gitt miner post --pat <YOUR_PAT> \\
   --wallet <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
   --netuid 422 --network test`}</CodeBlock>
@@ -316,12 +316,12 @@ uv pip install -e .`}</CodeBlock>
           </Typography>
           <NetworkTabs network={network} onChange={setNetwork} />
           {network === 'mainnet' ? (
-            <CodeBlock label="mainnet">{`gitt miner check \\
+            <CodeBlock label="mainnet (subnet 74)">{`gitt miner check \\
   --wallet <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
   --netuid 74`}</CodeBlock>
           ) : (
-            <CodeBlock label="testnet">{`gitt miner check \\
+            <CodeBlock label="testnet (subnet 422)">{`gitt miner check \\
   --wallet <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
   --netuid 422 --network test`}</CodeBlock>
