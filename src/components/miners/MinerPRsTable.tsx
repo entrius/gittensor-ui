@@ -1,26 +1,19 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
-  Card,
-  Typography,
-  Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
-  CircularProgress,
   Avatar,
+  Box,
+  Card,
   Chip,
-  TextField,
+  CircularProgress,
   InputAdornment,
+  TextField,
   Tooltip,
+  Typography,
   alpha,
   useTheme,
-  type Theme,
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMinerPRs, type CommitLog } from '../../api';
 import {
   filterPrs,
@@ -28,16 +21,13 @@ import {
   paginateItems,
   type PrStatusFilter,
 } from '../../utils';
-import { useSearchParams } from 'react-router-dom';
-import { LinkTableRow } from '../common/linkBehavior';
+import {
+  DataTable,
+  type DataTableColumn,
+} from '../../components/common/DataTable';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
-import {
-  headerCellStyle,
-  bodyCellStyle,
-  tooltipSlotProps,
-  scrollbarSx,
-} from '../../theme';
+import { tooltipSlotProps } from '../../theme';
 
 type PrSortField = 'number' | 'repository' | 'score' | 'lines' | 'date';
 type SortDir = 'asc' | 'desc';
@@ -92,6 +82,7 @@ interface MinerPRsTableProps {
 
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
@@ -209,6 +200,215 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     return getPrStatusCounts(prs);
   }, [prs]);
 
+  const hasFilters =
+    Boolean(selectedAuthor) ||
+    statusFilter !== 'all' ||
+    searchQuery.trim() !== '';
+
+  const handleRowClick = useCallback(
+    (pr: CommitLog) => {
+      navigate(
+        `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
+        { state: { backLabel: `Back to ${prs?.[0]?.author || githubId}` } },
+      );
+    },
+    [navigate, prs, githubId],
+  );
+
+  const columns: DataTableColumn<CommitLog, PrSortField>[] = [
+    {
+      key: 'number',
+      header: 'PR #',
+      width: '10%',
+      sortKey: 'number',
+      cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
+      renderCell: (pr) => (
+        // Native <a> to GitHub — `onRowClick` (no row-as-anchor) keeps this valid HTML.
+        <a
+          href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            color: 'inherit',
+            textDecoration: 'none',
+            fontWeight: 500,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          #{pr.pullRequestNumber}
+        </a>
+      ),
+    },
+    {
+      key: 'title',
+      header: 'Title',
+      width: '25%',
+      cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
+      renderCell: (pr) => (
+        <Box
+          sx={{
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {pr.pullRequestTitle}
+        </Box>
+      ),
+    },
+    {
+      key: 'repository',
+      header: 'Repository',
+      width: '25%',
+      sortKey: 'repository',
+      renderCell: (pr) => {
+        const owner = pr.repository.split('/')[0];
+        return (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              overflow: 'hidden',
+            }}
+          >
+            <Avatar
+              src={`https://avatars.githubusercontent.com/${owner}`}
+              alt={owner}
+              sx={{
+                width: 20,
+                height: 20,
+                flexShrink: 0,
+                border: '1px solid',
+                borderColor: 'border.medium',
+                backgroundColor:
+                  owner === 'opentensor'
+                    ? 'text.primary'
+                    : owner === 'bitcoin'
+                      ? 'status.warning'
+                      : 'transparent',
+              }}
+            />
+            <Box
+              component="span"
+              sx={{ wordBreak: 'break-word', lineHeight: 1.3 }}
+            >
+              {pr.repository}
+            </Box>
+          </Box>
+        );
+      },
+    },
+    {
+      key: 'lines',
+      header: '+/-',
+      width: '12%',
+      align: 'right',
+      sortKey: 'lines',
+      renderCell: (pr) => (
+        <>
+          <Box
+            component="span"
+            sx={{ color: theme.palette.diff.additions, mr: 1 }}
+          >
+            +{pr.additions}
+          </Box>
+          <Box component="span" sx={{ color: theme.palette.diff.deletions }}>
+            -{pr.deletions}
+          </Box>
+        </>
+      ),
+    },
+    {
+      key: 'score',
+      header: 'Score',
+      width: '13%',
+      align: 'right',
+      sortKey: 'score',
+      renderCell: (pr) => {
+        const scoreTooltip = getScoreTooltip(pr);
+        return (
+          <Box>
+            {pr.prState === 'CLOSED' && !pr.mergedAt ? (
+              <Typography
+                sx={{
+                  fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                  fontWeight: 600,
+                  color: (t) => alpha(t.palette.text.primary, 0.3),
+                }}
+              >
+                -
+              </Typography>
+            ) : !pr.mergedAt && pr.collateralScore ? (
+              <Typography
+                sx={{
+                  fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                  fontWeight: 600,
+                  color: theme.palette.status.warningOrange,
+                }}
+              >
+                {parseFloat(pr.collateralScore || '0').toFixed(4)}
+              </Typography>
+            ) : scoreTooltip ? (
+              <Tooltip
+                title={scoreTooltip}
+                arrow
+                placement="left"
+                slotProps={tooltipSlotProps}
+              >
+                <Typography
+                  sx={{
+                    fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {parseFloat(pr.score || '0').toFixed(4)}
+                </Typography>
+              </Tooltip>
+            ) : (
+              <Typography
+                sx={{
+                  fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                  fontWeight: 600,
+                }}
+              >
+                {parseFloat(pr.score || '0').toFixed(4)}
+              </Typography>
+            )}
+            {!pr.mergedAt && pr.collateralScore && pr.prState !== 'CLOSED' && (
+              <Typography
+                sx={{
+                  fontSize: '0.6rem',
+                  color: (t) => alpha(t.palette.text.primary, 0.5),
+                }}
+              >
+                Collateral
+              </Typography>
+            )}
+          </Box>
+        );
+      },
+    },
+    {
+      key: 'date',
+      header: 'Date',
+      width: '15%',
+      align: 'right',
+      sortKey: 'date',
+      cellSx: {
+        fontSize: { xs: '0.75rem', sm: '0.85rem' },
+        color: (theme) => alpha(theme.palette.text.primary, 0.7),
+      },
+      renderCell: (pr) =>
+        pr.mergedAt
+          ? new Date(pr.mergedAt).toLocaleDateString()
+          : pr.prState === 'CLOSED'
+            ? 'Closed'
+            : 'Open',
+    },
+  ];
+
   if (isLoading) {
     return (
       <Card sx={{ p: 4, textAlign: 'center' }} elevation={0}>
@@ -216,6 +416,141 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       </Card>
     );
   }
+
+  const headerToolbar = (
+    <Box
+      sx={{
+        p: { xs: 2, sm: 3 },
+        borderBottom: '1px solid',
+        borderColor: 'border.light',
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 2,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
+          <Typography
+            variant="h6"
+            sx={{
+              color: 'text.primary',
+              fontSize: { xs: '0.95rem', sm: '1.1rem' },
+              fontWeight: 500,
+            }}
+          >
+            Pull Requests
+          </Typography>
+          <Typography
+            sx={{
+              color: (t) => alpha(t.palette.text.primary, 0.5),
+              fontSize: '0.75rem',
+            }}
+          >
+            ({filteredPRs.length}
+            {hasFilters ? ` of ${prs?.length || 0}` : ''})
+          </Typography>
+        </Box>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: { xs: 1.5, sm: 1 },
+            flexWrap: 'wrap',
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            width: { xs: '100%', sm: 'auto' },
+          }}
+        >
+          {selectedAuthor && (
+            <Chip
+              variant="filter"
+              label={`Author: ${selectedAuthor}`}
+              onDelete={() => {
+                setSelectedAuthor(null);
+                setPage(0);
+              }}
+            />
+          )}
+
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+            <ExplorerFilterButton
+              label="All"
+              count={statusCounts.all}
+              color={theme.palette.status.neutral}
+              selected={statusFilter === 'all'}
+              onClick={() => setStatusFilter('all')}
+            />
+            <ExplorerFilterButton
+              label="Open"
+              count={statusCounts.open}
+              color={theme.palette.status.open}
+              selected={statusFilter === 'open'}
+              onClick={() => setStatusFilter('open')}
+            />
+            <ExplorerFilterButton
+              label="Merged"
+              count={statusCounts.merged}
+              color={theme.palette.status.merged}
+              selected={statusFilter === 'merged'}
+              onClick={() => setStatusFilter('merged')}
+            />
+            <ExplorerFilterButton
+              label="Closed"
+              count={statusCounts.closed}
+              color={theme.palette.status.closed}
+              selected={statusFilter === 'closed'}
+              onClick={() => setStatusFilter('closed')}
+            />
+          </Box>
+        </Box>
+      </Box>
+
+      <TextField
+        size="small"
+        placeholder="Search by title, repo, or PR number..."
+        value={searchQuery}
+        onChange={(e) => {
+          setSearchQuery(e.target.value);
+          setPage(0);
+        }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon
+                sx={{
+                  color: (t) => alpha(t.palette.text.primary, 0.3),
+                  fontSize: '1rem',
+                }}
+              />
+            </InputAdornment>
+          ),
+        }}
+        sx={{
+          mt: 2,
+          maxWidth: 400,
+          minWidth: 350,
+          '& .MuiOutlinedInput-root': {
+            fontSize: '0.8rem',
+            color: 'text.primary',
+            backgroundColor: 'surface.subtle',
+            borderRadius: 2,
+            '& fieldset': { borderColor: 'border.light' },
+            '&:hover fieldset': { borderColor: 'border.medium' },
+            '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+          },
+        }}
+      />
+    </Box>
+  );
+
+  const noDataAtAll = !prs || prs.length === 0;
+  const emptyMessage = noDataAtAll
+    ? 'No PRs found'
+    : 'No PRs found for the selected filters';
 
   return (
     <Card
@@ -227,469 +562,44 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       }}
       elevation={0}
     >
-      <Box
-        sx={{
-          p: { xs: 2, sm: 3 },
-          borderBottom: '1px solid',
-          borderColor: 'border.light',
-        }}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 2,
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
-            <Typography
-              variant="h6"
-              sx={{
-                color: 'text.primary',
-                fontSize: { xs: '0.95rem', sm: '1.1rem' },
-                fontWeight: 500,
-              }}
-            >
-              Pull Requests
-            </Typography>
+      <DataTable<CommitLog, PrSortField>
+        columns={columns}
+        rows={pagedPRs}
+        getRowKey={(pr) =>
+          `${pr.repository}-${pr.pullRequestNumber}-${pr.prCreatedAt ?? ''}`
+        }
+        minWidth="700px"
+        stickyHeader
+        size="medium"
+        header={headerToolbar}
+        emptyState={
+          <Box sx={{ textAlign: 'center', py: 8 }}>
             <Typography
               sx={{
                 color: (t) => alpha(t.palette.text.primary, 0.5),
-                fontSize: '0.75rem',
+                fontSize: '0.9rem',
               }}
             >
-              ({filteredPRs.length}
-              {selectedAuthor || statusFilter !== 'all' || searchQuery.trim()
-                ? ` of ${prs?.length || 0}`
-                : ''}
-              )
+              {emptyMessage}
             </Typography>
           </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              gap: { xs: 1.5, sm: 1 },
-              flexWrap: 'wrap',
-              alignItems: { xs: 'flex-start', sm: 'center' },
-              width: { xs: '100%', sm: 'auto' },
-            }}
-          >
-            {selectedAuthor && (
-              <Chip
-                variant="filter"
-                label={`Author: ${selectedAuthor}`}
-                onDelete={() => {
-                  setSelectedAuthor(null);
-                  setPage(0);
-                }}
-              />
-            )}
-
-            {/* Status Filter Buttons */}
-            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-              <ExplorerFilterButton
-                label="All"
-                count={statusCounts.all}
-                color={theme.palette.status.neutral}
-                selected={statusFilter === 'all'}
-                onClick={() => {
-                  setStatusFilter('all');
-                }}
-              />
-              <ExplorerFilterButton
-                label="Open"
-                count={statusCounts.open}
-                color={theme.palette.status.open}
-                selected={statusFilter === 'open'}
-                onClick={() => {
-                  setStatusFilter('open');
-                }}
-              />
-              <ExplorerFilterButton
-                label="Merged"
-                count={statusCounts.merged}
-                color={theme.palette.status.merged}
-                selected={statusFilter === 'merged'}
-                onClick={() => {
-                  setStatusFilter('merged');
-                }}
-              />
-              <ExplorerFilterButton
-                label="Closed"
-                count={statusCounts.closed}
-                color={theme.palette.status.closed}
-                selected={statusFilter === 'closed'}
-                onClick={() => {
-                  setStatusFilter('closed');
-                }}
-              />
-            </Box>
-          </Box>
-        </Box>
-
-        {/* Search */}
-        <TextField
-          size="small"
-          placeholder="Search by title, repo, or PR number..."
-          value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setPage(0);
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon
-                  sx={{
-                    color: (t) => alpha(t.palette.text.primary, 0.3),
-                    fontSize: '1rem',
-                  }}
-                />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            mt: 2,
-            maxWidth: 400,
-            minWidth: 350,
-            '& .MuiOutlinedInput-root': {
-              fontSize: '0.8rem',
-              color: 'text.primary',
-              backgroundColor: 'surface.subtle',
-              borderRadius: 2,
-              '& fieldset': { borderColor: 'border.light' },
-              '&:hover fieldset': { borderColor: 'border.medium' },
-              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-            },
-          }}
-        />
-      </Box>
-
-      {/* Table */}
-      {!prs || prs.length === 0 ? (
-        <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Typography
-            sx={{
-              color: (t) => alpha(t.palette.text.primary, 0.5),
-              fontSize: '0.9rem',
-            }}
-          >
-            No PRs found
-          </Typography>
-        </Box>
-      ) : pagedPRs.length === 0 ? (
-        <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Typography
-            sx={{
-              color: (t) => alpha(t.palette.text.primary, 0.5),
-              fontSize: '0.9rem',
-            }}
-          >
-            No PRs found for the selected filters
-          </Typography>
-        </Box>
-      ) : (
-        <>
-          <TableContainer
-            sx={{
-              overflowY: 'auto',
-              overflowX: 'auto',
-              ...scrollbarSx,
-            }}
-          >
-            <Table
-              stickyHeader
-              sx={{ tableLayout: 'fixed', minWidth: '700px' }}
-            >
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ ...headerCellStyle, width: '10%' }}>
-                    <TableSortLabel
-                      active={sortField === 'number'}
-                      direction={sortField === 'number' ? sortDir : 'desc'}
-                      onClick={() => handleSort('number')}
-                      sx={sortLabelSx}
-                    >
-                      PR #
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell sx={{ ...headerCellStyle, width: '25%' }}>
-                    Title
-                  </TableCell>
-                  <TableCell sx={{ ...headerCellStyle, width: '25%' }}>
-                    <TableSortLabel
-                      active={sortField === 'repository'}
-                      direction={
-                        sortField === 'repository'
-                          ? sortDir
-                          : DEFAULT_SORT_DIR.repository
-                      }
-                      onClick={() => handleSort('repository')}
-                      sx={sortLabelSx}
-                    >
-                      Repository
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...headerCellStyle, width: '12%' }}
-                  >
-                    <TableSortLabel
-                      active={sortField === 'lines'}
-                      direction={sortField === 'lines' ? sortDir : 'desc'}
-                      onClick={() => handleSort('lines')}
-                      sx={sortLabelSx}
-                    >
-                      +/-
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...headerCellStyle, width: '13%' }}
-                  >
-                    <TableSortLabel
-                      active={sortField === 'score'}
-                      direction={sortField === 'score' ? sortDir : 'desc'}
-                      onClick={() => handleSort('score')}
-                      sx={sortLabelSx}
-                    >
-                      Score
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...headerCellStyle, width: '15%' }}
-                  >
-                    <TableSortLabel
-                      active={sortField === 'date'}
-                      direction={sortField === 'date' ? sortDir : 'desc'}
-                      onClick={() => handleSort('date')}
-                      sx={sortLabelSx}
-                    >
-                      Date
-                    </TableSortLabel>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {pagedPRs.map((pr, index) => {
-                  const scoreTooltip = getScoreTooltip(pr);
-                  return (
-                    <LinkTableRow
-                      key={`${pr.repository}-${pr.pullRequestNumber}-${index}`}
-                      href={`/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`}
-                      linkState={{
-                        backLabel: `Back to ${prs?.[0]?.author || githubId}`,
-                      }}
-                      sx={{
-                        cursor: 'pointer',
-                        '&:hover': {
-                          backgroundColor: 'surface.subtle',
-                        },
-                        transition: 'all 0.2s',
-                      }}
-                    >
-                      <TableCell
-                        sx={{
-                          ...bodyCellStyle,
-                          fontSize: { xs: '0.75rem', sm: '0.85rem' },
-                        }}
-                      >
-                        <a
-                          href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            color: 'inherit',
-                            textDecoration: 'none',
-                            fontWeight: 500,
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          #{pr.pullRequestNumber}
-                        </a>
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          ...bodyCellStyle,
-                          fontSize: { xs: '0.75rem', sm: '0.85rem' },
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {pr.pullRequestTitle}
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={bodyCellStyle}>
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1.5,
-                            overflow: 'hidden',
-                          }}
-                        >
-                          <Avatar
-                            src={`https://avatars.githubusercontent.com/${pr.repository.split('/')[0]}`}
-                            alt={pr.repository.split('/')[0]}
-                            sx={{
-                              width: 20,
-                              height: 20,
-                              flexShrink: 0,
-                              border: '1px solid',
-                              borderColor: 'border.medium',
-                              backgroundColor:
-                                pr.repository.split('/')[0] === 'opentensor'
-                                  ? 'text.primary'
-                                  : pr.repository.split('/')[0] === 'bitcoin'
-                                    ? 'status.warning'
-                                    : 'transparent',
-                            }}
-                          />
-                          <Box
-                            component="span"
-                            sx={{
-                              wordBreak: 'break-word',
-                              lineHeight: 1.3,
-                            }}
-                          >
-                            {pr.repository}
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell align="right" sx={bodyCellStyle}>
-                        <Box
-                          component="span"
-                          sx={{
-                            color: theme.palette.diff.additions,
-                            mr: 1,
-                          }}
-                        >
-                          +{pr.additions}
-                        </Box>
-                        <Box
-                          component="span"
-                          sx={{
-                            color: theme.palette.diff.deletions,
-                          }}
-                        >
-                          -{pr.deletions}
-                        </Box>
-                      </TableCell>
-                      <TableCell align="right" sx={bodyCellStyle}>
-                        <Box>
-                          {pr.prState === 'CLOSED' && !pr.mergedAt ? (
-                            <Typography
-                              sx={{
-                                fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                                fontWeight: 600,
-                                color: (t) =>
-                                  alpha(t.palette.text.primary, 0.3),
-                              }}
-                            >
-                              -
-                            </Typography>
-                          ) : !pr.mergedAt && pr.collateralScore ? (
-                            <Typography
-                              sx={{
-                                fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                                fontWeight: 600,
-                                color: theme.palette.status.warningOrange,
-                              }}
-                            >
-                              {parseFloat(pr.collateralScore || '0').toFixed(4)}
-                            </Typography>
-                          ) : scoreTooltip ? (
-                            <Tooltip
-                              title={scoreTooltip}
-                              arrow
-                              placement="left"
-                              slotProps={tooltipSlotProps}
-                            >
-                              <Typography
-                                sx={{
-                                  fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                }}
-                              >
-                                {parseFloat(pr.score || '0').toFixed(4)}
-                              </Typography>
-                            </Tooltip>
-                          ) : (
-                            <Typography
-                              sx={{
-                                fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                                fontWeight: 600,
-                              }}
-                            >
-                              {parseFloat(pr.score || '0').toFixed(4)}
-                            </Typography>
-                          )}
-                          {!pr.mergedAt &&
-                            pr.collateralScore &&
-                            pr.prState !== 'CLOSED' && (
-                              <Typography
-                                sx={{
-                                  fontSize: '0.6rem',
-                                  color: (t) =>
-                                    alpha(t.palette.text.primary, 0.5),
-                                }}
-                              >
-                                Collateral
-                              </Typography>
-                            )}
-                        </Box>
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{
-                          ...bodyCellStyle,
-                          fontSize: { xs: '0.75rem', sm: '0.85rem' },
-                          color: (t) => alpha(t.palette.text.primary, 0.7),
-                        }}
-                      >
-                        {pr.mergedAt
-                          ? new Date(pr.mergedAt).toLocaleDateString()
-                          : pr.prState === 'CLOSED'
-                            ? 'Closed'
-                            : 'Open'}
-                      </TableCell>
-                    </LinkTableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
+        }
+        onRowClick={handleRowClick}
+        sort={{
+          field: sortField,
+          order: sortDir,
+          onChange: handleSort,
+        }}
+        pagination={
           <TablePagination
             page={page}
             totalPages={totalPages}
             onPageChange={setPage}
           />
-        </>
-      )}
+        }
+      />
     </Card>
   );
-};
-
-const sortLabelSx = {
-  '&.MuiTableSortLabel-root': {
-    color: (t: Theme) => alpha(t.palette.text.primary, 0.7),
-  },
-  '&.MuiTableSortLabel-root:hover': { color: 'text.primary' },
-  '&.Mui-active': { color: 'text.primary' },
-  '& .MuiTableSortLabel-icon': {
-    color: (t: Theme) => `${alpha(t.palette.text.primary, 0.4)} !important`,
-  },
 };
 
 export default MinerPRsTable;

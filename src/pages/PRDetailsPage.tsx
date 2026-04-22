@@ -9,8 +9,10 @@ import {
   BackButton,
   SEO,
   PRComments,
+  WatchlistButton,
 } from '../components';
 import { usePullRequestDetails } from '../api';
+import { serializePRKey } from '../hooks/useWatchlist';
 import { STATUS_COLORS } from '../theme';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CodeIcon from '@mui/icons-material/Code';
@@ -100,11 +102,23 @@ const PRDetailsPage: React.FC = () => {
             <BackButton to="/repositories" label="Back to Repositories" />
 
             {/* Header always visible */}
-            <PRHeader
-              repository={repository}
-              pullRequestNumber={parseInt(pullRequestNumber)}
-              prDetails={prDetails}
-            />
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <PRHeader
+                  repository={repository}
+                  pullRequestNumber={parseInt(pullRequestNumber)}
+                  prDetails={prDetails}
+                />
+              </Box>
+              <WatchlistButton
+                category="prs"
+                itemKey={serializePRKey(
+                  repository,
+                  parseInt(pullRequestNumber),
+                )}
+                size="medium"
+              />
+            </Box>
 
             {/* Tabs */}
             <Box

@@ -26,13 +26,23 @@ const PR_TABS = [
 const ISSUE_TABS = ['overview', 'activity', 'repositories'] as const;
 type MinerDetailsTab = (typeof PR_TABS)[number] | (typeof ISSUE_TABS)[number];
 
-const tabSx = {
+/**
+ * Align first tab label with Card body content (MinerInsightsCard `p: 3` — same edge as
+ * "Insights & Next Actions" and insight row borders, not inner `px: 1.5` text).
+ * Padding lives on the tab flex row, not the scroll buttons: with scroll arrows, the
+ * first tab was shifted right by the left arrow width.
+ */
+const tabsAlignSx = {
+  '& .MuiTabs-flexContainer': {
+    pl: 3,
+  },
   '& .MuiTab-root': {
     color: 'text.secondary',
     textTransform: 'none' as const,
     fontSize: '0.83rem',
     fontWeight: 500,
     '&.Mui-selected': { color: 'primary.main' },
+    '&:first-of-type': { pl: 0 },
   },
 };
 
@@ -100,17 +110,31 @@ const MinerDetailsPage: React.FC = () => {
           <Box
             sx={{
               display: 'flex',
-              alignItems: 'center',
+              alignItems: { xs: 'stretch', sm: 'center' },
               justifyContent: 'space-between',
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: { xs: 1.25, sm: 0 },
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 1,
+              }}
+            >
               <BackButton to="/top-miners" mb={0} />
-              <WatchlistButton githubId={githubId} size="medium" />
+              <WatchlistButton
+                category="miners"
+                itemKey={githubId}
+                size="medium"
+              />
             </Box>
             <Box
               sx={{
                 display: 'flex',
+                width: { xs: '100%', sm: 'auto' },
                 gap: 0.5,
                 backgroundColor: 'surface.subtle',
                 p: 0.5,
@@ -129,17 +153,19 @@ const MinerDetailsPage: React.FC = () => {
                     key={option.value}
                     href={buildModeHref(option.value)}
                     sx={{
-                      px: 2,
+                      px: { xs: 1.25, sm: 2 },
                       py: 0.75,
                       borderRadius: 1.5,
-                      transition: 'all 0.2s',
                       cursor: 'pointer',
+                      minWidth: 0,
+                      flex: { xs: 1, sm: '0 0 auto' },
                       backgroundColor: isActive
                         ? 'surface.elevated'
                         : 'transparent',
                       color: isActive
                         ? 'text.primary'
                         : (t) => alpha(t.palette.text.primary, 0.5),
+                      transition: 'all 0.2s',
                       '&:hover': {
                         backgroundColor: 'surface.elevated',
                         color: 'text.primary',
@@ -148,8 +174,10 @@ const MinerDetailsPage: React.FC = () => {
                   >
                     <Typography
                       sx={{
-                        fontSize: '0.8rem',
+                        fontSize: { xs: '0.74rem', sm: '0.8rem' },
                         fontWeight: 600,
+                        textAlign: 'center',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {option.label}
@@ -167,9 +195,8 @@ const MinerDetailsPage: React.FC = () => {
               value={activeTab}
               onChange={handleTabChange}
               variant="scrollable"
-              scrollButtons="auto"
-              allowScrollButtonsMobile
-              sx={tabSx}
+              scrollButtons={false}
+              sx={tabsAlignSx}
             >
               <Tab value="overview" label="Overview" />
               <Tab value="activity" label="Activity" />
