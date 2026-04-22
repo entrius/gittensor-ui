@@ -20,6 +20,7 @@ import {
   buildDashboardOverview,
   buildDashboardTrendData,
   buildFeaturedContributors,
+  buildFeaturedWork,
   type TrendTimeRange,
 } from './dashboardData';
 
@@ -64,6 +65,10 @@ export const useDashboardData = (range: TrendTimeRange) => {
     [datasets.issues.data, datasets.prs.data, range],
   );
 
+  const featuredWork = useMemo(
+    () => buildFeaturedWork(datasets.prs.data, datasets.issues.data, range),
+    [datasets.issues.data, datasets.prs.data, range],
+  );
   const featuredContributors = useMemo(
     () => buildFeaturedContributors(datasets.prs.data, datasets.miners.data),
     [datasets.miners.data, datasets.prs.data],
@@ -80,6 +85,7 @@ export const useDashboardData = (range: TrendTimeRange) => {
     overview,
     trendLabels: trendData.labels,
     trendSeries: trendData.series,
+    featuredWork,
     featuredContributors,
     isLoading:
       datasets.prs.isLoading ||

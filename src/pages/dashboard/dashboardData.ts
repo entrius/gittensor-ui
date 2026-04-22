@@ -2,10 +2,11 @@
  * Pure dashboard data builders.
  *
  * This module converts raw PR, issue, and miner datasets into UI-facing models
- * for trends, overview sections, KPIs, and featured contributors.
+ * for trends, overview sections, KPIs, and featured work highlights.
  *
  * Most dashboard sections are driven by the caller-provided time range.
- * Featured contributors intentionally use a fixed 35-day lookback window.
+ * Featured work uses the selected range, except "all" which falls back
+ * to a fixed 35-day lookback window for dashboard relevance.
  */
 import { type CommitLog, type MinerEvaluation } from '../../api';
 import { type IssueBounty } from '../../api/models/Issues';
@@ -56,6 +57,31 @@ export interface DashboardFeaturedContributor {
     unit: string;
   }>;
   repos: string[];
+}
+
+export interface DashboardFeaturedPr {
+  repository: string;
+  pullRequestNumber: number;
+  title: string;
+  author: string;
+  score: number;
+  mergedAt: string | null;
+}
+
+export interface DashboardFeaturedIssue {
+  id: number;
+  repositoryFullName: string;
+  issueNumber: number;
+  title: string;
+  status: IssueBounty['status'];
+  targetBounty: number;
+  bountyAmount: number;
+  createdAt: string;
+}
+
+export interface DashboardFeaturedWork {
+  prs: DashboardFeaturedPr[];
+  issues: DashboardFeaturedIssue[];
 }
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -681,4 +707,79 @@ export const buildFeaturedContributors = (
   if (highestScoringMergedAuthor) contributors.push(highestScoringMergedAuthor);
 
   return contributors;
+};
+
+const getFeaturedWorkWindow = (range: TrendTimeRange, now = new Date()) =>
+  range === 'all'
+    ? getWindowBounds(CURRENT_LOOKBACK_WINDOW, now)
+    : getWindowBounds(range, now);
+
+export const buildFeaturedWork = (
+  prs: CommitLog[],
+  issues: IssueBounty[],
+  range: TrendTimeRange,
+  now = new Date(),
+): DashboardFeaturedWork => {
+  const window = getFeaturedWorkWindow(range, now);
+  const topPrs = [...prs]
+    .filter(
+      (pr) =>
+        !!pr.repository &&
+        !!pr.pullRequestTitle &&
+        isWithinWindow(toTimestamp(pr.mergedAt), window),
+    )
+    .sort((a, b) => {
+      const scoreDiff = parseNumber(b.score) - parseNumber(a.score);
+      if (scoreDiff !== 0) return scoreDiff;
+
+      const mergedAtDiff =
+        (toTimestamp(b.mergedAt) ?? 0) - (toTimestamp(a.mergedAt) ?? 0);
+      if (mergedAtDiff !== 0) return mergedAtDiff;
+
+      return b.pullRequestNumber - a.pullRequestNumber;
+    })
+    .slice(0, 4)
+    .map((pr) => ({
+      repository: pr.repository,
+      pullRequestNumber: pr.pullRequestNumber,
+      title: pr.pullRequestTitle,
+      author: pr.author || 'unknown',
+      score: parseNumber(pr.score),
+      mergedAt: pr.mergedAt,
+    }));
+
+  const topIssues = [...issues]
+    .filter(
+      (issue) =>
+        !!issue.repositoryFullName &&
+        isWithinWindow(toTimestamp(issue.createdAt), window),
+    )
+    .sort((a, b) => {
+      const targetDiff =
+        parseNumber(b.targetBounty) - parseNumber(a.targetBounty);
+      if (targetDiff !== 0) return targetDiff;
+
+      const bountyDiff =
+        parseNumber(b.bountyAmount) - parseNumber(a.bountyAmount);
+      if (bountyDiff !== 0) return bountyDiff;
+
+      const createdAtDiff =
+        (toTimestamp(b.createdAt) ?? 0) - (toTimestamp(a.createdAt) ?? 0);
+      if (createdAtDiff !== 0) return createdAtDiff;
+
+      return b.id - a.id;
+    })
+    .slice(0, 4)
+    .map((issue) => ({
+      id: issue.id,
+      repositoryFullName: issue.repositoryFullName,
+      issueNumber: issue.issueNumber,
+      title: issue.title ?? `Issue #${issue.issueNumber}`,
+      status: issue.status,
+      targetBounty: parseNumber(issue.targetBounty),
+      bountyAmount: parseNumber(issue.bountyAmount),
+      createdAt: issue.createdAt,
+    }));
+
+  return { prs: topPrs, issues: topIssues };
 };

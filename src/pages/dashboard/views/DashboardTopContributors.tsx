@@ -3,19 +3,51 @@ import {
   Avatar,
   Box,
   CircularProgress,
+  Divider,
   Stack,
   Typography,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { getGithubAvatarSrc } from '../../../utils';
-import { type DashboardFeaturedContributor } from '../dashboardData';
+import {
+  type DashboardFeaturedContributor,
+  type DashboardFeaturedWork,
+} from '../dashboardData';
 
 interface DashboardTopContributorsProps {
+  featuredWork: DashboardFeaturedWork;
   contributors: DashboardFeaturedContributor[];
   isLoading?: boolean;
 }
 
+const formatShortDate = (timestamp: string | null) => {
+  if (!timestamp) return 'Unknown date';
+  const parsed = new Date(timestamp).getTime();
+  if (!Number.isFinite(parsed)) return 'Unknown date';
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(parsed));
+};
+
+const formatBounty = (value: number) => {
+  const formatted = value.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+  return `${formatted} TAO`;
+};
+
+const statusLabelMap = {
+  registered: 'Registered',
+  active: 'Active',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+} as const;
+
+const getRepoName = (fullName: string) => fullName.split('/').pop() || fullName;
 const getInitials = (name: string) =>
   name
     .split(' ')
@@ -25,6 +57,7 @@ const getInitials = (name: string) =>
     .toUpperCase();
 
 const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
+  featuredWork,
   contributors,
   isLoading = false,
 }) => {
@@ -32,11 +65,10 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
   const navigate = useNavigate();
   const monoFontFamily = theme.typography.fontFamily;
 
-  const openContributor = (githubId: string) => {
-    navigate(`/miners/details?githubId=${encodeURIComponent(githubId)}`, {
-      state: { backTo: '/dashboard' },
-    });
-  };
+  const hasAnyHighlights =
+    featuredWork.prs.length > 0 ||
+    featuredWork.issues.length > 0 ||
+    contributors.length > 0;
 
   return (
     <Box
@@ -57,7 +89,7 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
             fontWeight: 700,
           }}
         >
-          Featured Contributors
+          Featured Work
         </Typography>
       </Box>
 
@@ -72,7 +104,7 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
         >
           <CircularProgress size={28} />
         </Box>
-      ) : contributors.length === 0 ? (
+      ) : !hasAnyHighlights ? (
         <Typography
           sx={{
             color: 'text.secondary',
@@ -80,7 +112,8 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
             fontSize: '0.8rem',
           }}
         >
-          No contributor highlights available for the selected window.
+          No featured work or contributor highlights available for the selected
+          window.
         </Typography>
       ) : (
         <Box
@@ -89,164 +122,402 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
             display: 'grid',
             gridTemplateColumns: {
               xs: '1fr',
-              sm: 'repeat(2, minmax(0, 1fr))',
-              lg: `repeat(${Math.min(contributors.length, 3)}, minmax(250px, 360px))`,
-            },
-            justifyContent: {
-              xs: 'stretch',
-              lg: 'start',
+              lg: 'repeat(2, minmax(0, 1fr))',
             },
             gap: 1.25,
           }}
         >
-          {contributors.map((contributor) => {
-            const avatarUsername =
-              contributor.githubUsername ?? contributor.githubId;
-
-            return (
-              <Stack
-                key={`${contributor.featuredLabel}-${contributor.githubId}`}
-                spacing={1}
-                onClick={() => openContributor(contributor.githubId)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    openContributor(contributor.githubId);
-                  }
-                }}
-                role="button"
-                tabIndex={0}
+          <Stack
+            spacing={0.8}
+            sx={{
+              border: `1px solid ${theme.palette.border.light}`,
+              borderRadius: 3,
+              p: 1.15,
+            }}
+          >
+            <Typography
+              sx={{
+                color: theme.palette.text.primary,
+                fontFamily: monoFontFamily,
+                fontSize: '0.86rem',
+                fontWeight: 700,
+              }}
+            >
+              Top Pull Requests
+            </Typography>
+            {featuredWork.prs.length === 0 ? (
+              <Typography
                 sx={{
-                  width: '100%',
-                  minWidth: 0,
-                  p: 1.2,
-                  pb: 0.9,
-                  borderRadius: 3,
-                  border: `1px solid ${theme.palette.border.light}`,
-                  backgroundColor: 'transparent',
-                  cursor: 'pointer',
-                  transition:
-                    'border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease',
-                  '&:hover': {
-                    borderColor: alpha(theme.palette.status.merged, 0.3),
-                    backgroundColor: theme.palette.surface.subtle,
-                    transform: 'translateY(-1px)',
-                  },
-                  '&:focus-visible': {
-                    outline: `2px solid ${alpha(theme.palette.status.merged, 0.5)}`,
-                    outlineOffset: '2px',
-                  },
+                  color: alpha(theme.palette.text.primary, 0.68),
+                  fontFamily: monoFontFamily,
+                  fontSize: '0.75rem',
                 }}
               >
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <Avatar
-                    src={getGithubAvatarSrc(avatarUsername)}
-                    alt={avatarUsername}
+                No PR highlights in this window.
+              </Typography>
+            ) : (
+              featuredWork.prs.map((pr, index) => (
+                <Box key={`${pr.repository}-${pr.pullRequestNumber}`}>
+                  {index > 0 && (
+                    <Divider
+                      sx={{
+                        borderColor: theme.palette.border.light,
+                        my: 0.8,
+                      }}
+                    />
+                  )}
+                  <Stack
+                    spacing={0.45}
+                    onClick={() =>
+                      navigate(
+                        `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
+                      )
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        navigate(
+                          `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
+                        );
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
                     sx={{
-                      width: 64,
-                      height: 64,
-                      fontSize: '1rem',
-                      fontFamily: monoFontFamily,
-                      bgcolor: theme.palette.surface.light,
-                      color: theme.palette.text.primary,
-                      border: `1px solid ${theme.palette.border.light}`,
-                      flexShrink: 0,
+                      cursor: 'pointer',
+                      borderRadius: 1.5,
+                      p: 0.55,
+                      transition:
+                        'border-color 0.18s ease, background-color 0.18s ease',
+                      '&:hover': {
+                        backgroundColor: theme.palette.surface.subtle,
+                      },
+                      '&:focus-visible': {
+                        outline: `2px solid ${alpha(theme.palette.status.merged, 0.45)}`,
+                        outlineOffset: '2px',
+                      },
                     }}
                   >
-                    {getInitials(contributor.name)}
-                  </Avatar>
-
-                  <Box sx={{ minWidth: 0 }}>
                     <Typography
                       sx={{
                         color: theme.palette.text.primary,
                         fontFamily: monoFontFamily,
-                        fontSize: '0.96rem',
+                        fontSize: '0.77rem',
                         fontWeight: 700,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
+                        lineHeight: 1.3,
                       }}
                     >
-                      {contributor.name}
+                      {getRepoName(pr.repository)} #{pr.pullRequestNumber}
                     </Typography>
                     <Typography
                       sx={{
-                        mt: 0.16,
-                        color: alpha(theme.palette.status.award, 0.88),
+                        color: alpha(theme.palette.text.primary, 0.76),
                         fontFamily: monoFontFamily,
                         fontSize: '0.72rem',
-                        fontWeight: 700,
-                        letterSpacing: '0.02em',
-                        textTransform: 'none',
+                        lineHeight: 1.32,
                       }}
                     >
-                      {contributor.featuredLabel}
+                      {pr.title}
                     </Typography>
-                  </Box>
-                </Stack>
-
-                <Stack spacing={0.55}>
-                  <Typography
-                    sx={{
-                      color: alpha(theme.palette.text.primary, 0.68),
-                      fontFamily: monoFontFamily,
-                      fontSize: '0.74rem',
-                      fontWeight: 500,
-                      lineHeight: 1.35,
-                    }}
-                  >
-                    {contributor.metrics.map((metric, index) => (
+                    <Typography
+                      sx={{
+                        color: alpha(theme.palette.diff.additions, 0.9),
+                        fontFamily: monoFontFamily,
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                      }}
+                    >
+                      Score {Math.round(pr.score).toLocaleString()}
                       <Box
                         component="span"
-                        key={`${metric.value}-${metric.unit}-${index}`}
+                        sx={{
+                          color: alpha(theme.palette.text.primary, 0.58),
+                          fontWeight: 500,
+                          ml: 0.75,
+                        }}
                       >
-                        {index > 0 ? ', ' : ''}
-                        <Box
-                          component="span"
-                          sx={{
-                            color: alpha(theme.palette.diff.additions, 0.92),
-                            fontSize: 'inherit',
-                            fontWeight: 700,
-                          }}
-                        >
-                          {metric.value}
-                        </Box>
-                        {metric.unit ? ` ${metric.unit}` : ''}
+                        by @{pr.author} on {formatShortDate(pr.mergedAt)}
                       </Box>
-                    ))}
-                  </Typography>
+                    </Typography>
+                  </Stack>
+                </Box>
+              ))
+            )}
+          </Stack>
 
-                  {contributor.repos.length > 0 && (
-                    <Stack
-                      direction="row"
-                      spacing={0.55}
-                      useFlexGap
-                      flexWrap="wrap"
+          <Stack
+            spacing={0.8}
+            sx={{
+              border: `1px solid ${theme.palette.border.light}`,
+              borderRadius: 3,
+              p: 1.15,
+            }}
+          >
+            <Typography
+              sx={{
+                color: theme.palette.text.primary,
+                fontFamily: monoFontFamily,
+                fontSize: '0.86rem',
+                fontWeight: 700,
+              }}
+            >
+              Top Issues
+            </Typography>
+            {featuredWork.issues.length === 0 ? (
+              <Typography
+                sx={{
+                  color: alpha(theme.palette.text.primary, 0.68),
+                  fontFamily: monoFontFamily,
+                  fontSize: '0.75rem',
+                }}
+              >
+                No issue highlights in this window.
+              </Typography>
+            ) : (
+              featuredWork.issues.map((issue, index) => (
+                <Box key={issue.id}>
+                  {index > 0 && (
+                    <Divider
+                      sx={{
+                        borderColor: theme.palette.border.light,
+                        my: 0.8,
+                      }}
+                    />
+                  )}
+                  <Stack
+                    spacing={0.45}
+                    onClick={() => navigate(`/bounties/details?id=${issue.id}`)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        navigate(`/bounties/details?id=${issue.id}`);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    sx={{
+                      cursor: 'pointer',
+                      borderRadius: 1.5,
+                      p: 0.55,
+                      transition:
+                        'border-color 0.18s ease, background-color 0.18s ease',
+                      '&:hover': {
+                        backgroundColor: theme.palette.surface.subtle,
+                      },
+                      '&:focus-visible': {
+                        outline: `2px solid ${alpha(theme.palette.status.merged, 0.45)}`,
+                        outlineOffset: '2px',
+                      },
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        color: theme.palette.text.primary,
+                        fontFamily: monoFontFamily,
+                        fontSize: '0.77rem',
+                        fontWeight: 700,
+                        lineHeight: 1.3,
+                      }}
                     >
-                      {contributor.repos.map((repo) => (
-                        <Box
-                          key={`${contributor.githubId}-${repo}`}
+                      {getRepoName(issue.repositoryFullName)} #
+                      {issue.issueNumber}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        color: alpha(theme.palette.text.primary, 0.76),
+                        fontFamily: monoFontFamily,
+                        fontSize: '0.72rem',
+                        lineHeight: 1.32,
+                      }}
+                    >
+                      {issue.title}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        color: alpha(theme.palette.status.award, 0.92),
+                        fontFamily: monoFontFamily,
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                      }}
+                    >
+                      Target {formatBounty(issue.targetBounty)}
+                      <Box
+                        component="span"
+                        sx={{
+                          color: alpha(theme.palette.text.primary, 0.58),
+                          fontWeight: 500,
+                          ml: 0.75,
+                        }}
+                      >
+                        {statusLabelMap[issue.status]} on{' '}
+                        {formatShortDate(issue.createdAt)}
+                      </Box>
+                    </Typography>
+                  </Stack>
+                </Box>
+              ))
+            )}
+          </Stack>
+
+          <Stack
+            spacing={0.8}
+            sx={{
+              border: `1px solid ${theme.palette.border.light}`,
+              borderRadius: 3,
+              p: 1.15,
+              gridColumn: {
+                xs: 'auto',
+                lg: '1 / -1',
+              },
+            }}
+          >
+            <Typography
+              sx={{
+                color: theme.palette.text.primary,
+                fontFamily: monoFontFamily,
+                fontSize: '0.86rem',
+                fontWeight: 700,
+              }}
+            >
+              Featured Contributors
+            </Typography>
+            {contributors.length === 0 ? (
+              <Typography
+                sx={{
+                  color: alpha(theme.palette.text.primary, 0.68),
+                  fontFamily: monoFontFamily,
+                  fontSize: '0.75rem',
+                }}
+              >
+                No contributor highlights in this window.
+              </Typography>
+            ) : (
+              <Box
+                sx={{
+                  width: '100%',
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    md: 'repeat(2, minmax(0, 1fr))',
+                    xl: `repeat(${Math.min(contributors.length, 3)}, minmax(220px, 1fr))`,
+                  },
+                  gap: 1,
+                }}
+              >
+                {contributors.map((contributor) => {
+                  const avatarUsername =
+                    contributor.githubUsername ?? contributor.githubId;
+                  return (
+                    <Stack
+                      key={`${contributor.featuredLabel}-${contributor.githubId}`}
+                      spacing={0.6}
+                      onClick={() =>
+                        navigate(
+                          `/miners/details?githubId=${encodeURIComponent(contributor.githubId)}`,
+                          { state: { backTo: '/dashboard' } },
+                        )
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          navigate(
+                            `/miners/details?githubId=${encodeURIComponent(contributor.githubId)}`,
+                            { state: { backTo: '/dashboard' } },
+                          );
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      sx={{
+                        p: 0.85,
+                        borderRadius: 2.2,
+                        border: `1px solid ${theme.palette.border.light}`,
+                        cursor: 'pointer',
+                        '&:hover': {
+                          backgroundColor: theme.palette.surface.subtle,
+                        },
+                        '&:focus-visible': {
+                          outline: `2px solid ${alpha(theme.palette.status.merged, 0.45)}`,
+                          outlineOffset: '2px',
+                        },
+                      }}
+                    >
+                      <Stack direction="row" spacing={0.8} alignItems="center">
+                        <Avatar
+                          src={getGithubAvatarSrc(avatarUsername)}
+                          alt={avatarUsername}
                           sx={{
-                            px: 0.85,
-                            py: 0.38,
-                            borderRadius: 999,
-                            border: `1px solid ${theme.palette.border.light}`,
-                            color: theme.palette.text.primary,
+                            width: 36,
+                            height: 36,
+                            fontSize: '0.74rem',
                             fontFamily: monoFontFamily,
-                            fontSize: '0.66rem',
-                            lineHeight: 1,
+                            bgcolor: theme.palette.surface.light,
+                            border: `1px solid ${theme.palette.border.light}`,
                           }}
                         >
-                          {repo.split('/').pop() || repo}
+                          {getInitials(contributor.name)}
+                        </Avatar>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography
+                            sx={{
+                              color: theme.palette.text.primary,
+                              fontFamily: monoFontFamily,
+                              fontSize: '0.74rem',
+                              fontWeight: 700,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                          >
+                            {contributor.name}
+                          </Typography>
+                          <Typography
+                            sx={{
+                              color: alpha(theme.palette.status.award, 0.88),
+                              fontFamily: monoFontFamily,
+                              fontSize: '0.66rem',
+                              fontWeight: 700,
+                            }}
+                          >
+                            {contributor.featuredLabel}
+                          </Typography>
                         </Box>
-                      ))}
+                      </Stack>
+                      <Typography
+                        sx={{
+                          color: alpha(theme.palette.text.primary, 0.68),
+                          fontFamily: monoFontFamily,
+                          fontSize: '0.67rem',
+                        }}
+                      >
+                        {contributor.metrics.map((metric, index) => (
+                          <Box
+                            component="span"
+                            key={`${metric.value}-${metric.unit}-${index}`}
+                          >
+                            {index > 0 ? ', ' : ''}
+                            <Box
+                              component="span"
+                              sx={{
+                                color: alpha(
+                                  theme.palette.diff.additions,
+                                  0.92,
+                                ),
+                                fontWeight: 700,
+                              }}
+                            >
+                              {metric.value}
+                            </Box>
+                            {metric.unit ? ` ${metric.unit}` : ''}
+                          </Box>
+                        ))}
+                      </Typography>
                     </Stack>
-                  )}
-                </Stack>
-              </Stack>
-            );
-          })}
+                  );
+                })}
+              </Box>
+            )}
+          </Stack>
         </Box>
       )}
     </Box>

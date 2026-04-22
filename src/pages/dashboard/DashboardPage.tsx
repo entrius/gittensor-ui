@@ -21,6 +21,7 @@ const DashboardFeaturePage: React.FC = () => {
     overview,
     trendLabels,
     trendSeries,
+    featuredWork,
     featuredContributors,
     isLoading,
   } = useDashboardData(range);
@@ -78,6 +79,7 @@ const DashboardFeaturePage: React.FC = () => {
             />
 
             <DashboardTopContributors
+              featuredWork={featuredWork}
               contributors={featuredContributors}
               isLoading={isLoading}
             />
