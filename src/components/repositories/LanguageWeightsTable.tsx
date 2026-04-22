@@ -219,19 +219,32 @@ const LanguageWeightsTable: React.FC = () => {
       <Box
         sx={{
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: { xs: 'stretch', sm: 'center' },
           gap: 2,
           mb: 3,
         }}
       >
         <Box sx={{ flex: 1 }}>
-          <Typography variant="body2" color="text.secondary">
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ lineHeight: 1.6 }}
+          >
             Programming language multipliers used in scoring calculations
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+            flexWrap: 'wrap',
+            gap: 1.5,
+          }}
+        >
           <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
             <IconButton
               onClick={() => setShowChart(!showChart)}
@@ -321,7 +334,7 @@ const LanguageWeightsTable: React.FC = () => {
               ),
             }}
             sx={{
-              width: '200px',
+              width: { xs: '100%', sm: '200px' },
               '& .MuiOutlinedInput-root': {
                 color: theme.palette.text.primary,
                 backgroundColor: alpha(theme.palette.common.black, 0.4),
