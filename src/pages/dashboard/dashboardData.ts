@@ -13,11 +13,7 @@ import { getPrStatusLabel, parseNumber } from '../../utils';
 
 export type PresetTimeRange = '1d' | '7d' | '35d';
 export type TrendTimeRange = PresetTimeRange | 'all';
-export type TrendSeriesKey =
-  | 'mergedPrs'
-  | 'issuesResolved'
-  | 'prsOpened'
-  | 'issuesOpened';
+export type TrendSeriesKey = 'mergedPrs' | 'issuesResolved' | 'prsOpened';
 
 export interface DashboardTrendSeries {
   key: TrendSeriesKey;
@@ -76,7 +72,6 @@ const TREND_SERIES_KEYS: TrendSeriesKey[] = [
   'mergedPrs',
   'issuesResolved',
   'prsOpened',
-  'issuesOpened',
 ];
 const CURRENT_LOOKBACK_WINDOW: PresetTimeRange = '35d';
 
@@ -158,7 +153,6 @@ const formatTrendBucketLabel = (timestamp: number, range: TrendTimeRange) => {
 };
 
 const buildTrendBuckets = (
-  timestamps: Array<number | null>,
   range: TrendTimeRange,
   now = new Date(),
 ): Array<{ startMs: number; endMs: number; label: string }> => {
@@ -239,25 +233,12 @@ export const buildDashboardTrendData = (
 ): { labels: string[]; series: DashboardTrendSeries[] } => {
   const mergedPrTimestamps = prs.map((pr) => toTimestamp(pr.mergedAt));
   const openedPrTimestamps = prs.map((pr) => toTimestamp(pr.prCreatedAt));
-  const openedIssueTimestamps = issues.map((issue) =>
-    toTimestamp(issue.createdAt),
-  );
   const resolvedIssueTimestamps = issues
     .filter((issue) => issue.status === 'completed')
     .map((issue) => toTimestamp(issue.completedAt));
-  const buckets = buildTrendBuckets(
-    [
-      ...mergedPrTimestamps,
-      ...openedPrTimestamps,
-      ...openedIssueTimestamps,
-      ...resolvedIssueTimestamps,
-    ],
-    range,
-    now,
-  );
+  const buckets = buildTrendBuckets(range, now);
   const mergedPrValues = bucketTimestamps(mergedPrTimestamps, buckets);
   const openedPrValues = bucketTimestamps(openedPrTimestamps, buckets);
-  const openedIssueValues = bucketTimestamps(openedIssueTimestamps, buckets);
   const resolvedIssueValues = bucketTimestamps(
     resolvedIssueTimestamps,
     buckets,
@@ -272,9 +253,7 @@ export const buildDashboardTrendData = (
           ? mergedPrValues
           : key === 'prsOpened'
             ? openedPrValues
-            : key === 'issuesResolved'
-              ? resolvedIssueValues
-              : openedIssueValues,
+            : resolvedIssueValues,
     })),
   };
 };
@@ -486,9 +465,9 @@ export const buildDashboardKpis = (
       subtitle: 'Total PR snapshots',
     },
     {
-      title: 'Issues Solved',
+      title: 'Bounties Completed',
       value: totalIssuesSolved,
-      subtitle: 'Problem resolved and closed',
+      subtitle: 'Bounty issues fully paid out',
     },
     {
       title: 'Total Lines Committed',

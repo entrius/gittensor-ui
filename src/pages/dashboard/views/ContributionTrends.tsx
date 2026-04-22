@@ -41,7 +41,7 @@ const TREND_SERIES_PRESENTATION: Record<
     lineOpacity: 1,
   },
   issuesResolved: {
-    label: 'Issues Resolved',
+    label: 'Bounties Completed',
     colorOpacity: 0.85,
     lineWidth: 2.5,
     lineOpacity: 0.9,
@@ -51,12 +51,6 @@ const TREND_SERIES_PRESENTATION: Record<
     colorOpacity: 0.35,
     lineWidth: 1.75,
     lineOpacity: 0.6,
-  },
-  issuesOpened: {
-    label: 'Issues Opened',
-    colorOpacity: 0.3,
-    lineWidth: 1.5,
-    lineOpacity: 0.5,
   },
 };
 
