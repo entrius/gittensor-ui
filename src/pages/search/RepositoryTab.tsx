@@ -3,9 +3,8 @@ import { Box, Typography } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
 import { getRankColors } from '../../components/leaderboard/types';
 import { getGithubAvatarSrc } from '../../utils';
-import SearchResultsTable, {
-  type SearchResultsTableColumn,
-} from './SearchResultsTable';
+import { type DataTableColumn } from '../../components/common/DataTable';
+import SearchResultsCard from './SearchResultsCard';
 import {
   SearchAvatarContentCell,
   SearchTruncatedText,
@@ -40,7 +39,7 @@ const getPositiveValueCellSx = (value: number) => ({
   color: value > 0 ? 'text.primary' : 'text.secondary',
 });
 
-const repositoryColumns: SearchResultsTableColumn<RepoSearchData>[] = [
+const repositoryColumns: DataTableColumn<RepoSearchData>[] = [
   {
     key: 'rank',
     header: 'Rank',
@@ -150,7 +149,7 @@ const RepositoryTab: React.FC<RepositoryTabProps> = ({
   rowsPerPageOptions,
   repositoryResults,
 }) => (
-  <SearchResultsTable
+  <SearchResultsCard
     columns={repositoryColumns}
     emptyLabel="No repository matches."
     errorLabel="Failed to load repositories for search."
