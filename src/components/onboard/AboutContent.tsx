@@ -262,7 +262,9 @@ export const AboutContent: React.FC = () => {
               textTransform: 'none',
             }}
           >
-            {isMobile ? 'View Docs & Setup Guide' : 'View Documentation & Setup Guide'}
+            {isMobile
+              ? 'View Docs & Setup Guide'
+              : 'View Documentation & Setup Guide'}
           </Button>
         </Box>
 
