@@ -23,6 +23,7 @@ import {
 } from '@mui/material';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
@@ -756,6 +757,21 @@ const IssuesList: React.FC<IssuesListProps> = ({
                   />
                 </InputAdornment>
               ),
+              endAdornment: searchQuery ? (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setPage(0);
+                    }}
+                    edge="end"
+                    aria-label="clear search"
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ) : undefined,
             }}
             sx={{
               width: '200px',

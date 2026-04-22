@@ -75,6 +75,11 @@ const LanguageWeightsTable: React.FC = () => {
     setPage(0);
   };
 
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setPage(0);
+  };
+
   const filteredAndSortedLanguages = useMemo(() => {
     if (!languages) return [];
 
@@ -319,6 +324,18 @@ const LanguageWeightsTable: React.FC = () => {
                   />
                 </InputAdornment>
               ),
+              endAdornment: searchQuery ? (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    onClick={handleClearSearch}
+                    edge="end"
+                    aria-label="clear search"
+                  >
+                    <Close fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ) : undefined,
             }}
             sx={{
               width: '200px',

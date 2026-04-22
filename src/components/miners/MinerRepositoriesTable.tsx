@@ -4,12 +4,13 @@ import {
   Box,
   Card,
   CircularProgress,
+  IconButton,
   InputAdornment,
   TextField,
   Typography,
   alpha,
 } from '@mui/material';
-import { Search as SearchIcon } from '@mui/icons-material';
+import { Search as SearchIcon, Close as CloseIcon } from '@mui/icons-material';
 import { useMinerPRs, useReposAndWeights } from '../../api';
 import { LinkBox } from '../common/linkBehavior';
 import {
@@ -293,6 +294,21 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                 />
               </InputAdornment>
             ),
+            endAdornment: searchQuery ? (
+              <InputAdornment position="end">
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setPage(0);
+                  }}
+                  edge="end"
+                  aria-label="clear search"
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ) : undefined,
           }}
           sx={searchFieldSx}
         />

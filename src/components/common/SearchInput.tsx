@@ -1,6 +1,7 @@
 import React from 'react';
+import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
-import { TextField, InputAdornment } from '@mui/material';
+import { TextField, InputAdornment, IconButton } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
 interface SearchInputProps {
@@ -32,6 +33,18 @@ export const SearchInput: React.FC<SearchInputProps> = ({
           />
         </InputAdornment>
       ),
+      endAdornment: value ? (
+        <InputAdornment position="end">
+          <IconButton
+            size="small"
+            onClick={() => onChange('')}
+            edge="end"
+            aria-label="clear search"
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </InputAdornment>
+      ) : undefined,
     }}
     sx={[
       (theme) => ({

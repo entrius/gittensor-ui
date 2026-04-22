@@ -5,6 +5,7 @@ import {
   Card,
   Chip,
   CircularProgress,
+  IconButton,
   InputAdornment,
   TextField,
   Tooltip,
@@ -12,7 +13,7 @@ import {
   alpha,
   useTheme,
 } from '@mui/material';
-import { Search as SearchIcon } from '@mui/icons-material';
+import { Search as SearchIcon, Close as CloseIcon } from '@mui/icons-material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMinerPRs, type CommitLog } from '../../api';
 import {
@@ -528,6 +529,21 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               />
             </InputAdornment>
           ),
+          endAdornment: searchQuery ? (
+            <InputAdornment position="end">
+              <IconButton
+                size="small"
+                onClick={() => {
+                  setSearchQuery('');
+                  setPage(0);
+                }}
+                edge="end"
+                aria-label="clear search"
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </InputAdornment>
+          ) : undefined,
         }}
         sx={{
           mt: 2,
