@@ -45,6 +45,10 @@ import {
   WatchlistButton,
 } from '../components';
 import { LinkBox } from '../components/common/linkBehavior';
+import {
+  DataTable,
+  type DataTableColumn,
+} from '../components/common/DataTable';
 import { useAllMiners, useAllPrs, useReposAndWeights, useIssues } from '../api';
 import type { CommitLog, Repository } from '../api/models/Dashboard';
 import { mapAllMinersToStats } from '../utils/minerMapper';
@@ -57,7 +61,7 @@ import {
 import { isMergedPr, isClosedUnmergedPr } from '../utils/prStatus';
 import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatTokenAmount } from '../utils/format';
-import {
+import theme, {
   CHART_COLORS,
   STATUS_COLORS,
   TEXT_OPACITY,
