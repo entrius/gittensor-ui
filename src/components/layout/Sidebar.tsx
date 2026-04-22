@@ -236,7 +236,6 @@ const SidebarNavLink: React.FC<{
         px: 2,
         color: '#ffffff',
         textDecoration: 'none',
-        fontFamily: '"JetBrains Mono", monospace',
         fontSize: '0.95rem',
         textTransform: 'none',
         backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
@@ -254,7 +253,6 @@ const SidebarNavLink: React.FC<{
         <Typography
           component="span"
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.65rem',
             color: 'secondary.main',
             fontStyle: 'italic',

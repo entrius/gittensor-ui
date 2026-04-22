@@ -596,7 +596,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const searchFieldBaseSx = {
     '& .MuiOutlinedInput-root': {
       color: 'text.primary',
-      fontFamily: '"JetBrains Mono", monospace',
       backgroundColor: 'background.default',
       fontSize: '0.8rem',
       height: '36px',
@@ -1220,7 +1219,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                         >
                           <Typography
                             sx={{
-                              fontFamily: '"JetBrains Mono", monospace',
                               fontSize: '0.75rem',
                               fontWeight: 600,
                               color: 'text.primary',
@@ -1235,7 +1233,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                         >
                           <Typography
                             sx={{
-                              fontFamily: '"JetBrains Mono", monospace',
                               fontSize: '0.75rem',
                               fontWeight: 600,
                               color:
@@ -1255,7 +1252,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                         >
                           <Typography
                             sx={{
-                              fontFamily: '"JetBrains Mono", monospace',
                               fontSize: '0.75rem',
                               color:
                                 (repo.totalPRs || 0) > 0
@@ -1272,7 +1268,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                         >
                           <Typography
                             sx={{
-                              fontFamily: '"JetBrains Mono", monospace',
                               fontSize: '0.75rem',
                               color:
                                 (repo.uniqueMiners?.size || 0) > 0
@@ -1307,12 +1302,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                               }}
                             >
                               Repository not in tracked list. Open details for{' '}
-                              <Typography
-                                component="span"
-                                sx={{
-                                  fontFamily: '"JetBrains Mono", monospace',
-                                }}
-                              >
+                              <Typography component="span">
                                 {trimmedSearch}
                               </Typography>
                               ?
