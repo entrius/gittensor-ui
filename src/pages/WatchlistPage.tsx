@@ -21,6 +21,7 @@ import {
   SEO,
   WatchlistButton,
 } from '../components';
+import { IssuesList } from '../components/issues';
 import { LinkBox } from '../components/common/linkBehavior';
 import { useAllMiners, useAllPrs, useReposAndWeights, useIssues } from '../api';
 import { mapAllMinersToStats } from '../utils/minerMapper';
@@ -31,8 +32,6 @@ import {
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
 import { isMergedPr, isClosedUnmergedPr } from '../utils/prStatus';
-import { getIssueStatusMeta } from '../utils/issueStatus';
-import { formatTokenAmount } from '../utils/format';
 import theme, { STATUS_COLORS, scrollbarSx } from '../theme';
 
 const WATCHLIST_LINK_STATE = { backLabel: 'Back to Watchlist' } as const;
