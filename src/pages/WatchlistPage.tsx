@@ -11,10 +11,16 @@ import {
   Tab,
   Tabs,
   Badge,
+  useMediaQuery,
 } from '@mui/material';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
-import { TopMinersTable, SEO, WatchlistButton } from '../components';
+import {
+  TopMinersTable,
+  ActivitySidebarCards,
+  SEO,
+  WatchlistButton,
+} from '../components';
 import { LinkBox } from '../components/common/linkBehavior';
 import { useAllMiners, useAllPrs, useReposAndWeights, useIssues } from '../api';
 import { mapAllMinersToStats } from '../utils/minerMapper';
@@ -27,7 +33,7 @@ import {
 import { isMergedPr, isClosedUnmergedPr } from '../utils/prStatus';
 import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatTokenAmount } from '../utils/format';
-import { STATUS_COLORS } from '../theme';
+import theme, { STATUS_COLORS, scrollbarSx } from '../theme';
 
 const TAB_ORDER: readonly WatchlistCategory[] = [
   'miners',
@@ -96,6 +102,25 @@ const WatchlistPage: React.FC = () => {
   const noun = TAB_NOUN[activeTab];
   const discovery = TAB_DISCOVERY[activeTab];
 
+  const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
+  const showSidebarRight = !isEmpty && isLargeScreen;
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const sidebarWidth =
+    isMobile || isTablet ? '100%' : isLargeScreen ? '340px' : '300px';
+
+  const { ids: minerIds } = useWatchlist('miners');
+  const { data: allMinersData } = useAllMiners();
+  const minerStats = useMemo(() => {
+    const watchedSet = new Set(minerIds);
+    return mapAllMinersToStats(allMinersData ?? [])
+      .filter((m) => watchedSet.has(m.githubId))
+      .map((m) => ({
+        ...m,
+        isEligible: Boolean(m.ossIsEligible || m.discoveriesIsEligible),
+      }));
+  }, [allMinersData, minerIds]);
+
   const handleClear = () => {
     clear();
     setConfirmOpen(false);
@@ -126,131 +151,166 @@ const WatchlistPage: React.FC = () => {
       <Box
         sx={{
           width: '100%',
+          height: showSidebarRight ? 'calc(100vh - 64px)' : 'auto',
           display: 'flex',
-          flexDirection: 'column',
-          gap: { xs: 2, sm: 1.5 },
+          flexDirection: showSidebarRight ? 'row' : 'column',
+          gap: { xs: 2, sm: 2, md: 2.5, lg: 3 },
           py: { xs: 2, sm: 2, md: 2.5, lg: 3 },
           px: { xs: 2, sm: 2, md: 2.5, lg: 3 },
+          overflow: 'hidden',
         }}
       >
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          spacing={2}
+        {/* Main Content Area */}
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: { xs: 2, sm: 1.5 },
+            minHeight: 0,
+            overflow: showSidebarRight ? 'auto' : 'visible',
+            minWidth: 0,
+            pr: showSidebarRight ? 1 : 0,
+            ...scrollbarSx,
+          }}
         >
-          <Typography
-            sx={{
-              fontSize: '0.8rem',
-              color: (t) => alpha(t.palette.text.primary, 0.5),
-              lineHeight: 1.6,
-            }}
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            spacing={2}
           >
-            Your watchlist — {count}{' '}
-            {count === 1 ? `${noun.single} pinned` : `${noun.plural} pinned`}.
-            Stored locally in this browser.
-          </Typography>
-          {count > 0 && (
-            <Button
-              size="small"
-              onClick={() => setConfirmOpen(true)}
-              sx={{
-                fontSize: '0.75rem',
-                textTransform: 'none',
-                color: 'text.secondary',
-              }}
-            >
-              Clear {noun.plural}
-            </Button>
-          )}
-        </Stack>
-
-        <Box sx={{ borderBottom: '1px solid', borderColor: 'border.light' }}>
-          <Tabs
-            value={activeTab}
-            onChange={handleTabChange}
-            variant="scrollable"
-            scrollButtons="auto"
-            sx={{
-              minHeight: 40,
-              '& .MuiTab-root': {
-                minHeight: 40,
-                fontSize: '0.83rem',
-                fontWeight: 500,
-                textTransform: 'none',
-                color: 'text.secondary',
-                '&.Mui-selected': { color: 'primary.main' },
-              },
-            }}
-          >
-            {TAB_ORDER.map((cat) => (
-              <Tab
-                key={cat}
-                value={cat}
-                label={
-                  <Badge
-                    badgeContent={counts[cat]}
-                    color="primary"
-                    sx={{
-                      '& .MuiBadge-badge': {
-                        fontSize: '0.65rem',
-                        minWidth: 18,
-                        height: 18,
-                      },
-                    }}
-                  >
-                    <Box sx={{ pr: counts[cat] > 0 ? 1.5 : 0 }}>
-                      {TAB_LABELS[cat]}
-                    </Box>
-                  </Badge>
-                }
-              />
-            ))}
-          </Tabs>
-        </Box>
-
-        {isEmpty ? (
-          <Box
-            sx={{
-              py: 8,
-              textAlign: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2,
-              alignItems: 'center',
-              color: 'text.secondary',
-            }}
-          >
-            <Typography sx={{ fontSize: '0.95rem' }}>
-              No watched {noun.plural} yet.
-            </Typography>
             <Typography
               sx={{
                 fontSize: '0.8rem',
-                maxWidth: 480,
                 color: (t) => alpha(t.palette.text.primary, 0.5),
+                lineHeight: 1.6,
               }}
             >
-              {discovery.hint} Pinned items appear here across reloads and tabs.
+              Your watchlist — {count}{' '}
+              {count === 1 ? `${noun.single} pinned` : `${noun.plural} pinned`}.
+              Stored locally in this browser.
             </Typography>
-            <Button
-              component={RouterLink}
-              to={discovery.path}
-              variant="outlined"
-              size="small"
-              sx={{ textTransform: 'none', mt: 1 }}
+            {count > 0 && (
+              <Button
+                size="small"
+                onClick={() => setConfirmOpen(true)}
+                sx={{
+                  fontSize: '0.75rem',
+                  textTransform: 'none',
+                  color: 'text.secondary',
+                }}
+              >
+                Clear {noun.plural}
+              </Button>
+            )}
+          </Stack>
+
+          <Box sx={{ borderBottom: '1px solid', borderColor: 'border.light' }}>
+            <Tabs
+              value={activeTab}
+              onChange={handleTabChange}
+              variant="scrollable"
+              scrollButtons="auto"
+              sx={{
+                minHeight: 40,
+                '& .MuiTab-root': {
+                  minHeight: 40,
+                  fontSize: '0.83rem',
+                  fontWeight: 500,
+                  textTransform: 'none',
+                  color: 'text.secondary',
+                  '&.Mui-selected': { color: 'primary.main' },
+                },
+              }}
             >
-              Go to {discovery.label}
-            </Button>
+              {TAB_ORDER.map((cat) => (
+                <Tab
+                  key={cat}
+                  value={cat}
+                  label={
+                    <Badge
+                      badgeContent={counts[cat]}
+                      color="primary"
+                      sx={{
+                        '& .MuiBadge-badge': {
+                          fontSize: '0.65rem',
+                          minWidth: 18,
+                          height: 18,
+                        },
+                      }}
+                    >
+                      <Box sx={{ pr: counts[cat] > 0 ? 1.5 : 0 }}>
+                        {TAB_LABELS[cat]}
+                      </Box>
+                    </Badge>
+                  }
+                />
+              ))}
+            </Tabs>
           </Box>
-        ) : activeTab === 'miners' ? (
-          <MinersList itemKeys={ids} />
-        ) : activeTab === 'repos' ? (
-          <ReposList itemKeys={ids} />
-        ) : activeTab === 'bounties' ? (
-          <BountiesList itemKeys={ids} />
-        ) : (
-          <PRsList itemKeys={ids} />
+
+          {isEmpty ? (
+            <Box
+              sx={{
+                py: 8,
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+                alignItems: 'center',
+                color: 'text.secondary',
+              }}
+            >
+              <Typography sx={{ fontSize: '0.95rem' }}>
+                No watched {noun.plural} yet.
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: '0.8rem',
+                  color: (t) => alpha(t.palette.text.primary, 0.5),
+                  lineHeight: 1.6,
+                }}
+              >
+                {discovery.hint} Pinned items appear here across reloads and
+                tabs.
+              </Typography>
+              <Button
+                component={RouterLink}
+                to={discovery.path}
+                variant="outlined"
+                size="small"
+                sx={{ textTransform: 'none', mt: 1 }}
+              >
+                Go to {discovery.label}
+              </Button>
+            </Box>
+          ) : activeTab === 'miners' ? (
+            <MinersList itemKeys={ids} />
+          ) : activeTab === 'repos' ? (
+            <ReposList itemKeys={ids} />
+          ) : activeTab === 'bounties' ? (
+            <BountiesList itemKeys={ids} />
+          ) : (
+            <PRsList itemKeys={ids} />
+          )}
+        </Box>
+
+        {/* Right Sidebar — new activities */}
+        {!isEmpty && (
+          <Box
+            sx={{
+              width: showSidebarRight ? sidebarWidth : '100%',
+              height: showSidebarRight ? '100%' : 'auto',
+              maxHeight: showSidebarRight ? '100%' : 'none',
+              flexShrink: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+            }}
+          >
+            <ActivitySidebarCards miners={minerStats} />
+          </Box>
         )}
       </Box>
 

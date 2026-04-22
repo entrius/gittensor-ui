@@ -1,17 +1,31 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Avatar,
   Box,
   Card,
   Chip,
+  Collapse,
+  FormControl,
+  IconButton,
+  InputAdornment,
   Link,
+  MenuItem,
+  Select,
   Skeleton,
+  Stack,
+  TablePagination,
+  TextField,
   Tooltip,
   Typography,
   alpha,
   useTheme,
 } from '@mui/material';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import SearchIcon from '@mui/icons-material/Search';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import ReactECharts from 'echarts-for-react';
 import { IssueBounty } from '../../api/models/Issues';
 import { usePrices } from '../../hooks/usePrices';
 import {
@@ -21,13 +35,11 @@ import {
 } from '../../utils/format';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
-import {
-  DataTable,
-  type DataTableColumn,
-} from '../../components/common/DataTable';
+import { DataTable, type DataTableColumn } from '../common/DataTable';
 import BountyProgress from './BountyProgress';
+import FilterButton from '../FilterButton';
 
-type ListType = 'available' | 'pending' | 'history';
+type FilterType = 'all' | 'available' | 'pending' | 'history';
 type SortDirection = 'asc' | 'desc';
 type SortKey =
   | 'id'
@@ -39,10 +51,11 @@ type SortKey =
   | 'solver'
   | 'date';
 
+const VALID_ROWS = [10, 25, 50];
+
 interface IssuesListProps {
   issues: IssueBounty[];
   isLoading?: boolean;
-  listType: ListType;
   getIssueHref?: (id: number) => string;
   linkState?: Record<string, unknown>;
 }
@@ -56,14 +69,74 @@ const truncateAddress = (address: string | null): string => {
 const IssuesList: React.FC<IssuesListProps> = ({
   issues,
   isLoading = false,
-  listType,
   getIssueHref,
   linkState,
 }) => {
   const theme = useTheme();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Derive filterType directly from URL — single source of truth so that
+  // redirects from /bounties/:tab and browser back/forward both work correctly.
+  const filterType = useMemo<FilterType>(() => {
+    const f = searchParams.get('filter');
+    if (f === 'available' || f === 'pending' || f === 'history') return f;
+    return 'all';
+  }, [searchParams]);
+
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [page, setPage] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showChart, setShowChart] = useState(false);
+
   const { taoPrice, alphaPrice } = usePrices();
+
+  const handleFilterChange = useCallback(
+    (f: FilterType) => {
+      if (f === 'all') {
+        setSearchParams({}, { replace: true });
+      } else {
+        setSearchParams({ filter: f }, { replace: true });
+      }
+    },
+    [setSearchParams],
+  );
+
+  const counts = useMemo(
+    () => ({
+      all: issues.length,
+      available: issues.filter((i) => i.status === 'active').length,
+      pending: issues.filter((i) => i.status === 'registered').length,
+      history: issues.filter(
+        (i) => i.status === 'completed' || i.status === 'cancelled',
+      ).length,
+    }),
+    [issues],
+  );
+
+  const filteredByType = useMemo(() => {
+    if (filterType === 'available')
+      return issues.filter((i) => i.status === 'active');
+    if (filterType === 'pending')
+      return issues.filter((i) => i.status === 'registered');
+    if (filterType === 'history')
+      return issues.filter(
+        (i) => i.status === 'completed' || i.status === 'cancelled',
+      );
+    return issues;
+  }, [issues, filterType]);
+
+  const filteredIssues = useMemo(() => {
+    if (!searchQuery) return filteredByType;
+    const q = searchQuery.toLowerCase();
+    return filteredByType.filter(
+      (i) =>
+        i.repositoryFullName.toLowerCase().includes(q) ||
+        i.title?.toLowerCase().includes(q) ||
+        String(i.issueNumber).includes(q),
+    );
+  }, [filteredByType, searchQuery]);
 
   const parseAmount = (value: string | null | undefined): number => {
     const parsed = Number.parseFloat(value ?? '0');
@@ -73,7 +146,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const getLowerText = (value: string | null | undefined): string =>
     (value ?? '').toLowerCase();
 
-  // String columns feel natural ascending by default, numeric/date desc.
   const getDefaultSortDirection = useCallback(
     (key: SortKey): SortDirection =>
       key === 'id' || key === 'bounty' || key === 'date' ? 'desc' : 'asc',
@@ -82,11 +154,12 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
   const visibleSortKeys = useMemo<SortKey[]>(() => {
     const common: SortKey[] = ['id', 'repository', 'issue'];
-    if (listType === 'available') return [...common, 'bounty', 'status'];
-    if (listType === 'pending')
+    if (filterType === 'pending')
       return [...common, 'bounty', 'funding', 'status'];
-    return [...common, 'bounty', 'solver', 'status', 'date'];
-  }, [listType]);
+    if (filterType === 'history')
+      return [...common, 'bounty', 'solver', 'status', 'date'];
+    return [...common, 'bounty', 'status'];
+  }, [filterType]);
 
   useEffect(() => {
     if (!visibleSortKeys.includes(sortKey)) {
@@ -94,6 +167,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
       setSortDirection('desc');
     }
   }, [sortKey, visibleSortKeys]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [filterType, searchQuery]);
 
   const handleSort = useCallback(
     (key: SortKey) => {
@@ -114,7 +191,8 @@ const IssuesList: React.FC<IssuesListProps> = ({
       sensitivity: 'base',
       numeric: true,
     });
-    const decorated = issues.map((issue) => {
+
+    const decorated = filteredIssues.map((issue) => {
       let value: number | string;
       switch (sortKey) {
         case 'id':
@@ -143,9 +221,12 @@ const IssuesList: React.FC<IssuesListProps> = ({
         case 'date':
           value = new Date(issue.completedAt || issue.updatedAt || 0).getTime();
           break;
+        default:
+          value = issue.id;
       }
       return { issue, value };
     });
+
     decorated.sort((a, b) => {
       if (typeof a.value === 'number' && typeof b.value === 'number') {
         return (a.value - b.value) * directionFactor;
@@ -154,8 +235,111 @@ const IssuesList: React.FC<IssuesListProps> = ({
         collator.compare(String(a.value), String(b.value)) * directionFactor
       );
     });
+
     return decorated.map((item) => item.issue);
-  }, [issues, sortDirection, sortKey]);
+  }, [filteredIssues, sortDirection, sortKey]);
+
+  const paginatedIssues = useMemo(() => {
+    const start = page * rowsPerPage;
+    return sortedIssues.slice(start, start + rowsPerPage);
+  }, [sortedIssues, page, rowsPerPage]);
+
+  const chartOption = useMemo(() => {
+    const repoTotals = new Map<string, number>();
+    filteredIssues.forEach((issue) => {
+      const amount = parseAmount(issue.targetBounty);
+      repoTotals.set(
+        issue.repositoryFullName,
+        (repoTotals.get(issue.repositoryFullName) || 0) + amount,
+      );
+    });
+    const sorted = [...repoTotals.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20);
+    const textColor = alpha(theme.palette.common.white, 0.85);
+    const gridColor = theme.palette.border.subtle;
+
+    return {
+      backgroundColor: 'transparent',
+      title: {
+        text: 'Bounty Pool by Repository',
+        subtext: `${filteredIssues.length} issues`,
+        left: 'center',
+        top: 20,
+        textStyle: {
+          color: theme.palette.text.primary,
+          fontFamily: 'JetBrains Mono',
+          fontSize: 16,
+          fontWeight: 600,
+        },
+        subtextStyle: {
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+          fontFamily: 'JetBrains Mono',
+          fontSize: 12,
+        },
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        backgroundColor: alpha(theme.palette.background.default, 0.95),
+        borderColor: alpha(theme.palette.common.white, 0.15),
+        borderWidth: 1,
+        textStyle: {
+          color: theme.palette.text.primary,
+          fontFamily: 'JetBrains Mono',
+        },
+        formatter: (params: { name: string; value: number }[]) => {
+          const p = params[0];
+          return `${p.name}: ${p.value.toFixed(4)} ل`;
+        },
+      },
+      grid: {
+        left: '3%',
+        right: '3%',
+        bottom: '15%',
+        top: '20%',
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: sorted.map(([repo]) => repo.split('/')[1] || repo),
+        axisLabel: {
+          color: textColor,
+          fontFamily: 'JetBrains Mono',
+          rotate: 45,
+          interval: 0,
+        },
+        axisLine: { lineStyle: { color: gridColor } },
+      },
+      yAxis: {
+        type: 'value',
+        name: 'Bounty (α)',
+        nameTextStyle: { color: textColor, fontFamily: 'JetBrains Mono' },
+        axisLabel: { color: textColor, fontFamily: 'JetBrains Mono' },
+        splitLine: { lineStyle: { color: gridColor, type: 'dashed' } },
+      },
+      series: [
+        {
+          data: sorted.map(([, v]) => v),
+          type: 'bar',
+          itemStyle: {
+            color: {
+              type: 'linear',
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                { offset: 0, color: theme.palette.primary.main },
+                { offset: 1, color: theme.palette.status.info },
+              ],
+            },
+            borderRadius: [4, 4, 0, 0],
+          },
+        },
+      ],
+    };
+  }, [filteredIssues, theme]);
 
   const columns = useMemo<DataTableColumn<IssueBounty, SortKey>[]>(() => {
     const idColumn: DataTableColumn<IssueBounty, SortKey> = {
@@ -178,15 +362,26 @@ const IssuesList: React.FC<IssuesListProps> = ({
     const repositoryColumn: DataTableColumn<IssueBounty, SortKey> = {
       key: 'repository',
       header: 'Repository',
-      width: '220px',
+      width: '200px',
       sortKey: 'repository',
+      cellSx: { overflow: 'hidden' },
       renderCell: (issue) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}
+        >
           <Avatar
             src={`https://avatars.githubusercontent.com/${issue.repositoryFullName.split('/')[0]}`}
-            sx={{ width: 24, height: 24, borderRadius: 1 }}
+            sx={{ width: 24, height: 24, borderRadius: 1, flexShrink: 0 }}
           />
-          <Typography sx={{ fontSize: '0.85rem', color: STATUS_COLORS.info }}>
+          <Typography
+            sx={{
+              fontSize: '0.85rem',
+              color: STATUS_COLORS.info,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
             {issue.repositoryFullName}
           </Typography>
         </Box>
@@ -208,7 +403,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
-                maxWidth: '600px',
               }}
             >
               {issue.title}
@@ -241,11 +435,12 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
     const bountyColumn = (
       label: string,
-      colorOverride?: (issue: IssueBounty) => string,
+      width?: string,
+      colorFn?: (issue: IssueBounty) => string,
     ): DataTableColumn<IssueBounty, SortKey> => ({
       key: 'bounty',
       header: label,
-      width: listType === 'available' ? '120px' : undefined,
+      width,
       align: 'right',
       sortKey: 'bounty',
       renderCell: (issue) => {
@@ -255,8 +450,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
           alphaPrice,
         );
         const color =
-          colorOverride?.(issue) ??
-          (listType === 'pending' ? STATUS_COLORS.award : STATUS_COLORS.merged);
+          colorFn?.(issue) ??
+          (filterType === 'pending'
+            ? STATUS_COLORS.award
+            : STATUS_COLORS.merged);
         return (
           <>
             <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color }}>
@@ -320,6 +517,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
     const solverColumn: DataTableColumn<IssueBounty, SortKey> = {
       key: 'solver',
       header: 'Solver',
+      width: '160px',
       align: 'center',
       sortKey: 'solver',
       renderCell: (issue) =>
@@ -350,6 +548,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
     const dateColumn: DataTableColumn<IssueBounty, SortKey> = {
       key: 'date',
       header: 'Date',
+      width: '110px',
       align: 'center',
       sortKey: 'date',
       renderCell: (issue) => (
@@ -364,39 +563,40 @@ const IssuesList: React.FC<IssuesListProps> = ({
       ),
     };
 
-    if (listType === 'available') {
+    if (filterType === 'pending') {
       return [
         idColumn,
         repositoryColumn,
         issueColumn,
-        bountyColumn('Bounty'),
-        statusColumn('100px'),
-      ];
-    }
-    if (listType === 'pending') {
-      return [
-        idColumn,
-        repositoryColumn,
-        issueColumn,
-        bountyColumn('Target Bounty'),
+        bountyColumn('Target Bounty', '140px'),
         fundingColumn,
-        statusColumn(),
+        statusColumn('110px'),
       ];
     }
+    if (filterType === 'history') {
+      return [
+        idColumn,
+        repositoryColumn,
+        issueColumn,
+        bountyColumn('Payout', '120px', (issue) =>
+          issue.status === 'completed'
+            ? STATUS_COLORS.merged
+            : alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+        ),
+        solverColumn,
+        statusColumn('110px'),
+        dateColumn,
+      ];
+    }
+    // 'all' and 'available' share the same column set
     return [
       idColumn,
       repositoryColumn,
       issueColumn,
-      bountyColumn('Payout', (issue) =>
-        issue.status === 'completed'
-          ? STATUS_COLORS.merged
-          : alpha(theme.palette.common.white, TEXT_OPACITY.muted),
-      ),
-      solverColumn,
-      statusColumn(),
-      dateColumn,
+      bountyColumn('Bounty', '120px'),
+      statusColumn('110px'),
     ];
-  }, [listType, theme, taoPrice, alphaPrice]);
+  }, [filterType, theme, taoPrice, alphaPrice]);
 
   if (isLoading) {
     return (
@@ -422,34 +622,179 @@ const IssuesList: React.FC<IssuesListProps> = ({
     );
   }
 
-  const emptyMessages: Record<ListType, string> = {
-    available: 'No active issues available for solving',
-    pending: 'No pending issues awaiting funding',
-    history: 'No completed or cancelled issues yet',
-  };
-
-  if (issues.length === 0) {
-    return (
-      <Card
+  const headerToolbar = (
+    <>
+      <Box
         sx={{
-          backgroundColor: 'background.default',
-          border: `1px solid ${theme.palette.border.light}`,
-          borderRadius: 3,
-          p: 4,
-          textAlign: 'center',
+          px: 2,
+          py: 1.5,
+          borderBottom: `1px solid ${theme.palette.border.light}`,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 2,
         }}
-        elevation={0}
       >
-        <Typography
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          <FilterButton
+            label="All"
+            isActive={filterType === 'all'}
+            onClick={() => handleFilterChange('all')}
+            count={counts.all}
+            color={theme.palette.status.neutral}
+          />
+          <FilterButton
+            label="Available"
+            isActive={filterType === 'available'}
+            onClick={() => handleFilterChange('available')}
+            count={counts.available}
+            color={theme.palette.status.merged}
+          />
+          <FilterButton
+            label="Pending"
+            isActive={filterType === 'pending'}
+            onClick={() => handleFilterChange('pending')}
+            count={counts.pending}
+            color={theme.palette.status.warning}
+          />
+          <FilterButton
+            label="History"
+            isActive={filterType === 'history'}
+            onClick={() => handleFilterChange('history')}
+            count={counts.history}
+            color={theme.palette.status.neutral}
+          />
+        </Stack>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+            <IconButton
+              onClick={() => setShowChart(!showChart)}
+              size="small"
+              sx={{
+                color: showChart
+                  ? theme.palette.text.primary
+                  : alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+                border: `1px solid ${theme.palette.border.light}`,
+                borderRadius: 2,
+                padding: '6px',
+                '&:hover': {
+                  backgroundColor: theme.palette.surface.subtle,
+                  borderColor: theme.palette.border.medium,
+                },
+              }}
+            >
+              {showChart ? (
+                <TableChartIcon fontSize="small" />
+              ) : (
+                <BarChartIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
+
+          <FormControl size="small">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: alpha(
+                    theme.palette.common.white,
+                    TEXT_OPACITY.secondary,
+                  ),
+                  fontSize: '0.8rem',
+                }}
+              >
+                Rows:
+              </Typography>
+              <Select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(e.target.value as number);
+                  setPage(0);
+                }}
+                sx={{
+                  color: theme.palette.text.primary,
+                  backgroundColor: alpha(theme.palette.common.black, 0.4),
+                  fontSize: '0.8rem',
+                  height: '36px',
+                  borderRadius: 2,
+                  minWidth: '80px',
+                  '& fieldset': { borderColor: theme.palette.border.light },
+                  '&:hover fieldset': {
+                    borderColor: theme.palette.border.medium,
+                  },
+                  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                  '& .MuiSelect-select': { py: 0.75 },
+                }}
+              >
+                {VALID_ROWS.map((n) => (
+                  <MenuItem key={n} value={n}>
+                    {n}
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
+          </FormControl>
+
+          <TextField
+            placeholder="Search..."
+            size="small"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon
+                    sx={{
+                      color: alpha(
+                        theme.palette.common.white,
+                        TEXT_OPACITY.muted,
+                      ),
+                      fontSize: '1rem',
+                    }}
+                  />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              width: '200px',
+              '& .MuiOutlinedInput-root': {
+                color: theme.palette.text.primary,
+                backgroundColor: alpha(theme.palette.common.black, 0.4),
+                fontSize: '0.8rem',
+                height: '36px',
+                borderRadius: 2,
+                '& fieldset': { borderColor: theme.palette.border.light },
+                '&:hover fieldset': {
+                  borderColor: theme.palette.border.medium,
+                },
+                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+              },
+            }}
+          />
+        </Box>
+      </Box>
+
+      <Collapse in={showChart}>
+        <Box
           sx={{
-            color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+            height: 500,
+            p: 2,
+            borderBottom: `1px solid ${theme.palette.border.light}`,
+            backgroundColor: alpha(theme.palette.common.black, 0.2),
           }}
         >
-          {emptyMessages[listType]}
-        </Typography>
-      </Card>
-    );
-  }
+          {showChart && filteredIssues.length > 0 && (
+            <ReactECharts
+              option={chartOption}
+              style={{ height: '100%', width: '100%' }}
+            />
+          )}
+        </Box>
+      </Collapse>
+    </>
+  );
 
   return (
     <Card
@@ -458,20 +803,49 @@ const IssuesList: React.FC<IssuesListProps> = ({
         border: `1px solid ${theme.palette.border.light}`,
         borderRadius: 3,
         overflow: 'hidden',
-        // Original IssuesList used `py: 1.5` (12px) on every cell;
-        // restore the original row spacing on top of `size="small"`.
-        '& .MuiTableCell-root': { py: 1.5 },
       }}
       elevation={0}
     >
       <DataTable<IssueBounty, SortKey>
         columns={columns}
-        rows={sortedIssues}
+        rows={paginatedIssues}
         getRowKey={(issue) => issue.id}
         getRowHref={
           getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
         }
         linkState={linkState}
+        minWidth={
+          filterType === 'history'
+            ? '1000px'
+            : filterType === 'pending'
+              ? '900px'
+              : '750px'
+        }
+        header={headerToolbar}
+        emptyState={
+          <Box sx={{ p: 4, textAlign: 'center' }}>
+            <Typography
+              sx={{
+                color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+              }}
+            >
+              {searchQuery ? 'No issues match your search' : 'No issues found'}
+            </Typography>
+          </Box>
+        }
+        pagination={
+          <TablePagination
+            rowsPerPageOptions={[]}
+            component="div"
+            count={sortedIssues.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={(_event, newPage) => setPage(newPage)}
+            onRowsPerPageChange={() => {}}
+            showFirstButton
+            showLastButton
+          />
+        }
         sort={{
           field: sortKey,
           order: sortDirection,
