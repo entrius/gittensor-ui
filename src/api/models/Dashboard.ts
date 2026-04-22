@@ -165,6 +165,15 @@ export type MinerEvaluation = {
   lifetimeAlpha?: number;
   lifetimeTao?: number;
   lifetimeUsd?: number;
+  /**
+   * Per-program USD breakdown. When the API provides these, the UI uses them
+   * directly instead of computing a proportional split from scores. Any
+   * combination of fields being present is valid — the UI handles partial data.
+   */
+  ossUsdPerDay?: number | null;
+  issueUsdPerDay?: number | null;
+  ossLifetimeUsd?: number | null;
+  issueLifetimeUsd?: number | null;
 };
 
 export type GithubMinerData = {

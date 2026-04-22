@@ -65,6 +65,104 @@ const openPrColor = (open: number, threshold: number) => {
   return undefined;
 };
 
+/**
+ * Resolve mode-specific earnings from a miner record.
+ *
+ * Priority order (highest → lowest):
+ *  1. Explicit per-program API fields (ossUsdPerDay / issueUsdPerDay).
+ *     Partial presence is supported — if only one side is explicit, the other
+ *     falls through to score-proportional splitting.
+ *  2. Score-proportional split of combined usdPerDay / lifetimeUsd.
+ *  3. Zero-score fallback: OSS receives the full combined amount; issues show $0.
+ *
+ * Returns `isEstimated: true` whenever the value is derived rather than an
+ * explicit API figure, so callers can render a visual approximation indicator.
+ */
+const resolveEarnings = (
+  miner: MinerEvaluation,
+  mode: 'prs' | 'issues',
+): { usdPerDay: number; lifetimeUsd: number; isEstimated: boolean; tooltipNote: string } => {
+  const combinedUsd = miner.usdPerDay ?? 0;
+  const combinedLife = miner.lifetimeUsd ?? 0;
+
+  const hasExplicitOss =
+    miner.ossUsdPerDay != null && Number.isFinite(Number(miner.ossUsdPerDay));
+  const hasExplicitIssue =
+    miner.issueUsdPerDay != null && Number.isFinite(Number(miner.issueUsdPerDay));
+
+  // Both sides explicit — return directly, no estimation needed.
+  if (hasExplicitOss && hasExplicitIssue) {
+    if (mode === 'prs') {
+      return {
+        usdPerDay: Number(miner.ossUsdPerDay),
+        lifetimeUsd: Number(miner.ossLifetimeUsd ?? 0),
+        isEstimated: false,
+        tooltipNote: '',
+      };
+    }
+    return {
+      usdPerDay: Number(miner.issueUsdPerDay),
+      lifetimeUsd: Number(miner.issueLifetimeUsd ?? 0),
+      isEstimated: false,
+      tooltipNote: '',
+    };
+  }
+
+  // One side is explicit — use it directly; split the remainder for the other.
+  const ossScore = Math.max(0, parseNumber(miner.totalScore));
+  const issueScore = Math.max(0, parseNumber(miner.issueDiscoveryScore));
+  const sum = ossScore + issueScore;
+
+  if (hasExplicitOss && mode === 'prs') {
+    return {
+      usdPerDay: Number(miner.ossUsdPerDay),
+      lifetimeUsd: Number(miner.ossLifetimeUsd ?? 0),
+      isEstimated: false,
+      tooltipNote: '',
+    };
+  }
+  if (hasExplicitIssue && mode === 'issues') {
+    return {
+      usdPerDay: Number(miner.issueUsdPerDay),
+      lifetimeUsd: Number(miner.issueLifetimeUsd ?? 0),
+      isEstimated: false,
+      tooltipNote: '',
+    };
+  }
+
+  // Score-proportional split fallback.
+  if (sum <= 0) {
+    // No scores at all — OSS gets the full combined amount, issues get $0.
+    if (mode === 'issues') {
+      return {
+        usdPerDay: 0,
+        lifetimeUsd: 0,
+        isEstimated: true,
+        tooltipNote: 'No issue discovery score yet; issue-track earnings shown as zero.',
+      };
+    }
+    return {
+      usdPerDay: combinedUsd,
+      lifetimeUsd: combinedLife,
+      isEstimated: true,
+      tooltipNote: 'No score data to split earnings; showing combined estimate.',
+    };
+  }
+
+  const fraction = mode === 'prs' ? ossScore / sum : issueScore / sum;
+  const splitNote =
+    ossScore > 0 && issueScore > 0
+      ? 'Split proportionally by OSS vs issue discovery score — exact values available once the API returns per-program fields.'
+      : '';
+
+  return {
+    usdPerDay: combinedUsd * fraction,
+    lifetimeUsd: combinedLife * fraction,
+    isEstimated: true,
+    tooltipNote: splitNote,
+  };
+};
+
 interface StatTileProps {
   label: string;
   value: string;
@@ -343,6 +441,14 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
     }, 0);
   }, [prs]);
 
+  const earnings = useMemo(
+    () =>
+      minerStats
+        ? resolveEarnings(minerStats, viewMode)
+        : { usdPerDay: 0, lifetimeUsd: 0, isEstimated: true, tooltipNote: '' },
+    [minerStats, viewMode],
+  );
+
   if (isLoading) {
     return (
       <Card sx={{ p: 4, textAlign: 'center' }} elevation={0}>
@@ -450,18 +556,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
     { xs: 'flex', sm: 'none' },
     1,
   );
-  const renderEarningsTile = (tooltip: string) => (
-    <StatTile
-      label="Earnings"
-      value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
-      sub={`$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
-      color={
-        (minerStats.usdPerDay ?? 0) > 0 ? STATUS_COLORS.success : undefined
-      }
-      tooltip={tooltip}
-    />
-  );
-
   return (
     <Card sx={{ p: 3, position: 'relative' }} elevation={0}>
       {/* Updated chip — desktop */}
@@ -691,9 +785,13 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
-            {renderEarningsTile(
-              'Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus.',
-            )}
+            <StatTile
+              label="Earnings"
+              value={`${earnings.isEstimated ? '~' : ''}$${Math.round(earnings.usdPerDay).toLocaleString()}/d`}
+              sub={`${earnings.isEstimated ? '~' : ''}$${Math.round(earnings.usdPerDay * 30).toLocaleString()}/mo · ${earnings.isEstimated ? '~' : ''}$${Math.round(earnings.lifetimeUsd).toLocaleString()} total`}
+              color={earnings.usdPerDay > 0 ? STATUS_COLORS.success : undefined}
+              tooltip={`Estimated OSS-track earnings based on current network incentive distribution. Actual payouts depend on validator consensus.${earnings.tooltipNote ? ` ${earnings.tooltipNote}` : ''}`}
+            />
           </Grid>
         </Grid>
       ) : (
@@ -746,9 +844,13 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
-            {renderEarningsTile(
-              'Estimated earnings from issue discovery based on current network incentive distribution.',
-            )}
+            <StatTile
+              label="Earnings"
+              value={`${earnings.isEstimated ? '~' : ''}$${Math.round(earnings.usdPerDay).toLocaleString()}/d`}
+              sub={`${earnings.isEstimated ? '~' : ''}$${Math.round(earnings.usdPerDay * 30).toLocaleString()}/mo · ${earnings.isEstimated ? '~' : ''}$${Math.round(earnings.lifetimeUsd).toLocaleString()} total`}
+              color={earnings.usdPerDay > 0 ? STATUS_COLORS.success : undefined}
+              tooltip={`Estimated issue-discovery earnings based on current network incentive distribution. Actual payouts depend on validator consensus.${earnings.tooltipNote ? ` ${earnings.tooltipNote}` : ''}`}
+            />
           </Grid>
         </Grid>
       )}
