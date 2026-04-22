@@ -211,60 +211,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             justifyContent: 'flex-end',
           }}
         >
-          {showDualEligibilityBadges ? (
-            <>
-              <Typography
-                sx={(theme) => ({
-                  fontFamily: FONTS.mono,
-                  fontSize: '0.65rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  border: `1px solid ${
-                    ossEligible
-                      ? alpha(theme.palette.status.merged, 0.45)
-                      : theme.palette.border.subtle
-                  }`,
-                  borderRadius: 1,
-                  px: 0.75,
-                  py: 0.25,
-                  letterSpacing: '0.06em',
-                  color: ossEligible
-                    ? theme.palette.status.merged
-                    : theme.palette.text.secondary,
-                  backgroundColor: ossEligible
-                    ? alpha(theme.palette.status.merged, 0.08)
-                    : theme.palette.surface.subtle,
-                })}
-              >
-                OSS {ossEligible ? 'Eligible' : 'Ineligible'}
-              </Typography>
-              <Typography
-                sx={(theme) => ({
-                  fontFamily: FONTS.mono,
-                  fontSize: '0.65rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  border: `1px solid ${
-                    discoveriesEligible
-                      ? alpha(theme.palette.status.merged, 0.45)
-                      : theme.palette.border.subtle
-                  }`,
-                  borderRadius: 1,
-                  px: 0.75,
-                  py: 0.25,
-                  letterSpacing: '0.06em',
-                  color: discoveriesEligible
-                    ? theme.palette.status.merged
-                    : theme.palette.text.secondary,
-                  backgroundColor: discoveriesEligible
-                    ? alpha(theme.palette.status.merged, 0.08)
-                    : theme.palette.surface.subtle,
-                })}
-              >
-                Issues {discoveriesEligible ? 'Eligible' : 'Ineligible'}
-              </Typography>
-            </>
-          ) : !isEligible ? (
+          {!showDualEligibilityBadges && !isEligible && (
             <Typography
               sx={(theme) => ({
                 fontFamily: FONTS.mono,
@@ -282,7 +229,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             >
               Ineligible
             </Typography>
-          ) : null}
+          )}
           {miner.githubId && (
             <WatchlistButton
               category="miners"
@@ -292,6 +239,67 @@ export const MinerCard: React.FC<MinerCardProps> = ({
           )}
         </Box>
       </Box>
+
+      {showDualEligibilityBadges && (
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 0.5,
+          }}
+        >
+          <Typography
+            sx={(theme) => ({
+              fontFamily: FONTS.mono,
+              fontSize: '0.65rem',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              border: `1px solid ${
+                ossEligible
+                  ? alpha(theme.palette.status.merged, 0.45)
+                  : theme.palette.border.subtle
+              }`,
+              borderRadius: 1,
+              px: 0.75,
+              py: 0.25,
+              letterSpacing: '0.06em',
+              color: ossEligible
+                ? theme.palette.status.merged
+                : theme.palette.text.secondary,
+              backgroundColor: ossEligible
+                ? alpha(theme.palette.status.merged, 0.08)
+                : theme.palette.surface.subtle,
+            })}
+          >
+            OSS {ossEligible ? 'Eligible' : 'Ineligible'}
+          </Typography>
+          <Typography
+            sx={(theme) => ({
+              fontFamily: FONTS.mono,
+              fontSize: '0.65rem',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              border: `1px solid ${
+                discoveriesEligible
+                  ? alpha(theme.palette.status.merged, 0.45)
+                  : theme.palette.border.subtle
+              }`,
+              borderRadius: 1,
+              px: 0.75,
+              py: 0.25,
+              letterSpacing: '0.06em',
+              color: discoveriesEligible
+                ? theme.palette.status.merged
+                : theme.palette.text.secondary,
+              backgroundColor: discoveriesEligible
+                ? alpha(theme.palette.status.merged, 0.08)
+                : theme.palette.surface.subtle,
+            })}
+          >
+            Issues {discoveriesEligible ? 'Eligible' : 'Ineligible'}
+          </Typography>
+        </Box>
+      )}
 
       <Box
         sx={{
