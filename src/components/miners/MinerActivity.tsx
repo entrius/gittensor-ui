@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import { subDays, format } from 'date-fns';
 import ReactECharts from 'echarts-for-react';
+import { ChartWrapper } from '../common';
 import {
   useMinerStats,
   useMinerPRs,
@@ -166,11 +167,18 @@ const IssueCredibilityChart: React.FC<{
       </Typography>
 
       <Box sx={{ height: '190px', width: '100%', mb: 0.75 }}>
-        <ReactECharts
-          option={chartOption}
-          style={{ height: '100%', width: '100%' }}
-          opts={{ renderer: 'svg' }}
-        />
+        <ChartWrapper
+          data={[solved, open, closed]}
+          isEmpty={(d) => d.every((v) => v === 0)}
+          emptyMessage="No issue activity yet"
+          emptyHint="Issue credibility appears once you file issues."
+        >
+          <ReactECharts
+            option={chartOption}
+            style={{ height: '100%', width: '100%' }}
+            opts={{ renderer: 'svg' }}
+          />
+        </ChartWrapper>
       </Box>
 
       <Box
@@ -276,11 +284,18 @@ const IssuePerformanceRadar: React.FC<{
         Discovery Profile
       </Typography>
       <Box sx={{ height: '220px', width: '100%' }}>
-        <ReactECharts
-          option={chartOption}
-          style={{ height: '100%', width: '100%' }}
-          opts={{ renderer: 'svg' }}
-        />
+        <ChartWrapper
+          data={[credibility, solvedRatio, validRatio, volume, tokenScore]}
+          isEmpty={(d) => d.every((v) => !v)}
+          emptyMessage="No discovery activity yet"
+          emptyHint="Discovery profile appears after filing issues."
+        >
+          <ReactECharts
+            option={chartOption}
+            style={{ height: '100%', width: '100%' }}
+            opts={{ renderer: 'svg' }}
+          />
+        </ChartWrapper>
       </Box>
     </Box>
   );
