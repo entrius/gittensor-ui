@@ -625,7 +625,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         startAdornment: searchAdornment,
       }}
       sx={{
-        width: '200px',
+        width: { xs: '100%', sm: 280 },
         ...(isMobileSearchVisible
           ? {
               flexBasis: { xs: '100%', sm: 'auto' },
