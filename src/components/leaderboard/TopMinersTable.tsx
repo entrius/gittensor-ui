@@ -250,7 +250,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   }
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box sx={{ width: '100%', px: { xs: 0, md: 1 }, py: 0 }}>
       {/* Header Card — two-row toolbar */}
       <SectionCard
         sx={{
@@ -298,7 +298,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           <Box
             sx={{
               display: 'flex',
-              alignItems: 'center',
+              alignItems: { xs: 'stretch', sm: 'center' },
               justifyContent: 'space-between',
               gap: 1,
               flexWrap: 'wrap',
@@ -310,7 +310,15 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
               onSortChange={handleSortChange}
               variant={variant}
             />
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'center', sm: 'center' },
+                gap: 1,
+                width: { xs: '100%', sm: 'auto' },
+              }}
+            >
               <EligibilityToggle
                 value={eligibilityFilter}
                 onChange={handleEligibilityChange}
@@ -324,7 +332,9 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
         </Box>
       </SectionCard>
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box
+        sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}
+      >
         {filteredMiners.length > 0 && viewMode === 'cards' && (
           <Grid container spacing={2}>
             {visibleMiners.map((miner) => (
