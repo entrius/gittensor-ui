@@ -38,6 +38,7 @@ import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import BountyProgress from './BountyProgress';
 import FilterButton from '../FilterButton';
+import { WatchlistButton } from '../common/WatchlistButton';
 
 type FilterType = 'all' | 'available' | 'pending' | 'history';
 type SortDirection = 'asc' | 'desc';
@@ -563,6 +564,16 @@ const IssuesList: React.FC<IssuesListProps> = ({
       ),
     };
 
+    const watchlistColumn: DataTableColumn<IssueBounty, SortKey> = {
+      key: 'watchlist',
+      header: '',
+      width: '56px',
+      align: 'center',
+      renderCell: (issue) => (
+        <WatchlistButton category="bounties" itemKey={String(issue.id)} />
+      ),
+    };
+
     if (filterType === 'pending') {
       return [
         idColumn,
@@ -571,6 +582,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         bountyColumn('Target Bounty', '140px'),
         fundingColumn,
         statusColumn('110px'),
+        watchlistColumn,
       ];
     }
     if (filterType === 'history') {
@@ -586,6 +598,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         solverColumn,
         statusColumn('110px'),
         dateColumn,
+        watchlistColumn,
       ];
     }
     // 'all' and 'available' share the same column set
@@ -595,6 +608,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
       issueColumn,
       bountyColumn('Bounty', '120px'),
       statusColumn('110px'),
+      watchlistColumn,
     ];
   }, [filterType, theme, taoPrice, alphaPrice]);
 

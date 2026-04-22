@@ -45,6 +45,7 @@ import ViewListIcon from '@mui/icons-material/ViewList';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import FilterButton from '../FilterButton';
+import { WatchlistButton } from '../common/WatchlistButton';
 import { RepositoryCard } from './RepositoryCard';
 import {
   REPOSITORIES_CARD_ROWS,
@@ -1127,6 +1128,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 >
                   Contributors
                 </SortableHeader>
+                <TableCell
+                  sx={{ ...headerCellStyle, width: '56px', textAlign: 'center' }}
+                >
+                  
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -1279,6 +1285,20 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                               ? repo.uniqueMiners?.size
                               : '-'}
                           </Typography>
+                        </TableCell>
+
+                        <TableCell
+                          sx={{
+                            ...bodyCellStyle,
+                            width: '56px',
+                            textAlign: 'center',
+                            pr: 1,
+                          }}
+                        >
+                          <WatchlistButton
+                            category="repos"
+                            itemKey={repo.repository || ''}
+                          />
                         </TableCell>
                       </LinkTableRow>
                     );
