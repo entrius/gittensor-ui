@@ -307,6 +307,10 @@ const WatchlistPage: React.FC = () => {
               display: 'flex',
               flexDirection: 'column',
               gap: 2,
+              minHeight: 0,
+              overflowY: showSidebarRight ? 'auto' : 'visible',
+              pr: showSidebarRight ? 1 : 0,
+              ...scrollbarSx,
             }}
           >
             <ActivitySidebarCards miners={minerStats} />
