@@ -727,9 +727,7 @@ const pickMostSolvedIssuesMiner = (
   miners: MinerEvaluation[],
 ): DashboardFeaturedContributor | undefined => {
   const top = [...miners]
-    .filter(
-      (m) => m.isIssueEligible && (m.totalValidSolvedIssues ?? 0) > 0,
-    )
+    .filter((m) => m.isIssueEligible && (m.totalValidSolvedIssues ?? 0) > 0)
     .sort((a, b) => {
       const diff =
         (b.totalValidSolvedIssues ?? 0) - (a.totalValidSolvedIssues ?? 0);
@@ -807,7 +805,8 @@ export const buildFeaturedDiscoveryContributors = (
 
   if (topDiscoveryMiner) contributors.push(topDiscoveryMiner);
   if (mostSolvedIssuesMiner) contributors.push(mostSolvedIssuesMiner);
-  if (highestIssueTokenScoreMiner) contributors.push(highestIssueTokenScoreMiner);
+  if (highestIssueTokenScoreMiner)
+    contributors.push(highestIssueTokenScoreMiner);
 
   return contributors;
 };
