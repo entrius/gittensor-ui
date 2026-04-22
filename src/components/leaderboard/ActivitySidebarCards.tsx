@@ -13,6 +13,26 @@ interface ActivitySidebarCardsProps {
 export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
   miners,
 }) => {
+  const eligibilityStats = useMemo(() => {
+    const all = miners.length;
+    const ossEligible = miners.filter((m) => !!m.ossIsEligible).length;
+    const discoveryEligible = miners.filter(
+      (m) => !!m.discoveriesIsEligible,
+    ).length;
+
+    return {
+      all,
+      oss: {
+        eligible: ossEligible,
+        ineligible: Math.max(0, all - ossEligible),
+      },
+      discovery: {
+        eligible: discoveryEligible,
+        ineligible: Math.max(0, all - discoveryEligible),
+      },
+    };
+  }, [miners]);
+
   const minerActivityStats = useMemo(() => {
     const all = miners.length;
     const eligiblePr = miners.filter((m) => m.ossIsEligible).length;
@@ -106,6 +126,162 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
 
   return (
     <>
+      {/* CARD 0: Miners Activity */}
+      <SectionCard title="Miners Activity" sx={{ flexShrink: 0 }}>
+        <Box sx={{ px: 2, pt: 1, pb: 2 }}>
+          <Box
+            sx={(theme) => ({
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr 1fr',
+              gap: 1,
+              pb: 2,
+              borderBottom: `1px solid ${theme.palette.border.light}`,
+              mb: 2,
+            })}
+          >
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.7rem',
+                color: STATUS_COLORS.open,
+                textTransform: 'uppercase',
+              }}
+            />
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.7rem',
+                color: STATUS_COLORS.open,
+                textTransform: 'uppercase',
+                textAlign: 'center',
+              }}
+            >
+              PR
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.7rem',
+                color: STATUS_COLORS.open,
+                textTransform: 'uppercase',
+                textAlign: 'center',
+              }}
+            >
+              Issue
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr 1fr',
+              columnGap: 1,
+              rowGap: 1.5,
+              alignItems: 'center',
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.75rem',
+                color: STATUS_COLORS.open,
+                textTransform: 'uppercase',
+              }}
+            >
+              All
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '1.05rem',
+                fontWeight: 600,
+                color: STATUS_COLORS.open,
+                textAlign: 'center',
+              }}
+            >
+              {eligibilityStats.all.toLocaleString()}
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '1.05rem',
+                fontWeight: 600,
+                color: STATUS_COLORS.open,
+                textAlign: 'center',
+              }}
+            >
+              {eligibilityStats.all.toLocaleString()}
+            </Typography>
+
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.75rem',
+                color: STATUS_COLORS.open,
+                textTransform: 'uppercase',
+              }}
+            >
+              Eligible
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '1.05rem',
+                fontWeight: 600,
+                color: STATUS_COLORS.merged,
+                textAlign: 'center',
+              }}
+            >
+              {eligibilityStats.oss.eligible.toLocaleString()}
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '1.05rem',
+                fontWeight: 600,
+                color: STATUS_COLORS.merged,
+                textAlign: 'center',
+              }}
+            >
+              {eligibilityStats.discovery.eligible.toLocaleString()}
+            </Typography>
+
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.75rem',
+                color: STATUS_COLORS.open,
+                textTransform: 'uppercase',
+              }}
+            >
+              Ineligible
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '1.05rem',
+                fontWeight: 600,
+                color: STATUS_COLORS.closed,
+                textAlign: 'center',
+              }}
+            >
+              {eligibilityStats.oss.ineligible.toLocaleString()}
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '1.05rem',
+                fontWeight: 600,
+                color: STATUS_COLORS.closed,
+                textAlign: 'center',
+              }}
+            >
+              {eligibilityStats.discovery.ineligible.toLocaleString()}
+            </Typography>
+          </Box>
+        </Box>
+      </SectionCard>
+
       {/* CARD 1: Miners Activity */}
       <SectionCard title="Miners Activity" sx={{ flexShrink: 0 }}>
         <Box sx={{ px: 2, pt: 1, pb: 2 }}>
