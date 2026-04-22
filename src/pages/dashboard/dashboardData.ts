@@ -30,14 +30,16 @@ export interface DashboardOverviewMetric {
   delta: string;
 }
 
+export interface DashboardOverviewPool {
+  metrics: DashboardOverviewMetric[];
+  chartSegments: Array<{ label: string; value: number }>;
+  chartCenterLabel: string;
+}
+
 export interface DashboardOverviewSection {
   title: string;
-  metrics: DashboardOverviewMetric[];
-  chartSegments: Array<{
-    label: string;
-    value: number;
-  }>;
-  chartCenterLabel: string;
+  eligible: DashboardOverviewPool;
+  ineligible: DashboardOverviewPool;
 }
 
 export interface DashboardKpi {
@@ -357,95 +359,80 @@ export const buildDashboardOverview = (
   const currentWindow = getWindowBounds(range, now);
   const previousWindow = getPreviousWindowBounds(range, now);
 
-  const currentPrMetrics = getPrOverviewMetrics(prs, currentWindow);
-  const previousPrMetrics = previousWindow
-    ? getPrOverviewMetrics(prs, previousWindow)
+  const eligibleIds = new Set(
+    miners.filter((m) => m.isEligible).map((m) => m.githubId),
+  );
+  const eligiblePrs = prs.filter((pr) => pr.githubId && eligibleIds.has(pr.githubId));
+  const ineligiblePrs = prs.filter((pr) => !pr.githubId || !eligibleIds.has(pr.githubId));
+
+  const eligibleMiners = miners.filter((m) => m.isIssueEligible);
+  const ineligibleMiners = miners.filter((m) => !m.isIssueEligible);
+
+  const currentEligiblePrMetrics = getPrOverviewMetrics(eligiblePrs, currentWindow);
+  const previousEligiblePrMetrics = previousWindow
+    ? getPrOverviewMetrics(eligiblePrs, previousWindow)
     : null;
-  const currentIssueMetrics = getIssueOverviewMetricsFromMiners(miners);
+
+  const currentIneligiblePrMetrics = getPrOverviewMetrics(ineligiblePrs, currentWindow);
+  const previousIneligiblePrMetrics = previousWindow
+    ? getPrOverviewMetrics(ineligiblePrs, previousWindow)
+    : null;
+
+  const eligibleIssueMetrics = getIssueOverviewMetricsFromMiners(eligibleMiners);
+  const ineligibleIssueMetrics = getIssueOverviewMetricsFromMiners(ineligibleMiners);
+
   const getMetricDelta = (currentValue: number, previousValue?: number) =>
     range === 'all' || previousValue === undefined
       ? '0%'
       : formatDelta(currentValue, previousValue);
 
+  const buildPrPool = (
+    current: ReturnType<typeof getPrOverviewMetrics>,
+    previous: ReturnType<typeof getPrOverviewMetrics> | null,
+  ): DashboardOverviewPool => ({
+    chartSegments: [
+      { label: 'Merged', value: current.merged },
+      { label: 'Open', value: current.open },
+      { label: 'Closed', value: current.closed },
+    ],
+    chartCenterLabel: formatCenterPercent(current.merged, current.merged + current.closed),
+    metrics: [
+      { label: 'Total', value: current.total, delta: getMetricDelta(current.total, previous?.total) },
+      { label: 'Merged', value: current.merged, delta: getMetricDelta(current.merged, previous?.merged) },
+      { label: 'Open', value: current.open, delta: getMetricDelta(current.open, previous?.open) },
+      { label: 'Closed', value: current.closed, delta: getMetricDelta(current.closed, previous?.closed) },
+    ],
+  });
+
+  const buildIssuePool = (
+    issueMetrics: ReturnType<typeof getIssueOverviewMetricsFromMiners>,
+  ): DashboardOverviewPool => ({
+    chartSegments: [
+      { label: 'Solved', value: issueMetrics.solved },
+      { label: 'Open', value: issueMetrics.open },
+      { label: 'Closed', value: issueMetrics.closed },
+    ],
+    chartCenterLabel: formatCenterPercent(issueMetrics.solved, issueMetrics.solved + issueMetrics.closed),
+    // Issue metrics come from per-miner aggregates (all-time totals), so
+    // there is no previous-window comparison available — deltas are '0%'.
+    metrics: [
+      { label: 'Total', value: issueMetrics.total, delta: '0%' },
+      { label: 'Solved', value: issueMetrics.solved, delta: '0%' },
+      { label: 'Open', value: issueMetrics.open, delta: '0%' },
+      { label: 'Closed', value: issueMetrics.closed, delta: '0%' },
+    ],
+  });
+
   return [
     {
       title: 'OSS Contributions',
-      chartSegments: [
-        { label: 'Merged', value: currentPrMetrics.merged },
-        { label: 'Open', value: currentPrMetrics.open },
-        { label: 'Closed', value: currentPrMetrics.closed },
-      ],
-      chartCenterLabel: formatCenterPercent(
-        currentPrMetrics.merged,
-        currentPrMetrics.merged + currentPrMetrics.closed,
-      ),
-      metrics: [
-        {
-          label: 'Total',
-          value: currentPrMetrics.total,
-          delta: getMetricDelta(
-            currentPrMetrics.total,
-            previousPrMetrics?.total,
-          ),
-        },
-        {
-          label: 'Merged',
-          value: currentPrMetrics.merged,
-          delta: getMetricDelta(
-            currentPrMetrics.merged,
-            previousPrMetrics?.merged,
-          ),
-        },
-        {
-          label: 'Open',
-          value: currentPrMetrics.open,
-          delta: getMetricDelta(currentPrMetrics.open, previousPrMetrics?.open),
-        },
-        {
-          label: 'Closed',
-          value: currentPrMetrics.closed,
-          delta: getMetricDelta(
-            currentPrMetrics.closed,
-            previousPrMetrics?.closed,
-          ),
-        },
-      ],
+      eligible: buildPrPool(currentEligiblePrMetrics, previousEligiblePrMetrics),
+      ineligible: buildPrPool(currentIneligiblePrMetrics, previousIneligiblePrMetrics),
     },
     {
       title: 'Issue Discoveries',
-      chartSegments: [
-        { label: 'Solved', value: currentIssueMetrics.solved },
-        { label: 'Open', value: currentIssueMetrics.open },
-        { label: 'Closed', value: currentIssueMetrics.closed },
-      ],
-      chartCenterLabel: formatCenterPercent(
-        currentIssueMetrics.solved,
-        currentIssueMetrics.solved + currentIssueMetrics.closed,
-      ),
-      // Issue metrics come from per-miner aggregates (all-time totals), so
-      // there is no previous-window comparison available — deltas are '0%'.
-      metrics: [
-        {
-          label: 'Total',
-          value: currentIssueMetrics.total,
-          delta: '0%',
-        },
-        {
-          label: 'Solved',
-          value: currentIssueMetrics.solved,
-          delta: '0%',
-        },
-        {
-          label: 'Open',
-          value: currentIssueMetrics.open,
-          delta: '0%',
-        },
-        {
-          label: 'Closed',
-          value: currentIssueMetrics.closed,
-          delta: '0%',
-        },
-      ],
+      eligible: buildIssuePool(eligibleIssueMetrics),
+      ineligible: buildIssuePool(ineligibleIssueMetrics),
     },
   ];
 };
