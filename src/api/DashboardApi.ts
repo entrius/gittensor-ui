@@ -1,4 +1,8 @@
-import { useApiQuery } from './ApiUtils';
+import {
+  normalizeArrayResponse,
+  useApiArrayQuery,
+  useApiQuery,
+} from './ApiUtils';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import {
@@ -23,6 +27,21 @@ export const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
     enabled,
   );
 
+export const useDashboardArrayQuery = <TItem = void>(
+  queryName: string,
+  url: string,
+  refetchInterval?: number,
+  queryParams?: Record<string, string | number | undefined>,
+  enabled?: boolean,
+) =>
+  useApiArrayQuery<TItem>(
+    queryName,
+    `/dash${url}`,
+    refetchInterval,
+    queryParams,
+    enabled,
+  );
+
 export const useStats = () => useDashboardQuery<Stats>('useStats', '/stats');
 
 // Shared cache key for the repositories dataset.
@@ -30,17 +49,20 @@ export const getReposQueryKey = () =>
   ['useReposAndWeights', '/dash/repos', undefined] as const;
 
 export const useReposAndWeights = () =>
-  useDashboardQuery<Repository[]>('useReposAndWeights', '/repos');
+  useDashboardArrayQuery<Repository>('useReposAndWeights', '/repos');
 
 export const useLanguagesAndWeights = () =>
-  useDashboardQuery<LanguageWeight[]>('useLanguagesAndWeights', '/languages');
+  useDashboardArrayQuery<LanguageWeight>(
+    'useLanguagesAndWeights',
+    '/languages',
+  );
 
 export const useCommitLog = (
   options?: { refetchInterval?: number },
   page?: number,
   limit?: number,
 ) =>
-  useDashboardQuery<CommitLog[]>(
+  useDashboardArrayQuery<CommitLog>(
     'useCommitLog',
     '/commits',
     options?.refetchInterval,
@@ -58,10 +80,10 @@ export const useInfiniteCommitLog = (options?: {
     queryFn: async ({ pageParam }: { pageParam: number }) => {
       const url = '/dash/commits';
       const requestUrl = baseUrl ? `${baseUrl}${url}` : url;
-      const { data } = await axios.get<CommitLog[]>(requestUrl, {
+      const { data } = await axios.get(requestUrl, {
         params: { page: pageParam, limit },
       });
-      return data;
+      return normalizeArrayResponse<CommitLog>(data);
     },
     getNextPageParam: (lastPage: CommitLog[], allPages: CommitLog[][]) => {
       // If the last page has fewer items than the limit, we've reached the end

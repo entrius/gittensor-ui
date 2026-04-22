@@ -3,7 +3,7 @@
  * Composes cached miners, repositories, PRs, and issues datasets in place of a dedicated search endpoint.
  */
 import { useQueryClient } from '@tanstack/react-query';
-import { useApiQuery } from './ApiUtils';
+import { normalizeArrayResponse, useApiArrayQuery } from './ApiUtils';
 import { getReposQueryKey } from './DashboardApi';
 import { getIssuesQueryKey } from './IssuesApi';
 import { getAllMinersQueryKey } from './MinerApi';
@@ -35,7 +35,7 @@ const useCachedSearchDataset = <T>(
   cachedData: T[] | undefined,
   shouldFetch: boolean,
 ): DatasetState<T> => {
-  const datasetQuery = useApiQuery<T[]>(
+  const datasetQuery = useApiArrayQuery<T>(
     queryName,
     url,
     undefined,
@@ -44,7 +44,7 @@ const useCachedSearchDataset = <T>(
   );
 
   return {
-    data: datasetQuery.data ?? cachedData ?? [],
+    data: normalizeArrayResponse<T>(datasetQuery.data ?? cachedData),
     isLoading: isDatasetLoading(
       shouldFetch,
       cachedData,
