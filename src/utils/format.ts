@@ -79,6 +79,16 @@ export const formatAlphaToUsd = (
   return `~${usd.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`;
 };
 
+/**
+ * Compact numeric badge for tabs (exact below 1k; then 1k+ … 4k+; cap at 5k+).
+ */
+export const formatCompactCountBadge = (n: number): string => {
+  if (!Number.isFinite(n) || n < 0) return '0';
+  if (n < 1000) return String(Math.floor(n));
+  if (n >= 5000) return '5k+';
+  return `${Math.floor(n / 1000)}k+`;
+};
+
 export const credibilityColor = (cred: number): string => {
   if (cred >= 0.9) return CREDIBILITY_COLORS.excellent;
   if (cred >= 0.7) return CREDIBILITY_COLORS.good;
