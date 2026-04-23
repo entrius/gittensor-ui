@@ -10,12 +10,6 @@ import {
   Card,
   Grid,
   Skeleton,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Typography,
   Avatar,
   TextField,
@@ -63,12 +57,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { truncateText } from '../../utils';
 import { RankIcon } from './RankIcon';
-import LeaderboardTableSkeleton from './LeaderboardTableSkeleton';
-import {
-  getRepositoryOwnerAvatarBackground,
-  headerCellStyle,
-  type RepoStats,
-} from './types';
+import { getRepositoryOwnerAvatarBackground, type RepoStats } from './types';
 import {
   CHART_COLORS,
   STATUS_COLORS,
@@ -1170,115 +1159,67 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         </Box>
       )}
 
-      {viewMode === 'list' &&
-        (isLoading ? (
-          <TableContainer sx={{ overflowY: 'auto', ...scrollbarSx }}>
-            <Table
-              stickyHeader
-              sx={{ tableLayout: 'fixed', width: '100%', minWidth: '1000px' }}
-            >
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ ...headerCellStyle, width: '60px' }}>
-                    Rank
-                  </TableCell>
-                  <TableCell sx={{ ...headerCellStyle, width: '35%' }}>
-                    Repository
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...headerCellStyle, width: '12%' }}
+      {viewMode === 'list' && (
+        <Box sx={{ overflowY: 'auto', ...scrollbarSx }}>
+          <DataTable<RepoStats, SortColumn>
+            columns={listColumns}
+            rows={pagedRepositories}
+            isLoading={isLoading}
+            getRowKey={(repo) => repo.repository || ''}
+            getRowHref={(repo) => getRepositoryHref(repo.repository || '')}
+            linkState={linkState}
+            getRowSx={(repo) => ({
+              opacity: repo.inactiveAt ? 0.5 : 1,
+              '&:hover': { backgroundColor: 'border.subtle' },
+              transition: 'all 0.2s',
+              borderBottom: '1px solid',
+              borderColor: 'surface.light',
+            })}
+            minWidth="1000px"
+            stickyHeader
+            sort={{
+              field: sortColumn,
+              order: sortDirection,
+              onChange: handleSort,
+            }}
+            emptyState={
+              !filteredRepositories.length &&
+              trimmedSearch &&
+              isDirectRepoInput ? (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 2,
+                    px: 2,
+                    py: 2,
+                    borderBottom: '1px solid',
+                    borderColor: 'surface.light',
+                  }}
+                >
+                  <Typography sx={{ color: 'text.secondary' }}>
+                    Repository not in tracked list. Open details for{' '}
+                    <Typography component="span">{trimmedSearch}</Typography>?
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() =>
+                      navigate(getRepositoryHref(trimmedSearch), {
+                        state: linkState,
+                      })
+                    }
+                    sx={{ textTransform: 'none' }}
                   >
-                    Weight
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...headerCellStyle, width: '18%' }}
-                  >
-                    Total Score
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...headerCellStyle, width: '15%' }}
-                  >
-                    PRs
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ ...headerCellStyle, width: '15%' }}
-                  >
-                    Contributors
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                <LeaderboardTableSkeleton
-                  variant="repositories"
-                  rows={rowsPerPage}
-                />
-              </TableBody>
-            </Table>
-          </TableContainer>
-        ) : (
-          <Box sx={{ overflowY: 'auto', ...scrollbarSx }}>
-            <DataTable<RepoStats, SortColumn>
-              columns={listColumns}
-              rows={pagedRepositories}
-              getRowKey={(repo) => repo.repository || ''}
-              getRowHref={(repo) => getRepositoryHref(repo.repository || '')}
-              linkState={linkState}
-              getRowSx={(repo) => ({
-                opacity: repo.inactiveAt ? 0.5 : 1,
-                '&:hover': { backgroundColor: 'border.subtle' },
-                transition: 'all 0.2s',
-                borderBottom: '1px solid',
-                borderColor: 'surface.light',
-              })}
-              minWidth="1000px"
-              stickyHeader
-              sort={{
-                field: sortColumn,
-                order: sortDirection,
-                onChange: handleSort,
-              }}
-              emptyState={
-                !filteredRepositories.length &&
-                trimmedSearch &&
-                isDirectRepoInput ? (
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 2,
-                      px: 2,
-                      py: 2,
-                      borderBottom: '1px solid',
-                      borderColor: 'surface.light',
-                    }}
-                  >
-                    <Typography sx={{ color: 'text.secondary' }}>
-                      Repository not in tracked list. Open details for{' '}
-                      <Typography component="span">{trimmedSearch}</Typography>?
-                    </Typography>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() =>
-                        navigate(getRepositoryHref(trimmedSearch), {
-                          state: linkState,
-                        })
-                      }
-                      sx={{ textTransform: 'none' }}
-                    >
-                      Open repository
-                    </Button>
-                  </Box>
-                ) : undefined
-              }
-            />
-          </Box>
-        ))}
+                    Open repository
+                  </Button>
+                </Box>
+              ) : undefined
+            }
+          />
+        </Box>
+      )}
       <TablePagination
         rowsPerPageOptions={[]}
         component="div"

@@ -1,5 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { Box, Typography, Avatar, alpha, useTheme } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Avatar,
+  CircularProgress,
+  alpha,
+  useTheme,
+} from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useAllPrs, useAllMiners } from '../../api';
@@ -236,7 +243,15 @@ const RepositoryContributorsTable: React.FC<
     [repositoryFullName, theme.palette.border.light],
   );
 
-  if (!isLoading && contributors.length === 0) {
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+        <CircularProgress size={20} />
+      </Box>
+    );
+  }
+
+  if (contributors.length === 0) {
     return null;
   }
 
@@ -303,7 +318,6 @@ const RepositoryContributorsTable: React.FC<
         columns={columns}
         rows={displayedContributors}
         getRowKey={(c) => c.githubId}
-        isLoading={isLoading}
         header={header}
         pagination={showMoreRow || undefined}
         getRowSx={(c) => ({

@@ -416,11 +416,7 @@ const LanguageWeightsTable: React.FC = () => {
           getRowKey={(lang) => lang.extension}
           isLoading={isLoading}
           stickyHeader
-          emptyState={
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <Typography>No languages found!</Typography>
-            </Box>
-          }
+          emptyState={null}
           sort={{
             field: sortField,
             order: sortOrder,
@@ -443,6 +439,12 @@ const LanguageWeightsTable: React.FC = () => {
           '.MuiTablePagination-displayedRows': {},
         }}
       />
+
+      {filteredAndSortedLanguages.length === 0 && !isLoading && (
+        <Box sx={{ textAlign: 'center', py: 4 }}>
+          <Typography>No languages found!</Typography>
+        </Box>
+      )}
     </Box>
   );
 };
