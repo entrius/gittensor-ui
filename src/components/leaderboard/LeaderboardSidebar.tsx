@@ -11,6 +11,18 @@ import { ActivitySidebarCards } from './ActivitySidebarCards';
 // Re-export MinerStats for backward compatibility
 export type { MinerStats } from './types';
 
+type EligibilityFilter = 'all' | 'eligible' | 'ineligible';
+
+const ELIGIBILITY_FILTER_OPTIONS: Array<{
+  value: EligibilityFilter;
+  label: string;
+  color: string;
+}> = [
+  { value: 'all', label: 'All', color: STATUS_COLORS.open },
+  { value: 'eligible', label: 'Eligible', color: STATUS_COLORS.merged },
+  { value: 'ineligible', label: 'Ineligible', color: STATUS_COLORS.closed },
+];
+
 interface LeaderboardSidebarProps {
   miners: MinerStats[];
   getMinerHref: (miner: MinerStats) => string;
@@ -24,30 +36,36 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
   linkState,
   variant = 'oss',
 }) => {
-  // State for toggling lists
   const [leaderboardType, setLeaderboardType] = useState<'earners' | 'active'>(
     'earners',
   );
+  const [eligibilityFilter, setEligibilityFilter] =
+    useState<EligibilityFilter>('all');
 
-  // Stats (Use original unfiltered list for stats)
+  const filteredMiners = useMemo(() => {
+    if (eligibilityFilter === 'eligible') return miners.filter((m) => m.isEligible);
+    if (eligibilityFilter === 'ineligible') return miners.filter((m) => !m.isEligible);
+    return miners;
+  }, [miners, eligibilityFilter]);
+
   const topEarners = useMemo(
     () =>
-      [...miners]
+      [...filteredMiners]
         .sort((a, b) => (b.usdPerDay || 0) - (a.usdPerDay || 0))
         .slice(0, 5),
-    [miners],
+    [filteredMiners],
   );
 
   const mostActive = useMemo(
     () =>
-      [...miners]
+      [...filteredMiners]
         .sort((a, b) =>
           variant === 'discoveries'
             ? (b.totalIssues || 0) - (a.totalIssues || 0)
             : (b.totalPRs || 0) - (a.totalPRs || 0),
         )
         .slice(0, 5),
-    [miners, variant],
+    [filteredMiners, variant],
   );
 
   return (
@@ -55,8 +73,63 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
       spacing={2}
       sx={{ height: '100%', overflow: 'auto', pr: 1, ...scrollbarSx }}
     >
+      {/* Filter tabs */}
+      <Box
+        sx={(t) => ({
+          display: 'inline-flex',
+          alignSelf: 'center',
+          gap: 0.5,
+          p: 0.5,
+          borderRadius: 2,
+          backgroundColor: t.palette.surface.light,
+        })}
+      >
+        {ELIGIBILITY_FILTER_OPTIONS.map((option) => {
+          const selected = eligibilityFilter === option.value;
+          return (
+            <Box
+              key={option.value}
+              component="button"
+              type="button"
+              aria-pressed={selected}
+              onClick={() => setEligibilityFilter(option.value)}
+              sx={(t) => ({
+                px: 1.6,
+                height: 24,
+                display: 'flex',
+                alignItems: 'center',
+                border: 0,
+                borderRadius: 1.5,
+                backgroundColor: selected
+                  ? alpha(t.palette.text.primary, 0.15)
+                  : 'transparent',
+                color: selected
+                  ? t.palette.text.primary
+                  : alpha(option.color, 0.82),
+                cursor: 'pointer',
+                fontFamily: FONTS.mono,
+                fontSize: '0.72rem',
+                fontWeight: selected ? 600 : 500,
+                lineHeight: 1,
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  backgroundColor: alpha(t.palette.text.primary, 0.1),
+                  color: t.palette.text.primary,
+                },
+                '&:focus-visible': {
+                  outline: `1px solid ${option.color}`,
+                  outlineOffset: 1,
+                },
+              })}
+            >
+              {option.label}
+            </Box>
+          );
+        })}
+      </Box>
+
       {/* Activity Cards: PR Activity, Issue Activity, Code Impact */}
-      <ActivitySidebarCards miners={miners} />
+      <ActivitySidebarCards miners={filteredMiners} />
 
       {/* Leaderboard Lists (Tabs) */}
       <SectionCard
