@@ -57,12 +57,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { truncateText } from '../../utils';
 import { RankIcon } from './RankIcon';
-import {
-  getRepositoryOwnerAvatarBackground,
-  bodyCellStyle as leaderboardBodyCellStyle,
-  headerCellStyle as leaderboardHeaderCellStyle,
-  type RepoStats,
-} from './types';
+import { getRepositoryOwnerAvatarBackground, type RepoStats } from './types';
 import {
   CHART_COLORS,
   STATUS_COLORS,
@@ -660,22 +655,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     </Box>
   );
 
-  // Override theme.ts defaults that DataTable applies, so list view keeps
-  // the denser leaderboard cell metrics (shorter rows, non-uppercase headers,
-  // no letterSpacing) defined in `./types`.
-  const listBodyCellOverride = {
-    ...leaderboardBodyCellStyle,
-    borderBottom: '1px solid',
-    borderColor: 'border.light',
-  };
-  const listHeaderCellOverride = {
-    ...leaderboardHeaderCellStyle,
-    textTransform: 'none' as const,
-    letterSpacing: 0,
-  };
-
   const sortableHeaderSx = {
-    ...listHeaderCellOverride,
     padding: 0,
     cursor: 'pointer',
     userSelect: 'none' as const,
@@ -689,8 +669,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       key: 'rank',
       header: 'Rank',
       width: '60px',
-      headerSx: listHeaderCellOverride,
-      cellSx: { ...listBodyCellOverride, pr: 0 },
+      cellSx: { pr: 0 },
       renderCell: (repo) => <RankIcon rank={repo.rank || 0} />,
     },
     {
@@ -698,7 +677,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       header: renderSortHeader('repository', 'Repository'),
       width: '35%',
       headerSx: sortableHeaderSx,
-      cellSx: { ...listBodyCellOverride, pl: 1.5 },
+      cellSx: { pl: 1.5 },
       renderCell: (repo) => (
         <Box
           sx={{
@@ -753,7 +732,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       width: '12%',
       align: 'right',
       headerSx: sortableHeaderSx,
-      cellSx: listBodyCellOverride,
       renderCell: (repo) => (
         <Typography
           sx={{
@@ -772,7 +750,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       width: '18%',
       align: 'right',
       headerSx: sortableHeaderSx,
-      cellSx: listBodyCellOverride,
       renderCell: (repo) => (
         <Typography
           sx={{
@@ -794,7 +771,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       width: '15%',
       align: 'right',
       headerSx: sortableHeaderSx,
-      cellSx: listBodyCellOverride,
       renderCell: (repo) => (
         <Typography
           sx={{
@@ -812,7 +788,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       width: '15%',
       align: 'right',
       headerSx: sortableHeaderSx,
-      cellSx: listBodyCellOverride,
       renderCell: (repo) => (
         <Typography
           sx={{

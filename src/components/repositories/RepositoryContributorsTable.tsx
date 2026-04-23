@@ -29,36 +29,7 @@ interface ContributorRow {
   isEligible?: boolean;
 }
 
-const cellFontSx = {
-  fontFamily:
-    '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
-  fontSize: '12px',
-  color: 'text.primary',
-  py: 1,
-  borderColor: 'rgba(255, 255, 255, 0.05)',
-};
-
-const headerCellSx = {
-  fontFamily:
-    '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
-  fontSize: '11px',
-  color: 'text.secondary',
-  textTransform: 'uppercase' as const,
-  letterSpacing: 0,
-  backgroundColor: 'transparent',
-  backdropFilter: 'none',
-  py: 1,
-};
-
-const numericCellSx = {
-  ...cellFontSx,
-  fontVariantNumeric: 'tabular-nums',
-};
-
-const numericHeaderSx = {
-  ...headerCellSx,
-  fontVariantNumeric: 'tabular-nums',
-};
+const numericCellSx = { fontVariantNumeric: 'tabular-nums' as const };
 
 const RepositoryContributorsTable: React.FC<
   RepositoryContributorsTableProps
@@ -143,9 +114,7 @@ const RepositoryContributorsTable: React.FC<
         key: 'rank',
         header: '#',
         width: '32px',
-        headerSx: headerCellSx,
         cellSx: (c) => ({
-          ...cellFontSx,
           color: c.rank <= 3 ? 'text.primary' : STATUS_COLORS.open,
           fontWeight: c.rank <= 3 ? 600 : 400,
         }),
@@ -154,8 +123,7 @@ const RepositoryContributorsTable: React.FC<
       {
         key: 'miner',
         header: 'Miner',
-        headerSx: headerCellSx,
-        cellSx: { ...cellFontSx, minWidth: 0 },
+        cellSx: { minWidth: 0 },
         renderCell: (c) => (
           <LinkBox
             href={`/miners/details?githubId=${c.githubId}`}
@@ -196,8 +164,6 @@ const RepositoryContributorsTable: React.FC<
                   fontSize: '13px',
                   fontWeight: 500,
                   color: 'text.primary',
-                  fontFamily:
-                    '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -228,7 +194,7 @@ const RepositoryContributorsTable: React.FC<
         header: 'PRs',
         width: '3rem',
         align: 'right',
-        headerSx: numericHeaderSx,
+        headerSx: numericCellSx,
         cellSx: numericCellSx,
         renderCell: (c) => c.prs,
       },
@@ -237,7 +203,7 @@ const RepositoryContributorsTable: React.FC<
         header: 'Score',
         width: '4.5rem',
         align: 'right',
-        headerSx: numericHeaderSx,
+        headerSx: numericCellSx,
         cellSx: numericCellSx,
         renderCell: (c) => c.score.toFixed(2),
       },
