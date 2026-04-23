@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { Outlet, useLocation } from 'react-router-dom';
 import MenuIcon from '@mui/icons-material/Menu';
+import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import { LoadingPage } from '../../pages';
 import useOnNavigate from '../../hooks/useOnNavigate';
 import { Sidebar } from '..';
@@ -21,24 +22,7 @@ import { getRouteForPathname } from '../../routes';
 
 const SIDEBAR_OPEN_STORAGE_KEY = 'gittensor.sidebar.open';
 const SIDEBAR_WIDTH = 240;
-
-const PanelLeftIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    <rect width="18" height="18" x="3" y="3" rx="2" />
-    <path d="M9 3v18" />
-  </svg>
-);
+const SIDEBAR_COLLAPSED_WIDTH = 72;
 
 const readStoredSidebarOpen = (): boolean => {
   try {
@@ -153,125 +137,71 @@ const AppLayout: React.FC = () => {
         </Drawer>
       )}
 
-      {/* Desktop Sidebar - Hidden on mobile, visible on larger screens.
-          Slides to 0 width when collapsed; a chevron button on its right
-          edge toggles the state (persisted to localStorage). */}
+      {/* Desktop Sidebar — narrows to icon rail when collapsed (persisted). */}
       {!isMobile && (
         <Box
           sx={{
             flexShrink: 0,
-            width: sidebarOpen ? `${SIDEBAR_WIDTH}px` : 0,
-            minWidth: sidebarOpen ? `${SIDEBAR_WIDTH}px` : 0,
-            borderRight: sidebarOpen
-              ? `1px solid ${theme.palette.border.light}`
-              : 'none',
+            width: sidebarOpen
+              ? `${SIDEBAR_WIDTH}px`
+              : `${SIDEBAR_COLLAPSED_WIDTH}px`,
+            minWidth: sidebarOpen
+              ? `${SIDEBAR_WIDTH}px`
+              : `${SIDEBAR_COLLAPSED_WIDTH}px`,
+            borderRight: `1px solid ${theme.palette.border.light}`,
             overflow: 'hidden',
             transition: 'width 0.2s ease, min-width 0.2s ease',
           }}
         >
-          <Sidebar />
+          <Sidebar collapsed={!sidebarOpen} />
         </Box>
       )}
 
-      {/* Sidebar open/close toggle (desktop only).
-          - Open: a plain panel-left IconButton tucked into the sidebar's
-            top-right corner.
-          - Closed: shows the Gittensor logo at the top-left; on hover the
-            logo swaps to the panel-left icon so the user sees what clicking
-            does (ChatGPT-style affordance). */}
+      {/* Desktop collapse (top-right of expanded sidebar) / expand (top of collapsed rail) */}
       {!isMobile && sidebarOpen && (
         <Tooltip title="Collapse sidebar" placement="right" arrow>
           <IconButton
-            size="small"
+            size="medium"
             onClick={handleSidebarToggle}
             aria-label="Collapse sidebar"
             aria-expanded
             sx={{
               position: 'fixed',
               top: 12,
-              left: SIDEBAR_WIDTH - 36,
+              left: SIDEBAR_WIDTH - 48,
               zIndex: 1300,
               cursor: 'pointer',
               color: theme.palette.text.secondary,
               '&:hover': { color: theme.palette.text.primary },
+              '& .MuiSvgIcon-root': { fontSize: '1.2rem' },
             }}
           >
-            <PanelLeftIcon size={18} />
+            <MenuOpenIcon />
           </IconButton>
         </Tooltip>
       )}
       {!isMobile && !sidebarOpen && (
         <Tooltip title="Expand sidebar" placement="right" arrow>
-          <Box
-            component="button"
-            type="button"
+          <IconButton
+            size="medium"
             onClick={handleSidebarToggle}
             aria-label="Expand sidebar"
             aria-expanded={false}
             sx={{
               position: 'fixed',
               top: 12,
-              left: 12,
+              /* Horizontally center in the collapsed rail (same axis as nav icons) */
+              left: SIDEBAR_COLLAPSED_WIDTH / 2,
+              transform: 'translateX(-50%)',
               zIndex: 1300,
-              width: 32,
-              height: 32,
-              p: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               cursor: 'pointer',
-              backgroundColor: 'transparent',
-              border: 'none',
-              borderRadius: 1,
               color: theme.palette.text.secondary,
-              transition: 'background-color 0.15s ease, color 0.15s ease',
-              '& .sidebar-toggle-logo': { display: 'flex' },
-              '& .sidebar-toggle-chevron': { display: 'none' },
-              '&:hover': {
-                cursor: 'pointer',
-                backgroundColor: alpha(theme.palette.text.primary, 0.08),
-                color: theme.palette.text.primary,
-                '& .sidebar-toggle-logo': { display: 'none' },
-                '& .sidebar-toggle-chevron': { display: 'flex' },
-              },
-              '&:focus-visible': {
-                outline: `2px solid ${theme.palette.primary.main}`,
-                outlineOffset: 2,
-              },
+              '&:hover': { color: theme.palette.text.primary },
+              '& .MuiSvgIcon-root': { fontSize: '1.2rem' },
             }}
           >
-            <Box
-              className="sidebar-toggle-logo"
-              sx={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '100%',
-                height: '100%',
-              }}
-            >
-              <img
-                src="/gt-logo.svg"
-                alt=""
-                aria-hidden="true"
-                style={{
-                  width: '70%',
-                  height: '70%',
-                  filter: `brightness(0) invert(1) drop-shadow(0 0 4px ${alpha(theme.palette.common.white, 0.6)})`,
-                }}
-              />
-            </Box>
-            <Box
-              className="sidebar-toggle-chevron"
-              sx={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '100%',
-                height: '100%',
-              }}
-            >
-              <PanelLeftIcon size={18} />
-            </Box>
-          </Box>
+            <MenuIcon />
+          </IconButton>
         </Tooltip>
       )}
 
