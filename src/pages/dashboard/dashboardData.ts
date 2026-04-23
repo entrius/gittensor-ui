@@ -30,14 +30,16 @@ export interface DashboardOverviewMetric {
   delta: string;
 }
 
+export interface DashboardOverviewPool {
+  metrics: DashboardOverviewMetric[];
+  chartSegments: Array<{ label: string; value: number }>;
+  chartCenterLabel: string;
+}
+
 export interface DashboardOverviewSection {
   title: string;
-  metrics: DashboardOverviewMetric[];
-  chartSegments: Array<{
-    label: string;
-    value: number;
-  }>;
-  chartCenterLabel: string;
+  eligible: DashboardOverviewPool;
+  ineligible: DashboardOverviewPool;
 }
 
 export interface DashboardKpi {
@@ -357,95 +359,120 @@ export const buildDashboardOverview = (
   const currentWindow = getWindowBounds(range, now);
   const previousWindow = getPreviousWindowBounds(range, now);
 
-  const currentPrMetrics = getPrOverviewMetrics(prs, currentWindow);
-  const previousPrMetrics = previousWindow
-    ? getPrOverviewMetrics(prs, previousWindow)
+  const eligibleIds = new Set(
+    miners.filter((m) => m.isEligible).map((m) => m.githubId),
+  );
+  const eligiblePrs = prs.filter(
+    (pr) => pr.githubId && eligibleIds.has(pr.githubId),
+  );
+  const ineligiblePrs = prs.filter(
+    (pr) => !pr.githubId || !eligibleIds.has(pr.githubId),
+  );
+
+  const eligibleMiners = miners.filter((m) => m.isIssueEligible);
+  const ineligibleMiners = miners.filter((m) => !m.isIssueEligible);
+
+  const currentEligiblePrMetrics = getPrOverviewMetrics(
+    eligiblePrs,
+    currentWindow,
+  );
+  const previousEligiblePrMetrics = previousWindow
+    ? getPrOverviewMetrics(eligiblePrs, previousWindow)
     : null;
-  const currentIssueMetrics = getIssueOverviewMetricsFromMiners(miners);
+
+  const currentIneligiblePrMetrics = getPrOverviewMetrics(
+    ineligiblePrs,
+    currentWindow,
+  );
+  const previousIneligiblePrMetrics = previousWindow
+    ? getPrOverviewMetrics(ineligiblePrs, previousWindow)
+    : null;
+
+  const eligibleIssueMetrics =
+    getIssueOverviewMetricsFromMiners(eligibleMiners);
+  const ineligibleIssueMetrics =
+    getIssueOverviewMetricsFromMiners(ineligibleMiners);
+
   const getMetricDelta = (currentValue: number, previousValue?: number) =>
     range === 'all' || previousValue === undefined
       ? '0%'
       : formatDelta(currentValue, previousValue);
 
+  const buildPrPool = (
+    current: ReturnType<typeof getPrOverviewMetrics>,
+    previous: ReturnType<typeof getPrOverviewMetrics> | null,
+  ): DashboardOverviewPool => ({
+    chartSegments: [
+      { label: 'Merged', value: current.merged },
+      { label: 'Open', value: current.open },
+      { label: 'Closed', value: current.closed },
+    ],
+    chartCenterLabel: formatCenterPercent(
+      current.merged,
+      current.merged + current.closed,
+    ),
+    metrics: [
+      {
+        label: 'Total',
+        value: current.total,
+        delta: getMetricDelta(current.total, previous?.total),
+      },
+      {
+        label: 'Merged',
+        value: current.merged,
+        delta: getMetricDelta(current.merged, previous?.merged),
+      },
+      {
+        label: 'Open',
+        value: current.open,
+        delta: getMetricDelta(current.open, previous?.open),
+      },
+      {
+        label: 'Closed',
+        value: current.closed,
+        delta: getMetricDelta(current.closed, previous?.closed),
+      },
+    ],
+  });
+
+  const buildIssuePool = (
+    issueMetrics: ReturnType<typeof getIssueOverviewMetricsFromMiners>,
+  ): DashboardOverviewPool => ({
+    chartSegments: [
+      { label: 'Solved', value: issueMetrics.solved },
+      { label: 'Open', value: issueMetrics.open },
+      { label: 'Closed', value: issueMetrics.closed },
+    ],
+    chartCenterLabel: formatCenterPercent(
+      issueMetrics.solved,
+      issueMetrics.solved + issueMetrics.closed,
+    ),
+    // Issue metrics come from per-miner aggregates (all-time totals), so
+    // there is no previous-window comparison available — deltas are '0%'.
+    metrics: [
+      { label: 'Total', value: issueMetrics.total, delta: '0%' },
+      { label: 'Solved', value: issueMetrics.solved, delta: '0%' },
+      { label: 'Open', value: issueMetrics.open, delta: '0%' },
+      { label: 'Closed', value: issueMetrics.closed, delta: '0%' },
+    ],
+  });
+
   return [
     {
       title: 'OSS Contributions',
-      chartSegments: [
-        { label: 'Merged', value: currentPrMetrics.merged },
-        { label: 'Open', value: currentPrMetrics.open },
-        { label: 'Closed', value: currentPrMetrics.closed },
-      ],
-      chartCenterLabel: formatCenterPercent(
-        currentPrMetrics.merged,
-        currentPrMetrics.merged + currentPrMetrics.closed,
+      eligible: buildPrPool(
+        currentEligiblePrMetrics,
+        previousEligiblePrMetrics,
       ),
-      metrics: [
-        {
-          label: 'Total',
-          value: currentPrMetrics.total,
-          delta: getMetricDelta(
-            currentPrMetrics.total,
-            previousPrMetrics?.total,
-          ),
-        },
-        {
-          label: 'Merged',
-          value: currentPrMetrics.merged,
-          delta: getMetricDelta(
-            currentPrMetrics.merged,
-            previousPrMetrics?.merged,
-          ),
-        },
-        {
-          label: 'Open',
-          value: currentPrMetrics.open,
-          delta: getMetricDelta(currentPrMetrics.open, previousPrMetrics?.open),
-        },
-        {
-          label: 'Closed',
-          value: currentPrMetrics.closed,
-          delta: getMetricDelta(
-            currentPrMetrics.closed,
-            previousPrMetrics?.closed,
-          ),
-        },
-      ],
+      ineligible: buildPrPool(
+        currentIneligiblePrMetrics,
+        previousIneligiblePrMetrics,
+      ),
     },
     {
       title: 'Issue Discoveries',
-      chartSegments: [
-        { label: 'Solved', value: currentIssueMetrics.solved },
-        { label: 'Open', value: currentIssueMetrics.open },
-        { label: 'Closed', value: currentIssueMetrics.closed },
-      ],
-      chartCenterLabel: formatCenterPercent(
-        currentIssueMetrics.solved,
-        currentIssueMetrics.solved + currentIssueMetrics.closed,
-      ),
-      // Issue metrics come from per-miner aggregates (all-time totals), so
-      // there is no previous-window comparison available — deltas are '0%'.
-      metrics: [
-        {
-          label: 'Total',
-          value: currentIssueMetrics.total,
-          delta: '0%',
-        },
-        {
-          label: 'Solved',
-          value: currentIssueMetrics.solved,
-          delta: '0%',
-        },
-        {
-          label: 'Open',
-          value: currentIssueMetrics.open,
-          delta: '0%',
-        },
-        {
-          label: 'Closed',
-          value: currentIssueMetrics.closed,
-          delta: '0%',
-        },
-      ],
+      eligible: buildIssuePool(eligibleIssueMetrics),
+      ineligible: buildIssuePool(ineligibleIssueMetrics),
     },
   ];
 };
@@ -679,6 +706,134 @@ export const buildFeaturedContributors = (
   if (topOssMiner) contributors.push(topOssMiner);
   if (mostMergedPrMiner) contributors.push(mostMergedPrMiner);
   if (highestScoringMergedAuthor) contributors.push(highestScoringMergedAuthor);
+
+  return contributors;
+};
+
+const pickTopDiscoveryMiner = (
+  prs: CommitLog[],
+  miners: MinerEvaluation[],
+): DashboardFeaturedContributor | undefined => {
+  const top = [...miners]
+    .filter((m) => m.isIssueEligible && parseNumber(m.issueDiscoveryScore) > 0)
+    .sort((a, b) => {
+      const diff =
+        parseNumber(b.issueDiscoveryScore) - parseNumber(a.issueDiscoveryScore);
+      return diff !== 0 ? diff : a.id - b.id;
+    })[0];
+
+  if (!top) return undefined;
+
+  return {
+    featuredLabel: 'Top Discovery Miner',
+    githubId: top.githubId,
+    githubUsername: top.githubUsername,
+    name: top.githubUsername ?? top.githubId,
+    metrics: [
+      {
+        value: Math.round(
+          parseNumber(top.issueDiscoveryScore),
+        ).toLocaleString(),
+        unit: 'Score',
+      },
+      ...(parseNumber(top.issueCredibility) > 0
+        ? [
+            {
+              value: `${Math.round(parseNumber(top.issueCredibility) * 100)}%`,
+              unit: 'Cred.',
+            },
+          ]
+        : []),
+    ],
+    repos: getTopContributorRepos(prs, top.githubId),
+  };
+};
+
+const pickMostSolvedIssuesMiner = (
+  prs: CommitLog[],
+  miners: MinerEvaluation[],
+): DashboardFeaturedContributor | undefined => {
+  const top = [...miners]
+    .filter((m) => m.isIssueEligible && (m.totalValidSolvedIssues ?? 0) > 0)
+    .sort((a, b) => {
+      const diff =
+        (b.totalValidSolvedIssues ?? 0) - (a.totalValidSolvedIssues ?? 0);
+      if (diff !== 0) return diff;
+      return (
+        parseNumber(b.issueDiscoveryScore) - parseNumber(a.issueDiscoveryScore)
+      );
+    })[0];
+
+  if (!top) return undefined;
+
+  return {
+    featuredLabel: 'Most Solved Issues',
+    githubId: top.githubId,
+    githubUsername: top.githubUsername,
+    name: top.githubUsername ?? top.githubId,
+    metrics: [
+      {
+        value: `${top.totalValidSolvedIssues ?? 0}`,
+        unit: 'Solved',
+      },
+      ...(parseNumber(top.issueCredibility) > 0
+        ? [
+            {
+              value: `${Math.round(parseNumber(top.issueCredibility) * 100)}%`,
+              unit: 'Cred.',
+            },
+          ]
+        : []),
+    ],
+    repos: getTopContributorRepos(prs, top.githubId),
+  };
+};
+
+const pickHighestIssueTokenScoreMiner = (
+  prs: CommitLog[],
+  miners: MinerEvaluation[],
+): DashboardFeaturedContributor | undefined => {
+  const top = [...miners]
+    .filter((m) => m.isIssueEligible && parseNumber(m.issueTokenScore) > 0)
+    .sort((a, b) => {
+      const diff =
+        parseNumber(b.issueTokenScore) - parseNumber(a.issueTokenScore);
+      return diff !== 0 ? diff : a.id - b.id;
+    })[0];
+
+  if (!top) return undefined;
+
+  return {
+    featuredLabel: 'Highest-Scoring Issue Author',
+    githubId: top.githubId,
+    githubUsername: top.githubUsername,
+    name: top.githubUsername ?? top.githubId,
+    metrics: [
+      {
+        value: Math.round(parseNumber(top.issueTokenScore)).toLocaleString(),
+        unit: 'Score',
+      },
+    ],
+    repos: getTopContributorRepos(prs, top.githubId),
+  };
+};
+
+export const buildFeaturedDiscoveryContributors = (
+  prs: CommitLog[],
+  miners: MinerEvaluation[],
+): DashboardFeaturedContributor[] => {
+  const topDiscoveryMiner = pickTopDiscoveryMiner(prs, miners);
+  const mostSolvedIssuesMiner = pickMostSolvedIssuesMiner(prs, miners);
+  const highestIssueTokenScoreMiner = pickHighestIssueTokenScoreMiner(
+    prs,
+    miners,
+  );
+  const contributors: DashboardFeaturedContributor[] = [];
+
+  if (topDiscoveryMiner) contributors.push(topDiscoveryMiner);
+  if (mostSolvedIssuesMiner) contributors.push(mostSolvedIssuesMiner);
+  if (highestIssueTokenScoreMiner)
+    contributors.push(highestIssueTokenScoreMiner);
 
   return contributors;
 };

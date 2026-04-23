@@ -115,6 +115,12 @@ const TrustBadge: React.FC<TrustBadgeProps> = ({ credibility, totalPRs }) => {
         color: assessment.color,
         borderColor: assessment.color,
         border: assessment.border,
+        maxWidth: '100%',
+        '& .MuiChip-label': {
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        },
         '& .MuiChip-icon': { color: assessment.color },
       }}
     />
