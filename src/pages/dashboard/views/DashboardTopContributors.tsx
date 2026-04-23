@@ -39,7 +39,7 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
   const monoFontFamily = theme.typography.fontFamily;
 
   const openContributor = (githubId: string) => {
-    const modeParam = mode === 'issues' ? '&mode=issues' : '';
+    const modeParam = mode !== 'prs' ? `&mode=${mode}` : '';
     navigate(`/miners/details?githubId=${encodeURIComponent(githubId)}${modeParam}`, {
       state: { backTo: '/dashboard' },
     });
