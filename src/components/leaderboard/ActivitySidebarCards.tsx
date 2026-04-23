@@ -5,14 +5,18 @@ import { SectionCard } from './SectionCard';
 import { STATUS_COLORS, DIFF_COLORS, CREDIBILITY_COLORS } from '../../theme';
 import { credibilityColor } from '../../utils/format';
 import { type MinerStats, FONTS } from './types';
+import { useEligibilityFilteredMiners } from './useEligibilityFilteredMiners';
 
 interface ActivitySidebarCardsProps {
   miners: MinerStats[];
 }
 
 export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
-  miners,
+  miners: minersProp,
 }) => {
+  // Respect the main table's eligibility filter so activity cards match what
+  // the user sees in the leaderboard.
+  const miners = useEligibilityFilteredMiners(minersProp);
   const ossUsdPerDay = useMemo(
     () =>
       miners

@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Box, Stack, Typography, Avatar } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { useSearchParams } from 'react-router-dom';
 import { SectionCard } from './SectionCard';
+import { useEligibilityFilteredMiners } from './useEligibilityFilteredMiners';
 import { STATUS_COLORS, scrollbarSx } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { LinkBox } from '../common/linkBehavior';
@@ -30,17 +30,9 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
     'earners',
   );
 
-  // Respect the main table's eligibility filter (?eligible=true|false) so
-  // sidebar stats/lists match what the user sees in the leaderboard.
-  const [searchParams] = useSearchParams();
-  const eligibilityFilter = searchParams.get('eligible');
-  const filteredMiners = useMemo(() => {
-    if (eligibilityFilter !== 'true' && eligibilityFilter !== 'false') {
-      return miners;
-    }
-    const wantEligible = eligibilityFilter === 'true';
-    return miners.filter((m) => !!m.isEligible === wantEligible);
-  }, [miners, eligibilityFilter]);
+  // Respect the main table's eligibility filter so sidebar stats/lists match
+  // what the user sees in the leaderboard.
+  const filteredMiners = useEligibilityFilteredMiners(miners);
 
   const topEarners = useMemo(
     () =>
