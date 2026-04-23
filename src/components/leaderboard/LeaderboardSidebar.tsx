@@ -35,10 +35,11 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
   const [searchParams] = useSearchParams();
   const eligibilityFilter = searchParams.get('eligible');
   const filteredMiners = useMemo(() => {
-    if (eligibilityFilter === 'true') return miners.filter((m) => m.isEligible);
-    if (eligibilityFilter === 'false')
-      return miners.filter((m) => !m.isEligible);
-    return miners;
+    if (eligibilityFilter !== 'true' && eligibilityFilter !== 'false') {
+      return miners;
+    }
+    const wantEligible = eligibilityFilter === 'true';
+    return miners.filter((m) => !!m.isEligible === wantEligible);
   }, [miners, eligibilityFilter]);
 
   const topEarners = useMemo(
