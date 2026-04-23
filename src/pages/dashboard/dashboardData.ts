@@ -6,7 +6,8 @@
  *
  * Most dashboard sections are driven by the caller-provided time range.
  * Featured work uses the selected range, except "all" which falls back
- * to a fixed 35-day lookback window for dashboard relevance.
+ * to a fixed 35-day lookback window for dashboard relevance. It highlights
+ * standout merged PRs and completed bounty issues (not open or in-flight work).
  */
 import { type CommitLog, type MinerEvaluation } from '../../api';
 import { type IssueBounty } from '../../api/models/Issues';
@@ -66,6 +67,9 @@ export interface DashboardFeaturedPr {
   author: string;
   score: number;
   mergedAt: string | null;
+  /** additions + deletions — used to rank and display impact */
+  linesChanged: number;
+  commitCount: number;
 }
 
 export interface DashboardFeaturedIssue {
@@ -73,10 +77,10 @@ export interface DashboardFeaturedIssue {
   repositoryFullName: string;
   issueNumber: number;
   title: string;
-  status: IssueBounty['status'];
   targetBounty: number;
   bountyAmount: number;
-  createdAt: string;
+  /** When the bounty was completed (fallback: closedAt) */
+  completedAt: string | null;
 }
 
 export interface DashboardFeaturedWork {
@@ -721,16 +725,26 @@ export const buildFeaturedWork = (
   now = new Date(),
 ): DashboardFeaturedWork => {
   const window = getFeaturedWorkWindow(range, now);
+  const linesChanged = (pr: CommitLog) =>
+    parseNumber(pr.additions) + parseNumber(pr.deletions);
+
   const topPrs = [...prs]
     .filter(
       (pr) =>
         !!pr.repository &&
         !!pr.pullRequestTitle &&
+        getPrStatusLabel(pr) === 'Merged' &&
         isWithinWindow(toTimestamp(pr.mergedAt), window),
     )
     .sort((a, b) => {
       const scoreDiff = parseNumber(b.score) - parseNumber(a.score);
       if (scoreDiff !== 0) return scoreDiff;
+
+      const linesDiff = linesChanged(b) - linesChanged(a);
+      if (linesDiff !== 0) return linesDiff;
+
+      const commitsDiff = parseNumber(b.commitCount) - parseNumber(a.commitCount);
+      if (commitsDiff !== 0) return commitsDiff;
 
       const mergedAtDiff =
         (toTimestamp(b.mergedAt) ?? 0) - (toTimestamp(a.mergedAt) ?? 0);
@@ -746,13 +760,19 @@ export const buildFeaturedWork = (
       author: pr.author || 'unknown',
       score: parseNumber(pr.score),
       mergedAt: pr.mergedAt,
+      linesChanged: linesChanged(pr),
+      commitCount: parseNumber(pr.commitCount),
     }));
+
+  const issueCompletedTimestamp = (issue: IssueBounty) =>
+    toTimestamp(issue.completedAt) ?? toTimestamp(issue.closedAt);
 
   const topIssues = [...issues]
     .filter(
       (issue) =>
+        issue.status === 'completed' &&
         !!issue.repositoryFullName &&
-        isWithinWindow(toTimestamp(issue.createdAt), window),
+        isWithinWindow(issueCompletedTimestamp(issue), window),
     )
     .sort((a, b) => {
       const targetDiff =
@@ -763,9 +783,9 @@ export const buildFeaturedWork = (
         parseNumber(b.bountyAmount) - parseNumber(a.bountyAmount);
       if (bountyDiff !== 0) return bountyDiff;
 
-      const createdAtDiff =
-        (toTimestamp(b.createdAt) ?? 0) - (toTimestamp(a.createdAt) ?? 0);
-      if (createdAtDiff !== 0) return createdAtDiff;
+      const completedDiff =
+        (issueCompletedTimestamp(b) ?? 0) - (issueCompletedTimestamp(a) ?? 0);
+      if (completedDiff !== 0) return completedDiff;
 
       return b.id - a.id;
     })
@@ -775,10 +795,9 @@ export const buildFeaturedWork = (
       repositoryFullName: issue.repositoryFullName,
       issueNumber: issue.issueNumber,
       title: issue.title ?? `Issue #${issue.issueNumber}`,
-      status: issue.status,
       targetBounty: parseNumber(issue.targetBounty),
       bountyAmount: parseNumber(issue.bountyAmount),
-      createdAt: issue.createdAt,
+      completedAt: issue.completedAt ?? issue.closedAt,
     }));
 
   return { prs: topPrs, issues: topIssues };

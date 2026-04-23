@@ -40,13 +40,6 @@ const formatBounty = (value: number) => {
   return `${formatted} TAO`;
 };
 
-const statusLabelMap = {
-  registered: 'Registered',
-  active: 'Active',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-} as const;
-
 const getRepoName = (fullName: string) => fullName.split('/').pop() || fullName;
 const getInitials = (name: string) =>
   name
@@ -91,6 +84,18 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
         >
           Featured Work
         </Typography>
+        <Typography
+          sx={{
+            mt: 0.35,
+            color: alpha(theme.palette.text.primary, 0.62),
+            fontFamily: monoFontFamily,
+            fontSize: { xs: '0.72rem', sm: '0.74rem' },
+            fontWeight: 500,
+            lineHeight: 1.35,
+          }}
+        >
+          Standout merged PRs and completed bounty issues in this period.
+        </Typography>
       </Box>
 
       {isLoading ? (
@@ -112,8 +117,8 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
             fontSize: '0.8rem',
           }}
         >
-          No featured work or contributor highlights available for the selected
-          window.
+          No standout merged PRs, completed issues, or contributor highlights for
+          the selected window.
         </Typography>
       ) : (
         <Box
@@ -143,7 +148,7 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
                 fontWeight: 700,
               }}
             >
-              Top Pull Requests
+              Standout merged PRs
             </Typography>
             {featuredWork.prs.length === 0 ? (
               <Typography
@@ -153,7 +158,7 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
                   fontSize: '0.75rem',
                 }}
               >
-                No PR highlights in this window.
+                No merged PR highlights in this window.
               </Typography>
             ) : (
               featuredWork.prs.map((pr, index) => (
@@ -236,7 +241,9 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
                           ml: 0.75,
                         }}
                       >
-                        by @{pr.author} on {formatShortDate(pr.mergedAt)}
+                        {pr.commitCount.toLocaleString()} commits ·{' '}
+                        {pr.linesChanged.toLocaleString()} lines · @{pr.author}{' '}
+                        · merged {formatShortDate(pr.mergedAt)}
                       </Box>
                     </Typography>
                   </Stack>
@@ -261,7 +268,7 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
                 fontWeight: 700,
               }}
             >
-              Top Issues
+              Completed issues
             </Typography>
             {featuredWork.issues.length === 0 ? (
               <Typography
@@ -271,7 +278,7 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
                   fontSize: '0.75rem',
                 }}
               >
-                No issue highlights in this window.
+                No completed bounty issues in this window.
               </Typography>
             ) : (
               featuredWork.issues.map((issue, index) => (
@@ -349,8 +356,8 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
                           ml: 0.75,
                         }}
                       >
-                        {statusLabelMap[issue.status]} on{' '}
-                        {formatShortDate(issue.createdAt)}
+                        Bounty {formatBounty(issue.bountyAmount)} · completed{' '}
+                        {formatShortDate(issue.completedAt)}
                       </Box>
                     </Typography>
                   </Stack>
