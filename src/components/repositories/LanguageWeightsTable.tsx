@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import {
   Box,
   Table,
@@ -33,37 +32,17 @@ import { useLanguagesAndWeights } from '../../api';
 
 type SortField = 'extension' | 'weight' | 'language';
 type SortOrder = 'asc' | 'desc';
-const VIEW_STORAGE_KEY = 'languages_view';
 
 const LanguageWeightsTable: React.FC = () => {
   const theme = useTheme();
   const { data: languages, isLoading } = useLanguagesAndWeights();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('weight');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [showChart, setShowChart] = useState(() => {
-    const view = searchParams.get('view');
-    if (view === 'chart' || view === 'table') return view === 'chart';
-    return window.localStorage.getItem(VIEW_STORAGE_KEY) === 'chart';
-  });
+  const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const handleToggleChart = () => {
-    const next = !showChart;
-    setShowChart(next);
-    window.localStorage.setItem(VIEW_STORAGE_KEY, next ? 'chart' : 'table');
-    setSearchParams(
-      (p) => {
-        const u = new URLSearchParams(p);
-        u.set('view', next ? 'chart' : 'table');
-        return u;
-      },
-      { replace: true },
-    );
-  };
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -265,7 +244,7 @@ const LanguageWeightsTable: React.FC = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
             <IconButton
-              onClick={handleToggleChart}
+              onClick={() => setShowChart(!showChart)}
               size="small"
               sx={{
                 color: showChart
