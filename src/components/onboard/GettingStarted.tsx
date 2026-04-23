@@ -1,17 +1,9 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Typography,
-  Stack,
-  Button,
-  Tabs,
-  Tab,
-  Tooltip,
-} from '@mui/material';
+import { Box, Typography, Button, Tabs, Tab, Tooltip } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
-import { alpha } from '@mui/material/styles';
+import { alpha, darken } from '@mui/material/styles';
 import { scrollbarSx, tooltipSlotProps } from '../../theme';
 
 const MONO = '"JetBrains Mono", monospace';
@@ -443,8 +435,8 @@ export const GettingStarted: React.FC = () => {
           sx={{
             position: 'absolute',
             top: 24,
-            left: '3%',
-            right: '3%',
+            left: { xs: 0, md: 'calc(100% / 14)' },
+            width: { xs: '100%', md: 'calc(100% * 6 / 7)' },
             height: 2,
             background: (theme) =>
               `linear-gradient(90deg, ${theme.palette.border.subtle} 0%, ${theme.palette.border.medium} 50%, ${theme.palette.border.subtle} 100%)`,
@@ -453,12 +445,16 @@ export const GettingStarted: React.FC = () => {
           }}
         />
 
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          spacing={{ xs: 2, md: 0 }}
-          justifyContent="space-between"
-          alignItems={{ xs: 'flex-start', md: 'flex-start' }}
-          sx={{ position: 'relative', zIndex: 1 }}
+        <Box
+          sx={{
+            display: { xs: 'flex', md: 'grid' },
+            flexDirection: { xs: 'column' },
+            gap: { xs: 2, md: 0 },
+            gridTemplateColumns: { md: 'repeat(7, minmax(0, 1fr))' },
+            alignItems: { xs: 'flex-start', md: 'flex-start' },
+            position: 'relative',
+            zIndex: 1,
+          }}
         >
           {steps.map((item, index) => (
             <Box
@@ -469,7 +465,8 @@ export const GettingStarted: React.FC = () => {
                 flexDirection: { xs: 'row', md: 'column' },
                 alignItems: 'center',
                 gap: { xs: 1.5, md: 1 },
-                width: { xs: '100%', md: 'auto' },
+                width: { xs: '100%', md: '100%' },
+                minWidth: 0,
                 cursor: 'pointer',
                 '&:hover .step-circle': {
                   borderColor: 'border.medium',
@@ -485,8 +482,8 @@ export const GettingStarted: React.FC = () => {
                   bgcolor: (theme) =>
                     activeStep === index
                       ? index === steps.length - 1
-                        ? alpha(theme.palette.secondary.main, 0.15)
-                        : alpha(theme.palette.primary.main, 0.15)
+                        ? darken(theme.palette.secondary.main, 0.85)
+                        : darken(theme.palette.primary.main, 0.85)
                       : theme.palette.background.default,
                   border: '2px solid',
                   borderColor: item.active
@@ -550,7 +547,7 @@ export const GettingStarted: React.FC = () => {
               </Box>
             </Box>
           ))}
-        </Stack>
+        </Box>
       </Box>
 
       <Box

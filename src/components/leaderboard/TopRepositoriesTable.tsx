@@ -433,16 +433,20 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           const data = params[0];
           const item = seriesData[data.dataIndex];
 
+          const statRow = (label: string, value: string) => `
+                <span style="color: ${tooltipLabelColor}; min-width: 0;">${label}</span>
+                <span style="color: ${primaryColor}; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap;">${value}</span>`;
+
           return `
-            <div style="font-family: 'JetBrains Mono', monospace;">
-              <div style="font-weight: 600; margin-bottom: 8px; font-size: 13px;">
+            <div style="font-family: 'JetBrains Mono', monospace; display: grid; grid-template-columns: minmax(0, max-content); width: max-content; max-width: min(420px, 92vw); box-sizing: border-box;">
+              <div style="font-weight: 600; margin-bottom: 8px; font-size: 13px; line-height: 1.35;">
                 #${item.rank} ${item.repository}
               </div>
-              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid ${tooltipBorderColor};">
-                <div style="color: ${tooltipLabelColor}; margin-bottom: 4px;">Total Score: <span style="color: ${primaryColor}; font-weight: 600;">${item.value.toFixed(2)}</span></div>
-                <div style="color: ${tooltipLabelColor}; margin-bottom: 4px;">Weight: <span style="color: ${primaryColor}; font-weight: 600;">${item.weight.toFixed(2)}</span></div>
-                <div style="color: ${tooltipLabelColor}; margin-bottom: 4px;">Pull Requests: <span style="color: ${primaryColor}; font-weight: 600;">${item.prs}</span></div>
-                <div style="color: ${tooltipLabelColor};">Contributors: <span style="color: ${primaryColor}; font-weight: 600;">${item.contributors}</span></div>
+              <div style="margin-top: 0; padding-top: 8px; border-top: 1px solid ${tooltipBorderColor}; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; row-gap: 6px; align-items: baseline; min-width: 0;">
+                ${statRow('Total Score:', item.value.toFixed(2))}
+                ${statRow('Weight:', item.weight.toFixed(2))}
+                ${statRow('Pull Requests:', String(item.prs))}
+                ${statRow('Contributors:', String(item.contributors))}
               </div>
             </div>
           `;
@@ -596,7 +600,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const searchFieldBaseSx = {
     '& .MuiOutlinedInput-root': {
       color: 'text.primary',
-      fontFamily: '"JetBrains Mono", monospace',
       backgroundColor: 'background.default',
       fontSize: '0.8rem',
       height: '36px',
@@ -1220,7 +1223,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                         >
                           <Typography
                             sx={{
-                              fontFamily: '"JetBrains Mono", monospace',
                               fontSize: '0.75rem',
                               fontWeight: 600,
                               color: 'text.primary',
@@ -1235,7 +1237,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                         >
                           <Typography
                             sx={{
-                              fontFamily: '"JetBrains Mono", monospace',
                               fontSize: '0.75rem',
                               fontWeight: 600,
                               color:
@@ -1255,7 +1256,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                         >
                           <Typography
                             sx={{
-                              fontFamily: '"JetBrains Mono", monospace',
                               fontSize: '0.75rem',
                               color:
                                 (repo.totalPRs || 0) > 0
@@ -1272,7 +1272,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                         >
                           <Typography
                             sx={{
-                              fontFamily: '"JetBrains Mono", monospace',
                               fontSize: '0.75rem',
                               color:
                                 (repo.uniqueMiners?.size || 0) > 0
@@ -1307,12 +1306,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                               }}
                             >
                               Repository not in tracked list. Open details for{' '}
-                              <Typography
-                                component="span"
-                                sx={{
-                                  fontFamily: '"JetBrains Mono", monospace',
-                                }}
-                              >
+                              <Typography component="span">
                                 {trimmedSearch}
                               </Typography>
                               ?
