@@ -155,19 +155,10 @@ const LanguageWeightsTable: React.FC = () => {
       grid: {
         left: '3%',
         right: '3%',
-        bottom: '18%',
+        bottom: '10%',
         top: '20%',
         containLabel: true,
       },
-      dataZoom: [
-        {
-          type: 'inside',
-          start: 0,
-          end: 100,
-          zoomOnMouseWheel: true,
-          moveOnMouseMove: true,
-        },
-      ],
       xAxis: {
         type: 'category',
         data: xAxisData,
