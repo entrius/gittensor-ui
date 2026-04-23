@@ -15,8 +15,26 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
   miners: minersProp,
 }) => {
   // Respect the main table's eligibility filter so activity cards match what
-  // the user sees in the leaderboard.
+  // the user sees in the leaderboard. The Miners Activity overview card below
+  // is intentionally computed from the unfiltered prop since it shows the full
+  // All/Eligible/Ineligible breakdown regardless of the active filter.
   const miners = useEligibilityFilteredMiners(minersProp);
+
+  const minerActivityStats = useMemo(() => {
+    const all = minersProp.length;
+    const eligiblePr = minersProp.filter((m) => m.ossIsEligible).length;
+    const eligibleIssue = minersProp.filter(
+      (m) => m.discoveriesIsEligible,
+    ).length;
+    return {
+      all,
+      eligiblePr,
+      ineligiblePr: Math.max(0, all - eligiblePr),
+      eligibleIssue,
+      ineligibleIssue: Math.max(0, all - eligibleIssue),
+    };
+  }, [minersProp]);
+
   const ossUsdPerDay = useMemo(
     () =>
       miners
@@ -97,7 +115,73 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
 
   return (
     <>
-      {/* CARD 1: PR Activity */}
+      {/* CARD 1: Miners Activity */}
+      <SectionCard title="Miners Activity" sx={{ flexShrink: 0 }}>
+        <Box sx={{ px: 2, pt: 1, pb: 2 }}>
+          <Box
+            sx={(theme) => ({
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr 1fr',
+              gap: 1,
+              alignItems: 'center',
+              pb: 1.5,
+              borderBottom: `1px solid ${theme.palette.border.light}`,
+              mb: 1.5,
+            })}
+          >
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.7rem',
+                color: STATUS_COLORS.open,
+                textTransform: 'uppercase',
+              }}
+            >
+              &nbsp;
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.7rem',
+                color: STATUS_COLORS.open,
+                textTransform: 'uppercase',
+                textAlign: 'center',
+              }}
+            >
+              PR
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.7rem',
+                color: STATUS_COLORS.open,
+                textTransform: 'uppercase',
+                textAlign: 'center',
+              }}
+            >
+              Issue
+            </Typography>
+          </Box>
+
+          <MinerActivityRow
+            label="All"
+            pr={minerActivityStats.all}
+            issue={minerActivityStats.all}
+          />
+          <MinerActivityRow
+            label="Eligible"
+            pr={minerActivityStats.eligiblePr}
+            issue={minerActivityStats.eligibleIssue}
+          />
+          <MinerActivityRow
+            label="Ineligible"
+            pr={minerActivityStats.ineligiblePr}
+            issue={minerActivityStats.ineligibleIssue}
+          />
+        </Box>
+      </SectionCard>
+
+      {/* CARD 2: PR Activity */}
       <SectionCard title="PR Activity" sx={{ flexShrink: 0 }}>
         <Box sx={{ px: 2, pt: 1, pb: 2 }}>
           <Box
@@ -168,7 +252,7 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
         </Box>
       </SectionCard>
 
-      {/* CARD 2: Issue Activity */}
+      {/* CARD 3: Issue Activity */}
       <SectionCard title="Issue Activity" sx={{ flexShrink: 0 }}>
         <Box sx={{ px: 2, pt: 1, pb: 2 }}>
           <Box
@@ -239,7 +323,7 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
         </Box>
       </SectionCard>
 
-      {/* CARD 3: Code Impact */}
+      {/* CARD 4: Code Impact */}
       <SectionCard title="Code Impact" sx={{ flexShrink: 0 }}>
         <Box
           sx={{
@@ -344,6 +428,62 @@ export const StatRow: React.FC<StatRowProps> = ({
       })}
     >
       {value}
+    </Typography>
+  </Box>
+);
+
+interface MinerActivityRowProps {
+  label: string;
+  pr: number;
+  issue: number;
+}
+
+const MinerActivityRow: React.FC<MinerActivityRowProps> = ({
+  label,
+  pr,
+  issue,
+}) => (
+  <Box
+    sx={(theme) => ({
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr 1fr',
+      gap: 1,
+      alignItems: 'center',
+      py: 1.1,
+      borderBottom: `1px solid ${alpha(theme.palette.text.primary, 0.06)}`,
+      '&:last-of-type': { borderBottom: 'none' },
+    })}
+  >
+    <Typography
+      sx={{
+        fontFamily: FONTS.mono,
+        fontSize: '0.85rem',
+        color: STATUS_COLORS.open,
+      }}
+    >
+      {label}
+    </Typography>
+    <Typography
+      sx={(theme) => ({
+        fontFamily: FONTS.mono,
+        fontWeight: 600,
+        fontSize: '1.1rem',
+        color: theme.palette.text.primary,
+        textAlign: 'center',
+      })}
+    >
+      {pr.toLocaleString()}
+    </Typography>
+    <Typography
+      sx={(theme) => ({
+        fontFamily: FONTS.mono,
+        fontWeight: 600,
+        fontSize: '1.1rem',
+        color: theme.palette.text.primary,
+        textAlign: 'center',
+      })}
+    >
+      {issue.toLocaleString()}
     </Typography>
   </Box>
 );
