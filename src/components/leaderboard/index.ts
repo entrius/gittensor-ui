@@ -1,5 +1,5 @@
 // Components
-export { default as TopMinersTable } from './TopMinersTable';
+export { TopMinersTable } from './TopMinersTable';
 export { default as TopRepositoriesTable } from './TopRepositoriesTable';
 export { LeaderboardSidebar } from './LeaderboardSidebar';
 export { ActivitySidebarCards, StatRow } from './ActivitySidebarCards';

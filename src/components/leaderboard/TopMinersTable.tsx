@@ -157,7 +157,7 @@ const compareMiners = (
   }
 };
 
-const TopMinersTable: React.FC<TopMinersTableProps> = ({
+export const TopMinersTable: React.FC<TopMinersTableProps> = ({
   miners,
   isLoading,
   getMinerHref,
