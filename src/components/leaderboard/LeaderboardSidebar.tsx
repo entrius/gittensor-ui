@@ -5,7 +5,7 @@ import { SectionCard } from './SectionCard';
 import { STATUS_COLORS, scrollbarSx } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { LinkBox } from '../common/linkBehavior';
-import { type MinerStats, FONTS } from './types';
+import { type MinerStats } from './types';
 import { ActivitySidebarCards } from './ActivitySidebarCards';
 
 // Re-export MinerStats for backward compatibility
@@ -225,7 +225,6 @@ const LeaderboardTabs: React.FC<LeaderboardTabsProps> = ({
       >
         <Typography
           sx={{
-            fontFamily: FONTS.mono,
             fontSize: '0.75rem',
             fontWeight: 600,
           }}
@@ -256,7 +255,6 @@ const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({
   >
     <Typography
       sx={{
-        fontFamily: FONTS.mono,
         fontSize: '0.7rem',
         color: STATUS_COLORS.open,
         width: 24,
@@ -267,7 +265,6 @@ const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({
     </Typography>
     <Typography
       sx={{
-        fontFamily: FONTS.mono,
         fontSize: '0.7rem',
         color: STATUS_COLORS.open,
         flex: 1,
@@ -278,7 +275,6 @@ const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({
     </Typography>
     <Typography
       sx={{
-        fontFamily: FONTS.mono,
         fontSize: '0.7rem',
         color: STATUS_COLORS.open,
         textTransform: 'uppercase',
@@ -328,7 +324,6 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
     >
       <Typography
         sx={{
-          fontFamily: FONTS.mono,
           fontSize: '0.85rem',
           color: STATUS_COLORS.open,
           width: 24,
@@ -351,7 +346,6 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
         />
         <Typography
           sx={(theme) => ({
-            fontFamily: FONTS.mono,
             fontSize: '0.85rem',
             color: theme.palette.text.tertiary,
             overflow: 'hidden',
@@ -364,7 +358,6 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
       </Box>
       <Typography
         sx={(theme) => ({
-          fontFamily: FONTS.mono,
           fontSize: '0.95rem',
           color:
             type === 'earners'
