@@ -84,7 +84,7 @@ const DashboardFeaturePage: React.FC = () => {
             />
 
             <DashboardTopContributors
-              title="Featured Discoveries"
+              title="Featured Discoverers"
               contributors={featuredDiscoveryContributors}
               isLoading={isLoading}
             />
