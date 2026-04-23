@@ -215,6 +215,7 @@ export const headerCellStyle = {
   borderColor: 'border.light',
   textTransform: 'uppercase' as const,
   letterSpacing: '0.5px',
+  py: 1.5,
 };
 
 export const bodyCellStyle = {
@@ -223,6 +224,7 @@ export const bodyCellStyle = {
   borderBottom: '1px solid',
   borderColor: 'border.light',
   fontSize: '0.85rem',
+  py: 1.5,
 };
 
 export const tooltipSlotProps = {
@@ -553,6 +555,12 @@ const theme = createTheme({
     MuiButtonBase: {
       defaultProps: {
         disableRipple: true,
+      },
+    },
+    MuiTooltip: {
+      defaultProps: {
+        enterTouchDelay: 0,
+        leaveTouchDelay: 15000,
       },
     },
     MuiAppBar: {
