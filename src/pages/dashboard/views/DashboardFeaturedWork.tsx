@@ -154,8 +154,9 @@ const DashboardFeaturedWorkSection: React.FC<DashboardFeaturedWorkProps> = ({
                     'transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease',
                   '&:hover': {
                     transform: 'translateY(-1px)',
-                    borderColor: alpha(theme.palette.text.primary, 0.24),
-                    boxShadow: `0 8px 24px ${alpha(theme.palette.common.black, 0.28)}`,
+                    borderColor: alpha(theme.palette.status.merged, 0.3),
+                    backgroundColor: theme.palette.surface.subtle,
+                    boxShadow: `0 8px 24px ${alpha(theme.palette.common.black, 0.22)}`,
                   },
                   '&:focus-visible': {
                     outline: `2px solid ${alpha(toneColor, 0.45)}`,
