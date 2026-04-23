@@ -623,6 +623,39 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     />
   );
 
+  // Custom sort header to preserve the original unicode arrow look and
+  // cell-wide hover background (MUI's TableSortLabel differs visually).
+  const renderSortHeader = (column: SortColumn, label: string) => (
+    <Box
+      onClick={() => handleSort(column)}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.5,
+        cursor: 'pointer',
+        userSelect: 'none',
+        width: '100%',
+        height: '100%',
+        justifyContent: 'inherit',
+      }}
+    >
+      {label}
+      {sortColumn === column && (
+        <Typography component="span" sx={{ fontSize: '0.7rem', opacity: 0.7 }}>
+          {sortDirection === 'asc' ? '▲' : '▼'}
+        </Typography>
+      )}
+    </Box>
+  );
+
+  const sortableHeaderSx = {
+    cursor: 'pointer',
+    userSelect: 'none' as const,
+    '&:hover': {
+      backgroundColor: 'surface.light',
+    },
+  };
+
   const listColumns: DataTableColumn<RepoStats, SortColumn>[] = [
     {
       key: 'rank',
@@ -633,9 +666,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'repository',
-      header: 'Repository',
+      header: renderSortHeader('repository', 'Repository'),
       width: '35%',
-      sortKey: 'repository',
+      headerSx: sortableHeaderSx,
       cellSx: { pl: 1.5 },
       renderCell: (repo) => (
         <Box
@@ -687,10 +720,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'weight',
-      header: 'Weight',
+      header: renderSortHeader('weight', 'Weight'),
       width: '12%',
       align: 'right',
-      sortKey: 'weight',
+      headerSx: sortableHeaderSx,
       renderCell: (repo) => (
         <Typography
           sx={{
@@ -705,10 +738,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'totalScore',
-      header: 'Total Score',
+      header: renderSortHeader('totalScore', 'Total Score'),
       width: '18%',
       align: 'right',
-      sortKey: 'totalScore',
+      headerSx: sortableHeaderSx,
       renderCell: (repo) => (
         <Typography
           sx={{
@@ -726,10 +759,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'totalPRs',
-      header: 'PRs',
+      header: renderSortHeader('totalPRs', 'PRs'),
       width: '15%',
       align: 'right',
-      sortKey: 'totalPRs',
+      headerSx: sortableHeaderSx,
       renderCell: (repo) => (
         <Typography
           sx={{
@@ -743,10 +776,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'contributors',
-      header: 'Contributors',
+      header: renderSortHeader('contributors', 'Contributors'),
       width: '15%',
       align: 'right',
-      sortKey: 'contributors',
+      headerSx: sortableHeaderSx,
       renderCell: (repo) => (
         <Typography
           sx={{
@@ -1177,11 +1210,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             })}
             minWidth="1000px"
             stickyHeader
-            sort={{
-              field: sortColumn,
-              order: sortDirection,
-              onChange: handleSort,
-            }}
             emptyState={
               !filteredRepositories.length &&
               trimmedSearch &&

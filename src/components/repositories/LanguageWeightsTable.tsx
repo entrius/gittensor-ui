@@ -207,18 +207,28 @@ const LanguageWeightsTable: React.FC = () => {
     }
   }, [rowsPerPage]);
 
+  const sortLabelHeaderSx = {
+    '& .MuiTableSortLabel-root:hover': { color: 'secondary.main' },
+    '& .MuiTableSortLabel-root.Mui-active': { color: 'secondary.main' },
+    '& .MuiTableSortLabel-root.Mui-active .MuiTableSortLabel-icon': {
+      color: 'secondary.main',
+    },
+  } as const;
+
   const columns = useMemo<DataTableColumn<LanguageRow, SortField>[]>(
     () => [
       {
         key: 'extension',
         header: 'Extension',
         sortKey: 'extension',
+        headerSx: sortLabelHeaderSx,
         renderCell: (lang) => lang.extension,
       },
       {
         key: 'language',
         header: 'Language',
         sortKey: 'language',
+        headerSx: sortLabelHeaderSx,
         cellSx: (lang) => ({
           color: lang.language ? 'text.primary' : 'text.disabled',
         }),
@@ -254,9 +264,11 @@ const LanguageWeightsTable: React.FC = () => {
         header: 'Weight',
         align: 'right',
         sortKey: 'weight',
+        headerSx: sortLabelHeaderSx,
         renderCell: (lang) => lang.weight,
       },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [theme.palette.status.success, theme.palette.status.error],
   );
 

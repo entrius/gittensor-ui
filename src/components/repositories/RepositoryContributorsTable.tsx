@@ -35,6 +35,7 @@ const cellFontSx = {
   fontSize: '12px',
   color: 'text.primary',
   py: 1,
+  borderColor: 'rgba(255, 255, 255, 0.05)',
 };
 
 const headerCellSx = {
@@ -45,6 +46,7 @@ const headerCellSx = {
   textTransform: 'uppercase' as const,
   letterSpacing: 0,
   backgroundColor: 'transparent',
+  backdropFilter: 'none',
   py: 1,
 };
 
