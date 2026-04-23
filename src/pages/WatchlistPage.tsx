@@ -314,9 +314,30 @@ const WatchlistPage: React.FC = () => {
         )}
       </Box>
 
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>Clear all {count} pinned miner(s)?</DialogTitle>
-        <DialogActions>
+      <Dialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        PaperProps={{
+          sx: (t) => ({
+            backgroundColor: t.palette.background.default,
+            border: `1px solid ${t.palette.border.light}`,
+            borderRadius: 3,
+            backgroundImage: 'none',
+            p: 3,
+          }),
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontSize: '0.9rem',
+            fontWeight: 600,
+            p: 0,
+            mb: 3,
+          }}
+        >
+          Clear all {count} pinned {count === 1 ? noun.single : noun.plural}?
+        </DialogTitle>
+        <DialogActions sx={{ p: 0 }}>
           <Button
             onClick={() => setConfirmOpen(false)}
             sx={{
