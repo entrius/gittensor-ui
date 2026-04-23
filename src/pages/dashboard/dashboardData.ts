@@ -173,13 +173,6 @@ const formatTrendBucketLabel = (timestamp: number, range: TrendTimeRange) => {
     }).format(new Date(timestamp));
   }
 
-  if (range === 'all') {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-    }).format(new Date(timestamp));
-  }
-
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
@@ -246,6 +239,13 @@ const bucketTimestamps = (
   return values;
 };
 
+const optionalCredibilityMetrics = (
+  credibility: unknown,
+): Array<{ value: string; unit: string }> => {
+  const n = parseNumber(credibility as number);
+  return n > 0 ? [{ value: `${Math.round(n * 100)}%`, unit: 'Cred.' }] : [];
+};
+
 const formatDelta = (
   currentValue: number,
   previousValue: number,
@@ -292,18 +292,18 @@ export const buildDashboardTrendData = (
     buckets,
   );
 
+  const seriesByKey: Record<TrendSeriesKey, number[]> = {
+    mergedPrs: mergedPrValues,
+    issuesResolved: resolvedIssueValues,
+    prsOpened: openedPrValues,
+    issuesOpened: openedIssueValues,
+  };
+
   return {
     labels: buckets.map((bucket) => bucket.label),
     series: TREND_SERIES_KEYS.map((key) => ({
       key,
-      values:
-        key === 'mergedPrs'
-          ? mergedPrValues
-          : key === 'prsOpened'
-            ? openedPrValues
-            : key === 'issuesResolved'
-              ? resolvedIssueValues
-              : openedIssueValues,
+      values: seriesByKey[key],
     })),
   };
 };
@@ -565,10 +565,11 @@ const getTopContributorRepos = (prs: CommitLog[], githubId: string) => {
   >();
 
   prs.forEach((pr) => {
+    const mergedAt = toTimestamp(pr.mergedAt);
     if (
       pr.githubId !== githubId ||
       !pr.repository ||
-      !isWithinWindow(toTimestamp(pr.mergedAt), currentWindow)
+      !isWithinWindow(mergedAt, currentWindow)
     ) {
       return;
     }
@@ -581,10 +582,7 @@ const getTopContributorRepos = (prs: CommitLog[], githubId: string) => {
 
     existing.mergedPrs += 1;
     existing.totalScore += parseNumber(pr.score);
-    existing.lastMergedAt = Math.max(
-      existing.lastMergedAt,
-      toTimestamp(pr.mergedAt) ?? 0,
-    );
+    existing.lastMergedAt = Math.max(existing.lastMergedAt, mergedAt ?? 0);
 
     repoStats.set(pr.repository, existing);
   });
@@ -673,14 +671,7 @@ const pickTopOssContributor = (
         value: Math.round(parseNumber(topOssMiner.totalScore)).toLocaleString(),
         unit: 'Score',
       },
-      ...(parseNumber(topOssMiner.credibility) > 0
-        ? [
-            {
-              value: `${Math.round(parseNumber(topOssMiner.credibility) * 100)}%`,
-              unit: 'Cred.',
-            },
-          ]
-        : []),
+      ...optionalCredibilityMetrics(topOssMiner.credibility),
     ],
     repos: getTopContributorRepos(prs, topOssMiner.githubId),
   };
@@ -708,14 +699,7 @@ const pickMostMergedPrMiner = (
         value: `${mostMergedPrMiner.totalMergedPrs ?? 0}`,
         unit: 'Merged',
       },
-      ...(parseNumber(mostMergedPrMiner.credibility) > 0
-        ? [
-            {
-              value: `${Math.round(parseNumber(mostMergedPrMiner.credibility) * 100)}%`,
-              unit: 'Cred.',
-            },
-          ]
-        : []),
+      ...optionalCredibilityMetrics(mostMergedPrMiner.credibility),
     ],
     repos: getTopContributorRepos(prs, mostMergedPrMiner.githubId),
   };
@@ -794,6 +778,24 @@ export const buildFeaturedWork = (
     selectedAuthors.add((authorLabel || 'unknown').toLowerCase());
   };
 
+  const pickFirstDiverse = <T>(
+    sortedLists: T[][],
+    getRepository: (item: T) => string,
+    getAuthor: (item: T) => string,
+  ): T | undefined => {
+    for (const list of sortedLists) {
+      const found =
+        list.find((item) =>
+          isCandidateAllowed(getRepository(item), getAuthor(item)),
+        ) ??
+        list.find((item) =>
+          isCandidateAllowed(getRepository(item), getAuthor(item), true),
+        );
+      if (found) return found;
+    }
+    return undefined;
+  };
+
   const mergedPrs = [...prs].filter(
     (pr) =>
       getPrStatusLabel(pr) === 'Merged' &&
@@ -855,6 +857,8 @@ export const buildFeaturedWork = (
       baseMetrics[2] = { label: 'Score', value: score.toFixed(2) };
     }
 
+    const statusLabel = getPrStatusLabel(pr);
+
     return {
       id: `pr-${featuredLabel}-${pr.repository}-${pr.pullRequestNumber}`,
       kind: 'pr',
@@ -864,8 +868,8 @@ export const buildFeaturedWork = (
       repository: pr.repository,
       title: pr.pullRequestTitle || `PR #${pr.pullRequestNumber}`,
       score,
-      statusLabel: getPrStatusLabel(pr),
-      statusTone: mapPrStatusTone(getPrStatusLabel(pr)),
+      statusLabel,
+      statusTone: mapPrStatusTone(statusLabel),
       authorLabel: pr.author || 'unknown',
       githubUsername: pr.author || undefined,
       openedAt: pr.mergedAt ?? pr.prCreatedAt ?? null,
@@ -882,17 +886,10 @@ export const buildFeaturedWork = (
     const mergedSorted = [...mergedPrs].sort(sortFn);
     const allSorted = [...allWindowPrs].sort(sortFn);
     const candidate =
-      mergedSorted.find((pr) =>
-        isCandidateAllowed(pr.repository, pr.author || 'unknown'),
-      ) ??
-      mergedSorted.find((pr) =>
-        isCandidateAllowed(pr.repository, pr.author || 'unknown', true),
-      ) ??
-      allSorted.find((pr) =>
-        isCandidateAllowed(pr.repository, pr.author || 'unknown'),
-      ) ??
-      allSorted.find((pr) =>
-        isCandidateAllowed(pr.repository, pr.author || 'unknown', true),
+      pickFirstDiverse(
+        [mergedSorted, allSorted],
+        (pr) => pr.repository,
+        (pr) => pr.author || 'unknown',
       ) ??
       mergedSorted.find((pr) => Boolean(pr.repository)) ??
       allSorted.find((pr) => Boolean(pr.repository));
@@ -918,6 +915,10 @@ export const buildFeaturedWork = (
     });
   const rankedCompletedIssues = rankedHighestBountyIssues.filter(
     (issue) => issue.status === 'completed',
+  );
+
+  const fallbackIssuePool = [...issues].sort(
+    (a, b) => getIssueDisplayAmount(b) - getIssueDisplayAmount(a),
   );
 
   const toIssueCard = (
@@ -951,38 +952,14 @@ export const buildFeaturedWork = (
   };
 
   const pickIssue = (featuredLabel: string, pool: IssueBounty[]) => {
-    const fallbackPool = [...issues].sort(
-      (a, b) => getIssueDisplayAmount(b) - getIssueDisplayAmount(a),
-    );
     const candidate =
-      pool.find((issue) =>
-        isCandidateAllowed(
-          issue.repositoryFullName,
-          issue.authorLogin || 'open bounty',
-        ),
-      ) ??
-      pool.find((issue) =>
-        isCandidateAllowed(
-          issue.repositoryFullName,
-          issue.authorLogin || 'open bounty',
-          true,
-        ),
-      ) ??
-      fallbackPool.find((issue) =>
-        isCandidateAllowed(
-          issue.repositoryFullName,
-          issue.authorLogin || 'open bounty',
-        ),
-      ) ??
-      fallbackPool.find((issue) =>
-        isCandidateAllowed(
-          issue.repositoryFullName,
-          issue.authorLogin || 'open bounty',
-          true,
-        ),
+      pickFirstDiverse(
+        [pool, fallbackIssuePool],
+        (issue) => issue.repositoryFullName,
+        (issue) => issue.authorLogin || 'open bounty',
       ) ??
       pool[0] ??
-      fallbackPool[0];
+      fallbackIssuePool[0];
     if (!candidate) return undefined;
     markAsSelected(
       candidate.repositoryFullName,
@@ -1050,14 +1027,7 @@ const pickTopDiscoveryMiner = (
         ).toLocaleString(),
         unit: 'Score',
       },
-      ...(parseNumber(top.issueCredibility) > 0
-        ? [
-            {
-              value: `${Math.round(parseNumber(top.issueCredibility) * 100)}%`,
-              unit: 'Cred.',
-            },
-          ]
-        : []),
+      ...optionalCredibilityMetrics(top.issueCredibility),
     ],
     repos: getTopContributorRepos(prs, top.githubId),
   };
@@ -1090,14 +1060,7 @@ const pickMostSolvedIssuesMiner = (
         value: `${top.totalValidSolvedIssues ?? 0}`,
         unit: 'Solved',
       },
-      ...(parseNumber(top.issueCredibility) > 0
-        ? [
-            {
-              value: `${Math.round(parseNumber(top.issueCredibility) * 100)}%`,
-              unit: 'Cred.',
-            },
-          ]
-        : []),
+      ...optionalCredibilityMetrics(top.issueCredibility),
     ],
     repos: getTopContributorRepos(prs, top.githubId),
   };
