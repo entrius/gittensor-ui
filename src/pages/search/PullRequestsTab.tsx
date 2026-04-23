@@ -2,9 +2,8 @@ import React from 'react';
 import { Box } from '@mui/material';
 import { type CommitLog } from '../../api/models/Dashboard';
 import { getGithubAvatarSrc } from '../../utils';
-import SearchResultsTable, {
-  type SearchResultsTableColumn,
-} from './SearchResultsTable';
+import { type DataTableColumn } from '../../components/common/DataTable';
+import SearchResultsCard from './SearchResultsCard';
 import {
   SearchAvatarContentCell,
   SearchTruncatedText,
@@ -23,7 +22,7 @@ const formatPrDateOrStatus = (pr: CommitLog) => {
   return 'Open';
 };
 
-const prColumns: SearchResultsTableColumn<CommitLog>[] = [
+const prColumns: DataTableColumn<CommitLog>[] = [
   {
     key: 'prNumber',
     header: 'PR #',
@@ -156,7 +155,7 @@ const PullRequestsTab: React.FC<PullRequestsTabProps> = ({
   rowsPerPage,
   rowsPerPageOptions,
 }) => (
-  <SearchResultsTable
+  <SearchResultsCard
     columns={prColumns}
     emptyLabel="No pull request matches."
     errorLabel="Failed to load pull requests for search."

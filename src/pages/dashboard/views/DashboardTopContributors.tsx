@@ -14,6 +14,7 @@ import { type DashboardFeaturedContributor } from '../dashboardData';
 interface DashboardTopContributorsProps {
   contributors: DashboardFeaturedContributor[];
   isLoading?: boolean;
+  title?: string;
 }
 
 const getInitials = (name: string) =>
@@ -27,6 +28,7 @@ const getInitials = (name: string) =>
 const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
   contributors,
   isLoading = false,
+  title = 'Featured Contributors',
 }) => {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -57,7 +59,7 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
             fontWeight: 700,
           }}
         >
-          Featured Contributors
+          {title}
         </Typography>
       </Box>
 

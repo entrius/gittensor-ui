@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import { useLinkBehavior } from '../common/linkBehavior';
-import { useWatchlist } from '../../hooks/useWatchlist';
+import { useWatchlistTotalCount } from '../../hooks/useWatchlist';
 
 interface SidebarProps {
   onNavigate?: () => void;
@@ -17,7 +17,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
   const location = useLocation();
-  const { count: watchlistCount } = useWatchlist();
+  const watchlistCount = useWatchlistTotalCount();
 
   const navItems = [
     { label: 'dashboard', path: '/dashboard' },
@@ -236,7 +236,6 @@ const SidebarNavLink: React.FC<{
         px: 2,
         color: '#ffffff',
         textDecoration: 'none',
-        fontFamily: '"JetBrains Mono", monospace',
         fontSize: '0.95rem',
         textTransform: 'none',
         backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
@@ -254,7 +253,6 @@ const SidebarNavLink: React.FC<{
         <Typography
           component="span"
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.65rem',
             color: 'secondary.main',
             fontStyle: 'italic',
