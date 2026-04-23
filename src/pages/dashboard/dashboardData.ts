@@ -709,3 +709,131 @@ export const buildFeaturedContributors = (
 
   return contributors;
 };
+
+const pickTopDiscoveryMiner = (
+  prs: CommitLog[],
+  miners: MinerEvaluation[],
+): DashboardFeaturedContributor | undefined => {
+  const top = [...miners]
+    .filter((m) => m.isIssueEligible && parseNumber(m.issueDiscoveryScore) > 0)
+    .sort((a, b) => {
+      const diff =
+        parseNumber(b.issueDiscoveryScore) - parseNumber(a.issueDiscoveryScore);
+      return diff !== 0 ? diff : a.id - b.id;
+    })[0];
+
+  if (!top) return undefined;
+
+  return {
+    featuredLabel: 'Top Discovery Miner',
+    githubId: top.githubId,
+    githubUsername: top.githubUsername,
+    name: top.githubUsername ?? top.githubId,
+    metrics: [
+      {
+        value: Math.round(
+          parseNumber(top.issueDiscoveryScore),
+        ).toLocaleString(),
+        unit: 'Score',
+      },
+      ...(parseNumber(top.issueCredibility) > 0
+        ? [
+            {
+              value: `${Math.round(parseNumber(top.issueCredibility) * 100)}%`,
+              unit: 'Cred.',
+            },
+          ]
+        : []),
+    ],
+    repos: getTopContributorRepos(prs, top.githubId),
+  };
+};
+
+const pickMostSolvedIssuesMiner = (
+  prs: CommitLog[],
+  miners: MinerEvaluation[],
+): DashboardFeaturedContributor | undefined => {
+  const top = [...miners]
+    .filter((m) => m.isIssueEligible && (m.totalValidSolvedIssues ?? 0) > 0)
+    .sort((a, b) => {
+      const diff =
+        (b.totalValidSolvedIssues ?? 0) - (a.totalValidSolvedIssues ?? 0);
+      if (diff !== 0) return diff;
+      return (
+        parseNumber(b.issueDiscoveryScore) - parseNumber(a.issueDiscoveryScore)
+      );
+    })[0];
+
+  if (!top) return undefined;
+
+  return {
+    featuredLabel: 'Most Solved Issues',
+    githubId: top.githubId,
+    githubUsername: top.githubUsername,
+    name: top.githubUsername ?? top.githubId,
+    metrics: [
+      {
+        value: `${top.totalValidSolvedIssues ?? 0}`,
+        unit: 'Solved',
+      },
+      ...(parseNumber(top.issueCredibility) > 0
+        ? [
+            {
+              value: `${Math.round(parseNumber(top.issueCredibility) * 100)}%`,
+              unit: 'Cred.',
+            },
+          ]
+        : []),
+    ],
+    repos: getTopContributorRepos(prs, top.githubId),
+  };
+};
+
+const pickHighestIssueTokenScoreMiner = (
+  prs: CommitLog[],
+  miners: MinerEvaluation[],
+): DashboardFeaturedContributor | undefined => {
+  const top = [...miners]
+    .filter((m) => m.isIssueEligible && parseNumber(m.issueTokenScore) > 0)
+    .sort((a, b) => {
+      const diff =
+        parseNumber(b.issueTokenScore) - parseNumber(a.issueTokenScore);
+      return diff !== 0 ? diff : a.id - b.id;
+    })[0];
+
+  if (!top) return undefined;
+
+  return {
+    featuredLabel: 'Highest-Scoring Issue Author',
+    githubId: top.githubId,
+    githubUsername: top.githubUsername,
+    name: top.githubUsername ?? top.githubId,
+    metrics: [
+      {
+        value: Math.round(parseNumber(top.issueTokenScore)).toLocaleString(),
+        unit: 'Score',
+      },
+    ],
+    repos: getTopContributorRepos(prs, top.githubId),
+  };
+};
+
+export const buildFeaturedDiscoveryContributors = (
+  prs: CommitLog[],
+  miners: MinerEvaluation[],
+): DashboardFeaturedContributor[] => {
+  const topDiscoveryMiner = pickTopDiscoveryMiner(prs, miners);
+  const mostSolvedIssuesMiner = pickMostSolvedIssuesMiner(prs, miners);
+  const highestIssueTokenScoreMiner = pickHighestIssueTokenScoreMiner(
+    prs,
+    miners,
+  );
+  const contributors: DashboardFeaturedContributor[] = [];
+
+  if (topDiscoveryMiner) contributors.push(topDiscoveryMiner);
+  if (mostSolvedIssuesMiner) contributors.push(mostSolvedIssuesMiner);
+  if (highestIssueTokenScoreMiner)
+    contributors.push(highestIssueTokenScoreMiner);
+
+  return contributors;
+};
