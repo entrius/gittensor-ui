@@ -430,6 +430,9 @@ const LanguageWeightsTable: React.FC = () => {
           isLoading={isLoading}
           stickyHeader
           emptyState={null}
+          getRowSx={() => ({
+            '&:hover': { backgroundColor: 'action.hover' },
+          })}
           sort={{
             field: sortField,
             order: sortOrder,

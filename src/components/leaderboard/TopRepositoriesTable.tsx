@@ -57,7 +57,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { truncateText } from '../../utils';
 import { RankIcon } from './RankIcon';
-import { getRepositoryOwnerAvatarBackground, type RepoStats } from './types';
+import {
+  getRepositoryOwnerAvatarBackground,
+  bodyCellStyle as leaderboardBodyCellStyle,
+  headerCellStyle as leaderboardHeaderCellStyle,
+  type RepoStats,
+} from './types';
 import {
   CHART_COLORS,
   STATUS_COLORS,
@@ -624,8 +629,13 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   );
 
   // Custom sort header to preserve the original unicode arrow look and
-  // cell-wide hover background (MUI's TableSortLabel differs visually).
-  const renderSortHeader = (column: SortColumn, label: string) => (
+  // cell-wide click + hover (MUI's TableSortLabel differs visually). The
+  // Box takes on the cell's padding so clicks anywhere inside the cell hit.
+  const renderSortHeader = (
+    column: SortColumn,
+    label: string,
+    align: 'left' | 'right' = 'left',
+  ) => (
     <Box
       onClick={() => handleSort(column)}
       sx={{
@@ -636,7 +646,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         userSelect: 'none',
         width: '100%',
         height: '100%',
-        justifyContent: 'inherit',
+        px: 2,
+        py: 1,
+        justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
       }}
     >
       {label}
@@ -648,7 +660,23 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     </Box>
   );
 
+  // Override theme.ts defaults that DataTable applies, so list view keeps
+  // the denser leaderboard cell metrics (shorter rows, non-uppercase headers,
+  // no letterSpacing) defined in `./types`.
+  const listBodyCellOverride = {
+    ...leaderboardBodyCellStyle,
+    borderBottom: '1px solid',
+    borderColor: 'border.light',
+  };
+  const listHeaderCellOverride = {
+    ...leaderboardHeaderCellStyle,
+    textTransform: 'none' as const,
+    letterSpacing: 0,
+  };
+
   const sortableHeaderSx = {
+    ...listHeaderCellOverride,
+    padding: 0,
     cursor: 'pointer',
     userSelect: 'none' as const,
     '&:hover': {
@@ -661,7 +689,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       key: 'rank',
       header: 'Rank',
       width: '60px',
-      cellSx: { pr: 0 },
+      headerSx: listHeaderCellOverride,
+      cellSx: { ...listBodyCellOverride, pr: 0 },
       renderCell: (repo) => <RankIcon rank={repo.rank || 0} />,
     },
     {
@@ -669,7 +698,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       header: renderSortHeader('repository', 'Repository'),
       width: '35%',
       headerSx: sortableHeaderSx,
-      cellSx: { pl: 1.5 },
+      cellSx: { ...listBodyCellOverride, pl: 1.5 },
       renderCell: (repo) => (
         <Box
           sx={{
@@ -720,10 +749,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'weight',
-      header: renderSortHeader('weight', 'Weight'),
+      header: renderSortHeader('weight', 'Weight', 'right'),
       width: '12%',
       align: 'right',
       headerSx: sortableHeaderSx,
+      cellSx: listBodyCellOverride,
       renderCell: (repo) => (
         <Typography
           sx={{
@@ -738,10 +768,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'totalScore',
-      header: renderSortHeader('totalScore', 'Total Score'),
+      header: renderSortHeader('totalScore', 'Total Score', 'right'),
       width: '18%',
       align: 'right',
       headerSx: sortableHeaderSx,
+      cellSx: listBodyCellOverride,
       renderCell: (repo) => (
         <Typography
           sx={{
@@ -759,10 +790,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'totalPRs',
-      header: renderSortHeader('totalPRs', 'PRs'),
+      header: renderSortHeader('totalPRs', 'PRs', 'right'),
       width: '15%',
       align: 'right',
       headerSx: sortableHeaderSx,
+      cellSx: listBodyCellOverride,
       renderCell: (repo) => (
         <Typography
           sx={{
@@ -776,10 +808,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'contributors',
-      header: renderSortHeader('contributors', 'Contributors'),
+      header: renderSortHeader('contributors', 'Contributors', 'right'),
       width: '15%',
       align: 'right',
       headerSx: sortableHeaderSx,
+      cellSx: listBodyCellOverride,
       renderCell: (repo) => (
         <Typography
           sx={{
