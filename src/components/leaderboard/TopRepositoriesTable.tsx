@@ -34,8 +34,6 @@ import {
   alpha,
   useMediaQuery,
   useTheme,
-  type SxProps,
-  type Theme,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import BarChartIcon from '@mui/icons-material/BarChart';
@@ -62,14 +60,13 @@ import {
 import ReactECharts from 'echarts-for-react';
 import type { TooltipComponentFormatterCallbackParams } from 'echarts';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { LinkTableRow } from '../common/linkBehavior';
+import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { truncateText } from '../../utils';
 import { RankIcon } from './RankIcon';
 import LeaderboardTableSkeleton from './LeaderboardTableSkeleton';
 import {
   getRepositoryOwnerAvatarBackground,
   headerCellStyle,
-  bodyCellStyle,
   type RepoStats,
 } from './types';
 import {
@@ -637,50 +634,145 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     />
   );
 
-  const SortableHeader = ({
-    column,
-    children,
-    align = 'left',
-    sx = {},
-  }: {
-    column: SortColumn;
-    children: React.ReactNode;
-    align?: 'left' | 'right';
-    sx?: SxProps<Theme>;
-  }) => (
-    <TableCell
-      align={align}
-      sx={{
-        ...headerCellStyle,
-        ...(sx || {}),
-        cursor: 'pointer',
-        userSelect: 'none',
-        '&:hover': {
-          backgroundColor: 'surface.light',
-        },
-      }}
-      onClick={() => handleSort(column)}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
-          gap: 0.5,
-        }}
-      >
-        {children}
-        {sortColumn === column && (
-          <Typography
-            component="span"
-            sx={{ fontSize: '0.7rem', opacity: 0.7 }}
-          >
-            {sortDirection === 'asc' ? '▲' : '▼'}
-          </Typography>
-        )}
-      </Box>
-    </TableCell>
-  );
+  const listColumns: DataTableColumn<RepoStats, SortColumn>[] = [
+    {
+      key: 'rank',
+      header: 'Rank',
+      width: '60px',
+      cellSx: { pr: 0 },
+      renderCell: (repo) => <RankIcon rank={repo.rank || 0} />,
+    },
+    {
+      key: 'repository',
+      header: 'Repository',
+      width: '35%',
+      sortKey: 'repository',
+      cellSx: { pl: 1.5 },
+      renderCell: (repo) => (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            cursor: 'pointer',
+            '&:hover': {
+              '& .MuiTypography-root': {
+                color: 'primary.main',
+                textDecoration: 'underline',
+              },
+            },
+          }}
+        >
+          <Avatar
+            src={`https://avatars.githubusercontent.com/${(repo.repository || '').split('/')[0]}`}
+            alt={(repo.repository || '').split('/')[0]}
+            sx={{
+              width: 20,
+              height: 20,
+              border: '1px solid',
+              borderColor: 'border.medium',
+              backgroundColor: getRepositoryOwnerAvatarBackground(
+                (repo.repository || '').split('/')[0],
+              ),
+            }}
+          />
+          <Tooltip title={repo.repository || ''} placement="top">
+            <Typography
+              component="span"
+              sx={{
+                color: 'text.primary',
+                fontWeight: 500,
+                transition: 'color 0.2s',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '100%',
+                display: 'inline-block',
+              }}
+            >
+              {truncateText(repo.repository || '', 40)}
+            </Typography>
+          </Tooltip>
+        </Box>
+      ),
+    },
+    {
+      key: 'weight',
+      header: 'Weight',
+      width: '12%',
+      align: 'right',
+      sortKey: 'weight',
+      renderCell: (repo) => (
+        <Typography
+          sx={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color: 'text.primary',
+          }}
+        >
+          {repo.weight.toFixed(2)}
+        </Typography>
+      ),
+    },
+    {
+      key: 'totalScore',
+      header: 'Total Score',
+      width: '18%',
+      align: 'right',
+      sortKey: 'totalScore',
+      renderCell: (repo) => (
+        <Typography
+          sx={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color:
+              (repo.totalScore || 0) > 0 ? 'text.primary' : 'text.secondary',
+          }}
+        >
+          {(repo.totalScore || 0) > 0
+            ? Number(repo.totalScore || 0).toFixed(2)
+            : '-'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'totalPRs',
+      header: 'PRs',
+      width: '15%',
+      align: 'right',
+      sortKey: 'totalPRs',
+      renderCell: (repo) => (
+        <Typography
+          sx={{
+            fontSize: '0.75rem',
+            color: (repo.totalPRs || 0) > 0 ? 'text.primary' : 'text.secondary',
+          }}
+        >
+          {(repo.totalPRs || 0) > 0 ? repo.totalPRs : '-'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'contributors',
+      header: 'Contributors',
+      width: '15%',
+      align: 'right',
+      sortKey: 'contributors',
+      renderCell: (repo) => (
+        <Typography
+          sx={{
+            fontSize: '0.75rem',
+            color:
+              (repo.uniqueMiners?.size || 0) > 0
+                ? 'text.primary'
+                : 'text.secondary',
+          }}
+        >
+          {(repo.uniqueMiners?.size || 0) > 0 ? repo.uniqueMiners?.size : '-'}
+        </Typography>
+      ),
+    },
+  ];
 
   useEffect(() => {
     if (isInitialMount.current) {
@@ -1078,257 +1170,115 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         </Box>
       )}
 
-      {viewMode === 'list' && (
-        <TableContainer
-          sx={{
-            overflowY: 'auto',
-            ...scrollbarSx,
-          }}
-        >
-          <Table
-            stickyHeader
-            sx={{ tableLayout: 'fixed', width: '100%', minWidth: '1000px' }}
-          >
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ ...headerCellStyle, width: '60px' }}>
-                  Rank
-                </TableCell>
-                <SortableHeader column="repository" sx={{ width: '35%' }}>
-                  Repository
-                </SortableHeader>
-                <SortableHeader
-                  column="weight"
-                  align="right"
-                  sx={{ width: '12%' }}
-                >
-                  Weight
-                </SortableHeader>
-                <SortableHeader
-                  column="totalScore"
-                  align="right"
-                  sx={{
-                    width: '18%',
-                  }}
-                >
-                  Total Score
-                </SortableHeader>
-                <SortableHeader
-                  column="totalPRs"
-                  align="right"
-                  sx={{ width: '15%' }}
-                >
-                  PRs
-                </SortableHeader>
-                <SortableHeader
-                  column="contributors"
-                  align="right"
-                  sx={{ width: '15%' }}
-                >
-                  Contributors
-                </SortableHeader>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {isLoading ? (
+      {viewMode === 'list' &&
+        (isLoading ? (
+          <TableContainer sx={{ overflowY: 'auto', ...scrollbarSx }}>
+            <Table
+              stickyHeader
+              sx={{ tableLayout: 'fixed', width: '100%', minWidth: '1000px' }}
+            >
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ ...headerCellStyle, width: '60px' }}>
+                    Rank
+                  </TableCell>
+                  <TableCell sx={{ ...headerCellStyle, width: '35%' }}>
+                    Repository
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ ...headerCellStyle, width: '12%' }}
+                  >
+                    Weight
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ ...headerCellStyle, width: '18%' }}
+                  >
+                    Total Score
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ ...headerCellStyle, width: '15%' }}
+                  >
+                    PRs
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ ...headerCellStyle, width: '15%' }}
+                  >
+                    Contributors
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 <LeaderboardTableSkeleton
                   variant="repositories"
                   rows={rowsPerPage}
                 />
-              ) : (
-                <>
-                  {pagedRepositories.map((repo) => {
-                    return (
-                      <LinkTableRow
-                        key={repo.repository}
-                        href={getRepositoryHref(repo.repository || '')}
-                        linkState={linkState}
-                        hover
-                        sx={{
-                          cursor: 'pointer',
-                          '&:hover': {
-                            backgroundColor: 'border.subtle',
-                          },
-                          transition: 'all 0.2s',
-                          opacity: repo.inactiveAt ? 0.5 : 1,
-                          borderBottom: '1px solid',
-                          borderColor: 'surface.light',
-                        }}
-                      >
-                        <TableCell
-                          sx={{ ...bodyCellStyle, width: '60px', pr: 0 }}
-                        >
-                          <RankIcon rank={repo.rank || 0} />
-                        </TableCell>
-                        <TableCell
-                          sx={{ ...bodyCellStyle, width: '35%', pl: 1.5 }}
-                        >
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1,
-                              cursor: 'pointer',
-                              '&:hover': {
-                                '& .MuiTypography-root': {
-                                  color: 'primary.main',
-                                  textDecoration: 'underline',
-                                },
-                              },
-                            }}
-                          >
-                            <Avatar
-                              src={`https://avatars.githubusercontent.com/${(repo.repository || '').split('/')[0]}`}
-                              alt={(repo.repository || '').split('/')[0]}
-                              sx={{
-                                width: 20,
-                                height: 20,
-                                border: '1px solid',
-                                borderColor: 'border.medium',
-                                backgroundColor:
-                                  getRepositoryOwnerAvatarBackground(
-                                    (repo.repository || '').split('/')[0],
-                                  ),
-                              }}
-                            />
-                            <Tooltip
-                              title={repo.repository || ''}
-                              placement="top"
-                            >
-                              <Typography
-                                component="span"
-                                sx={{
-                                  color: 'text.primary',
-                                  fontWeight: 500,
-                                  transition: 'color 0.2s',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  maxWidth: '100%',
-                                  display: 'inline-block',
-                                }}
-                              >
-                                {truncateText(repo.repository || '', 40)}
-                              </Typography>
-                            </Tooltip>
-                          </Box>
-                        </TableCell>
-                        <TableCell
-                          align="right"
-                          sx={{ ...bodyCellStyle, width: '12%' }}
-                        >
-                          <Typography
-                            sx={{
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              color: 'text.primary',
-                            }}
-                          >
-                            {repo.weight.toFixed(2)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell
-                          align="right"
-                          sx={{ ...bodyCellStyle, width: '18%' }}
-                        >
-                          <Typography
-                            sx={{
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              color:
-                                (repo.totalScore || 0) > 0
-                                  ? 'text.primary'
-                                  : 'text.secondary',
-                            }}
-                          >
-                            {(repo.totalScore || 0) > 0
-                              ? Number(repo.totalScore || 0).toFixed(2)
-                              : '-'}
-                          </Typography>
-                        </TableCell>
-                        <TableCell
-                          align="right"
-                          sx={{ ...bodyCellStyle, width: '15%' }}
-                        >
-                          <Typography
-                            sx={{
-                              fontSize: '0.75rem',
-                              color:
-                                (repo.totalPRs || 0) > 0
-                                  ? 'text.primary'
-                                  : 'text.secondary',
-                            }}
-                          >
-                            {(repo.totalPRs || 0) > 0 ? repo.totalPRs : '-'}
-                          </Typography>
-                        </TableCell>
-                        <TableCell
-                          align="right"
-                          sx={{ ...bodyCellStyle, width: '15%' }}
-                        >
-                          <Typography
-                            sx={{
-                              fontSize: '0.75rem',
-                              color:
-                                (repo.uniqueMiners?.size || 0) > 0
-                                  ? 'text.primary'
-                                  : 'text.secondary',
-                            }}
-                          >
-                            {(repo.uniqueMiners?.size || 0) > 0
-                              ? repo.uniqueMiners?.size
-                              : '-'}
-                          </Typography>
-                        </TableCell>
-                      </LinkTableRow>
-                    );
-                  })}
-                  {!filteredRepositories.length &&
-                    trimmedSearch &&
-                    isDirectRepoInput && (
-                      <TableRow hover>
-                        <TableCell colSpan={6} sx={{ ...bodyCellStyle, py: 2 }}>
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              gap: 2,
-                            }}
-                          >
-                            <Typography
-                              sx={{
-                                color: 'text.secondary',
-                              }}
-                            >
-                              Repository not in tracked list. Open details for{' '}
-                              <Typography component="span">
-                                {trimmedSearch}
-                              </Typography>
-                              ?
-                            </Typography>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              onClick={() =>
-                                navigate(getRepositoryHref(trimmedSearch), {
-                                  state: linkState,
-                                })
-                              }
-                              sx={{ textTransform: 'none' }}
-                            >
-                              Open repository
-                            </Button>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                </>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        ) : (
+          <Box sx={{ overflowY: 'auto', ...scrollbarSx }}>
+            <DataTable<RepoStats, SortColumn>
+              columns={listColumns}
+              rows={pagedRepositories}
+              getRowKey={(repo) => repo.repository || ''}
+              getRowHref={(repo) => getRepositoryHref(repo.repository || '')}
+              linkState={linkState}
+              getRowSx={(repo) => ({
+                opacity: repo.inactiveAt ? 0.5 : 1,
+                '&:hover': { backgroundColor: 'border.subtle' },
+                transition: 'all 0.2s',
+                borderBottom: '1px solid',
+                borderColor: 'surface.light',
+              })}
+              minWidth="1000px"
+              stickyHeader
+              sort={{
+                field: sortColumn,
+                order: sortDirection,
+                onChange: handleSort,
+              }}
+              emptyState={
+                !filteredRepositories.length &&
+                trimmedSearch &&
+                isDirectRepoInput ? (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 2,
+                      px: 2,
+                      py: 2,
+                      borderBottom: '1px solid',
+                      borderColor: 'surface.light',
+                    }}
+                  >
+                    <Typography sx={{ color: 'text.secondary' }}>
+                      Repository not in tracked list. Open details for{' '}
+                      <Typography component="span">{trimmedSearch}</Typography>?
+                    </Typography>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() =>
+                        navigate(getRepositoryHref(trimmedSearch), {
+                          state: linkState,
+                        })
+                      }
+                      sx={{ textTransform: 'none' }}
+                    >
+                      Open repository
+                    </Button>
+                  </Box>
+                ) : undefined
+              }
+            />
+          </Box>
+        ))}
       <TablePagination
         rowsPerPageOptions={[]}
         component="div"

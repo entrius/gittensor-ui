@@ -1,22 +1,55 @@
 import React, { useMemo, useState } from 'react';
-import {
-  Box,
-  Typography,
-  CircularProgress,
-  Avatar,
-  alpha,
-  useTheme,
-} from '@mui/material';
+import { Box, Typography, Avatar, alpha, useTheme } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useAllPrs, useAllMiners } from '../../api';
 import { LinkBox } from '../common/linkBehavior';
 import { STATUS_COLORS } from '../../theme';
 import { isMergedPr } from '../../utils/prStatus';
+import { DataTable, type DataTableColumn } from '../common/DataTable';
 
 interface RepositoryContributorsTableProps {
   repositoryFullName: string;
 }
+
+interface ContributorRow {
+  rank: number;
+  author: string;
+  githubId: string;
+  prs: number;
+  score: number;
+  minerRank?: number;
+  isEligible?: boolean;
+}
+
+const cellFontSx = {
+  fontFamily:
+    '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+  fontSize: '12px',
+  color: 'text.primary',
+  py: 1,
+};
+
+const headerCellSx = {
+  fontFamily:
+    '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+  fontSize: '11px',
+  color: 'text.secondary',
+  textTransform: 'uppercase' as const,
+  letterSpacing: 0,
+  backgroundColor: 'transparent',
+  py: 1,
+};
+
+const numericCellSx = {
+  ...cellFontSx,
+  fontVariantNumeric: 'tabular-nums',
+};
+
+const numericHeaderSx = {
+  ...headerCellSx,
+  fontVariantNumeric: 'tabular-nums',
+};
 
 const RepositoryContributorsTable: React.FC<
   RepositoryContributorsTableProps
@@ -46,7 +79,7 @@ const RepositoryContributorsTable: React.FC<
   }, [allMinersStats]);
 
   // Get contributors for this repository - only count merged PRs
-  const contributors = useMemo(() => {
+  const contributors = useMemo<ContributorRow[]>(() => {
     if (!allPRs) return [];
 
     const allRepoPRs = allPRs.filter(
@@ -75,273 +108,213 @@ const RepositoryContributorsTable: React.FC<
     });
 
     // Default sort by score descending
-    return Array.from(contributorsMap.values()).sort(
-      (a, b) => b.score - a.score,
-    );
-  }, [allPRs, repositoryFullName]);
+    return Array.from(contributorsMap.values())
+      .sort((a, b) => b.score - a.score)
+      .map((c, index) => {
+        const minerData = minerDataMap.get(c.githubId);
+        return {
+          ...c,
+          rank: index + 1,
+          minerRank: minerData?.rank,
+          isEligible: minerData?.isEligible,
+        };
+      });
+  }, [allPRs, repositoryFullName, minerDataMap]);
 
   const displayedContributors = contributors.slice(0, visibleCount);
   const totalContributors = contributors.length;
   const hasMore = visibleCount < totalContributors;
 
-  const handleShowMore = () => {
-    // Expand fully
-    setVisibleCount(totalContributors);
-  };
+  const handleShowMore = () => setVisibleCount(totalContributors);
+  const handleShowLess = () => setVisibleCount(7);
 
-  const handleShowLess = () => {
-    // Reset to 7
-    setVisibleCount(7);
-  };
-
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-        <CircularProgress size={20} />
-      </Box>
-    );
-  }
-
-  if (contributors.length === 0) {
-    return null;
-  }
-
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2,
-        }}
-      >
-        <Typography
-          variant="subtitle2"
-          sx={{
-            color: 'text.secondary',
-          }}
-        >
-          Top Miner Contributors{' '}
-          <Typography
-            component="span"
-            sx={{ color: STATUS_COLORS.open, fontSize: '0.8em' }}
-          >
-            ({contributors.length})
-          </Typography>
-        </Typography>
-      </Box>
-
-      {/* Header Row — minmax(0,1fr) prevents the miner column from forcing PRS/SCORE off-alignment */}
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns:
-            '32px minmax(0, 1fr) minmax(3rem, auto) minmax(4.5rem, auto)',
-          columnGap: 1,
-          rowGap: 0,
-          alignItems: 'center',
-          px: 1.5,
-          py: 1,
-          borderBottom: `1px solid ${theme.palette.border.light}`,
-        }}
-      >
-        <Typography sx={{ fontSize: '11px', color: 'text.secondary' }}>
-          #
-        </Typography>
-        <Typography sx={{ fontSize: '11px', color: 'text.secondary' }}>
-          MINER
-        </Typography>
-        <Typography
-          sx={{
-            fontSize: '11px',
-            color: 'text.secondary',
-            textAlign: 'right',
-            fontVariantNumeric: 'tabular-nums',
-          }}
-        >
-          PRS
-        </Typography>
-        <Typography
-          sx={{
-            fontSize: '11px',
-            color: 'text.secondary',
-            textAlign: 'right',
-            fontVariantNumeric: 'tabular-nums',
-          }}
-        >
-          SCORE
-        </Typography>
-      </Box>
-
-      {/* Rows */}
-      <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-        {displayedContributors.map((contributor, index) => {
-          const minerData = minerDataMap.get(contributor.githubId);
-          const minerRank = minerData?.rank;
-          const isInactive = !minerData?.isEligible;
-
-          return (
-            <Box
-              key={contributor.githubId}
-              sx={{
-                display: 'grid',
-                gridTemplateColumns:
-                  '32px minmax(0, 1fr) minmax(3rem, auto) minmax(4.5rem, auto)',
-                columnGap: 1,
-                rowGap: 0,
-                px: 1.5,
-                py: 1,
-                borderBottom: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
-                alignItems: 'center',
-                minWidth: 0,
-                opacity: isInactive ? 0.5 : 1,
-                '&:hover': {
-                  backgroundColor: alpha(theme.palette.common.white, 0.04),
-                  opacity: 1,
-                },
-                transition: 'all 0.1s',
-              }}
-            >
-              {/* Rank */}
-              <Box
-                sx={{
-                  fontSize: '12px',
-                  color: index < 3 ? 'text.primary' : STATUS_COLORS.open,
-                  fontWeight: index < 3 ? 600 : 400,
-                }}
-              >
-                {index + 1}
-              </Box>
-
-              {/* Contributor */}
-              <LinkBox
-                href={`/miners/details?githubId=${contributor.githubId}`}
-                linkState={{
-                  backLabel: `Back to ${repositoryFullName}`,
-                }}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                  overflow: 'hidden',
-                  cursor: 'pointer',
-                  '&:hover .contributor-name': {
-                    color: STATUS_COLORS.info,
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                <Avatar
-                  src={`https://avatars.githubusercontent.com/${contributor.author}`}
-                  sx={{
-                    width: 20,
-                    height: 20,
-                    border: `1px solid ${theme.palette.border.light}`,
-                  }}
-                />
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    minWidth: 0,
-                  }}
-                >
-                  <Typography
-                    className="contributor-name"
-                    sx={{
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      color: 'text.primary',
-                      fontFamily:
-                        '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      transition: 'color 0.1s',
-                    }}
-                  >
-                    {contributor.author}
-                  </Typography>
-                  {/* Miner Rank Subtext */}
-                  {minerRank && (
-                    <Typography
-                      sx={{
-                        fontSize: '10px',
-                        color: STATUS_COLORS.open,
-                        whiteSpace: 'nowrap', // Force single line
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      Global Rank #{minerRank}
-                    </Typography>
-                  )}
-                </Box>
-              </LinkBox>
-
-              {/* PRs */}
-              <Box
-                sx={{
-                  textAlign: 'right',
-                  fontSize: '12px',
-                  color: 'text.primary',
-                  fontVariantNumeric: 'tabular-nums',
-                  minWidth: 0,
-                }}
-              >
-                {contributor.prs}
-              </Box>
-
-              {/* Score */}
-              <Box
-                sx={{
-                  textAlign: 'right',
-                  fontSize: '12px',
-                  color: 'text.primary',
-                  fontVariantNumeric: 'tabular-nums',
-                  minWidth: 0,
-                }}
-              >
-                {contributor.score.toFixed(2)}
-              </Box>
-            </Box>
-          );
-        })}
-
-        {/* Show More / Show Less Row */}
-        {contributors.length > 7 && (
-          <Box
-            onClick={hasMore ? handleShowMore : handleShowLess}
+  const columns = useMemo<DataTableColumn<ContributorRow>[]>(
+    () => [
+      {
+        key: 'rank',
+        header: '#',
+        width: '32px',
+        headerSx: headerCellSx,
+        cellSx: (c) => ({
+          ...cellFontSx,
+          color: c.rank <= 3 ? 'text.primary' : STATUS_COLORS.open,
+          fontWeight: c.rank <= 3 ? 600 : 400,
+        }),
+        renderCell: (c) => c.rank,
+      },
+      {
+        key: 'miner',
+        header: 'Miner',
+        headerSx: headerCellSx,
+        cellSx: { ...cellFontSx, minWidth: 0 },
+        renderCell: (c) => (
+          <LinkBox
+            href={`/miners/details?githubId=${c.githubId}`}
+            linkState={{
+              backLabel: `Back to ${repositoryFullName}`,
+            }}
             sx={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'flex-start', // Left align to match flow
-              px: 1.5,
-              py: 1.5,
+              gap: 1.5,
+              overflow: 'hidden',
               cursor: 'pointer',
-              color: STATUS_COLORS.open,
-              fontSize: '12px',
-              '&:hover': {
-                color: 'text.primary',
-                backgroundColor: 'surface.subtle',
+              '&:hover .contributor-name': {
+                color: STATUS_COLORS.info,
+                textDecoration: 'underline',
               },
-              transition: 'all 0.1s',
             }}
           >
-            {hasMore ? (
-              <>
-                Show more{' '}
-                <KeyboardArrowDownIcon sx={{ fontSize: 16, ml: 0.5 }} />
-              </>
-            ) : (
-              <>
-                Show less <KeyboardArrowUpIcon sx={{ fontSize: 16, ml: 0.5 }} />
-              </>
-            )}
-          </Box>
-        )}
-      </Box>
+            <Avatar
+              src={`https://avatars.githubusercontent.com/${c.author}`}
+              sx={{
+                width: 20,
+                height: 20,
+                border: `1px solid ${theme.palette.border.light}`,
+                flexShrink: 0,
+              }}
+            />
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                minWidth: 0,
+              }}
+            >
+              <Typography
+                className="contributor-name"
+                sx={{
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  color: 'text.primary',
+                  fontFamily:
+                    '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  transition: 'color 0.1s',
+                }}
+              >
+                {c.author}
+              </Typography>
+              {c.minerRank != null && (
+                <Typography
+                  sx={{
+                    fontSize: '10px',
+                    color: STATUS_COLORS.open,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  Global Rank #{c.minerRank}
+                </Typography>
+              )}
+            </Box>
+          </LinkBox>
+        ),
+      },
+      {
+        key: 'prs',
+        header: 'PRs',
+        width: '3rem',
+        align: 'right',
+        headerSx: numericHeaderSx,
+        cellSx: numericCellSx,
+        renderCell: (c) => c.prs,
+      },
+      {
+        key: 'score',
+        header: 'Score',
+        width: '4.5rem',
+        align: 'right',
+        headerSx: numericHeaderSx,
+        cellSx: numericCellSx,
+        renderCell: (c) => c.score.toFixed(2),
+      },
+    ],
+    [repositoryFullName, theme.palette.border.light],
+  );
+
+  if (!isLoading && contributors.length === 0) {
+    return null;
+  }
+
+  const header = (
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        mb: 2,
+      }}
+    >
+      <Typography
+        variant="subtitle2"
+        sx={{
+          color: 'text.secondary',
+        }}
+      >
+        Top Miner Contributors{' '}
+        <Typography
+          component="span"
+          sx={{ color: STATUS_COLORS.open, fontSize: '0.8em' }}
+        >
+          ({contributors.length})
+        </Typography>
+      </Typography>
+    </Box>
+  );
+
+  const showMoreRow = contributors.length > 7 && (
+    <Box
+      onClick={hasMore ? handleShowMore : handleShowLess}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        px: 1.5,
+        py: 1.5,
+        cursor: 'pointer',
+        color: STATUS_COLORS.open,
+        fontSize: '12px',
+        '&:hover': {
+          color: 'text.primary',
+          backgroundColor: 'surface.subtle',
+        },
+        transition: 'all 0.1s',
+      }}
+    >
+      {hasMore ? (
+        <>
+          Show more <KeyboardArrowDownIcon sx={{ fontSize: 16, ml: 0.5 }} />
+        </>
+      ) : (
+        <>
+          Show less <KeyboardArrowUpIcon sx={{ fontSize: 16, ml: 0.5 }} />
+        </>
+      )}
+    </Box>
+  );
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+      <DataTable<ContributorRow>
+        columns={columns}
+        rows={displayedContributors}
+        getRowKey={(c) => c.githubId}
+        isLoading={isLoading}
+        header={header}
+        pagination={showMoreRow || undefined}
+        getRowSx={(c) => ({
+          opacity: c.isEligible ? 1 : 0.5,
+          '&:hover': {
+            backgroundColor: alpha(theme.palette.common.white, 0.04),
+            opacity: 1,
+          },
+          transition: 'all 0.1s',
+        })}
+      />
     </Box>
   );
 };

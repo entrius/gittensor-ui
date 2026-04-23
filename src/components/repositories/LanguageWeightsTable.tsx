@@ -1,19 +1,10 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
   TablePagination,
   TextField,
   Typography,
-  Paper,
   InputAdornment,
-  CircularProgress,
   Select,
   MenuItem,
   FormControl,
@@ -27,16 +18,18 @@ import { Search, Check, Close } from '@mui/icons-material';
 import ReactECharts from 'echarts-for-react';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
-import {
-  scrollbarSx,
-  TEXT_OPACITY,
-  headerCellStyle,
-  bodyCellStyle,
-} from '../../theme';
+import { TEXT_OPACITY } from '../../theme';
 import { useLanguagesAndWeights } from '../../api';
+import { DataTable, type DataTableColumn } from '../common/DataTable';
 
 type SortField = 'extension' | 'weight' | 'language';
 type SortOrder = 'asc' | 'desc';
+
+interface LanguageRow {
+  extension: string;
+  language: string | null;
+  weight: string;
+}
 
 const LanguageWeightsTable: React.FC = () => {
   const theme = useTheme();
@@ -75,7 +68,7 @@ const LanguageWeightsTable: React.FC = () => {
     setPage(0);
   };
 
-  const filteredAndSortedLanguages = useMemo(() => {
+  const filteredAndSortedLanguages = useMemo<LanguageRow[]>(() => {
     if (!languages) return [];
 
     const filtered = languages.filter((lang) => {
@@ -213,6 +206,59 @@ const LanguageWeightsTable: React.FC = () => {
       });
     }
   }, [rowsPerPage]);
+
+  const columns = useMemo<DataTableColumn<LanguageRow, SortField>[]>(
+    () => [
+      {
+        key: 'extension',
+        header: 'Extension',
+        sortKey: 'extension',
+        renderCell: (lang) => lang.extension,
+      },
+      {
+        key: 'language',
+        header: 'Language',
+        sortKey: 'language',
+        cellSx: (lang) => ({
+          color: lang.language ? 'text.primary' : 'text.disabled',
+        }),
+        renderCell: (lang) => lang.language || '-',
+      },
+      {
+        key: 'tokenScoring',
+        header: (
+          <Tooltip title="Indicates if this extension supports token-based scoring. Token scoring uses AST parsing for more accurate contribution measurement.">
+            <span>Token Scoring</span>
+          </Tooltip>
+        ),
+        align: 'center',
+        renderCell: (lang) =>
+          lang.language ? (
+            <Check
+              sx={{
+                color: theme.palette.status.success,
+                fontSize: '1.2rem',
+              }}
+            />
+          ) : (
+            <Close
+              sx={{
+                color: theme.palette.status.error,
+                fontSize: '1.2rem',
+              }}
+            />
+          ),
+      },
+      {
+        key: 'weight',
+        header: 'Weight',
+        align: 'right',
+        sortKey: 'weight',
+        renderCell: (lang) => lang.weight,
+      },
+    ],
+    [theme.palette.status.success, theme.palette.status.error],
+  );
 
   return (
     <Box ref={containerRef}>
@@ -357,120 +403,31 @@ const LanguageWeightsTable: React.FC = () => {
         </Box>
       </Collapse>
 
-      {isLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <TableContainer
-          component={Paper}
-          elevation={0}
-          sx={{
-            backgroundColor: 'transparent',
-            maxHeight: '800px',
-            overflowY: 'auto',
-            ...scrollbarSx,
+      <Box
+        sx={{
+          maxHeight: '800px',
+          overflowY: 'auto',
+          backgroundColor: 'transparent',
+        }}
+      >
+        <DataTable<LanguageRow, SortField>
+          columns={columns}
+          rows={paginatedLanguages}
+          getRowKey={(lang) => lang.extension}
+          isLoading={isLoading}
+          stickyHeader
+          emptyState={
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography>No languages found!</Typography>
+            </Box>
+          }
+          sort={{
+            field: sortField,
+            order: sortOrder,
+            onChange: handleSort,
           }}
-        >
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={headerCellStyle}>
-                  <TableSortLabel
-                    active={sortField === 'extension'}
-                    direction={sortField === 'extension' ? sortOrder : 'asc'}
-                    onClick={() => handleSort('extension')}
-                    sx={{
-                      '&:hover': {
-                        color: 'secondary.main',
-                      },
-                      '&.Mui-active': {
-                        color: 'secondary.main',
-                      },
-                    }}
-                  >
-                    Extension
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell sx={headerCellStyle}>
-                  <TableSortLabel
-                    active={sortField === 'language'}
-                    direction={sortField === 'language' ? sortOrder : 'asc'}
-                    onClick={() => handleSort('language')}
-                    sx={{
-                      '&:hover': {
-                        color: 'secondary.main',
-                      },
-                      '&.Mui-active': {
-                        color: 'secondary.main',
-                      },
-                    }}
-                  >
-                    Language
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="center" sx={headerCellStyle}>
-                  <Tooltip title="Indicates if this extension supports token-based scoring. Token scoring uses AST parsing for more accurate contribution measurement.">
-                    <span>Token Scoring</span>
-                  </Tooltip>
-                </TableCell>
-                <TableCell align="right" sx={headerCellStyle}>
-                  <TableSortLabel
-                    active={sortField === 'weight'}
-                    direction={sortField === 'weight' ? sortOrder : 'desc'}
-                    onClick={() => handleSort('weight')}
-                    sx={{
-                      '&:hover': {
-                        color: 'secondary.main',
-                      },
-                      '&.Mui-active': {
-                        color: 'secondary.main',
-                      },
-                    }}
-                  >
-                    Weight
-                  </TableSortLabel>
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {paginatedLanguages.map((lang) => (
-                <TableRow key={lang.extension} hover>
-                  <TableCell sx={bodyCellStyle}>{lang.extension}</TableCell>
-                  <TableCell
-                    sx={{
-                      ...bodyCellStyle,
-                      color: lang.language ? 'text.primary' : 'text.disabled',
-                    }}
-                  >
-                    {lang.language || '-'}
-                  </TableCell>
-                  <TableCell align="center" sx={bodyCellStyle}>
-                    {lang.language ? (
-                      <Check
-                        sx={{
-                          color: theme.palette.status.success,
-                          fontSize: '1.2rem',
-                        }}
-                      />
-                    ) : (
-                      <Close
-                        sx={{
-                          color: theme.palette.status.error,
-                          fontSize: '1.2rem',
-                        }}
-                      />
-                    )}
-                  </TableCell>
-                  <TableCell align="right" sx={bodyCellStyle}>
-                    {lang.weight}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+        />
+      </Box>
 
       <TablePagination
         rowsPerPageOptions={[]}
@@ -486,12 +443,6 @@ const LanguageWeightsTable: React.FC = () => {
           '.MuiTablePagination-displayedRows': {},
         }}
       />
-
-      {filteredAndSortedLanguages.length === 0 && !isLoading && (
-        <Box sx={{ textAlign: 'center', py: 4 }}>
-          <Typography>No languages found!</Typography>
-        </Box>
-      )}
     </Box>
   );
 };
