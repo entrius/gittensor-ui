@@ -9,7 +9,7 @@ import {
 } from '../components';
 import { useAllMiners } from '../api';
 import theme, { scrollbarSx } from '../theme';
-import { parseNumber } from '../utils/ExplorerUtils';
+import { mapIssueDiscoveryMinerStats } from '../utils/minerMapper';
 
 const MINER_LINK_STATE = { backLabel: 'Back to Discoveries' } as const;
 const getMinerHref = (miner: MinerStats) =>
@@ -20,38 +20,13 @@ const DiscoveriesPage: React.FC = () => {
   const allMinersStats = allMinerStatsQuery?.data;
   const isLoadingMinerStats = allMinerStatsQuery?.isLoading;
 
-  // Process miner stats for TopMinersTable, using issue discovery fields
-  const minerStats = useMemo(() => {
-    if (!Array.isArray(allMinersStats)) return [];
-    return allMinersStats.map((stat) => ({
-      id: String(stat.id),
-      githubId: stat.githubId || '',
-      author: stat.githubUsername || undefined,
-      totalScore: parseNumber(stat.issueDiscoveryScore),
-      baseTotalScore: parseNumber(stat.baseTotalScore),
-      totalPRs: parseNumber(stat.totalPrs),
-      totalIssues:
-        parseNumber(stat.totalSolvedIssues) +
-        parseNumber(stat.totalOpenIssues) +
-        parseNumber(stat.totalClosedIssues),
-      linesChanged: parseNumber(stat.totalNodesScored),
-      linesAdded: parseNumber(stat.totalAdditions),
-      linesDeleted: parseNumber(stat.totalDeletions),
-      hotkey: stat.hotkey || 'N/A',
-      uniqueReposCount: parseNumber(stat.uniqueReposCount),
-      issueCredibility: parseNumber(stat.issueCredibility),
-      isEligible: stat.isIssueEligible ?? false,
-      ossIsEligible: stat.isEligible ?? false,
-      discoveriesIsEligible: stat.isIssueEligible ?? false,
-      usdPerDay: parseNumber(stat.usdPerDay),
-      totalMergedPrs: parseNumber(stat.totalMergedPrs),
-      totalOpenPrs: parseNumber(stat.totalOpenPrs),
-      totalClosedPrs: parseNumber(stat.totalClosedPrs),
-      totalSolvedIssues: parseNumber(stat.totalSolvedIssues),
-      totalOpenIssues: parseNumber(stat.totalOpenIssues),
-      totalClosedIssues: parseNumber(stat.totalClosedIssues),
-    }));
-  }, [allMinersStats]);
+  const minerStats = useMemo(
+    () =>
+      Array.isArray(allMinersStats)
+        ? mapIssueDiscoveryMinerStats(allMinersStats)
+        : [],
+    [allMinersStats],
+  );
 
   // Sort miners by issue discovery score
   const sortedMinerStats = useMemo(
