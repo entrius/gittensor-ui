@@ -15,6 +15,8 @@ interface DashboardTopContributorsProps {
   contributors: DashboardFeaturedContributor[];
   isLoading?: boolean;
   title?: string;
+  mode?: 'prs' | 'issues';
+  viewAllHref?: string;
 }
 
 const getInitials = (name: string) =>
@@ -29,13 +31,16 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
   contributors,
   isLoading = false,
   title = 'Featured Contributors',
+  mode = 'prs',
+  viewAllHref,
 }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const monoFontFamily = theme.typography.fontFamily;
 
   const openContributor = (githubId: string) => {
-    navigate(`/miners/details?githubId=${encodeURIComponent(githubId)}`, {
+    const modeParam = mode === 'issues' ? '&mode=issues' : '';
+    navigate(`/miners/details?githubId=${encodeURIComponent(githubId)}${modeParam}`, {
       state: { backTo: '/dashboard' },
     });
   };
@@ -50,7 +55,14 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
         backgroundColor: 'transparent',
       }}
     >
-      <Box sx={{ mb: 1.35 }}>
+      <Box
+        sx={{
+          mb: 1.35,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
         <Typography
           sx={{
             color: theme.palette.text.primary,
@@ -61,6 +73,25 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
         >
           {title}
         </Typography>
+        {viewAllHref && (
+          <Typography
+            onClick={() => navigate(viewAllHref)}
+            sx={{
+              color: alpha(theme.palette.text.primary, 0.45),
+              fontFamily: monoFontFamily,
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              letterSpacing: '0.02em',
+              transition: 'color 0.15s ease',
+              '&:hover': {
+                color: theme.palette.text.primary,
+              },
+            }}
+          >
+            view all →
+          </Typography>
+        )}
       </Box>
 
       {isLoading ? (
