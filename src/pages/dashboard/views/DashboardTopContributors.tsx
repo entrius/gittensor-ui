@@ -80,10 +80,8 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
           <Typography
             onClick={() => navigate(viewAllHref)}
             sx={{
+              ...theme.typography.tooltipLabel,
               color: alpha(theme.palette.text.primary, 0.45),
-              fontFamily: monoFontFamily,
-              fontSize: '0.72rem',
-              fontWeight: 600,
               cursor: 'pointer',
               letterSpacing: '0.02em',
               transition: 'color 0.15s ease',
