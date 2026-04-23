@@ -6,6 +6,7 @@ import {
   TEXT_OPACITY,
   scrollbarSx,
 } from '../theme';
+import { formatIsoDateOnlyForDisplay } from '../utils';
 
 interface ContributionData {
   date: string;
@@ -128,7 +129,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
             showWeekdayLabels={false}
             renderBlock={(block, activity) => (
               <Tooltip
-                title={`${activity.count} contribution${activity.count !== 1 ? 's' : ''} on ${new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
+                title={`${activity.count} contribution${activity.count !== 1 ? 's' : ''} on ${formatIsoDateOnlyForDisplay(activity.date)}`}
                 arrow
                 placement="top"
                 enterDelay={0}
