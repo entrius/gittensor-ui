@@ -43,8 +43,10 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
     useState<EligibilityFilter>('all');
 
   const filteredMiners = useMemo(() => {
-    if (eligibilityFilter === 'eligible') return miners.filter((m) => m.isEligible);
-    if (eligibilityFilter === 'ineligible') return miners.filter((m) => !m.isEligible);
+    if (eligibilityFilter === 'eligible')
+      return miners.filter((m) => m.isEligible);
+    if (eligibilityFilter === 'ineligible')
+      return miners.filter((m) => !m.isEligible);
     return miners;
   }, [miners, eligibilityFilter]);
 
@@ -107,10 +109,6 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
                   ? t.palette.text.primary
                   : alpha(option.color, 0.82),
                 cursor: 'pointer',
-                fontFamily: FONTS.mono,
-                fontSize: '0.72rem',
-                fontWeight: selected ? 600 : 500,
-                lineHeight: 1,
                 transition: 'all 0.2s ease',
                 '&:hover': {
                   backgroundColor: alpha(t.palette.text.primary, 0.1),
@@ -122,7 +120,16 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
                 },
               })}
             >
-              {option.label}
+              <Typography
+                sx={{
+                  fontSize: '0.72rem',
+                  fontWeight: selected ? 600 : 500,
+                  lineHeight: 1,
+                  color: 'inherit',
+                }}
+              >
+                {option.label}
+              </Typography>
             </Box>
           );
         })}
