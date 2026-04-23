@@ -18,10 +18,21 @@ const HighlightRow: React.FC<{
   href: string;
   linkState?: Record<string, unknown>;
   avatar: string;
+  avatarAlt?: string;
+  avatarFallback?: string;
   avatarBg?: (theme: Theme) => string;
   label: React.ReactNode;
   right: React.ReactNode;
-}> = ({ href, linkState, avatar, avatarBg = 'transparent', label, right }) => {
+}> = ({
+  href,
+  linkState,
+  avatar,
+  avatarAlt,
+  avatarFallback,
+  avatarBg = 'transparent',
+  label,
+  right,
+}) => {
   return (
     <LinkBox
       href={href}
@@ -52,14 +63,19 @@ const HighlightRow: React.FC<{
       >
         <Avatar
           src={avatar}
+          alt={avatarAlt}
           sx={{
             width: 24,
             height: 24,
             flexShrink: 0,
             border: '1px solid rgba(255,255,255,0.1)',
             backgroundColor: avatarBg,
+            fontSize: '0.72rem',
+            fontWeight: 600,
           }}
-        />
+        >
+          {avatarFallback}
+        </Avatar>
         {label}
       </Box>
       {right}
@@ -74,6 +90,11 @@ const getAvatarBg = (name: string) => {
   if (owner === 'bitcoin')
     return (theme: Theme) => theme.palette.status.warningOrange;
   return (theme: Theme) => theme.palette.surface.transparent;
+};
+
+const getRepoOwnerInitial = (name: string) => {
+  const owner = name.split('/')[0]?.trim();
+  return owner ? owner.charAt(0).toUpperCase() : '?';
 };
 
 const SectionHeader: React.FC<{ children: React.ReactNode }> = ({
@@ -368,6 +389,8 @@ const RepositoriesPage: React.FC = () => {
                         href={getRepoHref(repo.name)}
                         linkState={REPO_LINK_STATE}
                         avatar={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
+                        avatarAlt={repo.name.split('/')[0]}
+                        avatarFallback={getRepoOwnerInitial(repo.name)}
                         avatarBg={getAvatarBg(repo.name)}
                         label={
                           <Tooltip title={repo.name} arrow placement="top">
@@ -437,6 +460,8 @@ const RepositoriesPage: React.FC = () => {
                         href={getRepoHref(repo.name)}
                         linkState={REPO_LINK_STATE}
                         avatar={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
+                        avatarAlt={repo.name.split('/')[0]}
+                        avatarFallback={getRepoOwnerInitial(repo.name)}
                         avatarBg={getAvatarBg(repo.name)}
                         label={
                           <Tooltip title={repo.name} arrow placement="top">
@@ -500,6 +525,8 @@ const RepositoriesPage: React.FC = () => {
                         href={getPrHref(pr.name, pr.number)}
                         linkState={REPO_LINK_STATE}
                         avatar={`https://avatars.githubusercontent.com/${pr.name.split('/')[0]}`}
+                        avatarAlt={pr.name.split('/')[0]}
+                        avatarFallback={getRepoOwnerInitial(pr.name)}
                         avatarBg={getAvatarBg(pr.name)}
                         label={
                           <Box
