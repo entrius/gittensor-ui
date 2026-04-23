@@ -121,6 +121,13 @@ const getOwnerInitial = (repository: string) => {
   return owner ? owner.charAt(0).toUpperCase() : '?';
 };
 
+const getOwnerInitialColor = (owner: string) => {
+  if (owner === 'opentensor' || owner === 'bitcoin') {
+    return theme.palette.common.black;
+  }
+  return theme.palette.text.primary;
+};
+
 const CommitLogItem: React.FC<{
   entry: CommitLogEntry;
   isNew: boolean;
@@ -130,6 +137,7 @@ const CommitLogItem: React.FC<{
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const repositoryOwner = entry.repository.split('/')[0];
   const repositoryOwnerInitial = getOwnerInitial(entry.repository);
+  const repositoryOwnerInitialColor = getOwnerInitialColor(repositoryOwner);
 
   const isMerged = !!entry.mergedAt;
   const isClosed = entry.prState === 'CLOSED' && !entry.mergedAt;
@@ -208,7 +216,8 @@ const CommitLogItem: React.FC<{
                     : repositoryOwner === 'bitcoin'
                       ? REPO_OWNER_AVATAR_BACKGROUNDS.bitcoin
                       : theme.palette.surface.transparent,
-                fontSize: '0.55rem',
+                color: repositoryOwnerInitialColor,
+                fontSize: '0.62rem',
                 fontWeight: 600,
               }}
             >
