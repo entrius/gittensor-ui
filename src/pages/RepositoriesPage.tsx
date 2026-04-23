@@ -21,7 +21,6 @@ const HighlightRow: React.FC<{
   avatarAlt?: string;
   avatarFallback?: string;
   avatarBg?: (theme: Theme) => string;
-  avatarColor?: (theme: Theme) => string;
   label: React.ReactNode;
   right: React.ReactNode;
 }> = ({
@@ -31,7 +30,6 @@ const HighlightRow: React.FC<{
   avatarAlt,
   avatarFallback,
   avatarBg = 'transparent',
-  avatarColor = 'text.primary',
   label,
   right,
 }) => {
@@ -66,15 +64,25 @@ const HighlightRow: React.FC<{
         <Avatar
           src={avatar}
           alt={avatarAlt}
-          sx={{
-            width: 24,
-            height: 24,
-            flexShrink: 0,
-            border: '1px solid rgba(255,255,255,0.1)',
-            backgroundColor: avatarBg,
-            color: avatarColor,
-            fontSize: '0.72rem',
-            fontWeight: 600,
+          sx={(theme) => {
+            const resolvedAvatarBg =
+              typeof avatarBg === 'function'
+                ? avatarBg(theme)
+                : theme.palette.surface.transparent;
+            const resolvedColor =
+              resolvedAvatarBg === theme.palette.surface.transparent
+                ? theme.palette.text.primary
+                : theme.palette.getContrastText(resolvedAvatarBg);
+            return {
+              width: 24,
+              height: 24,
+              flexShrink: 0,
+              border: '1px solid rgba(255,255,255,0.1)',
+              backgroundColor: resolvedAvatarBg,
+              color: resolvedColor,
+              fontSize: '0.72rem',
+              fontWeight: 600,
+            };
           }}
         >
           {avatarFallback}
@@ -98,14 +106,6 @@ const getAvatarBg = (name: string) => {
 const getRepoOwnerInitial = (name: string) => {
   const owner = name.split('/')[0]?.trim();
   return owner ? owner.charAt(0).toUpperCase() : '?';
-};
-
-const getRepoOwnerInitialColor = (name: string) => {
-  const owner = name.split('/')[0];
-  if (owner === 'opentensor' || owner === 'bitcoin') {
-    return (theme: Theme) => theme.palette.common.black;
-  }
-  return (theme: Theme) => theme.palette.text.primary;
 };
 
 const SectionHeader: React.FC<{ children: React.ReactNode }> = ({
@@ -403,7 +403,6 @@ const RepositoriesPage: React.FC = () => {
                         avatarAlt={repo.name.split('/')[0]}
                         avatarFallback={getRepoOwnerInitial(repo.name)}
                         avatarBg={getAvatarBg(repo.name)}
-                        avatarColor={getRepoOwnerInitialColor(repo.name)}
                         label={
                           <Tooltip title={repo.name} arrow placement="top">
                             <Typography
@@ -475,7 +474,6 @@ const RepositoriesPage: React.FC = () => {
                         avatarAlt={repo.name.split('/')[0]}
                         avatarFallback={getRepoOwnerInitial(repo.name)}
                         avatarBg={getAvatarBg(repo.name)}
-                        avatarColor={getRepoOwnerInitialColor(repo.name)}
                         label={
                           <Tooltip title={repo.name} arrow placement="top">
                             <Typography
@@ -541,7 +539,6 @@ const RepositoriesPage: React.FC = () => {
                         avatarAlt={pr.name.split('/')[0]}
                         avatarFallback={getRepoOwnerInitial(pr.name)}
                         avatarBg={getAvatarBg(pr.name)}
-                        avatarColor={getRepoOwnerInitialColor(pr.name)}
                         label={
                           <Box
                             sx={{

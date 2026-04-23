@@ -121,11 +121,30 @@ const getOwnerInitial = (repository: string) => {
   return owner ? owner.charAt(0).toUpperCase() : '?';
 };
 
-const getOwnerInitialColor = (owner: string) => {
-  if (owner === 'opentensor' || owner === 'bitcoin') {
-    return theme.palette.common.black;
+const getOwnerAvatarBg = (owner: string) => {
+  if (owner === 'opentensor') {
+    return REPO_OWNER_AVATAR_BACKGROUNDS.opentensor;
   }
-  return theme.palette.text.primary;
+  if (owner === 'bitcoin') {
+    return REPO_OWNER_AVATAR_BACKGROUNDS.bitcoin;
+  }
+  return theme.palette.surface.transparent;
+};
+
+const getAvatarFallbackColor = (avatarBg: string) => {
+  if (avatarBg === theme.palette.surface.transparent) {
+    return theme.palette.text.primary;
+  }
+  return theme.palette.getContrastText(avatarBg);
+};
+
+const getOwnerAvatarStyles = (owner: string) => {
+  const avatarBg = getOwnerAvatarBg(owner);
+  // Keep fallback text readable regardless of background color choice.
+  return {
+    backgroundColor: avatarBg,
+    color: getAvatarFallbackColor(avatarBg),
+  };
 };
 
 const CommitLogItem: React.FC<{
@@ -137,7 +156,7 @@ const CommitLogItem: React.FC<{
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const repositoryOwner = entry.repository.split('/')[0];
   const repositoryOwnerInitial = getOwnerInitial(entry.repository);
-  const repositoryOwnerInitialColor = getOwnerInitialColor(repositoryOwner);
+  const ownerAvatarStyles = getOwnerAvatarStyles(repositoryOwner);
 
   const isMerged = !!entry.mergedAt;
   const isClosed = entry.prState === 'CLOSED' && !entry.mergedAt;
@@ -210,13 +229,7 @@ const CommitLogItem: React.FC<{
                 width: 16,
                 height: 16,
                 border: `1px solid ${theme.palette.border.medium}`,
-                backgroundColor:
-                  repositoryOwner === 'opentensor'
-                    ? REPO_OWNER_AVATAR_BACKGROUNDS.opentensor
-                    : repositoryOwner === 'bitcoin'
-                      ? REPO_OWNER_AVATAR_BACKGROUNDS.bitcoin
-                      : theme.palette.surface.transparent,
-                color: repositoryOwnerInitialColor,
+                ...ownerAvatarStyles,
                 fontSize: '0.62rem',
                 fontWeight: 600,
               }}
