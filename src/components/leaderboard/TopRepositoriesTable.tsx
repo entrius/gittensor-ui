@@ -100,6 +100,11 @@ const VALID_SORT_COLUMNS: SortColumn[] = [
   'contributors',
 ];
 
+const getOwnerInitial = (repositoryFullName: string) => {
+  const owner = repositoryFullName.split('/')[0]?.trim();
+  return owner ? owner.charAt(0).toUpperCase() : '?';
+};
+
 const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   repositories,
   isLoading,
@@ -697,19 +702,31 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             },
           }}
         >
-          <Avatar
-            src={`https://avatars.githubusercontent.com/${(repo.repository || '').split('/')[0]}`}
-            alt={(repo.repository || '').split('/')[0]}
-            sx={{
-              width: 20,
-              height: 20,
-              border: '1px solid',
-              borderColor: 'border.medium',
-              backgroundColor: getRepositoryOwnerAvatarBackground(
-                (repo.repository || '').split('/')[0],
-              ),
-            }}
-          />
+          {(() => {
+            const owner = (repo.repository || '').split('/')[0];
+            const ownerAvatarBg = getRepositoryOwnerAvatarBackground(owner);
+            return (
+              <Avatar
+                src={`https://avatars.githubusercontent.com/${owner}`}
+                alt={owner}
+                sx={(theme) => ({
+                  width: 20,
+                  height: 20,
+                  border: '1px solid',
+                  borderColor: 'border.medium',
+                  backgroundColor: ownerAvatarBg,
+                  color:
+                    ownerAvatarBg === theme.palette.surface.transparent
+                      ? theme.palette.text.primary
+                      : theme.palette.getContrastText(ownerAvatarBg),
+                  fontSize: '0.62rem',
+                  fontWeight: 600,
+                })}
+              >
+                {getOwnerInitial(repo.repository || '')}
+              </Avatar>
+            );
+          })()}
           <Tooltip title={repo.repository || ''} placement="top">
             <Typography
               component="span"
