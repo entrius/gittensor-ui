@@ -18,7 +18,7 @@ import { Search, Check, Close } from '@mui/icons-material';
 import ReactECharts from 'echarts-for-react';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
-import { TEXT_OPACITY } from '../../theme';
+import { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { useLanguagesAndWeights } from '../../api';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 
@@ -408,6 +408,7 @@ const LanguageWeightsTable: React.FC = () => {
           maxHeight: '800px',
           overflowY: 'auto',
           backgroundColor: 'transparent',
+          ...scrollbarSx,
         }}
       >
         <DataTable<LanguageRow, SortField>
