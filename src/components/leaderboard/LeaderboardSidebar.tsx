@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Box, Stack, Typography, Avatar } from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import { useSearchParams } from 'react-router-dom';
 import { SectionCard } from './SectionCard';
 import { STATUS_COLORS, scrollbarSx } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
@@ -29,25 +30,35 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
     'earners',
   );
 
-  // Stats (Use original unfiltered list for stats)
+  // Respect the main table's eligibility filter (?eligible=true|false) so
+  // sidebar stats/lists match what the user sees in the leaderboard.
+  const [searchParams] = useSearchParams();
+  const eligibilityFilter = searchParams.get('eligible');
+  const filteredMiners = useMemo(() => {
+    if (eligibilityFilter === 'true') return miners.filter((m) => m.isEligible);
+    if (eligibilityFilter === 'false')
+      return miners.filter((m) => !m.isEligible);
+    return miners;
+  }, [miners, eligibilityFilter]);
+
   const topEarners = useMemo(
     () =>
-      [...miners]
+      [...filteredMiners]
         .sort((a, b) => (b.usdPerDay || 0) - (a.usdPerDay || 0))
         .slice(0, 5),
-    [miners],
+    [filteredMiners],
   );
 
   const mostActive = useMemo(
     () =>
-      [...miners]
+      [...filteredMiners]
         .sort((a, b) =>
           variant === 'discoveries'
             ? (b.totalIssues || 0) - (a.totalIssues || 0)
             : (b.totalPRs || 0) - (a.totalPRs || 0),
         )
         .slice(0, 5),
-    [miners, variant],
+    [filteredMiners, variant],
   );
 
   return (
@@ -56,7 +67,7 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
       sx={{ height: '100%', overflow: 'auto', pr: 1, ...scrollbarSx }}
     >
       {/* Activity Cards: PR Activity, Issue Activity, Code Impact */}
-      <ActivitySidebarCards miners={miners} />
+      <ActivitySidebarCards miners={filteredMiners} />
 
       {/* Leaderboard Lists (Tabs) */}
       <SectionCard
