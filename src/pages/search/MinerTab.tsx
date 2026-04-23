@@ -2,9 +2,8 @@ import React from 'react';
 import { Box } from '@mui/material';
 import { type Theme } from '@mui/material/styles';
 import { getGithubAvatarSrc } from '../../utils';
-import SearchResultsTable, {
-  type SearchResultsTableColumn,
-} from './SearchResultsTable';
+import { type DataTableColumn } from '../../components/common/DataTable';
+import SearchResultsCard from './SearchResultsCard';
 import {
   SearchAvatarContentCell,
   SearchTruncatedText,
@@ -26,7 +25,7 @@ const numericCellSx = {
   fontVariantNumeric: 'tabular-nums',
 } as const;
 
-const minerColumns: SearchResultsTableColumn<MinerSearchData>[] = [
+const minerColumns: DataTableColumn<MinerSearchData>[] = [
   {
     key: 'rank',
     header: 'Rank',
@@ -162,7 +161,7 @@ const MinerTab: React.FC<MinerTabProps> = ({
   rowsPerPage,
   rowsPerPageOptions,
 }) => (
-  <SearchResultsTable
+  <SearchResultsCard
     columns={minerColumns}
     emptyLabel="No miner matches."
     errorLabel="Failed to load miners for search."

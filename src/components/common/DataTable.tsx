@@ -87,6 +87,12 @@ export type DataTableProps<T, SortKey extends string = never> = {
    * ancestor with a bounded height — the consumer must provide one.
    */
   stickyHeader?: boolean;
+  /**
+   * MUI table cell padding density. Defaults to 'small' (compact cells —
+   * matches the historical look of the leaderboard and search tables).
+   * Pass 'medium' for the roomier MUI default (~16px vertical padding).
+   */
+  size?: 'small' | 'medium';
 };
 
 const containerSx: SxProps<Theme> = {
@@ -126,6 +132,7 @@ export const DataTable = <T, SortKey extends string = never>({
   footer,
   sort,
   stickyHeader = false,
+  size = 'small',
 }: DataTableProps<T, SortKey>) => {
   const showTable = !isLoading && !isError && rows.length > 0;
   const showEmpty = !isLoading && !isError && rows.length === 0;
@@ -155,7 +162,7 @@ export const DataTable = <T, SortKey extends string = never>({
           <TableContainer sx={containerSx}>
             <Table
               stickyHeader={stickyHeader}
-              size="small"
+              size={size}
               sx={{ ...tableSx, ...(minWidth ? { minWidth } : {}) }}
             >
               <TableHead>
