@@ -50,7 +50,7 @@ const paginationSx: SxProps<Theme> = (theme) => ({
   },
 });
 
-export const SearchResultsCard = <T,>({
+const SearchResultsCard = <T,>({
   columns,
   rows,
   totalCount,

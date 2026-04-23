@@ -10,4 +10,4 @@ export { default as MinerScoreCard } from './MinerScoreCard';
 export { default as PerformanceRadar } from './PerformanceRadar';
 export { default as RankBadge } from './RankBadge';
 export { default as TablePagination } from './TablePagination';
-export { default as TrustBadge, getRiskAssessment } from './TrustBadge';
+export { default as TrustBadge } from './TrustBadge';

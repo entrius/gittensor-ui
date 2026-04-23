@@ -190,7 +190,7 @@ export const sortMinerRepoStats = (
 // Scoring window staleness check
 // ---------------------------------------------------------------------------
 
-export const SCORING_WINDOW_DAYS = 35;
+const SCORING_WINDOW_DAYS = 35;
 
 export const isOutsideScoringWindow = (
   date: string | null | undefined,
