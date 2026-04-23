@@ -47,11 +47,23 @@ export const useCommitLog = (
     { page, limit },
   );
 
+export const COMMIT_LOG_PAGE_LIMIT = 15;
+
+export const getNextCommitLogPageParam = (
+  lastPage: CommitLog[],
+  lastPageParam: number,
+) => {
+  if (lastPage.length < COMMIT_LOG_PAGE_LIMIT) {
+    return undefined;
+  }
+
+  return lastPageParam + 1;
+};
+
 export const useInfiniteCommitLog = (options?: {
   refetchInterval?: number;
 }) => {
   const baseUrl = import.meta.env.VITE_REACT_APP_BASE_URL;
-  const limit = 15;
 
   return useInfiniteQuery({
     queryKey: ['useInfiniteCommitLog'],
@@ -59,18 +71,15 @@ export const useInfiniteCommitLog = (options?: {
       const url = '/dash/commits';
       const requestUrl = baseUrl ? `${baseUrl}${url}` : url;
       const { data } = await axios.get<CommitLog[]>(requestUrl, {
-        params: { page: pageParam, limit },
+        params: { page: pageParam, limit: COMMIT_LOG_PAGE_LIMIT },
       });
       return data;
     },
-    getNextPageParam: (lastPage: CommitLog[], allPages: CommitLog[][]) => {
-      // If the last page has fewer items than the limit, we've reached the end
-      if (lastPage.length < limit) {
-        return undefined;
-      }
-      // Otherwise, return the next page number
-      return allPages.length + 1;
-    },
+    getNextPageParam: (
+      lastPage: CommitLog[],
+      _allPages: CommitLog[][],
+      lastPageParam: number,
+    ) => getNextCommitLogPageParam(lastPage, lastPageParam),
     initialPageParam: 1,
     refetchInterval: options?.refetchInterval,
     retry: false,

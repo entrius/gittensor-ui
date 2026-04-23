@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Card,
   CardContent,
@@ -318,6 +324,10 @@ const LiveCommitLog: React.FC = () => {
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
   const logContainerRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLAnchorElement>(null);
+  const fetchNextPagePendingRef = useRef(false);
+  const loadMoreVisibleRef = useRef(false);
+  const scrollGenerationRef = useRef(0);
+  const lastFetchScrollGenerationRef = useRef(0);
 
   const apiCommits = useMemo<CommitLogEntry[]>(
     () => data?.pages.flat() ?? [],
@@ -375,6 +385,29 @@ const LiveCommitLog: React.FC = () => {
   const showWaitingForActivity = !showInitialLoading && !hasAnyEntries;
   const showFilteredEmptyState = hasAnyEntries && visibleEntries.length === 0;
 
+  const fetchNextPageAfterScroll = useCallback(() => {
+    if (
+      !loadMoreVisibleRef.current ||
+      !hasNextPage ||
+      isFetchingNextPage ||
+      fetchNextPagePendingRef.current ||
+      scrollGenerationRef.current === lastFetchScrollGenerationRef.current
+    ) {
+      return;
+    }
+
+    lastFetchScrollGenerationRef.current = scrollGenerationRef.current;
+    fetchNextPagePendingRef.current = true;
+    void fetchNextPage().finally(() => {
+      fetchNextPagePendingRef.current = false;
+    });
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  const handleLogScroll = useCallback(() => {
+    scrollGenerationRef.current += 1;
+    fetchNextPageAfterScroll();
+  }, [fetchNextPageAfterScroll]);
+
   // Intersection observer for infinite scroll
   useEffect(() => {
     const scrollContainer = logContainerRef.current;
@@ -383,9 +416,9 @@ const LiveCommitLog: React.FC = () => {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
+        const entry = entries[0];
+        loadMoreVisibleRef.current = !!entry?.isIntersecting;
+        fetchNextPageAfterScroll();
       },
       {
         root: scrollContainer,
@@ -396,7 +429,7 @@ const LiveCommitLog: React.FC = () => {
     observer.observe(loadMoreElement);
 
     return () => observer.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, visibleEntries.length]);
+  }, [fetchNextPageAfterScroll]);
 
   return (
     <Card
@@ -532,6 +565,7 @@ const LiveCommitLog: React.FC = () => {
         ) : (
           <Box
             ref={logContainerRef}
+            onScroll={handleLogScroll}
             sx={{
               flex: 1,
               overflowY: 'auto',
