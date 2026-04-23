@@ -117,8 +117,8 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
             fontSize: '0.8rem',
           }}
         >
-          No standout merged PRs, completed issues, or contributor highlights for
-          the selected window.
+          No standout merged PRs, completed issues, or contributor highlights
+          for the selected window.
         </Typography>
       ) : (
         <Box

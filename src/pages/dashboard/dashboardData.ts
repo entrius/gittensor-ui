@@ -743,7 +743,8 @@ export const buildFeaturedWork = (
       const linesDiff = linesChanged(b) - linesChanged(a);
       if (linesDiff !== 0) return linesDiff;
 
-      const commitsDiff = parseNumber(b.commitCount) - parseNumber(a.commitCount);
+      const commitsDiff =
+        parseNumber(b.commitCount) - parseNumber(a.commitCount);
       if (commitsDiff !== 0) return commitsDiff;
 
       const mergedAtDiff =
