@@ -1,22 +1,18 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
   CircularProgress,
   Grid,
   Tooltip,
-  Menu,
-  MenuItem,
-  ListItemText,
-  Divider,
   Select,
   FormControl,
   IconButton,
+  MenuItem,
 } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { SectionCard } from './SectionCard';
@@ -32,6 +28,7 @@ import {
   type LeaderboardMode,
   FONTS,
 } from './types';
+import FilterButton from '../FilterButton';
 
 type ViewMode = 'cards' | 'list';
 
@@ -305,6 +302,21 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     [setFilter],
   );
 
+  const eligibilityCounts = useMemo(() => {
+    if (mode !== 'leaderboard') return null;
+    const ossEligibleCount = miners.filter((m) => m.ossIsEligible).length;
+    const discoveriesEligibleCount = miners.filter(
+      (m) => m.discoveriesIsEligible,
+    ).length;
+    return {
+      all: miners.length,
+      ossEligible: ossEligibleCount,
+      ossIneligible: miners.length - ossEligibleCount,
+      discoveriesEligible: discoveriesEligibleCount,
+      discoveriesIneligible: miners.length - discoveriesEligibleCount,
+    };
+  }, [miners, mode]);
+
   // Rank is computed on the full sorted leaderboard so each miner keeps their
   // true position regardless of filters. Filtering (search / eligibility) then
   // only hides rows without renumbering the ones that remain. Sort direction
@@ -397,38 +409,188 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
         }}
       >
         <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          {/* Row 1: Title + Search + Filters + View */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 2,
-              flexWrap: { xs: 'wrap', sm: 'nowrap' },
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{ fontSize: '1.25rem', fontWeight: 600, flexShrink: 0 }}
-            >
-              Miners ({filteredMiners.length})
-            </Typography>
+          {mode === 'leaderboard' ? (
+            <>
+              {/* Row 1: Filter (left) + Sort (right) */}
+              <Box
+                sx={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 2,
+                  flexWrap: { xs: 'wrap', md: 'nowrap' },
+                }}
+              >
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <EligibilityTimelineToggle
+                    value={(eligibilityFilter ?? 'all') as EligibilityFilter}
+                    onChange={(next) => handleEligibilityChange(next)}
+                    counts={eligibilityCounts}
+                  />
+                </Box>
+                {viewMode === 'cards' ? (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'flex-end',
+                      alignItems: 'center',
+                      gap: 1,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: '0.8rem',
+                        color: 'text.secondary',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Sort:
+                    </Typography>
+                    <FormControl size="small">
+                      <Select
+                        value={sortOption}
+                        onChange={(e) => {
+                          const next = e.target.value as SortOption;
+                          if (next !== sortOption) handleSortChange(next);
+                        }}
+                        sx={{
+                          color: 'text.primary',
+                          backgroundColor: 'background.default',
+                          fontSize: '0.8rem',
+                          height: '36px',
+                          borderRadius: 2,
+                          minWidth: '190px',
+                          '& fieldset': { borderColor: 'border.light' },
+                          '&:hover fieldset': { borderColor: 'border.medium' },
+                          '&.Mui-focused fieldset': {
+                            borderColor: 'primary.main',
+                          },
+                          '& .MuiSelect-select': { py: 0.75 },
+                        }}
+                      >
+                        {(
+                          [
+                            { value: 'ossScore', label: 'OSS Score' },
+                            { value: 'issueScore', label: 'Issues Score' },
+                            { value: 'usdPerDay', label: 'Earnings' },
+                            { value: 'totalPRs', label: 'PRs' },
+                            { value: 'totalIssues', label: 'Issues' },
+                            {
+                              value: 'ossCredibility',
+                              label: 'OSS Credibility',
+                            },
+                            {
+                              value: 'issueCredibility',
+                              label: 'Issues Credibility',
+                            },
+                          ] as const
+                        ).map((opt) => (
+                          <MenuItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    <Tooltip
+                      title={
+                        sortDirection === 'asc' ? 'Ascending' : 'Descending'
+                      }
+                    >
+                      <IconButton
+                        size="small"
+                        onClick={() => handleSortChange(sortOption)}
+                        sx={{
+                          color: 'text.primary',
+                          border: '1px solid',
+                          borderColor: 'border.light',
+                          borderRadius: 2,
+                          padding: '6px',
+                          '&:hover': {
+                            backgroundColor: 'surface.light',
+                            borderColor: 'border.medium',
+                          },
+                        }}
+                        aria-label={
+                          sortDirection === 'asc'
+                            ? 'Sort descending'
+                            : 'Sort ascending'
+                        }
+                      >
+                        {sortDirection === 'asc' ? (
+                          <ArrowUpwardIcon fontSize="small" />
+                        ) : (
+                          <ArrowDownwardIcon fontSize="small" />
+                        )}
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                ) : null}
+              </Box>
+
+              {/* Row 2: Search (left) + View mode (right) */}
+              <Box
+                sx={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 2,
+                  flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                }}
+              >
+                <Box
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    width: { xs: '100%', sm: 'auto' },
+                  }}
+                >
+                  <SearchInput
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    width="100%"
+                    placeholder="Search miners..."
+                  />
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <ViewModeToggle
+                    viewMode={viewMode}
+                    onChange={handleViewModeChange}
+                  />
+                </Box>
+              </Box>
+            </>
+          ) : (
+            /* Row 1: Title + Search + Filters + View */
             <Box
-              sx={{ flex: 1, minWidth: 0, width: { xs: '100%', sm: 'auto' } }}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                width: '100%',
+                justifyContent: 'space-between',
+                flexWrap: { xs: 'wrap', sm: 'nowrap' },
+              }}
             >
-              <SearchInput
-                value={searchQuery}
-                onChange={handleSearchChange}
-                width="100%"
-                placeholder="Search miners..."
-              />
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {mode === 'leaderboard' ? (
-                <EligibilityMenu
-                  value={(eligibilityFilter ?? 'all') as EligibilityFilter}
-                  onChange={(next) => handleEligibilityChange(next)}
+              <Typography
+                variant="h6"
+                sx={{ fontSize: '1.25rem', fontWeight: 600, flexShrink: 0 }}
+              >
+                Miners ({filteredMiners.length})
+              </Typography>
+              <Box
+                sx={{ flex: 1, minWidth: 0, width: { xs: '100%', sm: 'auto' } }}
+              >
+                <SearchInput
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  width="100%"
+                  placeholder="Search miners..."
                 />
-              ) : (
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <EligibilityToggle
                   value={
                     (legacyEligibilityFilter ??
@@ -436,16 +598,16 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                   }
                   onChange={handleEligibilityChange}
                 />
-              )}
-              <ViewModeToggle
-                viewMode={viewMode}
-                onChange={handleViewModeChange}
-              />
+                <ViewModeToggle
+                  viewMode={viewMode}
+                  onChange={handleViewModeChange}
+                />
+              </Box>
             </Box>
-          </Box>
+          )}
 
-          {/* Row 2: Sort controls (card view only — matches repositories UX) */}
-          {viewMode === 'cards' ? (
+          {/* Sort controls (card view only — non-leaderboard) */}
+          {mode !== 'leaderboard' && viewMode === 'cards' ? (
             <Box
               sx={{
                 display: 'flex',
@@ -482,30 +644,18 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                     '& .MuiSelect-select': { py: 0.75 },
                   }}
                 >
-                  {(mode === 'leaderboard'
-                    ? ([
-                        { value: 'ossScore', label: 'OSS Score' },
-                        { value: 'issueScore', label: 'Issues Score' },
-                        { value: 'usdPerDay', label: 'Earnings' },
-                        { value: 'totalPRs', label: 'PRs' },
-                        { value: 'totalIssues', label: 'Issues' },
-                        { value: 'ossCredibility', label: 'OSS Credibility' },
-                        {
-                          value: 'issueCredibility',
-                          label: 'Issues Credibility',
-                        },
-                      ] as const)
-                    : ([
-                        { value: 'totalScore', label: 'Score' },
-                        { value: 'usdPerDay', label: 'Earnings' },
-                        ...(variant !== 'discoveries'
-                          ? [{ value: 'totalPRs', label: 'PRs' } as const]
-                          : []),
-                        ...(variant === 'discoveries' || variant === 'watchlist'
-                          ? [{ value: 'totalIssues', label: 'Issues' } as const]
-                          : []),
-                        { value: 'credibility', label: 'Credibility' },
-                      ] as const)
+                  {(
+                    [
+                      { value: 'totalScore', label: 'Score' },
+                      { value: 'usdPerDay', label: 'Earnings' },
+                      ...(variant !== 'discoveries'
+                        ? [{ value: 'totalPRs', label: 'PRs' } as const]
+                        : []),
+                      ...(variant === 'discoveries' || variant === 'watchlist'
+                        ? [{ value: 'totalIssues', label: 'Issues' } as const]
+                        : []),
+                      { value: 'credibility', label: 'Credibility' },
+                    ] as const
                   ).map((opt) => (
                     <MenuItem key={opt.value} value={opt.value}>
                       {opt.label}
@@ -796,72 +946,46 @@ const ELIGIBILITY_MENU_OPTIONS: Array<{
   { value: 'all', label: 'All' },
   { value: 'ossEligible', label: 'OSS eligible' },
   { value: 'ossIneligible', label: 'OSS ineligible' },
-  { value: 'discoveriesEligible', label: 'Discoveries eligible' },
-  { value: 'discoveriesIneligible', label: 'Discoveries ineligible' },
+  { value: 'discoveriesEligible', label: 'Issues eligible' },
+  { value: 'discoveriesIneligible', label: 'Issues ineligible' },
 ];
 
-const EligibilityMenu: React.FC<{
+const EligibilityTimelineToggle: React.FC<{
   value: EligibilityFilter;
   onChange: (next: EligibilityFilter) => void;
-}> = ({ value, onChange }) => {
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
-  const label =
-    ELIGIBILITY_MENU_OPTIONS.find((x) => x.value === value)?.label ?? 'All';
-
-  return (
-    <>
-      <Box
-        component="button"
-        type="button"
-        onClick={(e) => setAnchorEl(e.currentTarget)}
-        sx={(theme) => ({
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 0.5,
-          height: 32,
-          px: 1.25,
-          borderRadius: 2,
-          border: `1px solid ${theme.palette.border.light}`,
-          backgroundColor: theme.palette.surface.subtle,
-          color: theme.palette.text.primary,
-          cursor: 'pointer',
-          fontFamily: FONTS.mono,
-          fontSize: '0.72rem',
-          fontWeight: 700,
-          textTransform: 'uppercase',
-          letterSpacing: '0.06em',
-          '&:hover': {
-            backgroundColor: theme.palette.surface.light,
-          },
-        })}
-      >
-        {label}
-        <KeyboardArrowDownIcon sx={{ fontSize: '1.1rem', opacity: 0.85 }} />
-      </Box>
-      <Menu
-        anchorEl={anchorEl}
-        open={open}
-        onClose={() => setAnchorEl(null)}
-        MenuListProps={{ dense: true }}
-      >
-        {ELIGIBILITY_MENU_OPTIONS.map((option, idx) => (
-          <React.Fragment key={option.value}>
-            {idx === 1 ? <Divider /> : null}
-            <MenuItem
-              selected={value === option.value}
-              onClick={() => {
-                onChange(option.value);
-                setAnchorEl(null);
-              }}
-            >
-              <ListItemText primary={option.label} />
-            </MenuItem>
-          </React.Fragment>
-        ))}
-      </Menu>
-    </>
-  );
-};
+  counts: null | {
+    all: number;
+    ossEligible: number;
+    ossIneligible: number;
+    discoveriesEligible: number;
+    discoveriesIneligible: number;
+  };
+}> = ({ value, onChange, counts }) => (
+  <Box
+    sx={{
+      display: 'flex',
+      gap: 0.5,
+      alignItems: 'center',
+      flexWrap: 'wrap',
+    }}
+    role="tablist"
+    aria-label="Eligibility timeline"
+  >
+    {ELIGIBILITY_MENU_OPTIONS.map((opt) => {
+      const isActive = value === opt.value;
+      const count = counts?.[opt.value as keyof NonNullable<typeof counts>];
+      return (
+        <FilterButton
+          key={opt.value}
+          label={opt.label}
+          isActive={isActive}
+          count={count}
+          color={STATUS_COLORS.open}
+          onClick={() => onChange(opt.value)}
+        />
+      );
+    })}
+  </Box>
+);
 
 export default TopMinersTable;
