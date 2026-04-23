@@ -40,9 +40,12 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
 
   const openContributor = (githubId: string) => {
     const modeParam = mode !== 'prs' ? `&mode=${mode}` : '';
-    navigate(`/miners/details?githubId=${encodeURIComponent(githubId)}${modeParam}`, {
-      state: { backTo: '/dashboard' },
-    });
+    navigate(
+      `/miners/details?githubId=${encodeURIComponent(githubId)}${modeParam}`,
+      {
+        state: { backTo: '/dashboard' },
+      },
+    );
   };
 
   return (
