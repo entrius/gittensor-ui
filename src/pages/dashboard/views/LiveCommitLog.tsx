@@ -99,6 +99,7 @@ const COMMIT_STATUS_FILTERS: CommitStatusFilter[] = [
   'open',
   'closed',
 ];
+const SCROLL_FETCH_THRESHOLD_PX = 48;
 
 const getCommitId = (entry: CommitLogEntry) =>
   `${entry.repository}-${entry.pullRequestNumber}`;
@@ -323,11 +324,7 @@ const LiveCommitLog: React.FC = () => {
   const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
   const logContainerRef = useRef<HTMLDivElement>(null);
-  const loadMoreRef = useRef<HTMLAnchorElement>(null);
   const fetchNextPagePendingRef = useRef(false);
-  const loadMoreVisibleRef = useRef(false);
-  const scrollGenerationRef = useRef(0);
-  const lastFetchScrollGenerationRef = useRef(0);
 
   const apiCommits = useMemo<CommitLogEntry[]>(
     () => data?.pages.flat() ?? [],
@@ -385,51 +382,38 @@ const LiveCommitLog: React.FC = () => {
   const showWaitingForActivity = !showInitialLoading && !hasAnyEntries;
   const showFilteredEmptyState = hasAnyEntries && visibleEntries.length === 0;
 
-  const fetchNextPageAfterScroll = useCallback(() => {
-    if (
-      !loadMoreVisibleRef.current ||
-      !hasNextPage ||
-      isFetchingNextPage ||
-      fetchNextPagePendingRef.current ||
-      scrollGenerationRef.current === lastFetchScrollGenerationRef.current
-    ) {
-      return;
-    }
+  const fetchNextPageIfNeeded = useCallback(
+    (scrollContainer: HTMLDivElement) => {
+      const distanceFromBottom =
+        scrollContainer.scrollHeight -
+        (scrollContainer.scrollTop + scrollContainer.clientHeight);
 
-    lastFetchScrollGenerationRef.current = scrollGenerationRef.current;
-    fetchNextPagePendingRef.current = true;
-    void fetchNextPage().finally(() => {
-      fetchNextPagePendingRef.current = false;
-    });
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+      if (distanceFromBottom > SCROLL_FETCH_THRESHOLD_PX) {
+        return;
+      }
 
-  const handleLogScroll = useCallback(() => {
-    scrollGenerationRef.current += 1;
-    fetchNextPageAfterScroll();
-  }, [fetchNextPageAfterScroll]);
+      if (
+        !hasNextPage ||
+        isFetchingNextPage ||
+        fetchNextPagePendingRef.current
+      ) {
+        return;
+      }
 
-  // Intersection observer for infinite scroll
-  useEffect(() => {
-    const scrollContainer = logContainerRef.current;
-    const loadMoreElement = loadMoreRef.current;
-    if (!scrollContainer || !loadMoreElement) return;
+      fetchNextPagePendingRef.current = true;
+      void fetchNextPage().finally(() => {
+        fetchNextPagePendingRef.current = false;
+      });
+    },
+    [fetchNextPage, hasNextPage, isFetchingNextPage],
+  );
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        loadMoreVisibleRef.current = !!entry?.isIntersecting;
-        fetchNextPageAfterScroll();
-      },
-      {
-        root: scrollContainer,
-        threshold: 0.1,
-      },
-    );
-
-    observer.observe(loadMoreElement);
-
-    return () => observer.disconnect();
-  }, [fetchNextPageAfterScroll]);
+  const handleLogScroll = useCallback(
+    (event: React.UIEvent<HTMLDivElement>) => {
+      fetchNextPageIfNeeded(event.currentTarget);
+    },
+    [fetchNextPageIfNeeded],
+  );
 
   return (
     <Card
@@ -614,8 +598,6 @@ const LiveCommitLog: React.FC = () => {
                 })}
               </Stack>
             )}
-
-            <Box ref={loadMoreRef} sx={{ height: 1 }} />
 
             {isFetchingNextPage && (
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
