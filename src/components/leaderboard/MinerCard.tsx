@@ -284,7 +284,11 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             </Typography>
           ) : null}
           {miner.githubId && (
-            <WatchlistButton githubId={miner.githubId} size="small" />
+            <WatchlistButton
+              category="miners"
+              itemKey={miner.githubId}
+              size="small"
+            />
           )}
         </Box>
       </Box>
@@ -346,13 +350,13 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             <CredDonut
               segments={getPrSegments(miner)}
               percent={credibilityPercent}
-              isEligible={miner.isEligible ?? false}
+              isEligible={ossEligible}
               label="PRs"
             />
             <CredDonut
               segments={getIssueSegments(miner)}
               percent={issueCredPercent}
-              isEligible={miner.isIssueEligible ?? false}
+              isEligible={discoveriesEligible}
               label="Issues"
             />
           </Box>
