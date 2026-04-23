@@ -2,16 +2,15 @@ import React from 'react';
 import { alpha } from '@mui/material/styles';
 import { type IssueBounty } from '../../api/models/Issues';
 import { getGithubAvatarSrc, getIssueStatusMeta } from '../../utils';
-import SearchResultsTable, {
-  type SearchResultsTableColumn,
-} from './SearchResultsTable';
+import { type DataTableColumn } from '../../components/common/DataTable';
+import SearchResultsCard from './SearchResultsCard';
 import {
   SearchAvatarContentCell,
   SearchStatusChip,
   SearchTruncatedText,
 } from './SearchTableCells';
 
-const issueColumns: SearchResultsTableColumn<IssueBounty>[] = [
+const issueColumns: DataTableColumn<IssueBounty>[] = [
   {
     key: 'issueNumber',
     header: 'Issue #',
@@ -113,7 +112,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
   rowsPerPage,
   rowsPerPageOptions,
 }) => (
-  <SearchResultsTable
+  <SearchResultsCard
     columns={issueColumns}
     emptyLabel="No issue matches."
     errorLabel="Failed to load issues for search."

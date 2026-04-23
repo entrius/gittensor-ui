@@ -54,8 +54,8 @@ export const useDashboardData = (range: TrendTimeRange) => {
 
   const overview = useMemo(
     () =>
-      buildDashboardOverview(datasets.prs.data, datasets.issues.data, range),
-    [datasets.issues.data, datasets.prs.data, range],
+      buildDashboardOverview(datasets.prs.data, datasets.miners.data, range),
+    [datasets.miners.data, datasets.prs.data, range],
   );
 
   const trendData = useMemo(
