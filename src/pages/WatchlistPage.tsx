@@ -335,7 +335,7 @@ const WatchlistPage: React.FC = () => {
             mb: 3,
           }}
         >
-          Clear all {count} pinned {count === 1 ? noun.single : noun.plural}?
+          Clear all {count} pinned miner(s)?
         </DialogTitle>
         <DialogActions sx={{ p: 0 }}>
           <Button
