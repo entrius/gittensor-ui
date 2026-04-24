@@ -1,5 +1,12 @@
 import React from 'react';
-import { Box, Typography, alpha } from '@mui/material';
+import {
+  Box,
+  IconButton,
+  Typography,
+  alpha,
+  type SxProps,
+  type Theme,
+} from '@mui/material';
 import {
   NavigateBefore as PrevIcon,
   NavigateNext as NextIcon,
@@ -11,6 +18,22 @@ interface TablePaginationProps {
   onPageChange: (newPage: number) => void;
 }
 
+const navButtonSx: SxProps<Theme> = {
+  p: 0.25,
+  color: (t) => alpha(t.palette.text.primary, 0.6),
+  '&:hover': { color: 'text.primary' },
+  '&.Mui-focusVisible': {
+    backgroundColor: (t) => alpha(t.palette.primary.main, 0.2),
+    outline: '2px solid',
+    outlineColor: 'primary.main',
+    outlineOffset: '-2px',
+    color: 'text.primary',
+  },
+  '&.Mui-disabled': { opacity: 0.3 },
+};
+
+const navIconSx = { fontSize: '1.2rem' };
+
 const TablePagination: React.FC<TablePaginationProps> = ({
   page,
   totalPages,
@@ -19,21 +42,6 @@ const TablePagination: React.FC<TablePaginationProps> = ({
   if (totalPages <= 1) {
     return null;
   }
-
-  const canGoPrev = page > 0;
-  const canGoNext = page < totalPages - 1;
-
-  const handlePrev = () => {
-    if (canGoPrev) {
-      onPageChange(page - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (canGoNext) {
-      onPageChange(page + 1);
-    }
-  };
 
   return (
     <Box
@@ -47,19 +55,15 @@ const TablePagination: React.FC<TablePaginationProps> = ({
         borderColor: 'border.subtle',
       }}
     >
-      <Box
-        onClick={handlePrev}
-        sx={{
-          cursor: canGoPrev ? 'pointer' : 'default',
-          opacity: canGoPrev ? 1 : 0.3,
-          display: 'flex',
-          alignItems: 'center',
-          color: (t) => alpha(t.palette.text.primary, 0.6),
-          '&:hover': canGoPrev ? { color: 'text.primary' } : {},
-        }}
+      <IconButton
+        onClick={() => onPageChange(page - 1)}
+        disabled={page === 0}
+        aria-label="Previous page"
+        size="small"
+        sx={navButtonSx}
       >
-        <PrevIcon sx={{ fontSize: '1.2rem' }} />
-      </Box>
+        <PrevIcon sx={navIconSx} />
+      </IconButton>
       <Typography
         sx={{
           fontSize: '0.75rem',
@@ -68,19 +72,15 @@ const TablePagination: React.FC<TablePaginationProps> = ({
       >
         {page + 1} / {totalPages}
       </Typography>
-      <Box
-        onClick={handleNext}
-        sx={{
-          cursor: canGoNext ? 'pointer' : 'default',
-          opacity: canGoNext ? 1 : 0.3,
-          display: 'flex',
-          alignItems: 'center',
-          color: (t) => alpha(t.palette.text.primary, 0.6),
-          '&:hover': canGoNext ? { color: 'text.primary' } : {},
-        }}
+      <IconButton
+        onClick={() => onPageChange(page + 1)}
+        disabled={page >= totalPages - 1}
+        aria-label="Next page"
+        size="small"
+        sx={navButtonSx}
       >
-        <NextIcon sx={{ fontSize: '1.2rem' }} />
-      </Box>
+        <NextIcon sx={navIconSx} />
+      </IconButton>
     </Box>
   );
 };
