@@ -373,17 +373,20 @@ const IssuesList: React.FC<IssuesListProps> = ({
             src={`https://avatars.githubusercontent.com/${issue.repositoryFullName.split('/')[0]}`}
             sx={{ width: 24, height: 24, borderRadius: 1, flexShrink: 0 }}
           />
-          <Typography
-            sx={{
-              fontSize: '0.85rem',
-              color: STATUS_COLORS.info,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {issue.repositoryFullName}
-          </Typography>
+          <Tooltip title={issue.repositoryFullName} arrow>
+            <Typography
+              sx={{
+                fontSize: '0.85rem',
+                color: STATUS_COLORS.info,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                cursor: 'pointer',
+              }}
+            >
+              {issue.repositoryFullName}
+            </Typography>
+          </Tooltip>
         </Box>
       ),
     };
@@ -395,18 +398,21 @@ const IssuesList: React.FC<IssuesListProps> = ({
       renderCell: (issue) => (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
           {issue.title && (
-            <Typography
-              sx={{
-                fontSize: '0.85rem',
-                color: 'text.primary',
-                fontWeight: 500,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {issue.title}
-            </Typography>
+            <Tooltip title={issue.title} arrow>
+              <Typography
+                sx={{
+                  fontSize: '0.85rem',
+                  color: 'text.primary',
+                  fontWeight: 500,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  cursor: 'pointer',
+                }}
+              >
+                {issue.title}
+              </Typography>
+            </Tooltip>
           )}
           <Link
             href={issue.githubUrl}
@@ -485,17 +491,20 @@ const IssuesList: React.FC<IssuesListProps> = ({
       renderCell: (issue) => {
         const statusBadge = getIssueStatusMeta(issue.status);
         return (
-          <Chip
-            label={statusBadge.text}
-            size="small"
-            sx={{
-              fontSize: '0.7rem',
-              fontWeight: 600,
-              backgroundColor: statusBadge.bgColor,
-              color: statusBadge.color,
-              border: `1px solid ${statusBadge.color}40`,
-            }}
-          />
+          <Tooltip title={statusBadge.text} arrow>
+            <Chip
+              label={statusBadge.text}
+              size="small"
+              sx={{
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                backgroundColor: statusBadge.bgColor,
+                color: statusBadge.color,
+                border: `1px solid ${statusBadge.color}40`,
+                cursor: 'pointer',
+              }}
+            />
+          </Tooltip>
         );
       },
     });
