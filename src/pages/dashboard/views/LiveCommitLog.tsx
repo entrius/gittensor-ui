@@ -262,15 +262,26 @@ const CommitLogItem: React.FC<{
           direction="row"
           justifyContent="space-between"
           alignItems="center"
+          gap={1}
           sx={{
             pt: 1,
+            minWidth: 0,
             borderTop: `1px solid ${theme.palette.border.subtle}`,
           }}
         >
-          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: 'text.secondary',
+              minWidth: 0,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
             by {entry.author}
           </Typography>
-          <Stack direction="row" spacing={2}>
+          <Stack direction="row" spacing={2} sx={{ flexShrink: 0 }}>
             <Stack direction="row" spacing={0.5} alignItems="center">
               <Typography
                 variant="caption"
