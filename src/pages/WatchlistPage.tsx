@@ -1889,19 +1889,38 @@ const buildPrColumns = (
     width: '20%',
     sortKey: 'repo',
     cellSx: prCellSx,
-    renderCell: (pr) => (
-      <Typography
-        sx={{
-          fontSize: '0.75rem',
-          color: 'text.secondary',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {pr.repository}
-      </Typography>
-    ),
+    renderCell: (pr) => {
+      const owner = pr.repository.split('/')[0] || '';
+      return (
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}
+        >
+          <Avatar
+            src={`https://avatars.githubusercontent.com/${owner}`}
+            alt={owner}
+            sx={{
+              width: 20,
+              height: 20,
+              flexShrink: 0,
+              border: '1px solid',
+              borderColor: 'border.medium',
+              backgroundColor: getRepositoryOwnerAvatarBackground(owner),
+            }}
+          />
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: 'text.secondary',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {pr.repository}
+          </Typography>
+        </Box>
+      );
+    },
   },
   {
     key: 'author',
