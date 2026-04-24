@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   ButtonBase,
   Card,
@@ -29,6 +29,7 @@ import {
   useGeneralConfig,
   type MinerEvaluation,
 } from '../../api';
+import { useClipboardCopy } from '../../hooks/useClipboardCopy';
 import {
   RANK_COLORS,
   STATUS_COLORS,
@@ -198,17 +199,10 @@ const formatHotkeyPreview = (hotkey: string): string => {
 };
 
 const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
-  const [copied, setCopied] = useState(false);
-  const timerRef = useRef<number | null>(null);
-
-  useEffect(
-    () => () => {
-      if (timerRef.current !== null) {
-        window.clearTimeout(timerRef.current);
-      }
-    },
-    [],
-  );
+  const { copied, copy, liveRegion } = useClipboardCopy({
+    resetMs: COPY_FEEDBACK_MS,
+    copiedMessage: 'Hotkey copied to clipboard',
+  });
 
   if (!hotkey) return null;
 
@@ -220,81 +214,60 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
     lineHeight: 1,
   } as const;
 
-  const handleCopy = async () => {
-    try {
-      if (!navigator.clipboard?.writeText) {
-        throw new Error('clipboard-unavailable');
-      }
-      await navigator.clipboard.writeText(hotkey);
-      setCopied(true);
-      if (timerRef.current !== null) {
-        window.clearTimeout(timerRef.current);
-      }
-      timerRef.current = window.setTimeout(() => {
-        setCopied(false);
-        timerRef.current = null;
-      }, COPY_FEEDBACK_MS);
-    } catch {
-      // The ss58 text remains selectable, so users can copy manually if
-      // the Clipboard API is unavailable (e.g. http:// or a restricted
-      // iframe).
-    }
-  };
-
   return (
-    <ButtonBase
-      onClick={handleCopy}
-      aria-label={
-        copied ? 'Hotkey copied to clipboard' : 'Copy hotkey to clipboard'
-      }
-      aria-live="polite"
-      disableRipple
-      sx={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        textAlign: 'left',
-        borderRadius: '4px',
-        lineHeight: 1,
-        p: 0,
-        m: 0,
-        color: (t) =>
-          copied
-            ? t.palette.status.success
-            : alpha(t.palette.text.primary, 0.45),
-        transition: 'color 0.15s ease',
-        '&:hover': {
+    <>
+      <ButtonBase
+        onClick={() => void copy(hotkey)}
+        aria-label="Copy hotkey"
+        disableRipple
+        sx={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          textAlign: 'left',
+          borderRadius: '4px',
+          lineHeight: 1,
+          p: 0,
+          m: 0,
           color: (t) =>
             copied
               ? t.palette.status.success
-              : alpha(t.palette.text.primary, 0.8),
-        },
-        '&:focus-visible': {
-          outline: (t) => `2px solid ${t.palette.primary.main}`,
-          outlineOffset: '2px',
-        },
-      }}
-    >
-      <Box
-        component="span"
-        sx={{
-          ...hotkeyTextSx,
-          display: copied ? 'inline' : { xs: 'inline', sm: 'none' },
+              : alpha(t.palette.text.primary, 0.45),
+          transition: 'color 0.15s ease',
+          '&:hover': {
+            color: (t) =>
+              copied
+                ? t.palette.status.success
+                : alpha(t.palette.text.primary, 0.8),
+          },
+          '&:focus-visible': {
+            outline: (t) => `2px solid ${t.palette.primary.main}`,
+            outlineOffset: '2px',
+          },
         }}
       >
-        {copied ? '✓ Copied to clipboard' : formatHotkeyPreview(hotkey)}
-      </Box>
-      {!copied ? (
         <Box
           component="span"
           sx={{
             ...hotkeyTextSx,
-            display: { xs: 'none', sm: 'inline' },
+            display: copied ? 'inline' : { xs: 'inline', sm: 'none' },
           }}
         >
-          {hotkey}
+          {copied ? '✓ Copied to clipboard' : formatHotkeyPreview(hotkey)}
         </Box>
-      ) : null}
-    </ButtonBase>
+        {!copied ? (
+          <Box
+            component="span"
+            sx={{
+              ...hotkeyTextSx,
+              display: { xs: 'none', sm: 'inline' },
+            }}
+          >
+            {hotkey}
+          </Box>
+        ) : null}
+      </ButtonBase>
+      {liveRegion}
+    </>
   );
 };
 
