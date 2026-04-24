@@ -72,6 +72,7 @@ const routesArray: AppRoute[] = [
     name: 'repositories',
     path: '/repositories',
     element: <RepositoriesPage />,
+    showGlobalSearch: true,
   },
   {
     name: 'miner-details',
