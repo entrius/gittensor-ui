@@ -633,7 +633,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const renderSortHeader = (
     column: SortColumn,
     label: string,
-    align: 'left' | 'right' = 'left',
+    align: 'left' | 'right' | 'center' = 'left',
   ) => (
     <Box
       onClick={() => handleSort(column)}
@@ -647,7 +647,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         height: '100%',
         px: 2,
         py: 1,
-        justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
+        justifyContent:
+          align === 'right'
+            ? 'flex-end'
+            : align === 'center'
+              ? 'center'
+              : 'flex-start',
       }}
     >
       {label}
@@ -678,7 +683,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'repository',
-      header: renderSortHeader('repository', 'Repository'),
+      header: renderSortHeader('repository', 'Repository', 'center'),
       width: '35%',
       headerSx: sortableHeaderSx,
       cellSx: { pl: 1.5 },
@@ -732,9 +737,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'weight',
-      header: renderSortHeader('weight', 'Weight', 'right'),
+      header: renderSortHeader('weight', 'Weight', 'center'),
       width: '12%',
-      align: 'right',
+      align: 'center',
       headerSx: sortableHeaderSx,
       renderCell: (repo) => (
         <Typography
@@ -750,9 +755,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'totalScore',
-      header: renderSortHeader('totalScore', 'Total Score', 'right'),
+      header: renderSortHeader('totalScore', 'Total Score', 'center'),
       width: '18%',
-      align: 'right',
+      align: 'center',
       headerSx: sortableHeaderSx,
       renderCell: (repo) => (
         <Typography
@@ -771,9 +776,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'totalPRs',
-      header: renderSortHeader('totalPRs', 'PRs', 'right'),
+      header: renderSortHeader('totalPRs', 'PRs', 'center'),
       width: '15%',
-      align: 'right',
+      align: 'center',
       headerSx: sortableHeaderSx,
       renderCell: (repo) => (
         <Typography
@@ -788,9 +793,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'contributors',
-      header: renderSortHeader('contributors', 'Contributors', 'right'),
+      header: renderSortHeader('contributors', 'Contributors', 'center'),
       width: '15%',
-      align: 'right',
+      align: 'center',
       headerSx: sortableHeaderSx,
       renderCell: (repo) => (
         <Typography
