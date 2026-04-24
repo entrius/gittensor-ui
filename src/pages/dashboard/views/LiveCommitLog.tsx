@@ -10,6 +10,7 @@ import {
   alpha,
   Avatar,
   Chip,
+  Tooltip,
 } from '@mui/material';
 import { LinkBox } from '../../../components/common/linkBehavior';
 import { useInfiniteCommitLog } from '../../../api';
@@ -258,53 +259,89 @@ const CommitLogItem: React.FC<{
           </Typography>
         </Box>
 
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          sx={{
-            pt: 1,
-            borderTop: `1px solid ${theme.palette.border.subtle}`,
-          }}
-        >
-          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            by {entry.author}
-          </Typography>
-          <Stack direction="row" spacing={2}>
-            <Stack direction="row" spacing={0.5} alignItems="center">
-              <Typography
-                variant="caption"
-                sx={{ color: theme.palette.diff.additions, fontWeight: 600 }}
-              >
-                +{entry.additions}
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                /
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{ color: theme.palette.diff.deletions, fontWeight: 600 }}
-              >
-                -{entry.deletions}
-              </Typography>
-            </Stack>
-            <Typography
-              variant="caption"
-              sx={{
-                color: getScoreColor(entry.score),
-                fontWeight: 600,
-              }}
-            >
-              SCORE: {parseFloat(entry.score).toFixed(2)}
-            </Typography>
-          </Stack>
-        </Stack>
+        <LiveCommitFooter
+          author={entry.author}
+          additions={entry.additions}
+          deletions={entry.deletions}
+          score={entry.score}
+        />
       </Stack>
     </LinkBox>
   );
 
   return content;
 };
+
+interface LiveCommitFooterProps {
+  author: string;
+  additions: number;
+  deletions: number;
+  score: string;
+}
+
+function LiveCommitFooter({
+  author,
+  additions,
+  deletions,
+  score,
+}: LiveCommitFooterProps) {
+  return (
+    <Stack
+      direction="row"
+      justifyContent="space-between"
+      alignItems="center"
+      gap={1}
+      sx={{
+        pt: 1,
+        minWidth: 0,
+        borderTop: `1px solid ${theme.palette.border.subtle}`,
+      }}
+    >
+      <Tooltip title={author} placement="top" arrow>
+        <Typography
+          variant="caption"
+          sx={{
+            color: 'text.secondary',
+            minWidth: 0,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          by {author}
+        </Typography>
+      </Tooltip>
+      <Stack direction="row" spacing={2} sx={{ flexShrink: 0 }}>
+        <Stack direction="row" spacing={0.5} alignItems="center">
+          <Typography
+            variant="caption"
+            sx={{ color: theme.palette.diff.additions, fontWeight: 600 }}
+          >
+            +{additions}
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            /
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{ color: theme.palette.diff.deletions, fontWeight: 600 }}
+          >
+            -{deletions}
+          </Typography>
+        </Stack>
+        <Typography
+          variant="caption"
+          sx={{
+            color: getScoreColor(score),
+            fontWeight: 600,
+          }}
+        >
+          SCORE: {parseFloat(score).toFixed(2)}
+        </Typography>
+      </Stack>
+    </Stack>
+  );
+}
 
 const LiveCommitLog: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
