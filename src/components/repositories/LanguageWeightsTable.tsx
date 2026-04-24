@@ -115,7 +115,7 @@ const LanguageWeightsTable: React.FC = () => {
   }, [filteredAndSortedLanguages, page, rowsPerPage]);
 
   const chartOption = useMemo(() => {
-    const chartData = filteredAndSortedLanguages;
+    const chartData = paginatedLanguages;
     const textColor = alpha(theme.palette.common.white, 0.85);
     const gridColor = theme.palette.border.subtle;
 
@@ -129,7 +129,7 @@ const LanguageWeightsTable: React.FC = () => {
       backgroundColor: 'transparent',
       title: {
         text: 'Language Weight Distribution',
-        subtext: 'All languages by weight',
+        subtext: 'Values match the current table sort and page',
         left: 'center',
         top: 20,
         textStyle: {
@@ -195,7 +195,7 @@ const LanguageWeightsTable: React.FC = () => {
         },
       ],
     };
-  }, [filteredAndSortedLanguages, theme]);
+  }, [paginatedLanguages, theme]);
 
   // Scroll to top when rows per page changes
   useEffect(() => {
