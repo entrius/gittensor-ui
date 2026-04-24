@@ -2,7 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 
 const STORAGE_PREFIX = 'tab:';
 
-function readStored<T extends string>(key: string, valid: readonly T[]): T | null {
+function readStored<T extends string>(
+  key: string,
+  valid: readonly T[],
+): T | null {
   try {
     const v = localStorage.getItem(key);
     if (v !== null && (valid as readonly string[]).includes(v)) return v as T;
@@ -76,7 +79,6 @@ export function usePersistedTab<T extends string>(
   // Re-sync when the URL value changes (back/forward navigation, direct links).
   // `validTabs` is intentionally omitted from deps — it must be a stable
   // module-level const; including it would fire on every render for inline arrays.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setTab(resolve(key, validTabs, urlValue));
   }, [key, urlValue]); // eslint-disable-line react-hooks/exhaustive-deps
