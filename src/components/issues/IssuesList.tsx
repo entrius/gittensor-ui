@@ -38,8 +38,10 @@ import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import BountyProgress from './BountyProgress';
 import FilterButton from '../FilterButton';
+import { usePersistedTab } from '../../hooks/usePersistedTab';
 
 type FilterType = 'all' | 'available' | 'pending' | 'history';
+const FILTER_TABS = ['all', 'available', 'pending', 'history'] as const;
 type SortDirection = 'asc' | 'desc';
 type SortKey =
   | 'id'
@@ -75,13 +77,13 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const theme = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Derive filterType directly from URL — single source of truth so that
-  // redirects from /bounties/:tab and browser back/forward both work correctly.
-  const filterType = useMemo<FilterType>(() => {
-    const f = searchParams.get('filter');
-    if (f === 'available' || f === 'pending' || f === 'history') return f;
-    return 'all';
-  }, [searchParams]);
+  // Prefer URL param → stored preference → 'all'.
+  const filterParam = searchParams.get('filter');
+  const [filterType, persistFilter] = usePersistedTab(
+    'bounties-filter',
+    FILTER_TABS,
+    filterParam,
+  );
 
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -94,13 +96,14 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
   const handleFilterChange = useCallback(
     (f: FilterType) => {
+      persistFilter(f);
       if (f === 'all') {
         setSearchParams({}, { replace: true });
       } else {
         setSearchParams({ filter: f }, { replace: true });
       }
     },
-    [setSearchParams],
+    [setSearchParams, persistFilter],
   );
 
   const counts = useMemo(

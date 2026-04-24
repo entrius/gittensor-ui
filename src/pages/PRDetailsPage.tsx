@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Box, Tabs, Tab, CircularProgress, Typography } from '@mui/material';
 import { Page } from '../components/layout';
@@ -17,13 +17,19 @@ import { STATUS_COLORS } from '../theme';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CodeIcon from '@mui/icons-material/Code';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import { usePersistedTab } from '../hooks/usePersistedTab';
+
+const PR_DETAIL_TABS = ['overview', 'files-changed', 'conversation'] as const;
+type PRDetailTab = (typeof PR_DETAIL_TABS)[number];
 
 const PRDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const repository = searchParams.get('repo');
   const pullRequestNumber = searchParams.get('number');
-  const [tabValue, setTabValue] = useState(0);
+
+  const [activeTab, persistTab] = usePersistedTab('pr-details', PR_DETAIL_TABS);
+  const tabValue = PR_DETAIL_TABS.indexOf(activeTab);
 
   // Call hook unconditionally (React rules of hooks)
   const { data: prDetails, isLoading } = usePullRequestDetails(
@@ -40,7 +46,7 @@ const PRDetailsPage: React.FC = () => {
   }
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
+    persistTab(PR_DETAIL_TABS[newValue] as PRDetailTab);
   };
 
   return (

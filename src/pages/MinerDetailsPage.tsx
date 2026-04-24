@@ -14,6 +14,7 @@ import {
   SEO,
 } from '../components';
 import { WatchlistButton } from '../components/common';
+import { usePersistedTab } from '../hooks/usePersistedTab';
 
 type ViewMode = 'prs' | 'issues';
 
@@ -63,16 +64,20 @@ const MinerDetailsPage: React.FC = () => {
 
   const tabs = viewMode === 'issues' ? ISSUE_TABS : PR_TABS;
 
+  // Prefer URL param → stored preference → first tab.
+  // Per-mode storage key keeps OSS and Issue Discovery memories independent.
   const tabParam = searchParams.get('tab');
-  const activeTab: MinerDetailsTab =
-    tabParam && (tabs as readonly string[]).includes(tabParam)
-      ? (tabParam as MinerDetailsTab)
-      : 'overview';
+  const [activeTab, persistTab] = usePersistedTab(
+    `miner-details-${viewMode}`,
+    tabs,
+    tabParam,
+  );
 
   const handleTabChange = (
     _event: React.SyntheticEvent,
     newValue: MinerDetailsTab,
   ) => {
+    persistTab(newValue);
     const p = new URLSearchParams(searchParams);
     p.set('tab', newValue);
     setSearchParams(p, { replace: true });
