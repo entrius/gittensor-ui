@@ -1,8 +1,10 @@
 import React from 'react';
-import { Box, Typography, Avatar, Tooltip, alpha } from '@mui/material';
+import { Box, Typography, Avatar, Button, Tooltip, alpha } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
-import { formatUsdEstimate } from '../../utils';
+import { formatDate, formatUsdEstimate } from '../../utils';
 import { type PullRequestDetails } from '../../api/models/Dashboard';
 import { STATUS_COLORS } from '../../theme';
 import { getRepositoryOwnerAvatarBackground } from '../leaderboard/types';
@@ -22,7 +24,23 @@ const PRHeader: React.FC<PRHeaderProps> = ({
     `/miners/repository?name=${encodeURIComponent(repository)}`,
     { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
   );
-
+  const authorLinkProps = useLinkBehavior<HTMLAnchorElement>(
+    `/miners/details?githubId=${prDetails.githubId ?? ''}`,
+    { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
+  );
+  const githubPrUrl = `https://github.com/${repository}/pull/${pullRequestNumber}`;
+  const mergedDateLabel = prDetails.mergedAt
+    ? formatDate(prDetails.mergedAt)
+    : null;
+  const chipSx = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.75,
+    px: 1,
+    py: 0.5,
+    borderRadius: 1,
+    border: '1px solid',
+  };
   const isOpenPR = prDetails.prState === 'OPEN';
   const isClosed = prDetails.prState === 'CLOSED';
   const collateralScore = parseFloat(prDetails.collateralScore || '0');
@@ -96,6 +114,32 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               {prDetails.prState}
             </Typography>
           </Box>
+          <Button
+            component="a"
+            href={githubPrUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="outlined"
+            size="small"
+            startIcon={<OpenInNewIcon />}
+            aria-label="Open on GitHub"
+            sx={{
+              color: STATUS_COLORS.info,
+              borderColor: alpha(STATUS_COLORS.info, 0.5),
+              backgroundColor: alpha(STATUS_COLORS.info, 0.1),
+              textTransform: 'none',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              '&:hover': {
+                borderColor: STATUS_COLORS.info,
+                color: STATUS_COLORS.info,
+                backgroundColor: alpha(STATUS_COLORS.info, 0.2),
+              },
+            }}
+          >
+            Open on GitHub
+          </Button>
         </Box>
         <Typography
           sx={{
@@ -125,6 +169,76 @@ const PRHeader: React.FC<PRHeaderProps> = ({
           >
             {repository}
           </Typography>
+        </Box>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 1,
+            mt: 1,
+          }}
+        >
+          {prDetails.authorLogin && (
+            <Box
+              component="a"
+              {...authorLinkProps}
+              sx={{
+                ...linkResetSx,
+                ...chipSx,
+                borderColor: 'border.light',
+                backgroundColor: 'surface.subtle',
+                cursor: 'pointer',
+                transition: 'color 0.15s, border-color 0.15s',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  '& .author-login': { color: 'primary.main' },
+                },
+              }}
+            >
+              <Avatar
+                src={`https://avatars.githubusercontent.com/${prDetails.authorLogin}`}
+                alt={prDetails.authorLogin}
+                sx={{ width: 22, height: 22 }}
+              />
+              <Typography
+                className="author-login"
+                sx={{
+                  color: 'text.primary',
+                  fontSize: '0.9rem',
+                  fontWeight: 500,
+                  transition: 'color 0.15s',
+                }}
+              >
+                @{prDetails.authorLogin}
+              </Typography>
+            </Box>
+          )}
+          {mergedDateLabel && (
+            <Box
+              sx={{
+                ...chipSx,
+                borderColor: alpha(STATUS_COLORS.merged, 0.25),
+                backgroundColor: alpha(STATUS_COLORS.merged, 0.08),
+              }}
+            >
+              <EventAvailableIcon
+                sx={{
+                  fontSize: '0.95rem',
+                  color: STATUS_COLORS.merged,
+                }}
+              />
+              <Typography
+                sx={{
+                  color: 'text.primary',
+                  fontSize: '0.9rem',
+                  fontWeight: 500,
+                }}
+              >
+                Merged {mergedDateLabel}
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Box>
 

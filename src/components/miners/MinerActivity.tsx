@@ -494,23 +494,27 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
           borderColor: 'border.light',
           backgroundColor: 'surface.subtle',
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: { xs: 1, sm: 0.75 },
         }}
       >
         <Typography variant="sectionTitle">
           {isIssueMode ? 'Issue Discovery Activity' : 'Developer Activity'}
         </Typography>
-        <TrustBadge
-          credibility={
-            isIssueMode
-              ? (issueData?.issueCred ?? 0)
-              : minerStats.credibility || 0
-          }
-          totalPRs={
-            isIssueMode ? (issueData?.solved ?? 0) : minerStats.totalPrs || 0
-          }
-        />
+        <Box sx={{ alignSelf: { xs: 'stretch', sm: 'auto' }, minWidth: 0 }}>
+          <TrustBadge
+            credibility={
+              isIssueMode
+                ? (issueData?.issueCred ?? 0)
+                : minerStats.credibility || 0
+            }
+            totalPRs={
+              isIssueMode ? (issueData?.solved ?? 0) : minerStats.totalPrs || 0
+            }
+          />
+        </Box>
       </Box>
 
       {isIssueMode ? (
@@ -576,7 +580,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
               data={contributionData}
               contributionsLast30Days={contributionsLast30Days}
               totalDaysShown={totalDaysShown}
-              subtitle="contributions in the last 30 days"
+              subtitle="contribution(s) in the last 30 days"
               footerText="* Activity based on merged PRs in Gittensor-tracked repositories"
               bare
             />

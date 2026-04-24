@@ -34,7 +34,6 @@ const NotFoundPage: React.FC = () => {
         />
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: { xs: '1.5rem', md: '2rem' },
             fontWeight: 600,
             color: 'text.primary',
@@ -44,7 +43,6 @@ const NotFoundPage: React.FC = () => {
         </Typography>
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.85rem',
             color: (t) => alpha(t.palette.text.primary, 0.5),
             lineHeight: 1.6,
@@ -57,7 +55,6 @@ const NotFoundPage: React.FC = () => {
           component="pre"
           sx={{
             width: '100%',
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.75rem',
             color: (t) => alpha(t.palette.text.primary, 0.4),
             border: '1px solid',

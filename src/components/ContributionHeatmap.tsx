@@ -28,7 +28,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
   data,
   contributionsLast30Days,
   totalDaysShown,
-  subtitle = 'network contributions in the last 30 days',
+  subtitle = 'network contribution(s) in the last 30 days',
   footerText,
   emptyTitle = 'No contributions yet',
   emptySubtitle = 'Activity will appear here once PRs are merged',
@@ -118,7 +118,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
                 'Nov',
                 'Dec',
               ],
-              totalCount: `{{count}} contributions in the last ${totalDaysShown} day(s)`,
+              totalCount: `{{count}} contribution(s) in the last ${totalDaysShown} day(s)`,
               weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
             }}
             blockSize={11}
@@ -128,7 +128,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
             showWeekdayLabels={false}
             renderBlock={(block, activity) => (
               <Tooltip
-                title={`${activity.count} contribution${activity.count !== 1 ? 's' : ''} on ${new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
+                title={`${activity.count} contribution(s) on ${new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
                 arrow
                 placement="top"
                 enterDelay={0}

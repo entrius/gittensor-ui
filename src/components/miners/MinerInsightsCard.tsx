@@ -380,45 +380,64 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
                 py: 1.2,
                 border: `1px solid ${style.border}`,
                 backgroundColor: style.background,
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 1.1,
               }}
             >
-              <Box sx={{ color: style.color, mt: 0.15 }}>{style.icon}</Box>
-              <Box sx={{ flexGrow: 1 }}>
-                <Typography
-                  sx={{
-                    color: style.color,
-                    fontSize: '0.83rem',
-                    fontWeight: 600,
-                  }}
-                >
-                  {insight.title}
-                </Typography>
-                <Typography
-                  sx={{
-                    color: (t) => alpha(t.palette.text.primary, 0.68),
-                    fontSize: '0.8rem',
-                    mt: 0.4,
-                    lineHeight: 1.45,
-                  }}
-                >
-                  {insight.description}
-                </Typography>
-              </Box>
-              <Chip
-                size="small"
-                label={insight.type}
+              <Box
                 sx={{
-                  textTransform: 'uppercase',
-                  fontSize: '0.62rem',
-                  color: style.color,
-                  backgroundColor: alpha(style.color, 0.12),
-                  border: `1px solid ${alpha(style.color, 0.35)}`,
-                  height: 22,
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  gap: 1.1,
+                  mb: 0.75,
                 }}
-              />
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 1.1,
+                    minWidth: 0,
+                    flex: 1,
+                  }}
+                >
+                  <Box sx={{ color: style.color, mt: 0.15, flexShrink: 0 }}>
+                    {style.icon}
+                  </Box>
+                  <Typography
+                    sx={{
+                      color: style.color,
+                      fontSize: '0.83rem',
+                      fontWeight: 600,
+                      lineHeight: 1.35,
+                    }}
+                  >
+                    {insight.title}
+                  </Typography>
+                </Box>
+                <Chip
+                  size="small"
+                  label={insight.type}
+                  sx={{
+                    flexShrink: 0,
+                    textTransform: 'uppercase',
+                    fontSize: '0.62rem',
+                    color: style.color,
+                    backgroundColor: alpha(style.color, 0.12),
+                    border: `1px solid ${alpha(style.color, 0.35)}`,
+                    height: 22,
+                  }}
+                />
+              </Box>
+              <Typography
+                sx={{
+                  color: (t) => alpha(t.palette.text.primary, 0.68),
+                  fontSize: '0.8rem',
+                  lineHeight: 1.45,
+                  width: '100%',
+                }}
+              >
+                {insight.description}
+              </Typography>
             </Box>
           );
         })}
@@ -427,7 +446,7 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
       <Typography
         sx={{
           mt: 2,
-          textAlign: 'right',
+          textAlign: { xs: 'center', sm: 'right' },
           fontSize: '0.72rem',
           color: (t) => alpha(t.palette.text.primary, 0.35),
         }}
