@@ -16,14 +16,13 @@ const DashboardPage = React.lazy(
 const IssuesPage = React.lazy(() => import('./pages/IssuesPage'));
 const SearchPage = React.lazy(() => import('./pages/search/SearchPage'));
 const IssueDetailsPage = React.lazy(() => import('./pages/IssueDetailsPage'));
-const TopMinersPage = React.lazy(() => import('./pages/TopMinersPage'));
 const RepositoriesPage = React.lazy(() => import('./pages/RepositoriesPage'));
 const MinerDetailsPage = React.lazy(() => import('./pages/MinerDetailsPage'));
 const RepositoryDetailsPage = React.lazy(
   () => import('./pages/RepositoryDetailsPage'),
 );
 const PRDetailsPage = React.lazy(() => import('./pages/PRDetailsPage'));
-const DiscoveriesPage = React.lazy(() => import('./pages/DiscoveriesPage'));
+const LeaderboardPage = React.lazy(() => import('./pages/LeaderboardPage'));
 const OnboardPage = React.lazy(() => import('./pages/OnboardPage'));
 const WatchlistPage = React.lazy(() => import('./pages/WatchlistPage'));
 
@@ -53,13 +52,19 @@ const routesArray: AppRoute[] = [
   {
     name: 'discoveries',
     path: '/discoveries',
-    element: <DiscoveriesPage />,
+    element: <Navigate to="/leaderboard" replace />,
+    showGlobalSearch: true,
+  },
+  {
+    name: 'leaderboard',
+    path: '/leaderboard',
+    element: <LeaderboardPage />,
     showGlobalSearch: true,
   },
   {
     name: 'top-miners',
     path: '/top-miners',
-    element: <TopMinersPage />,
+    element: <Navigate to="/leaderboard" replace />,
     showGlobalSearch: true,
   },
   {

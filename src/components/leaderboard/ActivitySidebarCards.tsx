@@ -78,18 +78,33 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
       (acc, m) => acc + (m.uniqueReposCount || 0),
       0,
     );
-    const credibilityValues = miners
+    return { linesAdded, linesDeleted, reposTouched };
+  }, [miners]);
+
+  const avgCredibilityStats = useMemo(() => {
+    // Match the `test` branch logic: average of provided numeric values,
+    // then expressed as a percentage (0-100).
+    const ossValues = miners
       .map((m) => m.credibility)
       .filter((c): c is number => typeof c === 'number');
-    const avgCredibility =
-      credibilityValues.length > 0
+    const discValues = miners
+      .map((m) => m.issueCredibility)
+      .filter((c): c is number => typeof c === 'number');
+
+    const ossAvg =
+      ossValues.length > 0
         ? Math.round(
-            (credibilityValues.reduce((acc, c) => acc + c, 0) /
-              credibilityValues.length) *
+            (ossValues.reduce((acc, c) => acc + c, 0) / ossValues.length) * 100,
+          )
+        : 0;
+    const discAvg =
+      discValues.length > 0
+        ? Math.round(
+            (discValues.reduce((acc, c) => acc + c, 0) / discValues.length) *
               100,
           )
         : 0;
-    return { linesAdded, linesDeleted, reposTouched, avgCredibility };
+    return { ossAvg, discAvg };
   }, [miners]);
 
   const solveRateColor =
@@ -237,6 +252,43 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
             </Box>
           </Box>
 
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mt: 1.25,
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.85rem',
+                color: STATUS_COLORS.open,
+              }}
+            >
+              Avg Credibility
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <RateBar
+                rate={avgCredibilityStats.ossAvg}
+                color={credibilityColor(avgCredibilityStats.ossAvg / 100)}
+              />
+              <Typography
+                sx={{
+                  fontFamily: FONTS.mono,
+                  fontWeight: 600,
+                  fontSize: '1.1rem',
+                  color: credibilityColor(avgCredibilityStats.ossAvg / 100),
+                  minWidth: 40,
+                  textAlign: 'right',
+                }}
+              >
+                {avgCredibilityStats.ossAvg}%
+              </Typography>
+            </Box>
+          </Box>
+
           <StatRow
             label="Total $/day"
             value={`$${Math.round(ossUsdPerDay).toLocaleString()}`}
@@ -308,6 +360,43 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
             </Box>
           </Box>
 
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mt: 1.25,
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.85rem',
+                color: STATUS_COLORS.open,
+              }}
+            >
+              Avg Credibility
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <RateBar
+                rate={avgCredibilityStats.discAvg}
+                color={credibilityColor(avgCredibilityStats.discAvg / 100)}
+              />
+              <Typography
+                sx={{
+                  fontFamily: FONTS.mono,
+                  fontWeight: 600,
+                  fontSize: '1.1rem',
+                  color: credibilityColor(avgCredibilityStats.discAvg / 100),
+                  minWidth: 40,
+                  textAlign: 'right',
+                }}
+              >
+                {avgCredibilityStats.discAvg}%
+              </Typography>
+            </Box>
+          </Box>
+
           <StatRow
             label="Total $/day"
             value={`$${Math.round(issueUsdPerDay).toLocaleString()}`}
@@ -342,41 +431,6 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
             label="Repos Touched"
             value={codeStats.reposTouched.toLocaleString()}
           />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <Typography
-              sx={{
-                fontFamily: FONTS.mono,
-                fontSize: '0.85rem',
-                color: STATUS_COLORS.open,
-              }}
-            >
-              Avg Credibility
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <RateBar
-                rate={codeStats.avgCredibility}
-                color={credibilityColor(codeStats.avgCredibility / 100)}
-              />
-              <Typography
-                sx={{
-                  fontFamily: FONTS.mono,
-                  fontWeight: 600,
-                  fontSize: '1.1rem',
-                  color: credibilityColor(codeStats.avgCredibility / 100),
-                  minWidth: 40,
-                  textAlign: 'right',
-                }}
-              >
-                {codeStats.avgCredibility}%
-              </Typography>
-            </Box>
-          </Box>
         </Box>
       </SectionCard>
     </>

@@ -1,25 +1,35 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Typography,
   CircularProgress,
   Grid,
   Tooltip,
+  Menu,
+  MenuItem,
+  ListItemText,
+  Divider,
+  Select,
+  FormControl,
+  IconButton,
 } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { SectionCard } from './SectionCard';
 import { MinerCard } from './MinerCard';
 import { MinersList } from './MinersList';
 import { SearchInput } from '../common/SearchInput';
 import { STATUS_COLORS } from '../../theme';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
-import { type SortOrder } from '../../utils/ExplorerUtils';
 import {
   type MinerStats,
   type SortOption,
   type LeaderboardVariant,
+  type LeaderboardMode,
   FONTS,
 } from './types';
 
@@ -34,6 +44,7 @@ const VIEW_QUERY_PARAM = 'view';
 const SEARCH_QUERY_PARAM = 'search';
 const VISIBLE_QUERY_PARAM = 'visible';
 const VIEW_STORAGE_KEY = 'leaderboard:viewMode';
+const ELIGIBILITY_QUERY_PARAM = 'eligibility';
 // Sort state (`sort`, `dir`) is owned by `useDataTableParams`. We reuse the
 // `page` param slot for our "show more" count via the paramKeys override.
 
@@ -62,9 +73,23 @@ interface TopMinersTableProps {
   linkState?: Record<string, unknown>;
   variant?: LeaderboardVariant;
   showDualEligibilityBadges?: boolean;
+  mode?: LeaderboardMode;
 }
 
-const getAllowedSortOptions = (variant: LeaderboardVariant): SortOption[] => {
+const getAllowedSortOptions = (
+  variant: LeaderboardVariant,
+  mode: LeaderboardMode,
+): SortOption[] => {
+  if (mode === 'leaderboard')
+    return [
+      'ossScore',
+      'issueScore',
+      'usdPerDay',
+      'totalPRs',
+      'totalIssues',
+      'ossCredibility',
+      'issueCredibility',
+    ];
   if (variant === 'discoveries')
     return ['totalScore', 'usdPerDay', 'totalIssues', 'credibility'];
   if (variant === 'watchlist')
@@ -78,16 +103,46 @@ const getAllowedSortOptions = (variant: LeaderboardVariant): SortOption[] => {
   return ['totalScore', 'usdPerDay', 'totalPRs', 'credibility'];
 };
 
-type EligibilityFilter = 'all' | 'eligible' | 'ineligible';
+type LegacyEligibilityFilter = 'all' | 'eligible' | 'ineligible';
+type EligibilityFilter =
+  | 'all'
+  | 'ossEligible'
+  | 'ossIneligible'
+  | 'discoveriesEligible'
+  | 'discoveriesIneligible';
 
 const compareMiners = (
   a: MinerStats,
   b: MinerStats,
   option: SortOption,
+  mode: LeaderboardMode,
 ): number => {
+  const getScore = (m: MinerStats) => {
+    if (mode === 'leaderboard') {
+      // If someone passes legacy `totalScore` while in leaderboard mode,
+      // treat it as OSS score (default program).
+      return Number(m.totalScore ?? 0);
+    }
+    return Number(m.totalScore ?? 0);
+  };
+
+  const getCred = (m: MinerStats) => {
+    if (mode === 'leaderboard') {
+      // Legacy key in leaderboard mode maps to OSS credibility.
+      return Number(m.credibility ?? 0);
+    }
+    return Number(m.credibility ?? 0);
+  };
+
   switch (option) {
     case 'totalScore':
-      return a.totalScore - b.totalScore;
+      return getScore(a) - getScore(b);
+    case 'ossScore':
+      return Number(a.totalScore ?? 0) - Number(b.totalScore ?? 0);
+    case 'issueScore':
+      return (
+        Number(a.issueDiscoveryScore ?? 0) - Number(b.issueDiscoveryScore ?? 0)
+      );
     case 'usdPerDay':
       return (a.usdPerDay ?? 0) - (b.usdPerDay ?? 0);
     case 'totalPRs':
@@ -95,7 +150,11 @@ const compareMiners = (
     case 'totalIssues':
       return (a.totalIssues ?? 0) - (b.totalIssues ?? 0);
     case 'credibility':
-      return (a.credibility ?? 0) - (b.credibility ?? 0);
+      return getCred(a) - getCred(b);
+    case 'ossCredibility':
+      return Number(a.credibility ?? 0) - Number(b.credibility ?? 0);
+    case 'issueCredibility':
+      return Number(a.issueCredibility ?? 0) - Number(b.issueCredibility ?? 0);
     default:
       return 0;
   }
@@ -108,10 +167,11 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   linkState,
   variant = 'oss',
   showDualEligibilityBadges = false,
+  mode = 'default',
 }) => {
   const allowedSortKeys = useMemo(
-    () => getAllowedSortOptions(variant),
-    [variant],
+    () => getAllowedSortOptions(variant, mode),
+    [variant, mode],
   );
 
   // Stable filter configs — values are destructured below.
@@ -134,20 +194,48 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
         serialize: (value: ViewMode): string => value,
         resetPageOnChange: false,
       },
-      eligible: {
-        paramKey: ELIGIBLE_QUERY_PARAM,
-        parse: (raw: string | null): EligibilityFilter =>
-          raw === 'true' ? 'eligible' : raw === 'false' ? 'ineligible' : 'all',
-        serialize: (value: EligibilityFilter): string | null =>
-          value === 'all' ? null : value === 'eligible' ? 'true' : 'false',
-      },
+      ...(mode === 'leaderboard'
+        ? {
+            eligibility: {
+              paramKey: ELIGIBILITY_QUERY_PARAM,
+              parse: (raw: string | null): EligibilityFilter =>
+                raw === 'ossEligible' ||
+                raw === 'ossIneligible' ||
+                raw === 'discoveriesEligible' ||
+                raw === 'discoveriesIneligible'
+                  ? raw
+                  : 'all',
+              serialize: (
+                value: EligibilityFilter | undefined,
+              ): string | null => (!value || value === 'all' ? null : value),
+            },
+          }
+        : {
+            eligible: {
+              paramKey: ELIGIBLE_QUERY_PARAM,
+              parse: (raw: string | null): LegacyEligibilityFilter =>
+                raw === 'true'
+                  ? 'eligible'
+                  : raw === 'false'
+                    ? 'ineligible'
+                    : 'all',
+              serialize: (
+                value: LegacyEligibilityFilter | undefined,
+              ): string | null =>
+                value === 'all'
+                  ? null
+                  : value === 'eligible'
+                    ? 'true'
+                    : 'false',
+            },
+          }),
       search: {
         paramKey: SEARCH_QUERY_PARAM,
         parse: (raw: string | null): string => raw ?? '',
         serialize: (value: string): string | null => value.trim() || null,
       },
     }),
-    [],
+    [mode],
   );
 
   const {
@@ -156,23 +244,32 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     setSort: handleSortChange,
     page: storedVisibleCount,
     setPage: setVisibleCount,
-    filters: {
-      view: viewMode,
-      eligible: eligibilityFilter,
-      search: searchQuery,
-    },
+    filters,
     setFilter,
   } = useDataTableParams<
     SortOption,
-    { view: ViewMode; eligible: EligibilityFilter; search: string }
+    {
+      view: ViewMode;
+      search: string;
+      eligible?: LegacyEligibilityFilter;
+      eligibility?: EligibilityFilter;
+    }
   >({
     sortKeys: allowedSortKeys,
-    defaultSortKey: 'totalScore',
+    defaultSortKey: mode === 'leaderboard' ? 'ossScore' : 'totalScore',
     // Reuse the hook's `page` slot for our "show more" count — setSort and
     // filter changes reset it, which is the behavior we want.
     paramKeys: { page: VISIBLE_QUERY_PARAM },
     filters: filtersConfig,
   });
+
+  const viewMode = filters.view as ViewMode;
+  const searchQuery = filters.search as string;
+  const legacyEligibilityFilter = (
+    filters as { eligible?: LegacyEligibilityFilter }
+  ).eligible;
+  const eligibilityFilter = (filters as { eligibility?: EligibilityFilter })
+    .eligibility;
 
   // `page` is 0 when no visible param is set — clamp to the initial batch.
   const visibleCount =
@@ -193,8 +290,14 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   );
 
   const handleEligibilityChange = useCallback(
-    (nextFilter: EligibilityFilter) => setFilter('eligible', nextFilter),
-    [setFilter],
+    (nextFilter: EligibilityFilter | LegacyEligibilityFilter) => {
+      if (mode === 'leaderboard') {
+        setFilter('eligibility' as never, nextFilter as never);
+        return;
+      }
+      setFilter('eligible' as never, nextFilter as never);
+    },
+    [mode, setFilter],
   );
 
   const handleSearchChange = useCallback(
@@ -209,9 +312,11 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   const rankedMiners = useMemo(() => {
     const directionMultiplier = sortDirection === 'asc' ? 1 : -1;
     return [...miners]
-      .sort((a, b) => compareMiners(a, b, sortOption) * directionMultiplier)
+      .sort(
+        (a, b) => compareMiners(a, b, sortOption, mode) * directionMultiplier,
+      )
       .map((miner, index) => ({ ...miner, rank: index + 1 }));
-  }, [miners, sortOption, sortDirection]);
+  }, [miners, sortOption, sortDirection, mode]);
 
   const filteredMiners = useMemo(() => {
     let result = rankedMiners;
@@ -225,14 +330,31 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       );
     }
 
-    if (eligibilityFilter === 'eligible') {
-      result = result.filter((m) => m.isEligible);
-    } else if (eligibilityFilter === 'ineligible') {
-      result = result.filter((m) => !m.isEligible);
+    if (mode === 'leaderboard') {
+      const filterValue: EligibilityFilter = eligibilityFilter ?? 'all';
+      if (filterValue === 'ossEligible')
+        result = result.filter((m) => m.ossIsEligible ?? false);
+      else if (filterValue === 'ossIneligible')
+        result = result.filter((m) => !(m.ossIsEligible ?? false));
+      else if (filterValue === 'discoveriesEligible')
+        result = result.filter((m) => m.discoveriesIsEligible ?? false);
+      else if (filterValue === 'discoveriesIneligible')
+        result = result.filter((m) => !(m.discoveriesIsEligible ?? false));
+    } else {
+      const legacy = legacyEligibilityFilter ?? 'all';
+      if (legacy === 'eligible') result = result.filter((m) => m.isEligible);
+      else if (legacy === 'ineligible')
+        result = result.filter((m) => !m.isEligible);
     }
 
     return result;
-  }, [rankedMiners, searchQuery, eligibilityFilter]);
+  }, [
+    rankedMiners,
+    searchQuery,
+    eligibilityFilter,
+    legacyEligibilityFilter,
+    mode,
+  ]);
 
   useEffect(() => {
     if (visibleCount <= filteredMiners.length) return;
@@ -275,7 +397,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
         }}
       >
         <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          {/* Row 1: Title + Search */}
+          {/* Row 1: Title + Search + Filters + View */}
           <Box
             sx={{
               display: 'flex',
@@ -300,35 +422,129 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                 placeholder="Search miners..."
               />
             </Box>
-          </Box>
-
-          {/* Row 2: Sort tabs + Eligibility toggle */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 1,
-              flexWrap: 'wrap',
-            }}
-          >
-            <SortButtons
-              sortOption={sortOption}
-              sortDirection={sortDirection}
-              onSortChange={handleSortChange}
-              variant={variant}
-            />
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <EligibilityToggle
-                value={eligibilityFilter}
-                onChange={handleEligibilityChange}
-              />
+              {mode === 'leaderboard' ? (
+                <EligibilityMenu
+                  value={(eligibilityFilter ?? 'all') as EligibilityFilter}
+                  onChange={(next) => handleEligibilityChange(next)}
+                />
+              ) : (
+                <EligibilityToggle
+                  value={
+                    (legacyEligibilityFilter ??
+                      'all') as LegacyEligibilityFilter
+                  }
+                  onChange={handleEligibilityChange}
+                />
+              )}
               <ViewModeToggle
                 viewMode={viewMode}
                 onChange={handleViewModeChange}
               />
             </Box>
           </Box>
+
+          {/* Row 2: Sort controls (card view only — matches repositories UX) */}
+          {viewMode === 'cards' ? (
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: '0.8rem',
+                  color: 'text.secondary',
+                }}
+              >
+                Sort:
+              </Typography>
+              <FormControl size="small">
+                <Select
+                  value={sortOption}
+                  onChange={(e) => {
+                    const next = e.target.value as SortOption;
+                    if (next !== sortOption) handleSortChange(next);
+                  }}
+                  sx={{
+                    color: 'text.primary',
+                    backgroundColor: 'background.default',
+                    fontSize: '0.8rem',
+                    height: '36px',
+                    borderRadius: 2,
+                    minWidth: '170px',
+                    '& fieldset': { borderColor: 'border.light' },
+                    '&:hover fieldset': { borderColor: 'border.medium' },
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                    '& .MuiSelect-select': { py: 0.75 },
+                  }}
+                >
+                  {(mode === 'leaderboard'
+                    ? ([
+                        { value: 'ossScore', label: 'OSS Score' },
+                        { value: 'issueScore', label: 'Issues Score' },
+                        { value: 'usdPerDay', label: 'Earnings' },
+                        { value: 'totalPRs', label: 'PRs' },
+                        { value: 'totalIssues', label: 'Issues' },
+                        { value: 'ossCredibility', label: 'OSS Credibility' },
+                        {
+                          value: 'issueCredibility',
+                          label: 'Issues Credibility',
+                        },
+                      ] as const)
+                    : ([
+                        { value: 'totalScore', label: 'Score' },
+                        { value: 'usdPerDay', label: 'Earnings' },
+                        ...(variant !== 'discoveries'
+                          ? [{ value: 'totalPRs', label: 'PRs' } as const]
+                          : []),
+                        ...(variant === 'discoveries' || variant === 'watchlist'
+                          ? [{ value: 'totalIssues', label: 'Issues' } as const]
+                          : []),
+                        { value: 'credibility', label: 'Credibility' },
+                      ] as const)
+                  ).map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Tooltip
+                title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
+              >
+                <IconButton
+                  size="small"
+                  onClick={() => handleSortChange(sortOption)}
+                  sx={{
+                    color: 'text.primary',
+                    border: '1px solid',
+                    borderColor: 'border.light',
+                    borderRadius: 2,
+                    padding: '6px',
+                    '&:hover': {
+                      backgroundColor: 'surface.light',
+                      borderColor: 'border.medium',
+                    },
+                  }}
+                  aria-label={
+                    sortDirection === 'asc'
+                      ? 'Sort descending'
+                      : 'Sort ascending'
+                  }
+                >
+                  {sortDirection === 'asc' ? (
+                    <ArrowUpwardIcon fontSize="small" />
+                  ) : (
+                    <ArrowDownwardIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </Tooltip>
+            </Box>
+          ) : null}
         </Box>
       </SectionCard>
 
@@ -353,6 +569,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           <MinersList
             miners={visibleMiners}
             variant={variant}
+            mode={mode}
             sortOption={sortOption}
             sortDirection={sortDirection}
             onSort={handleSortChange}
@@ -422,87 +639,6 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     </Box>
   );
 };
-
-interface SortButtonsProps {
-  sortOption: SortOption;
-  sortDirection: SortOrder;
-  onSortChange: (option: SortOption) => void;
-  variant: LeaderboardVariant;
-}
-
-const SortButtons: React.FC<SortButtonsProps> = ({
-  sortOption,
-  sortDirection,
-  onSortChange,
-  variant,
-}) => (
-  <Box
-    sx={{
-      display: 'flex',
-      gap: 0.5,
-      flexWrap: 'wrap',
-      justifyContent: 'center',
-    }}
-  >
-    {[
-      { label: 'Score', value: 'totalScore' },
-      { label: 'Earnings', value: 'usdPerDay' },
-      ...(variant !== 'discoveries'
-        ? [{ label: 'PRs', value: 'totalPRs' as const }]
-        : []),
-      ...(variant === 'discoveries' || variant === 'watchlist'
-        ? [{ label: 'Issues', value: 'totalIssues' as const }]
-        : []),
-      { label: 'Credibility', value: 'credibility' },
-    ].map((option) => {
-      const isActive = sortOption === option.value;
-      return (
-        <Box
-          key={option.value}
-          onClick={() => onSortChange(option.value as SortOption)}
-          sx={(theme) => ({
-            px: 1.5,
-            height: 32,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.5,
-            borderRadius: 2,
-            cursor: 'pointer',
-            backgroundColor: isActive
-              ? alpha(theme.palette.text.primary, 0.1)
-              : 'transparent',
-            color: isActive ? theme.palette.text.primary : STATUS_COLORS.open,
-            border: '1px solid',
-            borderColor: isActive ? theme.palette.border.medium : 'transparent',
-            transition: 'all 0.2s',
-            '&:hover': {
-              backgroundColor: theme.palette.surface.light,
-              color: theme.palette.text.primary,
-            },
-          })}
-        >
-          <Typography
-            sx={{
-              fontFamily: FONTS.mono,
-              fontSize: '0.75rem',
-              fontWeight: 600,
-            }}
-          >
-            {option.label}
-          </Typography>
-          {isActive && (
-            <Typography
-              component="span"
-              sx={{ fontSize: '0.7rem', opacity: 0.7 }}
-            >
-              {sortDirection === 'asc' ? '▲' : '▼'}
-            </Typography>
-          )}
-        </Box>
-      );
-    })}
-  </Box>
-);
 
 interface ViewModeToggleProps {
   viewMode: ViewMode;
@@ -582,16 +718,18 @@ const ViewModeToggle: React.FC<ViewModeToggleProps> = ({
 };
 
 interface EligibilityToggleProps {
-  value: EligibilityFilter;
-  onChange: (next: EligibilityFilter) => void;
+  value: LegacyEligibilityFilter;
+  onChange: (next: LegacyEligibilityFilter) => void;
 }
 
-const ELIGIBILITY_OPTIONS: Array<{ value: EligibilityFilter; label: string }> =
-  [
-    { value: 'all', label: 'All' },
-    { value: 'eligible', label: 'Eligible' },
-    { value: 'ineligible', label: 'Ineligible' },
-  ];
+const ELIGIBILITY_OPTIONS: Array<{
+  value: LegacyEligibilityFilter;
+  label: string;
+}> = [
+  { value: 'all', label: 'All' },
+  { value: 'eligible', label: 'Eligible' },
+  { value: 'ineligible', label: 'Ineligible' },
+];
 
 const EligibilityToggle: React.FC<EligibilityToggleProps> = ({
   value,
@@ -650,5 +788,80 @@ const EligibilityToggle: React.FC<EligibilityToggleProps> = ({
     })}
   </Box>
 );
+
+const ELIGIBILITY_MENU_OPTIONS: Array<{
+  value: EligibilityFilter;
+  label: string;
+}> = [
+  { value: 'all', label: 'All' },
+  { value: 'ossEligible', label: 'OSS eligible' },
+  { value: 'ossIneligible', label: 'OSS ineligible' },
+  { value: 'discoveriesEligible', label: 'Discoveries eligible' },
+  { value: 'discoveriesIneligible', label: 'Discoveries ineligible' },
+];
+
+const EligibilityMenu: React.FC<{
+  value: EligibilityFilter;
+  onChange: (next: EligibilityFilter) => void;
+}> = ({ value, onChange }) => {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+  const label =
+    ELIGIBILITY_MENU_OPTIONS.find((x) => x.value === value)?.label ?? 'All';
+
+  return (
+    <>
+      <Box
+        component="button"
+        type="button"
+        onClick={(e) => setAnchorEl(e.currentTarget)}
+        sx={(theme) => ({
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 0.5,
+          height: 32,
+          px: 1.25,
+          borderRadius: 2,
+          border: `1px solid ${theme.palette.border.light}`,
+          backgroundColor: theme.palette.surface.subtle,
+          color: theme.palette.text.primary,
+          cursor: 'pointer',
+          fontFamily: FONTS.mono,
+          fontSize: '0.72rem',
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          '&:hover': {
+            backgroundColor: theme.palette.surface.light,
+          },
+        })}
+      >
+        {label}
+        <KeyboardArrowDownIcon sx={{ fontSize: '1.1rem', opacity: 0.85 }} />
+      </Box>
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={() => setAnchorEl(null)}
+        MenuListProps={{ dense: true }}
+      >
+        {ELIGIBILITY_MENU_OPTIONS.map((option, idx) => (
+          <React.Fragment key={option.value}>
+            {idx === 1 ? <Divider /> : null}
+            <MenuItem
+              selected={value === option.value}
+              onClick={() => {
+                onChange(option.value);
+                setAnchorEl(null);
+              }}
+            >
+              <ListItemText primary={option.label} />
+            </MenuItem>
+          </React.Fragment>
+        ))}
+      </Menu>
+    </>
+  );
+};
 
 export default TopMinersTable;

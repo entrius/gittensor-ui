@@ -53,12 +53,18 @@ export interface RepoStats {
 
 export type LeaderboardVariant = 'oss' | 'discoveries' | 'watchlist';
 
+export type LeaderboardMode = 'default' | 'leaderboard';
+
 export type SortOption =
   | 'totalScore'
+  | 'ossScore'
+  | 'issueScore'
   | 'usdPerDay'
   | 'totalPRs'
   | 'totalIssues'
-  | 'credibility';
+  | 'credibility'
+  | 'ossCredibility'
+  | 'issueCredibility';
 
 export const FONTS = {
   mono: '"JetBrains Mono", monospace',

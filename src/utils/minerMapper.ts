@@ -18,6 +18,12 @@ export const mapAllMinersToStats = (
     totalScore: parseNumber(stat.totalScore),
     baseTotalScore: parseNumber(stat.baseTotalScore),
     totalPRs: parseNumber(stat.totalPrs),
+    // Discovered issues count (issue discovery program):
+    // total issues the miner has discovered across statuses.
+    totalIssues:
+      parseNumber(stat.totalSolvedIssues) +
+      parseNumber(stat.totalOpenIssues) +
+      parseNumber(stat.totalClosedIssues),
     linesChanged: parseNumber(stat.totalNodesScored),
     linesAdded: parseNumber(stat.totalAdditions),
     linesDeleted: parseNumber(stat.totalDeletions),

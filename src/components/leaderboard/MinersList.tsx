@@ -9,6 +9,7 @@ import {
   type LeaderboardVariant,
   type MinerStats,
   type SortOption,
+  type LeaderboardMode,
 } from './types';
 
 const SEGMENT_COLORS = [
@@ -25,6 +26,7 @@ const cellTypographySx = {
 interface MinersListProps {
   miners: MinerStats[];
   variant: LeaderboardVariant;
+  mode?: LeaderboardMode;
   sortOption: SortOption;
   sortDirection: SortOrder;
   onSort: (option: SortOption) => void;
@@ -35,6 +37,7 @@ interface MinersListProps {
 export const MinersList: React.FC<MinersListProps> = ({
   miners,
   variant,
+  mode = 'default',
   sortOption,
   sortDirection,
   onSort,
@@ -42,6 +45,7 @@ export const MinersList: React.FC<MinersListProps> = ({
   linkState,
 }) => {
   const isDiscoveries = variant === 'discoveries';
+  const isLeaderboard = mode === 'leaderboard';
   const prLabel = isDiscoveries ? 'Issues' : 'PRs';
   const prSortKey: SortOption = isDiscoveries ? 'totalIssues' : 'totalPRs';
 
@@ -77,40 +81,117 @@ export const MinersList: React.FC<MinersListProps> = ({
         </Typography>
       ),
     },
-    {
-      key: 'activity',
-      header: prLabel,
-      width: '18%',
-      align: 'right',
-      sortKey: prSortKey,
-      renderCell: (miner) => (
-        <MinerActivitySegments miner={miner} variant={variant} />
-      ),
-    },
-    {
-      key: 'credibility',
-      header: 'Credibility',
-      width: '12%',
-      align: 'right',
-      sortKey: 'credibility',
-      renderCell: (miner) => (
-        <Typography sx={{ ...cellTypographySx, color: 'text.primary' }}>
-          {((miner.credibility ?? 0) * 100).toFixed(0)}%
-        </Typography>
-      ),
-    },
-    {
-      key: 'totalScore',
-      header: 'Score',
-      width: '11%',
-      align: 'right',
-      sortKey: 'totalScore',
-      renderCell: (miner) => (
-        <Typography sx={{ ...cellTypographySx, color: 'text.primary' }}>
-          {Number(miner.totalScore).toFixed(2)}
-        </Typography>
-      ),
-    },
+    ...(isLeaderboard
+      ? ([
+          {
+            key: 'prs',
+            header: 'PRs',
+            width: '12%',
+            align: 'right',
+            sortKey: 'totalPRs',
+            renderCell: (miner) => (
+              <Typography sx={{ ...cellTypographySx, color: 'text.primary' }}>
+                {(miner.totalPRs ?? 0).toLocaleString()}
+              </Typography>
+            ),
+          },
+          {
+            key: 'issues',
+            header: 'Issues',
+            width: '12%',
+            align: 'right',
+            sortKey: 'totalIssues',
+            renderCell: (miner) => (
+              <Typography sx={{ ...cellTypographySx, color: 'text.primary' }}>
+                {(miner.totalIssues ?? 0).toLocaleString()}
+              </Typography>
+            ),
+          },
+          {
+            key: 'ossCred',
+            header: 'OSS Cred',
+            width: '10%',
+            align: 'right',
+            sortKey: 'ossCredibility',
+            renderCell: (miner) => (
+              <Typography sx={{ ...cellTypographySx, color: 'text.primary' }}>
+                {(((miner.credibility ?? 0) as number) * 100).toFixed(0)}%
+              </Typography>
+            ),
+          },
+          {
+            key: 'issueCred',
+            header: 'Issues Cred',
+            width: '12%',
+            align: 'right',
+            sortKey: 'issueCredibility',
+            renderCell: (miner) => (
+              <Typography sx={{ ...cellTypographySx, color: 'text.primary' }}>
+                {(((miner.issueCredibility ?? 0) as number) * 100).toFixed(0)}%
+              </Typography>
+            ),
+          },
+          {
+            key: 'ossScore',
+            header: 'OSS Score',
+            width: '11%',
+            align: 'right',
+            sortKey: 'ossScore',
+            renderCell: (miner) => (
+              <Typography sx={{ ...cellTypographySx, color: 'text.primary' }}>
+                {Number(miner.totalScore ?? 0).toFixed(2)}
+              </Typography>
+            ),
+          },
+          {
+            key: 'issueScore',
+            header: 'Issues Score',
+            width: '12%',
+            align: 'right',
+            sortKey: 'issueScore',
+            renderCell: (miner) => (
+              <Typography sx={{ ...cellTypographySx, color: 'text.primary' }}>
+                {Number(miner.issueDiscoveryScore ?? 0).toFixed(2)}
+              </Typography>
+            ),
+          },
+        ] as DataTableColumn<MinerStats, SortOption>[])
+      : ([
+          {
+            key: 'activity',
+            header: prLabel,
+            width: '18%',
+            align: 'right',
+            sortKey: prSortKey,
+            renderCell: (miner) => (
+              <MinerActivitySegments miner={miner} variant={variant} />
+            ),
+          },
+          {
+            key: 'credibility',
+            header: 'Credibility',
+            width: '12%',
+            align: 'right',
+            sortKey: 'credibility',
+            renderCell: (miner) => (
+              <Typography sx={{ ...cellTypographySx, color: 'text.primary' }}>
+                {((miner.credibility ?? 0) * 100).toFixed(0)}%
+              </Typography>
+            ),
+          },
+          {
+            key: 'totalScore',
+            header: 'Score',
+            width: '11%',
+            align: 'right',
+            sortKey: 'totalScore',
+            renderCell: (miner) => (
+              <Typography sx={{ ...cellTypographySx, color: 'text.primary' }}>
+                {Number(miner.totalScore).toFixed(2)}
+              </Typography>
+            ),
+          },
+        ] as DataTableColumn<MinerStats, SortOption>[])),
     {
       key: 'watch',
       header: '\u2605',
@@ -157,7 +238,7 @@ export const MinersList: React.FC<MinersListProps> = ({
           opacity: (miner.isEligible ?? false) ? 1 : 0.5,
           transition: 'opacity 0.2s, background-color 0.2s',
         })}
-        minWidth="900px"
+        minWidth={isLeaderboard ? '1250px' : '900px'}
         stickyHeader
         sort={{
           field: sortOption,
