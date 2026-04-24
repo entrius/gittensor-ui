@@ -5,6 +5,7 @@ import {
   Box,
   Card,
   Chip,
+  CircularProgress,
   Collapse,
   FormControl,
   IconButton,
@@ -12,7 +13,6 @@ import {
   Link,
   MenuItem,
   Select,
-  Skeleton,
   Stack,
   TablePagination,
   TextField,
@@ -609,25 +609,9 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
   if (isLoading) {
     return (
-      <Card
-        sx={{
-          backgroundColor: 'background.default',
-          border: `1px solid ${theme.palette.border.light}`,
-          borderRadius: 3,
-        }}
-        elevation={0}
-      >
-        <Box sx={{ p: 2 }}>
-          {[1, 2, 3, 4, 5].map((i) => (
-            <Skeleton
-              key={i}
-              variant="rectangular"
-              height={48}
-              sx={{ mb: 1, borderRadius: 1 }}
-            />
-          ))}
-        </Box>
-      </Card>
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress size={40} sx={{ color: 'primary.main' }} />
+      </Box>
     );
   }
 
