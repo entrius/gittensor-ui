@@ -35,6 +35,10 @@ export const mapAllMinersToStats = (
     totalSolvedIssues: parseNumber(stat.totalSolvedIssues),
     totalOpenIssues: parseNumber(stat.totalOpenIssues),
     totalClosedIssues: parseNumber(stat.totalClosedIssues),
+    totalIssues:
+      parseNumber(stat.totalSolvedIssues) +
+      parseNumber(stat.totalOpenIssues) +
+      parseNumber(stat.totalClosedIssues),
     issueDiscoveryScore: parseNumber(stat.issueDiscoveryScore),
     issueCredibility: parseNumber(stat.issueCredibility),
     isIssueEligible: stat.isIssueEligible ?? false,
