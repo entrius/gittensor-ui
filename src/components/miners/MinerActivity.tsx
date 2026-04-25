@@ -381,8 +381,8 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
       ...allMinerStats.map((m) => m.totalNodesScored || 0),
       1,
     );
-    const maxMergedPrs = Math.max(
-      ...allMinerStats.map((m) => m.totalMergedPrs || 0),
+    const maxSolvedIssues = Math.max(
+      ...allMinerStats.map((m) => m.totalSolvedIssues || 0),
       1,
     );
     const maxUniqueRepos = Math.max(
@@ -412,7 +412,8 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
     return {
       credibility: ((minerStats.credibility || 0) / maxCredibility) * 100,
       complexity: ((minerStats.totalNodesScored || 0) / maxComplexity) * 100,
-      issuesSolved: ((minerStats.totalMergedPrs || 0) / maxMergedPrs) * 100,
+      issuesSolved:
+        ((minerStats.totalSolvedIssues || 0) / maxSolvedIssues) * 100,
       uniqueRepos: ((minerStats.uniqueReposCount || 0) / maxUniqueRepos) * 100,
       totalPRs: ((minerStats.totalPrs || 0) / maxTotalPrs) * 100,
       avgRepoWeight: avgWeightVal,
