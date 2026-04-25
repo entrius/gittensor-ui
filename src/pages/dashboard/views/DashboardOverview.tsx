@@ -62,6 +62,19 @@ const buildStatusChartOption = (
     },
     tooltip: {
       trigger: 'item',
+      appendToBody: true,
+      confine: false,
+      transitionDuration: 0,
+      position: (
+        point: [number, number],
+        _params: unknown,
+        _dom: HTMLElement,
+        _rect: unknown,
+        size: { contentSize: [number, number]; viewSize: [number, number] },
+      ) => {
+        const [tipW, tipH] = size.contentSize;
+        return [point[0] - tipW / 2, point[1] - tipH - 12];
+      },
       formatter: ({
         name,
         value,
