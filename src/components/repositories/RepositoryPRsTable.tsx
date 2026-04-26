@@ -212,7 +212,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'pullRequestTitle',
       header: 'Title',
-      width: '25%',
+      width: '19%',
       sortKey: 'pullRequestTitle',
       renderCell: (pr) => (
         <Tooltip
@@ -277,7 +277,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'lines',
       header: '+/-',
-      width: '14%',
+      width: '11%',
       align: 'center',
       sortKey: 'lines',
       renderCell: (pr) => (
@@ -297,7 +297,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'score',
       header: 'Score',
-      width: '10%',
+      width: '13%',
       align: 'center',
       sortKey: 'score',
       renderCell: (pr) => (
@@ -309,7 +309,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'status',
       header: 'Status',
-      width: '13%',
+      width: '16%',
       sortKey: 'status',
       renderCell: (pr) => {
         const state =
@@ -319,18 +319,20 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         else if (state === 'OPEN') color = theme.palette.status.open;
         else if (state === 'CLOSED') color = theme.palette.status.closed;
         return (
-          <Chip
-            variant="status"
-            label={state}
-            sx={{ color, borderColor: color }}
-          />
+          <Tooltip title={state} arrow placement="bottom" slotProps={tooltipSlotProps}>
+            <Chip
+              variant="status"
+              label={state}
+              sx={{ color, borderColor: color }}
+            />
+          </Tooltip>
         );
       },
     },
     {
       key: 'mergedAt',
       header: 'Merged',
-      width: '10%',
+      width: '13%',
       align: 'center',
       sortKey: 'mergedAt',
       renderCell: (pr) =>

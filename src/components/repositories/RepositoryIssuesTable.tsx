@@ -48,21 +48,33 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   const { data: bounties } = useRepoIssues(repositoryFullName);
   const [filter, setFilter] = useState<'all' | 'open' | 'closed'>('all');
 
-  const counts = useMemo(() => {
-    if (!issues) return { total: 0, open: 0, closed: 0 };
-    return {
-      total: issues.length,
-      open: issues.filter((issue) => !issue.closedAt).length,
-      closed: issues.filter((issue) => issue.closedAt).length,
-    };
+  const isIssueClosed = useCallback(
+    (issue: RepositoryIssue) =>
+      Boolean(issue.closedAt) || issue.state?.toLowerCase() === 'closed',
+    [],
+  );
+
+  const uniqueIssues = useMemo(() => {
+    if (!issues) return [];
+    const seen = new Set<string>();
+    return issues.filter((issue) => {
+      const key = `${issue.repositoryFullName}-${issue.number}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }, [issues]);
 
+  const counts = useMemo(() => {
+    const closed = uniqueIssues.filter(isIssueClosed).length;
+    return { total: uniqueIssues.length, open: uniqueIssues.length - closed, closed };
+  }, [uniqueIssues, isIssueClosed]);
+
   const filteredIssues = useMemo(() => {
-    if (!issues) return [];
-    if (filter === 'open') return issues.filter((issue) => !issue.closedAt);
-    if (filter === 'closed') return issues.filter((issue) => issue.closedAt);
-    return issues;
-  }, [issues, filter]);
+    if (filter === 'open') return uniqueIssues.filter((issue) => !isIssueClosed(issue));
+    if (filter === 'closed') return uniqueIssues.filter(isIssueClosed);
+    return uniqueIssues;
+  }, [uniqueIssues, filter, isIssueClosed]);
 
   const sortedIssues = useMemo(
     () =>
@@ -156,18 +168,22 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       header: 'Status',
       width: '14%',
       renderCell: (issue) => {
-        const isOpen = !issue.closedAt;
+        const closed = isIssueClosed(issue);
+        const label = closed ? 'CLOSED' : 'OPEN';
+        const color = closed ? STATUS_COLORS.merged : STATUS_COLORS.open;
         return (
-          <Chip
-            variant="status"
-            icon={isOpen ? <RadioButtonUncheckedIcon /> : <CheckCircleIcon />}
-            label={isOpen ? 'OPEN' : 'CLOSED'}
-            sx={{
-              color: isOpen ? STATUS_COLORS.open : STATUS_COLORS.merged,
-              borderColor: isOpen ? STATUS_COLORS.open : STATUS_COLORS.merged,
-              '& .MuiChip-icon': { color: 'inherit' },
-            }}
-          />
+          <Tooltip title={label} arrow placement="bottom" slotProps={tooltipSlotProps}>
+            <Chip
+              variant="status"
+              icon={closed ? <CheckCircleIcon /> : <RadioButtonUncheckedIcon />}
+              label={label}
+              sx={{
+                color,
+                borderColor: color,
+                '& .MuiChip-icon': { color: 'inherit' },
+              }}
+            />
+          </Tooltip>
         );
       },
     },
