@@ -22,7 +22,7 @@ import { LinkBox } from '../common/linkBehavior';
 import {
   DataTable,
   type DataTableColumn,
-} from '../../components/common/DataTable';
+} from '../common/DataTable';
 import { formatTokenAmount } from '../../utils/format';
 import {
   getIssueStatusMeta,
