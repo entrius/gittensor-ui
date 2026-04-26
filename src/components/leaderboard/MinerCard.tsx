@@ -168,7 +168,14 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             }}
           >
             {/* Name + rank on the same line */}
-            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.75, minWidth: 0 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: 0.75,
+                minWidth: 0,
+              }}
+            >
               <Typography
                 sx={(theme) => ({
                   fontFamily: FONTS.mono,
