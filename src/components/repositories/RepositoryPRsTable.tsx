@@ -190,6 +190,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'pullRequestNumber',
       header: 'PR #',
+      width: '6%',
       sortKey: 'pullRequestNumber',
       renderCell: (pr) => (
         // Native <a> to GitHub — `onRowClick` (no row-as-anchor) keeps this valid HTML.
@@ -211,6 +212,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'pullRequestTitle',
       header: 'Title',
+      width: '25%',
       sortKey: 'pullRequestTitle',
       renderCell: (pr) => (
         <Tooltip
@@ -234,6 +236,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'author',
       header: 'Author',
+      width: '18%',
       sortKey: 'author',
       renderCell: (pr) => (
         <Tooltip
@@ -266,14 +269,16 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'commitCount',
       header: 'Commits',
-      align: 'right',
+      width: '8%',
+      align: 'center',
       sortKey: 'commitCount',
       renderCell: (pr) => pr.commitCount,
     },
     {
       key: 'lines',
       header: '+/-',
-      align: 'right',
+      width: '14%',
+      align: 'center',
       sortKey: 'lines',
       renderCell: (pr) => (
         <>
@@ -292,7 +297,8 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'score',
       header: 'Score',
-      align: 'right',
+      width: '10%',
+      align: 'center',
       sortKey: 'score',
       renderCell: (pr) => (
         <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
@@ -303,6 +309,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'status',
       header: 'Status',
+      width: '13%',
       sortKey: 'status',
       renderCell: (pr) => {
         const state =
@@ -323,7 +330,8 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'mergedAt',
       header: 'Merged',
-      align: 'right',
+      width: '10%',
+      align: 'center',
       sortKey: 'mergedAt',
       renderCell: (pr) =>
         pr.mergedAt ? new Date(pr.mergedAt).toLocaleDateString() : '-',
@@ -377,6 +385,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         getRowKey={(pr) => `${pr.repository}-${pr.pullRequestNumber}`}
         stickyHeader
         size="medium"
+        minWidth="700px"
         header={headerToolbar}
         emptyState={
           <Box sx={{ p: 4, textAlign: 'center' }}>

@@ -111,6 +111,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'number',
       header: 'Issue #',
+      width: '8%',
       renderCell: (issue) => (
         <a
           href={`https://github.com/${issue.repositoryFullName}/issues/${issue.number}`}
@@ -130,6 +131,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'title',
       header: 'Title',
+      width: '26%',
       renderCell: (issue) => (
         <Tooltip
           title={issue.title}
@@ -152,6 +154,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'status',
       header: 'Status',
+      width: '14%',
       renderCell: (issue) => {
         const isOpen = !issue.closedAt;
         return (
@@ -171,6 +174,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'linkedPr',
       header: 'Linked PR',
+      width: '14%',
       renderCell: (issue) =>
         issue.prNumber ? (
           <a
@@ -199,14 +203,16 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'created',
       header: 'Created',
-      align: 'right',
+      width: '19%',
+      align: 'center',
       renderCell: (issue) =>
         issue.createdAt ? new Date(issue.createdAt).toLocaleDateString() : '-',
     },
     {
       key: 'closed',
       header: 'Closed',
-      align: 'right',
+      width: '19%',
+      align: 'center',
       renderCell: (issue) =>
         issue.closedAt ? new Date(issue.closedAt).toLocaleDateString() : '-',
     },
@@ -426,6 +432,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
           getRowKey={(issue) => `${issue.number}-${issue.repositoryFullName}`}
           stickyHeader
           size="medium"
+          minWidth="560px"
           header={headerToolbar}
           emptyState={
             <Box sx={{ p: 4, textAlign: 'center' }}>
