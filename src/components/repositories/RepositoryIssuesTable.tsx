@@ -19,10 +19,7 @@ import {
   type RepositoryIssue,
 } from '../../api';
 import { LinkBox } from '../common/linkBehavior';
-import {
-  DataTable,
-  type DataTableColumn,
-} from '../common/DataTable';
+import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { formatTokenAmount } from '../../utils/format';
 import {
   getIssueStatusMeta,
@@ -67,11 +64,16 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
 
   const counts = useMemo(() => {
     const closed = uniqueIssues.filter(isIssueClosed).length;
-    return { total: uniqueIssues.length, open: uniqueIssues.length - closed, closed };
+    return {
+      total: uniqueIssues.length,
+      open: uniqueIssues.length - closed,
+      closed,
+    };
   }, [uniqueIssues, isIssueClosed]);
 
   const filteredIssues = useMemo(() => {
-    if (filter === 'open') return uniqueIssues.filter((issue) => !isIssueClosed(issue));
+    if (filter === 'open')
+      return uniqueIssues.filter((issue) => !isIssueClosed(issue));
     if (filter === 'closed') return uniqueIssues.filter(isIssueClosed);
     return uniqueIssues;
   }, [uniqueIssues, filter, isIssueClosed]);
@@ -172,7 +174,12 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         const label = closed ? 'CLOSED' : 'OPEN';
         const color = closed ? STATUS_COLORS.merged : STATUS_COLORS.open;
         return (
-          <Tooltip title={label} arrow placement="bottom" slotProps={tooltipSlotProps}>
+          <Tooltip
+            title={label}
+            arrow
+            placement="bottom"
+            slotProps={tooltipSlotProps}
+          >
             <Chip
               variant="status"
               icon={closed ? <CheckCircleIcon /> : <RadioButtonUncheckedIcon />}

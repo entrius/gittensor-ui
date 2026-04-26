@@ -319,7 +319,12 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         else if (state === 'OPEN') color = theme.palette.status.open;
         else if (state === 'CLOSED') color = theme.palette.status.closed;
         return (
-          <Tooltip title={state} arrow placement="bottom" slotProps={tooltipSlotProps}>
+          <Tooltip
+            title={state}
+            arrow
+            placement="bottom"
+            slotProps={tooltipSlotProps}
+          >
             <Chip
               variant="status"
               label={state}
