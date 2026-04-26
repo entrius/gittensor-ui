@@ -55,6 +55,7 @@ import ReactECharts from 'echarts-for-react';
 import type { TooltipComponentFormatterCallbackParams } from 'echarts';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
+import { WatchlistButton } from '../common';
 import { truncateText } from '../../utils';
 import { RankIcon } from './RankIcon';
 import { getRepositoryOwnerAvatarBackground, type RepoStats } from './types';
@@ -810,6 +811,21 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           {(repo.uniqueMiners?.size || 0) > 0 ? repo.uniqueMiners?.size : '-'}
         </Typography>
       ),
+    },
+    {
+      key: 'watch',
+      header: '★',
+      width: '52px',
+      align: 'center',
+      cellSx: { p: 0 },
+      renderCell: (repo) =>
+        repo.repository ? (
+          <WatchlistButton
+            category="repos"
+            itemKey={repo.repository}
+            size="small"
+          />
+        ) : null,
     },
   ];
 
