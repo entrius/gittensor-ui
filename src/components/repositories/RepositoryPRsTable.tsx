@@ -6,6 +6,7 @@ import {
   Chip,
   CircularProgress,
   Stack,
+  Tooltip,
   Typography,
   alpha,
 } from '@mui/material';
@@ -15,7 +16,11 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
-import theme, { TEXT_OPACITY, scrollbarSx } from '../../theme';
+import theme, {
+  TEXT_OPACITY,
+  scrollbarSx,
+  tooltipSlotProps,
+} from '../../theme';
 import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
 import FilterButton from '../FilterButton';
 
@@ -208,16 +213,22 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       header: 'Title',
       sortKey: 'pullRequestTitle',
       renderCell: (pr) => (
-        <Box
-          sx={{
-            maxWidth: '300px',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
+        <Tooltip
+          title={pr.pullRequestTitle}
+          arrow
+          placement="bottom"
+          slotProps={tooltipSlotProps}
         >
-          {pr.pullRequestTitle}
-        </Box>
+          <Box
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {pr.pullRequestTitle}
+          </Box>
+        </Tooltip>
       ),
     },
     {
@@ -225,14 +236,31 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       header: 'Author',
       sortKey: 'author',
       renderCell: (pr) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Avatar
-            src={`https://avatars.githubusercontent.com/${pr.author}`}
-            alt={pr.author}
-            sx={{ width: 20, height: 20 }}
-          />
-          {pr.author}
-        </Box>
+        <Tooltip
+          title={pr.author}
+          arrow
+          placement="bottom"
+          slotProps={tooltipSlotProps}
+        >
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}
+          >
+            <Avatar
+              src={`https://avatars.githubusercontent.com/${pr.author}`}
+              alt={pr.author}
+              sx={{ width: 20, height: 20, flexShrink: 0 }}
+            />
+            <Box
+              sx={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {pr.author}
+            </Box>
+          </Box>
+        </Tooltip>
       ),
     },
     {

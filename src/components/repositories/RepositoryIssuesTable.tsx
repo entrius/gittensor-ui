@@ -5,6 +5,7 @@ import {
   Chip,
   CircularProgress,
   Stack,
+  Tooltip,
   Typography,
   alpha,
   useTheme,
@@ -27,7 +28,12 @@ import {
   getIssueStatusMeta,
   getBountyAmountColor,
 } from '../../utils/issueStatus';
-import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
+import {
+  STATUS_COLORS,
+  TEXT_OPACITY,
+  scrollbarSx,
+  tooltipSlotProps,
+} from '../../theme';
 import FilterButton from '../FilterButton';
 
 interface RepositoryIssuesTableProps {
@@ -125,16 +131,22 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       key: 'title',
       header: 'Title',
       renderCell: (issue) => (
-        <Box
-          sx={{
-            maxWidth: '400px',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
+        <Tooltip
+          title={issue.title}
+          arrow
+          placement="bottom"
+          slotProps={tooltipSlotProps}
         >
-          {issue.title}
-        </Box>
+          <Box
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {issue.title}
+          </Box>
+        </Tooltip>
       ),
     },
     {
