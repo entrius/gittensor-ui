@@ -12,10 +12,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAllPrs, type CommitLog } from '../../api';
-import {
-  DataTable,
-  type DataTableColumn,
-} from '../common/DataTable';
+import { DataTable, type DataTableColumn } from '../common/DataTable';
 import theme, {
   TEXT_OPACITY,
   scrollbarSx,
