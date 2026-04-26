@@ -415,6 +415,8 @@ const IssuesList: React.FC<IssuesListProps> = ({
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
                   cursor: 'pointer',
+                  alignSelf: 'flex-start',
+                  maxWidth: '100%',
                 }}
               >
                 {issue.title}
