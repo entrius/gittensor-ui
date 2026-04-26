@@ -6,7 +6,7 @@ import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS, STATUS_COLORS } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
-import { WatchlistButton } from '../common';
+import { MinerWatchlistButton } from '../common';
 import { type MinerStats, type LeaderboardVariant, FONTS } from './types';
 
 interface MinerCardProps {
@@ -296,9 +296,9 @@ export const MinerCard: React.FC<MinerCardProps> = ({
         {/* Watchlist button stays top-right */}
         <Box sx={{ flexShrink: 0 }}>
           {miner.githubId && (
-            <WatchlistButton
-              category="miners"
-              itemKey={miner.githubId}
+            <MinerWatchlistButton
+              githubId={miner.githubId}
+              hotkey={miner.hotkey}
               size="small"
             />
           )}

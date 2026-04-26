@@ -13,7 +13,7 @@ import {
   MinerScoreCard,
   SEO,
 } from '../components';
-import { WatchlistButton } from '../components/common';
+import { MinerWatchlistButton } from '../components/common';
 
 type ViewMode = 'prs' | 'issues';
 
@@ -125,11 +125,7 @@ const MinerDetailsPage: React.FC = () => {
               }}
             >
               <BackButton to="/top-miners" mb={0} />
-              <WatchlistButton
-                category="miners"
-                itemKey={githubId}
-                size="medium"
-              />
+              <MinerWatchlistButton githubId={githubId} size="medium" />
             </Box>
             <Box
               sx={{

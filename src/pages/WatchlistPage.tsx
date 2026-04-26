@@ -5,14 +5,11 @@ import {
   Card,
   Chip,
   FormControl,
-  Grid,
-  IconButton,
   InputAdornment,
   MenuItem,
   Select,
   TablePagination,
   TextField,
-  Tooltip,
   Typography,
   Button,
   alpha,
@@ -26,8 +23,6 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import ViewModuleIcon from '@mui/icons-material/ViewModule';
-import ViewListIcon from '@mui/icons-material/ViewList';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
 import {
@@ -41,7 +36,7 @@ import {
   type DataTableColumn,
 } from '../components/common/DataTable';
 import { LinkBox } from '../components/common/linkBehavior';
-import { useAllMiners, useAllPrs, useReposAndWeights, useIssues } from '../api';
+import { useAllMiners, useReposAndWeights, useIssues } from '../api';
 import { mapAllMinersToStats } from '../utils/minerMapper';
 import {
   useWatchlist,
@@ -49,16 +44,12 @@ import {
   serializePRKey,
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
-import {
-  isMergedPr,
-  isClosedUnmergedPr,
-  getPrStatusCounts,
-} from '../utils/prStatus';
+import { useWatchedPRs } from '../hooks/useWatchedPRs';
+import { isMergedPr, isClosedUnmergedPr } from '../utils/prStatus';
 import { filterPrs, type PrStatusFilter } from '../utils/prTable';
 import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatTokenAmount } from '../utils/format';
 import theme, { STATUS_COLORS, scrollbarSx } from '../theme';
-import FilterButton from '../components/FilterButton';
 import type { CommitLog } from '../api/models/Dashboard';
 
 const TAB_ORDER: readonly WatchlistCategory[] = [
@@ -282,7 +273,9 @@ const WatchlistPage: React.FC = () => {
             </Tabs>
           </Box>
 
-          {isEmpty ? (
+          {activeTab === 'prs' ? (
+            <PRsList itemKeys={ids} />
+          ) : isEmpty ? (
             <Box
               sx={{
                 py: 8,
@@ -321,10 +314,8 @@ const WatchlistPage: React.FC = () => {
             <MinersList itemKeys={ids} />
           ) : activeTab === 'repos' ? (
             <ReposList itemKeys={ids} />
-          ) : activeTab === 'bounties' ? (
-            <BountiesList itemKeys={ids} />
           ) : (
-            <PRsList itemKeys={ids} />
+            <BountiesList itemKeys={ids} />
           )}
         </Box>
 
@@ -743,253 +734,17 @@ const prColumns: DataTableColumn<CommitLog, PrSortKey>[] = [
   },
 ];
 
-type PRsViewMode = 'list' | 'cards';
-
-const PRsViewModeToggle: React.FC<{
-  viewMode: PRsViewMode;
-  onChange: (mode: PRsViewMode) => void;
-}> = ({ viewMode, onChange }) => {
-  const options: {
-    value: PRsViewMode;
-    label: string;
-    Icon: typeof ViewListIcon;
-  }[] = [
-    { value: 'list', label: 'List view', Icon: ViewListIcon },
-    { value: 'cards', label: 'Card view', Icon: ViewModuleIcon },
-  ];
-
-  return (
-    <Box
-      sx={(t) => ({
-        display: 'inline-flex',
-        alignItems: 'center',
-        borderRadius: 2,
-        border: '1px solid',
-        borderColor: t.palette.border.light,
-        overflow: 'hidden',
-      })}
-      role="group"
-      aria-label="Toggle view mode"
-    >
-      {options.map(({ value, label, Icon }) => {
-        const isActive = viewMode === value;
-        return (
-          <Tooltip key={value} title={label} placement="top" arrow>
-            <IconButton
-              onClick={() => onChange(value)}
-              size="small"
-              aria-label={label}
-              aria-pressed={isActive}
-              sx={(t) => ({
-                borderRadius: 0,
-                padding: '6px 10px',
-                color: isActive
-                  ? t.palette.text.primary
-                  : t.palette.text.tertiary,
-                backgroundColor: isActive
-                  ? t.palette.surface.light
-                  : 'transparent',
-                '&:hover': {
-                  backgroundColor: t.palette.surface.light,
-                  color: t.palette.text.primary,
-                },
-              })}
-            >
-              <Icon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        );
-      })}
-    </Box>
-  );
-};
-
 const getPrHref = (pr: CommitLog) =>
   `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`;
-
-const PRCard: React.FC<{ pr: CommitLog }> = ({ pr }) => {
-  const { label, color } = prStatusMeta(pr);
-  const key = serializePRKey(pr.repository, pr.pullRequestNumber);
-  return (
-    <Card
-      elevation={0}
-      sx={(t) => ({
-        p: 1,
-        backgroundColor: t.palette.background.default,
-        backdropFilter: 'blur(12px)',
-        border: '1px solid',
-        borderColor: alpha(color, 0.3),
-        borderRadius: 2,
-        cursor: 'pointer',
-        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
-        boxShadow: `0 2px 8px ${alpha(t.palette.background.default, 0.1)}`,
-        '&:hover': {
-          backgroundColor: t.palette.surface.elevated,
-          borderColor: alpha(color, 0.5),
-          transform: 'translateY(-2px)',
-          boxShadow: `0 8px 24px -6px ${alpha(t.palette.background.default, 0.6)}`,
-        },
-      })}
-    >
-      {/* Row 1: repo + status + star */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-        }}
-      >
-        <Stack
-          direction="row"
-          alignItems="center"
-          spacing={1}
-          sx={{ minWidth: 0 }}
-        >
-          <Avatar
-            src={`https://avatars.githubusercontent.com/${pr.repository.split('/')[0]}`}
-            sx={{
-              width: 20,
-              height: 20,
-              flexShrink: 0,
-              border: '1px solid',
-              borderColor: 'border.medium',
-            }}
-          />
-          <Typography
-            sx={{
-              fontSize: '0.72rem',
-              color: 'text.secondary',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {pr.repository}
-          </Typography>
-        </Stack>
-        <Stack
-          direction="row"
-          alignItems="center"
-          spacing={0.5}
-          sx={{ flexShrink: 0 }}
-        >
-          <Chip
-            variant="status"
-            label={label}
-            size="small"
-            sx={{
-              color,
-              borderColor: alpha(color, 0.3),
-              backgroundColor: alpha(color, 0.08),
-            }}
-          />
-          <WatchlistButton category="prs" itemKey={key} size="small" />
-        </Stack>
-      </Box>
-
-      {/* Row 2: title (linkable) */}
-      <LinkBox
-        href={getPrHref(pr)}
-        linkState={{ backLabel: 'Back to Watchlist' }}
-        sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}
-      >
-        <Typography
-          sx={{
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            color: 'text.primary',
-            lineHeight: 1.4,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}
-        >
-          #{pr.pullRequestNumber} {pr.pullRequestTitle}
-        </Typography>
-
-        {/* Row 3: footer stats */}
-        <Box
-          sx={(t) => ({
-            mt: 'auto',
-            backgroundColor: alpha(t.palette.background.default, 0.2),
-            borderRadius: 1.5,
-            p: 1,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          })}
-        >
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Avatar
-              src={`https://avatars.githubusercontent.com/${pr.author}`}
-              sx={{ width: 18, height: 18 }}
-            />
-            <Typography
-              sx={{
-                fontSize: '0.72rem',
-                color: 'text.secondary',
-              }}
-            >
-              {pr.author}
-            </Typography>
-          </Stack>
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            <Stack direction="row" spacing={0.5} alignItems="center">
-              <Typography
-                sx={{
-                  fontSize: '0.7rem',
-                  color: 'diff.additions',
-                  fontWeight: 600,
-                }}
-              >
-                +{pr.additions}
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: '0.7rem',
-                  color: 'text.tertiary',
-                }}
-              >
-                /
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: '0.7rem',
-                  color: 'diff.deletions',
-                  fontWeight: 600,
-                }}
-              >
-                -{pr.deletions}
-              </Typography>
-            </Stack>
-            <Typography
-              sx={{
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                color: 'text.primary',
-              }}
-            >
-              {parseFloat(pr.score || '0').toFixed(2)}
-            </Typography>
-          </Stack>
-        </Box>
-      </LinkBox>
-    </Card>
-  );
-};
 
 const PR_ROWS_OPTIONS = [10, 25, 50] as const;
 
 const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
-  const { data: allPrs } = useAllPrs();
+  const { items } = useWatchedPRs(itemKeys);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
-  const [viewMode, setViewMode] = useState<PRsViewMode>('list');
+  const [authorFilter, setAuthorFilter] = useState<string>('all');
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(0);
   const [sortField, setSortField] = useState<PrSortKey>('score');
@@ -1009,25 +764,24 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     setPage(0);
   };
 
-  const items = useMemo(() => {
-    if (!allPrs) return [];
-    const set = new Set(itemKeys);
-    return allPrs.filter((pr) =>
-      set.has(serializePRKey(pr.repository, pr.pullRequestNumber)),
-    );
-  }, [allPrs, itemKeys]);
-
-  const counts = useMemo(() => getPrStatusCounts(items), [items]);
+  const authorOptions = useMemo(() => {
+    const seen = new Set<string>();
+    for (const pr of items) {
+      if (pr.author) seen.add(pr.author);
+    }
+    return Array.from(seen).sort((a, b) => a.localeCompare(b));
+  }, [items]);
 
   const filtered = useMemo(() => {
     const result = filterPrs(items, {
       statusFilter,
+      author: authorFilter === 'all' ? null : authorFilter,
       searchQuery,
       includeNumber: true,
     });
     setPage(0);
     return result;
-  }, [items, statusFilter, searchQuery]);
+  }, [items, statusFilter, authorFilter, searchQuery]);
 
   const sorted = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -1084,38 +838,132 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           gap: 2,
           borderBottom: '1px solid',
           borderColor: 'border.light',
+          flexWrap: 'wrap',
         }}
       >
-        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-          <FilterButton
-            label="All"
-            count={counts.all}
-            color={STATUS_COLORS.neutral}
-            isActive={statusFilter === 'all'}
-            onClick={() => setStatusFilter('all')}
-          />
-          <FilterButton
-            label="Open"
-            count={counts.open}
-            color={STATUS_COLORS.open}
-            isActive={statusFilter === 'open'}
-            onClick={() => setStatusFilter('open')}
-          />
-          <FilterButton
-            label="Merged"
-            count={counts.merged}
-            color={STATUS_COLORS.merged}
-            isActive={statusFilter === 'merged'}
-            onClick={() => setStatusFilter('merged')}
-          />
-          <FilterButton
-            label="Closed"
-            count={counts.closed}
-            color={STATUS_COLORS.closed}
-            isActive={statusFilter === 'closed'}
-            onClick={() => setStatusFilter('closed')}
-          />
-        </Box>
+        <FormControl size="small">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              variant="body2"
+              sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
+            >
+              State:
+            </Typography>
+            <Select
+              value={statusFilter}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as PrStatusFilter)
+              }
+              sx={{
+                color: 'text.primary',
+                backgroundColor: 'background.default',
+                fontSize: '0.8rem',
+                height: '36px',
+                borderRadius: 2,
+                minWidth: '96px',
+                '& fieldset': { borderColor: 'border.light' },
+                '&:hover fieldset': { borderColor: 'border.medium' },
+                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                '& .MuiSelect-select': { py: 0.75, pr: '28px !important' },
+              }}
+            >
+              <MenuItem value="all">All</MenuItem>
+              <MenuItem value="open">Open</MenuItem>
+              <MenuItem value="merged">Merged</MenuItem>
+              <MenuItem value="closed">Closed</MenuItem>
+            </Select>
+          </Box>
+        </FormControl>
+        <FormControl size="small">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              variant="body2"
+              sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
+            >
+              Author:
+            </Typography>
+            <Select
+              value={authorFilter}
+              onChange={(e) => setAuthorFilter(e.target.value as string)}
+              sx={{
+                color: 'text.primary',
+                backgroundColor: 'background.default',
+                fontSize: '0.8rem',
+                height: '36px',
+                borderRadius: 2,
+                minWidth: '180px',
+                maxWidth: '240px',
+                '& fieldset': { borderColor: 'border.light' },
+                '&:hover fieldset': { borderColor: 'border.medium' },
+                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                '& .MuiSelect-select': {
+                  py: 0.75,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.75,
+                },
+              }}
+              MenuProps={{ PaperProps: { sx: { maxHeight: 360 } } }}
+              renderValue={(value) =>
+                value === 'all' ? (
+                  'All authors'
+                ) : (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.75,
+                      minWidth: 0,
+                    }}
+                  >
+                    <Avatar
+                      src={`https://avatars.githubusercontent.com/${value}`}
+                      sx={{ width: 18, height: 18, flexShrink: 0 }}
+                    />
+                    <Box
+                      component="span"
+                      sx={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {value}
+                    </Box>
+                  </Box>
+                )
+              }
+            >
+              <MenuItem value="all">All authors</MenuItem>
+              {authorOptions.map((author) => (
+                <MenuItem
+                  key={author}
+                  value={author}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.75,
+                  }}
+                >
+                  <Avatar
+                    src={`https://avatars.githubusercontent.com/${author}`}
+                    sx={{ width: 20, height: 20, flexShrink: 0 }}
+                  />
+                  <Box
+                    component="span"
+                    sx={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {author}
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+        </FormControl>
         <FormControl size="small">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography
@@ -1164,7 +1012,8 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             ),
           }}
           sx={{
-            width: '220px',
+            flex: 1,
+            minWidth: '180px',
             '& .MuiOutlinedInput-root': {
               color: 'text.primary',
               backgroundColor: 'background.default',
@@ -1177,69 +1026,23 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             },
           }}
         />
-        <Box sx={{ ml: 'auto' }}>
-          <PRsViewModeToggle viewMode={viewMode} onChange={setViewMode} />
-        </Box>
       </Box>
 
-      {/* Content */}
-      {viewMode === 'list' ? (
-        <DataTable<CommitLog, PrSortKey>
-          columns={prColumns}
-          rows={paged}
-          getRowKey={(pr) =>
-            serializePRKey(pr.repository, pr.pullRequestNumber)
-          }
-          getRowHref={getPrHref}
-          linkState={{ backLabel: 'Back to Watchlist' }}
-          minWidth="750px"
-          stickyHeader
-          emptyLabel="No watched pull requests found."
-          sort={{
-            field: sortField,
-            order: sortOrder,
-            onChange: handleSort,
-          }}
-        />
-      ) : (
-        <Box
-          sx={{
-            p: 2,
-            overflowY: 'auto',
-            ...scrollbarSx,
-          }}
-        >
-          {paged.length === 0 ? (
-            <Typography
-              sx={{
-                color: 'text.secondary',
-                textAlign: 'center',
-                py: 4,
-                fontSize: '0.85rem',
-              }}
-            >
-              No watched pull requests found.
-            </Typography>
-          ) : (
-            <Grid container spacing={2} alignItems="stretch">
-              {paged.map((pr) => (
-                <Grid
-                  item
-                  xs={12}
-                  sm={6}
-                  md={4}
-                  key={serializePRKey(pr.repository, pr.pullRequestNumber)}
-                  sx={{ display: 'flex' }}
-                >
-                  <Box sx={{ width: '100%' }}>
-                    <PRCard pr={pr} />
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
-          )}
-        </Box>
-      )}
+      <DataTable<CommitLog, PrSortKey>
+        columns={prColumns}
+        rows={paged}
+        getRowKey={(pr) => serializePRKey(pr.repository, pr.pullRequestNumber)}
+        getRowHref={getPrHref}
+        linkState={{ backLabel: 'Back to Watchlist' }}
+        minWidth="750px"
+        stickyHeader
+        emptyLabel="No watched pull requests found."
+        sort={{
+          field: sortField,
+          order: sortOrder,
+          onChange: handleSort,
+        }}
+      />
       <TablePagination
         rowsPerPageOptions={[]}
         component="div"

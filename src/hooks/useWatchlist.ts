@@ -128,6 +128,7 @@ interface UseWatchlist {
   count: number;
   isWatched: (id: string) => boolean;
   add: (id: string) => void;
+  addMany: (ids: string[]) => void;
   remove: (id: string) => void;
   toggle: (id: string) => void;
   clear: () => void;
@@ -156,6 +157,26 @@ export const useWatchlist = (
     (id: string) => {
       if (!id || snapshot[category].includes(id)) return;
       setSnapshot({ ...snapshot, [category]: [...snapshot[category], id] });
+    },
+    [category],
+  );
+
+  const addMany = useCallback(
+    (incoming: string[]) => {
+      if (!incoming || incoming.length === 0) return;
+      const existing = snapshot[category];
+      const existingSet = new Set(existing);
+      const additions: string[] = [];
+      for (const id of incoming) {
+        if (!id || existingSet.has(id)) continue;
+        existingSet.add(id);
+        additions.push(id);
+      }
+      if (additions.length === 0) return;
+      setSnapshot({
+        ...snapshot,
+        [category]: [...existing, ...additions],
+      });
     },
     [category],
   );
@@ -195,6 +216,7 @@ export const useWatchlist = (
     count: ids.length,
     isWatched,
     add,
+    addMany,
     remove,
     toggle,
     clear,

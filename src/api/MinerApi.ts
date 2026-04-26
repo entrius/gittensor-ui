@@ -57,6 +57,9 @@ export const useMinerPRs = (githubId: string, enabled?: boolean) =>
     enabled,
   );
 
+export const getMinerPRsQueryKey = (githubId: string) =>
+  ['useMinerPRs', `/miners/${githubId}/prs`, undefined] as const;
+
 /**
  * Get GitHub profile data for a specific miner
  * @param githubId - Numeric GitHub ID (e.g., "583231"), NOT username

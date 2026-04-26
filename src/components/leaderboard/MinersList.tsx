@@ -3,7 +3,11 @@ import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
 import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS, scrollbarSx } from '../../theme';
 import { getGithubAvatarSrc, type SortOrder } from '../../utils/ExplorerUtils';
-import { DataTable, type DataTableColumn, WatchlistButton } from '../common';
+import {
+  DataTable,
+  type DataTableColumn,
+  MinerWatchlistButton,
+} from '../common';
 import { RankIcon } from './RankIcon';
 import {
   type LeaderboardVariant,
@@ -119,9 +123,9 @@ export const MinersList: React.FC<MinersListProps> = ({
       cellSx: { p: 0 },
       renderCell: (miner) =>
         miner.githubId ? (
-          <WatchlistButton
-            category="miners"
-            itemKey={miner.githubId}
+          <MinerWatchlistButton
+            githubId={miner.githubId}
+            hotkey={miner.hotkey}
             size="small"
           />
         ) : null,
