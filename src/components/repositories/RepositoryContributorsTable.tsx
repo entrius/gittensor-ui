@@ -50,8 +50,7 @@ const RepositoryContributorsTable: React.FC<
   const { data: allMinersStats, isLoading: isMinersLoading } = useAllMiners();
 
   const [visibleCount, setVisibleCount] = useState(7);
-  const [programTab, setProgramTab] =
-    useState<ContributorsProgramTab>('oss');
+  const [programTab, setProgramTab] = useState<ContributorsProgramTab>('oss');
 
   useEffect(() => {
     setVisibleCount(7);
@@ -406,9 +405,7 @@ const RepositoryContributorsTable: React.FC<
                 minWidth: 0,
                 flex: 1,
                 fontFamily: 'inherit',
-                backgroundColor: isActive
-                  ? 'surface.elevated'
-                  : 'transparent',
+                backgroundColor: isActive ? 'surface.elevated' : 'transparent',
                 color: isActive
                   ? 'text.primary'
                   : (t) => alpha(t.palette.text.primary, 0.5),
