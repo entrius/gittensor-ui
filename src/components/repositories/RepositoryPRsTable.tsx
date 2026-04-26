@@ -15,7 +15,7 @@ import { useAllPrs, type CommitLog } from '../../api';
 import {
   DataTable,
   type DataTableColumn,
-} from '../../components/common/DataTable';
+} from '../common/DataTable';
 import theme, {
   TEXT_OPACITY,
   scrollbarSx,
