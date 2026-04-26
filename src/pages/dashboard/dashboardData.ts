@@ -14,7 +14,11 @@ import { formatTokenAmount } from '../../utils/format';
 
 export type PresetTimeRange = '1d' | '7d' | '35d';
 export type TrendTimeRange = PresetTimeRange | 'all';
-export type TrendSeriesKey = 'mergedPrs' | 'issuesResolved' | 'prsOpened';
+export type TrendSeriesKey =
+  | 'mergedPrs'
+  | 'issuesResolved'
+  | 'prsOpened'
+  | 'issuesOpened';
 
 export interface DashboardTrendSeries {
   key: TrendSeriesKey;
@@ -101,6 +105,7 @@ const TREND_SERIES_KEYS: TrendSeriesKey[] = [
   'mergedPrs',
   'issuesResolved',
   'prsOpened',
+  'issuesOpened',
 ];
 const CURRENT_LOOKBACK_WINDOW: PresetTimeRange = '35d';
 
@@ -265,6 +270,9 @@ export const buildDashboardTrendData = (
   const resolvedIssueTimestamps = issues
     .filter((issue) => issue.status === 'completed')
     .map((issue) => toTimestamp(issue.completedAt));
+  const openedIssueTimestamps = issues.map((issue) =>
+    toTimestamp(issue.createdAt),
+  );
   const buckets = buildTrendBuckets(range, now);
   const mergedPrValues = bucketTimestamps(mergedPrTimestamps, buckets);
   const openedPrValues = bucketTimestamps(openedPrTimestamps, buckets);
@@ -272,6 +280,7 @@ export const buildDashboardTrendData = (
     resolvedIssueTimestamps,
     buckets,
   );
+  const openedIssueValues = bucketTimestamps(openedIssueTimestamps, buckets);
 
   const seriesByKey: Record<TrendSeriesKey, number[]> = {
     mergedPrs: mergedPrValues,
@@ -284,12 +293,6 @@ export const buildDashboardTrendData = (
     labels: buckets.map((bucket) => bucket.label),
     series: TREND_SERIES_KEYS.map((key) => ({
       key,
-      values:
-        key === 'mergedPrs'
-          ? mergedPrValues
-          : key === 'prsOpened'
-            ? openedPrValues
-            : resolvedIssueValues,
       values: seriesByKey[key],
     })),
   };
