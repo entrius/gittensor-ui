@@ -319,8 +319,7 @@ export const buildMergedIssueDiscoveryByRepo = (
       discoveryContributors: new Set<string>(),
     };
     const token = parseNumber(pr.tokenScore);
-    cur.discoveryScore +=
-      token > 0 ? token : parseFloat(pr.score || '0');
+    cur.discoveryScore += token > 0 ? token : parseFloat(pr.score || '0');
     cur.discoveryIssues += 1;
     const minerKey = pr.githubId || pr.author;
     if (minerKey) cur.discoveryContributors.add(String(minerKey));

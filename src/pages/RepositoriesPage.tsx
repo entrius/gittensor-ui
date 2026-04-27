@@ -190,8 +190,7 @@ const RepositoriesPage: React.FC = () => {
           inactiveAt: repo.inactiveAt,
           discoveryScore: d?.discoveryScore ?? 0,
           discoveryIssues: d?.discoveryIssues ?? 0,
-          discoveryContributors:
-            d?.discoveryContributors ?? new Set<string>(),
+          discoveryContributors: d?.discoveryContributors ?? new Set<string>(),
         };
       })
       .sort((a, b) => b.totalScore - a.totalScore);

@@ -225,7 +225,9 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
         </Box>
       </Box>
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, pt: 0.5 }}>
+      <Box
+        sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, pt: 0.5 }}
+      >
         <Box
           sx={{
             display: 'grid',
