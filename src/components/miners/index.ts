@@ -1,6 +1,3 @@
-export { default as CredibilityChart } from './CredibilityChart';
-export { default as EmptyStateMessage } from './EmptyStateMessage';
-export { default as ExplorerFilterButton } from './ExplorerFilterButton';
 export { default as MinerActivity } from './MinerActivity';
 export { default as MinerComparisonRadar } from './MinerComparisonRadar';
 export { default as MinerInsightsCard } from './MinerInsightsCard';
@@ -8,7 +5,3 @@ export { default as MinerPRsTable } from './MinerPRsTable';
 export { default as MinerRepositoriesTable } from './MinerRepositoriesTable';
 export { default as MinerScoreBreakdown } from './MinerScoreBreakdown';
 export { default as MinerScoreCard } from './MinerScoreCard';
-export { default as PerformanceRadar } from './PerformanceRadar';
-export { default as RankBadge } from './RankBadge';
-export { default as TablePagination } from './TablePagination';
-export { default as TrustBadge, getRiskAssessment } from './TrustBadge';

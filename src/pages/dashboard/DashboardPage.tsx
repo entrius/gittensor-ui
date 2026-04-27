@@ -6,6 +6,7 @@ import theme, { scrollbarSx } from '../../theme';
 import { type TrendTimeRange } from './dashboardData';
 import useDashboardData from './useDashboardData';
 import ActiveNetwork from './views/ActiveNetwork';
+import DashboardFeaturedWorkSection from './views/DashboardFeaturedWork';
 import DashboardTopContributors from './views/DashboardTopContributors';
 import LiveSidebar from './views/LiveSidebar';
 
@@ -21,6 +22,7 @@ const DashboardFeaturePage: React.FC = () => {
     overview,
     trendLabels,
     trendSeries,
+    featuredWork,
     featuredContributors,
     featuredDiscoveryContributors,
     isLoading,
@@ -81,11 +83,19 @@ const DashboardFeaturePage: React.FC = () => {
             <DashboardTopContributors
               contributors={featuredContributors}
               isLoading={isLoading}
+              viewAllHref="/top-miners"
             />
 
             <DashboardTopContributors
               title="Featured Discoverers"
               contributors={featuredDiscoveryContributors}
+              isLoading={isLoading}
+              mode="issues"
+              viewAllHref="/discoveries"
+            />
+
+            <DashboardFeaturedWorkSection
+              items={featuredWork}
               isLoading={isLoading}
             />
           </Box>
