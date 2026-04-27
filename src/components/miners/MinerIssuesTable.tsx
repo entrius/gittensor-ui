@@ -17,7 +17,7 @@ import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { useMinerIssues } from '../../api';
 import { type MinerIssue } from '../../api/models/Dashboard';
 import { paginateItems } from '../../utils';
-import { getIssueStatusMeta } from '../../utils/issueStatus';
+import { LABEL_COLORS } from '../../theme';
 import {
   DataTable,
   type DataTableColumn,
@@ -323,49 +323,52 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
       },
     },
     {
-      key: 'status',
-      header: 'Status',
-      width: '12%',
-      align: 'center',
+      key: 'labels',
+      header: 'Labels',
+      width: '15%',
       renderCell: (issue) => {
-        const reason = (issue.state_reason ?? '').toLowerCase();
-        // Match the bounties-page chip for completed issues: same alpha-tinted
-        // "Completed" badge sourced from getIssueStatusMeta.
-        if (reason === 'completed') {
-          const meta = getIssueStatusMeta('completed');
+        const labels = issue.labels ?? [];
+        if (labels.length === 0) {
           return (
-            <Chip
-              label="Resolved"
-              size="small"
+            <Typography
               sx={{
-                fontSize: '0.7rem',
-                height: 20,
-                color: meta.color,
-                backgroundColor: meta.bgColor,
-                border: '1px solid',
-                borderColor: meta.borderColor,
+                fontSize: '0.75rem',
+                color: (t) => alpha(t.palette.text.primary, 0.4),
               }}
-            />
+            >
+              —
+            </Typography>
           );
         }
-        // Prefer state_reason; fall back to OPEN/CLOSED state.
-        const s = issueState(issue);
-        const label = reason ? reason.replace(/_/g, ' ') : statusLabel(s);
-        const color = statusColor(theme, s);
         return (
-          <Chip
-            label={label}
-            size="small"
-            sx={{
-              fontSize: '0.7rem',
-              height: 20,
-              textTransform: 'capitalize',
-              color,
-              backgroundColor: alpha(color, 0.12),
-              border: '1px solid',
-              borderColor: alpha(color, 0.3),
-            }}
-          />
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            {labels.map((l) => {
+              // Map known label names to project theme colors. Unknown labels
+              // fall back to the neutral text-primary tint.
+              const name = l.name.toLowerCase();
+              let color: string | null = null;
+              if (name in LABEL_COLORS) {
+                color = LABEL_COLORS[name as keyof typeof LABEL_COLORS];
+              }
+              const bg = color ?? theme.palette.text.primary;
+              return (
+                <Chip
+                  key={l.name}
+                  label={l.name}
+                  size="small"
+                  sx={{
+                    fontSize: '0.65rem',
+                    height: 18,
+                    textTransform: 'lowercase',
+                    color,
+                    backgroundColor: alpha(bg, 0.12),
+                    border: '1px solid',
+                    borderColor: alpha(bg, 0.3),
+                  }}
+                />
+              );
+            })}
+          </Box>
         );
       },
     },
