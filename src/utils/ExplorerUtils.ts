@@ -1,10 +1,10 @@
 import {
   type CommitLog,
-  type IssueBounty,
   type MinerEvaluation,
   type Repository,
   type RepositoryPrScoring,
 } from '../api';
+import { type IssueBounty } from '../api/models/Issues';
 import { isMergedPr } from './prStatus';
 
 export const getGithubAvatarSrc = (username?: string | null) => {
