@@ -59,7 +59,6 @@ export const getNextCommitLogPageParam = (
 
   return lastPageParam + 1;
 };
-
 export const useInfiniteCommitLog = (options?: {
   refetchInterval?: number;
 }) => {
