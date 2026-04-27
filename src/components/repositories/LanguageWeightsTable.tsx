@@ -406,7 +406,7 @@ const LanguageWeightsTable: React.FC = () => {
             backgroundColor: alpha(theme.palette.common.black, 0.2),
           }}
         >
-          {showChart && filteredAndSortedLanguages.length > 0 && (
+          {showChart && paginatedLanguages.length > 0 && (
             <ReactECharts
               option={chartOption}
               style={{ height: '100%', width: '100%' }}

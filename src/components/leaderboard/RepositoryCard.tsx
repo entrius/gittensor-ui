@@ -2,6 +2,7 @@ import React from 'react';
 import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
+import { WatchlistButton } from '../common';
 import { RankIcon } from './RankIcon';
 import {
   FONTS,
@@ -161,6 +162,13 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
         >
           {isInactive ? 'Inactive' : 'Active'}
         </Typography>
+        {repo.repository && (
+          <WatchlistButton
+            category="repos"
+            itemKey={repo.repository}
+            size="small"
+          />
+        )}
       </Box>
 
       <Box>
