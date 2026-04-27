@@ -441,8 +441,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
       if (mergedForWeight.length > 0) {
         const totalWeight = mergedForWeight.reduce(
           (sum, pr) =>
-            sum +
-            (repoWeights.get((pr.repository || '').toLowerCase()) || 0),
+            sum + (repoWeights.get((pr.repository || '').toLowerCase()) || 0),
           0,
         );
         const avgRaw = totalWeight / mergedForWeight.length;
@@ -499,8 +498,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
       const issueRepos = aggregateIssueDiscoveryRepos(prs, repoWeights);
       if (issueRepos.length > 0) {
         const avgRaw =
-          issueRepos.reduce((sum, r) => sum + r.weight, 0) /
-          issueRepos.length;
+          issueRepos.reduce((sum, r) => sum + r.weight, 0) / issueRepos.length;
         avgRepoWeight = Math.min(Math.max(avgRaw, 0) * 100, 100);
       }
     }
