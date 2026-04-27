@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Avatar,
   Box,
@@ -62,6 +62,10 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   const [issueSortOrder, setIssueSortOrder] = useState<SortOrder>('desc');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
+
+  useEffect(() => {
+    setPage(0);
+  }, [viewMode]);
 
   const repoWeights = useMemo(() => buildRepoWeightsMap(repos), [repos]);
 
@@ -306,15 +310,15 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     },
     {
       key: 'bountyEarned',
-      header: 'Bounty (a)',
+      header: 'Bounty (α)',
       width: '12%',
       align: 'right',
       sortKey: 'bountyEarned',
-      renderCell: (repo) => formatTokenAmount(repo.bountyEarned),
+      renderCell: (repo) => `${formatTokenAmount(repo.bountyEarned)} α`,
     },
     {
       key: 'avgPerSolve',
-      header: 'Avg / solve',
+      header: 'Avg token / solve',
       width: '10%',
       align: 'right',
       cellSx: {
