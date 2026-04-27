@@ -1,9 +1,12 @@
 import React, { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
   Alert,
+  Avatar,
   Box,
   Button,
   Card,
@@ -37,6 +40,64 @@ const githubIssueUrl = (issue: RepositoryIssue) =>
 const githubSearchOpenByAuthor = (login: string) =>
   `https://github.com/search?q=${encodeURIComponent(`is:issue is:open author:${login}`)}&type=issues`;
 
+interface GithubSearchIssueItem {
+  number: number;
+  title: string;
+  html_url: string;
+  repository_url: string;
+  created_at: string | null;
+  closed_at: string | null;
+  user?: { login?: string | null } | null;
+  pull_request?: unknown;
+}
+
+interface GithubSearchIssuesResponse {
+  items: GithubSearchIssueItem[];
+}
+
+const parseRepoFromRepositoryUrl = (repositoryUrl: string): string | null => {
+  const marker = '/repos/';
+  const idx = repositoryUrl.indexOf(marker);
+  if (idx < 0) return null;
+  const repo = repositoryUrl.slice(idx + marker.length);
+  return repo || null;
+};
+
+const fetchGithubOpenIssuesByAuthor = async (
+  login: string,
+): Promise<RepositoryIssue[]> => {
+  const { data } = await axios.get<GithubSearchIssuesResponse>(
+    'https://api.github.com/search/issues',
+    {
+      params: {
+        q: `is:issue is:open author:${login}`,
+        per_page: 100,
+      },
+    },
+  );
+
+  return (data.items || [])
+    .filter((item) => !item.pull_request)
+    .map((item) => {
+      const repositoryFullName = parseRepoFromRepositoryUrl(
+        item.repository_url,
+      );
+      return {
+        number: item.number,
+        repositoryFullName: repositoryFullName ?? '',
+        prNumber: null,
+        title: item.title,
+        createdAt: item.created_at ?? null,
+        closedAt: item.closed_at ?? null,
+        state: item.closed_at ? 'closed' : 'open',
+        author: item.user?.login ?? login,
+        authorLogin: item.user?.login ?? login,
+        url: item.html_url,
+      } satisfies RepositoryIssue;
+    })
+    .filter((issue) => !!issue.repositoryFullName);
+};
+
 interface MinerOpenDiscoveryIssuesByRepoProps {
   githubId: string;
 }
@@ -53,13 +114,33 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
     useMinerRepositoriesOpenIssues(scanRepos, !isLoadingPrs);
 
   const login = githubProfile?.login ?? '';
+  const {
+    data: githubAuthoredIssues = [],
+    isLoading: isLoadingAuthoredIssues,
+    isFetching: isFetchingAuthoredIssues,
+    isError: isAuthorFallbackError,
+  } = useQuery({
+    queryKey: ['githubAuthorOpenIssues', login],
+    queryFn: () => fetchGithubOpenIssuesByAuthor(login),
+    enabled: !!login,
+    staleTime: 60_000,
+    retry: 1,
+  });
 
   const { mineByRepo, otherByRepo, mineTotal, otherTotal } = useMemo(() => {
     const mine = new Map<string, RepositoryIssue[]>();
     const other = new Map<string, RepositoryIssue[]>();
-    let m = 0;
-    let o = 0;
+    const mineKeys = new Set<string>();
     const loginLower = login.toLowerCase();
+    const addToMap = (
+      target: Map<string, RepositoryIssue[]>,
+      repo: string,
+      issue: RepositoryIssue,
+    ) => {
+      const arr = target.get(repo) ?? [];
+      arr.push(issue);
+      target.set(repo, arr);
+    };
 
     scanRepos.forEach((repo) => {
       const list = issuesByRepo.get(repo) ?? [];
@@ -68,14 +149,28 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         const author = getIssueAuthor(issue);
         const isMine =
           !!author && !!loginLower && author.toLowerCase() === loginLower;
-        const target = isMine ? mine : other;
-        const arr = target.get(repo) ?? [];
-        arr.push(issue);
-        target.set(repo, arr);
-        if (isMine) m += 1;
-        else o += 1;
+        if (isMine) {
+          const key = `${repo}#${issue.number}`;
+          mineKeys.add(key);
+          addToMap(mine, repo, issue);
+        } else {
+          addToMap(other, repo, issue);
+        }
       });
     });
+
+    githubAuthoredIssues.forEach((issue) => {
+      if (!isIssueOpen(issue)) return;
+      const repo = issue.repositoryFullName;
+      if (!repo) return;
+      const key = `${repo}#${issue.number}`;
+      if (mineKeys.has(key)) return;
+      mineKeys.add(key);
+      addToMap(mine, repo, issue);
+    });
+
+    const m = [...mine.values()].reduce((sum, items) => sum + items.length, 0);
+    const o = [...other.values()].reduce((sum, items) => sum + items.length, 0);
 
     return {
       mineByRepo: mine,
@@ -83,7 +178,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
       mineTotal: m,
       otherTotal: o,
     };
-  }, [issuesByRepo, login, scanRepos]);
+  }, [githubAuthoredIssues, issuesByRepo, login, scanRepos]);
 
   const [showOtherTracked, setShowOtherTracked] = useState(true);
 
@@ -167,6 +262,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
               border: '1px solid',
               borderColor: 'border.light',
               borderRadius: 2,
+              bgcolor: (t) => alpha(t.palette.background.paper, 0.35),
               '&:before': { display: 'none' },
               overflow: 'hidden',
             }}
@@ -182,24 +278,49 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
                   pr: 1,
                 }}
               >
-                <LinkBox
-                  href={`/miners/repository?name=${encodeURIComponent(repo)}`}
+                <Box
                   sx={{
-                    color: 'primary.main',
-                    fontWeight: 600,
-                    fontSize: '0.9rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
                     minWidth: 0,
-                    '&:hover': { textDecoration: 'underline' },
                   }}
                 >
-                  {repo}
-                </LinkBox>
+                  <Avatar
+                    src={`https://avatars.githubusercontent.com/${repo.split('/')[0]}`}
+                    sx={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <LinkBox
+                    href={`/miners/repository?name=${encodeURIComponent(repo)}`}
+                    sx={{
+                      color: (t) => alpha(t.palette.common.white, 0.9),
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      minWidth: 0,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                        color: 'text.primary',
+                      },
+                    }}
+                  >
+                    {repo}
+                  </LinkBox>
+                </Box>
                 <Chip
                   size="small"
                   label={`${issues.length} open`}
                   sx={{
-                    borderColor: STATUS_COLORS.open,
+                    borderColor: alpha(STATUS_COLORS.open, 0.4),
                     color: STATUS_COLORS.open,
+                    bgcolor: alpha(STATUS_COLORS.open, 0.12),
                     flexShrink: 0,
                   }}
                   variant="outlined"
@@ -251,14 +372,22 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
                           {issue.title}
                         </Typography>
                       </Link>
-                      <OpenInNewIcon
-                        sx={{
-                          fontSize: '1rem',
-                          color: (t) =>
-                            alpha(t.palette.common.white, TEXT_OPACITY.muted),
-                          flexShrink: 0,
-                        }}
-                      />
+                      <Link
+                        href={githubIssueUrl(issue)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        underline="none"
+                        sx={{ display: 'inline-flex', flexShrink: 0 }}
+                        aria-label={`Open issue #${issue.number} on GitHub`}
+                      >
+                        <OpenInNewIcon
+                          sx={{
+                            fontSize: '1rem',
+                            color: (t) =>
+                              alpha(t.palette.common.white, TEXT_OPACITY.faint),
+                          }}
+                        />
+                      </Link>
                     </Box>
                     <Box
                       sx={{
@@ -274,9 +403,9 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
                           target="_blank"
                           rel="noopener noreferrer"
                           variant="caption"
-                          sx={{ color: STATUS_COLORS.info }}
+                          sx={{ color: 'primary.main' }}
                         >
-                          Linked PR #{issue.prNumber}
+                          PR #{issue.prNumber}
                         </Link>
                       ) : (
                         <Typography variant="caption" color="text.secondary">
@@ -302,7 +431,18 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
 
   return (
     <Stack spacing={2}>
-      <Alert severity="info" sx={{ borderRadius: 2 }}>
+      <Alert
+        severity="info"
+        sx={{
+          borderRadius: 2,
+          bgcolor: (t) => alpha(t.palette.warning.main, 0.08),
+          border: '1px solid',
+          borderColor: (t) => alpha(t.palette.warning.main, 0.22),
+          '& .MuiAlert-icon': {
+            color: (t) => alpha(t.palette.warning.light, 0.95),
+          },
+        }}
+      >
         Open issues are loaded from Gittensor’s per-repository issue index for
         up to {repoFetchLimit} repositories where you have scored PRs (most
         recent first). When the API includes an issue author, issues you opened
@@ -317,7 +457,16 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
               rel="noopener noreferrer"
               size="small"
               variant="outlined"
+              color="inherit"
               endIcon={<OpenInNewIcon fontSize="small" />}
+              sx={{
+                borderColor: (t) => alpha(t.palette.warning.main, 0.45),
+                color: (t) => alpha(t.palette.warning.light, 0.95),
+                '&:hover': {
+                  borderColor: (t) => alpha(t.palette.warning.main, 0.65),
+                  bgcolor: (t) => alpha(t.palette.warning.main, 0.14),
+                },
+              }}
             >
               View all open issues by @{login} on GitHub
             </Button>
@@ -338,12 +487,18 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         </Alert>
       ) : null}
 
-      {isLoading ? (
+      {isLoading || isLoadingAuthoredIssues || isFetchingAuthoredIssues ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
           <CircularProgress size={36} />
         </Box>
       ) : (
         <>
+          {isAuthorFallbackError ? (
+            <Alert severity="warning" sx={{ borderRadius: 2 }}>
+              Could not load all authored open issues from GitHub right now.
+              Showing indexed results only.
+            </Alert>
+          ) : null}
           <Card
             elevation={0}
             sx={{
