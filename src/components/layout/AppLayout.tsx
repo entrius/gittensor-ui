@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useRef, useState } from 'react';
+import React, { Suspense, useRef, useState } from 'react';
 import {
   Box,
   useMediaQuery,
@@ -6,12 +6,10 @@ import {
   IconButton,
   AppBar,
   Toolbar,
-  Tooltip,
   alpha,
 } from '@mui/material';
 import { Outlet, useLocation } from 'react-router-dom';
 import MenuIcon from '@mui/icons-material/Menu';
-import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import { LoadingPage } from '../../pages';
 import useOnNavigate from '../../hooks/useOnNavigate';
 import { Sidebar } from '..';
@@ -20,49 +18,23 @@ import GlobalSearchBar from './GlobalSearchBar';
 import theme, { scrollbarSx } from '../../theme';
 import { getRouteForPathname } from '../../routes';
 
-const SIDEBAR_OPEN_STORAGE_KEY = 'gittensor.sidebar.open';
 const SIDEBAR_WIDTH = 240;
 const SIDEBAR_COLLAPSED_WIDTH = 72;
-
-const readStoredSidebarOpen = (): boolean => {
-  try {
-    const raw = window.localStorage.getItem(SIDEBAR_OPEN_STORAGE_KEY);
-    return raw === null ? true : raw === 'true';
-  } catch {
-    return true;
-  }
-};
 
 const AppLayout: React.FC = () => {
   const mainRef = useRef<HTMLElement>(null);
   const location = useLocation();
   useOnNavigate(() => mainRef.current?.scrollTo(0, 0));
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isCompactDesktop = useMediaQuery(theme.breakpoints.down('lg'));
+  const isDesktopSidebarCollapsed = !isMobile && isCompactDesktop;
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(
-    readStoredSidebarOpen,
-  );
   const shouldShowGlobalSearch = Boolean(
     getRouteForPathname(location.pathname)?.showGlobalSearch,
   );
 
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(
-        SIDEBAR_OPEN_STORAGE_KEY,
-        sidebarOpen ? 'true' : 'false',
-      );
-    } catch {
-      // storage unavailable (private mode) — toggle still works in-memory
-    }
-  }, [sidebarOpen]);
-
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
-  };
-
-  const handleSidebarToggle = () => {
-    setSidebarOpen((prev) => !prev);
   };
 
   return (
@@ -137,72 +109,24 @@ const AppLayout: React.FC = () => {
         </Drawer>
       )}
 
-      {/* Desktop Sidebar — narrows to icon rail when collapsed (persisted). */}
+      {/* Desktop Sidebar — auto-collapses by breakpoint (no manual toggle). */}
       {!isMobile && (
         <Box
           sx={{
             flexShrink: 0,
-            width: sidebarOpen
-              ? `${SIDEBAR_WIDTH}px`
-              : `${SIDEBAR_COLLAPSED_WIDTH}px`,
-            minWidth: sidebarOpen
-              ? `${SIDEBAR_WIDTH}px`
-              : `${SIDEBAR_COLLAPSED_WIDTH}px`,
+            width: isDesktopSidebarCollapsed
+              ? `${SIDEBAR_COLLAPSED_WIDTH}px`
+              : `${SIDEBAR_WIDTH}px`,
+            minWidth: isDesktopSidebarCollapsed
+              ? `${SIDEBAR_COLLAPSED_WIDTH}px`
+              : `${SIDEBAR_WIDTH}px`,
             borderRight: `1px solid ${theme.palette.border.light}`,
             overflow: 'hidden',
             transition: 'width 0.2s ease, min-width 0.2s ease',
           }}
         >
-          <Sidebar collapsed={!sidebarOpen} />
+          <Sidebar collapsed={isDesktopSidebarCollapsed} />
         </Box>
-      )}
-
-      {/* Desktop collapse (top-right of expanded sidebar) / expand (top of collapsed rail) */}
-      {!isMobile && sidebarOpen && (
-        <Tooltip title="Collapse sidebar" placement="right" arrow>
-          <IconButton
-            size="medium"
-            onClick={handleSidebarToggle}
-            aria-label="Collapse sidebar"
-            aria-expanded
-            sx={{
-              position: 'fixed',
-              top: 12,
-              left: SIDEBAR_WIDTH - 48,
-              zIndex: 1300,
-              cursor: 'pointer',
-              color: theme.palette.text.secondary,
-              '&:hover': { color: theme.palette.text.primary },
-              '& .MuiSvgIcon-root': { fontSize: '1.2rem' },
-            }}
-          >
-            <MenuOpenIcon />
-          </IconButton>
-        </Tooltip>
-      )}
-      {!isMobile && !sidebarOpen && (
-        <Tooltip title="Expand sidebar" placement="right" arrow>
-          <IconButton
-            size="medium"
-            onClick={handleSidebarToggle}
-            aria-label="Expand sidebar"
-            aria-expanded={false}
-            sx={{
-              position: 'fixed',
-              top: 12,
-              /* Horizontally center in the collapsed rail (same axis as nav icons) */
-              left: SIDEBAR_COLLAPSED_WIDTH / 2,
-              transform: 'translateX(-50%)',
-              zIndex: 1300,
-              cursor: 'pointer',
-              color: theme.palette.text.secondary,
-              '&:hover': { color: theme.palette.text.primary },
-              '& .MuiSvgIcon-root': { fontSize: '1.2rem' },
-            }}
-          >
-            <MenuIcon />
-          </IconButton>
-        </Tooltip>
       )}
 
       {/* Main Content Area - Constrained for ultra-wide screens */}
