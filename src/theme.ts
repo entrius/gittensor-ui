@@ -549,6 +549,12 @@ const theme = createTheme({
         disableRipple: true,
       },
     },
+    MuiTooltip: {
+      defaultProps: {
+        enterTouchDelay: 0,
+        leaveTouchDelay: 15000,
+      },
+    },
     MuiAppBar: {
       styleOverrides: {
         root: {

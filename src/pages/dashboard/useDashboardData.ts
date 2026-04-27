@@ -20,6 +20,7 @@ import {
   buildDashboardOverview,
   buildDashboardTrendData,
   buildFeaturedContributors,
+  buildFeaturedDiscoveryContributors,
   type TrendTimeRange,
 } from './dashboardData';
 
@@ -69,6 +70,15 @@ export const useDashboardData = (range: TrendTimeRange) => {
     [datasets.miners.data, datasets.prs.data],
   );
 
+  const featuredDiscoveryContributors = useMemo(
+    () =>
+      buildFeaturedDiscoveryContributors(
+        datasets.prs.data,
+        datasets.miners.data,
+      ),
+    [datasets.miners.data, datasets.prs.data],
+  );
+
   const kpis = useMemo(
     () => buildDashboardKpis(datasets.prs.data, datasets.issues.data, range),
     [datasets.issues.data, datasets.prs.data, range],
@@ -81,6 +91,7 @@ export const useDashboardData = (range: TrendTimeRange) => {
     trendLabels: trendData.labels,
     trendSeries: trendData.series,
     featuredContributors,
+    featuredDiscoveryContributors,
     isLoading:
       datasets.prs.isLoading ||
       datasets.miners.isLoading ||
