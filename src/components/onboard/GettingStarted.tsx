@@ -428,7 +428,7 @@ export const GettingStarted: React.FC = () => {
   const [activeStep, setActiveStep] = useState(0);
 
   return (
-    <Box sx={{ maxWidth: 1000, mx: 'auto', px: { xs: 2, md: 4 }, py: 4 }}>
+    <Box sx={{ width: '100%', maxWidth: '100%', py: 4 }}>
       <Typography
         variant="h4"
         fontWeight="bold"
