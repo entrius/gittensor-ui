@@ -60,9 +60,13 @@ const OnboardPage: React.FC = () => {
       >
         <Box
           sx={(theme) => ({
+            position: 'sticky',
+            top: 0,
+            zIndex: 2,
             maxWidth: 1200,
             width: '100%',
             mb: 4,
+            backgroundColor: theme.palette.background.default,
             borderBottom: '1px solid',
             borderColor: theme.palette.border.light,
           })}
