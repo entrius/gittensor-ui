@@ -8,7 +8,7 @@
  * Keep pure domain/data builders out of this file.
  */
 import { useMemo } from 'react';
-import { useAllMiners, useAllPrs, useIssues } from '../../api';
+import { useAllMiners, useAllPrs, useIssueDetails, useIssues } from '../../api';
 import {
   type CommitLog,
   type DatasetState,
@@ -20,6 +20,8 @@ import {
   buildDashboardOverview,
   buildDashboardTrendData,
   buildFeaturedContributors,
+  buildFeaturedWork,
+  buildFeaturedDiscoveryContributors,
   type TrendTimeRange,
 } from './dashboardData';
 
@@ -69,6 +71,70 @@ export const useDashboardData = (range: TrendTimeRange) => {
     [datasets.miners.data, datasets.prs.data],
   );
 
+  const featuredDiscoveryContributors = useMemo(
+    () =>
+      buildFeaturedDiscoveryContributors(
+        datasets.prs.data,
+        datasets.miners.data,
+      ),
+    [datasets.miners.data, datasets.prs.data],
+  );
+
+  const preliminaryFeaturedWork = useMemo(
+    () => buildFeaturedWork(datasets.prs.data, datasets.issues.data),
+    [datasets.prs.data, datasets.issues.data],
+  );
+
+  const featuredIssueIds = useMemo(
+    () =>
+      preliminaryFeaturedWork
+        .filter((item) => item.kind === 'issue' && item.issueId)
+        .map((item) => item.issueId as number)
+        .slice(0, 2),
+    [preliminaryFeaturedWork],
+  );
+
+  const featuredIssueDetailsQueryA = useIssueDetails(featuredIssueIds[0] ?? 0);
+  const featuredIssueDetailsQueryB = useIssueDetails(featuredIssueIds[1] ?? 0);
+
+  const enrichedIssues = useMemo(() => {
+    const issues = datasets.issues.data;
+    const detailsByIssueId = new Map<number, IssueBounty>();
+    if (featuredIssueIds[0] && featuredIssueDetailsQueryA.data) {
+      detailsByIssueId.set(
+        featuredIssueIds[0],
+        featuredIssueDetailsQueryA.data,
+      );
+    }
+    if (featuredIssueIds[1] && featuredIssueDetailsQueryB.data) {
+      detailsByIssueId.set(
+        featuredIssueIds[1],
+        featuredIssueDetailsQueryB.data,
+      );
+    }
+    if (detailsByIssueId.size === 0) return issues;
+
+    return issues.map((issue): IssueBounty => {
+      const details = detailsByIssueId.get(issue.id);
+      if (!details) return issue;
+      return {
+        ...issue,
+        ...details,
+        authorLogin: details.authorLogin ?? issue.authorLogin ?? null,
+      };
+    });
+  }, [
+    datasets.issues.data,
+    featuredIssueIds,
+    featuredIssueDetailsQueryA.data,
+    featuredIssueDetailsQueryB.data,
+  ]);
+
+  const featuredWork = useMemo(
+    () => buildFeaturedWork(datasets.prs.data, enrichedIssues),
+    [datasets.prs.data, enrichedIssues],
+  );
+
   const kpis = useMemo(
     () => buildDashboardKpis(datasets.prs.data, datasets.issues.data, range),
     [datasets.issues.data, datasets.prs.data, range],
@@ -80,7 +146,9 @@ export const useDashboardData = (range: TrendTimeRange) => {
     overview,
     trendLabels: trendData.labels,
     trendSeries: trendData.series,
+    featuredWork,
     featuredContributors,
+    featuredDiscoveryContributors,
     isLoading:
       datasets.prs.isLoading ||
       datasets.miners.isLoading ||
