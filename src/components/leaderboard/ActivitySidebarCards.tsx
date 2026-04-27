@@ -5,14 +5,16 @@ import { SectionCard } from './SectionCard';
 import { STATUS_COLORS, DIFF_COLORS, CREDIBILITY_COLORS } from '../../theme';
 import { credibilityColor } from '../../utils/format';
 import { type MinerStats, FONTS } from './types';
+import { useEligibilityFilteredMiners } from './useEligibilityFilteredMiners';
 
 interface ActivitySidebarCardsProps {
   miners: MinerStats[];
 }
 
 export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
-  miners,
+  miners: allMiners,
 }) => {
+  const miners = useEligibilityFilteredMiners(allMiners);
   const minerActivityStats = useMemo(() => {
     const all = miners.length;
     const eligiblePr = miners.filter((m) => m.ossIsEligible).length;
@@ -46,8 +48,8 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
     const merged = miners.reduce((acc, m) => acc + (m.totalMergedPrs || 0), 0);
     const open = miners.reduce((acc, m) => acc + (m.totalOpenPrs || 0), 0);
     const closed = miners.reduce((acc, m) => acc + (m.totalClosedPrs || 0), 0);
-    const total = merged + open + closed;
-    const mergeRate = total > 0 ? Math.round((merged / total) * 100) : 0;
+    const resolved = merged + closed;
+    const mergeRate = resolved > 0 ? Math.round((merged / resolved) * 100) : 0;
     return { merged, open, closed, mergeRate };
   }, [miners]);
 
@@ -61,8 +63,8 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
       (acc, m) => acc + (m.totalClosedIssues || 0),
       0,
     );
-    const total = solved + open + closed;
-    const solveRate = total > 0 ? Math.round((solved / total) * 100) : 0;
+    const resolved = solved + closed;
+    const solveRate = resolved > 0 ? Math.round((solved / resolved) * 100) : 0;
     return { solved, open, closed, solveRate };
   }, [miners]);
 

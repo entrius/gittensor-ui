@@ -22,6 +22,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import SearchIcon from '@mui/icons-material/Search';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
+import { format } from 'date-fns';
 import { IssueBounty } from '../../api/models/Issues';
 import { usePrices } from '../../hooks/usePrices';
 import { formatDate } from '../../utils/format';
@@ -381,19 +382,33 @@ const IssuesList: React.FC<IssuesListProps> = ({
     const dateColumn: DataTableColumn<IssueBounty, SortKey> = {
       key: 'date',
       header: 'Date',
-      width: '110px',
+      width: '132px',
       align: 'center',
       sortKey: 'date',
-      renderCell: (issue) => (
-        <Typography
-          sx={{
-            fontSize: '0.8rem',
-            color: alpha(theme.palette.common.white, 0.6),
-          }}
-        >
-          {formatDate(issue.completedAt || issue.updatedAt)}
-        </Typography>
-      ),
+      renderCell: (issue) => {
+        const raw = issue.completedAt || issue.updatedAt;
+        const label = formatDate(raw);
+        const tooltipTitle = (() => {
+          if (!raw) return label;
+          const d = new Date(raw);
+          if (Number.isNaN(d.getTime())) return label;
+          return format(d, 'PPpp');
+        })();
+        return (
+          <Tooltip title={tooltipTitle} arrow>
+            <Typography
+              component="span"
+              sx={{
+                fontSize: '0.8rem',
+                color: alpha(theme.palette.common.white, 0.6),
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {label}
+            </Typography>
+          </Tooltip>
+        );
+      },
     };
 
     const common = [
