@@ -41,6 +41,16 @@ export interface MinerStats {
   isIssueEligible?: boolean;
 }
 
+export interface RepoStats {
+  repository: string;
+  totalScore: number;
+  totalPRs: number;
+  uniqueMiners: Set<string>;
+  weight: number;
+  rank?: number;
+  inactiveAt?: string | null;
+}
+
 export type LeaderboardVariant = 'oss' | 'discoveries' | 'watchlist';
 
 export type SortOption =

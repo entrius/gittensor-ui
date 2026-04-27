@@ -207,6 +207,7 @@ export const headerCellStyle = {
   borderColor: 'border.light',
   textTransform: 'uppercase' as const,
   letterSpacing: '0.5px',
+  py: 1.5,
 };
 
 export const bodyCellStyle = {
@@ -215,6 +216,7 @@ export const bodyCellStyle = {
   borderBottom: '1px solid',
   borderColor: 'border.light',
   fontSize: '0.85rem',
+  py: 1.5,
 };
 
 export const tooltipSlotProps = {
@@ -227,7 +229,13 @@ export const tooltipSlotProps = {
       borderRadius: '6px',
       border: '1px solid',
       borderColor: 'border.light',
-      maxWidth: 260,
+      maxWidth: 220,
+      width: 'max-content',
+      minWidth: 0,
+      lineHeight: 1.45,
+      whiteSpace: 'pre-line',
+      wordBreak: 'normal',
+      overflowWrap: 'break-word',
     },
   },
   arrow: { sx: { color: 'surface.tooltip' } },
@@ -545,6 +553,12 @@ const theme = createTheme({
     MuiButtonBase: {
       defaultProps: {
         disableRipple: true,
+      },
+    },
+    MuiTooltip: {
+      defaultProps: {
+        enterTouchDelay: 0,
+        leaveTouchDelay: 15000,
       },
     },
     MuiAppBar: {

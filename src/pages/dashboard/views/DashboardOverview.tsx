@@ -5,6 +5,7 @@ import ReactECharts from 'echarts-for-react';
 import KpiCard from '../../../components/KpiCard';
 import {
   type DashboardKpi,
+  type DashboardOverviewPool,
   type DashboardOverviewSection,
   type TrendTimeRange,
 } from '../dashboardData';
@@ -46,7 +47,7 @@ const getDeltaColor = (theme: Theme, delta: string): string => {
 const buildStatusChartOption = (
   theme: Theme,
   centerLabel: string,
-  segments: DashboardOverviewSection['chartSegments'],
+  segments: DashboardOverviewPool['chartSegments'],
 ): Record<string, unknown> => {
   const totalValue = segments.reduce((sum, segment) => sum + segment.value, 0);
   const chartFont = echartsFontFamily(theme);
@@ -59,7 +60,7 @@ const buildStatusChartOption = (
       top: '34%',
       textStyle: {
         color: theme.palette.text.primary,
-        fontSize: 18,
+        fontSize: 13,
         fontWeight: 'bold',
         fontFamily: chartFont,
       },
@@ -123,6 +124,177 @@ const buildStatusChartOption = (
   };
 };
 
+interface PoolColumnProps {
+  sectionTitle: string;
+  pool: DashboardOverviewPool;
+  isEligible: boolean;
+}
+
+const PoolColumn: React.FC<PoolColumnProps> = ({
+  sectionTitle,
+  pool,
+  isEligible,
+}) => {
+  const theme = useTheme();
+  const monoFontFamily = theme.typography.fontFamily;
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0.75,
+        p: 1,
+        borderRadius: 2,
+        border: `1px solid ${theme.palette.border.light}`,
+      }}
+    >
+      {/* Pool label — matches MinerCard eligibility badge style */}
+      <Typography
+        sx={{
+          fontFamily: monoFontFamily,
+          fontSize: '0.62rem',
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          alignSelf: 'flex-start',
+          borderRadius: 1,
+          px: 0.75,
+          py: 0.2,
+          border: `1px solid ${isEligible ? alpha(theme.palette.status.merged, 0.45) : theme.palette.border.subtle}`,
+          color: isEligible
+            ? theme.palette.status.merged
+            : theme.palette.text.secondary,
+          backgroundColor: isEligible
+            ? alpha(theme.palette.status.merged, 0.08)
+            : theme.palette.surface.subtle,
+        }}
+      >
+        {isEligible ? 'Eligible' : 'Not Eligible'}
+      </Typography>
+
+      {/* Donut chart */}
+      <Box
+        sx={{
+          width: '100%',
+          aspectRatio: '1',
+          maxWidth: 90,
+          alignSelf: 'center',
+          '& > div': { width: '100%', height: '100%' },
+        }}
+      >
+        <ReactECharts
+          option={buildStatusChartOption(
+            theme,
+            pool.chartCenterLabel,
+            pool.chartSegments,
+          )}
+          style={{ width: '100%', height: '100%' }}
+          opts={{ renderer: 'svg' }}
+        />
+      </Box>
+
+      {/* Legend */}
+      <Stack
+        direction="row"
+        spacing={0.75}
+        useFlexGap
+        flexWrap="wrap"
+        justifyContent="center"
+      >
+        {pool.chartSegments.map((segment) => (
+          <Stack
+            key={`${sectionTitle}-${isEligible}-${segment.label}`}
+            direction="row"
+            spacing={0.4}
+            alignItems="center"
+          >
+            <Box
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                flexShrink: 0,
+                mt: '1px',
+                backgroundColor: getSegmentColor(theme, segment.label),
+              }}
+            />
+            <Typography
+              sx={{
+                color: alpha(theme.palette.text.primary, 0.55),
+                fontFamily: monoFontFamily,
+                fontSize: '0.6rem',
+                lineHeight: 1,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            >
+              {segment.label}
+            </Typography>
+          </Stack>
+        ))}
+      </Stack>
+
+      {/* Metrics */}
+      <Stack spacing={0} sx={{ mt: 0.25 }}>
+        {pool.metrics.map((metric) => (
+          <Box
+            key={`${sectionTitle}-${isEligible}-${metric.label}`}
+            sx={{
+              py: 0.45,
+              borderTop: `1px solid ${alpha(theme.palette.text.primary, 0.06)}`,
+            }}
+          >
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="baseline"
+            >
+              <Box>
+                <Typography
+                  sx={{
+                    color: alpha(theme.palette.text.primary, 0.75),
+                    fontFamily: monoFontFamily,
+                    fontSize: '0.62rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.07em',
+                  }}
+                >
+                  {metric.label}
+                </Typography>
+                <Typography
+                  sx={{
+                    color: isEligible
+                      ? getDeltaColor(theme, metric.delta)
+                      : alpha(theme.palette.text.primary, 0.25),
+                    fontFamily: monoFontFamily,
+                    fontSize: '0.62rem',
+                  }}
+                >
+                  {metric.delta}
+                </Typography>
+              </Box>
+              <Typography
+                sx={{
+                  color: isEligible
+                    ? getMetricTone(theme, metric.label)
+                    : alpha(theme.palette.text.primary, 0.4),
+                  fontFamily: monoFontFamily,
+                  fontSize: '0.9rem',
+                  fontWeight: 700,
+                  flexShrink: 0,
+                }}
+              >
+                {metric.value.toLocaleString()}
+              </Typography>
+            </Stack>
+          </Box>
+        ))}
+      </Stack>
+    </Box>
+  );
+};
+
 const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   range,
   sections,
@@ -156,170 +328,46 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                     '&:last-child': { pb: { xs: 1.35, sm: 1.5 } },
                   }}
                 >
-                  <Grid
-                    container
-                    spacing={{ xs: 1.5, md: 1.75 }}
-                    alignItems="center"
-                  >
-                    <Grid item xs={12} md={7}>
-                      <Box sx={{ minWidth: 0 }}>
-                        <Typography
-                          sx={{
-                            color: theme.palette.text.primary,
-                            fontFamily: monoFontFamily,
-                            fontSize: { xs: '0.98rem', sm: '1.05rem' },
-                            fontWeight: 700,
-                          }}
-                        >
-                          {section.title}
-                        </Typography>
-                        <Typography
-                          sx={{
-                            mt: 0.18,
-                            color: 'text.secondary',
-                            fontFamily: monoFontFamily,
-                            fontSize: '0.7rem',
-                            letterSpacing: '0.02em',
-                          }}
-                        >
-                          {rangeDescription}
-                        </Typography>
-                      </Box>
+                  {/* Card header */}
+                  <Box sx={{ mb: 1.25 }}>
+                    <Typography
+                      sx={{
+                        color: theme.palette.text.primary,
+                        fontFamily: monoFontFamily,
+                        fontSize: { xs: '0.98rem', sm: '1.05rem' },
+                        fontWeight: 700,
+                      }}
+                    >
+                      {section.title}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        mt: 0.18,
+                        color: 'text.secondary',
+                        fontFamily: monoFontFamily,
+                        fontSize: '0.7rem',
+                        letterSpacing: '0.02em',
+                      }}
+                    >
+                      {rangeDescription}
+                    </Typography>
+                  </Box>
 
-                      <Stack spacing={0.55} sx={{ mt: 0.7 }}>
-                        {section.metrics.map((metric) => (
-                          <Box
-                            key={`${section.title}-${metric.label}`}
-                            sx={{
-                              py: 0.58,
-                              borderTop: `1px solid ${alpha(theme.palette.text.primary, 0.06)}`,
-                              '&:first-of-type': {
-                                borderTop: `1px solid ${alpha(theme.palette.text.primary, 0.08)}`,
-                              },
-                            }}
-                          >
-                            <Stack
-                              direction="row"
-                              justifyContent="space-between"
-                              alignItems="baseline"
-                              spacing={1.5}
-                            >
-                              <Box sx={{ minWidth: 0 }}>
-                                <Typography
-                                  sx={{
-                                    color: alpha(
-                                      theme.palette.text.primary,
-                                      0.82,
-                                    ),
-                                    fontFamily: monoFontFamily,
-                                    fontSize: '0.68rem',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.08em',
-                                  }}
-                                >
-                                  {metric.label}
-                                </Typography>
-                                <Typography
-                                  sx={{
-                                    mt: 0.12,
-                                    color: getDeltaColor(theme, metric.delta),
-                                    fontFamily: monoFontFamily,
-                                    fontSize: '0.7rem',
-                                  }}
-                                >
-                                  {metric.delta}
-                                </Typography>
-                              </Box>
-
-                              <Typography
-                                sx={{
-                                  color: getMetricTone(theme, metric.label),
-                                  fontFamily: monoFontFamily,
-                                  fontSize: { xs: '0.96rem', sm: '1.04rem' },
-                                  fontWeight: 700,
-                                  flexShrink: 0,
-                                }}
-                              >
-                                {metric.value.toLocaleString()}
-                              </Typography>
-                            </Stack>
-                          </Box>
-                        ))}
-                      </Stack>
+                  {/* Two pools side by side */}
+                  <Grid container spacing={1}>
+                    <Grid item xs={6}>
+                      <PoolColumn
+                        sectionTitle={section.title}
+                        pool={section.eligible}
+                        isEligible={true}
+                      />
                     </Grid>
-
-                    <Grid item xs={12} md={5}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 0.7,
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            width: 116,
-                            height: 116,
-                            flexShrink: 0,
-                            '& > div': { width: '100%', height: '100%' },
-                          }}
-                        >
-                          <ReactECharts
-                            option={buildStatusChartOption(
-                              theme,
-                              section.chartCenterLabel,
-                              section.chartSegments,
-                            )}
-                            style={{ width: '100%', height: '100%' }}
-                            opts={{ renderer: 'svg' }}
-                          />
-                        </Box>
-
-                        <Stack
-                          direction="row"
-                          spacing={1}
-                          useFlexGap
-                          flexWrap="wrap"
-                          justifyContent="center"
-                        >
-                          {section.chartSegments.map((segment) => (
-                            <Stack
-                              key={`${section.title}-${segment.label}`}
-                              direction="row"
-                              spacing={0.6}
-                              alignItems="center"
-                            >
-                              <Box
-                                sx={{
-                                  width: 8,
-                                  height: 8,
-                                  borderRadius: '50%',
-                                  backgroundColor: getSegmentColor(
-                                    theme,
-                                    segment.label,
-                                  ),
-                                }}
-                              />
-                              <Typography
-                                sx={{
-                                  color: alpha(
-                                    theme.palette.text.primary,
-                                    0.58,
-                                  ),
-                                  fontFamily: monoFontFamily,
-                                  fontSize: '0.66rem',
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.05em',
-                                }}
-                              >
-                                {segment.label}
-                              </Typography>
-                            </Stack>
-                          ))}
-                        </Stack>
-                      </Box>
+                    <Grid item xs={6}>
+                      <PoolColumn
+                        sectionTitle={section.title}
+                        pool={section.ineligible}
+                        isEligible={false}
+                      />
                     </Grid>
                   </Grid>
                 </CardContent>
