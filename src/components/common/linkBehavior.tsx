@@ -26,11 +26,12 @@ export const useLinkBehavior = <E extends Element = HTMLElement>(
   href: string,
   options: {
     state?: LinkState;
+    replace?: boolean;
     onClick?: (e: React.MouseEvent<E>) => void;
   } = {},
 ) => {
   const navigate = useNavigate();
-  const { state, onClick } = options;
+  const { state, replace, onClick } = options;
 
   const handleClick = useCallback(
     (e: React.MouseEvent<E>) => {
@@ -38,9 +39,9 @@ export const useLinkBehavior = <E extends Element = HTMLElement>(
       if (e.defaultPrevented) return;
       if (isModifiedEvent(e)) return;
       e.preventDefault();
-      navigate(href, { state });
+      navigate(href, { state, replace });
     },
-    [href, state, navigate, onClick],
+    [href, state, replace, navigate, onClick],
   );
 
   return { href, onClick: handleClick } as const;
@@ -56,6 +57,8 @@ const mergeSx = (base: SxProps<Theme>, extra: SxProps<Theme> | undefined) =>
 type LinkProps = {
   href: string;
   linkState?: LinkState;
+  /** When true, navigation replaces the current history entry instead of pushing. */
+  replace?: boolean;
 };
 
 /**
@@ -63,9 +66,10 @@ type LinkProps = {
  * Drop-in replacement for any `<Box onClick={() => navigate(...)}>` row.
  */
 export const LinkBox = forwardRef<HTMLAnchorElement, BoxProps & LinkProps>(
-  ({ href, linkState, sx, ...rest }, ref) => {
+  ({ href, linkState, replace, sx, ...rest }, ref) => {
     const linkProps = useLinkBehavior<HTMLAnchorElement>(href, {
       state: linkState,
+      replace,
     });
     return (
       <Box

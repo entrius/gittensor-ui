@@ -158,6 +158,7 @@ const MinerDetailsPage: React.FC = () => {
                   <LinkBox
                     key={option.value}
                     href={buildModeHref(option.value)}
+                    replace
                     sx={{
                       px: { xs: 1.25, sm: 2 },
                       py: 0.75,

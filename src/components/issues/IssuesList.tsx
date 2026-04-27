@@ -26,6 +26,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SearchIcon from '@mui/icons-material/Search';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
+import { format } from 'date-fns';
 import { IssueBounty } from '../../api/models/Issues';
 import { usePrices } from '../../hooks/usePrices';
 import {
@@ -366,25 +367,34 @@ const IssuesList: React.FC<IssuesListProps> = ({
       sortKey: 'repository',
       cellSx: { overflow: 'hidden' },
       renderCell: (issue) => (
-        <Box
-          sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}
-        >
-          <Avatar
-            src={`https://avatars.githubusercontent.com/${issue.repositoryFullName.split('/')[0]}`}
-            sx={{ width: 24, height: 24, borderRadius: 1, flexShrink: 0 }}
-          />
-          <Typography
+        <Tooltip title={issue.repositoryFullName} arrow>
+          <Box
             sx={{
-              fontSize: '0.85rem',
-              color: STATUS_COLORS.info,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              minWidth: 0,
+              maxWidth: '100%',
             }}
           >
-            {issue.repositoryFullName}
-          </Typography>
-        </Box>
+            <Avatar
+              src={`https://avatars.githubusercontent.com/${issue.repositoryFullName.split('/')[0]}`}
+              sx={{ width: 24, height: 24, borderRadius: 1, flexShrink: 0 }}
+            />
+            <Typography
+              component="span"
+              sx={{
+                fontSize: '0.85rem',
+                color: STATUS_COLORS.info,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {issue.repositoryFullName}
+            </Typography>
+          </Box>
+        </Tooltip>
       ),
     };
 
@@ -548,19 +558,33 @@ const IssuesList: React.FC<IssuesListProps> = ({
     const dateColumn: DataTableColumn<IssueBounty, SortKey> = {
       key: 'date',
       header: 'Date',
-      width: '110px',
+      width: '132px',
       align: 'center',
       sortKey: 'date',
-      renderCell: (issue) => (
-        <Typography
-          sx={{
-            fontSize: '0.8rem',
-            color: alpha(theme.palette.common.white, 0.6),
-          }}
-        >
-          {formatDate(issue.completedAt || issue.updatedAt)}
-        </Typography>
-      ),
+      renderCell: (issue) => {
+        const raw = issue.completedAt || issue.updatedAt;
+        const label = formatDate(raw);
+        const tooltipTitle = (() => {
+          if (!raw) return label;
+          const d = new Date(raw);
+          if (Number.isNaN(d.getTime())) return label;
+          return format(d, 'PPpp');
+        })();
+        return (
+          <Tooltip title={tooltipTitle} arrow>
+            <Typography
+              component="span"
+              sx={{
+                fontSize: '0.8rem',
+                color: alpha(theme.palette.common.white, 0.6),
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {label}
+            </Typography>
+          </Tooltip>
+        );
+      },
     };
 
     if (filterType === 'pending') {

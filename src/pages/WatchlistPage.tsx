@@ -1,6 +1,18 @@
 import React, { useMemo, useState } from 'react';
 import {
+  Avatar,
   Box,
+  Card,
+  Chip,
+  FormControl,
+  Grid,
+  IconButton,
+  InputAdornment,
+  MenuItem,
+  Select,
+  TablePagination,
+  TextField,
+  Tooltip,
   Typography,
   Button,
   alpha,
@@ -13,6 +25,9 @@ import {
   Badge,
   useMediaQuery,
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
+import ViewListIcon from '@mui/icons-material/ViewList';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
 import {
@@ -21,6 +36,10 @@ import {
   SEO,
   WatchlistButton,
 } from '../components';
+import {
+  DataTable,
+  type DataTableColumn,
+} from '../components/common/DataTable';
 import { LinkBox } from '../components/common/linkBehavior';
 import { useAllMiners, useAllPrs, useReposAndWeights, useIssues } from '../api';
 import { mapAllMinersToStats } from '../utils/minerMapper';
@@ -30,10 +49,17 @@ import {
   serializePRKey,
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
-import { isMergedPr, isClosedUnmergedPr } from '../utils/prStatus';
+import {
+  isMergedPr,
+  isClosedUnmergedPr,
+  getPrStatusCounts,
+} from '../utils/prStatus';
+import { filterPrs, type PrStatusFilter } from '../utils/prTable';
 import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatTokenAmount } from '../utils/format';
 import theme, { STATUS_COLORS, scrollbarSx } from '../theme';
+import FilterButton from '../components/FilterButton';
+import type { CommitLog } from '../api/models/Dashboard';
 
 const TAB_ORDER: readonly WatchlistCategory[] = [
   'miners',
@@ -212,17 +238,23 @@ const WatchlistPage: React.FC = () => {
               onChange={handleTabChange}
               variant="scrollable"
               scrollButtons="auto"
-              sx={{
-                minHeight: 40,
+              sx={(t) => ({
+                minHeight: 48,
                 '& .MuiTab-root': {
-                  minHeight: 40,
-                  fontSize: '0.83rem',
-                  fontWeight: 500,
+                  minHeight: 48,
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
                   textTransform: 'none',
-                  color: 'text.secondary',
-                  '&.Mui-selected': { color: 'primary.main' },
+                  color: t.palette.text.secondary,
+                  '&.Mui-selected': {
+                    color: t.palette.text.primary,
+                  },
                 },
-              }}
+                '& .MuiTabs-indicator': {
+                  backgroundColor: t.palette.text.primary,
+                  height: 2,
+                },
+              })}
             >
               {TAB_ORDER.map((cat) => (
                 <Tab
@@ -335,7 +367,7 @@ const WatchlistPage: React.FC = () => {
             mb: 3,
           }}
         >
-          Clear all {count} pinned {count === 1 ? noun.single : noun.plural}?
+          Clear all {count} pinned miner(s)?
         </DialogTitle>
         <DialogActions sx={{ p: 0 }}>
           <Button
@@ -571,8 +603,412 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   );
 };
 
+const prStatusMeta = (pr: CommitLog) => {
+  const merged = isMergedPr(pr);
+  const closed = isClosedUnmergedPr(pr);
+  const label = merged ? 'MERGED' : closed ? 'CLOSED' : 'OPEN';
+  const color = merged
+    ? STATUS_COLORS.merged
+    : closed
+      ? STATUS_COLORS.closed
+      : STATUS_COLORS.open;
+  return { label, color };
+};
+
+type PrSortKey = 'pr' | 'title' | 'repo' | 'author' | 'score';
+
+const prCellSx = { py: 1.5 } as const;
+
+const prColumns: DataTableColumn<CommitLog, PrSortKey>[] = [
+  {
+    key: 'pr',
+    header: 'PR',
+    width: '70px',
+    sortKey: 'pr',
+    cellSx: prCellSx,
+    renderCell: (pr) => (
+      <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+        #{pr.pullRequestNumber}
+      </Typography>
+    ),
+  },
+  {
+    key: 'title',
+    header: 'Title',
+    width: '30%',
+    sortKey: 'title',
+    cellSx: prCellSx,
+    renderCell: (pr) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 500,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {pr.pullRequestTitle}
+      </Typography>
+    ),
+  },
+  {
+    key: 'repo',
+    header: 'Repository',
+    width: '20%',
+    sortKey: 'repo',
+    cellSx: prCellSx,
+    renderCell: (pr) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          color: 'text.secondary',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {pr.repository}
+      </Typography>
+    ),
+  },
+  {
+    key: 'author',
+    header: 'Author',
+    width: '14%',
+    sortKey: 'author',
+    cellSx: prCellSx,
+    renderCell: (pr) => (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+        <Avatar
+          src={`https://avatars.githubusercontent.com/${pr.author}`}
+          sx={{ width: 20, height: 20, flexShrink: 0 }}
+        />
+        <Typography
+          sx={{
+            fontSize: '0.75rem',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {pr.author}
+        </Typography>
+      </Box>
+    ),
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    width: '90px',
+    align: 'center',
+    cellSx: prCellSx,
+    renderCell: (pr) => {
+      const { label, color } = prStatusMeta(pr);
+      return (
+        <Chip
+          variant="status"
+          label={label}
+          sx={{ color, borderColor: color }}
+        />
+      );
+    },
+  },
+  {
+    key: 'score',
+    header: 'Score',
+    width: '80px',
+    align: 'right',
+    sortKey: 'score',
+    cellSx: prCellSx,
+    renderCell: (pr) => (
+      <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+        {parseFloat(pr.score || '0').toFixed(2)}
+      </Typography>
+    ),
+  },
+  {
+    key: 'watch',
+    header: '★',
+    width: '52px',
+    align: 'center',
+    cellSx: { p: 0 },
+    renderCell: (pr) => (
+      <WatchlistButton
+        category="prs"
+        itemKey={serializePRKey(pr.repository, pr.pullRequestNumber)}
+        size="small"
+      />
+    ),
+  },
+];
+
+type PRsViewMode = 'list' | 'cards';
+
+const PRsViewModeToggle: React.FC<{
+  viewMode: PRsViewMode;
+  onChange: (mode: PRsViewMode) => void;
+}> = ({ viewMode, onChange }) => {
+  const options: {
+    value: PRsViewMode;
+    label: string;
+    Icon: typeof ViewListIcon;
+  }[] = [
+    { value: 'list', label: 'List view', Icon: ViewListIcon },
+    { value: 'cards', label: 'Card view', Icon: ViewModuleIcon },
+  ];
+
+  return (
+    <Box
+      sx={(t) => ({
+        display: 'inline-flex',
+        alignItems: 'center',
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: t.palette.border.light,
+        overflow: 'hidden',
+      })}
+      role="group"
+      aria-label="Toggle view mode"
+    >
+      {options.map(({ value, label, Icon }) => {
+        const isActive = viewMode === value;
+        return (
+          <Tooltip key={value} title={label} placement="top" arrow>
+            <IconButton
+              onClick={() => onChange(value)}
+              size="small"
+              aria-label={label}
+              aria-pressed={isActive}
+              sx={(t) => ({
+                borderRadius: 0,
+                padding: '6px 10px',
+                color: isActive
+                  ? t.palette.text.primary
+                  : t.palette.text.tertiary,
+                backgroundColor: isActive
+                  ? t.palette.surface.light
+                  : 'transparent',
+                '&:hover': {
+                  backgroundColor: t.palette.surface.light,
+                  color: t.palette.text.primary,
+                },
+              })}
+            >
+              <Icon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        );
+      })}
+    </Box>
+  );
+};
+
+const getPrHref = (pr: CommitLog) =>
+  `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`;
+
+const PRCard: React.FC<{ pr: CommitLog }> = ({ pr }) => {
+  const { label, color } = prStatusMeta(pr);
+  const key = serializePRKey(pr.repository, pr.pullRequestNumber);
+  return (
+    <Card
+      elevation={0}
+      sx={(t) => ({
+        p: 1,
+        backgroundColor: t.palette.background.default,
+        backdropFilter: 'blur(12px)',
+        border: '1px solid',
+        borderColor: alpha(color, 0.3),
+        borderRadius: 2,
+        cursor: 'pointer',
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1,
+        boxShadow: `0 2px 8px ${alpha(t.palette.background.default, 0.1)}`,
+        '&:hover': {
+          backgroundColor: t.palette.surface.elevated,
+          borderColor: alpha(color, 0.5),
+          transform: 'translateY(-2px)',
+          boxShadow: `0 8px 24px -6px ${alpha(t.palette.background.default, 0.6)}`,
+        },
+      })}
+    >
+      {/* Row 1: repo + status + star */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+        }}
+      >
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={1}
+          sx={{ minWidth: 0 }}
+        >
+          <Avatar
+            src={`https://avatars.githubusercontent.com/${pr.repository.split('/')[0]}`}
+            sx={{
+              width: 20,
+              height: 20,
+              flexShrink: 0,
+              border: '1px solid',
+              borderColor: 'border.medium',
+            }}
+          />
+          <Typography
+            sx={{
+              fontSize: '0.72rem',
+              color: 'text.secondary',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {pr.repository}
+          </Typography>
+        </Stack>
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={0.5}
+          sx={{ flexShrink: 0 }}
+        >
+          <Chip
+            variant="status"
+            label={label}
+            size="small"
+            sx={{
+              color,
+              borderColor: alpha(color, 0.3),
+              backgroundColor: alpha(color, 0.08),
+            }}
+          />
+          <WatchlistButton category="prs" itemKey={key} size="small" />
+        </Stack>
+      </Box>
+
+      {/* Row 2: title (linkable) */}
+      <LinkBox
+        href={getPrHref(pr)}
+        linkState={{ backLabel: 'Back to Watchlist' }}
+        sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}
+      >
+        <Typography
+          sx={{
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            color: 'text.primary',
+            lineHeight: 1.4,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}
+        >
+          #{pr.pullRequestNumber} {pr.pullRequestTitle}
+        </Typography>
+
+        {/* Row 3: footer stats */}
+        <Box
+          sx={(t) => ({
+            mt: 'auto',
+            backgroundColor: alpha(t.palette.background.default, 0.2),
+            borderRadius: 1.5,
+            p: 1,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          })}
+        >
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Avatar
+              src={`https://avatars.githubusercontent.com/${pr.author}`}
+              sx={{ width: 18, height: 18 }}
+            />
+            <Typography
+              sx={{
+                fontSize: '0.72rem',
+                color: 'text.secondary',
+              }}
+            >
+              {pr.author}
+            </Typography>
+          </Stack>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <Typography
+                sx={{
+                  fontSize: '0.7rem',
+                  color: 'diff.additions',
+                  fontWeight: 600,
+                }}
+              >
+                +{pr.additions}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: '0.7rem',
+                  color: 'text.tertiary',
+                }}
+              >
+                /
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: '0.7rem',
+                  color: 'diff.deletions',
+                  fontWeight: 600,
+                }}
+              >
+                -{pr.deletions}
+              </Typography>
+            </Stack>
+            <Typography
+              sx={{
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                color: 'text.primary',
+              }}
+            >
+              {parseFloat(pr.score || '0').toFixed(2)}
+            </Typography>
+          </Stack>
+        </Box>
+      </LinkBox>
+    </Card>
+  );
+};
+
+const PR_ROWS_OPTIONS = [10, 25, 50] as const;
+
 const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: allPrs } = useAllPrs();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
+  const [viewMode, setViewMode] = useState<PRsViewMode>('list');
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [page, setPage] = useState(0);
+  const [sortField, setSortField] = useState<PrSortKey>('score');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (field: PrSortKey) => {
+    if (sortField === field) {
+      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder(
+        field === 'title' || field === 'author' || field === 'repo'
+          ? 'asc'
+          : 'desc',
+      );
+    }
+    setPage(0);
+  };
+
   const items = useMemo(() => {
     if (!allPrs) return [];
     const set = new Set(itemKeys);
@@ -581,43 +1017,246 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     );
   }, [allPrs, itemKeys]);
 
+  const counts = useMemo(() => getPrStatusCounts(items), [items]);
+
+  const filtered = useMemo(() => {
+    const result = filterPrs(items, {
+      statusFilter,
+      searchQuery,
+      includeNumber: true,
+    });
+    setPage(0);
+    return result;
+  }, [items, statusFilter, searchQuery]);
+
+  const sorted = useMemo(() => {
+    const dir = sortOrder === 'asc' ? 1 : -1;
+    const cmpStr = (a = '', b = '') => a.localeCompare(b) * dir;
+    const cmpNum = (a = 0, b = 0) => (a - b) * dir;
+    return [...filtered].sort((a, b) => {
+      switch (sortField) {
+        case 'pr':
+          return cmpNum(a.pullRequestNumber, b.pullRequestNumber);
+        case 'title':
+          return cmpStr(a.pullRequestTitle, b.pullRequestTitle);
+        case 'repo':
+          return cmpStr(a.repository, b.repository);
+        case 'author':
+          return cmpStr(a.author, b.author);
+        case 'score':
+          return cmpNum(parseFloat(a.score || '0'), parseFloat(b.score || '0'));
+        default:
+          return 0;
+      }
+    });
+  }, [filtered, sortField, sortOrder]);
+
+  const paged = useMemo(
+    () => sorted.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
+    [sorted, page, rowsPerPage],
+  );
+
   return (
-    <Stack spacing={0.5} sx={{ width: '100%' }}>
-      {items.map((pr) => {
-        const key = serializePRKey(pr.repository, pr.pullRequestNumber);
-        const merged = isMergedPr(pr);
-        const closed = isClosedUnmergedPr(pr);
-        const statusLabel = merged ? 'Merged' : closed ? 'Closed' : 'Open';
-        const statusColor = merged
-          ? STATUS_COLORS.merged
-          : closed
-            ? STATUS_COLORS.closed
-            : STATUS_COLORS.open;
-        return (
-          <WatchedItemRow
-            key={key}
-            href={`/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`}
-            primary={`#${pr.pullRequestNumber} ${pr.pullRequestTitle}`}
-            secondary={`${pr.repository} · ${pr.author}`}
-            actions={
-              <>
-                <StatusPill
-                  label={statusLabel}
-                  color={statusColor}
-                  background={alpha(statusColor, 0.12)}
-                />
-                <Typography
-                  sx={{ fontSize: '0.75rem', color: 'text.secondary' }}
-                >
-                  {parseFloat(pr.score || '0').toFixed(2)}
-                </Typography>
-                <WatchlistButton category="prs" itemKey={key} />
-              </>
-            }
+    <Card
+      elevation={0}
+      sx={{
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'border.light',
+        backgroundColor: 'transparent',
+        overflow: 'hidden',
+        maxHeight: '85vh',
+        display: 'flex',
+        flexDirection: 'column',
+        '& .MuiTableContainer-root': {
+          flex: 1,
+          overflowY: 'auto',
+          ...scrollbarSx,
+        },
+      }}
+    >
+      {/* Toolbar */}
+      <Box
+        sx={{
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          borderBottom: '1px solid',
+          borderColor: 'border.light',
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+          <FilterButton
+            label="All"
+            count={counts.all}
+            color={STATUS_COLORS.neutral}
+            isActive={statusFilter === 'all'}
+            onClick={() => setStatusFilter('all')}
           />
-        );
-      })}
-    </Stack>
+          <FilterButton
+            label="Open"
+            count={counts.open}
+            color={STATUS_COLORS.open}
+            isActive={statusFilter === 'open'}
+            onClick={() => setStatusFilter('open')}
+          />
+          <FilterButton
+            label="Merged"
+            count={counts.merged}
+            color={STATUS_COLORS.merged}
+            isActive={statusFilter === 'merged'}
+            onClick={() => setStatusFilter('merged')}
+          />
+          <FilterButton
+            label="Closed"
+            count={counts.closed}
+            color={STATUS_COLORS.closed}
+            isActive={statusFilter === 'closed'}
+            onClick={() => setStatusFilter('closed')}
+          />
+        </Box>
+        <FormControl size="small">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              variant="body2"
+              sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
+            >
+              Rows:
+            </Typography>
+            <Select
+              value={rowsPerPage}
+              onChange={(e) => {
+                setRowsPerPage(e.target.value as number);
+                setPage(0);
+              }}
+              sx={{
+                color: 'text.primary',
+                backgroundColor: 'background.default',
+                fontSize: '0.8rem',
+                height: '36px',
+                borderRadius: 2,
+                minWidth: '80px',
+                '& fieldset': { borderColor: 'border.light' },
+                '&:hover fieldset': { borderColor: 'border.medium' },
+                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                '& .MuiSelect-select': { py: 0.75 },
+              }}
+            >
+              {PR_ROWS_OPTIONS.map((n) => (
+                <MenuItem key={n} value={n}>
+                  {n}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+        </FormControl>
+        <TextField
+          placeholder="Search PRs..."
+          size="small"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            width: '220px',
+            '& .MuiOutlinedInput-root': {
+              color: 'text.primary',
+              backgroundColor: 'background.default',
+              fontSize: '0.8rem',
+              height: '36px',
+              borderRadius: 2,
+              '& fieldset': { borderColor: 'border.light' },
+              '&:hover fieldset': { borderColor: 'border.medium' },
+              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+            },
+          }}
+        />
+        <Box sx={{ ml: 'auto' }}>
+          <PRsViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+        </Box>
+      </Box>
+
+      {/* Content */}
+      {viewMode === 'list' ? (
+        <DataTable<CommitLog, PrSortKey>
+          columns={prColumns}
+          rows={paged}
+          getRowKey={(pr) =>
+            serializePRKey(pr.repository, pr.pullRequestNumber)
+          }
+          getRowHref={getPrHref}
+          linkState={{ backLabel: 'Back to Watchlist' }}
+          minWidth="750px"
+          stickyHeader
+          emptyLabel="No watched pull requests found."
+          sort={{
+            field: sortField,
+            order: sortOrder,
+            onChange: handleSort,
+          }}
+        />
+      ) : (
+        <Box
+          sx={{
+            p: 2,
+            overflowY: 'auto',
+            ...scrollbarSx,
+          }}
+        >
+          {paged.length === 0 ? (
+            <Typography
+              sx={{
+                color: 'text.secondary',
+                textAlign: 'center',
+                py: 4,
+                fontSize: '0.85rem',
+              }}
+            >
+              No watched pull requests found.
+            </Typography>
+          ) : (
+            <Grid container spacing={2} alignItems="stretch">
+              {paged.map((pr) => (
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  key={serializePRKey(pr.repository, pr.pullRequestNumber)}
+                  sx={{ display: 'flex' }}
+                >
+                  <Box sx={{ width: '100%' }}>
+                    <PRCard pr={pr} />
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+      )}
+      <TablePagination
+        rowsPerPageOptions={[]}
+        component="div"
+        count={filtered.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={(_e, newPage) => setPage(newPage)}
+        onRowsPerPageChange={() => {}}
+        showFirstButton
+        showLastButton
+        sx={{
+          borderTop: '1px solid',
+          borderColor: 'border.light',
+          color: 'text.secondary',
+        }}
+      />
+    </Card>
   );
 };
 
