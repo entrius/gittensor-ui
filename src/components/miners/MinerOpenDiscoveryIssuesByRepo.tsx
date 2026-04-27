@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import {
@@ -28,9 +28,6 @@ import {
 } from '../../hooks/useMinerRepositoriesOpenIssues';
 import { type RepositoryIssue } from '../../api/models/Miner';
 
-const getIssueAuthor = (issue: RepositoryIssue) =>
-  issue.authorLogin ?? issue.author ?? null;
-
 const isIssueOpen = (issue: RepositoryIssue) => !issue.closedAt;
 
 const githubIssueUrl = (issue: RepositoryIssue) =>
@@ -55,12 +52,57 @@ interface GithubSearchIssuesResponse {
   items: GithubSearchIssueItem[];
 }
 
+const parsePullNumberFromUrl = (url: string): number | null => {
+  const match = url.match(/\/pull\/(\d+)(?:$|[/?#])/);
+  if (!match?.[1]) return null;
+  const n = Number(match[1]);
+  return Number.isFinite(n) ? n : null;
+};
+
 const parseRepoFromRepositoryUrl = (repositoryUrl: string): string | null => {
   const marker = '/repos/';
   const idx = repositoryUrl.indexOf(marker);
   if (idx < 0) return null;
   const repo = repositoryUrl.slice(idx + marker.length);
   return repo || null;
+};
+
+interface GithubIssueTimelineEvent {
+  event?: string;
+  source?: {
+    issue?: {
+      pull_request?: {
+        html_url?: string;
+      } | null;
+    } | null;
+  } | null;
+}
+
+const fetchLinkedPrNumberForIssue = async (
+  repositoryFullName: string,
+  issueNumber: number,
+): Promise<number | null> => {
+  try {
+    const { data } = await axios.get<GithubIssueTimelineEvent[]>(
+      `https://api.github.com/repos/${repositoryFullName}/issues/${issueNumber}/timeline`,
+      {
+        headers: {
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+      },
+    );
+
+    for (const event of data ?? []) {
+      const prUrl = event.source?.issue?.pull_request?.html_url;
+      if (!prUrl) continue;
+      const prNumber = parsePullNumberFromUrl(prUrl);
+      if (prNumber != null) return prNumber;
+    }
+  } catch {
+    // Ignore timeline fetch failures and fall back to "No linked PR yet".
+  }
+  return null;
 };
 
 const fetchGithubOpenIssuesByAuthor = async (
@@ -76,7 +118,7 @@ const fetchGithubOpenIssuesByAuthor = async (
     },
   );
 
-  return (data.items || [])
+  const mapped = (data.items || [])
     .filter((item) => !item.pull_request)
     .map((item) => {
       const repositoryFullName = parseRepoFromRepositoryUrl(
@@ -96,6 +138,21 @@ const fetchGithubOpenIssuesByAuthor = async (
       } satisfies RepositoryIssue;
     })
     .filter((issue) => !!issue.repositoryFullName);
+
+  const enriched = await Promise.all(
+    mapped.map(async (issue) => {
+      const prNumber = await fetchLinkedPrNumberForIssue(
+        issue.repositoryFullName,
+        issue.number,
+      );
+      return {
+        ...issue,
+        prNumber,
+      } satisfies RepositoryIssue;
+    }),
+  );
+
+  return enriched;
 };
 
 interface MinerOpenDiscoveryIssuesByRepoProps {
@@ -110,9 +167,6 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
     useMinerGithubData(githubId);
 
   const scanRepos = useMemo(() => selectMinerIssueScanRepos(prs), [prs]);
-  const { issuesByRepo, isLoading, isError, repoFetchLimit } =
-    useMinerRepositoriesOpenIssues(scanRepos, !isLoadingPrs);
-
   const login = githubProfile?.login ?? '';
   const {
     data: githubAuthoredIssues = [],
@@ -126,12 +180,35 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
     staleTime: 60_000,
     retry: 1,
   });
+  const authoredRepos = useMemo(
+    () =>
+      [
+        ...new Set(githubAuthoredIssues.map((i) => i.repositoryFullName)),
+      ].filter(Boolean),
+    [githubAuthoredIssues],
+  );
+
+  const { issuesByRepo, isLoading, isError, repoFetchLimit } =
+    useMinerRepositoriesOpenIssues(scanRepos, !isLoadingPrs);
+  const {
+    issuesByRepo: authoredReposIssuesByRepo,
+    isLoading: isLoadingAuthoredRepoIssues,
+    isError: isAuthoredRepoIssuesError,
+  } = useMinerRepositoriesOpenIssues(
+    authoredRepos,
+    !isLoadingPrs && !isLoadingAuthoredIssues && authoredRepos.length > 0,
+  );
+
+  const reposForGrouping = useMemo(
+    () => [...new Set([...scanRepos, ...authoredRepos])],
+    [authoredRepos, scanRepos],
+  );
 
   const { mineByRepo, otherByRepo, mineTotal, otherTotal } = useMemo(() => {
     const mine = new Map<string, RepositoryIssue[]>();
     const other = new Map<string, RepositoryIssue[]>();
     const mineKeys = new Set<string>();
-    const loginLower = login.toLowerCase();
+    const indexedIssueByKey = new Map<string, RepositoryIssue>();
     const addToMap = (
       target: Map<string, RepositoryIssue[]>,
       repo: string,
@@ -142,23 +219,25 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
       target.set(repo, arr);
     };
 
-    scanRepos.forEach((repo) => {
-      const list = issuesByRepo.get(repo) ?? [];
+    reposForGrouping.forEach((repo) => {
+      const fromScan = issuesByRepo.get(repo) ?? [];
+      const fromAuthoredRepoFetch = authoredReposIssuesByRepo.get(repo) ?? [];
+      const listByNumber = new Map<number, RepositoryIssue>();
+      [...fromScan, ...fromAuthoredRepoFetch].forEach((issue) => {
+        listByNumber.set(issue.number, issue);
+      });
+      const list = [...listByNumber.values()];
       list.forEach((issue) => {
         if (!isIssueOpen(issue)) return;
-        const author = getIssueAuthor(issue);
-        const isMine =
-          !!author && !!loginLower && author.toLowerCase() === loginLower;
-        if (isMine) {
-          const key = `${repo}#${issue.number}`;
-          mineKeys.add(key);
-          addToMap(mine, repo, issue);
-        } else {
-          addToMap(other, repo, issue);
-        }
+        const key = `${repo}#${issue.number}`;
+        indexedIssueByKey.set(key, issue);
+        addToMap(other, repo, issue);
       });
     });
 
+    // Canonical "mine" source: GitHub open issues authored by this miner.
+    // We still overlay indexed records when available to preserve enriched fields
+    // such as linked PR numbers in the row metadata.
     githubAuthoredIssues.forEach((issue) => {
       if (!isIssueOpen(issue)) return;
       const repo = issue.repositoryFullName;
@@ -166,21 +245,43 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
       const key = `${repo}#${issue.number}`;
       if (mineKeys.has(key)) return;
       mineKeys.add(key);
-      addToMap(mine, repo, issue);
+      const indexedIssue = indexedIssueByKey.get(key);
+      addToMap(mine, repo, indexedIssue ?? issue);
+    });
+
+    // Remove authored issues from "other" buckets in the same repos.
+    const filteredOtherRaw = new Map<string, RepositoryIssue[]>();
+    other.forEach((issues, repo) => {
+      const filtered = issues.filter(
+        (issue) => !mineKeys.has(`${repo}#${issue.number}`),
+      );
+      if (filtered.length) filteredOtherRaw.set(repo, filtered);
+    });
+
+    const mineRepos = new Set(mine.keys());
+    const filteredOther = new Map<string, RepositoryIssue[]>();
+    filteredOtherRaw.forEach((issues, repo) => {
+      if (mineRepos.has(repo)) filteredOther.set(repo, issues);
     });
 
     const m = [...mine.values()].reduce((sum, items) => sum + items.length, 0);
-    const o = [...other.values()].reduce((sum, items) => sum + items.length, 0);
+    const o = [...filteredOther.values()].reduce(
+      (sum, items) => sum + items.length,
+      0,
+    );
 
     return {
       mineByRepo: mine,
-      otherByRepo: other,
+      otherByRepo: filteredOther,
       mineTotal: m,
       otherTotal: o,
     };
-  }, [githubAuthoredIssues, issuesByRepo, login, scanRepos]);
-
-  const [showOtherTracked, setShowOtherTracked] = useState(true);
+  }, [
+    authoredReposIssuesByRepo,
+    githubAuthoredIssues,
+    issuesByRepo,
+    reposForGrouping,
+  ]);
 
   if (isLoadingPrs || isLoadingGithub) {
     return (
@@ -481,13 +582,16 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         </Typography>
       ) : null}
 
-      {isError ? (
+      {isError || isAuthoredRepoIssuesError ? (
         <Alert severity="error" sx={{ borderRadius: 2 }}>
           Some issue lists could not be loaded. Try again later.
         </Alert>
       ) : null}
 
-      {isLoading || isLoadingAuthoredIssues || isFetchingAuthoredIssues ? (
+      {isLoading ||
+      isLoadingAuthoredIssues ||
+      isFetchingAuthoredIssues ||
+      isLoadingAuthoredRepoIssues ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
           <CircularProgress size={36} />
         </Box>
@@ -509,7 +613,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
             }}
           >
             <Typography variant="h6" sx={{ fontSize: '1.05rem', mb: 1 }}>
-              Your open reports
+              Your open discovery issues
               {mineTotal > 0 ? (
                 <Typography
                   component="span"
@@ -519,8 +623,13 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
                 </Typography>
               ) : null}
             </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+              Open issues authored by you in the scanned repositories (discovery
+              index plus GitHub fallback). Use this list to track your own
+              active reports.
+            </Typography>
             {mineTotal === 0 ? (
-              <Typography color="text.secondary" sx={{ mb: 1 }}>
+              <Typography color="text.secondary" sx={{ mb: 1.5 }}>
                 No open issues in this index matched your GitHub login as
                 author. That usually means the API response does not yet include
                 author fields, or you have no open reports in these
@@ -563,24 +672,15 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
                   </Typography>
                 ) : null}
               </Typography>
-              <Button
-                size="small"
-                onClick={() => setShowOtherTracked((v) => !v)}
-                disabled={otherTotal === 0}
-              >
-                {showOtherTracked ? 'Hide' : 'Show'}
-              </Button>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
               Other people’s open issues in the same repositories (still part of
               the discovery index). Useful for triage and collaboration.
             </Typography>
-            {showOtherTracked
-              ? renderRepoAccordionMap(
-                  otherByRepo,
-                  'No other open issues in the scanned repositories.',
-                )
-              : null}
+            {renderRepoAccordionMap(
+              otherByRepo,
+              'No other open issues in the scanned repositories.',
+            )}
           </Card>
         </>
       )}
