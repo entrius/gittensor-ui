@@ -1,9 +1,11 @@
 // Miner API hooks - uses /miners endpoints
-import { useApiQuery } from './ApiUtils';
+import { useApiQuery, useMirrorApiQuery } from './ApiUtils';
 import {
   type GithubMinerData,
   type MinerEvaluation,
   type CommitLog,
+  type MinerIssue,
+  type MinerIssuesResponse,
 } from './models/Dashboard';
 
 /**
@@ -69,4 +71,21 @@ export const useMinerGithubData = (githubId: string, enabled?: boolean) =>
     undefined,
     undefined,
     enabled,
+  );
+
+/**
+ * Get all issues authored or solved by a specific miner.
+ * Hits the mirror API (https://mirror.gittensor.io/api/v1) which returns the
+ * raw snake_case payload — `select` unwraps `{ issues: [...] }` for callers.
+ * @param githubId - Numeric GitHub ID (e.g., "583231"), NOT username
+ * @param enabled - Optional flag to enable/disable the query
+ */
+export const useMinerIssues = (githubId: string, enabled?: boolean) =>
+  useMirrorApiQuery<MinerIssuesResponse, MinerIssue[]>(
+    'useMinerIssues',
+    `/miners/${githubId}/issues`,
+    {
+      enabled,
+      select: (data) => data?.issues ?? [],
+    },
   );
