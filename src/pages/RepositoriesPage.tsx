@@ -13,8 +13,10 @@ import { alpha, type Theme } from '@mui/material/styles';
 import { LinkBox } from '../components/common/linkBehavior';
 import { Page } from '../components/layout';
 import { TopRepositoriesTable, SEO } from '../components';
-import { useAllPrs, useReposAndWeights } from '../api';
+import { useAllPrs, useAllMiners, useReposAndWeights } from '../api';
 import { type CommitLog } from '../api/models/Dashboard';
+import { buildRepoDiscoveryRollupFromMiners } from '../utils/ExplorerUtils';
+import { isMergedPr } from '../utils/prStatus';
 
 const FONTS = { mono: '"JetBrains Mono", monospace' } as const;
 
@@ -143,10 +145,11 @@ const RepositoriesPage: React.FC = () => {
   };
 
   const { data: allPRs, isLoading: isLoadingPRs } = useAllPrs();
+  const { data: allMiners, isLoading: isLoadingMiners } = useAllMiners();
   const { data: reposWithWeights, isLoading: isLoadingRepos } =
     useReposAndWeights();
 
-  const isLoading = isLoadingPRs || isLoadingRepos;
+  const isLoading = isLoadingPRs || isLoadingRepos || isLoadingMiners;
 
   // ── Main table stats ────────────────────────────────────────────────────
   const repoStats = useMemo(() => {
@@ -160,8 +163,7 @@ const RepositoriesPage: React.FC = () => {
     if (allPRs) {
       allPRs.forEach((pr: CommitLog) => {
         if (!pr?.repository) return;
-        // Only count merged PRs for the main table stats
-        if (!pr.mergedAt) return;
+        if (!isMergedPr(pr)) return;
 
         const repoKey = pr.repository.toLowerCase();
         const cur = prStatsMap.get(repoKey) || {
@@ -176,9 +178,16 @@ const RepositoriesPage: React.FC = () => {
       });
     }
 
+    const discoveryByRepo = buildRepoDiscoveryRollupFromMiners(
+      allPRs,
+      allMiners,
+    );
+
     return reposWithWeights
       .map((repo) => {
-        const s = prStatsMap.get(repo.fullName.toLowerCase());
+        const key = repo.fullName.toLowerCase();
+        const s = prStatsMap.get(key);
+        const d = discoveryByRepo.get(key);
         return {
           repository: repo.fullName,
           totalScore: s?.totalScore || 0,
@@ -186,10 +195,13 @@ const RepositoriesPage: React.FC = () => {
           uniqueMiners: s?.uniqueMiners || new Set<string>(),
           weight: repo.weight ? parseFloat(String(repo.weight)) : 0,
           inactiveAt: repo.inactiveAt,
+          discoveryScore: d?.discoveryScore ?? 0,
+          discoveryIssues: d?.discoveryIssues ?? 0,
+          discoveryContributors: d?.discoveryContributors ?? new Set<string>(),
         };
       })
       .sort((a, b) => b.totalScore - a.totalScore);
-  }, [allPRs, reposWithWeights]);
+  }, [allPRs, allMiners, reposWithWeights]);
 
   // ── Trending: repos with biggest % score increase in the last 7 days ──
   // Excludes brand-new repos (no prior score) so only genuine growth shows
@@ -605,6 +617,31 @@ const RepositoriesPage: React.FC = () => {
                       />
                     ))
                   )}
+                </Box>
+              </>
+            ) : null}
+            {!isLoading && recentPrs.length === 0 ? (
+              <>
+                <SectionHeader>Recent Pull Requests</SectionHeader>
+                <Box
+                  sx={{
+                    flex: 1,
+                    minHeight: ROW_HEIGHT * 5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Typography
+                    sx={(theme) => ({
+                      color: alpha(theme.palette.text.primary, 0.3),
+                      fontSize: '0.8rem',
+                      p: 1,
+                      textAlign: 'center',
+                    })}
+                  >
+                    No merged PRs today
+                  </Typography>
                 </Box>
               </>
             ) : null}
