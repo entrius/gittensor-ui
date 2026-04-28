@@ -45,10 +45,12 @@ import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
 import {
   TopMinersTable,
+  TopRepositoriesTable,
   ActivitySidebarCards,
   SEO,
   WatchlistButton,
 } from '../components';
+import { IssuesList } from '../components/issues';
 import { MinerComparisonRadar } from '../components/miners';
 import {
   DataTable,
@@ -64,6 +66,8 @@ import {
   serializePRKey,
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
+import { useRepositoryLeaderboardStats } from '../hooks/useRepositoryLeaderboardStats';
+import { useMergedAllIssues } from '../hooks/useMergedAllIssues';
 import { useWatchedPRs, type WatchedPRSource } from '../hooks/useWatchedPRs';
 import {
   isMergedPr,
@@ -137,6 +141,50 @@ const tabFromParam = (param: string | null): WatchlistCategory =>
     : 'miners';
 
 const MAX_COMPARE = 4;
+
+const WATCHLIST_REPO_LINK = { backLabel: 'Back to Watchlist' } as const;
+
+const WatchlistRepositoriesPanel: React.FC<{ itemKeys: string[] }> = ({
+  itemKeys,
+}) => {
+  const { repoStats, isLoading } = useRepositoryLeaderboardStats();
+  const filtered = useMemo(() => {
+    const watched = new Set(itemKeys.map((k) => k.toLowerCase()));
+    return repoStats.filter((r) => watched.has(r.repository.toLowerCase()));
+  }, [repoStats, itemKeys]);
+
+  return (
+    <TopRepositoriesTable
+      repositories={filtered}
+      isLoading={isLoading}
+      getRepositoryHref={(name) =>
+        `/miners/repository?name=${encodeURIComponent(name)}`
+      }
+      linkState={WATCHLIST_REPO_LINK}
+      disableUrlSync
+    />
+  );
+};
+
+const WatchlistBountiesPanel: React.FC<{ itemKeys: string[] }> = ({
+  itemKeys,
+}) => {
+  const { issues, isLoading } = useMergedAllIssues();
+  const filtered = useMemo(() => {
+    const watched = new Set(itemKeys.map(String));
+    return issues.filter((issue) => watched.has(String(issue.id)));
+  }, [issues, itemKeys]);
+
+  return (
+    <IssuesList
+      issues={filtered}
+      isLoading={isLoading}
+      getIssueHref={(id) => `/bounties/details?id=${id}`}
+      linkState={WATCHLIST_REPO_LINK}
+      disableUrlSync
+    />
+  );
+};
 
 const WatchlistPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -365,9 +413,9 @@ const WatchlistPage: React.FC = () => {
           ) : activeTab === 'miners' ? (
             <MinersList itemKeys={ids} compareOpen={compareOpen} />
           ) : activeTab === 'repos' ? (
-            <ReposList itemKeys={ids} />
+            <WatchlistRepositoriesPanel itemKeys={ids} />
           ) : activeTab === 'bounties' ? (
-            <BountiesList itemKeys={ids} />
+            <WatchlistBountiesPanel itemKeys={ids} />
           ) : (
             <PRsList itemKeys={ids} />
           )}
@@ -454,91 +502,6 @@ const WatchlistPage: React.FC = () => {
     </Page>
   );
 };
-
-const rowSx = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: 2,
-  px: 1.5,
-  py: 1.25,
-  borderRadius: 1,
-  transition: 'background 0.15s',
-  '&:hover': { backgroundColor: 'surface.light' },
-};
-
-const primaryTextSx = {
-  fontSize: '0.85rem',
-  color: 'text.primary',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-};
-
-const secondaryTextSx = {
-  fontSize: '0.7rem',
-  color: 'text.secondary',
-  mt: 0.25,
-};
-
-interface WatchedItemRowProps {
-  href: string;
-  primary: React.ReactNode;
-  secondary?: React.ReactNode;
-  actions: React.ReactNode;
-}
-
-// LinkBox wraps only the navigable text area (not the whole row) so the
-// star button — a real <button> — is a sibling of the <a>, not a descendant.
-// Keeps middle-click / Cmd-click / "Open in new tab" working natively while
-// avoiding invalid interactive-inside-anchor HTML.
-const WatchedItemRow: React.FC<WatchedItemRowProps> = ({
-  href,
-  primary,
-  secondary,
-  actions,
-}) => (
-  <Box sx={rowSx}>
-    <LinkBox
-      href={href}
-      linkState={{ backLabel: 'Back to Watchlist' }}
-      sx={{ display: 'block', minWidth: 0, flex: 1 }}
-    >
-      <Typography sx={primaryTextSx}>{primary}</Typography>
-      {secondary !== undefined && (
-        <Typography sx={secondaryTextSx}>{secondary}</Typography>
-      )}
-    </LinkBox>
-    <Stack direction="row" spacing={2} alignItems="center">
-      {actions}
-    </Stack>
-  </Box>
-);
-
-interface StatusPillProps {
-  label: string;
-  color: string;
-  background: string;
-}
-
-const StatusPill: React.FC<StatusPillProps> = ({
-  label,
-  color,
-  background,
-}) => (
-  <Typography
-    sx={{
-      fontSize: '0.72rem',
-      color,
-      backgroundColor: background,
-      px: 1,
-      py: 0.25,
-      borderRadius: 0.75,
-    }}
-  >
-    {label}
-  </Typography>
-);
 
 const MinersList: React.FC<{ itemKeys: string[]; compareOpen: boolean }> = ({
   itemKeys,
