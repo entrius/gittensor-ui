@@ -60,10 +60,15 @@ const OnboardPage: React.FC = () => {
       >
         <Box
           sx={(theme) => ({
+            position: 'sticky',
+            top: 0,
+            zIndex: 2,
             maxWidth: 1200,
             width: '100%',
             px: { xs: 2, sm: 3, md: 0 },
+            mx: 'auto',
             mb: 4,
+            backgroundColor: theme.palette.background.default,
             borderBottom: '1px solid',
             borderColor: theme.palette.border.light,
           })}
@@ -105,35 +110,33 @@ const OnboardPage: React.FC = () => {
           </Tabs>
         </Box>
 
-        <Box sx={{ width: '100%' }}>
+        <Box
+          sx={{
+            width: '100%',
+            maxWidth: 1200,
+            mx: 'auto',
+            px: 2,
+            boxSizing: 'border-box',
+          }}
+        >
           {activeTab === 0 && <AboutContent />}
           {activeTab === 1 && <GettingStarted />}
           {activeTab === 2 && <Scoring />}
           {activeTab === 3 && (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+            <Card
+              sx={(theme) => ({
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: theme.palette.border.light,
+                backgroundColor: theme.palette.surface.transparent,
                 width: '100%',
-              }}
+              })}
+              elevation={0}
             >
-              <Card
-                sx={(theme) => ({
-                  borderRadius: 3,
-                  border: '1px solid',
-                  borderColor: theme.palette.border.light,
-                  backgroundColor: theme.palette.surface.transparent,
-                  maxWidth: 1200,
-                  width: '100%',
-                })}
-                elevation={0}
-              >
-                <CardContent>
-                  <LanguageWeightsTable />
-                </CardContent>
-              </Card>
-            </Box>
+              <CardContent>
+                <LanguageWeightsTable />
+              </CardContent>
+            </Card>
           )}
           {activeTab === 4 && <FAQContent />}
         </Box>
