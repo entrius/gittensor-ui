@@ -793,22 +793,23 @@ const IssuesList: React.FC<IssuesListProps> = ({
     <>
       <Box
         sx={{
-          px: 2,
-          py: 1.5,
+          px: { xs: 1.5, md: 2 },
+          py: { xs: 1.25, md: 1.5 },
           borderBottom: `1px solid ${theme.palette.border.light}`,
           display: 'flex',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 2,
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { xs: 'stretch', md: 'center' },
+          gap: { xs: 1.25, md: 2 },
         }}
       >
         {/* Left: filter buttons + chart toggle */}
         <Stack
           direction="row"
-          spacing={1}
+          spacing={0.75}
           alignItems="center"
           flexWrap="wrap"
           useFlexGap
+          sx={{ width: { xs: '100%', md: 'auto' } }}
         >
           <FilterButton
             label="All"
@@ -865,90 +866,103 @@ const IssuesList: React.FC<IssuesListProps> = ({
           </Tooltip>
         </Stack>
 
-        {/* Rows selector */}
-        <FormControl size="small">
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              variant="body2"
-              sx={{
-                color: alpha(
-                  theme.palette.common.white,
-                  TEXT_OPACITY.secondary,
-                ),
-                fontSize: '0.8rem',
-              }}
-            >
-              Rows:
-            </Typography>
-            <Select
-              value={rowsPerPage}
-              onChange={(e) => {
-                setRowsPerPage(e.target.value as number);
-                setPage(0);
-              }}
-              sx={{
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: { xs: 'space-between', md: 'flex-end' },
+            flexWrap: 'wrap',
+            gap: 1,
+            width: { xs: '100%', md: 'auto' },
+          }}
+        >
+          {/* Rows selector */}
+          <FormControl size="small">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: alpha(
+                    theme.palette.common.white,
+                    TEXT_OPACITY.secondary,
+                  ),
+                  fontSize: '0.8rem',
+                }}
+              >
+                Rows:
+              </Typography>
+              <Select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(e.target.value as number);
+                  setPage(0);
+                }}
+                sx={{
+                  color: theme.palette.text.primary,
+                  backgroundColor: alpha(theme.palette.common.black, 0.4),
+                  fontSize: '0.8rem',
+                  height: '36px',
+                  borderRadius: 2,
+                  minWidth: '80px',
+                  '& fieldset': { borderColor: theme.palette.border.light },
+                  '&:hover fieldset': {
+                    borderColor: theme.palette.border.medium,
+                  },
+                  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                  '& .MuiSelect-select': { py: 0.75 },
+                }}
+              >
+                {validRows.map((n) => (
+                  <MenuItem key={n} value={n}>
+                    {n}
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
+          </FormControl>
+
+          {/* Search */}
+          <TextField
+            placeholder="Search..."
+            size="small"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon
+                    sx={{
+                      color: alpha(
+                        theme.palette.common.white,
+                        TEXT_OPACITY.muted,
+                      ),
+                      fontSize: '1rem',
+                    }}
+                  />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              width: { xs: '100%', sm: '200px' },
+              '& .MuiOutlinedInput-root': {
                 color: theme.palette.text.primary,
                 backgroundColor: alpha(theme.palette.common.black, 0.4),
-                fontSize: '0.8rem',
+                fontSize: { xs: '0.75rem', sm: '0.8rem' },
                 height: '36px',
                 borderRadius: 2,
-                minWidth: '80px',
                 '& fieldset': { borderColor: theme.palette.border.light },
-                '&:hover fieldset': {
-                  borderColor: theme.palette.border.medium,
-                },
+                '&:hover fieldset': { borderColor: theme.palette.border.medium },
                 '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                '& .MuiSelect-select': { py: 0.75 },
-              }}
-            >
-              {validRows.map((n) => (
-                <MenuItem key={n} value={n}>
-                  {n}
-                </MenuItem>
-              ))}
-            </Select>
+              },
+            }}
+          />
+
+          <Box sx={{ ml: { xs: 0, md: 'auto' } }}>
+            <ViewModeToggle
+              viewMode={viewMode}
+              onChange={handleViewModeChange}
+            />
           </Box>
-        </FormControl>
-
-        {/* Search */}
-        <TextField
-          placeholder="Search..."
-          size="small"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon
-                  sx={{
-                    color: alpha(
-                      theme.palette.common.white,
-                      TEXT_OPACITY.muted,
-                    ),
-                    fontSize: '1rem',
-                  }}
-                />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            width: '200px',
-            '& .MuiOutlinedInput-root': {
-              color: theme.palette.text.primary,
-              backgroundColor: alpha(theme.palette.common.black, 0.4),
-              fontSize: '0.8rem',
-              height: '36px',
-              borderRadius: 2,
-              '& fieldset': { borderColor: theme.palette.border.light },
-              '&:hover fieldset': { borderColor: theme.palette.border.medium },
-              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-            },
-          }}
-        />
-
-        {/* View toggle — pushed to far right */}
-        <Box sx={{ ml: 'auto' }}>
-          <ViewModeToggle viewMode={viewMode} onChange={handleViewModeChange} />
         </Box>
       </Box>
 
