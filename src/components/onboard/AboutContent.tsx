@@ -112,11 +112,12 @@ export const AboutContent: React.FC = () => {
                     <Box key={i} sx={{ display: 'flex', gap: 2 }}>
                       <Box
                         sx={{
-                          width: 6,
-                          height: 6,
+                          width: 12,
+                          height: 12,
                           borderRadius: '50%',
                           bgcolor: 'secondary.main',
-                          mt: 1,
+                          mt: 0.95,
+                          flexShrink: 0,
                         }}
                       />
                       <Box>
