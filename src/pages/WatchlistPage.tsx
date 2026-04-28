@@ -1464,7 +1464,9 @@ const getIssueCounts = (items: MinerIssue[]) => {
   return c;
 };
 
-const issueColumns: DataTableColumn<MinerIssue, IssueSortKey>[] = [
+const buildIssueColumns = (
+  sourcesByKey: Map<string, WatchedPRSource[]>,
+): DataTableColumn<MinerIssue, IssueSortKey>[] => [
   {
     key: 'issue',
     header: 'Issue',
@@ -1656,6 +1658,16 @@ const issueColumns: DataTableColumn<MinerIssue, IssueSortKey>[] = [
     },
   },
   {
+    key: 'source',
+    header: 'Why',
+    width: '92px',
+    align: 'center',
+    cellSx: issueCellSx,
+    renderCell: (i) => (
+      <WatchedSourceBadges sources={sourcesByKey.get(issueKey(i)) ?? []} />
+    ),
+  },
+  {
     key: 'watch',
     header: '★',
     width: '52px',
@@ -1667,13 +1679,8 @@ const issueColumns: DataTableColumn<MinerIssue, IssueSortKey>[] = [
   },
 ];
 
-const getIssueHref = (issue: MinerIssue): string => {
-  const prNumber = issue.solving_pr?.pr_number ?? issue.solved_by_pr ?? null;
-  if (prNumber) {
-    return `/miners/pr?repo=${encodeURIComponent(issue.repo_full_name)}&number=${prNumber}`;
-  }
-  return `https://github.com/${issue.repo_full_name}/issues/${issue.issue_number}`;
-};
+const getIssueHref = (issue: MinerIssue): string =>
+  `https://github.com/${issue.repo_full_name}/issues/${issue.issue_number}`;
 
 const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
   const { label, color } = issueStatusMeta(issue);
@@ -1762,10 +1769,19 @@ const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
         </Stack>
       </Box>
 
-      <LinkBox
+      <Box
+        component="a"
         href={getIssueHref(issue)}
-        linkState={{ backLabel: 'Back to Watchlist' }}
-        sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}
+        target="_blank"
+        rel="noopener noreferrer"
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+          flex: 1,
+          textDecoration: 'none',
+          color: 'inherit',
+        }}
       >
         <Typography
           sx={{
@@ -1838,7 +1854,7 @@ const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
             </Typography>
           )}
         </Box>
-      </LinkBox>
+      </Box>
     </Card>
   );
 };
@@ -1846,6 +1862,43 @@ const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
 const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   const issueQueries = useMinersIssues(minerIds, minerIds.length > 0);
   const isLoading = issueQueries.some((q) => q.isLoading);
+
+  const { ids: starredIssueIds } = useWatchlist('issues');
+  const { ids: watchedRepoIds } = useWatchlist('repos');
+  const starredSet = useMemo(() => new Set(starredIssueIds), [starredIssueIds]);
+  const watchedRepoSet = useMemo(
+    () => new Set(watchedRepoIds.map((r) => r.toLowerCase())),
+    [watchedRepoIds],
+  );
+  const watchedMinerSet = useMemo(() => new Set(minerIds), [minerIds]);
+
+  const sourcesByKey = useMemo(() => {
+    const map = new Map<string, WatchedPRSource[]>();
+    issueQueries.forEach((q) => {
+      (q.data ?? []).forEach((issue) => {
+        const key = issueKey(issue);
+        if (map.has(key)) return;
+        const sources: WatchedPRSource[] = [];
+        if (starredSet.has(key)) sources.push('starred');
+        if (
+          issue.author_github_id &&
+          watchedMinerSet.has(issue.author_github_id)
+        ) {
+          sources.push('miner');
+        }
+        if (watchedRepoSet.has(issue.repo_full_name.toLowerCase())) {
+          sources.push('repo');
+        }
+        map.set(key, sources);
+      });
+    });
+    return map;
+  }, [issueQueries, starredSet, watchedMinerSet, watchedRepoSet]);
+
+  const issueColumns = useMemo(
+    () => buildIssueColumns(sourcesByKey),
+    [sourcesByKey],
+  );
 
   // Flatten + dedupe issues across all watched miners.
   const items = useMemo<MinerIssue[]>(() => {
@@ -2033,8 +2086,9 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
           columns={issueColumns}
           rows={paged}
           getRowKey={(i) => issueKey(i)}
-          getRowHref={getIssueHref}
-          linkState={{ backLabel: 'Back to Watchlist' }}
+          onRowClick={(i) =>
+            window.open(getIssueHref(i), '_blank', 'noopener,noreferrer')
+          }
           minWidth="750px"
           stickyHeader
           isLoading={isLoading && items.length === 0}
