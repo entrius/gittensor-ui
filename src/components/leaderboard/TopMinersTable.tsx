@@ -534,7 +534,9 @@ interface SortButtonsProps {
 
 type SortButtonOption = { label: string; value: SortOption };
 
-const getSortButtonOptions = (variant: LeaderboardVariant): SortButtonOption[] => {
+const getSortButtonOptions = (
+  variant: LeaderboardVariant,
+): SortButtonOption[] => {
   const scoreLabel = variant === 'watchlist' ? 'OSS' : 'Score';
   const earnings = { label: 'Earnings', value: 'usdPerDay' as const };
   const prs = { label: 'PRs', value: 'totalPRs' as const };
@@ -547,14 +549,7 @@ const getSortButtonOptions = (variant: LeaderboardVariant): SortButtonOption[] =
   const score = { label: scoreLabel, value: 'totalScore' as const };
 
   if (variant === 'watchlist') {
-    return [
-      score,
-      discovery,
-      earnings,
-      prs,
-      issues,
-      credibility,
-    ];
+    return [score, discovery, earnings, prs, issues, credibility];
   }
   if (variant === 'discoveries') {
     return [score, earnings, issues, credibility];
@@ -724,7 +719,10 @@ const WatchlistEligibilityBar: React.FC<WatchlistEligibilityBarProps> = ({
 
   return (
     <>
-      <Tooltip title="Eligibility filters — OSS and Discovery (both apply)" arrow>
+      <Tooltip
+        title="Eligibility filters — OSS and Discovery (both apply)"
+        arrow
+      >
         <Box
           component="button"
           type="button"
