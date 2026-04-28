@@ -31,6 +31,11 @@ interface LanguageRow {
   weight: string;
 }
 
+/** Row shown in the table: language data plus 1-based index in the full filtered list. */
+interface LanguageDisplayRow extends LanguageRow {
+  displayNumber: number;
+}
+
 const LanguageWeightsTable: React.FC = () => {
   const theme = useTheme();
   const { data: languages, isLoading } = useLanguagesAndWeights();
@@ -113,6 +118,15 @@ const LanguageWeightsTable: React.FC = () => {
     const endIndex = startIndex + rowsPerPage;
     return filteredAndSortedLanguages.slice(startIndex, endIndex);
   }, [filteredAndSortedLanguages, page, rowsPerPage]);
+
+  const displayRows = useMemo<LanguageDisplayRow[]>(
+    () =>
+      paginatedLanguages.map((lang, i) => ({
+        ...lang,
+        displayNumber: page * rowsPerPage + i + 1,
+      })),
+    [paginatedLanguages, page, rowsPerPage],
+  );
 
   const chartOption = useMemo(() => {
     const chartData = paginatedLanguages;
@@ -215,8 +229,15 @@ const LanguageWeightsTable: React.FC = () => {
     },
   } as const;
 
-  const columns = useMemo<DataTableColumn<LanguageRow, SortField>[]>(
+  const columns = useMemo<DataTableColumn<LanguageDisplayRow, SortField>[]>(
     () => [
+      {
+        key: 'count',
+        header: '#',
+        width: 52,
+        align: 'right',
+        renderCell: (row) => row.displayNumber,
+      },
       {
         key: 'extension',
         header: 'Extension',
@@ -331,7 +352,7 @@ const LanguageWeightsTable: React.FC = () => {
               <Select
                 value={rowsPerPage}
                 onChange={(e) => {
-                  setRowsPerPage(e.target.value as number);
+                  setRowsPerPage(Number(e.target.value));
                   setPage(0);
                 }}
                 sx={{
@@ -415,31 +436,28 @@ const LanguageWeightsTable: React.FC = () => {
         </Box>
       </Collapse>
 
-      <Box
-        sx={{
-          maxHeight: '800px',
-          overflowY: 'auto',
+      <DataTable<LanguageDisplayRow, SortField>
+        columns={columns}
+        rows={displayRows}
+        getRowKey={(row) => `${row.displayNumber}-${row.extension}`}
+        isLoading={isLoading}
+        stickyHeader
+        tableContainerSx={{
+          maxHeight: 'min(800px, 75vh)',
+          overflow: 'auto',
           backgroundColor: 'transparent',
           ...scrollbarSx,
         }}
-      >
-        <DataTable<LanguageRow, SortField>
-          columns={columns}
-          rows={paginatedLanguages}
-          getRowKey={(lang) => lang.extension}
-          isLoading={isLoading}
-          stickyHeader
-          emptyState={null}
-          getRowSx={() => ({
-            '&:hover': { backgroundColor: 'action.hover' },
-          })}
-          sort={{
-            field: sortField,
-            order: sortOrder,
-            onChange: handleSort,
-          }}
-        />
-      </Box>
+        emptyState={null}
+        getRowSx={() => ({
+          '&:hover': { backgroundColor: 'action.hover' },
+        })}
+        sort={{
+          field: sortField,
+          order: sortOrder,
+          onChange: handleSort,
+        }}
+      />
 
       <TablePagination
         rowsPerPageOptions={[]}
