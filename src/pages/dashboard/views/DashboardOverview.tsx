@@ -9,6 +9,11 @@ import {
   type DashboardOverviewSection,
   type TrendTimeRange,
 } from '../dashboardData';
+import {
+  echartsFontFamily,
+  echartsItemTooltipChrome,
+  echartsTransparentBackground,
+} from '../../../utils/echarts/gittensorChartTheme';
 
 interface DashboardOverviewProps {
   range: TrendTimeRange;
@@ -45,10 +50,10 @@ const buildStatusChartOption = (
   segments: DashboardOverviewPool['chartSegments'],
 ): Record<string, unknown> => {
   const totalValue = segments.reduce((sum, segment) => sum + segment.value, 0);
-  const monoFontFamily = theme.typography.fontFamily;
+  const chartFont = echartsFontFamily(theme);
 
   return {
-    backgroundColor: 'transparent',
+    ...echartsTransparentBackground(),
     title: {
       text: centerLabel,
       left: 'center',
@@ -57,7 +62,7 @@ const buildStatusChartOption = (
         color: theme.palette.text.primary,
         fontSize: 13,
         fontWeight: 'bold',
-        fontFamily: monoFontFamily,
+        fontFamily: chartFont,
       },
     },
     tooltip: {
@@ -71,13 +76,7 @@ const buildStatusChartOption = (
         value: number;
         percent: number;
       }) => `${name}: ${Number(value).toLocaleString()} (${percent}%)`,
-      backgroundColor: theme.palette.surface.tooltip,
-      borderColor: alpha(theme.palette.text.primary, 0.15),
-      borderWidth: 1,
-      textStyle: {
-        color: theme.palette.text.primary,
-        fontFamily: monoFontFamily,
-      },
+      ...echartsItemTooltipChrome(theme),
     },
     series: [
       {
