@@ -7,6 +7,8 @@ export interface RepositoryIssue {
   closedAt: string | null;
   state?: string;
   author?: string;
+  /** When present, preferred over `author` for matching the reporter. */
+  authorLogin?: string | null;
   url?: string;
 }
 
