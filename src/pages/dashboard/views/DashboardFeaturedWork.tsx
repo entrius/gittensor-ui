@@ -1,5 +1,12 @@
 import React from 'react';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import CallMergeIcon from '@mui/icons-material/CallMerge';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import OpenInFullIcon from '@mui/icons-material/OpenInFull';
+import TaskAltIcon from '@mui/icons-material/TaskAlt';
+import { type SvgIconComponent } from '@mui/icons-material';
 import {
   Avatar,
   Box,
@@ -88,6 +95,18 @@ const renderChangesMetric = (theme: Theme, value: string) => {
   );
 };
 
+const CATEGORY_STYLE: Record<
+  string,
+  { color: string; Icon: SvgIconComponent }
+> = {
+  'Top PR by Score': { color: '#F59E0B', Icon: EmojiEventsIcon },
+  'Largest PR': { color: '#3B82F6', Icon: OpenInFullIcon },
+  'Most Commits PR': { color: '#8B5CF6', Icon: AccountTreeIcon },
+  'Newest Merged PR': { color: '#22C55E', Icon: CallMergeIcon },
+  'Top Completed Issue': { color: '#14B8A6', Icon: TaskAltIcon },
+  'Highest Bounty Issue': { color: '#F97316', Icon: MonetizationOnIcon },
+};
+
 const DashboardFeaturedWorkSection: React.FC<DashboardFeaturedWorkProps> = ({
   items,
   isLoading = false,
@@ -115,10 +134,9 @@ const DashboardFeaturedWorkSection: React.FC<DashboardFeaturedWorkProps> = ({
     const owner = item.repository.split('/')[0] || '';
     const metrics = item.metrics.slice(0, 3);
     const n = metrics.length || 1;
-    const labelTint =
-      item.kind === 'issue'
-        ? alpha(theme.palette.status.award, 0.9)
-        : alpha(theme.palette.status.merged, 0.9);
+    const cat = CATEGORY_STYLE[item.featuredLabel];
+    const catColor = cat?.color ?? alpha(theme.palette.status.merged, 0.9);
+    const CatIcon = cat?.Icon;
 
     return (
       <Stack
@@ -137,9 +155,10 @@ const DashboardFeaturedWorkSection: React.FC<DashboardFeaturedWorkProps> = ({
           minHeight: 262,
           p: 0.9,
           fontFamily: mono,
-          backgroundColor: alpha(theme.palette.common.white, 0.015),
+          backgroundColor: alpha(catColor, 0.04),
           borderRadius: 2,
           border: `1px solid ${border}`,
+          borderTop: `2.5px solid ${alpha(catColor, 0.55)}`,
           display: 'grid',
           gridTemplateRows: 'auto auto 2.56em auto auto',
           rowGap: 0.55,
@@ -148,12 +167,13 @@ const DashboardFeaturedWorkSection: React.FC<DashboardFeaturedWorkProps> = ({
             'transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease',
           '&:hover': {
             transform: 'translateY(-1px)',
-            borderColor: alpha(theme.palette.status.merged, 0.3),
-            backgroundColor: theme.palette.surface.subtle,
+            borderColor: alpha(catColor, 0.45),
+            borderTopColor: catColor,
+            backgroundColor: alpha(catColor, 0.07),
             boxShadow: `0 8px 24px ${alpha(theme.palette.common.black, 0.22)}`,
           },
           '&:focus-visible': {
-            outline: `2px solid ${alpha(toneColor, 0.45)}`,
+            outline: `2px solid ${alpha(catColor, 0.5)}`,
             outlineOffset: '2px',
           },
         }}
@@ -198,21 +218,32 @@ const DashboardFeaturedWorkSection: React.FC<DashboardFeaturedWorkProps> = ({
             >
               {item.repository}
             </Typography>
-            <Typography
-              sx={{
-                mt: 0.28,
-                color: labelTint,
-                fontFamily: mono,
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                letterSpacing: '0.02em',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
+            <Stack
+              direction="row"
+              spacing={0.4}
+              alignItems="center"
+              sx={{ mt: 0.28, minWidth: 0 }}
             >
-              {item.featuredLabel}
-            </Typography>
+              {CatIcon && (
+                <CatIcon
+                  sx={{ fontSize: 13, color: catColor, flexShrink: 0 }}
+                />
+              )}
+              <Typography
+                sx={{
+                  color: catColor,
+                  fontFamily: mono,
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.02em',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {item.featuredLabel}
+              </Typography>
+            </Stack>
           </Box>
         </Box>
 
