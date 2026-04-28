@@ -54,6 +54,8 @@ import {
 import ReactECharts from 'echarts-for-react';
 import type { TooltipComponentFormatterCallbackParams } from 'echarts';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ChartWrapper } from '../common';
+import { LinkTableRow } from '../common/linkBehavior';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { WatchlistButton } from '../common';
 import { truncateText } from '../../utils';
@@ -1289,11 +1291,17 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             backgroundColor: 'surface.subtle',
           }}
         >
-          {showChart && filteredRepositories.length > 0 && (
-            <ReactECharts
-              option={getChartOption()}
-              style={{ height: '100%', width: '100%' }}
-            />
+          {showChart && (
+            <ChartWrapper
+              data={filteredRepositories}
+              emptyMessage="No repositories match your filters"
+              emptyHint="Try clearing the search or changing the status filter."
+            >
+              <ReactECharts
+                option={getChartOption()}
+                style={{ height: '100%', width: '100%' }}
+              />
+            </ChartWrapper>
           )}
         </Box>
       </Collapse>
