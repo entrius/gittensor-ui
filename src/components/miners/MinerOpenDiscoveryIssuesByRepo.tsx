@@ -49,9 +49,11 @@ const DEFAULT_SORT_DIR: Record<IssueSortField, SortDir> = {
 // Issue is still open
 const isOpenIssue = (i: RepositoryIssue) => !i.closedAt;
 // Issue was closed and has a linked PR (solved by a contributor)
-const isSolvedIssue = (i: RepositoryIssue) => !!i.closedAt && i.prNumber != null;
+const isSolvedIssue = (i: RepositoryIssue) =>
+  !!i.closedAt && i.prNumber != null;
 // Issue was closed without a linked PR (rejected, duplicate, etc.)
-const isClosedIssue = (i: RepositoryIssue) => !!i.closedAt && i.prNumber == null;
+const isClosedIssue = (i: RepositoryIssue) =>
+  !!i.closedAt && i.prNumber == null;
 
 const githubIssueUrl = (issue: RepositoryIssue) =>
   issue.url ??
@@ -140,7 +142,9 @@ const fetchGithubIssuesByAuthor = async (
   const mapped = (data.items || [])
     .filter((item) => !item.pull_request)
     .map((item) => {
-      const repositoryFullName = parseRepoFromRepositoryUrl(item.repository_url);
+      const repositoryFullName = parseRepoFromRepositoryUrl(
+        item.repository_url,
+      );
       return {
         number: item.number,
         repositoryFullName: repositoryFullName ?? '',
@@ -228,7 +232,8 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
   // Other section state
   const [otherFilter, setOtherFilter] = useState<IssueFilter>('all');
   const [otherSearch, setOtherSearch] = useState('');
-  const [otherSortField, setOtherSortField] = useState<IssueSortField>('opened');
+  const [otherSortField, setOtherSortField] =
+    useState<IssueSortField>('opened');
   const [otherSortDir, setOtherSortDir] = useState<SortDir>('desc');
   const [otherPage, setOtherPage] = useState(0);
   const [otherExpanded, setOtherExpanded] = useState(false);
@@ -251,9 +256,9 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
 
   const authoredRepos = useMemo(
     () =>
-      [...new Set(githubAuthoredIssues.map((i) => i.repositoryFullName))].filter(
-        Boolean,
-      ),
+      [
+        ...new Set(githubAuthoredIssues.map((i) => i.repositoryFullName)),
+      ].filter(Boolean),
     [githubAuthoredIssues],
   );
 
@@ -365,11 +370,25 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
   }, []);
 
   const filteredMine = useMemo(
-    () => applyIssueFilter(mineIssues, mineFilter, mineSearch, mineSortField, mineSortDir),
+    () =>
+      applyIssueFilter(
+        mineIssues,
+        mineFilter,
+        mineSearch,
+        mineSortField,
+        mineSortDir,
+      ),
     [mineIssues, mineFilter, mineSearch, mineSortField, mineSortDir],
   );
   const filteredOther = useMemo(
-    () => applyIssueFilter(otherIssues, otherFilter, otherSearch, otherSortField, otherSortDir),
+    () =>
+      applyIssueFilter(
+        otherIssues,
+        otherFilter,
+        otherSearch,
+        otherSortField,
+        otherSortDir,
+      ),
     [otherIssues, otherFilter, otherSearch, otherSortField, otherSortDir],
   );
 
@@ -388,304 +407,356 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
   const mineCounts = useMemo(() => getIssueCounts(mineIssues), [mineIssues]);
   const otherCounts = useMemo(() => getIssueCounts(otherIssues), [otherIssues]);
 
-  const mineColumns: DataTableColumn<RepositoryIssue, IssueSortField>[] = useMemo(
-    () => [
-      {
-        key: 'number',
-        header: 'Issue #',
-        width: '9%',
-        sortKey: 'number',
-        cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
-        renderCell: (issue) => (
-          // stopPropagation keeps the row's onRowClick from also firing
-          <a
-            href={githubIssueUrl(issue)}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: 'inherit', textDecoration: 'none', fontWeight: 500 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            #{issue.number}
-          </a>
-        ),
-      },
-      {
-        key: 'title',
-        header: 'Title',
-        width: '35%',
-        cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
-        renderCell: (issue) => (
-          <Box
-            sx={{
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {issue.title}
-          </Box>
-        ),
-      },
-      {
-        key: 'repository',
-        header: 'Repository',
-        width: '24%',
-        sortKey: 'repository',
-        renderCell: (issue) => {
-          const owner = issue.repositoryFullName.split('/')[0];
-          return (
+  const mineColumns: DataTableColumn<RepositoryIssue, IssueSortField>[] =
+    useMemo(
+      () => [
+        {
+          key: 'number',
+          header: 'Issue #',
+          width: '9%',
+          sortKey: 'number',
+          cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
+          renderCell: (issue) => (
+            // stopPropagation keeps the row's onRowClick from also firing
+            <a
+              href={githubIssueUrl(issue)}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: 'inherit',
+                textDecoration: 'none',
+                fontWeight: 500,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              #{issue.number}
+            </a>
+          ),
+        },
+        {
+          key: 'title',
+          header: 'Title',
+          width: '35%',
+          cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
+          renderCell: (issue) => (
             <Box
               sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.5,
                 overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}
             >
-              <Avatar
-                src={`https://avatars.githubusercontent.com/${owner}`}
-                alt={owner}
-                sx={{
-                  width: 20,
-                  height: 20,
-                  flexShrink: 0,
-                  border: '1px solid',
-                  borderColor: 'border.medium',
-                }}
-              />
-              <Box
-                component="span"
-                sx={{ wordBreak: 'break-word', lineHeight: 1.3 }}
-              >
-                {issue.repositoryFullName}
-              </Box>
+              {issue.title}
             </Box>
-          );
-        },
-      },
-      {
-        key: 'linked_pr',
-        header: 'Linked PR',
-        width: '17%',
-        renderCell: (issue) =>
-          issue.prNumber != null ? (
-            <a
-              href={`https://github.com/${issue.repositoryFullName}/pull/${issue.prNumber}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ textDecoration: 'none' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Chip
-                size="small"
-                label={`PR #${issue.prNumber}`}
-                sx={{
-                  height: 20,
-                  fontSize: '0.72rem',
-                  cursor: 'pointer',
-                  bgcolor: (t) => alpha(t.palette.success.main, 0.14),
-                  color: 'success.light',
-                  borderColor: (t) => alpha(t.palette.success.main, 0.35),
-                  '& .MuiChip-label': { px: 1 },
-                  '&:hover': {
-                    bgcolor: (t) => alpha(t.palette.success.main, 0.25),
-                  },
-                }}
-                variant="outlined"
-              />
-            </a>
-          ) : (
-            <Chip
-              size="small"
-              label="No PR yet"
-              sx={{
-                height: 20,
-                fontSize: '0.72rem',
-                bgcolor: (t) => alpha(t.palette.warning.main, 0.1),
-                color: (t) => alpha(t.palette.warning.light, 0.75),
-                borderColor: (t) => alpha(t.palette.warning.main, 0.25),
-                '& .MuiChip-label': { px: 1 },
-              }}
-              variant="outlined"
-            />
           ),
-      },
-      {
-        key: 'opened',
-        header: 'Opened',
-        width: '15%',
-        align: 'right',
-        sortKey: 'opened',
-        cellSx: {
-          fontSize: { xs: '0.75rem', sm: '0.85rem' },
-          color: (t) => alpha(t.palette.text.primary, 0.7),
         },
-        renderCell: (issue) =>
-          issue.createdAt ? (
-            <Tooltip
-              title={new Date(issue.createdAt).toLocaleDateString()}
-              placement="top"
-            >
-              <span style={{ cursor: 'default' }}>
-                {formatDistanceToNow(new Date(issue.createdAt), {
-                  addSuffix: true,
-                })}
-              </span>
-            </Tooltip>
-          ) : null,
-      },
-    ],
-    [],
-  );
-
-  const otherColumns: DataTableColumn<RepositoryIssue, IssueSortField>[] = useMemo(
-    () => [
-      {
-        key: 'number',
-        header: 'Issue #',
-        width: '9%',
-        sortKey: 'number' as IssueSortField,
-        cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
-        renderCell: (issue) => (
-          <a
-            href={githubIssueUrl(issue)}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: 'inherit', textDecoration: 'none', fontWeight: 500 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            #{issue.number}
-          </a>
-        ),
-      },
-      {
-        key: 'title',
-        header: 'Title',
-        width: '28%',
-        cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
-        renderCell: (issue) => (
-          <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {issue.title}
-          </Box>
-        ),
-      },
-      {
-        key: 'repository',
-        header: 'Repository',
-        width: '20%',
-        sortKey: 'repository' as IssueSortField,
-        renderCell: (issue) => {
-          const owner = issue.repositoryFullName.split('/')[0];
-          return (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden' }}>
-              <Avatar
-                src={`https://avatars.githubusercontent.com/${owner}`}
-                alt={owner}
-                sx={{ width: 20, height: 20, flexShrink: 0, border: '1px solid', borderColor: 'border.medium' }}
-              />
-              <Box component="span" sx={{ wordBreak: 'break-word', lineHeight: 1.3 }}>
-                {issue.repositoryFullName}
-              </Box>
-            </Box>
-          );
-        },
-      },
-      {
-        key: 'author',
-        header: 'Author',
-        width: '14%',
-        renderCell: (issue) => {
-          const authorLogin = issue.authorLogin ?? issue.author ?? null;
-          if (!authorLogin) return null;
-          return (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden' }}>
-              <Avatar
-                src={`https://avatars.githubusercontent.com/${authorLogin}`}
-                alt={authorLogin}
-                sx={{ width: 18, height: 18, flexShrink: 0, border: '1px solid', borderColor: 'border.medium' }}
-              />
+        {
+          key: 'repository',
+          header: 'Repository',
+          width: '24%',
+          sortKey: 'repository',
+          renderCell: (issue) => {
+            const owner = issue.repositoryFullName.split('/')[0];
+            return (
               <Box
-                component="span"
                 sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
                   overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  fontSize: '0.8rem',
                 }}
               >
-                @{authorLogin}
+                <Avatar
+                  src={`https://avatars.githubusercontent.com/${owner}`}
+                  alt={owner}
+                  sx={{
+                    width: 20,
+                    height: 20,
+                    flexShrink: 0,
+                    border: '1px solid',
+                    borderColor: 'border.medium',
+                  }}
+                />
+                <Box
+                  component="span"
+                  sx={{ wordBreak: 'break-word', lineHeight: 1.3 }}
+                >
+                  {issue.repositoryFullName}
+                </Box>
               </Box>
-            </Box>
-          );
+            );
+          },
         },
-      },
-      {
-        key: 'linked_pr',
-        header: 'Linked PR',
-        width: '15%',
-        renderCell: (issue) =>
-          issue.prNumber != null ? (
-            <a
-              href={`https://github.com/${issue.repositoryFullName}/pull/${issue.prNumber}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ textDecoration: 'none' }}
-              onClick={(e) => e.stopPropagation()}
-            >
+        {
+          key: 'linked_pr',
+          header: 'Linked PR',
+          width: '17%',
+          renderCell: (issue) =>
+            issue.prNumber != null ? (
+              <a
+                href={`https://github.com/${issue.repositoryFullName}/pull/${issue.prNumber}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'none' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Chip
+                  size="small"
+                  label={`PR #${issue.prNumber}`}
+                  sx={{
+                    height: 20,
+                    fontSize: '0.72rem',
+                    cursor: 'pointer',
+                    bgcolor: (t) => alpha(t.palette.success.main, 0.14),
+                    color: 'success.light',
+                    borderColor: (t) => alpha(t.palette.success.main, 0.35),
+                    '& .MuiChip-label': { px: 1 },
+                    '&:hover': {
+                      bgcolor: (t) => alpha(t.palette.success.main, 0.25),
+                    },
+                  }}
+                  variant="outlined"
+                />
+              </a>
+            ) : (
               <Chip
                 size="small"
-                label={`PR #${issue.prNumber}`}
+                label="No PR yet"
                 sx={{
                   height: 20,
                   fontSize: '0.72rem',
-                  cursor: 'pointer',
-                  bgcolor: (t) => alpha(t.palette.success.main, 0.14),
-                  color: 'success.light',
-                  borderColor: (t) => alpha(t.palette.success.main, 0.35),
+                  bgcolor: (t) => alpha(t.palette.warning.main, 0.1),
+                  color: (t) => alpha(t.palette.warning.light, 0.75),
+                  borderColor: (t) => alpha(t.palette.warning.main, 0.25),
                   '& .MuiChip-label': { px: 1 },
-                  '&:hover': { bgcolor: (t) => alpha(t.palette.success.main, 0.25) },
                 }}
                 variant="outlined"
               />
-            </a>
-          ) : (
-            <Chip
-              size="small"
-              label="No PR yet"
-              sx={{
-                height: 20,
-                fontSize: '0.72rem',
-                bgcolor: (t) => alpha(t.palette.warning.main, 0.1),
-                color: (t) => alpha(t.palette.warning.light, 0.75),
-                borderColor: (t) => alpha(t.palette.warning.main, 0.25),
-                '& .MuiChip-label': { px: 1 },
-              }}
-              variant="outlined"
-            />
-          ),
-      },
-      {
-        key: 'opened',
-        header: 'Opened',
-        width: '14%',
-        align: 'right',
-        sortKey: 'opened' as IssueSortField,
-        cellSx: {
-          fontSize: { xs: '0.75rem', sm: '0.85rem' },
-          color: (t) => alpha(t.palette.text.primary, 0.7),
+            ),
         },
-        renderCell: (issue) =>
-          issue.createdAt ? (
-            <Tooltip title={new Date(issue.createdAt).toLocaleDateString()} placement="top">
-              <span style={{ cursor: 'default' }}>
-                {formatDistanceToNow(new Date(issue.createdAt), { addSuffix: true })}
-              </span>
-            </Tooltip>
-          ) : null,
-      },
-    ],
-    [],
-  );
+        {
+          key: 'opened',
+          header: 'Opened',
+          width: '15%',
+          align: 'right',
+          sortKey: 'opened',
+          cellSx: {
+            fontSize: { xs: '0.75rem', sm: '0.85rem' },
+            color: (t) => alpha(t.palette.text.primary, 0.7),
+          },
+          renderCell: (issue) =>
+            issue.createdAt ? (
+              <Tooltip
+                title={new Date(issue.createdAt).toLocaleDateString()}
+                placement="top"
+              >
+                <span style={{ cursor: 'default' }}>
+                  {formatDistanceToNow(new Date(issue.createdAt), {
+                    addSuffix: true,
+                  })}
+                </span>
+              </Tooltip>
+            ) : null,
+        },
+      ],
+      [],
+    );
+
+  const otherColumns: DataTableColumn<RepositoryIssue, IssueSortField>[] =
+    useMemo(
+      () => [
+        {
+          key: 'number',
+          header: 'Issue #',
+          width: '9%',
+          sortKey: 'number' as IssueSortField,
+          cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
+          renderCell: (issue) => (
+            <a
+              href={githubIssueUrl(issue)}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: 'inherit',
+                textDecoration: 'none',
+                fontWeight: 500,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              #{issue.number}
+            </a>
+          ),
+        },
+        {
+          key: 'title',
+          header: 'Title',
+          width: '28%',
+          cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
+          renderCell: (issue) => (
+            <Box
+              sx={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {issue.title}
+            </Box>
+          ),
+        },
+        {
+          key: 'repository',
+          header: 'Repository',
+          width: '20%',
+          sortKey: 'repository' as IssueSortField,
+          renderCell: (issue) => {
+            const owner = issue.repositoryFullName.split('/')[0];
+            return (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  overflow: 'hidden',
+                }}
+              >
+                <Avatar
+                  src={`https://avatars.githubusercontent.com/${owner}`}
+                  alt={owner}
+                  sx={{
+                    width: 20,
+                    height: 20,
+                    flexShrink: 0,
+                    border: '1px solid',
+                    borderColor: 'border.medium',
+                  }}
+                />
+                <Box
+                  component="span"
+                  sx={{ wordBreak: 'break-word', lineHeight: 1.3 }}
+                >
+                  {issue.repositoryFullName}
+                </Box>
+              </Box>
+            );
+          },
+        },
+        {
+          key: 'author',
+          header: 'Author',
+          width: '14%',
+          renderCell: (issue) => {
+            const authorLogin = issue.authorLogin ?? issue.author ?? null;
+            if (!authorLogin) return null;
+            return (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  overflow: 'hidden',
+                }}
+              >
+                <Avatar
+                  src={`https://avatars.githubusercontent.com/${authorLogin}`}
+                  alt={authorLogin}
+                  sx={{
+                    width: 18,
+                    height: 18,
+                    flexShrink: 0,
+                    border: '1px solid',
+                    borderColor: 'border.medium',
+                  }}
+                />
+                <Box
+                  component="span"
+                  sx={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  @{authorLogin}
+                </Box>
+              </Box>
+            );
+          },
+        },
+        {
+          key: 'linked_pr',
+          header: 'Linked PR',
+          width: '15%',
+          renderCell: (issue) =>
+            issue.prNumber != null ? (
+              <a
+                href={`https://github.com/${issue.repositoryFullName}/pull/${issue.prNumber}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'none' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Chip
+                  size="small"
+                  label={`PR #${issue.prNumber}`}
+                  sx={{
+                    height: 20,
+                    fontSize: '0.72rem',
+                    cursor: 'pointer',
+                    bgcolor: (t) => alpha(t.palette.success.main, 0.14),
+                    color: 'success.light',
+                    borderColor: (t) => alpha(t.palette.success.main, 0.35),
+                    '& .MuiChip-label': { px: 1 },
+                    '&:hover': {
+                      bgcolor: (t) => alpha(t.palette.success.main, 0.25),
+                    },
+                  }}
+                  variant="outlined"
+                />
+              </a>
+            ) : (
+              <Chip
+                size="small"
+                label="No PR yet"
+                sx={{
+                  height: 20,
+                  fontSize: '0.72rem',
+                  bgcolor: (t) => alpha(t.palette.warning.main, 0.1),
+                  color: (t) => alpha(t.palette.warning.light, 0.75),
+                  borderColor: (t) => alpha(t.palette.warning.main, 0.25),
+                  '& .MuiChip-label': { px: 1 },
+                }}
+                variant="outlined"
+              />
+            ),
+        },
+        {
+          key: 'opened',
+          header: 'Opened',
+          width: '14%',
+          align: 'right',
+          sortKey: 'opened' as IssueSortField,
+          cellSx: {
+            fontSize: { xs: '0.75rem', sm: '0.85rem' },
+            color: (t) => alpha(t.palette.text.primary, 0.7),
+          },
+          renderCell: (issue) =>
+            issue.createdAt ? (
+              <Tooltip
+                title={new Date(issue.createdAt).toLocaleDateString()}
+                placement="top"
+              >
+                <span style={{ cursor: 'default' }}>
+                  {formatDistanceToNow(new Date(issue.createdAt), {
+                    addSuffix: true,
+                  })}
+                </span>
+              </Tooltip>
+            ) : null,
+        },
+      ],
+      [],
+    );
 
   const renderToolbar = (
     title: string | null,
@@ -706,88 +777,52 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         borderColor: 'border.light',
       }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 2,
-        }}
-      >
-        {title != null && (
-          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
-            <Typography
-              variant="h6"
-              sx={{
-                color: 'text.primary',
-                fontSize: { xs: '0.95rem', sm: '1.1rem' },
-                fontWeight: 500,
-              }}
-            >
-              {title}
-            </Typography>
-            <Typography
-              sx={{
-                color: (t) => alpha(t.palette.text.primary, 0.5),
-                fontSize: '0.75rem',
-              }}
-            >
-              ({filteredCount}
-              {hasFilters ? ` of ${totalIssues.length}` : ''})
-            </Typography>
-          </Box>
-        )}
-
-        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', ml: 'auto' }}>
-          <ExplorerFilterButton
-            label="All"
-            count={counts.all}
-            color={theme.palette.status.neutral}
-            selected={filter === 'all'}
-            onClick={() => { onFilterChange('all'); }}
-          />
-          <ExplorerFilterButton
-            label="Open"
-            count={counts.open}
-            color={theme.palette.status.open}
-            selected={filter === 'open'}
-            onClick={() => { onFilterChange('open'); }}
-          />
-          <ExplorerFilterButton
-            label="Solved"
-            count={counts.solved}
-            color={theme.palette.status.merged}
-            selected={filter === 'solved'}
-            onClick={() => { onFilterChange('solved'); }}
-          />
-          <ExplorerFilterButton
-            label="Closed"
-            count={counts.closed}
-            color={theme.palette.status.closed}
-            selected={filter === 'closed'}
-            onClick={() => { onFilterChange('closed'); }}
-          />
-        </Box>
-      </Box>
-
-      {subtitle && (
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ mt: 1 }}
+      {/* Title row — only when a title is provided */}
+      {title != null && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: 1.5,
+            mb: subtitle ? 0.75 : 2,
+          }}
         >
+          <Typography
+            variant="h6"
+            sx={{
+              color: 'text.primary',
+              fontSize: { xs: '0.95rem', sm: '1.1rem' },
+              fontWeight: 500,
+            }}
+          >
+            {title}
+          </Typography>
+          <Typography
+            sx={{
+              color: (t) => alpha(t.palette.text.primary, 0.5),
+              fontSize: '0.75rem',
+            }}
+          >
+            ({filteredCount}
+            {hasFilters ? ` of ${totalIssues.length}` : ''})
+          </Typography>
+        </Box>
+      )}
+
+      {/* Subtitle description */}
+      {subtitle && (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           {subtitle}
         </Typography>
       )}
 
+      {/* Search + filters on one line */}
       <Box
         sx={{
-          mt: 2,
           display: 'flex',
+          alignItems: 'center',
           gap: 1,
           flexWrap: 'wrap',
-          alignItems: 'center',
         }}
       >
         <TextField
@@ -809,7 +844,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
           }}
           sx={{
             maxWidth: 400,
-            minWidth: 300,
+            minWidth: 260,
             '& .MuiOutlinedInput-root': {
               fontSize: '0.8rem',
               color: 'text.primary',
@@ -821,6 +856,45 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
             },
           }}
         />
+
+        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', ml: 'auto' }}>
+          <ExplorerFilterButton
+            label="All"
+            count={counts.all}
+            color={theme.palette.status.neutral}
+            selected={filter === 'all'}
+            onClick={() => {
+              onFilterChange('all');
+            }}
+          />
+          <ExplorerFilterButton
+            label="Open"
+            count={counts.open}
+            color={theme.palette.status.open}
+            selected={filter === 'open'}
+            onClick={() => {
+              onFilterChange('open');
+            }}
+          />
+          <ExplorerFilterButton
+            label="Solved"
+            count={counts.solved}
+            color={theme.palette.status.merged}
+            selected={filter === 'solved'}
+            onClick={() => {
+              onFilterChange('solved');
+            }}
+          />
+          <ExplorerFilterButton
+            label="Closed"
+            count={counts.closed}
+            color={theme.palette.status.closed}
+            selected={filter === 'closed'}
+            onClick={() => {
+              onFilterChange('closed');
+            }}
+          />
+        </Box>
       </Box>
     </Box>
   );
@@ -939,8 +1013,8 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
 
       {prs.length > repoFetchLimit ? (
         <Typography variant="caption" color="text.secondary">
-          You have PRs in more than {repoFetchLimit} repositories; only the
-          most active {repoFetchLimit} are scanned here to limit load.
+          You have PRs in more than {repoFetchLimit} repositories; only the most
+          active {repoFetchLimit} are scanned here to limit load.
         </Typography>
       ) : null}
 
@@ -951,14 +1025,19 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
       )}
       {isAuthorFallbackError && !isDataLoading && (
         <Alert severity="warning" sx={{ borderRadius: 2 }}>
-          Could not load all authored open issues from GitHub right now.
-          Showing indexed results only.
+          Could not load all authored open issues from GitHub right now. Showing
+          indexed results only.
         </Alert>
       )}
 
       {/* Your open discovery issues */}
       <Card
-        sx={{ p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+        sx={{
+          p: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
         elevation={0}
       >
         <DataTable<RepositoryIssue, IssueSortField>
@@ -975,9 +1054,15 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
             filteredMine.length,
             mineCounts,
             mineFilter,
-            (f) => { setMineFilter(f); setMinePage(0); },
+            (f) => {
+              setMineFilter(f);
+              setMinePage(0);
+            },
             mineSearch,
-            (s) => { setMineSearch(s); setMinePage(0); },
+            (s) => {
+              setMineSearch(s);
+              setMinePage(0);
+            },
             mineSectionHasFilters,
             'Open issues authored by you in the scanned repositories (discovery index plus GitHub fallback). Use this list to track your own active reports.',
           )}
@@ -1022,7 +1107,12 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
 
       {/* Other open discovery issues — collapsed by default */}
       <Card
-        sx={{ p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+        sx={{
+          p: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
         elevation={0}
       >
         <Box
@@ -1094,9 +1184,15 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
               filteredOther.length,
               otherCounts,
               otherFilter,
-              (f) => { setOtherFilter(f); setOtherPage(0); },
+              (f) => {
+                setOtherFilter(f);
+                setOtherPage(0);
+              },
               otherSearch,
-              (s) => { setOtherSearch(s); setOtherPage(0); },
+              (s) => {
+                setOtherSearch(s);
+                setOtherPage(0);
+              },
               otherSectionHasFilters,
               "Other people's open issues in the same repositories (still part of the discovery index). Useful for triage and collaboration.",
             )}
