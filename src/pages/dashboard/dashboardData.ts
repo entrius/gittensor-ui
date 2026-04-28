@@ -904,9 +904,7 @@ export const buildFeaturedWork = (
       .sort(sortFn);
     const mergedSorted = [...mergedPrs].sort(sortFn);
     const allRecent = allWindowPrs
-      .filter((pr) =>
-        isWithinWindow(toTimestamp(pr.prCreatedAt), recentWindow),
-      )
+      .filter((pr) => isWithinWindow(toTimestamp(pr.prCreatedAt), recentWindow))
       .sort(sortFn);
     const allSorted = [...allWindowPrs].sort(sortFn);
     const candidate =
@@ -1042,8 +1040,18 @@ export const buildFeaturedWork = (
       if (dateDiff !== 0) return dateDiff;
       return parseNumber(b.score) - parseNumber(a.score);
     }),
-    pickIssue('Top Completed Issue', rankedCompletedIssues, rankedCompletedIssuesRecent, rankedCompletedIssuesMedium),
-    pickIssue('Highest Bounty Issue', rankedHighestBountyIssues, rankedHighestBountyIssuesRecent, rankedHighestBountyIssuesMedium),
+    pickIssue(
+      'Top Completed Issue',
+      rankedCompletedIssues,
+      rankedCompletedIssuesRecent,
+      rankedCompletedIssuesMedium,
+    ),
+    pickIssue(
+      'Highest Bounty Issue',
+      rankedHighestBountyIssues,
+      rankedHighestBountyIssuesRecent,
+      rankedHighestBountyIssuesMedium,
+    ),
   ];
 
   return picks.filter((entry): entry is DashboardFeaturedWork =>
