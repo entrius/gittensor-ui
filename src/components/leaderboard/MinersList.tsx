@@ -56,7 +56,7 @@ export const MinersList: React.FC<MinersListProps> = ({
         {
           key: 'prs',
           header: 'PRs',
-          width: '13%',
+          width: '11%',
           align: 'right',
           sortKey: 'totalPRs',
           renderCell: (miner) => (
@@ -66,7 +66,7 @@ export const MinersList: React.FC<MinersListProps> = ({
         {
           key: 'issues',
           header: 'Issues',
-          width: '13%',
+          width: '11%',
           align: 'right',
           sortKey: 'totalIssues',
           renderCell: (miner) => (
@@ -134,7 +134,7 @@ export const MinersList: React.FC<MinersListProps> = ({
     },
     {
       key: 'totalScore',
-      header: 'Score',
+      header: isWatchlist ? 'OSS' : 'Score',
       width: '11%',
       align: 'right',
       sortKey: 'totalScore',
@@ -144,6 +144,22 @@ export const MinersList: React.FC<MinersListProps> = ({
         </Typography>
       ),
     },
+    ...(isWatchlist
+      ? ([
+          {
+            key: 'discovery',
+            header: 'Discovery',
+            width: '11%',
+            align: 'right' as const,
+            sortKey: 'issueDiscoveryScore',
+            renderCell: (miner: MinerStats) => (
+              <Typography sx={{ ...cellTypographySx, color: 'text.primary' }}>
+                {Number(miner.issueDiscoveryScore ?? 0).toFixed(2)}
+              </Typography>
+            ),
+          },
+        ] satisfies DataTableColumn<MinerStats, SortOption>[])
+      : []),
     {
       key: 'watch',
       header: '\u2605',
@@ -190,7 +206,7 @@ export const MinersList: React.FC<MinersListProps> = ({
           opacity: (miner.isEligible ?? false) ? 1 : 0.5,
           transition: 'opacity 0.2s, background-color 0.2s',
         })}
-        minWidth="900px"
+        minWidth="1020px"
         stickyHeader
         sort={{
           field: sortOption,
