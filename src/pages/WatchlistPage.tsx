@@ -1738,17 +1738,28 @@ const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
             {issue.repo_full_name}
           </Typography>
         </Stack>
-        <Chip
-          variant="status"
-          label={label}
-          size="small"
-          sx={{
-            color,
-            borderColor: alpha(color, 0.3),
-            backgroundColor: alpha(color, 0.08),
-            flexShrink: 0,
-          }}
-        />
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={0.5}
+          sx={{ flexShrink: 0 }}
+        >
+          <Chip
+            variant="status"
+            label={label}
+            size="small"
+            sx={{
+              color,
+              borderColor: alpha(color, 0.3),
+              backgroundColor: alpha(color, 0.08),
+            }}
+          />
+          <WatchlistButton
+            category="issues"
+            itemKey={issueKey(issue)}
+            size="small"
+          />
+        </Stack>
       </Box>
 
       <LinkBox
