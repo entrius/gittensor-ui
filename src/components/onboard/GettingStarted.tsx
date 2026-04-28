@@ -17,6 +17,11 @@ import { useClipboardCopy } from '../../hooks/useClipboardCopy';
 
 const MONO = '"JetBrains Mono", monospace';
 
+const MAINNET_NETUID = 74;
+const TESTNET_NETUID = 422;
+const MAINNET_LABEL = `mainnet (subnet ${MAINNET_NETUID})`;
+const TESTNET_LABEL = `testnet (subnet ${TESTNET_NETUID})`;
+
 const steps = [
   {
     step: 1,
@@ -191,11 +196,11 @@ const StepDetail: React.FC<{ step: number }> = ({ step }) => {
           </Typography>
           <NetworkTabs network={network} onChange={setNetwork} />
           {network === 'mainnet' ? (
-            <CodeBlock label="mainnet (subnet 74)">{`btcli subnet register --netuid 74 \\
+            <CodeBlock label={MAINNET_LABEL}>{`btcli subnet register --netuid ${MAINNET_NETUID} \\
   --wallet-name <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME>`}</CodeBlock>
           ) : (
-            <CodeBlock label="testnet (subnet 422)">{`btcli subnet register --netuid 422 \\
+            <CodeBlock label={TESTNET_LABEL}>{`btcli subnet register --netuid ${TESTNET_NETUID} \\
   --wallet-name <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
   --network test`}</CodeBlock>
@@ -298,15 +303,15 @@ uv pip install -e .`}</CodeBlock>
           </Typography>
           <NetworkTabs network={network} onChange={setNetwork} />
           {network === 'mainnet' ? (
-            <CodeBlock label="mainnet">{`gitt miner post --pat <YOUR_PAT> \\
+            <CodeBlock label={MAINNET_LABEL}>{`gitt miner post --pat <YOUR_PAT> \\
   --wallet <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
-  --netuid 74`}</CodeBlock>
+  --netuid ${MAINNET_NETUID}`}</CodeBlock>
           ) : (
-            <CodeBlock label="testnet">{`gitt miner post --pat <YOUR_PAT> \\
+            <CodeBlock label={TESTNET_LABEL}>{`gitt miner post --pat <YOUR_PAT> \\
   --wallet <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
-  --netuid 422 --network test`}</CodeBlock>
+  --netuid ${TESTNET_NETUID} --network test`}</CodeBlock>
           )}
           <Typography
             variant="body2"
@@ -330,15 +335,15 @@ uv pip install -e .`}</CodeBlock>
           </Typography>
           <NetworkTabs network={network} onChange={setNetwork} />
           {network === 'mainnet' ? (
-            <CodeBlock label="mainnet">{`gitt miner check \\
+            <CodeBlock label={MAINNET_LABEL}>{`gitt miner check \\
   --wallet <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
-  --netuid 74`}</CodeBlock>
+  --netuid ${MAINNET_NETUID}`}</CodeBlock>
           ) : (
-            <CodeBlock label="testnet">{`gitt miner check \\
+            <CodeBlock label={TESTNET_LABEL}>{`gitt miner check \\
   --wallet <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
-  --netuid 422 --network test`}</CodeBlock>
+  --netuid ${TESTNET_NETUID} --network test`}</CodeBlock>
           )}
           <Typography
             variant="body2"
