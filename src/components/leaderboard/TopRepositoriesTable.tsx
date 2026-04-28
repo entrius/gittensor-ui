@@ -954,7 +954,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         'Issue contrib.',
         'center',
       ),
-      width: '9%',
+      width: '12%',
       align: 'center',
       headerSx: sortableHeaderSx,
       renderCell: (repo) => {
