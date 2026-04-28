@@ -7,12 +7,12 @@ import {
   sortMinerRepoStats,
   buildRepoWeightsMap,
   aggregatePRsByRepository,
+  aggregateIssueDiscoveryRepos,
+  isIssueDiscoveryContributionPr,
+  isIssueDiscoveryMultiplierPr,
   hasActiveFilters,
   getDisplayCount,
   filterBySearch,
-  isIssueDiscoveryContributionPr,
-  isIssueDiscoveryMultiplierPr,
-  aggregateIssueDiscoveryRepos,
   buildMergedIssueDiscoveryByRepo,
   buildRepoDiscoveryRollupFromMiners,
   buildIssueBountyRollupByRepo,
@@ -235,6 +235,19 @@ describe('buildRepoWeightsMap', () => {
     expect(map.get('org/repo2')).toBe(0.3);
   });
 
+  it('uses lowercase keys for lookup', () => {
+    const repos = [
+      {
+        fullName: 'Org/Repo1',
+        owner: 'Org',
+        name: 'Repo1',
+        weight: '1.25',
+      },
+    ];
+    const map = buildRepoWeightsMap(repos);
+    expect(map.get('org/repo1')).toBe(1.25);
+  });
+
   it('skips entries with missing fullName', () => {
     const repos = [{ fullName: '', owner: '', name: '', weight: '0.5' }];
     const map = buildRepoWeightsMap(repos);
@@ -295,7 +308,7 @@ describe('aggregatePRsByRepository', () => {
   });
 
   it('matches weights when PR repository casing differs', () => {
-    const w = new Map([['org/repo1', 0.5]]);
+    const w = new Map([['org/repo1', 0.75]]);
     const prs = [
       {
         repository: 'ORG/REPO1',
@@ -307,24 +320,37 @@ describe('aggregatePRsByRepository', () => {
     ] as any[];
     const result = aggregatePRsByRepository(prs, w);
     expect(result).toHaveLength(1);
-    expect(result[0].weight).toBe(0.5);
+    expect(result[0].weight).toBe(0.75);
     expect(result[0].repository).toBe('ORG/REPO1');
   });
 });
 
 describe('isIssueDiscoveryContributionPr', () => {
-  it('is true when issueMultiplier parses positive', () => {
+  it('returns true when issueMultiplier is positive', () => {
     expect(
-      isIssueDiscoveryContributionPr({ issueMultiplier: '1.2' } as any),
+      isIssueDiscoveryContributionPr({ issueMultiplier: '1.1' } as any),
     ).toBe(true);
   });
 
-  it('is true when label only (miner payloads)', () => {
+  it('returns false when multiplier zero and no label signals', () => {
+    expect(
+      isIssueDiscoveryContributionPr({ issueMultiplier: '0' } as any),
+    ).toBe(false);
+    expect(isIssueDiscoveryContributionPr({} as any)).toBe(false);
+  });
+
+  it('returns true when label is set even if issueMultiplier is zero', () => {
     expect(
       isIssueDiscoveryContributionPr({
         issueMultiplier: '0',
         label: 'bounty',
       } as any),
+    ).toBe(true);
+  });
+
+  it('returns true when labelMultiplier is positive', () => {
+    expect(
+      isIssueDiscoveryContributionPr({ labelMultiplier: 1.5 } as any),
     ).toBe(true);
   });
 });
@@ -346,7 +372,7 @@ describe('isIssueDiscoveryMultiplierPr', () => {
 describe('aggregateIssueDiscoveryRepos', () => {
   const w = new Map([['org/a', 0.2]]);
 
-  it('aggregates merged discovery PRs only', () => {
+  it('aggregates merged discovery PRs with positive issueMultiplier', () => {
     const prs = [
       {
         repository: 'org/a',
@@ -360,6 +386,24 @@ describe('aggregateIssueDiscoveryRepos', () => {
     const r = aggregateIssueDiscoveryRepos(prs, w);
     expect(r).toHaveLength(1);
     expect(r[0].prs).toBe(1);
+    expect(r[0].score).toBe(2);
+  });
+
+  it('aggregates merged PRs that only have a discovery label', () => {
+    const prs = [
+      {
+        repository: 'org/a',
+        score: '3',
+        issueMultiplier: '0',
+        label: 'bounty',
+        prState: 'MERGED',
+        mergedAt: '2024-01-02',
+        tokenScore: 1,
+      },
+    ] as any[];
+    const r = aggregateIssueDiscoveryRepos(prs, w);
+    expect(r).toHaveLength(1);
+    expect(r[0].score).toBe(3);
   });
 
   it('excludes open issue-discovery PRs', () => {

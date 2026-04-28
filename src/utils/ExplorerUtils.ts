@@ -244,7 +244,7 @@ export const aggregatePRsByRepository = (
 };
 
 // ---------------------------------------------------------------------------
-// Issue discovery – repo rollups from issue-linked / multiplier PRs
+// Issue discovery – miner repos and leaderboard rollups
 // ---------------------------------------------------------------------------
 
 /**
@@ -276,8 +276,9 @@ export const isIssueDiscoveryMultiplierPr = (pr: CommitLog): boolean => {
 };
 
 /**
- * Per-repository stats for a miner's issue-discovery repos: **merged** PRs only
- * (aligned with Repositories OSS row), passing {@link isIssueDiscoveryContributionPr}.
+ * Per-repository stats for the Issue Discovery Repositories tab and discovery radar:
+ * **merged** PRs only (aligned with OSS repos row), passing
+ * {@link isIssueDiscoveryContributionPr}.
  */
 export const aggregateIssueDiscoveryRepos = (
   prs: CommitLog[] | undefined,

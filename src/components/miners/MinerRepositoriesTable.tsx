@@ -26,6 +26,7 @@ import {
   type RepoStats,
   buildRepoWeightsMap,
   aggregatePRsByRepository,
+  aggregateIssueDiscoveryRepos,
   filterBySearch,
   sortMinerRepoStats,
   hasActiveFilters,
@@ -35,12 +36,15 @@ import {
 
 interface MinerRepositoriesTableProps {
   githubId: string;
+  /** When `issues`, only PRs with issue discovery scoring (issue multiplier). */
+  viewMode?: 'prs' | 'issues';
 }
 
 const PAGE_SIZE = 20;
 
 const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   githubId,
+  viewMode = 'prs',
 }) => {
   const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
@@ -52,8 +56,11 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   const repoWeights = useMemo(() => buildRepoWeightsMap(repos), [repos]);
 
   const repoStats = useMemo(
-    () => aggregatePRsByRepository(prs || [], repoWeights),
-    [prs, repoWeights],
+    () =>
+      viewMode === 'issues'
+        ? aggregateIssueDiscoveryRepos(prs, repoWeights)
+        : aggregatePRsByRepository(prs || [], repoWeights),
+    [prs, repoWeights, viewMode],
   );
 
   const filteredRepoStats = useMemo(
@@ -89,6 +96,11 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     isFiltered,
   );
   const isLoading = isLoadingPRs || isLoadingRepos;
+
+  const noRepositories =
+    !prs ||
+    prs.length === 0 ||
+    (viewMode === 'issues' && repoStats.length === 0);
 
   const columns: DataTableColumn<RepoStats, RepoSortField>[] = [
     {
@@ -298,8 +310,14 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
         />
       </Box>
 
-      {!prs || prs.length === 0 ? (
-        <EmptyStateMessage message="No repository contributions found" />
+      {noRepositories ? (
+        <EmptyStateMessage
+          message={
+            viewMode === 'issues'
+              ? 'No issue discovery repository contributions found'
+              : 'No repository contributions found'
+          }
+        />
       ) : (
         <DataTable<RepoStats, RepoSortField>
           columns={columns}

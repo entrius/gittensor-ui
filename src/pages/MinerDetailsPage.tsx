@@ -235,7 +235,10 @@ const MinerDetailsPage: React.FC = () => {
               <MinerPRsTable githubId={githubId} />
             )}
             {activeTab === 'repositories' && (
-              <MinerRepositoriesTable githubId={githubId} />
+              <MinerRepositoriesTable
+                githubId={githubId}
+                viewMode={viewMode}
+              />
             )}
           </Box>
         </Box>
