@@ -1769,19 +1769,9 @@ const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
         </Stack>
       </Box>
 
-      <Box
-        component="a"
+      <LinkBox
         href={getIssueHref(issue)}
-        target="_blank"
-        rel="noopener noreferrer"
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 1,
-          flex: 1,
-          textDecoration: 'none',
-          color: 'inherit',
-        }}
+        sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}
       >
         <Typography
           sx={{
@@ -1854,7 +1844,7 @@ const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
             </Typography>
           )}
         </Box>
-      </Box>
+      </LinkBox>
     </Card>
   );
 };
@@ -2086,9 +2076,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
           columns={issueColumns}
           rows={paged}
           getRowKey={(i) => issueKey(i)}
-          onRowClick={(i) =>
-            window.open(getIssueHref(i), '_blank', 'noopener,noreferrer')
-          }
+          getRowHref={getIssueHref}
           minWidth="750px"
           stickyHeader
           isLoading={isLoading && items.length === 0}
