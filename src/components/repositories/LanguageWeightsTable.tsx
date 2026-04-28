@@ -1,23 +1,29 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Box,
+  Grid,
+  IconButton,
+  InputAdornment,
+  Collapse,
+  FormControl,
+  MenuItem,
+  Select,
+  Skeleton,
   TablePagination,
   TextField,
-  Typography,
-  InputAdornment,
-  Select,
-  MenuItem,
-  FormControl,
-  IconButton,
-  Collapse,
   Tooltip,
+  Typography,
   alpha,
   useTheme,
 } from '@mui/material';
 import { Search, Check, Close } from '@mui/icons-material';
 import ReactECharts from 'echarts-for-react';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
+import ViewListIcon from '@mui/icons-material/ViewList';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { useLanguagesAndWeights } from '../../api';
 import {
@@ -29,15 +35,96 @@ import {
   echartsTransparentBackground,
 } from '../../utils/echarts/gittensorChartTheme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
+import { LanguageCard, type LanguageRow } from './LanguageCard';
 
 type SortField = 'extension' | 'weight' | 'language';
 type SortOrder = 'asc' | 'desc';
+type LangViewMode = 'cards' | 'list';
 
-interface LanguageRow {
-  extension: string;
-  language: string | null;
-  weight: string;
+const LANG_CARD_SORT_OPTIONS: Array<{ value: SortField; label: string }> = [
+  { value: 'weight', label: 'Weight' },
+  { value: 'extension', label: 'Extension' },
+  { value: 'language', label: 'Language' },
+];
+
+const LANG_VIEW_STORAGE_KEY = 'languages:viewMode';
+const LANG_LIST_ROWS = [5, 10, 25, 50] as const;
+const LANG_CARD_ROWS = [12, 24, 48] as const;
+const LANG_DEFAULT_LIST_ROWS = 10;
+const LANG_DEFAULT_CARD_ROWS = 12;
+
+const readStoredLangViewMode = (): LangViewMode => {
+  try {
+    return window.localStorage.getItem(LANG_VIEW_STORAGE_KEY) === 'cards'
+      ? 'cards'
+      : 'list';
+  } catch {
+    return 'list';
+  }
+};
+
+interface ViewModeToggleProps {
+  viewMode: LangViewMode;
+  onChange: (mode: LangViewMode) => void;
 }
+
+const ViewModeToggle: React.FC<ViewModeToggleProps> = ({
+  viewMode,
+  onChange,
+}) => {
+  const options: {
+    value: LangViewMode;
+    label: string;
+    Icon: typeof ViewListIcon;
+  }[] = [
+    { value: 'list', label: 'List view', Icon: ViewListIcon },
+    { value: 'cards', label: 'Card view', Icon: ViewModuleIcon },
+  ];
+  return (
+    <Box
+      sx={(theme) => ({
+        display: 'inline-flex',
+        alignItems: 'center',
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: theme.palette.border.light,
+        overflow: 'hidden',
+      })}
+      role="group"
+      aria-label="Toggle view mode"
+    >
+      {options.map(({ value, label, Icon }) => {
+        const isActive = viewMode === value;
+        return (
+          <Tooltip key={value} title={label} placement="top" arrow>
+            <IconButton
+              onClick={() => onChange(value)}
+              size="small"
+              aria-label={label}
+              aria-pressed={isActive}
+              sx={(theme) => ({
+                borderRadius: 0,
+                padding: '6px 10px',
+                color: isActive
+                  ? theme.palette.text.primary
+                  : theme.palette.text.tertiary,
+                backgroundColor: isActive
+                  ? theme.palette.surface.light
+                  : 'transparent',
+                '&:hover': {
+                  backgroundColor: theme.palette.surface.light,
+                  color: theme.palette.text.primary,
+                },
+              })}
+            >
+              <Icon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        );
+      })}
+    </Box>
+  );
+};
 
 const LanguageWeightsTable: React.FC = () => {
   const theme = useTheme();
@@ -47,7 +134,14 @@ const LanguageWeightsTable: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [viewMode, setViewMode] = useState<LangViewMode>(
+    readStoredLangViewMode,
+  );
+  const [rowsPerPage, setRowsPerPage] = useState(
+    readStoredLangViewMode() === 'cards'
+      ? LANG_DEFAULT_CARD_ROWS
+      : LANG_DEFAULT_LIST_ROWS,
+  );
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleSort = (field: SortField) => {
@@ -64,16 +158,25 @@ const LanguageWeightsTable: React.FC = () => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
     setPage(0);
+  };
+
+  const handleViewModeChange = (mode: LangViewMode) => {
+    try {
+      localStorage.setItem(LANG_VIEW_STORAGE_KEY, mode);
+    } catch {}
+    setViewMode(mode);
+    const cardRows = LANG_CARD_ROWS as readonly number[];
+    const listRows = LANG_LIST_ROWS as readonly number[];
+    if (mode === 'cards' && !cardRows.includes(rowsPerPage)) {
+      setRowsPerPage(LANG_DEFAULT_CARD_ROWS);
+      setPage(0);
+    } else if (mode === 'list' && !listRows.includes(rowsPerPage)) {
+      setRowsPerPage(LANG_DEFAULT_LIST_ROWS);
+      setPage(0);
+    }
   };
 
   const filteredAndSortedLanguages = useMemo<LanguageRow[]>(() => {
@@ -118,9 +221,20 @@ const LanguageWeightsTable: React.FC = () => {
 
   const paginatedLanguages = useMemo(() => {
     const startIndex = page * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
-    return filteredAndSortedLanguages.slice(startIndex, endIndex);
+    return filteredAndSortedLanguages.slice(
+      startIndex,
+      startIndex + rowsPerPage,
+    );
   }, [filteredAndSortedLanguages, page, rowsPerPage]);
+
+  const maxWeight = useMemo(
+    () =>
+      filteredAndSortedLanguages.reduce(
+        (m, l) => Math.max(m, parseFloat(l.weight) || 0),
+        0,
+      ),
+    [filteredAndSortedLanguages],
+  );
 
   const chartOption = useMemo(() => {
     const chartData = paginatedLanguages;
@@ -188,7 +302,6 @@ const LanguageWeightsTable: React.FC = () => {
     };
   }, [paginatedLanguages, theme]);
 
-  // Scroll to top when rows per page changes
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollIntoView({
@@ -236,17 +349,11 @@ const LanguageWeightsTable: React.FC = () => {
         renderCell: (lang) =>
           lang.language ? (
             <Check
-              sx={{
-                color: theme.palette.status.success,
-                fontSize: '1.2rem',
-              }}
+              sx={{ color: theme.palette.status.success, fontSize: '1.2rem' }}
             />
           ) : (
             <Close
-              sx={{
-                color: theme.palette.status.error,
-                fontSize: '1.2rem',
-              }}
+              sx={{ color: theme.palette.status.error, fontSize: '1.2rem' }}
             />
           ),
       },
@@ -263,15 +370,32 @@ const LanguageWeightsTable: React.FC = () => {
     [theme.palette.status.success, theme.palette.status.error],
   );
 
+  const validRows = viewMode === 'cards' ? LANG_CARD_ROWS : LANG_LIST_ROWS;
+
+  const pagination = (
+    <TablePagination
+      rowsPerPageOptions={[]}
+      component="div"
+      count={filteredAndSortedLanguages.length}
+      rowsPerPage={rowsPerPage}
+      page={page}
+      onPageChange={handleChangePage}
+      onRowsPerPageChange={() => {}}
+      showFirstButton
+      showLastButton
+    />
+  );
+
   return (
     <Box ref={containerRef}>
+      {/* Toolbar */}
       <Box
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 2,
-          mb: 3,
+          mb: viewMode === 'cards' ? 0 : 3,
         }}
       >
         <Box sx={{ flex: 1 }}>
@@ -305,6 +429,7 @@ const LanguageWeightsTable: React.FC = () => {
               )}
             </IconButton>
           </Tooltip>
+
           <FormControl size="small">
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography
@@ -337,18 +462,18 @@ const LanguageWeightsTable: React.FC = () => {
                     borderColor: theme.palette.border.medium,
                   },
                   '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                  '& .MuiSelect-select': {
-                    py: 0.75,
-                  },
+                  '& .MuiSelect-select': { py: 0.75 },
                 }}
               >
-                <MenuItem value={5}>5</MenuItem>
-                <MenuItem value={10}>10</MenuItem>
-                <MenuItem value={25}>25</MenuItem>
-                <MenuItem value={50}>50</MenuItem>
+                {validRows.map((n) => (
+                  <MenuItem key={n} value={n}>
+                    {n}
+                  </MenuItem>
+                ))}
               </Select>
             </Box>
           </FormControl>
+
           <TextField
             placeholder="Search..."
             size="small"
@@ -385,8 +510,80 @@ const LanguageWeightsTable: React.FC = () => {
               },
             }}
           />
+
+          <ViewModeToggle viewMode={viewMode} onChange={handleViewModeChange} />
         </Box>
       </Box>
+
+      {/* Sort controls (card view only) */}
+      {viewMode === 'cards' && (
+        <Box
+          sx={{
+            mt: 1,
+            mb: 3,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: 1,
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
+          >
+            Sort:
+          </Typography>
+          <Select
+            size="small"
+            value={sortField}
+            onChange={(e) => handleSort(e.target.value as SortField)}
+            sx={{
+              color: 'text.primary',
+              backgroundColor: 'background.default',
+              fontSize: '0.8rem',
+              height: '36px',
+              borderRadius: 2,
+              minWidth: '140px',
+              '& fieldset': { borderColor: 'border.light' },
+              '&:hover fieldset': { borderColor: 'border.medium' },
+              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+              '& .MuiSelect-select': { py: 0.75 },
+            }}
+          >
+            {LANG_CARD_SORT_OPTIONS.map((opt) => (
+              <MenuItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </Select>
+          <Tooltip title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}>
+            <IconButton
+              onClick={() => handleSort(sortField)}
+              size="small"
+              aria-label={
+                sortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'
+              }
+              sx={{
+                color: 'text.primary',
+                border: '1px solid',
+                borderColor: 'border.light',
+                borderRadius: 2,
+                padding: '6px',
+                '&:hover': {
+                  backgroundColor: 'surface.light',
+                  borderColor: 'border.medium',
+                },
+              }}
+            >
+              {sortOrder === 'asc' ? (
+                <ArrowUpwardIcon fontSize="small" />
+              ) : (
+                <ArrowDownwardIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
+        </Box>
+      )}
 
       <Collapse in={showChart}>
         <Box
@@ -406,51 +603,82 @@ const LanguageWeightsTable: React.FC = () => {
         </Box>
       </Collapse>
 
-      <Box
-        sx={{
-          maxHeight: '800px',
-          overflowY: 'auto',
-          backgroundColor: 'transparent',
-          ...scrollbarSx,
-        }}
-      >
-        <DataTable<LanguageRow, SortField>
-          columns={columns}
-          rows={paginatedLanguages}
-          getRowKey={(lang) => lang.extension}
-          isLoading={isLoading}
-          stickyHeader
-          emptyState={null}
-          getRowSx={() => ({
-            '&:hover': { backgroundColor: 'action.hover' },
-          })}
-          sort={{
-            field: sortField,
-            order: sortOrder,
-            onChange: handleSort,
-          }}
-        />
-      </Box>
-
-      <TablePagination
-        rowsPerPageOptions={[]}
-        component="div"
-        count={filteredAndSortedLanguages.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-        showFirstButton
-        showLastButton
-        sx={{
-          '.MuiTablePagination-displayedRows': {},
-        }}
-      />
-
-      {filteredAndSortedLanguages.length === 0 && !isLoading && (
-        <Box sx={{ textAlign: 'center', py: 4 }}>
-          <Typography>No languages found!</Typography>
-        </Box>
+      {isLoading ? (
+        viewMode === 'cards' ? (
+          <Grid container spacing={2} sx={{ mt: 0 }}>
+            {Array.from({ length: LANG_DEFAULT_CARD_ROWS }).map((_, i) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={i}>
+                <Skeleton
+                  variant="rounded"
+                  height={140}
+                  sx={{ bgcolor: (t) => alpha(t.palette.text.primary, 0.06) }}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        ) : (
+          <Box>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton
+                key={i}
+                variant="rectangular"
+                height={48}
+                sx={{ mb: 1, borderRadius: 1 }}
+              />
+            ))}
+          </Box>
+        )
+      ) : viewMode === 'cards' ? (
+        <>
+          {paginatedLanguages.length > 0 ? (
+            <Grid container spacing={2}>
+              {paginatedLanguages.map((lang) => (
+                <Grid item xs={12} sm={6} md={4} lg={3} key={lang.extension}>
+                  <LanguageCard lang={lang} maxWeight={maxWeight} />
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography>No languages found!</Typography>
+            </Box>
+          )}
+          {pagination}
+        </>
+      ) : (
+        <>
+          <Box
+            sx={{
+              maxHeight: '800px',
+              overflowY: 'auto',
+              backgroundColor: 'transparent',
+              ...scrollbarSx,
+            }}
+          >
+            <DataTable<LanguageRow, SortField>
+              columns={columns}
+              rows={paginatedLanguages}
+              getRowKey={(lang) => lang.extension}
+              isLoading={false}
+              stickyHeader
+              emptyState={null}
+              getRowSx={() => ({
+                '&:hover': { backgroundColor: 'action.hover' },
+              })}
+              sort={{
+                field: sortField,
+                order: sortOrder,
+                onChange: handleSort,
+              }}
+            />
+          </Box>
+          {pagination}
+          {filteredAndSortedLanguages.length === 0 && (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography>No languages found!</Typography>
+            </Box>
+          )}
+        </>
       )}
     </Box>
   );
