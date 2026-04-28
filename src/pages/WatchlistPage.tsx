@@ -71,11 +71,7 @@ import theme, { LABEL_COLORS, STATUS_COLORS, scrollbarSx } from '../theme';
 import FilterButton from '../components/FilterButton';
 import type { CommitLog, MinerIssue } from '../api/models/Dashboard';
 
-// 'issues' is a derived view tab — not a watchlist storage category. It
-// aggregates issues authored by every starred miner via the mirror API.
-type WatchlistTab = WatchlistCategory | 'issues';
-
-const TAB_ORDER: readonly WatchlistTab[] = [
+const TAB_ORDER: readonly WatchlistCategory[] = [
   'miners',
   'repos',
   'bounties',
@@ -83,7 +79,7 @@ const TAB_ORDER: readonly WatchlistTab[] = [
   'issues',
 ] as const;
 
-const TAB_LABELS: Record<WatchlistTab, string> = {
+const TAB_LABELS: Record<WatchlistCategory, string> = {
   miners: 'Miners',
   repos: 'Repositories',
   bounties: 'Bounties',
@@ -91,16 +87,17 @@ const TAB_LABELS: Record<WatchlistTab, string> = {
   issues: 'Issues',
 };
 
-const TAB_NOUN: Record<WatchlistTab, { single: string; plural: string }> = {
-  miners: { single: 'miner', plural: 'miners' },
-  repos: { single: 'repository', plural: 'repositories' },
-  bounties: { single: 'bounty', plural: 'bounties' },
-  prs: { single: 'pull request', plural: 'pull requests' },
-  issues: { single: 'issue', plural: 'issues' },
-};
+const TAB_NOUN: Record<WatchlistCategory, { single: string; plural: string }> =
+  {
+    miners: { single: 'miner', plural: 'miners' },
+    repos: { single: 'repository', plural: 'repositories' },
+    bounties: { single: 'bounty', plural: 'bounties' },
+    prs: { single: 'pull request', plural: 'pull requests' },
+    issues: { single: 'issue', plural: 'issues' },
+  };
 
 const TAB_DISCOVERY: Record<
-  WatchlistTab,
+  WatchlistCategory,
   { label: string; path: string; hint: string }
 > = {
   miners: {
@@ -130,9 +127,9 @@ const TAB_DISCOVERY: Record<
   },
 };
 
-const tabFromParam = (param: string | null): WatchlistTab =>
-  TAB_ORDER.includes(param as WatchlistTab)
-    ? (param as WatchlistTab)
+const tabFromParam = (param: string | null): WatchlistCategory =>
+  TAB_ORDER.includes(param as WatchlistCategory)
+    ? (param as WatchlistCategory)
     : 'miners';
 
 const WatchlistPage: React.FC = () => {
@@ -142,10 +139,7 @@ const WatchlistPage: React.FC = () => {
   // Single subscription for tab badges; per-tab content uses useWatchlist
   // scoped to its own category via the *List subcomponents below.
   const counts = useWatchlistCounts();
-  // 'issues' is a derived tab; fall back to 'miners' for storage operations.
-  const storageCategory: WatchlistCategory =
-    activeTab === 'issues' ? 'miners' : activeTab;
-  const { ids, count, clear } = useWatchlist(storageCategory);
+  const { ids, count, clear } = useWatchlist(activeTab);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const tabHasContent =
@@ -294,9 +288,7 @@ const WatchlistPage: React.FC = () => {
                   value={cat}
                   label={
                     <Badge
-                      badgeContent={
-                        cat === 'issues' ? counts.miners : counts[cat]
-                      }
+                      badgeContent={counts[cat]}
                       color="primary"
                       sx={{
                         '& .MuiBadge-badge': {
@@ -308,10 +300,7 @@ const WatchlistPage: React.FC = () => {
                     >
                       <Box
                         sx={{
-                          pr:
-                            (cat === 'issues' ? counts.miners : counts[cat]) > 0
-                              ? 1.5
-                              : 0,
+                          pr: counts[cat] > 0 ? 1.5 : 0,
                         }}
                       >
                         {TAB_LABELS[cat]}
@@ -365,7 +354,7 @@ const WatchlistPage: React.FC = () => {
           ) : activeTab === 'bounties' ? (
             <BountiesList itemKeys={ids} />
           ) : activeTab === 'issues' ? (
-            <IssuesList minerIds={ids} />
+            <IssuesList minerIds={minerIds} />
           ) : (
             <PRsList itemKeys={ids} />
           )}
@@ -1624,6 +1613,16 @@ const issueColumns: DataTableColumn<MinerIssue, IssueSortKey>[] = [
         </Typography>
       );
     },
+  },
+  {
+    key: 'watch',
+    header: '★',
+    width: '52px',
+    align: 'center',
+    cellSx: { p: 0 },
+    renderCell: (i) => (
+      <WatchlistButton category="issues" itemKey={issueKey(i)} size="small" />
+    ),
   },
 ];
 
