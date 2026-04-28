@@ -754,6 +754,9 @@ export const buildFeaturedWork = (
   issues: IssueBounty[],
 ): DashboardFeaturedWork[] => {
   const currentWindow = getWindowBounds(CURRENT_LOOKBACK_WINDOW);
+  const now = currentWindow.endMs;
+  const recentWindow: WindowBounds = { startMs: now - 7 * DAY_MS, endMs: now };
+  const mediumWindow: WindowBounds = { startMs: now - 14 * DAY_MS, endMs: now };
   const selectedRepos = new Set<string>();
   const selectedOrgs = new Set<string>();
   const selectedAuthors = new Set<string>();
@@ -883,11 +886,32 @@ export const buildFeaturedWork = (
     featuredLabel: string,
     sortFn: (a: CommitLog, b: CommitLog) => number,
   ) => {
+    const mergedRecent = mergedPrs
+      .filter((pr) =>
+        isWithinWindow(
+          toTimestamp(pr.mergedAt ?? pr.prCreatedAt),
+          recentWindow,
+        ),
+      )
+      .sort(sortFn);
+    const mergedMedium = mergedPrs
+      .filter((pr) =>
+        isWithinWindow(
+          toTimestamp(pr.mergedAt ?? pr.prCreatedAt),
+          mediumWindow,
+        ),
+      )
+      .sort(sortFn);
     const mergedSorted = [...mergedPrs].sort(sortFn);
+    const allRecent = allWindowPrs
+      .filter((pr) =>
+        isWithinWindow(toTimestamp(pr.prCreatedAt), recentWindow),
+      )
+      .sort(sortFn);
     const allSorted = [...allWindowPrs].sort(sortFn);
     const candidate =
       pickFirstDiverse(
-        [mergedSorted, allSorted],
+        [mergedRecent, mergedMedium, mergedSorted, allRecent, allSorted],
         (pr) => pr.repository,
         (pr) => pr.author || 'unknown',
       ) ??
@@ -898,6 +922,14 @@ export const buildFeaturedWork = (
     return toPrCard(candidate, featuredLabel);
   };
 
+  const issueSortFn = (a: IssueBounty, b: IssueBounty) => {
+    const bountyDiff = getIssueDisplayAmount(b) - getIssueDisplayAmount(a);
+    if (bountyDiff !== 0) return bountyDiff;
+    return (
+      (toTimestamp(b.completedAt ?? b.createdAt) ?? 0) -
+      (toTimestamp(a.completedAt ?? a.createdAt) ?? 0)
+    );
+  };
   const rankedHighestBountyIssues = [...issues]
     .filter((issue) =>
       isWithinWindow(
@@ -905,15 +937,28 @@ export const buildFeaturedWork = (
         currentWindow,
       ),
     )
-    .sort((a, b) => {
-      const bountyDiff = getIssueDisplayAmount(b) - getIssueDisplayAmount(a);
-      if (bountyDiff !== 0) return bountyDiff;
-      return (
-        (toTimestamp(b.completedAt ?? b.createdAt) ?? 0) -
-        (toTimestamp(a.completedAt ?? a.createdAt) ?? 0)
-      );
-    });
+    .sort(issueSortFn);
+  const rankedHighestBountyIssuesRecent = rankedHighestBountyIssues.filter(
+    (issue) =>
+      isWithinWindow(
+        toTimestamp(issue.completedAt ?? issue.createdAt),
+        recentWindow,
+      ),
+  );
+  const rankedHighestBountyIssuesMedium = rankedHighestBountyIssues.filter(
+    (issue) =>
+      isWithinWindow(
+        toTimestamp(issue.completedAt ?? issue.createdAt),
+        mediumWindow,
+      ),
+  );
   const rankedCompletedIssues = rankedHighestBountyIssues.filter(
+    (issue) => issue.status === 'completed',
+  );
+  const rankedCompletedIssuesRecent = rankedHighestBountyIssuesRecent.filter(
+    (issue) => issue.status === 'completed',
+  );
+  const rankedCompletedIssuesMedium = rankedHighestBountyIssuesMedium.filter(
     (issue) => issue.status === 'completed',
   );
 
@@ -951,10 +996,15 @@ export const buildFeaturedWork = (
     };
   };
 
-  const pickIssue = (featuredLabel: string, pool: IssueBounty[]) => {
+  const pickIssue = (
+    featuredLabel: string,
+    pool: IssueBounty[],
+    recentPool: IssueBounty[],
+    mediumPool: IssueBounty[],
+  ) => {
     const candidate =
       pickFirstDiverse(
-        [pool, fallbackIssuePool],
+        [recentPool, mediumPool, pool, fallbackIssuePool],
         (issue) => issue.repositoryFullName,
         (issue) => issue.authorLogin || 'open bounty',
       ) ??
@@ -992,8 +1042,8 @@ export const buildFeaturedWork = (
       if (dateDiff !== 0) return dateDiff;
       return parseNumber(b.score) - parseNumber(a.score);
     }),
-    pickIssue('Top Completed Issue', rankedCompletedIssues),
-    pickIssue('Highest Bounty Issue', rankedHighestBountyIssues),
+    pickIssue('Top Completed Issue', rankedCompletedIssues, rankedCompletedIssuesRecent, rankedCompletedIssuesMedium),
+    pickIssue('Highest Bounty Issue', rankedHighestBountyIssues, rankedHighestBountyIssuesRecent, rankedHighestBountyIssuesMedium),
   ];
 
   return picks.filter((entry): entry is DashboardFeaturedWork =>
