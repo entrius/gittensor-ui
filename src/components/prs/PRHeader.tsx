@@ -93,9 +93,10 @@ const PRHeader: React.FC<PRHeaderProps> = ({
           sx={{
             display: 'flex',
             alignItems: 'center',
-            flexWrap: 'wrap',
+            flexWrap: 'nowrap',
             gap: { xs: 1, sm: 1.5 },
             mb: 0.5,
+            minWidth: 0,
           }}
         >
           <Typography
@@ -104,6 +105,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               color: 'text.primary',
               fontSize: { xs: '1.1rem', sm: '1.3rem' },
               fontWeight: 500,
+              flexShrink: 0,
             }}
           >
             #{pullRequestNumber}
@@ -117,6 +119,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               backgroundColor: alpha(statusColor, 0.2),
               border: '1px solid',
               borderColor: alpha(statusColor, 0.4),
+              flexShrink: 0,
             }}
           >
             <Typography
@@ -147,10 +150,14 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: { xs: '0.75rem', sm: '0.8rem' },
               fontWeight: 600,
-              px: { xs: 1, sm: 1.5 },
+              px: { xs: 0.75, sm: 1.5 },
               minWidth: 0,
+              flexShrink: 0,
               whiteSpace: 'nowrap',
-              '& .MuiButton-startIcon': { mr: { xs: 0.5, sm: 1 } },
+              '& .MuiButton-startIcon': {
+                mr: { xs: 0, sm: 1 },
+                ml: { xs: 0, sm: 0 },
+              },
               '&:hover': {
                 borderColor: STATUS_COLORS.info,
                 color: STATUS_COLORS.info,
@@ -163,12 +170,6 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               sx={{ display: { xs: 'none', sm: 'inline' } }}
             >
               Open on GitHub
-            </Box>
-            <Box
-              component="span"
-              sx={{ display: { xs: 'inline', sm: 'none' } }}
-            >
-              GitHub
             </Box>
           </Button>
         </Box>
