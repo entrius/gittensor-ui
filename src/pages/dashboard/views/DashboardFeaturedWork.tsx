@@ -12,6 +12,7 @@ import {
   Box,
   CircularProgress,
   Stack,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { alpha, useTheme, type Theme } from '@mui/material/styles';
@@ -247,26 +248,28 @@ const DashboardFeaturedWorkSection: React.FC<DashboardFeaturedWorkProps> = ({
           </Box>
         </Box>
 
-        <Typography
-          sx={{
-            color: alpha(theme.palette.text.primary, 0.78),
-            fontFamily: 'inherit',
-            fontSize: '0.8rem',
-            fontWeight: 500,
-            lineHeight: 1.28,
-            height: '2.52em',
-            display: '-webkit-box',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            wordBreak: 'break-word',
-            mt: 1.05,
-            mb: -0.35,
-          }}
-        >
-          {item.title}
-        </Typography>
+        <Tooltip title={item.title} arrow placement="bottom">
+          <Typography
+            sx={{
+              color: alpha(theme.palette.text.primary, 0.78),
+              fontFamily: 'inherit',
+              fontSize: '0.8rem',
+              fontWeight: 500,
+              lineHeight: 1.28,
+              height: '2.52em',
+              display: '-webkit-box',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              wordBreak: 'break-word',
+              mt: 1.05,
+              mb: -0.35,
+            }}
+          >
+            {item.title}
+          </Typography>
+        </Tooltip>
 
         <Stack
           direction="row"
