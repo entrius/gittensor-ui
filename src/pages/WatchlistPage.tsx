@@ -37,6 +37,9 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ReactECharts from 'echarts-for-react';
+import StarIcon from '@mui/icons-material/Star';
+import PersonIcon from '@mui/icons-material/Person';
+import FolderIcon from '@mui/icons-material/Folder';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
 import {
@@ -59,7 +62,7 @@ import {
   serializePRKey,
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
-import { useWatchedPRs } from '../hooks/useWatchedPRs';
+import { useWatchedPRs, type WatchedPRSource } from '../hooks/useWatchedPRs';
 import {
   isMergedPr,
   isClosedUnmergedPr,
@@ -1641,7 +1644,77 @@ type PrSortKey = 'pr' | 'title' | 'repo' | 'author' | 'score';
 
 const prCellSx = { py: 1.5 } as const;
 
-const prColumns: DataTableColumn<CommitLog, PrSortKey>[] = [
+const SOURCE_META: Record<
+  WatchedPRSource,
+  { label: string; tooltip: string; Icon: typeof StarIcon; color: string }
+> = {
+  starred: {
+    label: 'Starred',
+    tooltip: 'You starred this pull request',
+    Icon: StarIcon,
+    color: '#facc15',
+  },
+  miner: {
+    label: 'Miner',
+    tooltip: 'From a watched miner',
+    Icon: PersonIcon,
+    color: '#60a5fa',
+  },
+  repo: {
+    label: 'Repo',
+    tooltip: 'From a watched repository',
+    Icon: FolderIcon,
+    color: '#a78bfa',
+  },
+};
+
+const SOURCE_RENDER_ORDER: WatchedPRSource[] = ['starred', 'miner', 'repo'];
+
+const WatchedSourceBadges: React.FC<{ sources: WatchedPRSource[] }> = ({
+  sources,
+}) => {
+  if (sources.length === 0) return null;
+  const present = new Set(sources);
+  return (
+    <Stack
+      direction="row"
+      spacing={0.5}
+      alignItems="center"
+      role="list"
+      aria-label="Reasons this PR is in your watchlist"
+    >
+      {SOURCE_RENDER_ORDER.filter((s) => present.has(s)).map((s) => {
+        const { label, tooltip, Icon, color } = SOURCE_META[s];
+        return (
+          <Tooltip key={s} title={tooltip} placement="top" arrow>
+            <Box
+              role="listitem"
+              aria-label={label}
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 22,
+                height: 22,
+                borderRadius: 1,
+                backgroundColor: alpha(color, 0.14),
+                border: '1px solid',
+                borderColor: alpha(color, 0.35),
+                color,
+              }}
+            >
+              <Icon sx={{ fontSize: '0.85rem' }} />
+            </Box>
+          </Tooltip>
+        );
+      })}
+    </Stack>
+  );
+};
+
+const buildPrColumns = (
+  sourcesByKey: Map<string, WatchedPRSource[]>,
+): DataTableColumn<CommitLog, PrSortKey>[] => [
   {
     key: 'pr',
     header: 'PR',
@@ -1750,6 +1823,22 @@ const prColumns: DataTableColumn<CommitLog, PrSortKey>[] = [
     ),
   },
   {
+    key: 'source',
+    header: 'Why',
+    width: '92px',
+    align: 'center',
+    cellSx: prCellSx,
+    renderCell: (pr) => (
+      <WatchedSourceBadges
+        sources={
+          sourcesByKey.get(
+            serializePRKey(pr.repository, pr.pullRequestNumber),
+          ) ?? []
+        }
+      />
+    ),
+  },
+  {
     key: 'watch',
     header: '★',
     width: '52px',
@@ -1829,7 +1918,10 @@ const PRsViewModeToggle: React.FC<{
 const getPrHref = (pr: CommitLog) =>
   `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`;
 
-const PRCard: React.FC<{ pr: CommitLog }> = ({ pr }) => {
+const PRCard: React.FC<{
+  pr: CommitLog;
+  sources?: WatchedPRSource[];
+}> = ({ pr, sources = [] }) => {
   const { label, color } = prStatusMeta(pr);
   const key = serializePRKey(pr.repository, pr.pullRequestNumber);
   return (
@@ -1909,6 +2001,7 @@ const PRCard: React.FC<{ pr: CommitLog }> = ({ pr }) => {
               backgroundColor: alpha(color, 0.08),
             }}
           />
+          <WatchedSourceBadges sources={sources} />
           <WatchlistButton category="prs" itemKey={key} size="small" />
         </Stack>
       </Box>
@@ -2008,7 +2101,8 @@ const PRCard: React.FC<{ pr: CommitLog }> = ({ pr }) => {
 const PR_ROWS_OPTIONS = [10, 25, 50] as const;
 
 const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
-  const { items, isLoading } = useWatchedPRs(itemKeys);
+  const { items, sourcesByKey, isLoading } = useWatchedPRs(itemKeys);
+  const prColumns = useMemo(() => buildPrColumns(sourcesByKey), [sourcesByKey]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
   const [viewMode, setViewMode] = useState<PRsViewMode>('list');
@@ -2251,7 +2345,12 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                   sx={{ display: 'flex' }}
                 >
                   <Box sx={{ width: '100%' }}>
-                    <PRCard pr={pr} />
+                    <PRCard
+                      pr={pr}
+                      sources={sourcesByKey.get(
+                        serializePRKey(pr.repository, pr.pullRequestNumber),
+                      )}
+                    />
                   </Box>
                 </Grid>
               ))}
