@@ -340,7 +340,7 @@ const RepositoriesPage: React.FC = () => {
       <Box
         sx={{
           width: '100%',
-          maxWidth: 1200,
+          maxWidth: 1440,
           mx: 'auto',
           py: { xs: 2, sm: 3 },
           px: { xs: 2, sm: 3 },
