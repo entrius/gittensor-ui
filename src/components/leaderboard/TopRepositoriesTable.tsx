@@ -73,15 +73,20 @@ type SortColumn =
   | 'weight'
   | 'totalScore'
   | 'totalPRs'
-  | 'contributors';
+  | 'contributors'
+  | 'discoveryScore'
+  | 'discoveryIssues'
+  | 'discoveryContributors';
 type SortDirection = 'asc' | 'desc';
 type ViewMode = RepositoriesViewMode;
 
+/** Card sort: classic metrics + Issues; issue score/contrib. sort via list headers / URL. */
 const CARD_SORT_OPTIONS: Array<{ value: SortColumn; label: string }> = [
   { value: 'weight', label: 'Weight' },
-  { value: 'totalScore', label: 'Total Score' },
+  { value: 'totalScore', label: 'OSS score' },
   { value: 'totalPRs', label: 'PRs' },
   { value: 'contributors', label: 'Contributors' },
+  { value: 'discoveryIssues', label: 'Issues' },
   { value: 'repository', label: 'Repository' },
 ];
 
@@ -99,7 +104,20 @@ const VALID_SORT_COLUMNS: SortColumn[] = [
   'totalScore',
   'totalPRs',
   'contributors',
+  'discoveryScore',
+  'discoveryIssues',
+  'discoveryContributors',
 ];
+
+/** List view: show numeric zeros when the row has OSS activity (avoids PRs > 0 with OSS score "-"). */
+const repoHasOssActivity = (repo: RepoStats) =>
+  (repo.totalPRs ?? 0) > 0 || (repo.totalScore ?? 0) > 0;
+
+/** List view: show discovery numbers when any discovery dimension is non-zero. */
+const repoHasDiscoveryActivity = (repo: RepoStats) =>
+  (repo.discoveryIssues ?? 0) !== 0 ||
+  (repo.discoveryScore ?? 0) !== 0 ||
+  (repo.discoveryContributors?.size ?? 0) > 0;
 
 const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   repositories,
@@ -169,6 +187,26 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const isMobileSearchVisible =
     isMobile && (isMobileSearchOpen || !!trimmedSearch);
   const isDirectRepoInput = /^[^/\s]+\/[^/\s]+$/.test(trimmedSearch);
+
+  const cardSortSelectOptions = useMemo(() => {
+    const opts = [...CARD_SORT_OPTIONS];
+    const inCardList = opts.some((o) => o.value === sortColumn);
+    if (
+      !inCardList &&
+      (sortColumn === 'discoveryScore' ||
+        sortColumn === 'discoveryContributors')
+    ) {
+      opts.push(
+        sortColumn === 'discoveryScore'
+          ? { value: 'discoveryScore' as const, label: 'Issue score' }
+          : {
+              value: 'discoveryContributors' as const,
+              label: 'Issue contributors',
+            },
+      );
+    }
+    return opts;
+  }, [sortColumn]);
 
   // Sync filter state to URL params (replace, don't push)
   const syncToUrl = useCallback(
@@ -245,6 +283,16 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         case 'contributors':
           comparison = a.uniqueMiners.size - b.uniqueMiners.size;
           break;
+        case 'discoveryScore':
+          comparison = a.discoveryScore - b.discoveryScore;
+          break;
+        case 'discoveryIssues':
+          comparison = a.discoveryIssues - b.discoveryIssues;
+          break;
+        case 'discoveryContributors':
+          comparison =
+            a.discoveryContributors.size - b.discoveryContributors.size;
+          break;
         default:
           // Default to totalScore descending (original behavior)
           comparison = b.totalScore - a.totalScore;
@@ -317,8 +365,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         value: (r) => r.weight || 0,
       },
       totalScore: {
-        title: 'Total Score',
-        yAxis: 'Total Score',
+        title: 'OSS score by repository',
+        yAxis: 'OSS score',
         value: (r) => r.totalScore || 0,
       },
       totalPRs: {
@@ -327,18 +375,33 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         value: (r) => r.totalPRs || 0,
       },
       contributors: {
-        title: 'Contributors by Repository',
+        title: 'OSS contributors by repository',
         yAxis: 'Contributors',
         value: (r) => r.uniqueMiners?.size || 0,
       },
+      discoveryScore: {
+        title: 'Issue score by repository',
+        yAxis: 'Issue score',
+        value: (r) => r.discoveryScore || 0,
+      },
+      discoveryIssues: {
+        title: 'Issues by repository',
+        yAxis: 'Issues',
+        value: (r) => r.discoveryIssues || 0,
+      },
+      discoveryContributors: {
+        title: 'Issue contributors by repository',
+        yAxis: 'Contributors',
+        value: (r) => r.discoveryContributors?.size || 0,
+      },
       rank: {
-        title: 'Total Score',
-        yAxis: 'Total Score',
+        title: 'OSS score by repository',
+        yAxis: 'OSS score',
         value: (r) => r.totalScore || 0,
       },
       repository: {
-        title: 'Total Score',
-        yAxis: 'Total Score',
+        title: 'OSS score by repository',
+        yAxis: 'OSS score',
         value: (r) => r.totalScore || 0,
       },
     };
@@ -347,7 +410,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       useLogScale &&
       sortColumn !== 'weight' &&
       sortColumn !== 'totalPRs' &&
-      sortColumn !== 'contributors';
+      sortColumn !== 'contributors' &&
+      sortColumn !== 'discoveryIssues' &&
+      sortColumn !== 'discoveryContributors';
 
     const barGradient = {
       type: 'linear',
@@ -374,6 +439,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       weight: item?.weight || 0,
       prs: item?.totalPRs || 0,
       contributors: item?.uniqueMiners?.size || 0,
+      ossScore: item?.totalScore || 0,
+      discoveryScore: item?.discoveryScore || 0,
+      discoveryIssues: item?.discoveryIssues || 0,
+      discoveryContributors: item?.discoveryContributors?.size || 0,
       itemStyle: {
         color: barGradient,
         borderRadius: [6, 6, 0, 0],
@@ -430,10 +499,13 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 #${item.rank} ${item.repository}
               </div>
               <div style="margin-top: 0; padding-top: 8px; border-top: 1px solid ${tooltipBorderColor}; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; row-gap: 6px; align-items: baseline; min-width: 0;">
-                ${statRow('Total Score:', item.value.toFixed(2))}
+                ${statRow('OSS score:', item.ossScore.toFixed(2))}
+                ${statRow('PRs:', String(item.prs))}
+                ${statRow('OSS contributors:', String(item.contributors))}
+                ${statRow('Issue score:', item.discoveryScore.toFixed(2))}
+                ${statRow('Issues:', String(item.discoveryIssues))}
+                ${statRow('Issue contributors:', String(item.discoveryContributors))}
                 ${statRow('Weight:', item.weight.toFixed(2))}
-                ${statRow('Pull Requests:', String(item.prs))}
-                ${statRow('Contributors:', String(item.contributors))}
               </div>
             </div>
           `;
@@ -493,6 +565,20 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           formatter: (value: number) => {
             if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
             if (sortColumn === 'weight') return value.toFixed(2);
+            if (
+              sortColumn === 'totalPRs' ||
+              sortColumn === 'contributors' ||
+              sortColumn === 'discoveryIssues' ||
+              sortColumn === 'discoveryContributors'
+            )
+              return String(Math.round(value));
+            if (
+              sortColumn === 'totalScore' ||
+              sortColumn === 'discoveryScore' ||
+              sortColumn === 'rank' ||
+              sortColumn === 'repository'
+            )
+              return value.toFixed(2);
             return value.toFixed(0);
           },
         },
@@ -680,7 +766,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     {
       key: 'repository',
       header: renderSortHeader('repository', 'Repository'),
-      width: '35%',
+      width: '30%',
       headerSx: sortableHeaderSx,
       cellSx: { pl: 1.5 },
       renderCell: (repo) => (
@@ -734,7 +820,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     {
       key: 'weight',
       header: renderSortHeader('weight', 'Weight', 'right'),
-      width: '12%',
+      width: '10%',
       align: 'right',
       headerSx: sortableHeaderSx,
       renderCell: (repo) => (
@@ -751,61 +837,135 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'totalScore',
-      header: renderSortHeader('totalScore', 'Total Score', 'right'),
-      width: '18%',
+      header: renderSortHeader('totalScore', 'OSS score', 'right'),
+      width: '11%',
       align: 'right',
       headerSx: sortableHeaderSx,
-      renderCell: (repo) => (
-        <Typography
-          sx={{
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            color:
-              (repo.totalScore || 0) > 0 ? 'text.primary' : 'text.secondary',
-          }}
-        >
-          {(repo.totalScore || 0) > 0
-            ? Number(repo.totalScore || 0).toFixed(2)
-            : '-'}
-        </Typography>
-      ),
+      renderCell: (repo) => {
+        const active = repoHasOssActivity(repo);
+        const v = repo.totalScore ?? 0;
+        return (
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              color: active && v > 0 ? 'text.primary' : 'text.secondary',
+            }}
+          >
+            {active ? Number(v).toFixed(2) : '-'}
+          </Typography>
+        );
+      },
     },
     {
       key: 'totalPRs',
       header: renderSortHeader('totalPRs', 'PRs', 'right'),
-      width: '15%',
+      width: '7%',
       align: 'right',
       headerSx: sortableHeaderSx,
-      renderCell: (repo) => (
-        <Typography
-          sx={{
-            fontSize: '0.75rem',
-            color: (repo.totalPRs || 0) > 0 ? 'text.primary' : 'text.secondary',
-          }}
-        >
-          {(repo.totalPRs || 0) > 0 ? repo.totalPRs : '-'}
-        </Typography>
-      ),
+      renderCell: (repo) => {
+        const active = repoHasOssActivity(repo);
+        const n = repo.totalPRs ?? 0;
+        return (
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: active && n > 0 ? 'text.primary' : 'text.secondary',
+            }}
+          >
+            {active ? String(n) : '-'}
+          </Typography>
+        );
+      },
+    },
+    {
+      key: 'discoveryScore',
+      header: renderSortHeader('discoveryScore', 'Issue score', 'right'),
+      width: '10%',
+      align: 'right',
+      headerSx: sortableHeaderSx,
+      renderCell: (repo) => {
+        const active = repoHasDiscoveryActivity(repo);
+        const v = repo.discoveryScore ?? 0;
+        return (
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              color: active && v > 0 ? 'text.primary' : 'text.secondary',
+            }}
+          >
+            {active ? Number(v).toFixed(2) : '-'}
+          </Typography>
+        );
+      },
+    },
+    {
+      key: 'discoveryIssues',
+      header: renderSortHeader('discoveryIssues', 'Issues', 'right'),
+      width: '7%',
+      align: 'right',
+      headerSx: sortableHeaderSx,
+      renderCell: (repo) => {
+        const active = repoHasDiscoveryActivity(repo);
+        const n = repo.discoveryIssues ?? 0;
+        return (
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: active && n > 0 ? 'text.primary' : 'text.secondary',
+            }}
+          >
+            {active ? String(n) : '-'}
+          </Typography>
+        );
+      },
     },
     {
       key: 'contributors',
       header: renderSortHeader('contributors', 'Contributors', 'right'),
-      width: '15%',
+      width: '9%',
       align: 'right',
       headerSx: sortableHeaderSx,
-      renderCell: (repo) => (
-        <Typography
-          sx={{
-            fontSize: '0.75rem',
-            color:
-              (repo.uniqueMiners?.size || 0) > 0
-                ? 'text.primary'
-                : 'text.secondary',
-          }}
-        >
-          {(repo.uniqueMiners?.size || 0) > 0 ? repo.uniqueMiners?.size : '-'}
-        </Typography>
+      renderCell: (repo) => {
+        const active = repoHasOssActivity(repo);
+        const n = repo.uniqueMiners?.size ?? 0;
+        return (
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: active && n > 0 ? 'text.primary' : 'text.secondary',
+            }}
+          >
+            {active ? String(n) : '-'}
+          </Typography>
+        );
+      },
+    },
+    {
+      key: 'discoveryContributors',
+      header: renderSortHeader(
+        'discoveryContributors',
+        'Issue contrib.',
+        'right',
       ),
+      width: '9%',
+      align: 'right',
+      headerSx: sortableHeaderSx,
+      renderCell: (repo) => {
+        const active = repoHasDiscoveryActivity(repo);
+        const n = repo.discoveryContributors?.size ?? 0;
+        return (
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: active && n > 0 ? 'text.primary' : 'text.secondary',
+            }}
+          >
+            {active ? String(n) : '-'}
+          </Typography>
+        );
+      },
     },
     {
       key: 'watch',
@@ -1081,7 +1241,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 '& .MuiSelect-select': { py: 0.75 },
               }}
             >
-              {CARD_SORT_OPTIONS.map((opt) => (
+              {cardSortSelectOptions.map((opt) => (
                 <MenuItem key={opt.value} value={opt.value}>
                   {opt.label}
                 </MenuItem>
@@ -1152,7 +1312,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 <Grid item xs={12} sm={6} md={4} lg={4} key={i}>
                   <Skeleton
                     variant="rounded"
-                    height={168}
+                    height={220}
                     sx={{
                       bgcolor: (t) => alpha(t.palette.text.primary, 0.06),
                     }}
@@ -1236,7 +1396,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               borderBottom: '1px solid',
               borderColor: 'surface.light',
             })}
-            minWidth="1000px"
+            minWidth="1280px"
             stickyHeader
             emptyState={
               !filteredRepositories.length &&

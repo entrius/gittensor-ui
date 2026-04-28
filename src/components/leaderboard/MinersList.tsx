@@ -11,6 +11,8 @@ import {
   type SortOption,
 } from './types';
 
+type ActivityMode = 'prs' | 'issues';
+
 const SEGMENT_COLORS = [
   CHART_COLORS.merged,
   CHART_COLORS.open,
@@ -41,9 +43,49 @@ export const MinersList: React.FC<MinersListProps> = ({
   getHref,
   linkState,
 }) => {
+  const isWatchlist = variant === 'watchlist';
   const isDiscoveries = variant === 'discoveries';
-  const prLabel = isDiscoveries ? 'Issues' : 'PRs';
-  const prSortKey: SortOption = isDiscoveries ? 'totalIssues' : 'totalPRs';
+  const singleActivityMode: ActivityMode = isDiscoveries ? 'issues' : 'prs';
+  const singleActivityLabel = isDiscoveries ? 'Issues' : 'PRs';
+  const singleActivitySortKey: SortOption = isDiscoveries
+    ? 'totalIssues'
+    : 'totalPRs';
+
+  const activityColumns: DataTableColumn<MinerStats, SortOption>[] = isWatchlist
+    ? [
+        {
+          key: 'prs',
+          header: 'PRs',
+          width: '13%',
+          align: 'right',
+          sortKey: 'totalPRs',
+          renderCell: (miner) => (
+            <MinerActivitySegments miner={miner} mode="prs" />
+          ),
+        },
+        {
+          key: 'issues',
+          header: 'Issues',
+          width: '13%',
+          align: 'right',
+          sortKey: 'totalIssues',
+          renderCell: (miner) => (
+            <MinerActivitySegments miner={miner} mode="issues" />
+          ),
+        },
+      ]
+    : [
+        {
+          key: 'activity',
+          header: singleActivityLabel,
+          width: '18%',
+          align: 'right',
+          sortKey: singleActivitySortKey,
+          renderCell: (miner) => (
+            <MinerActivitySegments miner={miner} mode={singleActivityMode} />
+          ),
+        },
+      ];
 
   const columns: DataTableColumn<MinerStats, SortOption>[] = [
     {
@@ -77,16 +119,7 @@ export const MinersList: React.FC<MinersListProps> = ({
         </Typography>
       ),
     },
-    {
-      key: 'activity',
-      header: prLabel,
-      width: '18%',
-      align: 'right',
-      sortKey: prSortKey,
-      renderCell: (miner) => (
-        <MinerActivitySegments miner={miner} variant={variant} />
-      ),
-    },
+    ...activityColumns,
     {
       key: 'credibility',
       header: 'Credibility',
@@ -222,15 +255,15 @@ const MinerIdentityCell: React.FC<MinerIdentityCellProps> = ({ miner }) => {
 
 interface MinerActivitySegmentsProps {
   miner: MinerStats;
-  variant: LeaderboardVariant;
+  mode: ActivityMode;
 }
 
 const MinerActivitySegments: React.FC<MinerActivitySegmentsProps> = ({
   miner,
-  variant,
+  mode,
 }) => {
   const segments =
-    variant === 'discoveries'
+    mode === 'issues'
       ? [
           { label: 'Solved', value: miner.totalSolvedIssues ?? 0 },
           { label: 'Open', value: miner.totalOpenIssues ?? 0 },

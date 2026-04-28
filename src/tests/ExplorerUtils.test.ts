@@ -10,6 +10,12 @@ import {
   hasActiveFilters,
   getDisplayCount,
   filterBySearch,
+  isIssueDiscoveryContributionPr,
+  isIssueDiscoveryMultiplierPr,
+  aggregateIssueDiscoveryRepos,
+  buildMergedIssueDiscoveryByRepo,
+  buildRepoDiscoveryRollupFromMiners,
+  buildIssueBountyRollupByRepo,
   type RepoStats,
 } from '../utils/ExplorerUtils';
 
@@ -234,6 +240,14 @@ describe('buildRepoWeightsMap', () => {
     const map = buildRepoWeightsMap(repos);
     expect(map.size).toBe(0);
   });
+
+  it('lower-cases fullName keys for consistent PR lookup', () => {
+    const repos = [
+      { fullName: 'Org/RepoA', owner: '', name: '', weight: '0.7' },
+    ] as any[];
+    const map = buildRepoWeightsMap(repos);
+    expect(map.get('org/repoa')).toBe(0.7);
+  });
 });
 
 describe('aggregatePRsByRepository', () => {
@@ -278,6 +292,196 @@ describe('aggregatePRsByRepository', () => {
     ] as any[];
     const result = aggregatePRsByRepository(prs, weights);
     expect(result).toHaveLength(2);
+  });
+
+  it('matches weights when PR repository casing differs', () => {
+    const w = new Map([['org/repo1', 0.5]]);
+    const prs = [
+      {
+        repository: 'ORG/REPO1',
+        score: '10',
+        prState: 'MERGED',
+        mergedAt: '2024-01-01',
+        tokenScore: 50,
+      },
+    ] as any[];
+    const result = aggregatePRsByRepository(prs, w);
+    expect(result).toHaveLength(1);
+    expect(result[0].weight).toBe(0.5);
+    expect(result[0].repository).toBe('ORG/REPO1');
+  });
+});
+
+describe('isIssueDiscoveryContributionPr', () => {
+  it('is true when issueMultiplier parses positive', () => {
+    expect(
+      isIssueDiscoveryContributionPr({ issueMultiplier: '1.2' } as any),
+    ).toBe(true);
+  });
+
+  it('is true when label only (miner payloads)', () => {
+    expect(
+      isIssueDiscoveryContributionPr({
+        issueMultiplier: '0',
+        label: 'bounty',
+      } as any),
+    ).toBe(true);
+  });
+});
+
+describe('isIssueDiscoveryMultiplierPr', () => {
+  it('requires multiplier fields, not label alone', () => {
+    expect(
+      isIssueDiscoveryMultiplierPr({ issueMultiplier: '1.1' } as any),
+    ).toBe(true);
+    expect(
+      isIssueDiscoveryMultiplierPr({
+        issueMultiplier: '0',
+        label: 'bounty',
+      } as any),
+    ).toBe(false);
+  });
+});
+
+describe('aggregateIssueDiscoveryRepos', () => {
+  const w = new Map([['org/a', 0.2]]);
+
+  it('aggregates merged discovery PRs only', () => {
+    const prs = [
+      {
+        repository: 'org/a',
+        score: '2',
+        issueMultiplier: '1.2',
+        prState: 'MERGED',
+        mergedAt: '2024-01-01',
+        tokenScore: 10,
+      },
+    ] as any[];
+    const r = aggregateIssueDiscoveryRepos(prs, w);
+    expect(r).toHaveLength(1);
+    expect(r[0].prs).toBe(1);
+  });
+
+  it('excludes open issue-discovery PRs', () => {
+    const prs = [
+      {
+        repository: 'org/a',
+        score: '99',
+        issueMultiplier: '1',
+        prState: 'OPEN',
+        mergedAt: null,
+      },
+      {
+        repository: 'org/a',
+        score: '2',
+        issueMultiplier: '1',
+        prState: 'MERGED',
+        mergedAt: '2024-01-01',
+      },
+    ] as any[];
+    const r = aggregateIssueDiscoveryRepos(prs, w);
+    expect(r).toHaveLength(1);
+    expect(r[0].prs).toBe(1);
+    expect(r[0].score).toBe(2);
+  });
+});
+
+describe('buildMergedIssueDiscoveryByRepo', () => {
+  it('only counts merged PRs with discovery multipliers', () => {
+    const prs = [
+      {
+        repository: 'org/a',
+        mergedAt: null,
+        prState: 'OPEN',
+        issueMultiplier: '1',
+      },
+      {
+        repository: 'org/a',
+        mergedAt: '2024-01-01',
+        prState: 'MERGED',
+        issueMultiplier: '1',
+        score: '3',
+        tokenScore: 0,
+      },
+    ] as any[];
+    const m = buildMergedIssueDiscoveryByRepo(prs);
+    const row = m.get('org/a');
+    expect(row?.discoveryIssues).toBe(1);
+    expect(row?.discoveryScore).toBe(3);
+  });
+});
+
+describe('buildRepoDiscoveryRollupFromMiners', () => {
+  const discoveryPr = (overrides: Record<string, unknown>) =>
+    ({
+      repository: 'org/repo',
+      mergedAt: '2024-01-01',
+      prState: 'MERGED',
+      issueMultiplier: '1',
+      score: '1',
+      tokenScore: 0,
+      ...overrides,
+    }) as any;
+
+  it('pro-rates miner discovery score and completed issues', () => {
+    const miners = [
+      {
+        githubId: '99',
+        issueDiscoveryScore: 200,
+        totalValidSolvedIssues: 12,
+        totalSolvedIssues: 0,
+      },
+    ] as any[];
+
+    const prs = [
+      discoveryPr({ repository: 'org/a', githubId: '99', author: 'alice' }),
+      discoveryPr({ repository: 'org/b', githubId: '99', author: 'alice' }),
+      discoveryPr({ repository: 'org/b', githubId: '99', author: 'alice' }),
+    ];
+
+    const m = buildRepoDiscoveryRollupFromMiners(prs, miners);
+    const a = m.get('org/a');
+    const b = m.get('org/b');
+    expect(a!.discoveryScore).toBeCloseTo(200 / 3, 5);
+    expect(a!.discoveryIssues).toBe(Math.round(12 / 3));
+    expect(b!.discoveryScore).toBeCloseTo((200 * 2) / 3, 5);
+    expect(b!.discoveryIssues).toBe(Math.round((12 * 2) / 3));
+    expect(a!.discoveryContributors.has('alice')).toBe(true);
+  });
+
+  it('does not count contributors with zero miner discovery stats', () => {
+    const miners = [
+      {
+        githubId: '99',
+        issueDiscoveryScore: 0,
+        totalValidSolvedIssues: 0,
+        totalSolvedIssues: 0,
+      },
+    ] as any[];
+    const prs = [
+      discoveryPr({
+        repository: 'org/z',
+        githubId: '99',
+        author: 'ghost',
+      }),
+    ];
+    const m = buildRepoDiscoveryRollupFromMiners(prs, miners);
+    const z = m.get('org/z');
+    expect(z!.discoveryContributors.size).toBe(0);
+  });
+});
+
+describe('buildIssueBountyRollupByRepo', () => {
+  it('aggregates bounty issues by repository', () => {
+    const issues = [
+      { repositoryFullName: 'org/A', status: 'active' },
+      { repositoryFullName: 'org/A', status: 'completed' },
+    ] as any[];
+    const m = buildIssueBountyRollupByRepo(issues);
+    const a = m.get('org/a');
+    expect(a!.bountyIssuesTotal).toBe(2);
+    expect(a!.bountyIssuesActive).toBe(1);
+    expect(a!.bountyIssuesCompleted).toBe(1);
   });
 });
 

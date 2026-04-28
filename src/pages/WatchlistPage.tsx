@@ -5,6 +5,7 @@ import {
   Card,
   Chip,
   Collapse,
+  CircularProgress,
   FormControl,
   FormControlLabel,
   Grid,
@@ -49,8 +50,8 @@ import {
   type DataTableColumn,
 } from '../components/common/DataTable';
 import { LinkBox } from '../components/common/linkBehavior';
-import { useAllMiners, useAllPrs, useReposAndWeights, useIssues } from '../api';
 import type { CommitLog, Repository } from '../api/models/Dashboard';
+import { useAllMiners, useReposAndWeights, useIssues } from '../api';
 import { mapAllMinersToStats } from '../utils/minerMapper';
 import {
   useWatchlist,
@@ -58,6 +59,7 @@ import {
   serializePRKey,
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
+import { useWatchedPRs } from '../hooks/useWatchedPRs';
 import {
   isMergedPr,
   isClosedUnmergedPr,
@@ -120,7 +122,7 @@ const TAB_DISCOVERY: Record<
   prs: {
     label: 'repositories',
     path: '/repositories',
-    hint: 'Open a pull request and star it to monitor its scoring here.',
+    hint: 'Star a pull request, miner, or repository to populate this tab.',
   },
 };
 
@@ -139,7 +141,11 @@ const WatchlistPage: React.FC = () => {
   const { ids, count, clear } = useWatchlist(activeTab);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const isEmpty = count === 0;
+  const tabHasContent =
+    activeTab === 'prs'
+      ? counts.prs + counts.miners + counts.repos > 0
+      : count > 0;
+  const isEmpty = !tabHasContent;
   const noun = TAB_NOUN[activeTab];
   const discovery = TAB_DISCOVERY[activeTab];
 
@@ -230,6 +236,8 @@ const WatchlistPage: React.FC = () => {
             >
               Your watchlist — {count}{' '}
               {count === 1 ? `${noun.single} pinned` : `${noun.plural} pinned`}.
+              {activeTab === 'prs' &&
+                ' Also shows PRs from watched miners and repositories.'}{' '}
               Stored locally in this browser.
             </Typography>
             {count > 0 && (
@@ -2000,7 +2008,7 @@ const PRCard: React.FC<{ pr: CommitLog }> = ({ pr }) => {
 const PR_ROWS_OPTIONS = [10, 25, 50] as const;
 
 const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
-  const { data: allPrs } = useAllPrs();
+  const { items, isLoading } = useWatchedPRs(itemKeys);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
   const [viewMode, setViewMode] = useState<PRsViewMode>('list');
@@ -2022,14 +2030,6 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     }
     setPage(0);
   };
-
-  const items = useMemo(() => {
-    if (!allPrs) return [];
-    const set = new Set(itemKeys);
-    return allPrs.filter((pr) =>
-      set.has(serializePRKey(pr.repository, pr.pullRequestNumber)),
-    );
-  }, [allPrs, itemKeys]);
 
   const counts = useMemo(() => getPrStatusCounts(items), [items]);
 
@@ -2208,6 +2208,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           linkState={{ backLabel: 'Back to Watchlist' }}
           minWidth="750px"
           stickyHeader
+          isLoading={isLoading && items.length === 0}
           emptyLabel="No watched pull requests found."
           sort={{
             field: sortField,
@@ -2223,7 +2224,11 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             ...scrollbarSx,
           }}
         >
-          {paged.length === 0 ? (
+          {isLoading && paged.length === 0 ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : paged.length === 0 ? (
             <Typography
               sx={{
                 color: 'text.secondary',
