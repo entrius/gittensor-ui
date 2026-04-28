@@ -66,6 +66,14 @@ import {
   UI_COLORS,
   scrollbarSx,
 } from '../../theme';
+import {
+  echartsAxisTooltipChrome,
+  echartsBarChartTitle,
+  echartsFontFamily,
+  echartsGridBarPaged,
+  echartsStrongAxisLabelColor,
+  echartsTransparentBackground,
+} from '../../utils/echarts/gittensorChartTheme';
 
 type SortColumn =
   | 'rank'
@@ -343,13 +351,13 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     const chartData = pagedRepositories;
     const white = UI_COLORS.white;
     const borderSubtle = alpha(white, 0.08);
-    const borderLight = alpha(white, 0.1);
     const surfaceSubtle = alpha(white, 0.02);
-    const textColor = alpha(white, 0.85);
-    const gridColor = borderSubtle;
-    const tooltipBorderColor = borderLight;
+    const textColor = echartsStrongAxisLabelColor(theme);
+    const gridColor = theme.palette.border.subtle;
+    const tooltipBorderColor = alpha(theme.palette.text.primary, 0.14);
     const tooltipLabelColor = alpha(white, TEXT_OPACITY.secondary);
-    const primaryColor = UI_COLORS.white;
+    const primaryColor = theme.palette.text.primary;
+    const chartFont = echartsFontFamily(theme);
 
     const chartMetric: Record<
       SortColumn,
@@ -452,22 +460,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     }));
 
     return {
-      backgroundColor: 'transparent',
-      title: {
-        text: metric.title,
-        subtext: 'Values match the current table sort and page',
-        left: 'center',
-        top: 20,
-        textStyle: {
-          color: primaryColor,
-          fontSize: 18,
-          fontWeight: 600,
-        },
-        subtextStyle: {
-          color: alpha(white, TEXT_OPACITY.tertiary),
-          fontSize: 12,
-        },
-      },
+      ...echartsTransparentBackground(),
+      title: echartsBarChartTitle(
+        theme,
+        metric.title,
+        'Values match the current table sort and page',
+      ),
       tooltip: {
         trigger: 'axis',
         axisPointer: {
@@ -476,11 +474,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             color: borderSubtle,
           },
         },
-        backgroundColor: UI_COLORS.surfaceTooltip,
-        borderColor: alpha(white, 0.15),
-        borderWidth: 1,
+        ...echartsAxisTooltipChrome(theme),
         textStyle: {
           color: primaryColor,
+          fontFamily: chartFont,
           fontSize: 12,
         },
         padding: [12, 16],
@@ -494,7 +491,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 <span style="color: ${primaryColor}; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap;">${value}</span>`;
 
           return `
-            <div style="font-family: 'JetBrains Mono', monospace; display: grid; grid-template-columns: minmax(0, max-content); width: max-content; max-width: min(420px, 92vw); box-sizing: border-box;">
+            <div style="font-family: ${chartFont}; display: grid; grid-template-columns: minmax(0, max-content); width: max-content; max-width: min(420px, 92vw); box-sizing: border-box;">
               <div style="font-weight: 600; margin-bottom: 8px; font-size: 13px; line-height: 1.35;">
                 #${item.rank} ${item.repository}
               </div>
@@ -511,13 +508,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           `;
         },
       },
-      grid: {
-        left: '3%',
-        right: '3%',
-        bottom: '18%',
-        top: '18%',
-        containLabel: true,
-      },
+      grid: echartsGridBarPaged(),
       dataZoom: [
         {
           type: 'inside',
@@ -532,6 +523,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         data: xAxisData.map((item) => item.name),
         axisLabel: {
           color: textColor,
+          fontFamily: chartFont,
           fontSize: 11,
           interval: 0,
           rotate: 45,
@@ -556,11 +548,13 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         name: metric.yAxis,
         nameTextStyle: {
           color: textColor,
+          fontFamily: chartFont,
           fontSize: 12,
           padding: [0, 0, 0, 0],
         },
         axisLabel: {
           color: textColor,
+          fontFamily: chartFont,
           fontSize: 11,
           formatter: (value: number) => {
             if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
