@@ -1392,7 +1392,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 // ---------------------------------------------------------------------------
 
 type IssueStatusFilter = 'all' | 'open' | 'resolved' | 'closed';
-type IssueSortKey = 'issue' | 'title' | 'repo' | 'date';
+type IssueSortKey = 'issue' | 'title' | 'repo' | 'author' | 'date';
 
 const ISSUE_STATUS_FILTERS: readonly IssueStatusFilter[] = [
   'all',
@@ -1516,6 +1516,47 @@ const issueColumns: DataTableColumn<MinerIssue, IssueSortKey>[] = [
         {i.repo_full_name}
       </Typography>
     ),
+  },
+  {
+    key: 'author',
+    header: 'Author',
+    width: '14%',
+    sortKey: 'author',
+    cellSx: issueCellSx,
+    renderCell: (i) => {
+      const login = i.author_login || i.author_github_id;
+      if (!login)
+        return (
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: (t) => alpha(t.palette.text.primary, 0.4),
+            }}
+          >
+            —
+          </Typography>
+        );
+      return (
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}
+        >
+          <Avatar
+            src={`https://avatars.githubusercontent.com/${login}`}
+            sx={{ width: 20, height: 20, flexShrink: 0 }}
+          />
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {login}
+          </Typography>
+        </Box>
+      );
+    },
   },
   {
     key: 'pr',
@@ -1833,6 +1874,8 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
           return cmpStr(a.title, b.title);
         case 'repo':
           return cmpStr(a.repo_full_name, b.repo_full_name);
+        case 'author':
+          return cmpStr(a.author_login ?? '', b.author_login ?? '');
         case 'date':
           return cmpStr(issueDate(a), issueDate(b));
         default:
