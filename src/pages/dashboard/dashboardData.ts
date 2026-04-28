@@ -754,9 +754,21 @@ export const buildFeaturedWork = (
   issues: IssueBounty[],
 ): DashboardFeaturedWork[] => {
   const currentWindow = getWindowBounds(CURRENT_LOOKBACK_WINDOW);
-  const now = currentWindow.endMs;
-  const recentWindow: WindowBounds = { startMs: now - 7 * DAY_MS, endMs: now };
-  const mediumWindow: WindowBounds = { startMs: now - 14 * DAY_MS, endMs: now };
+  // Age decay: value halves every HALF_LIFE_DAYS so older items yield to
+  // fresher work without hard cutoffs that degrade quality.
+  const HALF_LIFE_DAYS = 7;
+  const prRecencyFactor = (pr: CommitLog): number => {
+    const ts = toTimestamp(pr.mergedAt ?? pr.prCreatedAt);
+    if (ts === null) return 0.5;
+    const ageDays = (currentWindow.endMs - ts) / DAY_MS;
+    return 1 / (1 + ageDays / HALF_LIFE_DAYS);
+  };
+  const issueRecencyFactor = (issue: IssueBounty): number => {
+    const ts = toTimestamp(issue.completedAt ?? issue.createdAt);
+    if (ts === null) return 0.5;
+    const ageDays = (currentWindow.endMs - ts) / DAY_MS;
+    return 1 / (1 + ageDays / HALF_LIFE_DAYS);
+  };
   const selectedRepos = new Set<string>();
   const selectedOrgs = new Set<string>();
   const selectedAuthors = new Set<string>();
@@ -886,30 +898,11 @@ export const buildFeaturedWork = (
     featuredLabel: string,
     sortFn: (a: CommitLog, b: CommitLog) => number,
   ) => {
-    const mergedRecent = mergedPrs
-      .filter((pr) =>
-        isWithinWindow(
-          toTimestamp(pr.mergedAt ?? pr.prCreatedAt),
-          recentWindow,
-        ),
-      )
-      .sort(sortFn);
-    const mergedMedium = mergedPrs
-      .filter((pr) =>
-        isWithinWindow(
-          toTimestamp(pr.mergedAt ?? pr.prCreatedAt),
-          mediumWindow,
-        ),
-      )
-      .sort(sortFn);
     const mergedSorted = [...mergedPrs].sort(sortFn);
-    const allRecent = allWindowPrs
-      .filter((pr) => isWithinWindow(toTimestamp(pr.prCreatedAt), recentWindow))
-      .sort(sortFn);
     const allSorted = [...allWindowPrs].sort(sortFn);
     const candidate =
       pickFirstDiverse(
-        [mergedRecent, mergedMedium, mergedSorted, allRecent, allSorted],
+        [mergedSorted, allSorted],
         (pr) => pr.repository,
         (pr) => pr.author || 'unknown',
       ) ??
@@ -920,14 +913,10 @@ export const buildFeaturedWork = (
     return toPrCard(candidate, featuredLabel);
   };
 
-  const issueSortFn = (a: IssueBounty, b: IssueBounty) => {
-    const bountyDiff = getIssueDisplayAmount(b) - getIssueDisplayAmount(a);
-    if (bountyDiff !== 0) return bountyDiff;
-    return (
-      (toTimestamp(b.completedAt ?? b.createdAt) ?? 0) -
-      (toTimestamp(a.completedAt ?? a.createdAt) ?? 0)
-    );
-  };
+  const issueSortFn = (a: IssueBounty, b: IssueBounty) =>
+    getIssueDisplayAmount(b) * issueRecencyFactor(b) -
+    getIssueDisplayAmount(a) * issueRecencyFactor(a);
+
   const rankedHighestBountyIssues = [...issues]
     .filter((issue) =>
       isWithinWindow(
@@ -936,27 +925,7 @@ export const buildFeaturedWork = (
       ),
     )
     .sort(issueSortFn);
-  const rankedHighestBountyIssuesRecent = rankedHighestBountyIssues.filter(
-    (issue) =>
-      isWithinWindow(
-        toTimestamp(issue.completedAt ?? issue.createdAt),
-        recentWindow,
-      ),
-  );
-  const rankedHighestBountyIssuesMedium = rankedHighestBountyIssues.filter(
-    (issue) =>
-      isWithinWindow(
-        toTimestamp(issue.completedAt ?? issue.createdAt),
-        mediumWindow,
-      ),
-  );
   const rankedCompletedIssues = rankedHighestBountyIssues.filter(
-    (issue) => issue.status === 'completed',
-  );
-  const rankedCompletedIssuesRecent = rankedHighestBountyIssuesRecent.filter(
-    (issue) => issue.status === 'completed',
-  );
-  const rankedCompletedIssuesMedium = rankedHighestBountyIssuesMedium.filter(
     (issue) => issue.status === 'completed',
   );
 
@@ -994,15 +963,10 @@ export const buildFeaturedWork = (
     };
   };
 
-  const pickIssue = (
-    featuredLabel: string,
-    pool: IssueBounty[],
-    recentPool: IssueBounty[],
-    mediumPool: IssueBounty[],
-  ) => {
+  const pickIssue = (featuredLabel: string, pool: IssueBounty[]) => {
     const candidate =
       pickFirstDiverse(
-        [recentPool, mediumPool, pool, fallbackIssuePool],
+        [pool, fallbackIssuePool],
         (issue) => issue.repositoryFullName,
         (issue) => issue.authorLogin || 'open bounty',
       ) ??
@@ -1018,21 +982,25 @@ export const buildFeaturedWork = (
 
   const picks: Array<DashboardFeaturedWork | undefined> = [
     pickPr('Top PR by Score', (a, b) => {
-      const scoreDiff = parseNumber(b.score) - parseNumber(a.score);
-      if (scoreDiff !== 0) return scoreDiff;
-      return (toTimestamp(b.mergedAt) ?? 0) - (toTimestamp(a.mergedAt) ?? 0);
+      return (
+        parseNumber(b.score) * prRecencyFactor(b) -
+        parseNumber(a.score) * prRecencyFactor(a)
+      );
     }),
     pickPr('Largest PR', (a, b) => {
-      const aChanges = parseNumber(a.additions) + parseNumber(a.deletions);
-      const bChanges = parseNumber(b.additions) + parseNumber(b.deletions);
-      if (bChanges !== aChanges) return bChanges - aChanges;
-      return parseNumber(b.score) - parseNumber(a.score);
+      const aChanges =
+        (parseNumber(a.additions) + parseNumber(a.deletions)) *
+        prRecencyFactor(a);
+      const bChanges =
+        (parseNumber(b.additions) + parseNumber(b.deletions)) *
+        prRecencyFactor(b);
+      return bChanges - aChanges;
     }),
     pickPr('Most Commits PR', (a, b) => {
-      const commitDiff =
-        parseNumber(b.commitCount) - parseNumber(a.commitCount);
-      if (commitDiff !== 0) return commitDiff;
-      return parseNumber(b.score) - parseNumber(a.score);
+      return (
+        parseNumber(b.commitCount) * prRecencyFactor(b) -
+        parseNumber(a.commitCount) * prRecencyFactor(a)
+      );
     }),
     pickPr('Newest Merged PR', (a, b) => {
       const dateDiff =
@@ -1040,18 +1008,8 @@ export const buildFeaturedWork = (
       if (dateDiff !== 0) return dateDiff;
       return parseNumber(b.score) - parseNumber(a.score);
     }),
-    pickIssue(
-      'Top Completed Issue',
-      rankedCompletedIssues,
-      rankedCompletedIssuesRecent,
-      rankedCompletedIssuesMedium,
-    ),
-    pickIssue(
-      'Highest Bounty Issue',
-      rankedHighestBountyIssues,
-      rankedHighestBountyIssuesRecent,
-      rankedHighestBountyIssuesMedium,
-    ),
+    pickIssue('Top Completed Issue', rankedCompletedIssues),
+    pickIssue('Highest Bounty Issue', rankedHighestBountyIssues),
   ];
 
   return picks.filter((entry): entry is DashboardFeaturedWork =>
