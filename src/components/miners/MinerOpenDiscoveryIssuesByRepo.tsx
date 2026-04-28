@@ -441,15 +441,17 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
           headerSx: { verticalAlign: 'middle' },
           cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
           renderCell: (issue) => (
-            <Box
-              sx={{
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {issue.title}
-            </Box>
+            <Tooltip title={issue.title} placement="bottom" arrow>
+              <Box
+                sx={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {issue.title}
+              </Box>
+            </Tooltip>
           ),
         },
         {
@@ -480,12 +482,18 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
                     borderColor: 'border.medium',
                   }}
                 />
-                <Box
-                  component="span"
-                  sx={{ wordBreak: 'break-word', lineHeight: 1.3 }}
+                <Tooltip
+                  title={issue.repositoryFullName}
+                  placement="bottom"
+                  arrow
                 >
-                  {issue.repositoryFullName}
-                </Box>
+                  <Box
+                    component="span"
+                    sx={{ wordBreak: 'break-word', lineHeight: 1.3 }}
+                  >
+                    {issue.repositoryFullName}
+                  </Box>
+                </Tooltip>
               </Box>
             );
           },
@@ -553,7 +561,8 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
             issue.createdAt ? (
               <Tooltip
                 title={new Date(issue.createdAt).toLocaleDateString()}
-                placement="top"
+                placement="bottom"
+                arrow
               >
                 <span style={{ cursor: 'default' }}>
                   {formatDistanceToNow(new Date(issue.createdAt), {
@@ -600,15 +609,17 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
           headerSx: { verticalAlign: 'middle' },
           cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
           renderCell: (issue) => (
-            <Box
-              sx={{
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {issue.title}
-            </Box>
+            <Tooltip title={issue.title} placement="bottom" arrow>
+              <Box
+                sx={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {issue.title}
+              </Box>
+            </Tooltip>
           ),
         },
         {
@@ -639,12 +650,18 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
                     borderColor: 'border.medium',
                   }}
                 />
-                <Box
-                  component="span"
-                  sx={{ wordBreak: 'break-word', lineHeight: 1.3 }}
+                <Tooltip
+                  title={issue.repositoryFullName}
+                  placement="bottom"
+                  arrow
                 >
-                  {issue.repositoryFullName}
-                </Box>
+                  <Box
+                    component="span"
+                    sx={{ wordBreak: 'break-word', lineHeight: 1.3 }}
+                  >
+                    {issue.repositoryFullName}
+                  </Box>
+                </Tooltip>
               </Box>
             );
           },
@@ -712,7 +729,8 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
             issue.createdAt ? (
               <Tooltip
                 title={new Date(issue.createdAt).toLocaleDateString()}
-                placement="top"
+                placement="bottom"
+                arrow
               >
                 <span style={{ cursor: 'default' }}>
                   {formatDistanceToNow(new Date(issue.createdAt), {
