@@ -72,7 +72,7 @@ export const Scoring: React.FC = () => {
   const visibleCards = SCORING_CARDS.filter((c) => c.category === category);
 
   return (
-    <Box sx={{ maxWidth: 1000, mx: 'auto', px: { xs: 2, md: 4 }, py: 4 }}>
+    <Box sx={{ width: '100%', maxWidth: '100%', py: 4 }}>
       <Typography
         variant="h4"
         fontWeight="bold"
