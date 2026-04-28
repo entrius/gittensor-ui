@@ -635,10 +635,11 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
                 author fields, or you have no open reports in these
                 repositories. Use the GitHub button above for a definitive list.
               </Typography>
-            ) : null}
-            {renderRepoAccordionMap(
-              mineByRepo,
-              'No matching open issues in the scanned repositories.',
+            ) : (
+              renderRepoAccordionMap(
+                mineByRepo,
+                'No matching open issues in the scanned repositories.',
+              )
             )}
           </Card>
 
