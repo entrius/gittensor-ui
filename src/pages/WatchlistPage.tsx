@@ -1782,9 +1782,30 @@ const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
             alignItems: 'center',
           })}
         >
-          <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary' }}>
-            {issue.author_login || '—'}
-          </Typography>
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            sx={{ minWidth: 0 }}
+          >
+            {issue.author_login && (
+              <Avatar
+                src={`https://avatars.githubusercontent.com/${issue.author_login}`}
+                sx={{ width: 18, height: 18, flexShrink: 0 }}
+              />
+            )}
+            <Typography
+              sx={{
+                fontSize: '0.72rem',
+                color: 'text.secondary',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {issue.author_login || '—'}
+            </Typography>
+          </Stack>
           {prNumber ? (
             <Typography
               sx={{
