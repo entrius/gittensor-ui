@@ -3,6 +3,7 @@ import { Box, Card, Typography, Avatar } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
+import { calculateMonthlyUsdRange } from '../../utils/minerEarnings';
 import { CHART_COLORS, STATUS_COLORS } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
@@ -60,7 +61,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
   const isNumericId = (value?: string) => !value || /^\d+$/.test(value);
   const shouldFetch = !!miner.githubId && isNumericId(miner.author);
   const { data: githubData } = useMinerGithubData(miner.githubId, shouldFetch);
-  const { data: prs } = useMinerPRs(miner.githubId, shouldFetch);
+  const { data: prs } = useMinerPRs(miner.githubId, !!miner.githubId);
 
   const username =
     githubData?.login ||
@@ -353,7 +354,14 @@ export const MinerCard: React.FC<MinerCardProps> = ({
               mt: 0.2,
             })}
           >
-            ~${Math.round((miner.usdPerDay || 0) * 30).toLocaleString()}/mo
+            {(() => {
+              const daily = miner.usdPerDay || 0;
+              if (!daily) return '$0/mo';
+              const range = calculateMonthlyUsdRange(daily, prs);
+              return range
+                ? `$${Math.round(range.min).toLocaleString()}–$${Math.round(range.max).toLocaleString()}/mo`
+                : `~$${Math.round(daily * 30).toLocaleString()}/mo`;
+            })()}
           </Typography>
         </Box>
 

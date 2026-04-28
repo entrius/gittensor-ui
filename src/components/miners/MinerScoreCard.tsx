@@ -42,6 +42,7 @@ import {
   parseNumber,
 } from '../../utils/ExplorerUtils';
 import { credibilityColor } from '../../utils/format';
+import { calculateMonthlyUsdRange } from '../../utils/minerEarnings';
 
 const formatTimeAgo = (date: Date): string => {
   const now = new Date();
@@ -315,6 +316,11 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
     };
   }, [allMinersStats, minerStats, githubId]);
 
+  const monthlyUsdRange = useMemo(
+    () => calculateMonthlyUsdRange(minerStats?.usdPerDay ?? 0, prs),
+    [prs, minerStats?.usdPerDay],
+  );
+
   const topPrScore = useMemo(() => {
     if (!prs || prs.length === 0) return null;
     return prs.reduce((max, pr) => {
@@ -434,7 +440,13 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
     <StatTile
       label="Earnings"
       value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
-      sub={`$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
+      sub={`${
+        !(minerStats.usdPerDay ?? 0)
+          ? '$0/mo'
+          : monthlyUsdRange
+            ? `$${Math.round(monthlyUsdRange.min).toLocaleString()}–$${Math.round(monthlyUsdRange.max).toLocaleString()}/mo`
+            : `$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo`
+      } · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
       color={
         (minerStats.usdPerDay ?? 0) > 0 ? STATUS_COLORS.success : undefined
       }
@@ -673,7 +685,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
             {renderEarningsTile(
-              'Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus.',
+              'Estimated earnings based on current network incentive distribution. Monthly range: minimum assumes you stop contributing today (existing PRs continue to time-decay); maximum assumes you sustain the current daily rate. Actual payouts depend on validator consensus.',
             )}
           </Grid>
         </Grid>
