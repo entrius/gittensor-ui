@@ -54,8 +54,203 @@ const PRHeader: React.FC<PRHeaderProps> = ({
         ? STATUS_COLORS.merged
         : STATUS_COLORS.open;
 
+  const scoreContent = isOpenPR ? (
+    /* Open PR: Show Potential Score | Collateral */
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: { xs: 1.5, sm: 2.5 },
+      }}
+    >
+      {/* Potential Score */}
+      <Box sx={{ textAlign: 'right' }}>
+        <Tooltip
+          title="Potential score is an estimated earned score if this PR is merged. Some factors like the repository uniqueness multiplier depend on other miners' results at merge time and cannot be predicted exactly."
+          arrow
+          placement="top"
+          slotProps={{
+            tooltip: {
+              sx: {
+                backgroundColor: 'surface.tooltip',
+                color: 'text.primary',
+                fontSize: '0.75rem',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: '1px solid',
+                borderColor: 'border.light',
+                maxWidth: 280,
+              },
+            },
+            arrow: { sx: { color: 'surface.tooltip' } },
+          }}
+        >
+          <Typography
+            sx={{
+              color: 'text.tertiary',
+              fontSize: '0.75rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              mb: 0.5,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: 0.5,
+              cursor: 'pointer',
+            }}
+          >
+            Potential
+            <InfoOutlinedIcon sx={{ fontSize: '0.9rem' }} />
+          </Typography>
+        </Tooltip>
+        <Typography
+          sx={{
+            fontSize: { xs: '1.5rem', sm: '2.25rem' },
+            fontWeight: 700,
+            lineHeight: 1,
+            color: 'text.secondary',
+          }}
+        >
+          {(collateralScore * 5).toFixed(2)}
+        </Typography>
+      </Box>
+
+      {/* Divider */}
+      <Box
+        sx={{
+          width: '1px',
+          height: { xs: '40px', sm: '55px' },
+          backgroundColor: 'border.light',
+          mt: 0.5,
+        }}
+      />
+
+      {/* Collateral */}
+      <Box sx={{ textAlign: 'right' }}>
+        <Tooltip
+          title="Open collateral is deducted from your total score while PRs are open, preventing low-quality PR spam."
+          arrow
+          placement="top"
+          slotProps={{
+            tooltip: {
+              sx: {
+                backgroundColor: 'surface.tooltip',
+                color: 'text.primary',
+                fontSize: '0.75rem',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: '1px solid',
+                borderColor: 'border.light',
+                maxWidth: 240,
+              },
+            },
+            arrow: { sx: { color: 'surface.tooltip' } },
+          }}
+        >
+          <Typography
+            sx={{
+              color: 'text.tertiary',
+              fontSize: '0.75rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              mb: 0.5,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: 0.5,
+              cursor: 'pointer',
+            }}
+          >
+            Collateral
+            <InfoOutlinedIcon sx={{ fontSize: '0.9rem' }} />
+          </Typography>
+        </Tooltip>
+        <Typography
+          sx={{
+            fontSize: { xs: '1.5rem', sm: '2.25rem' },
+            fontWeight: 700,
+            lineHeight: 1,
+            color: collateralScore > 0 ? 'risk.exceeded' : 'text.secondary',
+          }}
+        >
+          {collateralScore > 0
+            ? `-${collateralScore.toFixed(2)}`
+            : collateralScore.toFixed(2)}
+        </Typography>
+      </Box>
+    </Box>
+  ) : (
+    /* Merged/Closed PR: Show Score */
+    <Box sx={{ textAlign: 'right' }}>
+      <Typography
+        sx={{
+          color: 'text.tertiary',
+          fontSize: '0.75rem',
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px',
+          mb: 0.5,
+        }}
+      >
+        Score
+      </Typography>
+      <Typography
+        sx={{
+          fontSize: { xs: '1.75rem', sm: '2.25rem' },
+          fontWeight: 700,
+          lineHeight: 1,
+          color: isClosed ? 'text.secondary' : 'text.primary',
+        }}
+      >
+        {earnedScore.toFixed(2)}
+      </Typography>
+      {!isClosed && predictedUsdPerDay != null && predictedUsdPerDay > 0 && (
+        <Tooltip
+          title="This is an estimation. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
+          arrow
+          placement="bottom"
+          slotProps={{
+            tooltip: {
+              sx: {
+                backgroundColor: 'surface.tooltip',
+                color: 'text.primary',
+                fontSize: '0.75rem',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: '1px solid',
+                borderColor: 'border.light',
+                maxWidth: 280,
+              },
+            },
+            arrow: { sx: { color: 'surface.tooltip' } },
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: '0.95rem',
+              color: 'status.success',
+              opacity: 0.8,
+              mt: 0.5,
+              cursor: 'pointer',
+            }}
+          >
+            ~{formatUsdEstimate(predictedUsdPerDay, { showZero: true })}
+            /day
+          </Typography>
+        </Tooltip>
+      )}
+    </Box>
+  );
+
   return (
-    <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+    <Box
+      sx={{
+        mb: 3,
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: { xs: 1.5, sm: 2 },
+        flexWrap: { xs: 'wrap', md: 'nowrap' },
+      }}
+    >
       <Box
         component="a"
         {...repoLinkProps}
@@ -72,21 +267,29 @@ const PRHeader: React.FC<PRHeaderProps> = ({
           src={`https://avatars.githubusercontent.com/${owner}`}
           alt={owner}
           sx={{
-            width: 64,
-            height: 64,
+            width: { xs: 48, sm: 64 },
+            height: { xs: 48, sm: 64 },
             border: '2px solid',
             borderColor: 'border.medium',
             backgroundColor: ownerAvatarBackground,
           }}
         />
       </Box>
-      <Box sx={{ flex: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: { xs: 1, sm: 1.5 },
+            mb: 0.5,
+          }}
+        >
           <Typography
             variant="h5"
             sx={{
               color: 'text.primary',
-              fontSize: '1.3rem',
+              fontSize: { xs: '1.1rem', sm: '1.3rem' },
               fontWeight: 500,
             }}
           >
@@ -129,8 +332,12 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               backgroundColor: alpha(STATUS_COLORS.info, 0.1),
               textTransform: 'none',
               fontFamily: '"JetBrains Mono", monospace',
-              fontSize: '0.8rem',
+              fontSize: { xs: '0.75rem', sm: '0.8rem' },
               fontWeight: 600,
+              px: { xs: 1, sm: 1.5 },
+              minWidth: 0,
+              whiteSpace: 'nowrap',
+              '& .MuiButton-startIcon': { mr: { xs: 0.5, sm: 1 } },
               '&:hover': {
                 borderColor: STATUS_COLORS.info,
                 color: STATUS_COLORS.info,
@@ -138,15 +345,27 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               },
             }}
           >
-            Open on GitHub
+            <Box
+              component="span"
+              sx={{ display: { xs: 'none', sm: 'inline' } }}
+            >
+              Open on GitHub
+            </Box>
+            <Box
+              component="span"
+              sx={{ display: { xs: 'inline', sm: 'none' } }}
+            >
+              GitHub
+            </Box>
           </Button>
         </Box>
         <Typography
           sx={{
             color: 'text.primary',
-            fontSize: '1rem',
+            fontSize: { xs: '0.95rem', sm: '1rem' },
             fontWeight: 400,
             mb: 0.5,
+            wordBreak: 'break-word',
           }}
         >
           {prDetails.title}
@@ -170,6 +389,116 @@ const PRHeader: React.FC<PRHeaderProps> = ({
             {repository}
           </Typography>
         </Box>
+        {/* Mobile-only score chip row: appears above user/merged chips */}
+        <Box
+          sx={{
+            display: { xs: 'flex', md: 'none' },
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 1,
+            mt: 1,
+          }}
+        >
+          {isOpenPR ? (
+            <>
+              <Box
+                sx={{
+                  ...chipSx,
+                  borderColor: 'border.light',
+                  backgroundColor: 'surface.subtle',
+                }}
+              >
+                <Typography
+                  sx={{
+                    color: 'text.tertiary',
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  Potential
+                </Typography>
+                <Typography
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: '0.9rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  {(collateralScore * 5).toFixed(2)}
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  ...chipSx,
+                  borderColor:
+                    collateralScore > 0
+                      ? alpha(STATUS_COLORS.error, 0.3)
+                      : 'border.light',
+                  backgroundColor:
+                    collateralScore > 0
+                      ? alpha(STATUS_COLORS.error, 0.08)
+                      : 'surface.subtle',
+                }}
+              >
+                <Typography
+                  sx={{
+                    color: 'text.tertiary',
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  Collateral
+                </Typography>
+                <Typography
+                  sx={{
+                    color:
+                      collateralScore > 0 ? 'risk.exceeded' : 'text.secondary',
+                    fontSize: '0.9rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  {collateralScore > 0
+                    ? `-${collateralScore.toFixed(2)}`
+                    : collateralScore.toFixed(2)}
+                </Typography>
+              </Box>
+            </>
+          ) : (
+            <Box
+              sx={{
+                ...chipSx,
+                borderColor: 'border.light',
+                backgroundColor: 'surface.subtle',
+              }}
+            >
+              <Typography
+                sx={{
+                  color: 'text.tertiary',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                Score
+              </Typography>
+              <Typography
+                sx={{
+                  color: isClosed ? 'text.secondary' : 'text.primary',
+                  fontSize: '0.9rem',
+                  fontWeight: 700,
+                }}
+              >
+                {earnedScore.toFixed(2)}
+              </Typography>
+            </Box>
+          )}
+        </Box>
+
         <Box
           sx={{
             display: 'flex',
@@ -242,210 +571,16 @@ const PRHeader: React.FC<PRHeaderProps> = ({
         </Box>
       </Box>
 
-      {/* Score Section */}
+      {/* Desktop score: right column */}
       <Box
         sx={{
-          display: 'flex',
+          display: { xs: 'none', md: 'flex' },
           flexDirection: 'column',
           alignItems: 'flex-end',
           gap: 0.75,
         }}
       >
-        {isOpenPR ? (
-          /* Open PR: Show Potential Score | Collateral */
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2.5 }}>
-            {/* Potential Score */}
-            <Box sx={{ textAlign: 'right' }}>
-              <Tooltip
-                title="Potential score is an estimated earned score if this PR is merged. Some factors like the repository uniqueness multiplier depend on other miners' results at merge time and cannot be predicted exactly."
-                arrow
-                placement="top"
-                slotProps={{
-                  tooltip: {
-                    sx: {
-                      backgroundColor: 'surface.tooltip',
-                      color: 'text.primary',
-                      fontSize: '0.75rem',
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid',
-                      borderColor: 'border.light',
-                      maxWidth: 280,
-                    },
-                  },
-                  arrow: {
-                    sx: {
-                      color: 'surface.tooltip',
-                    },
-                  },
-                }}
-              >
-                <Typography
-                  sx={{
-                    color: 'text.tertiary',
-                    fontSize: '0.75rem',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    mb: 0.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-end',
-                    gap: 0.5,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Potential
-                  <InfoOutlinedIcon sx={{ fontSize: '0.9rem' }} />
-                </Typography>
-              </Tooltip>
-              <Typography
-                sx={{
-                  fontSize: '2.25rem',
-                  fontWeight: 700,
-                  lineHeight: 1,
-                  color: 'text.secondary',
-                }}
-              >
-                {(collateralScore * 5).toFixed(2)}
-              </Typography>
-            </Box>
-
-            {/* Divider */}
-            <Box
-              sx={{
-                width: '1px',
-                height: '55px',
-                backgroundColor: 'border.light',
-                mt: 0.5,
-              }}
-            />
-
-            {/* Collateral */}
-            <Box sx={{ textAlign: 'right' }}>
-              <Tooltip
-                title="Open collateral is deducted from your total score while PRs are open, preventing low-quality PR spam."
-                arrow
-                placement="top"
-                slotProps={{
-                  tooltip: {
-                    sx: {
-                      backgroundColor: 'surface.tooltip',
-                      color: 'text.primary',
-                      fontSize: '0.75rem',
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid',
-                      borderColor: 'border.light',
-                      maxWidth: 240,
-                    },
-                  },
-                  arrow: {
-                    sx: {
-                      color: 'surface.tooltip',
-                    },
-                  },
-                }}
-              >
-                <Typography
-                  sx={{
-                    color: 'text.tertiary',
-                    fontSize: '0.75rem',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    mb: 0.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-end',
-                    gap: 0.5,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Collateral
-                  <InfoOutlinedIcon sx={{ fontSize: '0.9rem' }} />
-                </Typography>
-              </Tooltip>
-              <Typography
-                sx={{
-                  fontSize: '2.25rem',
-                  fontWeight: 700,
-                  lineHeight: 1,
-                  color:
-                    collateralScore > 0 ? 'risk.exceeded' : 'text.secondary',
-                }}
-              >
-                {collateralScore > 0
-                  ? `-${collateralScore.toFixed(2)}`
-                  : collateralScore.toFixed(2)}
-              </Typography>
-            </Box>
-          </Box>
-        ) : (
-          /* Merged/Closed PR: Show Score */
-          <Box sx={{ textAlign: 'right' }}>
-            <Typography
-              sx={{
-                color: 'text.tertiary',
-                fontSize: '0.75rem',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                mb: 0.5,
-              }}
-            >
-              Score
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: '2.25rem',
-                fontWeight: 700,
-                lineHeight: 1,
-                color: isClosed ? 'text.secondary' : 'text.primary',
-              }}
-            >
-              {earnedScore.toFixed(2)}
-            </Typography>
-            {!isClosed &&
-              predictedUsdPerDay != null &&
-              predictedUsdPerDay > 0 && (
-                <Tooltip
-                  title="This is an estimation. Actual payouts depend on validator consensus, network incentive distribution, and other miners' scores."
-                  arrow
-                  placement="bottom"
-                  slotProps={{
-                    tooltip: {
-                      sx: {
-                        backgroundColor: 'surface.tooltip',
-                        color: 'text.primary',
-                        fontSize: '0.75rem',
-                        padding: '8px 12px',
-                        borderRadius: '6px',
-                        border: '1px solid',
-                        borderColor: 'border.light',
-                        maxWidth: 280,
-                      },
-                    },
-                    arrow: {
-                      sx: {
-                        color: 'surface.tooltip',
-                      },
-                    },
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontSize: '0.95rem',
-                      color: 'status.success',
-                      opacity: 0.8,
-                      mt: 0.5,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    ~{formatUsdEstimate(predictedUsdPerDay, { showZero: true })}
-                    /day
-                  </Typography>
-                </Tooltip>
-              )}
-          </Box>
-        )}
+        {scoreContent}
       </Box>
     </Box>
   );
