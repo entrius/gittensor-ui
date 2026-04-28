@@ -211,6 +211,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       header: 'Title',
       width: '19%',
       sortKey: 'pullRequestTitle',
+      headerSx: { width: { xs: '35%', sm: '19%' } },
       renderCell: (pr) => (
         <Tooltip
           title={pr.pullRequestTitle}
@@ -235,6 +236,8 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       header: 'Author',
       width: '18%',
       sortKey: 'author',
+      headerSx: { display: { xs: 'none', sm: 'table-cell' } },
+      cellSx: { display: { xs: 'none', sm: 'table-cell' } },
       renderCell: (pr) => (
         <Tooltip
           title={pr.author}
@@ -269,6 +272,8 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       width: '8%',
       align: 'center',
       sortKey: 'commitCount',
+      headerSx: { display: { xs: 'none', sm: 'table-cell' } },
+      cellSx: { display: { xs: 'none', sm: 'table-cell' } },
       renderCell: (pr) => pr.commitCount,
     },
     {
@@ -277,6 +282,8 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       width: '11%',
       align: 'center',
       sortKey: 'lines',
+      headerSx: { display: { xs: 'none', sm: 'table-cell' } },
+      cellSx: { display: { xs: 'none', sm: 'table-cell' } },
       renderCell: (pr) => (
         <>
           <Box
@@ -389,7 +396,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         getRowKey={(pr) => `${pr.repository}-${pr.pullRequestNumber}`}
         stickyHeader
         size="medium"
-        minWidth="700px"
+        minWidth="480px"
         header={headerToolbar}
         emptyState={
           <Box sx={{ p: 4, textAlign: 'center' }}>
