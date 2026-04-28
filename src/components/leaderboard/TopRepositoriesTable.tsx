@@ -885,9 +885,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'discoveryScore',
-      header: renderSortHeader('discoveryScore', 'Issue score', 'right'),
+      header: renderSortHeader('discoveryScore', 'Issue score', 'center'),
       width: '10%',
-      align: 'right',
+      align: 'center',
       headerSx: sortableHeaderSx,
       renderCell: (repo) => {
         const active = repoHasDiscoveryActivity(repo);
@@ -907,9 +907,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'discoveryIssues',
-      header: renderSortHeader('discoveryIssues', 'Issues', 'right'),
+      header: renderSortHeader('discoveryIssues', 'Issues', 'center'),
       width: '7%',
-      align: 'right',
+      align: 'center',
       headerSx: sortableHeaderSx,
       renderCell: (repo) => {
         const active = repoHasDiscoveryActivity(repo);
@@ -952,10 +952,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       header: renderSortHeader(
         'discoveryContributors',
         'Issue contrib.',
-        'right',
+        'center',
       ),
       width: '9%',
-      align: 'right',
+      align: 'center',
       headerSx: sortableHeaderSx,
       renderCell: (repo) => {
         const active = repoHasDiscoveryActivity(repo);
