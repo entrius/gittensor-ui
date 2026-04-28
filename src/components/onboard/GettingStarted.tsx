@@ -196,11 +196,15 @@ const StepDetail: React.FC<{ step: number }> = ({ step }) => {
           </Typography>
           <NetworkTabs network={network} onChange={setNetwork} />
           {network === 'mainnet' ? (
-            <CodeBlock label={MAINNET_LABEL}>{`btcli subnet register --netuid ${MAINNET_NETUID} \\
+            <CodeBlock
+              label={MAINNET_LABEL}
+            >{`btcli subnet register --netuid ${MAINNET_NETUID} \\
   --wallet-name <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME>`}</CodeBlock>
           ) : (
-            <CodeBlock label={TESTNET_LABEL}>{`btcli subnet register --netuid ${TESTNET_NETUID} \\
+            <CodeBlock
+              label={TESTNET_LABEL}
+            >{`btcli subnet register --netuid ${TESTNET_NETUID} \\
   --wallet-name <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
   --network test`}</CodeBlock>
@@ -303,12 +307,16 @@ uv pip install -e .`}</CodeBlock>
           </Typography>
           <NetworkTabs network={network} onChange={setNetwork} />
           {network === 'mainnet' ? (
-            <CodeBlock label={MAINNET_LABEL}>{`gitt miner post --pat <YOUR_PAT> \\
+            <CodeBlock
+              label={MAINNET_LABEL}
+            >{`gitt miner post --pat <YOUR_PAT> \\
   --wallet <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
   --netuid ${MAINNET_NETUID}`}</CodeBlock>
           ) : (
-            <CodeBlock label={TESTNET_LABEL}>{`gitt miner post --pat <YOUR_PAT> \\
+            <CodeBlock
+              label={TESTNET_LABEL}
+            >{`gitt miner post --pat <YOUR_PAT> \\
   --wallet <WALLET_NAME> \\
   --hotkey <HOTKEY_NAME> \\
   --netuid ${TESTNET_NETUID} --network test`}</CodeBlock>
