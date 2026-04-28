@@ -415,6 +415,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
           header: 'Issue #',
           width: '9%',
           sortKey: 'number',
+          headerSx: { verticalAlign: 'middle' },
           cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
           renderCell: (issue) => (
             // stopPropagation keeps the row's onRowClick from also firing
@@ -436,7 +437,8 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         {
           key: 'title',
           header: 'Title',
-          width: '35%',
+          width: '38%',
+          headerSx: { verticalAlign: 'middle' },
           cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
           renderCell: (issue) => (
             <Box
@@ -453,8 +455,9 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         {
           key: 'repository',
           header: 'Repository',
-          width: '24%',
+          width: '20%',
           sortKey: 'repository',
+          headerSx: { verticalAlign: 'middle' },
           renderCell: (issue) => {
             const owner = issue.repositoryFullName.split('/')[0];
             return (
@@ -490,7 +493,8 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         {
           key: 'linked_pr',
           header: 'Linked PR',
-          width: '17%',
+          width: '14%',
+          headerSx: { verticalAlign: 'middle' },
           renderCell: (issue) =>
             issue.prNumber != null ? (
               <a
@@ -537,9 +541,10 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         {
           key: 'opened',
           header: 'Opened',
-          width: '15%',
+          width: '19%',
           align: 'right',
           sortKey: 'opened',
+          headerSx: { verticalAlign: 'middle' },
           cellSx: {
             fontSize: { xs: '0.75rem', sm: '0.85rem' },
             color: (t) => alpha(t.palette.text.primary, 0.7),
@@ -570,6 +575,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
           header: 'Issue #',
           width: '9%',
           sortKey: 'number' as IssueSortField,
+          headerSx: { verticalAlign: 'middle' },
           cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
           renderCell: (issue) => (
             <a
@@ -590,7 +596,8 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         {
           key: 'title',
           header: 'Title',
-          width: '28%',
+          width: '38%',
+          headerSx: { verticalAlign: 'middle' },
           cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
           renderCell: (issue) => (
             <Box
@@ -609,6 +616,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
           header: 'Repository',
           width: '20%',
           sortKey: 'repository' as IssueSortField,
+          headerSx: { verticalAlign: 'middle' },
           renderCell: (issue) => {
             const owner = issue.repositoryFullName.split('/')[0];
             return (
@@ -642,51 +650,10 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
           },
         },
         {
-          key: 'author',
-          header: 'Author',
-          width: '14%',
-          renderCell: (issue) => {
-            const authorLogin = issue.authorLogin ?? issue.author ?? null;
-            if (!authorLogin) return null;
-            return (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  overflow: 'hidden',
-                }}
-              >
-                <Avatar
-                  src={`https://avatars.githubusercontent.com/${authorLogin}`}
-                  alt={authorLogin}
-                  sx={{
-                    width: 18,
-                    height: 18,
-                    flexShrink: 0,
-                    border: '1px solid',
-                    borderColor: 'border.medium',
-                  }}
-                />
-                <Box
-                  component="span"
-                  sx={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    fontSize: '0.8rem',
-                  }}
-                >
-                  @{authorLogin}
-                </Box>
-              </Box>
-            );
-          },
-        },
-        {
           key: 'linked_pr',
           header: 'Linked PR',
-          width: '15%',
+          width: '14%',
+          headerSx: { verticalAlign: 'middle' },
           renderCell: (issue) =>
             issue.prNumber != null ? (
               <a
@@ -733,9 +700,10 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         {
           key: 'opened',
           header: 'Opened',
-          width: '14%',
+          width: '19%',
           align: 'right',
           sortKey: 'opened' as IssueSortField,
+          headerSx: { verticalAlign: 'middle' },
           cellSx: {
             fontSize: { xs: '0.75rem', sm: '0.85rem' },
             color: (t) => alpha(t.palette.text.primary, 0.7),
