@@ -51,7 +51,7 @@ import {
 } from '../components/common/DataTable';
 import { LinkBox } from '../components/common/linkBehavior';
 import type { CommitLog, Repository } from '../api/models/Dashboard';
-import { useAllMiners, useReposAndWeights, useIssues } from '../api';
+import { useAllMiners, useAllPrs, useReposAndWeights, useIssues } from '../api';
 import { mapAllMinersToStats } from '../utils/minerMapper';
 import {
   useWatchlist,
