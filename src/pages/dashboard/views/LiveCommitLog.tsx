@@ -124,6 +124,37 @@ const getScoreColor = (score: string) => {
   return theme.palette.text.secondary;
 };
 
+const getOwnerInitial = (repository: string) => {
+  const owner = repository.split('/')[0]?.trim();
+  return owner ? owner.charAt(0).toUpperCase() : '?';
+};
+
+const getOwnerAvatarBg = (owner: string) => {
+  if (owner === 'opentensor') {
+    return REPO_OWNER_AVATAR_BACKGROUNDS.opentensor;
+  }
+  if (owner === 'bitcoin') {
+    return REPO_OWNER_AVATAR_BACKGROUNDS.bitcoin;
+  }
+  return theme.palette.surface.transparent;
+};
+
+const getAvatarFallbackColor = (avatarBg: string) => {
+  if (avatarBg === theme.palette.surface.transparent) {
+    return theme.palette.text.primary;
+  }
+  return theme.palette.getContrastText(avatarBg);
+};
+
+const getOwnerAvatarStyles = (owner: string) => {
+  const avatarBg = getOwnerAvatarBg(owner);
+  // Keep fallback text readable regardless of background color choice.
+  return {
+    backgroundColor: avatarBg,
+    color: getAvatarFallbackColor(avatarBg),
+  };
+};
+
 const CommitLogItem: React.FC<{
   entry: CommitLogEntry;
   isNew: boolean;
@@ -131,6 +162,9 @@ const CommitLogItem: React.FC<{
 }> = ({ entry, isNew, innerRef }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const repositoryOwner = entry.repository.split('/')[0];
+  const repositoryOwnerInitial = getOwnerInitial(entry.repository);
+  const ownerAvatarStyles = getOwnerAvatarStyles(repositoryOwner);
 
   const isMerged = !!entry.mergedAt;
   const isClosed = entry.prState === 'CLOSED' && !entry.mergedAt;
@@ -197,19 +231,19 @@ const CommitLogItem: React.FC<{
         >
           <Stack direction="row" alignItems="center" spacing={1}>
             <Avatar
-              src={`https://avatars.githubusercontent.com/${entry.repository.split('/')[0]}`}
+              src={`https://avatars.githubusercontent.com/${repositoryOwner}`}
+              alt={repositoryOwner}
               sx={{
                 width: 16,
                 height: 16,
                 border: `1px solid ${theme.palette.border.medium}`,
-                backgroundColor:
-                  entry.repository.split('/')[0] === 'opentensor'
-                    ? REPO_OWNER_AVATAR_BACKGROUNDS.opentensor
-                    : entry.repository.split('/')[0] === 'bitcoin'
-                      ? REPO_OWNER_AVATAR_BACKGROUNDS.bitcoin
-                      : theme.palette.surface.transparent,
+                ...ownerAvatarStyles,
+                fontSize: '0.62rem',
+                fontWeight: 600,
               }}
-            />
+            >
+              {repositoryOwnerInitial}
+            </Avatar>
             <Typography
               variant="caption"
               sx={{
