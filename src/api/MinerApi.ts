@@ -79,6 +79,11 @@ export const useMinerGithubData = (githubId: string, enabled?: boolean) =>
 
 /**
  * Mirror-API issues for a single miner. `select` unwraps `{ issues: [...] }`.
+ * Get all issues authored or solved by a specific miner.
+ * Hits the mirror API (https://mirror.gittensor.io/api/v1) which returns the
+ * raw snake_case payload — `select` unwraps `{ issues: [...] }` for callers.
+ * @param githubId - Numeric GitHub ID (e.g., "583231"), NOT username
+ * @param enabled - Optional flag to enable/disable the query
  */
 export const useMinerIssues = (githubId: string, enabled?: boolean) =>
   useMirrorApiQuery<MinerIssuesResponse, MinerIssue[]>(

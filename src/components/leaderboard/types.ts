@@ -67,6 +67,7 @@ export type SortOption =
   | 'usdPerDay'
   | 'totalPRs'
   | 'totalIssues'
+  | 'issueDiscoveryScore'
   | 'credibility';
 
 export const FONTS = {
