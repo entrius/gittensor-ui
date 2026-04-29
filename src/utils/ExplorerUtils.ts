@@ -129,6 +129,17 @@ export interface RepoStats {
   latestPrDate?: string | null;
 }
 
+/** Per-repository stats for Issue Discovery (miner solved bounties via winning PRs). */
+export interface IssueRepoStats {
+  repository: string;
+  solved: number;
+  validSolved: number;
+  issueTokenScore: number;
+  bountyEarned: number;
+  weight: number;
+  latestActivityDate: string | null;
+}
+
 export type RepoSortField =
   | 'rank'
   | 'repository'
@@ -136,7 +147,21 @@ export type RepoSortField =
   | 'score'
   | 'tokenScore'
   | 'weight';
+
+export type IssueRepoSortField =
+  | 'rank'
+  | 'repository'
+  | 'solved'
+  | 'validSolved'
+  | 'issueTokenScore'
+  | 'bountyEarned'
+  | 'weight';
+
+export type MinerRepoTableSortField = RepoSortField | IssueRepoSortField;
+
 export type SortOrder = 'asc' | 'desc';
+
+const VALID_ISSUE_SOLVE_TOKEN_THRESHOLD = 5;
 
 export const sortMinerRepoStats = (
   stats: RepoStats[],
@@ -165,6 +190,44 @@ export const sortMinerRepoStats = (
       case 'rank':
         compareValue = a.score - b.score;
         break;
+    }
+    return order === 'asc' ? compareValue : -compareValue;
+  });
+  return sorted;
+};
+
+export const sortIssueRepoStats = (
+  stats: IssueRepoStats[],
+  field: IssueRepoSortField,
+  order: SortOrder,
+): IssueRepoStats[] => {
+  const sorted = [...stats];
+  sorted.sort((a, b) => {
+    let compareValue = 0;
+    switch (field) {
+      case 'repository':
+        compareValue = a.repository.localeCompare(b.repository);
+        break;
+      case 'solved':
+        compareValue = a.solved - b.solved;
+        break;
+      case 'validSolved':
+        compareValue = a.validSolved - b.validSolved;
+        break;
+      case 'issueTokenScore':
+        compareValue = a.issueTokenScore - b.issueTokenScore;
+        break;
+      case 'bountyEarned':
+        compareValue = a.bountyEarned - b.bountyEarned;
+        break;
+      case 'weight':
+        compareValue = a.weight - b.weight;
+        break;
+      case 'rank':
+        compareValue = a.issueTokenScore - b.issueTokenScore;
+        break;
+      default:
+        compareValue = 0;
     }
     return order === 'asc' ? compareValue : -compareValue;
   });
@@ -243,8 +306,67 @@ export const aggregatePRsByRepository = (
   return Array.from(statsMap.values());
 };
 
+/**
+ * Repositories where this miner’s merged PR was the winning solve for a completed bounty.
+ */
+export const aggregateIssueDiscoveryByRepository = (
+  prs: CommitLog[],
+  issues: IssueBounty[] | undefined,
+  repoWeights: Map<string, number>,
+): IssueRepoStats[] => {
+  if (!prs.length || !issues?.length) return [];
+
+  const winningMinerPrByKey = new Map<string, CommitLog>();
+  for (const pr of prs) {
+    if (!isMergedPr(pr) || !pr.repository) continue;
+    winningMinerPrByKey.set(`${pr.repository}#${pr.pullRequestNumber}`, pr);
+  }
+
+  const statsMap = new Map<string, IssueRepoStats>();
+
+  for (const issue of issues) {
+    if (issue.status !== 'completed' || issue.winningPrNumber == null) continue;
+    const repo = issue.repositoryFullName;
+    if (!repo) continue;
+
+    const pr = winningMinerPrByKey.get(`${repo}#${issue.winningPrNumber}`);
+    if (!pr) continue;
+
+    let row = statsMap.get(repo);
+    if (!row) {
+      row = {
+        repository: repo,
+        solved: 0,
+        validSolved: 0,
+        issueTokenScore: 0,
+        bountyEarned: 0,
+        weight: repoWeights.get(repo) || 0,
+        latestActivityDate: null,
+      };
+      statsMap.set(repo, row);
+    }
+
+    row.solved += 1;
+    const tok = parseNumber(pr.tokenScore);
+    row.issueTokenScore += tok;
+    if (tok >= VALID_ISSUE_SOLVE_TOKEN_THRESHOLD) {
+      row.validSolved += 1;
+    }
+    row.bountyEarned += parseFloat(issue.bountyAmount || '0');
+    const activityTs = issue.completedAt || pr.mergedAt;
+    if (
+      activityTs &&
+      (!row.latestActivityDate || activityTs > row.latestActivityDate)
+    ) {
+      row.latestActivityDate = activityTs;
+    }
+  }
+
+  return Array.from(statsMap.values());
+};
+
 // ---------------------------------------------------------------------------
-// Issue discovery – miner repos and leaderboard rollups
+// Issue discovery – repo rollups from issue-linked / multiplier PRs
 // ---------------------------------------------------------------------------
 
 /**
@@ -276,9 +398,8 @@ export const isIssueDiscoveryMultiplierPr = (pr: CommitLog): boolean => {
 };
 
 /**
- * Per-repository stats for the Issue Discovery Repositories tab and discovery radar:
- * **merged** PRs only (aligned with OSS repos row), passing
- * {@link isIssueDiscoveryContributionPr}.
+ * Per-repository stats for a miner's issue-discovery repos: **merged** PRs only
+ * (aligned with Repositories OSS row), passing {@link isIssueDiscoveryContributionPr}.
  */
 export const aggregateIssueDiscoveryRepos = (
   prs: CommitLog[] | undefined,
@@ -503,10 +624,10 @@ export const getDisplayCount = (
   return String(filteredCount);
 };
 
-export const filterBySearch = (
-  stats: RepoStats[],
+export const filterBySearch = <T extends { repository: string }>(
+  stats: T[],
   searchQuery: string,
-): RepoStats[] => {
+): T[] => {
   const q = searchQuery.trim().toLowerCase();
   if (!q) return stats;
   return stats.filter((r) => r.repository.toLowerCase().includes(q));

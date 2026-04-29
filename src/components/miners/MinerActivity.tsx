@@ -15,15 +15,21 @@ import {
   useMinerPRs,
   useReposAndWeights,
   useAllMiners,
+  useIssues,
 } from '../../api';
 import ContributionHeatmap from '../ContributionHeatmap';
 import DayPRsPanel from '../DayPRsPanel';
 import { CHART_COLORS, STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import {
-  aggregateIssueDiscoveryRepos,
+  aggregateIssueDiscoveryByRepository,
   buildRepoWeightsMap,
   parseNumber,
 } from '../../utils/ExplorerUtils';
+import {
+  echartsItemTooltipChrome,
+  echartsRadarChrome,
+  echartsTransparentBackground,
+} from '../../utils/echarts/gittensorChartTheme';
 import TrustBadge from './TrustBadge';
 import CredibilityChart from './CredibilityChart';
 import PerformanceRadar from './PerformanceRadar';
@@ -87,7 +93,7 @@ const IssueCredibilityChart: React.FC<{
 
   const chartOption = useMemo(
     () => ({
-      backgroundColor: 'transparent',
+      ...echartsTransparentBackground(),
       title: {
         text: `${(credibility * 100).toFixed(0)}%`,
         subtext: 'Credibility',
@@ -107,12 +113,7 @@ const IssueCredibilityChart: React.FC<{
       tooltip: {
         trigger: 'item',
         formatter: '{b}: {c} ({d}%)',
-        backgroundColor: alpha(theme.palette.common.black, 0.9),
-        borderColor: alpha(theme.palette.common.white, TEXT_OPACITY.ghost),
-        borderWidth: 1,
-        textStyle: {
-          color: theme.palette.text.primary,
-        },
+        ...echartsItemTooltipChrome(theme),
       },
       series: [
         {
@@ -213,8 +214,9 @@ const IssuePerformanceRadar: React.FC<{
 
   const chartOption = useMemo(
     () => ({
-      backgroundColor: 'transparent',
+      ...echartsTransparentBackground(),
       radar: {
+        ...echartsRadarChrome(theme),
         indicator: [
           { name: 'Credibility', max: 100 },
           { name: 'Solve\nRate', max: 100 },
@@ -228,24 +230,6 @@ const IssuePerformanceRadar: React.FC<{
         radius: '50%',
         shape: 'circle',
         splitNumber: 5,
-        axisName: {
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-          fontSize: 9,
-          lineHeight: 12,
-        },
-        splitLine: {
-          lineStyle: {
-            color: Array(5).fill(
-              alpha(theme.palette.common.white, TEXT_OPACITY.ghost * 0.25),
-            ),
-          },
-        },
-        splitArea: { show: false },
-        axisLine: {
-          lineStyle: {
-            color: alpha(theme.palette.common.white, TEXT_OPACITY.ghost * 0.5),
-          },
-        },
       },
       series: [
         {
@@ -324,6 +308,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
   const { data: minerStats } = useMinerStats(githubId);
   const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
   const { data: repos } = useReposAndWeights();
+  const { data: issues } = useIssues();
   const { data: allMinerStats } = useAllMiners();
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
@@ -487,15 +472,19 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
       1,
     );
 
-    // Avg repo weight = mean of subnet Weight column on Issue Discovery Repositories
-    // tab (issue-multiplier PRs only, one weight per distinct repo).
+    // Avg repo weight = mean subnet weight on Issue Discovery Repositories tab
+    // (completed bounty solves — same basis as MinerRepositoriesTable issue mode).
     let avgRepoWeight = 0;
     const repoWeights =
       repos && Array.isArray(repos) && repos.length > 0
         ? buildRepoWeightsMap(repos)
         : null;
-    if (repoWeights && prs?.length) {
-      const issueRepos = aggregateIssueDiscoveryRepos(prs, repoWeights);
+    if (repoWeights && prs?.length && issues?.length) {
+      const issueRepos = aggregateIssueDiscoveryByRepository(
+        prs,
+        issues,
+        repoWeights,
+      );
       if (issueRepos.length > 0) {
         const avgRaw =
           issueRepos.reduce((sum, r) => sum + r.weight, 0) / issueRepos.length;
@@ -515,7 +504,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
       tokenScore: (issueTokenScore / maxTokenScore) * 100,
       avgRepoWeight,
     };
-  }, [minerStats, allMinerStats, isIssueMode, repos, prs]);
+  }, [minerStats, allMinerStats, isIssueMode, repos, prs, issues]);
 
   if (!minerStats) return null;
 
