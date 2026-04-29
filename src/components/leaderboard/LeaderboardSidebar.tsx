@@ -2,22 +2,27 @@ import React, { useMemo, useState } from 'react';
 import { Box, Stack, Typography, Avatar } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { SectionCard } from './SectionCard';
-import { STATUS_COLORS } from '../../theme';
+import { STATUS_COLORS, scrollbarSx } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
+import { LinkBox } from '../common/linkBehavior';
 import { type MinerStats, FONTS } from './types';
+import { ActivitySidebarCards } from './ActivitySidebarCards';
+import { useEligibilityFilteredMiners } from './useEligibilityFilteredMiners';
 
 // Re-export MinerStats for backward compatibility
 export type { MinerStats } from './types';
 
 interface LeaderboardSidebarProps {
   miners: MinerStats[];
-  onSelectMiner: (githubId: string) => void;
+  getMinerHref: (miner: MinerStats) => string;
+  linkState?: Record<string, unknown>;
   variant?: 'oss' | 'discoveries';
 }
 
 export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
   miners,
-  onSelectMiner,
+  getMinerHref,
+  linkState,
   variant = 'oss',
 }) => {
   // State for toggling lists
@@ -25,75 +30,37 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
     'earners',
   );
 
-  // Stats (Use original unfiltered list for stats)
+  const filteredMiners = useEligibilityFilteredMiners(miners);
+
   const topEarners = useMemo(
     () =>
-      [...miners]
+      [...filteredMiners]
         .sort((a, b) => (b.usdPerDay || 0) - (a.usdPerDay || 0))
         .slice(0, 5),
-    [miners],
+    [filteredMiners],
   );
 
   const mostActive = useMemo(
     () =>
-      [...miners]
+      [...filteredMiners]
         .sort((a, b) =>
           variant === 'discoveries'
             ? (b.totalIssues || 0) - (a.totalIssues || 0)
             : (b.totalPRs || 0) - (a.totalPRs || 0),
         )
         .slice(0, 5),
-    [miners, variant],
-  );
-
-  // Network Stats Data
-  const networkStats = useMemo(
-    () => ({
-      totalMiners: miners.length,
-      eligible: miners.filter((m) => m.isEligible).length,
-      totalPRs: miners.reduce((acc, m) => acc + (m.totalPRs || 0), 0),
-      totalIssues: miners.reduce((acc, m) => acc + (m.totalIssues || 0), 0),
-      dailyPool: miners.reduce((acc, m) => acc + (m.usdPerDay || 0), 0),
-    }),
-    [miners],
+    [filteredMiners, variant],
   );
 
   return (
-    <Stack spacing={2} sx={{ height: '100%', overflow: 'auto', pr: 1 }}>
-      {/* CARD 1: Network Stats */}
-      <SectionCard title="Network Stats" sx={{ flexShrink: 0 }}>
-        <Box
-          sx={{
-            pt: 1,
-            px: 2,
-            pb: 2,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-          }}
-        >
-          <StatRow label="Total Miners" value={networkStats.totalMiners} />
-          <StatRow
-            label={variant === 'discoveries' ? 'Issues Eligible' : 'Eligible'}
-            value={networkStats.eligible}
-          />
-          <StatRow
-            label={variant === 'discoveries' ? 'Total Issues' : 'Total PRs'}
-            value={
-              variant === 'discoveries'
-                ? networkStats.totalIssues
-                : networkStats.totalPRs
-            }
-          />
-          <StatRow
-            label="Daily Pool"
-            value={`$${networkStats.dailyPool.toLocaleString()}`}
-            valueColor={STATUS_COLORS.merged}
-          />
-        </Box>
-      </SectionCard>
+    <Stack
+      spacing={2}
+      sx={{ height: '100%', overflow: 'auto', pr: 1, ...scrollbarSx }}
+    >
+      {/* Activity Cards: PR Activity, Issue Activity, Code Impact */}
+      <ActivitySidebarCards miners={miners} />
 
-      {/* CARD 2: Leaderboard Lists (Tabs) */}
+      {/* Leaderboard Lists (Tabs) */}
       <SectionCard
         title={leaderboardType === 'earners' ? 'Top Earners' : 'Most Active'}
         action={
@@ -115,9 +82,8 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
                 rank={i + 1}
                 type={leaderboardType}
                 variant={variant}
-                onClick={() =>
-                  onSelectMiner(miner.githubId || miner.author || '')
-                }
+                href={getMinerHref(miner)}
+                linkState={linkState}
               />
             ),
           )}
@@ -126,42 +92,6 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
     </Stack>
   );
 };
-
-interface StatRowProps {
-  label: string;
-  value: number | string;
-  valueColor?: string;
-}
-
-const StatRow: React.FC<StatRowProps> = ({ label, value, valueColor }) => (
-  <Box
-    sx={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    }}
-  >
-    <Typography
-      sx={{
-        fontFamily: FONTS.mono,
-        fontSize: '0.85rem',
-        color: STATUS_COLORS.open,
-      }}
-    >
-      {label}
-    </Typography>
-    <Typography
-      sx={(theme) => ({
-        fontFamily: FONTS.mono,
-        fontWeight: 600,
-        fontSize: '1.1rem',
-        color: valueColor ?? theme.palette.text.primary,
-      })}
-    >
-      {value}
-    </Typography>
-  </Box>
-);
 
 interface LeaderboardTabsProps {
   activeTab: 'earners' | 'active';
@@ -290,7 +220,8 @@ interface LeaderboardRowProps {
   rank: number;
   type: 'earners' | 'active';
   variant?: 'oss' | 'discoveries';
-  onClick: () => void;
+  href: string;
+  linkState?: Record<string, unknown>;
 }
 
 const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
@@ -298,73 +229,78 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
   rank,
   type,
   variant = 'oss',
-  onClick,
-}) => (
-  <Box
-    onClick={onClick}
-    sx={(theme) => ({
-      display: 'flex',
-      alignItems: 'center',
-      py: 1,
-      cursor: 'pointer',
-      '&:hover': {
-        backgroundColor: alpha(theme.palette.text.primary, 0.03),
-        borderRadius: 1,
-      },
-    })}
-  >
-    <Typography
-      sx={{
-        fontFamily: FONTS.mono,
-        fontSize: '0.85rem',
-        color: STATUS_COLORS.open,
-        width: 24,
-      }}
-    >
-      {rank}
-    </Typography>
-    <Box
-      sx={{
+  href,
+  linkState,
+}) => {
+  return (
+    <LinkBox
+      href={href}
+      linkState={linkState}
+      sx={(theme) => ({
         display: 'flex',
         alignItems: 'center',
-        gap: 1,
-        flex: 1,
-        minWidth: 0,
-      }}
+        py: 1,
+        px: 2,
+        mx: -2,
+        cursor: 'pointer',
+        '&:hover': {
+          backgroundColor: alpha(theme.palette.text.primary, 0.03),
+        },
+      })}
     >
-      <Avatar
-        src={getGithubAvatarSrc(miner.author || miner.githubId)}
-        sx={{ width: 20, height: 20 }}
-      />
+      <Typography
+        sx={{
+          fontFamily: FONTS.mono,
+          fontSize: '0.85rem',
+          color: STATUS_COLORS.open,
+          width: 24,
+        }}
+      >
+        {rank}
+      </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
+        <Avatar
+          src={getGithubAvatarSrc(miner.author || miner.githubId)}
+          sx={{ width: 20, height: 20 }}
+        />
+        <Typography
+          sx={(theme) => ({
+            fontFamily: FONTS.mono,
+            fontSize: '0.85rem',
+            color: theme.palette.text.tertiary,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          })}
+        >
+          {miner.author || miner.githubId}
+        </Typography>
+      </Box>
       <Typography
         sx={(theme) => ({
           fontFamily: FONTS.mono,
-          fontSize: '0.85rem',
-          color: theme.palette.text.tertiary,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
+          fontSize: '0.95rem',
+          color:
+            type === 'earners'
+              ? STATUS_COLORS.merged
+              : theme.palette.text.primary,
+          fontWeight: 600,
         })}
       >
-        {miner.author || miner.githubId}
+        {type === 'earners'
+          ? `$${Math.round(miner.usdPerDay || 0).toLocaleString()}`
+          : variant === 'discoveries'
+            ? miner.totalIssues
+            : miner.totalPRs}
       </Typography>
-    </Box>
-    <Typography
-      sx={(theme) => ({
-        fontFamily: FONTS.mono,
-        fontSize: '0.95rem',
-        color:
-          type === 'earners'
-            ? STATUS_COLORS.merged
-            : theme.palette.text.primary,
-        fontWeight: 600,
-      })}
-    >
-      {type === 'earners'
-        ? `$${Math.round(miner.usdPerDay || 0).toLocaleString()}`
-        : variant === 'discoveries'
-          ? miner.totalIssues
-          : miner.totalPRs}
-    </Typography>
-  </Box>
-);
+    </LinkBox>
+  );
+};

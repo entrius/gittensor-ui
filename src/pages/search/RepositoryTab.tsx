@@ -3,9 +3,8 @@ import { Box, Typography } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
 import { getRankColors } from '../../components/leaderboard/types';
 import { getGithubAvatarSrc } from '../../utils';
-import SearchResultsTable, {
-  type SearchResultsTableColumn,
-} from './SearchResultsTable';
+import { type DataTableColumn } from '../../components/common/DataTable';
+import SearchResultsCard from './SearchResultsCard';
 import {
   SearchAvatarContentCell,
   SearchTruncatedText,
@@ -40,7 +39,7 @@ const getPositiveValueCellSx = (value: number) => ({
   color: value > 0 ? 'text.primary' : 'text.secondary',
 });
 
-const repositoryColumns: SearchResultsTableColumn<RepoSearchData>[] = [
+const repositoryColumns: DataTableColumn<RepoSearchData>[] = [
   {
     key: 'rank',
     header: 'Rank',
@@ -128,7 +127,8 @@ type RepositoryTabProps = {
   isLoading: boolean;
   onPageChange: (newPage: number) => void;
   onRowsPerPageChange: (rowsPerPage: number) => void;
-  onSelectRepository: (fullName: string) => void;
+  getRepositoryHref: (repo: RepoSearchData) => string;
+  linkState?: Record<string, unknown>;
   page: number;
   paginatedRepositoryResults: RepoSearchData[];
   rowsPerPage: number;
@@ -141,14 +141,15 @@ const RepositoryTab: React.FC<RepositoryTabProps> = ({
   isLoading,
   onPageChange,
   onRowsPerPageChange,
-  onSelectRepository,
+  getRepositoryHref,
+  linkState,
   page,
   paginatedRepositoryResults,
   rowsPerPage,
   rowsPerPageOptions,
   repositoryResults,
 }) => (
-  <SearchResultsTable
+  <SearchResultsCard
     columns={repositoryColumns}
     emptyLabel="No repository matches."
     errorLabel="Failed to load repositories for search."
@@ -157,7 +158,8 @@ const RepositoryTab: React.FC<RepositoryTabProps> = ({
     isLoading={isLoading}
     minWidth={1000}
     onPageChange={onPageChange}
-    onRowClick={(repo: RepoSearchData) => onSelectRepository(repo.fullName)}
+    getRowHref={getRepositoryHref}
+    linkState={linkState}
     onRowsPerPageChange={onRowsPerPageChange}
     page={page}
     rows={paginatedRepositoryResults}

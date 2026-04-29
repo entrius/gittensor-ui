@@ -1,4 +1,8 @@
-import { RANK_COLORS, STATUS_COLORS } from '../../theme';
+import {
+  RANK_COLORS,
+  REPO_OWNER_AVATAR_BACKGROUNDS,
+  STATUS_COLORS,
+} from '../../theme';
 
 export interface MinerStats {
   id: string;
@@ -16,6 +20,15 @@ export interface MinerStats {
   uniqueReposCount?: number;
   credibility?: number;
   isEligible?: boolean;
+  /**
+   * Program-specific eligibility flags.
+   *
+   * These allow UI surfaces like Watchlist to disambiguate eligibility between
+   * OSS contributions and Issue Discoveries without changing the default
+   * `isEligible` semantics used across leaderboards.
+   */
+  ossIsEligible?: boolean;
+  discoveriesIsEligible?: boolean;
   usdPerDay?: number;
   totalMergedPrs?: number;
   totalOpenPrs?: number;
@@ -28,6 +41,25 @@ export interface MinerStats {
   isIssueEligible?: boolean;
 }
 
+export interface RepoStats {
+  repository: string;
+  totalScore: number;
+  totalPRs: number;
+  uniqueMiners: Set<string>;
+  weight: number;
+  rank?: number;
+  inactiveAt?: string | null;
+  /** Issue discovery track score (UI: "Issue score"; miner stats + merged multiplier PRs). */
+  discoveryScore: number;
+  /**
+   * Completed/solved discovery issues (pro-rated — excludes open-issue totals).
+   * Aligned with OSS row: merged PRs only.
+   */
+  discoveryIssues: number;
+  /** Identities with non-zero pro-rated discovery score/issues in this repo. */
+  discoveryContributors: Set<string>;
+}
+
 export type LeaderboardVariant = 'oss' | 'discoveries' | 'watchlist';
 
 export type SortOption =
@@ -35,6 +67,7 @@ export type SortOption =
   | 'usdPerDay'
   | 'totalPRs'
   | 'totalIssues'
+  | 'issueDiscoveryScore'
   | 'credibility';
 
 export const FONTS = {
@@ -49,8 +82,8 @@ export const getRankColors = (rank: number) => {
 };
 
 export const getRepositoryOwnerAvatarBackground = (owner: string) => {
-  if (owner === 'opentensor') return 'common.white';
-  if (owner === 'bitcoin') return '#F7931A';
+  if (owner === 'opentensor') return REPO_OWNER_AVATAR_BACKGROUNDS.opentensor;
+  if (owner === 'bitcoin') return REPO_OWNER_AVATAR_BACKGROUNDS.bitcoin;
   return 'transparent';
 };
 

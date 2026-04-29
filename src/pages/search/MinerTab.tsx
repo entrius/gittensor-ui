@@ -2,9 +2,8 @@ import React from 'react';
 import { Box } from '@mui/material';
 import { type Theme } from '@mui/material/styles';
 import { getGithubAvatarSrc } from '../../utils';
-import SearchResultsTable, {
-  type SearchResultsTableColumn,
-} from './SearchResultsTable';
+import { type DataTableColumn } from '../../components/common/DataTable';
+import SearchResultsCard from './SearchResultsCard';
 import {
   SearchAvatarContentCell,
   SearchTruncatedText,
@@ -26,7 +25,7 @@ const numericCellSx = {
   fontVariantNumeric: 'tabular-nums',
 } as const;
 
-const minerColumns: SearchResultsTableColumn<MinerSearchData>[] = [
+const minerColumns: DataTableColumn<MinerSearchData>[] = [
   {
     key: 'rank',
     header: 'Rank',
@@ -141,7 +140,8 @@ type MinerTabProps = {
   minerResults: MinerSearchData[];
   onPageChange: (newPage: number) => void;
   onRowsPerPageChange: (rowsPerPage: number) => void;
-  onSelectMiner: (githubId: string) => void;
+  getMinerHref: (miner: MinerSearchData) => string;
+  linkState?: Record<string, unknown>;
   page: number;
   paginatedMinerResults: MinerSearchData[];
   rowsPerPage: number;
@@ -154,13 +154,14 @@ const MinerTab: React.FC<MinerTabProps> = ({
   minerResults,
   onPageChange,
   onRowsPerPageChange,
-  onSelectMiner,
+  getMinerHref,
+  linkState,
   page,
   paginatedMinerResults,
   rowsPerPage,
   rowsPerPageOptions,
 }) => (
-  <SearchResultsTable
+  <SearchResultsCard
     columns={minerColumns}
     emptyLabel="No miner matches."
     errorLabel="Failed to load miners for search."
@@ -169,7 +170,8 @@ const MinerTab: React.FC<MinerTabProps> = ({
     isLoading={isLoading}
     minWidth={980}
     onPageChange={onPageChange}
-    onRowClick={(miner: MinerSearchData) => onSelectMiner(miner.githubId)}
+    getRowHref={getMinerHref}
+    linkState={linkState}
     onRowsPerPageChange={onRowsPerPageChange}
     page={page}
     rows={paginatedMinerResults}

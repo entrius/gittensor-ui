@@ -15,14 +15,19 @@ import useOnNavigate from '../../hooks/useOnNavigate';
 import { Sidebar } from '..';
 import ErrorBoundary from '../ErrorBoundary';
 import GlobalSearchBar from './GlobalSearchBar';
-import theme from '../../theme';
+import theme, { scrollbarSx } from '../../theme';
 import { getRouteForPathname } from '../../routes';
+
+const SIDEBAR_WIDTH = 240;
+const SIDEBAR_COLLAPSED_WIDTH = 72;
 
 const AppLayout: React.FC = () => {
   const mainRef = useRef<HTMLElement>(null);
   const location = useLocation();
   useOnNavigate(() => mainRef.current?.scrollTo(0, 0));
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isCompactDesktop = useMediaQuery(theme.breakpoints.down('lg'));
+  const isDesktopSidebarCollapsed = !isMobile && isCompactDesktop;
   const [mobileOpen, setMobileOpen] = useState(false);
   const shouldShowGlobalSearch = Boolean(
     getRouteForPathname(location.pathname)?.showGlobalSearch,
@@ -104,17 +109,23 @@ const AppLayout: React.FC = () => {
         </Drawer>
       )}
 
-      {/* Desktop Sidebar - Hidden on mobile, visible on larger screens */}
+      {/* Desktop Sidebar — auto-collapses by breakpoint (no manual toggle). */}
       {!isMobile && (
         <Box
           sx={{
             flexShrink: 0,
-            width: '240px',
-            minWidth: '240px',
+            width: isDesktopSidebarCollapsed
+              ? `${SIDEBAR_COLLAPSED_WIDTH}px`
+              : `${SIDEBAR_WIDTH}px`,
+            minWidth: isDesktopSidebarCollapsed
+              ? `${SIDEBAR_COLLAPSED_WIDTH}px`
+              : `${SIDEBAR_WIDTH}px`,
             borderRight: `1px solid ${theme.palette.border.light}`,
+            overflow: 'hidden',
+            transition: 'width 0.2s ease, min-width 0.2s ease',
           }}
         >
-          <Sidebar />
+          <Sidebar collapsed={isDesktopSidebarCollapsed} />
         </Box>
       )}
 
@@ -133,6 +144,7 @@ const AppLayout: React.FC = () => {
           display: 'flex',
           flexDirection: 'column',
           px: { xs: 1, sm: 2, md: 3 },
+          ...scrollbarSx,
           alignItems: 'center',
         }}
       >
@@ -141,13 +153,16 @@ const AppLayout: React.FC = () => {
             <Box
               sx={{
                 width: '100%',
-                maxWidth: 1200,
-                pt: { xs: 1, md: 2 },
-                px: { xs: 1, md: 0 },
+                pt: { xs: 1, md: 1.5 },
+                pb: { xs: 1, md: 1.5 },
+                px: { xs: 2, md: 3 },
                 position: 'sticky',
                 top: 0,
                 zIndex: 500,
                 backgroundColor: 'background.default',
+                borderBottom: `1px solid ${theme.palette.border.light}`,
+                display: 'flex',
+                justifyContent: 'center',
               }}
             >
               <GlobalSearchBar />

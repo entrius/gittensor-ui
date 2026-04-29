@@ -1,19 +1,10 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
   TablePagination,
   TextField,
   Typography,
-  Paper,
   InputAdornment,
-  CircularProgress,
   Select,
   MenuItem,
   FormControl,
@@ -27,11 +18,26 @@ import { Search, Check, Close } from '@mui/icons-material';
 import ReactECharts from 'echarts-for-react';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
-import { scrollbarSx, TEXT_OPACITY } from '../../theme';
+import { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { useLanguagesAndWeights } from '../../api';
+import {
+  echartsAxisTooltipChrome,
+  echartsBarChartTitle,
+  echartsFontFamily,
+  echartsGridBarWithTitle,
+  echartsStrongAxisLabelColor,
+  echartsTransparentBackground,
+} from '../../utils/echarts/gittensorChartTheme';
+import { DataTable, type DataTableColumn } from '../common/DataTable';
 
 type SortField = 'extension' | 'weight' | 'language';
 type SortOrder = 'asc' | 'desc';
+
+interface LanguageRow {
+  extension: string;
+  language: string | null;
+  weight: string;
+}
 
 const LanguageWeightsTable: React.FC = () => {
   const theme = useTheme();
@@ -70,7 +76,7 @@ const LanguageWeightsTable: React.FC = () => {
     setPage(0);
   };
 
-  const filteredAndSortedLanguages = useMemo(() => {
+  const filteredAndSortedLanguages = useMemo<LanguageRow[]>(() => {
     if (!languages) return [];
 
     const filtered = languages.filter((lang) => {
@@ -117,9 +123,10 @@ const LanguageWeightsTable: React.FC = () => {
   }, [filteredAndSortedLanguages, page, rowsPerPage]);
 
   const chartOption = useMemo(() => {
-    const chartData = filteredAndSortedLanguages;
-    const textColor = alpha(theme.palette.common.white, 0.85);
+    const chartData = paginatedLanguages;
+    const textColor = echartsStrongAxisLabelColor(theme);
     const gridColor = theme.palette.border.subtle;
+    const font = echartsFontFamily(theme);
 
     const xAxisData = chartData.map((item) => item.extension);
     const seriesData = chartData.map((item) => {
@@ -128,48 +135,24 @@ const LanguageWeightsTable: React.FC = () => {
     });
 
     return {
-      backgroundColor: 'transparent',
-      title: {
-        text: 'Language Weight Distribution',
-        subtext: 'All languages by weight',
-        left: 'center',
-        top: 20,
-        textStyle: {
-          color: theme.palette.text.primary,
-          fontFamily: 'JetBrains Mono',
-          fontSize: 18,
-          fontWeight: 600,
-        },
-        subtextStyle: {
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-          fontFamily: 'JetBrains Mono',
-          fontSize: 12,
-        },
-      },
+      ...echartsTransparentBackground(),
+      title: echartsBarChartTitle(
+        theme,
+        'Language Weight Distribution',
+        'Values match the current table sort and page',
+      ),
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
-        backgroundColor: alpha(theme.palette.background.default, 0.95),
-        borderColor: alpha(theme.palette.common.white, 0.15),
-        borderWidth: 1,
-        textStyle: {
-          color: theme.palette.text.primary,
-          fontFamily: 'JetBrains Mono',
-        },
+        ...echartsAxisTooltipChrome(theme),
       },
-      grid: {
-        left: '3%',
-        right: '3%',
-        bottom: '10%',
-        top: '20%',
-        containLabel: true,
-      },
+      grid: echartsGridBarWithTitle(),
       xAxis: {
         type: 'category',
         data: xAxisData,
         axisLabel: {
           color: textColor,
-          fontFamily: 'JetBrains Mono',
+          fontFamily: font,
           rotate: 45,
           interval: 0,
         },
@@ -178,8 +161,8 @@ const LanguageWeightsTable: React.FC = () => {
       yAxis: {
         type: 'value',
         name: 'Weight',
-        nameTextStyle: { color: textColor, fontFamily: 'JetBrains Mono' },
-        axisLabel: { color: textColor, fontFamily: 'JetBrains Mono' },
+        nameTextStyle: { color: textColor, fontFamily: font },
+        axisLabel: { color: textColor, fontFamily: font },
         splitLine: { lineStyle: { color: gridColor, type: 'dashed' } },
       },
       series: [
@@ -203,7 +186,7 @@ const LanguageWeightsTable: React.FC = () => {
         },
       ],
     };
-  }, [filteredAndSortedLanguages, theme]);
+  }, [paginatedLanguages, theme]);
 
   // Scroll to top when rows per page changes
   useEffect(() => {
@@ -214,6 +197,71 @@ const LanguageWeightsTable: React.FC = () => {
       });
     }
   }, [rowsPerPage]);
+
+  const sortLabelHeaderSx = {
+    '& .MuiTableSortLabel-root:hover': { color: 'secondary.main' },
+    '& .MuiTableSortLabel-root.Mui-active': { color: 'secondary.main' },
+    '& .MuiTableSortLabel-root.Mui-active .MuiTableSortLabel-icon': {
+      color: 'secondary.main',
+    },
+  } as const;
+
+  const columns = useMemo<DataTableColumn<LanguageRow, SortField>[]>(
+    () => [
+      {
+        key: 'extension',
+        header: 'Extension',
+        sortKey: 'extension',
+        headerSx: sortLabelHeaderSx,
+        renderCell: (lang) => lang.extension,
+      },
+      {
+        key: 'language',
+        header: 'Language',
+        sortKey: 'language',
+        headerSx: sortLabelHeaderSx,
+        cellSx: (lang) => ({
+          color: lang.language ? 'text.primary' : 'text.disabled',
+        }),
+        renderCell: (lang) => lang.language || '-',
+      },
+      {
+        key: 'tokenScoring',
+        header: (
+          <Tooltip title="Indicates if this extension supports token-based scoring. Token scoring uses AST parsing for more accurate contribution measurement.">
+            <span>Token Scoring</span>
+          </Tooltip>
+        ),
+        align: 'center',
+        renderCell: (lang) =>
+          lang.language ? (
+            <Check
+              sx={{
+                color: theme.palette.status.success,
+                fontSize: '1.2rem',
+              }}
+            />
+          ) : (
+            <Close
+              sx={{
+                color: theme.palette.status.error,
+                fontSize: '1.2rem',
+              }}
+            />
+          ),
+      },
+      {
+        key: 'weight',
+        header: 'Weight',
+        align: 'right',
+        sortKey: 'weight',
+        headerSx: sortLabelHeaderSx,
+        renderCell: (lang) => lang.weight,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [theme.palette.status.success, theme.palette.status.error],
+  );
 
   return (
     <Box ref={containerRef}>
@@ -266,7 +314,6 @@ const LanguageWeightsTable: React.FC = () => {
                     theme.palette.common.white,
                     TEXT_OPACITY.secondary,
                   ),
-                  fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.8rem',
                 }}
               >
@@ -280,7 +327,6 @@ const LanguageWeightsTable: React.FC = () => {
                 }}
                 sx={{
                   color: theme.palette.text.primary,
-                  fontFamily: '"JetBrains Mono", monospace',
                   backgroundColor: alpha(theme.palette.common.black, 0.4),
                   fontSize: '0.8rem',
                   height: '36px',
@@ -327,7 +373,6 @@ const LanguageWeightsTable: React.FC = () => {
               width: '200px',
               '& .MuiOutlinedInput-root': {
                 color: theme.palette.text.primary,
-                fontFamily: '"JetBrains Mono", monospace',
                 backgroundColor: alpha(theme.palette.common.black, 0.4),
                 fontSize: '0.8rem',
                 height: '36px',
@@ -352,7 +397,7 @@ const LanguageWeightsTable: React.FC = () => {
             backgroundColor: alpha(theme.palette.common.black, 0.2),
           }}
         >
-          {showChart && filteredAndSortedLanguages.length > 0 && (
+          {showChart && paginatedLanguages.length > 0 && (
             <ReactECharts
               option={chartOption}
               style={{ height: '100%', width: '100%' }}
@@ -361,166 +406,31 @@ const LanguageWeightsTable: React.FC = () => {
         </Box>
       </Collapse>
 
-      {isLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <TableContainer
-          component={Paper}
-          elevation={0}
-          sx={{
-            backgroundColor: 'transparent',
-            maxHeight: '800px',
-            overflowY: 'auto',
-            ...scrollbarSx,
+      <Box
+        sx={{
+          maxHeight: '800px',
+          overflowY: 'auto',
+          backgroundColor: 'transparent',
+          ...scrollbarSx,
+        }}
+      >
+        <DataTable<LanguageRow, SortField>
+          columns={columns}
+          rows={paginatedLanguages}
+          getRowKey={(lang) => lang.extension}
+          isLoading={isLoading}
+          stickyHeader
+          emptyState={null}
+          getRowSx={() => ({
+            '&:hover': { backgroundColor: 'action.hover' },
+          })}
+          sort={{
+            field: sortField,
+            order: sortOrder,
+            onChange: handleSort,
           }}
-        >
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell
-                  sx={{
-                    backgroundColor: alpha(
-                      theme.palette.background.paper,
-                      0.95,
-                    ),
-                    backdropFilter: 'blur(8px)',
-                    borderBottom: `1px solid ${theme.palette.border.light}`,
-                  }}
-                >
-                  <TableSortLabel
-                    active={sortField === 'extension'}
-                    direction={sortField === 'extension' ? sortOrder : 'asc'}
-                    onClick={() => handleSort('extension')}
-                    sx={{
-                      '&:hover': {
-                        color: 'secondary.main',
-                      },
-                      '&.Mui-active': {
-                        color: 'secondary.main',
-                      },
-                    }}
-                  >
-                    <Typography variant="dataLabel">Extension</Typography>
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell
-                  sx={{
-                    backgroundColor: alpha(
-                      theme.palette.background.paper,
-                      0.95,
-                    ),
-                    backdropFilter: 'blur(8px)',
-                    borderBottom: `1px solid ${theme.palette.border.light}`,
-                  }}
-                >
-                  <TableSortLabel
-                    active={sortField === 'language'}
-                    direction={sortField === 'language' ? sortOrder : 'asc'}
-                    onClick={() => handleSort('language')}
-                    sx={{
-                      '&:hover': {
-                        color: 'secondary.main',
-                      },
-                      '&.Mui-active': {
-                        color: 'secondary.main',
-                      },
-                    }}
-                  >
-                    <Typography variant="dataLabel">Language</Typography>
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{
-                    backgroundColor: alpha(
-                      theme.palette.background.paper,
-                      0.95,
-                    ),
-                    backdropFilter: 'blur(8px)',
-                    borderBottom: `1px solid ${theme.palette.border.light}`,
-                  }}
-                >
-                  <Tooltip title="Indicates if this extension supports token-based scoring. Token scoring uses AST parsing for more accurate contribution measurement.">
-                    <Typography variant="dataLabel" sx={{ cursor: 'pointer' }}>
-                      Token Scoring
-                    </Typography>
-                  </Tooltip>
-                </TableCell>
-                <TableCell
-                  align="right"
-                  sx={{
-                    backgroundColor: alpha(
-                      theme.palette.background.paper,
-                      0.95,
-                    ),
-                    backdropFilter: 'blur(8px)',
-                    borderBottom: `1px solid ${theme.palette.border.light}`,
-                  }}
-                >
-                  <TableSortLabel
-                    active={sortField === 'weight'}
-                    direction={sortField === 'weight' ? sortOrder : 'desc'}
-                    onClick={() => handleSort('weight')}
-                    sx={{
-                      '&:hover': {
-                        color: 'secondary.main',
-                      },
-                      '&.Mui-active': {
-                        color: 'secondary.main',
-                      },
-                    }}
-                  >
-                    <Typography variant="dataLabel">Weight</Typography>
-                  </TableSortLabel>
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {paginatedLanguages.map((lang) => (
-                <TableRow key={lang.extension} hover>
-                  <TableCell>
-                    <Typography variant="body1" fontWeight="medium">
-                      {lang.extension}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: lang.language ? 'text.primary' : 'text.disabled',
-                      }}
-                    >
-                      {lang.language || '-'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="center">
-                    {lang.language ? (
-                      <Check
-                        sx={{
-                          color: theme.palette.status.success,
-                          fontSize: '1.2rem',
-                        }}
-                      />
-                    ) : (
-                      <Close
-                        sx={{
-                          color: theme.palette.status.error,
-                          fontSize: '1.2rem',
-                        }}
-                      />
-                    )}
-                  </TableCell>
-                  <TableCell align="right">
-                    <Typography variant="dataValue">{lang.weight}</Typography>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+        />
+      </Box>
 
       <TablePagination
         rowsPerPageOptions={[]}

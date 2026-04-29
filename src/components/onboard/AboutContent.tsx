@@ -29,9 +29,8 @@ export const AboutContent: React.FC = () => {
     >
       <Box
         sx={{
-          maxWidth: 1000,
           width: '100%',
-          px: { xs: 2, sm: 3, md: 4 },
+          maxWidth: '100%',
         }}
       >
         {/* 1. Context: What is Gittensor? */}
@@ -160,8 +159,8 @@ export const AboutContent: React.FC = () => {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       },
-                    )} monthly reward pool by making open source contributions.`
-                  : 'Stop coding for free. Get paid in TAO for your open source contributions.',
+                    )} monthly reward pool through OSS contributions or Issue Discovery.`
+                  : 'Stop coding for free. Earn alpha tokens through two tracks: merge PRs to OSS repositories or discover issues for others to solve.',
               },
               {
                 icon: <VerifiedUserIcon fontSize="large" />,
@@ -185,12 +184,24 @@ export const AboutContent: React.FC = () => {
                     borderColor: 'border.subtle',
                   }}
                 >
-                  <Box sx={{ color: 'secondary.main', mb: 2 }}>{card.icon}</Box>
+                  <Box
+                    sx={{
+                      color: 'secondary.main',
+                      mb: 2,
+                      display: 'flex',
+                      justifyContent: { xs: 'center', md: 'flex-start' },
+                    }}
+                  >
+                    {card.icon}
+                  </Box>
                   <Typography
                     variant="h6"
                     fontWeight="bold"
                     gutterBottom
-                    sx={{ color: 'text.primary' }}
+                    sx={{
+                      color: 'text.primary',
+                      textAlign: { xs: 'center', md: 'left' },
+                    }}
                   >
                     {card.title}
                   </Typography>

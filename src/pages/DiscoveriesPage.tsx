@@ -1,24 +1,24 @@
 import React, { useMemo } from 'react';
 import { useMediaQuery, Box, Typography, alpha } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import { Page } from '../components/layout';
-import { TopMinersTable, LeaderboardSidebar, SEO } from '../components';
+import {
+  TopMinersTable,
+  LeaderboardSidebar,
+  SEO,
+  type MinerStats,
+} from '../components';
 import { useAllMiners } from '../api';
 import theme, { scrollbarSx } from '../theme';
 import { parseNumber } from '../utils/ExplorerUtils';
 
-const DiscoveriesPage: React.FC = () => {
-  const navigate = useNavigate();
+const MINER_LINK_STATE = { backLabel: 'Back to Discoveries' } as const;
+const getMinerHref = (miner: MinerStats) =>
+  `/miners/details?githubId=${miner.githubId}&mode=issues&tab=open-issues`;
 
+const DiscoveriesPage: React.FC = () => {
   const allMinerStatsQuery = useAllMiners();
   const allMinersStats = allMinerStatsQuery?.data;
   const isLoadingMinerStats = allMinerStatsQuery?.isLoading;
-
-  const handleSelectMiner = (githubId: string) => {
-    navigate(`/miners/details?githubId=${githubId}&mode=issues`, {
-      state: { backLabel: 'Back to Discoveries' },
-    });
-  };
 
   // Process miner stats for TopMinersTable, using issue discovery fields
   const minerStats = useMemo(() => {
@@ -39,8 +39,10 @@ const DiscoveriesPage: React.FC = () => {
       linesDeleted: parseNumber(stat.totalDeletions),
       hotkey: stat.hotkey || 'N/A',
       uniqueReposCount: parseNumber(stat.uniqueReposCount),
-      credibility: parseNumber(stat.issueCredibility),
+      issueCredibility: parseNumber(stat.issueCredibility),
       isEligible: stat.isIssueEligible ?? false,
+      ossIsEligible: stat.isEligible ?? false,
+      discoveriesIsEligible: stat.isIssueEligible ?? false,
       usdPerDay: parseNumber(stat.usdPerDay),
       totalMergedPrs: parseNumber(stat.totalMergedPrs),
       totalOpenPrs: parseNumber(stat.totalOpenPrs),
@@ -109,14 +111,23 @@ const DiscoveriesPage: React.FC = () => {
             Miners earn discovery rewards by filing quality issues that others
             solve via merged PRs. Rewarded separately from OSS contributions.
           </Typography>
+          <Typography
+            sx={{
+              fontSize: '0.8rem',
+              color: (t) => alpha(t.palette.text.primary, 0.5),
+              lineHeight: 1.6,
+            }}
+          >
+            Open a miner, switch to Issue Discovery, then use the Open issues
+            tab to see open discovery-indexed issues grouped by repository (plus
+            a GitHub search link for everything you have opened publicly).
+          </Typography>
           <Box sx={{ width: '100%' }}>
             <TopMinersTable
               miners={sortedMinerStats}
               isLoading={isLoadingMinerStats}
-              getHref={(m) =>
-                `/miners/details?githubId=${encodeURIComponent(m.githubId)}&mode=issues`
-              }
-              linkState={{ backLabel: 'Back to Discoveries' }}
+              getMinerHref={getMinerHref}
+              linkState={MINER_LINK_STATE}
               variant="discoveries"
             />
           </Box>
@@ -136,7 +147,8 @@ const DiscoveriesPage: React.FC = () => {
         >
           <LeaderboardSidebar
             miners={minerStats}
-            onSelectMiner={handleSelectMiner}
+            getMinerHref={getMinerHref}
+            linkState={MINER_LINK_STATE}
             variant="discoveries"
           />
         </Box>

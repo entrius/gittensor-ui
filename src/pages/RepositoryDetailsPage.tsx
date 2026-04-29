@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { formatDate } from '../utils/format';
 import {
   Alert,
   Box,
@@ -36,6 +37,7 @@ import {
   ContributingViewer,
   RepositoryMaintainers,
   RepositoryCheckTab,
+  WatchlistButton,
 } from '../components';
 
 interface TabPanelProps {
@@ -90,9 +92,9 @@ const RepositoryDetailsPage: React.FC = () => {
 
   const owner = repo ? repo.split('/')[0] : '';
 
-  // If no repo is provided, redirect to miners page
+  // If no repo is provided, redirect to repository list (registered route)
   if (!repo) {
-    navigate('/miners');
+    navigate('/repositories', { replace: true });
     return null;
   }
 
@@ -209,6 +211,7 @@ const RepositoryDetailsPage: React.FC = () => {
                   >
                     {repo}
                   </Typography>
+                  <WatchlistButton category="repos" itemKey={repo} />
                   <Chip variant="info" label="Public" />
                   <Chip
                     label="Tracked"
@@ -227,7 +230,7 @@ const RepositoryDetailsPage: React.FC = () => {
                     if (currentRepo?.inactiveAt) {
                       return (
                         <Chip
-                          label={`Inactive since ${new Date(currentRepo.inactiveAt).toLocaleDateString()}`}
+                          label={`Inactive since ${formatDate(currentRepo.inactiveAt)}`}
                           sx={(theme) => ({
                             backgroundColor: alpha(STATUS_COLORS.error, 0.1),
                             color: theme.palette.status.error,

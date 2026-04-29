@@ -2,16 +2,15 @@ import React from 'react';
 import { alpha } from '@mui/material/styles';
 import { type IssueBounty } from '../../api/models/Issues';
 import { getGithubAvatarSrc, getIssueStatusMeta } from '../../utils';
-import SearchResultsTable, {
-  type SearchResultsTableColumn,
-} from './SearchResultsTable';
+import { type DataTableColumn } from '../../components/common/DataTable';
+import SearchResultsCard from './SearchResultsCard';
 import {
   SearchAvatarContentCell,
   SearchStatusChip,
   SearchTruncatedText,
 } from './SearchTableCells';
 
-const issueColumns: SearchResultsTableColumn<IssueBounty>[] = [
+const issueColumns: DataTableColumn<IssueBounty>[] = [
   {
     key: 'issueNumber',
     header: 'Issue #',
@@ -92,7 +91,8 @@ type IssuesTabProps = {
   issueResults: IssueBounty[];
   onPageChange: (newPage: number) => void;
   onRowsPerPageChange: (rowsPerPage: number) => void;
-  onSelectIssue: (id: number) => void;
+  getIssueHref: (issue: IssueBounty) => string;
+  linkState?: Record<string, unknown>;
   page: number;
   paginatedIssueResults: IssueBounty[];
   rowsPerPage: number;
@@ -105,13 +105,14 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
   issueResults,
   onPageChange,
   onRowsPerPageChange,
-  onSelectIssue,
+  getIssueHref,
+  linkState,
   page,
   paginatedIssueResults,
   rowsPerPage,
   rowsPerPageOptions,
 }) => (
-  <SearchResultsTable
+  <SearchResultsCard
     columns={issueColumns}
     emptyLabel="No issue matches."
     errorLabel="Failed to load issues for search."
@@ -120,7 +121,8 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
     isLoading={isLoading}
     minWidth={900}
     onPageChange={onPageChange}
-    onRowClick={(issue) => onSelectIssue(issue.id)}
+    getRowHref={getIssueHref}
+    linkState={linkState}
     onRowsPerPageChange={onRowsPerPageChange}
     page={page}
     rows={paginatedIssueResults}

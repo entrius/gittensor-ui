@@ -10,6 +10,7 @@ import {
   Collapse,
   IconButton,
   Button,
+  useTheme,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -17,7 +18,8 @@ import {
   GitHub as GitHubIcon,
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import {
   useMinerStats,
   useMinerPRs,
@@ -28,9 +30,12 @@ import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
 import {
   parseNumber,
   calculateOpenIssueThreshold,
+  isOutsideScoringWindow,
 } from '../../utils/ExplorerUtils';
 import { credibilityColor } from '../../utils/format';
 import { buildMergedPillDefs } from '../../utils/multiplierDefs';
+import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
+import FilterButton from '../FilterButton';
 
 type ViewMode = 'prs' | 'issues';
 
@@ -116,11 +121,13 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
 
 interface PrScoreRowProps {
   pr: CommitLog;
-  onNavigateToPr: (repo: string, prNumber: number) => void;
 }
 
-const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
+const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr }) => {
   const [expanded, setExpanded] = useState(false);
+  const prLinkProps = useLinkBehavior<HTMLAnchorElement>(
+    `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
+  );
 
   // Fetch full PR details (with all multipliers) — cached by React Query
   const { data: prDetails } = usePullRequestDetails(
@@ -134,6 +141,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
   const isClosed = pr.prState === 'CLOSED' && !pr.mergedAt;
   const isOpen = !pr.mergedAt && pr.prState !== 'CLOSED';
   const collateral = parseFloat(pr.collateralScore || '0');
+  const isStale = isMerged && isOutsideScoringWindow(pr.mergedAt);
 
   const statusColor = isMerged
     ? STATUS_COLORS.merged
@@ -229,6 +237,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
               : isOpen
                 ? STATUS_COLORS.warningOrange
                 : 'text.primary',
+            opacity: isStale ? 0.4 : 1,
             flexShrink: 0,
           }}
         >
@@ -312,6 +321,12 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
               pr.totalNodesScored != null &&
                 parseNumber(pr.totalNodesScored) > 0 &&
                 `${pr.totalNodesScored} nodes`,
+              pr.structuralCount != null &&
+                parseNumber(pr.structuralCount) > 0 &&
+                `${pr.structuralCount} structural (${parseNumber(pr.structuralScore).toFixed(2)})`,
+              pr.leafCount != null &&
+                parseNumber(pr.leafCount) > 0 &&
+                `${pr.leafCount} leaf (${parseNumber(pr.leafScore).toFixed(2)})`,
             ]
               .filter(Boolean)
               .map((stat, i, arr) => (
@@ -369,11 +384,14 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr, onNavigateToPr }) => {
             <Button
               size="small"
               startIcon={<OpenInNewIcon sx={{ fontSize: '0.85rem' }} />}
+              component="a"
+              {...prLinkProps}
               onClick={(e) => {
                 e.stopPropagation();
-                onNavigateToPr(pr.repository, pr.pullRequestNumber);
+                prLinkProps.onClick(e);
               }}
               sx={{
+                ...linkResetSx,
                 fontSize: '0.65rem',
                 textTransform: 'none',
                 color: 'primary.main',
@@ -599,9 +617,10 @@ const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
 // ---------------------------------------------------------------------------
 
 const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
-  const navigate = useNavigate();
+  const theme = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
+  const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
   const PAGE_SIZE = 10;
 
   const page = parseInt(searchParams.get('scorePage') || '0', 10);
@@ -621,21 +640,28 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
     [page, setSearchParams],
   );
 
-  const handleNavigateToPr = (repo: string, prNumber: number) => {
-    navigate(`/miners/pr?repo=${encodeURIComponent(repo)}&number=${prNumber}`);
+  const handleFilterChange = (next: PrStatusFilter) => {
+    setStatusFilter(next);
+    setPage(0);
   };
+
+  const statusCounts = useMemo(() => getPrStatusCounts(prs ?? []), [prs]);
 
   const sortedPrs = useMemo(() => {
     if (!prs) return [];
-    return [...prs].sort(
+    return [...filterPrs(prs, { statusFilter })].sort(
       (a, b) => parseFloat(b.score || '0') - parseFloat(a.score || '0'),
     );
-  }, [prs]);
+  }, [prs, statusFilter]);
 
   if (isLoading || !prs || prs.length === 0) return null;
 
-  const totalPages = Math.ceil(sortedPrs.length / PAGE_SIZE);
-  const displayPrs = sortedPrs.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(sortedPrs.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const displayPrs = sortedPrs.slice(
+    safePage * PAGE_SIZE,
+    (safePage + 1) * PAGE_SIZE,
+  );
 
   return (
     <Card sx={{ p: 0, overflow: 'hidden' }} elevation={0}>
@@ -645,8 +671,10 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
           borderBottom: '1px solid',
           borderColor: 'border.subtle',
           display: 'flex',
+          flexWrap: 'wrap',
           justifyContent: 'space-between',
           alignItems: 'center',
+          gap: 1.5,
         }}
       >
         <Box>
@@ -669,17 +697,59 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
             Click any PR to see multiplier details
           </Typography>
         </Box>
+        <Stack direction="row" spacing={1} flexWrap="wrap">
+          <FilterButton
+            label="All"
+            isActive={statusFilter === 'all'}
+            onClick={() => handleFilterChange('all')}
+            count={statusCounts.all}
+            color={theme.palette.status.neutral}
+          />
+          <FilterButton
+            label="Open"
+            isActive={statusFilter === 'open'}
+            onClick={() => handleFilterChange('open')}
+            count={statusCounts.open}
+            color={theme.palette.status.open}
+          />
+          <FilterButton
+            label="Merged"
+            isActive={statusFilter === 'merged'}
+            onClick={() => handleFilterChange('merged')}
+            count={statusCounts.merged}
+            color={theme.palette.status.merged}
+          />
+          <FilterButton
+            label="Closed"
+            isActive={statusFilter === 'closed'}
+            onClick={() => handleFilterChange('closed')}
+            count={statusCounts.closed}
+            color={theme.palette.status.closed}
+          />
+        </Stack>
       </Box>
 
       {/* PR list */}
       <Box>
-        {displayPrs.map((pr, i) => (
-          <PrScoreRow
-            key={`${pr.repository}-${pr.pullRequestNumber}-${i}`}
-            pr={pr}
-            onNavigateToPr={handleNavigateToPr}
-          />
-        ))}
+        {displayPrs.length === 0 ? (
+          <Typography
+            sx={{
+              fontSize: '0.8rem',
+              color: (t) => alpha(t.palette.text.primary, 0.5),
+              textAlign: 'center',
+              py: 4,
+            }}
+          >
+            No {statusFilter === 'all' ? '' : statusFilter} PRs to show.
+          </Typography>
+        ) : (
+          displayPrs.map((pr, i) => (
+            <PrScoreRow
+              key={`${pr.repository}-${pr.pullRequestNumber}-${i}`}
+              pr={pr}
+            />
+          ))
+        )}
       </Box>
 
       {/* Pagination */}
@@ -700,12 +770,12 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
             sx={{
               fontSize: '0.72rem',
               color:
-                page === 0
+                safePage === 0
                   ? (t) => alpha(t.palette.text.primary, 0.2)
                   : 'primary.main',
-              cursor: page === 0 ? 'default' : 'pointer',
+              cursor: safePage === 0 ? 'default' : 'pointer',
               userSelect: 'none',
-              '&:hover': page > 0 ? { textDecoration: 'underline' } : {},
+              '&:hover': safePage > 0 ? { textDecoration: 'underline' } : {},
             }}
           >
             ← Prev
@@ -716,20 +786,22 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
               color: (t) => alpha(t.palette.text.primary, 0.5),
             }}
           >
-            {page + 1} / {totalPages}
+            {safePage + 1} / {totalPages}
           </Typography>
           <Typography
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             sx={{
               fontSize: '0.72rem',
               color:
-                page >= totalPages - 1
+                safePage >= totalPages - 1
                   ? (t) => alpha(t.palette.text.primary, 0.2)
                   : 'primary.main',
-              cursor: page >= totalPages - 1 ? 'default' : 'pointer',
+              cursor: safePage >= totalPages - 1 ? 'default' : 'pointer',
               userSelect: 'none',
               '&:hover':
-                page < totalPages - 1 ? { textDecoration: 'underline' } : {},
+                safePage < totalPages - 1
+                  ? { textDecoration: 'underline' }
+                  : {},
             }}
           >
             Next →
