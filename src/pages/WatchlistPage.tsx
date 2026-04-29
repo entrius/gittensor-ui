@@ -1105,9 +1105,21 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     const q = searchQuery.trim().toLowerCase();
     if (q) result = result.filter((r) => r.fullName.toLowerCase().includes(q));
 
-    setPage(0);
     return result;
   }, [items, statusFilter, searchQuery]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [searchQuery, statusFilter]);
+
+  useEffect(() => {
+    if (filtered.length === 0) {
+      if (page !== 0) setPage(0);
+      return;
+    }
+    const maxPage = Math.max(0, Math.ceil(filtered.length / rowsPerPage) - 1);
+    if (page > maxPage) setPage(maxPage);
+  }, [filtered.length, page, rowsPerPage]);
 
   const sorted = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -2159,14 +2171,25 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const counts = useMemo(() => getPrStatusCounts(items), [items]);
 
   const filtered = useMemo(() => {
-    const result = filterPrs(items, {
+    return filterPrs(items, {
       statusFilter,
       searchQuery,
       includeNumber: true,
     });
-    setPage(0);
-    return result;
   }, [items, statusFilter, searchQuery]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [searchQuery, statusFilter]);
+
+  useEffect(() => {
+    if (filtered.length === 0) {
+      if (page !== 0) setPage(0);
+      return;
+    }
+    const maxPage = Math.max(0, Math.ceil(filtered.length / rowsPerPage) - 1);
+    if (page > maxPage) setPage(maxPage);
+  }, [filtered.length, page, rowsPerPage]);
 
   const sorted = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
