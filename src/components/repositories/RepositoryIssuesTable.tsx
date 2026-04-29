@@ -22,7 +22,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
-import { formatTokenAmount } from '../../utils/format';
+import { formatTokenAmount, getLowerText, type SortOrder } from '../../utils';
 import {
   getIssueStatusMeta,
   getBountyAmountColor,
@@ -34,6 +34,14 @@ interface RepositoryIssuesTableProps {
   repositoryFullName: string;
 }
 
+type SortKey =
+  | 'number'
+  | 'title'
+  | 'status'
+  | 'linkedPr'
+  | 'created'
+  | 'closed';
+
 const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   repositoryFullName,
 }) => {
@@ -41,6 +49,8 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   const { data: issues, isLoading } = useRepositoryIssues(repositoryFullName);
   const { data: bounties } = useRepoIssues(repositoryFullName);
   const [filter, setFilter] = useState<'all' | 'open' | 'closed'>('all');
+  const [sortKey, setSortKey] = useState<SortKey>('number');
+  const [sortDirection, setSortDirection] = useState<SortOrder>('desc');
 
   const counts = useMemo(() => {
     if (!issues) return { total: 0, open: 0, closed: 0 };
@@ -58,15 +68,60 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     return issues;
   }, [issues, filter]);
 
-  const sortedIssues = useMemo(
-    () =>
-      [...filteredIssues].sort((a, b) => {
-        // Sort by creation date, most recent first.
-        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return dateB - dateA;
-      }),
-    [filteredIssues],
+  const sortedIssues = useMemo(() => {
+    const directionFactor = sortDirection === 'asc' ? 1 : -1;
+    const collator = new Intl.Collator(undefined, {
+      sensitivity: 'base',
+      numeric: true,
+    });
+    const decorated = filteredIssues.map((issue) => {
+      let value: number | string;
+      switch (sortKey) {
+        case 'number':
+          value = issue.number;
+          break;
+        case 'title':
+          value = getLowerText(issue.title);
+          break;
+        case 'status':
+          value = !issue.closedAt ? 'open' : 'closed';
+          break;
+        case 'linkedPr':
+          value = issue.prNumber ? String(issue.prNumber) : '';
+          break;
+        case 'created':
+          value = issue.createdAt ? new Date(issue.createdAt).getTime() : 0;
+          break;
+        case 'closed':
+          value = issue.closedAt ? new Date(issue.closedAt).getTime() : 0;
+          break;
+        default:
+          value = issue.createdAt ? new Date(issue.createdAt).getTime() : 0;
+      }
+      return { issue, value };
+    });
+
+    decorated.sort((a, b) => {
+      if (typeof a.value === 'number' && typeof b.value === 'number') {
+        return (a.value - b.value) * directionFactor;
+      }
+      return (
+        collator.compare(String(a.value), String(b.value)) * directionFactor
+      );
+    });
+    return decorated.map((item) => item.issue);
+  }, [filteredIssues, sortKey, sortDirection]);
+
+  const handleSort = useCallback(
+    (key: SortKey) => {
+      if (sortKey === key) {
+        setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+        return;
+      }
+      setSortKey(key);
+      setSortDirection('asc');
+    },
+    [sortKey],
   );
 
   const handleRowClick = useCallback((issue: RepositoryIssue) => {
@@ -101,10 +156,11 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     );
   }
 
-  const columns: DataTableColumn<RepositoryIssue>[] = [
+  const columns: DataTableColumn<RepositoryIssue, SortKey>[] = [
     {
       key: 'number',
       header: 'Issue #',
+      sortKey: 'number',
       renderCell: (issue) => (
         <a
           href={`https://github.com/${issue.repositoryFullName}/issues/${issue.number}`}
@@ -124,6 +180,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'title',
       header: 'Title',
+      sortKey: 'title',
       renderCell: (issue) => (
         <Box
           sx={{
@@ -140,6 +197,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'status',
       header: 'Status',
+      sortKey: 'status',
       renderCell: (issue) => {
         const isOpen = !issue.closedAt;
         return (
@@ -159,6 +217,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'linkedPr',
       header: 'Linked PR',
+      sortKey: 'linkedPr',
       renderCell: (issue) =>
         issue.prNumber ? (
           <a
@@ -188,6 +247,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       key: 'created',
       header: 'Created',
       align: 'right',
+      sortKey: 'created',
       renderCell: (issue) =>
         issue.createdAt ? new Date(issue.createdAt).toLocaleDateString() : '-',
     },
@@ -195,6 +255,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       key: 'closed',
       header: 'Closed',
       align: 'right',
+      sortKey: 'closed',
       renderCell: (issue) =>
         issue.closedAt ? new Date(issue.closedAt).toLocaleDateString() : '-',
     },
@@ -408,7 +469,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         }}
         elevation={0}
       >
-        <DataTable<RepositoryIssue>
+        <DataTable<RepositoryIssue, SortKey>
           columns={columns}
           rows={sortedIssues}
           getRowKey={(issue) => `${issue.number}-${issue.repositoryFullName}`}
@@ -431,6 +492,11 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
             </Box>
           }
           onRowClick={handleRowClick}
+          sort={{
+            field: sortKey,
+            order: sortDirection,
+            onChange: handleSort,
+          }}
         />
       </Card>
     </Box>
