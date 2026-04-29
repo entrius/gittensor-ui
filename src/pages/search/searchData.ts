@@ -35,6 +35,9 @@ export type RepoSearchData = {
   contributors: number;
   totalPRs: number;
   totalScore: number;
+  discoveryScore: number;
+  discoveryIssues: number;
+  discoveryContributors: number;
 };
 
 type SearchResultLimits = {
@@ -134,6 +137,16 @@ const buildRepoSearchData = (
       uniqueAuthors: Set<string>;
     }
   >();
+  const issueStatsMap = new Map<
+    string,
+    Pick<
+      RepoSearchData,
+      'discoveryScore' | 'discoveryIssues' | 'discoveryContributors'
+    > & {
+      uniqueIssueAuthors: Set<string>;
+      uniqueIssues: Set<string>;
+    }
+  >();
 
   // Aggregate merged PR stats by repository
   prs.forEach((pr) => {
@@ -156,12 +169,41 @@ const buildRepoSearchData = (
     }
 
     prStatsMap.set(repositoryKey, current);
+
+    const linkedIssues = Array.isArray(pr.linkedIssues) ? pr.linkedIssues : [];
+    if (linkedIssues.length > 0) {
+      const issueCurrent = issueStatsMap.get(repositoryKey) || {
+        discoveryScore: 0,
+        discoveryIssues: 0,
+        discoveryContributors: 0,
+        uniqueIssueAuthors: new Set<string>(),
+        uniqueIssues: new Set<string>(),
+      };
+
+      issueCurrent.discoveryScore += parseNumber(pr.issueTokenScore, 0);
+
+      linkedIssues.forEach((issue) => {
+        issueCurrent.uniqueIssues.add(
+          `${pr.repository.toLowerCase()}#${issue.number}`,
+        );
+      });
+      issueCurrent.discoveryIssues = issueCurrent.uniqueIssues.size;
+
+      if (pr.author) {
+        issueCurrent.uniqueIssueAuthors.add(pr.author);
+        issueCurrent.discoveryContributors =
+          issueCurrent.uniqueIssueAuthors.size;
+      }
+
+      issueStatsMap.set(repositoryKey, issueCurrent);
+    }
   });
 
   // Build repository search data ranked by weight, then total score.
   return repositories
     .map((repo) => {
       const stats = prStatsMap.get(repo.fullName.toLowerCase());
+      const issueStats = issueStatsMap.get(repo.fullName.toLowerCase());
 
       return {
         fullName: repo.fullName,
@@ -170,6 +212,9 @@ const buildRepoSearchData = (
         totalScore: stats?.totalScore || 0,
         totalPRs: stats?.totalPRs || 0,
         contributors: stats?.uniqueAuthors.size || 0,
+        discoveryScore: issueStats?.discoveryScore || 0,
+        discoveryIssues: issueStats?.discoveryIssues || 0,
+        discoveryContributors: issueStats?.uniqueIssueAuthors.size || 0,
       };
     })
     .sort((a, b) => {

@@ -4,6 +4,7 @@ import { type SxProps, type Theme } from '@mui/material/styles';
 import {
   DataTable,
   type DataTableColumn,
+  type DataTableSort,
 } from '../../components/common/DataTable';
 
 /**
@@ -13,8 +14,8 @@ import {
  * each tab.
  */
 
-type SearchResultsCardProps<T> = {
-  columns: DataTableColumn<T>[];
+type SearchResultsCardProps<T, K extends string> = {
+  columns: DataTableColumn<T, K>[];
   rows: T[];
   totalCount: number;
   emptyLabel: string;
@@ -30,6 +31,7 @@ type SearchResultsCardProps<T> = {
   page: number;
   rowsPerPage: number;
   rowsPerPageOptions: number[];
+  sort: DataTableSort<K>;
 };
 
 const cardSx: SxProps<Theme> = (theme) => ({
@@ -50,7 +52,7 @@ const paginationSx: SxProps<Theme> = (theme) => ({
   },
 });
 
-export const SearchResultsCard = <T,>({
+export const SearchResultsCard = <T, K extends string>({
   columns,
   rows,
   totalCount,
@@ -67,9 +69,10 @@ export const SearchResultsCard = <T,>({
   page,
   rowsPerPage,
   rowsPerPageOptions,
-}: SearchResultsCardProps<T>) => (
+  sort,
+}: SearchResultsCardProps<T, K>) => (
   <Card elevation={0} sx={cardSx}>
-    <DataTable
+    <DataTable<T, K>
       columns={columns}
       rows={rows}
       getRowKey={getRowKey}
@@ -80,6 +83,7 @@ export const SearchResultsCard = <T,>({
       minWidth={minWidth}
       getRowHref={getRowHref}
       linkState={linkState}
+      sort={sort}
       pagination={
         totalCount > 0 ? (
           <TablePagination

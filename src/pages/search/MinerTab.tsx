@@ -2,13 +2,17 @@ import React from 'react';
 import { Box } from '@mui/material';
 import { type Theme } from '@mui/material/styles';
 import { getGithubAvatarSrc } from '../../utils';
-import { type DataTableColumn } from '../../components/common/DataTable';
+import {
+  type DataTableColumn,
+  type DataTableSort,
+} from '../../components/common/DataTable';
 import SearchResultsCard from './SearchResultsCard';
 import {
   SearchAvatarContentCell,
   SearchTruncatedText,
 } from './SearchTableCells';
 import { type MinerSearchData } from './searchData';
+import { type MinerSearchSortKey } from './searchSort';
 
 const getCredibilityTone = (
   credibility: number,
@@ -25,11 +29,12 @@ const numericCellSx = {
   fontVariantNumeric: 'tabular-nums',
 } as const;
 
-const minerColumns: DataTableColumn<MinerSearchData>[] = [
+const minerColumns: DataTableColumn<MinerSearchData, MinerSearchSortKey>[] = [
   {
     key: 'rank',
     header: 'Rank',
     width: 72,
+    sortKey: 'rank',
     renderCell: (miner: MinerSearchData) =>
       miner.leaderboardRank > 0 ? `#${miner.leaderboardRank}` : '-',
     cellSx: (miner: MinerSearchData) => ({
@@ -41,6 +46,7 @@ const minerColumns: DataTableColumn<MinerSearchData>[] = [
     key: 'miner',
     header: 'Miner',
     width: '28%',
+    sortKey: 'miner',
     renderCell: (miner: MinerSearchData) => (
       <SearchAvatarContentCell
         avatarAlt={miner.githubUsername || miner.githubId}
@@ -76,6 +82,7 @@ const minerColumns: DataTableColumn<MinerSearchData>[] = [
     header: 'Credibility',
     width: '14%',
     align: 'right',
+    sortKey: 'credibility',
     renderCell: (miner: MinerSearchData) =>
       miner.credibility > 0 ? (
         <Box
@@ -97,6 +104,7 @@ const minerColumns: DataTableColumn<MinerSearchData>[] = [
     header: 'Token Score',
     width: '14%',
     align: 'right',
+    sortKey: 'tokenScore',
     renderCell: (miner: MinerSearchData) =>
       miner.totalTokenScore > 0
         ? miner.totalTokenScore.toLocaleString(undefined, {
@@ -113,6 +121,7 @@ const minerColumns: DataTableColumn<MinerSearchData>[] = [
     header: 'PRs',
     width: '12%',
     align: 'right',
+    sortKey: 'prs',
     renderCell: (miner: MinerSearchData) =>
       miner.totalPrs > 0 ? miner.totalPrs.toLocaleString() : '-',
     cellSx: (miner: MinerSearchData) => ({
@@ -125,6 +134,7 @@ const minerColumns: DataTableColumn<MinerSearchData>[] = [
     header: 'Score',
     width: '14%',
     align: 'right',
+    sortKey: 'score',
     renderCell: (miner: MinerSearchData) =>
       miner.totalScore.toLocaleString(undefined, {
         minimumFractionDigits: 2,
@@ -146,6 +156,7 @@ type MinerTabProps = {
   paginatedMinerResults: MinerSearchData[];
   rowsPerPage: number;
   rowsPerPageOptions: number[];
+  sort: DataTableSort<MinerSearchSortKey>;
 };
 
 const MinerTab: React.FC<MinerTabProps> = ({
@@ -160,6 +171,7 @@ const MinerTab: React.FC<MinerTabProps> = ({
   paginatedMinerResults,
   rowsPerPage,
   rowsPerPageOptions,
+  sort,
 }) => (
   <SearchResultsCard
     columns={minerColumns}
@@ -177,6 +189,7 @@ const MinerTab: React.FC<MinerTabProps> = ({
     rows={paginatedMinerResults}
     rowsPerPage={rowsPerPage}
     rowsPerPageOptions={rowsPerPageOptions}
+    sort={sort}
     totalCount={minerResults.length}
   />
 );

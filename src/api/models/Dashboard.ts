@@ -183,6 +183,10 @@ export type CommitLog = {
 
   // Linked issues (from /miners/{id}/pulls — issues this PR closes/references)
   linkedIssues?: LinkedIssue[];
+
+  /** Present on some PR payloads (e.g. miner pulls / discovery-enriched commits). */
+  issueDiscoveryScore?: number;
+  issueTokenScore?: number;
 };
 
 export type MinerEvaluation = {

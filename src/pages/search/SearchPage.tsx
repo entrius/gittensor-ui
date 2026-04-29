@@ -8,6 +8,19 @@ import MinerTab from './MinerTab';
 import PullRequestsTab from './PullRequestsTab';
 import RepositoryTab from './RepositoryTab';
 import { MIN_SEARCH_QUERY_LENGTH, useSearchResults } from './searchData';
+import {
+  getNextSearchSort,
+  parseSearchSort,
+  sortIssueRows,
+  sortMinerRows,
+  sortPrRows,
+  sortRepoRows,
+  type IssueSearchSortKey,
+  type MinerSearchSortKey,
+  type PrSearchSortKey,
+  type RepoSearchSortKey,
+  type SearchSortTab,
+} from './searchSort';
 
 const ROWS_PER_PAGE_OPTIONS = [10, 25, 50];
 const SEARCH_TABS = ['miners', 'repositories', 'prs', 'issues'] as const;
@@ -40,6 +53,8 @@ const SearchPage: React.FC = () => {
   const tabParam = searchParams.get('tab');
   const rowsParam = Number(searchParams.get('rows'));
   const pageParam = Number(searchParams.get('page'));
+  const sortParam = searchParams.get('sort');
+  const orderParam = searchParams.get('order');
 
   const rowsPerPage = ROWS_PER_PAGE_OPTIONS.includes(rowsParam)
     ? rowsParam
@@ -55,7 +70,12 @@ const SearchPage: React.FC = () => {
 
   const updateSearchParams = React.useCallback(
     (
-      updates: Partial<Record<'tab' | 'page' | 'rows', string | number | null>>,
+      updates: Partial<
+        Record<
+          'tab' | 'page' | 'rows' | 'sort' | 'order',
+          string | number | null
+        >
+      >,
     ) => {
       const nextParams = new URLSearchParams(searchParams);
 
@@ -89,11 +109,6 @@ const SearchPage: React.FC = () => {
     issues: issueResults.length,
   };
 
-  const totalResults = Object.values(resultCountByTab).reduce(
-    (sum, count) => sum + count,
-    0,
-  );
-
   // Use the URL param tab, or fall back to the first tab with results.
   const tabValue =
     explicitTabValue ||
@@ -110,15 +125,17 @@ const SearchPage: React.FC = () => {
   const tabState = datasets[tabValue];
   const activeResultCount = resultCountByTab[tabValue];
 
-  // Reset the active page when the search query changes.
+  // Reset the active page and sort when the search query changes.
   React.useEffect(() => {
     if (previousQueryRef.current === query) return;
 
     previousQueryRef.current = query;
 
-    if (page !== 0) {
-      updateSearchParams({ page: null });
-    }
+    updateSearchParams({
+      sort: null,
+      order: null,
+      ...(page !== 0 ? { page: null } : {}),
+    });
   }, [page, query, updateSearchParams]);
 
   // Keep the active tab page within valid bounds as result counts change.
@@ -129,24 +146,58 @@ const SearchPage: React.FC = () => {
     }
   }, [activeResultCount, page, rowsPerPage, updateSearchParams]);
 
+  const minerSortCfg = React.useMemo(
+    () => parseSearchSort('miners', sortParam, orderParam),
+    [sortParam, orderParam],
+  );
+  const repoSortCfg = React.useMemo(
+    () => parseSearchSort('repositories', sortParam, orderParam),
+    [sortParam, orderParam],
+  );
+  const prSortCfg = React.useMemo(
+    () => parseSearchSort('prs', sortParam, orderParam),
+    [sortParam, orderParam],
+  );
+  const issueSortCfg = React.useMemo(
+    () => parseSearchSort('issues', sortParam, orderParam),
+    [sortParam, orderParam],
+  );
+
+  const sortedMinerResults = React.useMemo(
+    () => sortMinerRows(minerResults, minerSortCfg.field, minerSortCfg.order),
+    [minerResults, minerSortCfg],
+  );
+  const sortedRepositoryResults = React.useMemo(
+    () => sortRepoRows(repositoryResults, repoSortCfg.field, repoSortCfg.order),
+    [repositoryResults, repoSortCfg],
+  );
+  const sortedPrResults = React.useMemo(
+    () => sortPrRows(prResults, prSortCfg.field, prSortCfg.order),
+    [prResults, prSortCfg],
+  );
+  const sortedIssueResults = React.useMemo(
+    () => sortIssueRows(issueResults, issueSortCfg.field, issueSortCfg.order),
+    [issueResults, issueSortCfg],
+  );
+
   const paginatedMinerResults = React.useMemo(
-    () => paginateResults(minerResults, page, rowsPerPage),
-    [minerResults, page, rowsPerPage],
+    () => paginateResults(sortedMinerResults, page, rowsPerPage),
+    [sortedMinerResults, page, rowsPerPage],
   );
 
   const paginatedRepositoryResults = React.useMemo(
-    () => paginateResults(repositoryResults, page, rowsPerPage),
-    [page, repositoryResults, rowsPerPage],
+    () => paginateResults(sortedRepositoryResults, page, rowsPerPage),
+    [page, sortedRepositoryResults, rowsPerPage],
   );
 
   const paginatedPrResults = React.useMemo(
-    () => paginateResults(prResults, page, rowsPerPage),
-    [page, prResults, rowsPerPage],
+    () => paginateResults(sortedPrResults, page, rowsPerPage),
+    [page, sortedPrResults, rowsPerPage],
   );
 
   const paginatedIssueResults = React.useMemo(
-    () => paginateResults(issueResults, page, rowsPerPage),
-    [issueResults, page, rowsPerPage],
+    () => paginateResults(sortedIssueResults, page, rowsPerPage),
+    [sortedIssueResults, page, rowsPerPage],
   );
 
   const handlePageChange = (newPage: number) => {
@@ -159,6 +210,20 @@ const SearchPage: React.FC = () => {
       page: null,
     });
   };
+
+  const handleSearchSort = React.useCallback(
+    (field: string) => {
+      const tab = tabValue as SearchSortTab;
+      const current = parseSearchSort(tab, sortParam, orderParam);
+      const next = getNextSearchSort(tab, current.field, current.order, field);
+      updateSearchParams({
+        sort: next.field,
+        order: next.order,
+        page: null,
+      });
+    },
+    [orderParam, sortParam, tabValue, updateSearchParams],
+  );
 
   const searchBackState = {
     backTo: `${location.pathname}${location.search}`,
@@ -207,9 +272,9 @@ const SearchPage: React.FC = () => {
         {hasQuery && (
           <Stack gap={2} sx={{ mt: 2 }}>
             <Typography variant="body2" color="text.secondary">
-              {isAnySectionLoading && totalResults === 0
+              {isAnySectionLoading && activeResultCount === 0
                 ? `Loading search results for "${query}"...`
-                : `${totalResults} result${totalResults === 1 ? '' : 's'} for "${query}"`}
+                : `${activeResultCount} result${activeResultCount === 1 ? '' : 's'} in ${TAB_LABELS[tabValue]} for "${query}"`}
             </Typography>
 
             <Box
@@ -224,6 +289,8 @@ const SearchPage: React.FC = () => {
                   updateSearchParams({
                     tab: newValue,
                     page: null,
+                    sort: null,
+                    order: null,
                   })
                 }
                 aria-label="search categories tabs"
@@ -265,7 +332,12 @@ const SearchPage: React.FC = () => {
                 rowsPerPage={rowsPerPage}
                 rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
                 paginatedMinerResults={paginatedMinerResults}
-                minerResults={minerResults}
+                minerResults={sortedMinerResults}
+                sort={{
+                  field: minerSortCfg.field as MinerSearchSortKey,
+                  order: minerSortCfg.order,
+                  onChange: handleSearchSort,
+                }}
               />
             )}
 
@@ -281,7 +353,12 @@ const SearchPage: React.FC = () => {
                 rowsPerPage={rowsPerPage}
                 rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
                 paginatedRepositoryResults={paginatedRepositoryResults}
-                repositoryResults={repositoryResults}
+                repositoryResults={sortedRepositoryResults}
+                sort={{
+                  field: repoSortCfg.field as RepoSearchSortKey,
+                  order: repoSortCfg.order,
+                  onChange: handleSearchSort,
+                }}
               />
             )}
 
@@ -297,7 +374,12 @@ const SearchPage: React.FC = () => {
                 rowsPerPage={rowsPerPage}
                 rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
                 paginatedPrResults={paginatedPrResults}
-                prResults={prResults}
+                prResults={sortedPrResults}
+                sort={{
+                  field: prSortCfg.field as PrSearchSortKey,
+                  order: prSortCfg.order,
+                  onChange: handleSearchSort,
+                }}
               />
             )}
 
@@ -313,7 +395,12 @@ const SearchPage: React.FC = () => {
                 rowsPerPage={rowsPerPage}
                 rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
                 paginatedIssueResults={paginatedIssueResults}
-                issueResults={issueResults}
+                issueResults={sortedIssueResults}
+                sort={{
+                  field: issueSortCfg.field as IssueSearchSortKey,
+                  order: issueSortCfg.order,
+                  onChange: handleSearchSort,
+                }}
               />
             )}
           </Stack>

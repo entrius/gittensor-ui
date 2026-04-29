@@ -1,9 +1,17 @@
 import React from 'react';
-import { Box } from '@mui/material';
+import { Chip } from '@mui/material';
 import { type CommitLog } from '../../api/models/Dashboard';
+import { WatchlistButton } from '../../components/common';
 import { getGithubAvatarSrc } from '../../utils';
-import { type DataTableColumn } from '../../components/common/DataTable';
+import {
+  type DataTableColumn,
+  type DataTableSort,
+} from '../../components/common/DataTable';
+import { serializePRKey } from '../../hooks/useWatchlist';
+import { STATUS_COLORS } from '../../theme';
+import { isClosedUnmergedPr, isMergedPr } from '../../utils/prStatus';
 import SearchResultsCard from './SearchResultsCard';
+import { type PrSearchSortKey } from './searchSort';
 import {
   SearchAvatarContentCell,
   SearchTruncatedText,
@@ -16,17 +24,25 @@ const formatPrScore = (pr: CommitLog) => {
   return parseFloat(pr.score).toFixed(4);
 };
 
-const formatPrDateOrStatus = (pr: CommitLog) => {
-  if (pr.mergedAt) return new Date(pr.mergedAt).toLocaleDateString();
-  if (pr.prState === 'CLOSED') return 'Closed';
-  return 'Open';
+/** Matches Watchlist PR table `prStatusMeta` + status `Chip` styling. */
+const prStatusMeta = (pr: CommitLog) => {
+  const merged = isMergedPr(pr);
+  const closed = isClosedUnmergedPr(pr);
+  const label = merged ? 'MERGED' : closed ? 'CLOSED' : 'OPEN';
+  const color = merged
+    ? STATUS_COLORS.merged
+    : closed
+      ? STATUS_COLORS.closed
+      : STATUS_COLORS.open;
+  return { label, color };
 };
 
-const prColumns: DataTableColumn<CommitLog>[] = [
+const prColumns: DataTableColumn<CommitLog, PrSearchSortKey>[] = [
   {
     key: 'prNumber',
-    header: 'PR #',
+    header: 'PR',
     width: 96,
+    sortKey: 'prNumber',
     renderCell: (pr: CommitLog) => `#${pr.pullRequestNumber}`,
     cellSx: {
       fontWeight: 600,
@@ -36,6 +52,7 @@ const prColumns: DataTableColumn<CommitLog>[] = [
     key: 'title',
     header: 'Title',
     width: '40%',
+    sortKey: 'title',
     renderCell: (pr: CommitLog) => {
       const prTitle = pr.pullRequestTitle || 'Untitled pull request';
 
@@ -53,7 +70,8 @@ const prColumns: DataTableColumn<CommitLog>[] = [
   {
     key: 'repository',
     header: 'Repository',
-    width: '20%',
+    width: '23%',
+    sortKey: 'repository',
     renderCell: (pr: CommitLog) => {
       const repositoryOwner = pr.repository.split('/')[0];
 
@@ -75,56 +93,66 @@ const prColumns: DataTableColumn<CommitLog>[] = [
     },
   },
   {
-    key: 'delta',
-    header: '+/-',
-    width: '12%',
-    align: 'right',
+    key: 'author',
+    header: 'Author',
+    width: '13%',
+    sortKey: 'author',
     renderCell: (pr: CommitLog) => (
-      <Box
-        sx={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 1,
-        }}
+      <SearchAvatarContentCell
+        avatarAlt={pr.author}
+        avatarSrc={getGithubAvatarSrc(pr.author)}
       >
-        <Box
-          component="span"
+        <SearchTruncatedText
+          tooltip={pr.author}
           sx={(theme) => ({
-            color: theme.palette.diff.additions,
+            color: theme.palette.text.primary,
           })}
-        >
-          +{pr.additions || 0}
-        </Box>
-        <Box
-          component="span"
-          sx={(theme) => ({
-            color: theme.palette.diff.deletions,
-          })}
-        >
-          -{pr.deletions || 0}
-        </Box>
-      </Box>
+          text={pr.author || '-'}
+        />
+      </SearchAvatarContentCell>
     ),
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    width: '11%',
+    align: 'center',
+    sortKey: 'status',
+    renderCell: (pr: CommitLog) => {
+      const { label, color } = prStatusMeta(pr);
+      return (
+        <Chip
+          variant="status"
+          label={label}
+          sx={{ color, borderColor: color }}
+        />
+      );
+    },
   },
   {
     key: 'score',
     header: 'Score',
-    width: '12%',
+    width: '10%',
     align: 'right',
+    sortKey: 'score',
     renderCell: (pr: CommitLog) => formatPrScore(pr),
     cellSx: {
       fontWeight: 600,
     },
   },
   {
-    key: 'date',
-    header: 'Date',
-    width: '14%',
-    align: 'right',
-    renderCell: (pr: CommitLog) => formatPrDateOrStatus(pr),
-    cellSx: {
-      color: 'text.secondary',
-    },
+    key: 'watch',
+    header: '★',
+    width: 52,
+    align: 'center',
+    cellSx: { p: 0 },
+    renderCell: (pr: CommitLog) => (
+      <WatchlistButton
+        category="prs"
+        itemKey={serializePRKey(pr.repository, pr.pullRequestNumber)}
+        size="small"
+      />
+    ),
   },
 ];
 
@@ -140,6 +168,7 @@ type PullRequestsTabProps = {
   prResults: CommitLog[];
   rowsPerPage: number;
   rowsPerPageOptions: number[];
+  sort: DataTableSort<PrSearchSortKey>;
 };
 
 const PullRequestsTab: React.FC<PullRequestsTabProps> = ({
@@ -154,6 +183,7 @@ const PullRequestsTab: React.FC<PullRequestsTabProps> = ({
   prResults,
   rowsPerPage,
   rowsPerPageOptions,
+  sort,
 }) => (
   <SearchResultsCard
     columns={prColumns}
@@ -162,7 +192,7 @@ const PullRequestsTab: React.FC<PullRequestsTabProps> = ({
     getRowKey={(pr: CommitLog) => `${pr.repository}-${pr.pullRequestNumber}`}
     isError={isError}
     isLoading={isLoading}
-    minWidth={960}
+    minWidth={1120}
     onPageChange={onPageChange}
     getRowHref={getPrHref}
     linkState={linkState}
@@ -171,6 +201,7 @@ const PullRequestsTab: React.FC<PullRequestsTabProps> = ({
     rows={paginatedPrResults}
     rowsPerPage={rowsPerPage}
     rowsPerPageOptions={rowsPerPageOptions}
+    sort={sort}
     totalCount={prResults.length}
   />
 );
