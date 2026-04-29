@@ -73,6 +73,7 @@ import {
 import { filterPrs, type PrStatusFilter } from '../utils/prTable';
 import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatTokenAmount } from '../utils/format';
+import { compareByWatchlist } from '../utils/watchlistSort';
 import theme, {
   CHART_COLORS,
   STATUS_COLORS,
@@ -1776,7 +1777,7 @@ const prStatusMeta = (pr: CommitLog) => {
   return { label, color };
 };
 
-type PrSortKey = 'pr' | 'title' | 'repo' | 'author' | 'score';
+type PrSortKey = 'pr' | 'title' | 'repo' | 'author' | 'score' | 'watch';
 
 const prCellSx = { py: 1.5 } as const;
 
@@ -1979,6 +1980,7 @@ const buildPrColumns = (
     header: '★',
     width: '52px',
     align: 'center',
+    sortKey: 'watch',
     cellSx: { p: 0 },
     renderCell: (pr) => (
       <WatchlistButton
@@ -2239,6 +2241,7 @@ const PR_ROWS_OPTIONS = [10, 25, 50] as const;
 const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { items, sourcesByKey, isLoading } = useWatchedPRs(itemKeys);
   const prColumns = useMemo(() => buildPrColumns(sourcesByKey), [sourcesByKey]);
+  const { isWatched } = useWatchlist('prs');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
   const [viewMode, setViewMode] = useState<PRsViewMode>('list');
@@ -2289,11 +2292,16 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           return cmpStr(a.author, b.author);
         case 'score':
           return cmpNum(parseFloat(a.score || '0'), parseFloat(b.score || '0'));
+        case 'watch': {
+          const key = (pr: CommitLog) =>
+            serializePRKey(pr.repository, pr.pullRequestNumber);
+          return compareByWatchlist(a, b, key, isWatched) * dir;
+        }
         default:
           return 0;
       }
     });
-  }, [filtered, sortField, sortOrder]);
+  }, [filtered, sortField, sortOrder, isWatched]);
 
   const paged = useMemo(
     () => sorted.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
