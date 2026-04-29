@@ -9,7 +9,11 @@
  */
 import { type CommitLog, type MinerEvaluation } from '../../api';
 import { type IssueBounty } from '../../api/models/Issues';
-import { getPrStatusLabel, parseNumber } from '../../utils';
+import {
+  getPrStatusLabel,
+  isIssueDiscoveryContributionPr,
+  parseNumber,
+} from '../../utils';
 import { formatTokenAmount } from '../../utils/format';
 
 export type PresetTimeRange = '1d' | '7d' | '35d';
@@ -351,10 +355,9 @@ const getPrOverviewMetrics = (prs: CommitLog[], window: WindowBounds) => {
   };
 };
 
-// Issue discovery metrics are sourced from per-miner aggregates (which
-// reflect every discovered issue) rather than the /issues endpoint (which
-// only returns bounty-backed issues — far fewer). Aggregates are all-time
-// totals, so the Issue Discoveries card is not windowed by the range filter.
+// Issue discovery headline counts: per-miner aggregates (full discovery scope).
+// Deltas for preset ranges use {@link getPrOverviewMetrics} on issue-linked PRs
+// (see {@link isIssueDiscoveryContributionPr}) split by issue-eligibility track.
 const getIssueOverviewMetricsFromMiners = (miners: MinerEvaluation[]) => {
   let solved = 0;
   let closed = 0;
@@ -370,6 +373,49 @@ const getIssueOverviewMetricsFromMiners = (miners: MinerEvaluation[]) => {
     open,
     closed,
   };
+};
+
+type IssueOverviewCounts = ReturnType<typeof getIssueOverviewMetricsFromMiners>;
+
+/** Miner is on the Issue Discovery eligibility track (matches Issue leaderboard split). */
+const prMatchesIssueEligibleTrack = (
+  pr: CommitLog,
+  issueEligibleGithubIds: Set<string>,
+  minerByGithubLogin: Map<string, MinerEvaluation>,
+): boolean => {
+  if (pr.githubId && issueEligibleGithubIds.has(pr.githubId)) return true;
+  const login = pr.author?.trim().toLowerCase();
+  if (!login) return false;
+  const miner = minerByGithubLogin.get(login);
+  return miner?.isIssueEligible === true;
+};
+
+const filterIssueDiscoveryFlowPrs = (
+  prs: CommitLog[],
+  miners: MinerEvaluation[],
+  wantEligibleTrack: boolean,
+): CommitLog[] => {
+  const issueEligibleGithubIds = new Set(
+    miners
+      .filter((m) => m.isIssueEligible === true)
+      .map((m) => m.githubId)
+      .filter(Boolean),
+  );
+  const minerByGithubLogin = new Map<string, MinerEvaluation>();
+  miners.forEach((m) => {
+    const login = m.githubUsername?.trim().toLowerCase();
+    if (login) minerByGithubLogin.set(login, m);
+  });
+
+  return prs.filter((pr) => {
+    if (!isIssueDiscoveryContributionPr(pr)) return false;
+    const onEligibleTrack = prMatchesIssueEligibleTrack(
+      pr,
+      issueEligibleGithubIds,
+      minerByGithubLogin,
+    );
+    return wantEligibleTrack ? onEligibleTrack : !onEligibleTrack;
+  });
 };
 
 const formatCenterPercent = (resolved: number, total: number) => {
@@ -414,6 +460,35 @@ export const buildDashboardOverview = (
   const previousIneligiblePrMetrics = previousWindow
     ? getPrOverviewMetrics(ineligiblePrs, previousWindow)
     : null;
+
+  const eligibleIssueDiscoveryPrs = filterIssueDiscoveryFlowPrs(
+    prs,
+    miners,
+    true,
+  );
+  const ineligibleIssueDiscoveryPrs = filterIssueDiscoveryFlowPrs(
+    prs,
+    miners,
+    false,
+  );
+
+  const currentEligibleIssueFlow =
+    range === 'all'
+      ? null
+      : getPrOverviewMetrics(eligibleIssueDiscoveryPrs, currentWindow);
+  const previousEligibleIssueFlow =
+    range === 'all' || !previousWindow
+      ? null
+      : getPrOverviewMetrics(eligibleIssueDiscoveryPrs, previousWindow);
+
+  const currentIneligibleIssueFlow =
+    range === 'all'
+      ? null
+      : getPrOverviewMetrics(ineligibleIssueDiscoveryPrs, currentWindow);
+  const previousIneligibleIssueFlow =
+    range === 'all' || !previousWindow
+      ? null
+      : getPrOverviewMetrics(ineligibleIssueDiscoveryPrs, previousWindow);
 
   const eligibleIssueMetrics =
     getIssueOverviewMetricsFromMiners(eligibleMiners);
@@ -463,24 +538,49 @@ export const buildDashboardOverview = (
   });
 
   const buildIssuePool = (
-    issueMetrics: ReturnType<typeof getIssueOverviewMetricsFromMiners>,
+    display: IssueOverviewCounts,
+    flowCurrent: ReturnType<typeof getPrOverviewMetrics> | null,
+    flowPrevious: ReturnType<typeof getPrOverviewMetrics> | null,
   ): DashboardOverviewPool => ({
     chartSegments: [
-      { label: 'Solved', value: issueMetrics.solved },
-      { label: 'Open', value: issueMetrics.open },
-      { label: 'Closed', value: issueMetrics.closed },
+      { label: 'Solved', value: display.solved },
+      { label: 'Open', value: display.open },
+      { label: 'Closed', value: display.closed },
     ],
     chartCenterLabel: formatCenterPercent(
-      issueMetrics.solved,
-      issueMetrics.solved + issueMetrics.closed,
+      display.solved,
+      display.solved + display.closed,
     ),
-    // Issue metrics come from per-miner aggregates (all-time totals), so
-    // there is no previous-window comparison available — deltas are '0%'.
     metrics: [
-      { label: 'Total', value: issueMetrics.total, delta: '0%' },
-      { label: 'Solved', value: issueMetrics.solved, delta: '0%' },
-      { label: 'Open', value: issueMetrics.open, delta: '0%' },
-      { label: 'Closed', value: issueMetrics.closed, delta: '0%' },
+      {
+        label: 'Total',
+        value: display.total,
+        delta: getMetricDelta(
+          flowCurrent?.total ?? 0,
+          flowPrevious?.total,
+        ),
+      },
+      {
+        label: 'Solved',
+        value: display.solved,
+        delta: getMetricDelta(
+          flowCurrent?.merged ?? 0,
+          flowPrevious?.merged,
+        ),
+      },
+      {
+        label: 'Open',
+        value: display.open,
+        delta: getMetricDelta(flowCurrent?.open ?? 0, flowPrevious?.open),
+      },
+      {
+        label: 'Closed',
+        value: display.closed,
+        delta: getMetricDelta(
+          flowCurrent?.closed ?? 0,
+          flowPrevious?.closed,
+        ),
+      },
     ],
   });
 
@@ -498,8 +598,16 @@ export const buildDashboardOverview = (
     },
     {
       title: 'Issue Discoveries',
-      eligible: buildIssuePool(eligibleIssueMetrics),
-      ineligible: buildIssuePool(ineligibleIssueMetrics),
+      eligible: buildIssuePool(
+        eligibleIssueMetrics,
+        currentEligibleIssueFlow,
+        previousEligibleIssueFlow,
+      ),
+      ineligible: buildIssuePool(
+        ineligibleIssueMetrics,
+        currentIneligibleIssueFlow,
+        previousIneligibleIssueFlow,
+      ),
     },
   ];
 };

@@ -155,8 +155,7 @@ const PoolColumn: React.FC<PoolColumnProps> = ({
           fontFamily: monoFontFamily,
           fontSize: '0.62rem',
           fontWeight: 700,
-          textTransform: 'uppercase',
-          letterSpacing: '0.06em',
+          letterSpacing: '0.04em',
           alignSelf: 'flex-start',
           borderRadius: 1,
           px: 0.75,
@@ -170,7 +169,7 @@ const PoolColumn: React.FC<PoolColumnProps> = ({
             : theme.palette.surface.subtle,
         }}
       >
-        {isEligible ? 'Eligible' : 'Not Eligible'}
+        {isEligible ? 'Eligible' : 'Ineligible'}
       </Typography>
 
       {/* Donut chart */}
