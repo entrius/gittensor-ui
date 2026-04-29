@@ -65,6 +65,7 @@ import {
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
 import { useWatchedPRs, type WatchedPRSource } from '../hooks/useWatchedPRs';
+import { useSessionStoredState } from '../hooks/useSessionStoredState';
 import {
   isMergedPr,
   isClosedUnmergedPr,
@@ -699,6 +700,15 @@ const isRepoActive = (repo: Repository): boolean => !repo.inactiveAt;
 
 type RepoStatusFilter = 'all' | 'active' | 'inactive';
 
+const REPO_STATUS_FILTERS: RepoStatusFilter[] = ['all', 'active', 'inactive'];
+const isRepoStatusFilter = (value: unknown): value is RepoStatusFilter =>
+  typeof value === 'string' &&
+  (REPO_STATUS_FILTERS as string[]).includes(value);
+
+const PR_STATUS_FILTERS: PrStatusFilter[] = ['all', 'open', 'merged', 'closed'];
+const isPrStatusFilter = (value: unknown): value is PrStatusFilter =>
+  typeof value === 'string' && (PR_STATUS_FILTERS as string[]).includes(value);
+
 type RepoSortKey =
   | 'name'
   | 'weight'
@@ -1138,7 +1148,11 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: repos } = useReposAndWeights();
   const { data: allPrs } = useAllPrs();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<RepoStatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useSessionStoredState<RepoStatusFilter>(
+    'watchlist:repos:statusFilter',
+    'all',
+    isRepoStatusFilter,
+  );
   const [viewMode, setViewMode] = useState<ReposViewMode>('list');
   const [showChart, setShowChart] = useState(false);
   const [useLogScale, setUseLogScale] = useState(false);
@@ -2240,7 +2254,11 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { items, sourcesByKey, isLoading } = useWatchedPRs(itemKeys);
   const prColumns = useMemo(() => buildPrColumns(sourcesByKey), [sourcesByKey]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useSessionStoredState<PrStatusFilter>(
+    'watchlist:prs:statusFilter',
+    'all',
+    isPrStatusFilter,
+  );
   const [viewMode, setViewMode] = useState<PRsViewMode>('list');
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(0);

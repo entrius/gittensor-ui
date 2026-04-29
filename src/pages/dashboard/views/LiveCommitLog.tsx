@@ -15,6 +15,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { LinkBox } from '../../../components/common/linkBehavior';
 import { useInfiniteCommitLog } from '../../../api';
+import { useSessionStoredState } from '../../../hooks/useSessionStoredState';
 import theme, {
   REPO_OWNER_AVATAR_BACKGROUNDS,
   scrollbarSx,
@@ -101,6 +102,12 @@ const COMMIT_STATUS_FILTERS: CommitStatusFilter[] = [
   'open',
   'closed',
 ];
+
+const STATUS_FILTER_STORAGE_KEY = 'liveActivity:statusFilter';
+
+const isCommitStatusFilter = (value: unknown): value is CommitStatusFilter =>
+  typeof value === 'string' &&
+  (COMMIT_STATUS_FILTERS as string[]).includes(value);
 
 const getCommitId = (entry: CommitLogEntry) =>
   `${entry.repository}-${entry.pullRequestNumber}`;
@@ -373,7 +380,11 @@ const LiveCommitLog: React.FC = () => {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteCommitLog({ refetchInterval: 10000 });
 
-  const [statusFilter, setStatusFilter] = useState<CommitStatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useSessionStoredState<CommitStatusFilter>(
+    STATUS_FILTER_STORAGE_KEY,
+    'all',
+    isCommitStatusFilter,
+  );
   const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
   const [, setRelativeTimeTick] = useState(0);
