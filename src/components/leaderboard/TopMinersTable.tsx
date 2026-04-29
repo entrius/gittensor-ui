@@ -412,10 +412,6 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                 width: { xs: '100%', sm: 'auto' },
               }}
             >
-              <EligibilityToggle
-                value={eligibilityFilter}
-                onChange={handleEligibilityChange}
-              />
               <Box
                 sx={{
                   display: 'flex',
