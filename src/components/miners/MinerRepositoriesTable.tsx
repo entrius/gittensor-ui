@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Avatar,
   Box,
@@ -11,7 +11,7 @@ import {
   alpha,
 } from '@mui/material';
 import { Search as SearchIcon, Close as CloseIcon } from '@mui/icons-material';
-import { useMinerPRs, useReposAndWeights } from '../../api';
+import { useIssues, useMinerPRs, useReposAndWeights } from '../../api';
 import { LinkBox } from '../common/linkBehavior';
 import {
   DataTable,
@@ -23,32 +23,47 @@ import TablePagination from './TablePagination';
 import { searchFieldSx } from './MinerRepositoriesTable.styles';
 import {
   type RepoSortField,
+  type IssueRepoSortField,
   type SortOrder,
   type RepoStats,
   buildRepoWeightsMap,
   aggregatePRsByRepository,
+  aggregateIssueDiscoveryByRepository,
   filterBySearch,
   sortMinerRepoStats,
+  sortIssueRepoStats,
   hasActiveFilters,
   getDisplayCount,
   isOutsideScoringWindow,
 } from '../../utils/ExplorerUtils';
 
+type ViewMode = 'prs' | 'issues';
+
 interface MinerRepositoriesTableProps {
   githubId: string;
+  viewMode?: ViewMode;
 }
 
 const PAGE_SIZE = 20;
 
 const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   githubId,
+  viewMode = 'prs',
 }) => {
+  const isIssueMode = viewMode === 'issues';
   const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
+  const { data: issues, isLoading: isLoadingIssues } = useIssues();
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
-  const [sortField, setSortField] = useState<RepoSortField>('score');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [prSortField, setPrSortField] = useState<RepoSortField>('score');
+  const [prSortOrder, setPrSortOrder] = useState<SortOrder>('desc');
+  const [issueSortField] = useState<IssueRepoSortField>('issueTokenScore');
+  const [issueSortOrder] = useState<SortOrder>('desc');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
+
+  useEffect(() => {
+    setPage(0);
+  }, [viewMode]);
 
   const repoWeights = useMemo(() => buildRepoWeightsMap(repos), [repos]);
 
@@ -57,48 +72,126 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     [prs, repoWeights],
   );
 
+  const issueRepoStats = useMemo(
+    () => aggregateIssueDiscoveryByRepository(prs || [], issues, repoWeights),
+    [prs, issues, repoWeights],
+  );
+
   const filteredRepoStats = useMemo(
     () => filterBySearch(repoStats, searchQuery),
     [repoStats, searchQuery],
   );
 
-  const sortedRepoStats = useMemo(
-    () => sortMinerRepoStats(filteredRepoStats, sortField, sortOrder),
-    [filteredRepoStats, sortField, sortOrder],
+  const filteredIssueRepoStats = useMemo(
+    () => filterBySearch(issueRepoStats, searchQuery),
+    [issueRepoStats, searchQuery],
   );
 
-  const pagedRepoStats = useMemo(() => {
+  const sortedRepoStats = useMemo(
+    () => sortMinerRepoStats(filteredRepoStats, prSortField, prSortOrder),
+    [filteredRepoStats, prSortField, prSortOrder],
+  );
+
+  const sortedIssueRepoStats = useMemo(
+    () =>
+      sortIssueRepoStats(
+        filteredIssueRepoStats,
+        issueSortField,
+        issueSortOrder,
+      ),
+    [filteredIssueRepoStats, issueSortField, issueSortOrder],
+  );
+
+  const activeSortedCount = isIssueMode
+    ? sortedIssueRepoStats.length
+    : sortedRepoStats.length;
+
+  const pagedRepoRows = useMemo(() => {
     const start = page * PAGE_SIZE;
     return sortedRepoStats.slice(start, start + PAGE_SIZE);
   }, [sortedRepoStats, page]);
 
-  const totalPages = Math.ceil(sortedRepoStats.length / PAGE_SIZE);
+  const totalPages = Math.ceil(activeSortedCount / PAGE_SIZE);
 
-  const handleSort = (field: RepoSortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+  const handlePrSort = (field: RepoSortField) => {
+    if (prSortField === field) {
+      setPrSortOrder(prSortOrder === 'asc' ? 'desc' : 'asc');
     } else {
-      setSortField(field);
-      setSortOrder('desc');
+      setPrSortField(field);
+      setPrSortOrder('desc');
     }
+    setPage(0);
   };
 
   const isFiltered = hasActiveFilters(searchQuery);
   const displayCount = getDisplayCount(
-    sortedRepoStats.length,
-    repoStats.length,
+    activeSortedCount,
+    isIssueMode ? issueRepoStats.length : repoStats.length,
     isFiltered,
   );
-  const isLoading = isLoadingPRs || isLoadingRepos;
 
-  const columns: DataTableColumn<RepoStats, RepoSortField>[] = [
+  const isLoading =
+    isLoadingPRs || isLoadingRepos || (isIssueMode && isLoadingIssues);
+
+  const backLabel = prs?.[0]?.author || githubId;
+
+  const renderRepositoryCell = (repository: string) => {
+    const owner = repository.split('/')[0];
+    return (
+      <LinkBox
+        href={`/miners/repository?name=${encodeURIComponent(repository)}`}
+        linkState={{ backLabel: `Back to ${backLabel}` }}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          cursor: 'pointer',
+          minWidth: 0,
+          '&:hover': {
+            color: 'primary.main',
+            '& .MuiTypography-root': { textDecoration: 'underline' },
+          },
+          transition: 'color 0.2s',
+        }}
+      >
+        <Avatar
+          src={`https://avatars.githubusercontent.com/${owner}`}
+          alt={owner}
+          sx={{
+            width: 24,
+            height: 24,
+            border: '1px solid',
+            borderColor: 'border.medium',
+            backgroundColor: getAvatarBgColor(owner),
+          }}
+        />
+        <Typography
+          component="span"
+          title={repository}
+          sx={{
+            fontSize: '0.85rem',
+            minWidth: 0,
+            flex: 1,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            transition: 'color 0.2s',
+          }}
+        >
+          {repository}
+        </Typography>
+      </LinkBox>
+    );
+  };
+
+  const prColumns: DataTableColumn<RepoStats, RepoSortField>[] = [
     {
       key: 'rank',
       header: 'Rank',
       width: '8%',
       sortKey: 'rank',
       renderCell: (repo) => {
-        const indexInPage = pagedRepoStats.indexOf(repo);
+        const indexInPage = pagedRepoRows.indexOf(repo);
         const rank = page * PAGE_SIZE + indexInPage;
         return <RankBadge rank={rank} displayNumber={rank + 1} />;
       },
@@ -108,56 +201,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       header: 'Repository',
       width: '36%',
       sortKey: 'repository',
-      renderCell: (repo) => {
-        const owner = repo.repository.split('/')[0];
-        return (
-          <LinkBox
-            href={`/miners/repository?name=${encodeURIComponent(repo.repository)}`}
-            linkState={{
-              backLabel: `Back to ${prs?.[0]?.author || githubId}`,
-            }}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-              cursor: 'pointer',
-              minWidth: 0,
-              '&:hover': {
-                color: 'primary.main',
-                '& .MuiTypography-root': { textDecoration: 'underline' },
-              },
-              transition: 'color 0.2s',
-            }}
-          >
-            <Avatar
-              src={`https://avatars.githubusercontent.com/${owner}`}
-              alt={owner}
-              sx={{
-                width: 24,
-                height: 24,
-                border: '1px solid',
-                borderColor: 'border.medium',
-                backgroundColor: getAvatarBgColor(owner),
-              }}
-            />
-            <Typography
-              component="span"
-              title={repo.repository}
-              sx={{
-                fontSize: '0.85rem',
-                minWidth: 0,
-                flex: 1,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                transition: 'color 0.2s',
-              }}
-            >
-              {repo.repository}
-            </Typography>
-          </LinkBox>
-        );
-      },
+      renderCell: (repo) => renderRepositoryCell(repo.repository),
     },
     {
       key: 'prs',
@@ -222,6 +266,86 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     );
   }
 
+  const headerToolbar = (
+    <Box
+      sx={{
+        p: 3,
+        borderBottom: '1px solid',
+        borderColor: 'border.light',
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 2,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
+          <Typography
+            variant="h6"
+            sx={{
+              color: 'text.primary',
+              fontSize: { xs: '0.95rem', sm: '1.1rem' },
+              fontWeight: 500,
+            }}
+          >
+            Repositories
+          </Typography>
+          <Typography
+            sx={{
+              color: (t) => alpha(t.palette.text.primary, 0.5),
+              fontSize: '0.75rem',
+            }}
+          >
+            ({displayCount})
+          </Typography>
+        </Box>
+      </Box>
+
+      <TextField
+        size="small"
+        placeholder="Search repositories..."
+        value={searchQuery}
+        onChange={(e) => {
+          setSearchQuery(e.target.value);
+          setPage(0);
+        }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon
+                sx={{
+                  color: (t) => alpha(t.palette.text.primary, 0.3),
+                  fontSize: '1rem',
+                }}
+              />
+            </InputAdornment>
+          ),
+          endAdornment: searchQuery ? (
+            <InputAdornment position="end">
+              <IconButton
+                size="small"
+                onClick={() => {
+                  setSearchQuery('');
+                  setPage(0);
+                }}
+                edge="end"
+                aria-label="clear search"
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </InputAdornment>
+          ) : undefined,
+        }}
+        sx={searchFieldSx}
+      />
+    </Box>
+  );
+
   return (
     <Card
       sx={{
@@ -236,101 +360,24 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       }}
       elevation={0}
     >
-      <Box
-        sx={{
-          p: 3,
-          borderBottom: '1px solid',
-          borderColor: 'border.light',
-        }}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            alignItems: { xs: 'flex-start', sm: 'center' },
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 2,
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
-            <Typography
-              variant="h6"
-              sx={{
-                color: 'text.primary',
-                fontSize: { xs: '0.95rem', sm: '1.1rem' },
-                fontWeight: 500,
-              }}
-            >
-              Repositories
-            </Typography>
-            <Typography
-              sx={{
-                color: (t) => alpha(t.palette.text.primary, 0.5),
-                fontSize: '0.75rem',
-              }}
-            >
-              ({displayCount})
-            </Typography>
-          </Box>
-        </Box>
-
-        <TextField
-          size="small"
-          placeholder="Search repositories..."
-          value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setPage(0);
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon
-                  sx={{
-                    color: (t) => alpha(t.palette.text.primary, 0.3),
-                    fontSize: '1rem',
-                  }}
-                />
-              </InputAdornment>
-            ),
-            endAdornment: searchQuery ? (
-              <InputAdornment position="end">
-                <IconButton
-                  size="small"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setPage(0);
-                  }}
-                  edge="end"
-                  aria-label="clear search"
-                >
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-              </InputAdornment>
-            ) : undefined,
-          }}
-          sx={searchFieldSx}
-        />
-      </Box>
-
       {!prs || prs.length === 0 ? (
         <EmptyStateMessage message="No repository contributions found" />
       ) : (
         <DataTable<RepoStats, RepoSortField>
-          columns={columns}
-          rows={pagedRepoStats}
+          columns={prColumns}
+          rows={sortedRepoStats}
           getRowKey={(repo) => repo.repository}
           minWidth="700px"
           stickyHeader
           size="medium"
+          header={headerToolbar}
           emptyState={
             <EmptyStateMessage message="No repositories found for the selected filters" />
           }
           sort={{
-            field: sortField,
-            order: sortOrder,
-            onChange: handleSort,
+            field: prSortField,
+            order: prSortOrder,
+            onChange: handlePrSort,
           }}
           getRowSx={(repo) => ({
             opacity: isOutsideScoringWindow(repo.latestPrDate) ? 0.4 : 1,

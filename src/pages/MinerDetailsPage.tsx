@@ -7,6 +7,8 @@ import {
   BackButton,
   MinerActivity,
   MinerInsightsCard,
+  MinerIssuesTable,
+  MinerOpenDiscoveryIssuesByRepo,
   MinerPRsTable,
   MinerRepositoriesTable,
   MinerScoreBreakdown,
@@ -23,7 +25,13 @@ const PR_TABS = [
   'pull-requests',
   'repositories',
 ] as const;
-const ISSUE_TABS = ['overview', 'activity', 'repositories'] as const;
+const ISSUE_TABS = [
+  'overview',
+  'activity',
+  'open-issues',
+  'issues',
+  'repositories',
+] as const;
 type MinerDetailsTab = (typeof PR_TABS)[number] | (typeof ISSUE_TABS)[number];
 
 /**
@@ -201,9 +209,13 @@ const MinerDetailsPage: React.FC = () => {
             >
               <Tab value="overview" label="Overview" />
               <Tab value="activity" label="Activity" />
+              {viewMode === 'issues' && (
+                <Tab value="open-issues" label="Open issues" />
+              )}
               {viewMode === 'prs' && (
                 <Tab value="pull-requests" label="Pull Requests" />
               )}
+              {viewMode === 'issues' && <Tab value="issues" label="Issues" />}
               <Tab value="repositories" label="Repositories" />
             </Tabs>
           </Box>
@@ -219,11 +231,15 @@ const MinerDetailsPage: React.FC = () => {
             {activeTab === 'activity' && (
               <MinerActivity githubId={githubId} viewMode={viewMode} />
             )}
+            {activeTab === 'open-issues' && viewMode === 'issues' && (
+              <MinerOpenDiscoveryIssuesByRepo githubId={githubId} />
+            )}
             {activeTab === 'pull-requests' && (
               <MinerPRsTable githubId={githubId} />
             )}
+            {activeTab === 'issues' && <MinerIssuesTable githubId={githubId} />}
             {activeTab === 'repositories' && (
-              <MinerRepositoriesTable githubId={githubId} />
+              <MinerRepositoriesTable githubId={githubId} viewMode={viewMode} />
             )}
           </Box>
         </Box>

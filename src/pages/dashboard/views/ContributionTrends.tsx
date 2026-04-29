@@ -16,6 +16,13 @@ import {
   type TrendSeriesKey,
   type TrendTimeRange,
 } from '../dashboardData';
+import {
+  echartsAxisTooltipChrome,
+  echartsFontFamily,
+  echartsGridLineChart,
+  echartsMutedCartesianAxisColors,
+  echartsTransparentBackground,
+} from '../../../utils/echarts/gittensorChartTheme';
 
 interface ContributionTrendsProps {
   range: TrendTimeRange;
@@ -90,14 +97,15 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
     const labelInterval = range === '35d' ? 6 : range === '7d' ? 0 : 'auto';
     const tooltipPrimaryColor = theme.palette.text.primary;
     const tooltipSecondaryColor = alpha(theme.palette.text.primary, 0.66);
-    const tooltipFontFamily = theme.typography.fontFamily;
-    const chartLabelColor = alpha(theme.palette.text.primary, 0.64);
-    const chartAxisLineColor = alpha(theme.palette.text.primary, 0.08);
-    const chartSplitLineColor = alpha(theme.palette.text.primary, 0.07);
-    const chartFontFamily = theme.typography.fontFamily;
+    const chartFontFamily = echartsFontFamily(theme);
+    const {
+      labelColor: chartLabelColor,
+      axisLineColor: chartAxisLineColor,
+      splitLineColor: chartSplitLineColor,
+    } = echartsMutedCartesianAxisColors(theme);
 
     return {
-      backgroundColor: 'transparent',
+      ...echartsTransparentBackground(),
       animationDuration: 450,
       color: visibleSeries.map((series) =>
         getTrendSeriesColor(theme, series.key),
@@ -111,13 +119,11 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
             width: 1,
           },
         },
-        backgroundColor: theme.palette.surface.tooltip,
-        borderColor: alpha(theme.palette.text.primary, 0.14),
-        borderWidth: 1,
+        ...echartsAxisTooltipChrome(theme),
         padding: [10, 12],
         textStyle: {
           color: theme.palette.text.primary,
-          fontFamily: theme.typography.fontFamily,
+          fontFamily: chartFontFamily,
           fontSize: 11,
         },
         formatter: (
@@ -138,20 +144,14 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
             .join('');
 
           return `
-            <div style="display:grid;gap:6px;font-family:${tooltipFontFamily};">
+            <div style="display:grid;gap:6px;font-family:${chartFontFamily};">
               <div style="color:${tooltipPrimaryColor};font-weight:700;">${params[0]?.axisValueLabel || ''}</div>
               ${rows}
             </div>
           `;
         },
       },
-      grid: {
-        left: '3%',
-        right: '2%',
-        top: 20,
-        bottom: 28,
-        containLabel: true,
-      },
+      grid: echartsGridLineChart(),
       xAxis: {
         type: 'category',
         boundaryGap: false,

@@ -7,6 +7,7 @@ import {
   Chip,
   Collapse,
   FormControl,
+  Grid,
   IconButton,
   InputAdornment,
   Link,
@@ -26,7 +27,10 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import TableChartIcon from '@mui/icons-material/TableChart';
+import ViewListIcon from '@mui/icons-material/ViewList';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ReactECharts from 'echarts-for-react';
+import { format } from 'date-fns';
 import { IssueBounty } from '../../api/models/Issues';
 import { usePrices } from '../../hooks/usePrices';
 import {
@@ -39,6 +43,19 @@ import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import BountyProgress from './BountyProgress';
 import FilterButton from '../FilterButton';
+import { BountyCard } from './BountyCard';
+import {
+  type IssuesViewMode,
+  ISSUES_VIEW_QUERY_PARAM,
+  ISSUES_LIST_ROWS,
+  ISSUES_CARD_ROWS,
+  ISSUES_DEFAULT_CARD_ROWS,
+  ISSUES_DEFAULT_LIST_ROWS,
+  clampRowsForIssuesView,
+  getIssuesViewModeFromQuery,
+  readStoredIssuesViewMode,
+  writeStoredIssuesViewMode,
+} from './issuesViewMode';
 
 type FilterType = 'all' | 'available' | 'pending' | 'history';
 type SortDirection = 'asc' | 'desc';
@@ -51,8 +68,6 @@ type SortKey =
   | 'funding'
   | 'solver'
   | 'date';
-
-const VALID_ROWS = [10, 25, 50];
 
 interface IssuesListProps {
   issues: IssueBounty[];
@@ -67,6 +82,70 @@ const truncateAddress = (address: string | null): string => {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 };
 
+interface ViewModeToggleProps {
+  viewMode: IssuesViewMode;
+  onChange: (mode: IssuesViewMode) => void;
+}
+
+const ViewModeToggle: React.FC<ViewModeToggleProps> = ({
+  viewMode,
+  onChange,
+}) => {
+  const options: {
+    value: IssuesViewMode;
+    label: string;
+    Icon: typeof ViewListIcon;
+  }[] = [
+    { value: 'list', label: 'List view', Icon: ViewListIcon },
+    { value: 'cards', label: 'Card view', Icon: ViewModuleIcon },
+  ];
+
+  return (
+    <Box
+      sx={(theme) => ({
+        display: 'inline-flex',
+        alignItems: 'center',
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: theme.palette.border.light,
+        overflow: 'hidden',
+      })}
+      role="group"
+      aria-label="Toggle view mode"
+    >
+      {options.map(({ value, label, Icon }) => {
+        const isActive = viewMode === value;
+        return (
+          <Tooltip key={value} title={label} placement="top" arrow>
+            <IconButton
+              onClick={() => onChange(value)}
+              size="small"
+              aria-label={label}
+              aria-pressed={isActive}
+              sx={(theme) => ({
+                borderRadius: 0,
+                padding: '6px 10px',
+                color: isActive
+                  ? theme.palette.text.primary
+                  : theme.palette.text.tertiary,
+                backgroundColor: isActive
+                  ? theme.palette.surface.light
+                  : 'transparent',
+                '&:hover': {
+                  backgroundColor: theme.palette.surface.light,
+                  color: theme.palette.text.primary,
+                },
+              })}
+            >
+              <Icon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        );
+      })}
+    </Box>
+  );
+};
+
 const IssuesList: React.FC<IssuesListProps> = ({
   issues,
   isLoading = false,
@@ -76,32 +155,64 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const theme = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Derive filterType directly from URL — single source of truth so that
-  // redirects from /bounties/:tab and browser back/forward both work correctly.
   const filterType = useMemo<FilterType>(() => {
     const f = searchParams.get('filter');
     if (f === 'available' || f === 'pending' || f === 'history') return f;
     return 'all';
   }, [searchParams]);
 
+  const [storedViewMode, setStoredViewMode] = useState<IssuesViewMode>(
+    readStoredIssuesViewMode,
+  );
+  const viewMode = useMemo(
+    () =>
+      getIssuesViewModeFromQuery(
+        searchParams.get(ISSUES_VIEW_QUERY_PARAM),
+        storedViewMode,
+      ),
+    [searchParams, storedViewMode],
+  );
+
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(
+    viewMode === 'cards' ? ISSUES_DEFAULT_CARD_ROWS : ISSUES_DEFAULT_LIST_ROWS,
+  );
   const [page, setPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [showChart, setShowChart] = useState(false);
 
   const { taoPrice, alphaPrice } = usePrices();
 
-  const handleFilterChange = useCallback(
-    (f: FilterType) => {
-      if (f === 'all') {
-        setSearchParams({}, { replace: true });
-      } else {
-        setSearchParams({ filter: f }, { replace: true });
-      }
+  const syncParams = useCallback(
+    (overrides: { filter?: FilterType; view?: IssuesViewMode }) => {
+      const f = overrides.filter ?? filterType;
+      const v = overrides.view ?? viewMode;
+      const params: Record<string, string> = {};
+      if (f !== 'all') params.filter = f;
+      if (v === 'cards') params.view = 'cards';
+      setSearchParams(params, { replace: true });
     },
-    [setSearchParams],
+    [filterType, viewMode, setSearchParams],
+  );
+
+  const handleFilterChange = useCallback(
+    (f: FilterType) => syncParams({ filter: f }),
+    [syncParams],
+  );
+
+  const handleViewModeChange = useCallback(
+    (nextMode: IssuesViewMode) => {
+      writeStoredIssuesViewMode(nextMode);
+      setStoredViewMode(nextMode);
+      const nextRows = clampRowsForIssuesView(rowsPerPage, nextMode);
+      if (nextRows !== rowsPerPage) {
+        setRowsPerPage(nextRows);
+        setPage(0);
+      }
+      syncParams({ view: nextMode });
+    },
+    [rowsPerPage, syncParams],
   );
 
   const counts = useMemo(
@@ -367,25 +478,34 @@ const IssuesList: React.FC<IssuesListProps> = ({
       sortKey: 'repository',
       cellSx: { overflow: 'hidden' },
       renderCell: (issue) => (
-        <Box
-          sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}
-        >
-          <Avatar
-            src={`https://avatars.githubusercontent.com/${issue.repositoryFullName.split('/')[0]}`}
-            sx={{ width: 24, height: 24, borderRadius: 1, flexShrink: 0 }}
-          />
-          <Typography
+        <Tooltip title={issue.repositoryFullName} arrow>
+          <Box
             sx={{
-              fontSize: '0.85rem',
-              color: STATUS_COLORS.info,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              minWidth: 0,
+              maxWidth: '100%',
             }}
           >
-            {issue.repositoryFullName}
-          </Typography>
-        </Box>
+            <Avatar
+              src={`https://avatars.githubusercontent.com/${issue.repositoryFullName.split('/')[0]}`}
+              sx={{ width: 24, height: 24, borderRadius: 1, flexShrink: 0 }}
+            />
+            <Typography
+              component="span"
+              sx={{
+                fontSize: '0.85rem',
+                color: STATUS_COLORS.info,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {issue.repositoryFullName}
+            </Typography>
+          </Box>
+        </Tooltip>
       ),
     };
 
@@ -549,19 +669,33 @@ const IssuesList: React.FC<IssuesListProps> = ({
     const dateColumn: DataTableColumn<IssueBounty, SortKey> = {
       key: 'date',
       header: 'Date',
-      width: '110px',
+      width: '132px',
       align: 'center',
       sortKey: 'date',
-      renderCell: (issue) => (
-        <Typography
-          sx={{
-            fontSize: '0.8rem',
-            color: alpha(theme.palette.common.white, 0.6),
-          }}
-        >
-          {formatDate(issue.completedAt || issue.updatedAt)}
-        </Typography>
-      ),
+      renderCell: (issue) => {
+        const raw = issue.completedAt || issue.updatedAt;
+        const label = formatDate(raw);
+        const tooltipTitle = (() => {
+          if (!raw) return label;
+          const d = new Date(raw);
+          if (Number.isNaN(d.getTime())) return label;
+          return format(d, 'PPpp');
+        })();
+        return (
+          <Tooltip title={tooltipTitle} arrow>
+            <Typography
+              component="span"
+              sx={{
+                fontSize: '0.8rem',
+                color: alpha(theme.palette.common.white, 0.6),
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {label}
+            </Typography>
+          </Tooltip>
+        );
+      },
     };
 
     if (filterType === 'pending') {
@@ -589,7 +723,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
         dateColumn,
       ];
     }
-    // 'all' and 'available' share the same column set
     return [
       idColumn,
       repositoryColumn,
@@ -599,31 +732,65 @@ const IssuesList: React.FC<IssuesListProps> = ({
     ];
   }, [filterType, theme, taoPrice, alphaPrice]);
 
+  const validRows = viewMode === 'cards' ? ISSUES_CARD_ROWS : ISSUES_LIST_ROWS;
+
+  const pagination = (
+    <TablePagination
+      rowsPerPageOptions={[]}
+      component="div"
+      count={sortedIssues.length}
+      rowsPerPage={rowsPerPage}
+      page={page}
+      onPageChange={(_event, newPage) => setPage(newPage)}
+      onRowsPerPageChange={() => {}}
+      showFirstButton
+      showLastButton
+    />
+  );
+
+  const cardSx = {
+    backgroundColor: 'background.default',
+    border: `1px solid ${theme.palette.border.light}`,
+    borderRadius: 3,
+    overflow: 'hidden',
+  };
+
   if (isLoading) {
     return (
-      <Card
-        sx={{
-          backgroundColor: 'background.default',
-          border: `1px solid ${theme.palette.border.light}`,
-          borderRadius: 3,
-        }}
-        elevation={0}
-      >
+      <Card sx={cardSx} elevation={0}>
         <Box sx={{ p: 2 }}>
-          {[1, 2, 3, 4, 5].map((i) => (
-            <Skeleton
-              key={i}
-              variant="rectangular"
-              height={48}
-              sx={{ mb: 1, borderRadius: 1 }}
-            />
-          ))}
+          {viewMode === 'cards' ? (
+            <Grid container spacing={2}>
+              {Array.from({ length: ISSUES_DEFAULT_CARD_ROWS }).map((_, i) => (
+                <Grid item xs={12} sm={6} md={4} key={i}>
+                  <Skeleton
+                    variant="rounded"
+                    height={220}
+                    sx={{
+                      bgcolor: (t) => alpha(t.palette.text.primary, 0.06),
+                    }}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton
+                  key={i}
+                  variant="rectangular"
+                  height={48}
+                  sx={{ mb: 1, borderRadius: 1 }}
+                />
+              ))}
+            </>
+          )}
         </Box>
       </Card>
     );
   }
 
-  const headerToolbar = (
+  const toolbar = (
     <>
       <Box
         sx={{
@@ -631,13 +798,19 @@ const IssuesList: React.FC<IssuesListProps> = ({
           py: 1.5,
           borderBottom: `1px solid ${theme.palette.border.light}`,
           display: 'flex',
-          justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: 2,
         }}
       >
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+        {/* Left: filter buttons + chart toggle */}
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          flexWrap="wrap"
+          useFlexGap
+        >
           <FilterButton
             label="All"
             isActive={filterType === 'all'}
@@ -666,9 +839,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
             count={counts.history}
             color={theme.palette.status.neutral}
           />
-        </Stack>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
             <IconButton
               onClick={() => setShowChart(!showChart)}
@@ -693,102 +864,105 @@ const IssuesList: React.FC<IssuesListProps> = ({
               )}
             </IconButton>
           </Tooltip>
+        </Stack>
 
-          <FormControl size="small">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography
-                variant="body2"
-                sx={{
-                  color: alpha(
-                    theme.palette.common.white,
-                    TEXT_OPACITY.secondary,
-                  ),
-                  fontSize: '0.8rem',
-                }}
-              >
-                Rows:
-              </Typography>
-              <Select
-                value={rowsPerPage}
-                onChange={(e) => {
-                  setRowsPerPage(e.target.value as number);
-                  setPage(0);
-                }}
-                sx={{
-                  color: theme.palette.text.primary,
-                  backgroundColor: alpha(theme.palette.common.black, 0.4),
-                  fontSize: '0.8rem',
-                  height: '36px',
-                  borderRadius: 2,
-                  minWidth: '80px',
-                  '& fieldset': { borderColor: theme.palette.border.light },
-                  '&:hover fieldset': {
-                    borderColor: theme.palette.border.medium,
-                  },
-                  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                  '& .MuiSelect-select': { py: 0.75 },
-                }}
-              >
-                {VALID_ROWS.map((n) => (
-                  <MenuItem key={n} value={n}>
-                    {n}
-                  </MenuItem>
-                ))}
-              </Select>
-            </Box>
-          </FormControl>
-
-          <TextField
-            placeholder="Search..."
-            size="small"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon
-                    sx={{
-                      color: alpha(
-                        theme.palette.common.white,
-                        TEXT_OPACITY.muted,
-                      ),
-                      fontSize: '1rem',
-                    }}
-                  />
-                </InputAdornment>
-              ),
-              endAdornment: searchQuery ? (
-                <InputAdornment position="end">
-                  <IconButton
-                    size="small"
-                    onClick={() => {
-                      setSearchQuery('');
-                      setPage(0);
-                    }}
-                    edge="end"
-                    aria-label="clear search"
-                  >
-                    <CloseIcon fontSize="small" />
-                  </IconButton>
-                </InputAdornment>
-              ) : undefined,
-            }}
-            sx={{
-              width: '200px',
-              '& .MuiOutlinedInput-root': {
+        <FormControl size="small">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: alpha(
+                  theme.palette.common.white,
+                  TEXT_OPACITY.secondary,
+                ),
+                fontSize: '0.8rem',
+              }}
+            >
+              Rows:
+            </Typography>
+            <Select
+              value={rowsPerPage}
+              onChange={(e) => {
+                setRowsPerPage(e.target.value as number);
+                setPage(0);
+              }}
+              sx={{
                 color: theme.palette.text.primary,
                 backgroundColor: alpha(theme.palette.common.black, 0.4),
                 fontSize: '0.8rem',
                 height: '36px',
                 borderRadius: 2,
+                minWidth: '80px',
                 '& fieldset': { borderColor: theme.palette.border.light },
                 '&:hover fieldset': {
                   borderColor: theme.palette.border.medium,
                 },
                 '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-              },
-            }}
-          />
+                '& .MuiSelect-select': { py: 0.75 },
+              }}
+            >
+              {validRows.map((n) => (
+                <MenuItem key={n} value={n}>
+                  {n}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+        </FormControl>
+
+        <TextField
+          placeholder="Search..."
+          size="small"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon
+                  sx={{
+                    color: alpha(
+                      theme.palette.common.white,
+                      TEXT_OPACITY.muted,
+                    ),
+                    fontSize: '1rem',
+                  }}
+                />
+              </InputAdornment>
+            ),
+            endAdornment: searchQuery ? (
+              <InputAdornment position="end">
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setPage(0);
+                  }}
+                  edge="end"
+                  aria-label="clear search"
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ) : undefined,
+          }}
+          sx={{
+            width: '200px',
+            '& .MuiOutlinedInput-root': {
+              color: theme.palette.text.primary,
+              backgroundColor: alpha(theme.palette.common.black, 0.4),
+              fontSize: '0.8rem',
+              height: '36px',
+              borderRadius: 2,
+              '& fieldset': { borderColor: theme.palette.border.light },
+              '&:hover fieldset': { borderColor: theme.palette.border.medium },
+              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+            },
+          }}
+        />
+
+        {/* View toggle — pushed to far right */}
+        <Box sx={{ ml: 'auto' }}>
+          <ViewModeToggle viewMode={viewMode} onChange={handleViewModeChange} />
         </Box>
       </Box>
 
@@ -812,62 +986,70 @@ const IssuesList: React.FC<IssuesListProps> = ({
     </>
   );
 
-  return (
-    <Card
-      sx={{
-        backgroundColor: 'background.default',
-        border: `1px solid ${theme.palette.border.light}`,
-        borderRadius: 3,
-        overflow: 'hidden',
-      }}
-      elevation={0}
-    >
-      <DataTable<IssueBounty, SortKey>
-        columns={columns}
-        rows={paginatedIssues}
-        getRowKey={(issue) => issue.id}
-        getRowHref={
-          getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
-        }
-        linkState={linkState}
-        minWidth={
-          filterType === 'history'
-            ? '1000px'
-            : filterType === 'pending'
-              ? '900px'
-              : '750px'
-        }
-        header={headerToolbar}
-        emptyState={
-          <Box sx={{ p: 4, textAlign: 'center' }}>
-            <Typography
-              sx={{
-                color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-              }}
-            >
-              {searchQuery ? 'No issues match your search' : 'No issues found'}
-            </Typography>
-          </Box>
-        }
-        pagination={
-          <TablePagination
-            rowsPerPageOptions={[]}
-            component="div"
-            count={sortedIssues.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={(_event, newPage) => setPage(newPage)}
-            onRowsPerPageChange={() => {}}
-            showFirstButton
-            showLastButton
-          />
-        }
-        sort={{
-          field: sortKey,
-          order: sortDirection,
-          onChange: handleSort,
+  const emptyState = (
+    <Box sx={{ p: 4, textAlign: 'center' }}>
+      <Typography
+        sx={{
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
         }}
-      />
+      >
+        {searchQuery ? 'No issues match your search' : 'No issues found'}
+      </Typography>
+    </Box>
+  );
+
+  return (
+    <Card sx={cardSx} elevation={0}>
+      {toolbar}
+
+      {viewMode === 'cards' ? (
+        <>
+          {paginatedIssues.length > 0 ? (
+            <Box sx={{ p: 2 }}>
+              <Grid container spacing={2}>
+                {paginatedIssues.map((issue) => (
+                  <Grid item xs={12} sm={6} md={4} key={issue.id}>
+                    <BountyCard
+                      issue={issue}
+                      href={getIssueHref ? getIssueHref(issue.id) : undefined}
+                      linkState={linkState}
+                      taoPrice={taoPrice}
+                      alphaPrice={alphaPrice}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          ) : (
+            emptyState
+          )}
+          {pagination}
+        </>
+      ) : (
+        <DataTable<IssueBounty, SortKey>
+          columns={columns}
+          rows={paginatedIssues}
+          getRowKey={(issue) => issue.id}
+          getRowHref={
+            getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
+          }
+          linkState={linkState}
+          minWidth={
+            filterType === 'history'
+              ? '1000px'
+              : filterType === 'pending'
+                ? '900px'
+                : '750px'
+          }
+          emptyState={emptyState}
+          pagination={pagination}
+          sort={{
+            field: sortKey,
+            order: sortDirection,
+            onChange: handleSort,
+          }}
+        />
+      )}
     </Card>
   );
 };

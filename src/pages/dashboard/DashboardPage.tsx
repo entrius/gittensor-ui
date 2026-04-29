@@ -83,12 +83,15 @@ const DashboardFeaturePage: React.FC = () => {
             <DashboardTopContributors
               contributors={featuredContributors}
               isLoading={isLoading}
+              viewAllHref="/top-miners"
             />
 
             <DashboardTopContributors
               title="Featured Discoverers"
               contributors={featuredDiscoveryContributors}
               isLoading={isLoading}
+              mode="issues"
+              viewAllHref="/discoveries"
             />
 
             <DashboardFeaturedWorkSection
