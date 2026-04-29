@@ -5,4 +5,3 @@ export const getRepositoryOwnerAvatarSrc = (
   if (!normalizedOwner) return '';
   return `https://github.com/${encodeURIComponent(normalizedOwner)}.png`;
 };
-

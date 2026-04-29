@@ -63,10 +63,7 @@ import {
 } from '../../utils';
 import { useWatchlist } from '../../hooks/useWatchlist';
 import { RankIcon } from './RankIcon';
-import {
-  getRepositoryOwnerAvatarBackground,
-  type RepoStats,
-} from './types';
+import { getRepositoryOwnerAvatarBackground, type RepoStats } from './types';
 import {
   CHART_COLORS,
   STATUS_COLORS,
