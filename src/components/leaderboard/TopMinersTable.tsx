@@ -365,13 +365,17 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 2,
+              gap: { xs: 1, sm: 2 },
               flexWrap: { xs: 'wrap', sm: 'nowrap' },
             }}
           >
             <Typography
               variant="h6"
-              sx={{ fontSize: '1.25rem', fontWeight: 600, flexShrink: 0 }}
+              sx={{
+                fontSize: { xs: '1.1rem', sm: '1.25rem' },
+                fontWeight: 600,
+                flexShrink: 0,
+              }}
             >
               Miners ({filteredMiners.length})
             </Typography>
@@ -391,10 +395,11 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           <Box
             sx={{
               display: 'flex',
-              alignItems: 'center',
+              alignItems: { xs: 'stretch', sm: 'center' },
               justifyContent: 'space-between',
-              gap: 1,
+              gap: { xs: 0.75, sm: 1 },
               flexWrap: 'wrap',
+              flexDirection: { xs: 'column', sm: 'row' },
             }}
           >
             <SortButtons
@@ -409,7 +414,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                 alignItems: 'center',
                 gap: 1,
                 flexWrap: 'wrap',
-                justifyContent: 'flex-end',
+                justifyContent: { xs: 'space-between', sm: 'flex-end' },
+                width: { xs: '100%', sm: 'auto' },
               }}
             >
               {variant === 'watchlist' ? (
@@ -566,9 +572,10 @@ const SortButtons: React.FC<SortButtonsProps> = ({
   <Box
     sx={{
       display: 'flex',
-      gap: 0.5,
+      gap: { xs: 0.35, sm: 0.5 },
       flexWrap: 'wrap',
-      justifyContent: 'center',
+      justifyContent: { xs: 'flex-start', sm: 'center' },
+      width: { xs: '100%', sm: 'auto' },
     }}
   >
     {getSortButtonOptions(variant).map((option) => {
@@ -578,7 +585,7 @@ const SortButtons: React.FC<SortButtonsProps> = ({
           key={option.value}
           onClick={() => onSortChange(option.value)}
           sx={(theme) => ({
-            px: 1.5,
+            px: { xs: 1, sm: 1.5 },
             height: 32,
             display: 'flex',
             alignItems: 'center',
@@ -601,7 +608,7 @@ const SortButtons: React.FC<SortButtonsProps> = ({
           <Typography
             sx={{
               fontFamily: FONTS.mono,
-              fontSize: '0.75rem',
+              fontSize: { xs: '0.7rem', sm: '0.75rem' },
               fontWeight: 600,
             }}
           >
@@ -649,6 +656,7 @@ const ViewModeToggle: React.FC<ViewModeToggleProps> = ({
         borderColor: theme.palette.border.light,
         backgroundColor: theme.palette.surface.subtle,
         overflow: 'hidden',
+        flexShrink: 0,
       })}
       role="group"
       aria-label="Toggle view mode"
