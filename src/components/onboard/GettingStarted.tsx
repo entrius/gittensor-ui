@@ -1,10 +1,19 @@
 import React, { useState } from 'react';
-import { Box, Typography, Button, Tabs, Tab, Tooltip } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  ButtonBase,
+  Tabs,
+  Tab,
+  Tooltip,
+} from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
 import { alpha, darken } from '@mui/material/styles';
 import { scrollbarSx, tooltipSlotProps } from '../../theme';
+import { useClipboardCopy } from '../../hooks/useClipboardCopy';
 
 const MONO = '"JetBrains Mono", monospace';
 
@@ -51,13 +60,10 @@ const CodeBlock: React.FC<{
   children: string;
   label?: string;
 }> = ({ children, label }) => {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(children.trim());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const { copied, copy, liveRegion } = useClipboardCopy({
+    copiedMessage: 'Command copied to clipboard',
+  });
+  const command = children.trim();
 
   return (
     <Box sx={{ mb: 2 }}>
@@ -101,23 +107,30 @@ const CodeBlock: React.FC<{
             lineHeight: 1.6,
           }}
         >
-          {children.trim()}
+          {command}
         </Typography>
         <Tooltip
           title={copied ? 'Copied!' : 'Copy'}
           placement="left"
           slotProps={tooltipSlotProps}
         >
-          <Box
-            onClick={handleCopy}
+          <ButtonBase
+            onClick={() => void copy(command)}
+            aria-label="Copy command"
+            disableRipple
             sx={{
               position: 'absolute',
               top: 8,
               right: 8,
-              cursor: 'pointer',
+              p: 0.5,
+              borderRadius: '4px',
               color: copied ? 'success.main' : 'text.tertiary',
               '&:hover': {
                 color: copied ? 'success.main' : 'text.secondary',
+              },
+              '&:focus-visible, &.Mui-focusVisible': {
+                outline: (theme) => `2px solid ${theme.palette.primary.main}`,
+                outlineOffset: '2px',
               },
               transition: 'color 0.2s',
             }}
@@ -127,8 +140,9 @@ const CodeBlock: React.FC<{
             ) : (
               <ContentCopyIcon sx={{ fontSize: 16 }} />
             )}
-          </Box>
+          </ButtonBase>
         </Tooltip>
+        {liveRegion}
       </Box>
     </Box>
   );
@@ -414,7 +428,7 @@ export const GettingStarted: React.FC = () => {
   const [activeStep, setActiveStep] = useState(0);
 
   return (
-    <Box sx={{ maxWidth: 1000, mx: 'auto', px: { xs: 2, md: 4 }, py: 4 }}>
+    <Box sx={{ width: '100%', maxWidth: '100%', py: 4 }}>
       <Typography
         variant="h4"
         fontWeight="bold"

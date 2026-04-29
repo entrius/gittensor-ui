@@ -22,3 +22,35 @@ export const useApiQuery = <TResponse = void, TSelect = TResponse>(
     refetchInterval,
   });
 };
+
+// Mirror API (https://mirror.gittensor.io/api/v1) — returns raw snake_case
+// payloads, so callers receive the response as-is and may transform it via
+// `useQuery`'s `select`. Kept separate from `useApiQuery` so the camelCase
+// production API isn't accidentally pointed at the mirror.
+export const useMirrorApiQuery = <TResponse = unknown, TSelect = TResponse>(
+  queryName: string,
+  url: string,
+  options?: {
+    refetchInterval?: number;
+    queryParams?: Record<string, string | number | undefined>;
+    enabled?: boolean;
+    select?: (data: TResponse) => TSelect;
+  },
+) => {
+  const baseUrl = import.meta.env.VITE_REACT_APP_MIRROR_BASE_URL;
+
+  return useQuery<TResponse, AxiosError, TSelect>({
+    queryKey: ['mirror', queryName, url, options?.queryParams],
+    queryFn: async () => {
+      const requestUrl = baseUrl ? `${baseUrl}${url}` : url;
+      const { data } = await axios.get(requestUrl, {
+        params: options?.queryParams,
+      });
+      return data;
+    },
+    select: options?.select,
+    retry: false,
+    enabled: options?.enabled ?? true,
+    refetchInterval: options?.refetchInterval,
+  });
+};

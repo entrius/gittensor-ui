@@ -67,6 +67,71 @@ export type Stats = {
   };
 };
 
+// Mirror API (snake_case) — kept as-is to avoid a transform layer.
+export type MinerIssue = {
+  repo_full_name: string;
+  issue_number: number;
+  title: string;
+  state: 'OPEN' | 'CLOSED' | string;
+  state_reason?: string | null;
+  author_github_id?: string | null;
+  author_login?: string | null;
+  author_association?: string | null;
+  created_at?: string | null;
+  closed_at?: string | null;
+  updated_at?: string | null;
+  last_edited_at?: string | null;
+  is_transferred?: boolean;
+  solved_by_pr?: number | null;
+  solving_pr?: {
+    pr_number: number;
+    author_github_id?: string | null;
+    state?: string;
+    merged_at?: string | null;
+    hours_since_merge?: number;
+    edited_after_merge?: boolean;
+    head_sha?: string;
+    base_sha?: string;
+    merge_base_sha?: string;
+    labels?: Array<{ name: string }>;
+    review_summary?: {
+      maintainer_changes_requested_count?: number;
+    };
+    repo_full_name?: string;
+  } | null;
+  labels?: Array<{
+    name: string;
+    actor_github_id?: string | null;
+    actor_association?: string | null;
+  }>;
+};
+
+export type MinerIssuesResponse = {
+  github_id: string;
+  since: string;
+  generated_at: string;
+  issues: MinerIssue[];
+};
+
+export type LinkedIssue = {
+  number: number;
+  title: string;
+  state: 'OPEN' | 'CLOSED' | string;
+  stateReason?: string | null;
+  authorGithubId?: string | null;
+  authorAssociation?: string | null;
+  createdAt?: string | null;
+  closedAt?: string | null;
+  updatedAt?: string | null;
+  isTransferred?: boolean;
+  solvedByPr?: number | null;
+  labels?: Array<{
+    name: string;
+    actorGithubId?: string | null;
+    actorAssociation?: string | null;
+  }>;
+};
+
 export type CommitLog = {
   pullRequestNumber: number;
   hotkey: string;
@@ -115,6 +180,9 @@ export type CommitLog = {
   predictedAlphaPerDay?: number | null;
   predictedTaoPerDay?: number | null;
   predictedUsdPerDay?: number | null;
+
+  // Linked issues (from /miners/{id}/pulls — issues this PR closes/references)
+  linkedIssues?: LinkedIssue[];
 };
 
 export type MinerEvaluation = {

@@ -29,9 +29,8 @@ export const AboutContent: React.FC = () => {
     >
       <Box
         sx={{
-          maxWidth: 1000,
           width: '100%',
-          px: { xs: 2, sm: 3, md: 4 },
+          maxWidth: '100%',
         }}
       >
         {/* 1. Context: What is Gittensor? */}
