@@ -477,7 +477,18 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             />
           )}
 
-          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: { xs: 0.75, sm: 0.5 },
+              flexWrap: 'wrap',
+              width: { xs: '100%', sm: 'auto' },
+              '& > .MuiButton-root': {
+                flex: { xs: 1, sm: 'none' },
+                minWidth: 0,
+              },
+            }}
+          >
             <ExplorerFilterButton
               label="All"
               count={statusCounts.all}
