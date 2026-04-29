@@ -1,12 +1,15 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Typography,
   CircularProgress,
   Grid,
   Tooltip,
+  Popover,
 } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
+import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import { SectionCard } from './SectionCard';
@@ -30,6 +33,9 @@ export type { MinerStats } from './types';
 
 const MINERS_PAGE_SIZE = 60;
 const ELIGIBLE_QUERY_PARAM = 'eligible';
+/** Watchlist: separate URL params so OSS and discovery eligibility filters are independent. */
+const OSS_ELIGIBLE_QUERY_PARAM = 'ossElig';
+const DISC_ELIGIBLE_QUERY_PARAM = 'discElig';
 const VIEW_QUERY_PARAM = 'view';
 const SEARCH_QUERY_PARAM = 'search';
 const VISIBLE_QUERY_PARAM = 'visible';
@@ -73,12 +79,61 @@ const getAllowedSortOptions = (variant: LeaderboardVariant): SortOption[] => {
       'usdPerDay',
       'totalPRs',
       'totalIssues',
+      'issueDiscoveryScore',
       'credibility',
     ];
   return ['totalScore', 'usdPerDay', 'totalPRs', 'credibility'];
 };
 
 type EligibilityFilter = 'all' | 'eligible' | 'ineligible';
+
+type TopMinersUrlFilters = {
+  view: ViewMode;
+  search: string;
+  /** OSS Contributions / Discoveries: single toggle. Inactive on watchlist (always `all`). */
+  eligible: EligibilityFilter;
+  /** Watchlist OSS column. Inactive on other variants (always `all`). */
+  eligibleOss: EligibilityFilter;
+  /** Watchlist Discovery column. Inactive on other variants (always `all`). */
+  eligibleDiscovery: EligibilityFilter;
+};
+
+const eligibleUrlField = (paramKey: string) => ({
+  paramKey,
+  parse: (raw: string | null): EligibilityFilter =>
+    raw === 'true' ? 'eligible' : raw === 'false' ? 'ineligible' : 'all',
+  serialize: (value: EligibilityFilter): string | null =>
+    value === 'all' ? null : value === 'eligible' ? 'true' : 'false',
+});
+
+/** URL-inert slot: keeps a stable filter key for the data-table hook when a variant does not use it. */
+const inactiveEligibilitySlot = (paramKey: string) => ({
+  paramKey,
+  parse: (_raw: string | null): EligibilityFilter => 'all',
+  serialize: (_value: EligibilityFilter): string | null => null,
+});
+
+const passesOssEligibility = (
+  miner: MinerStats,
+  filter: EligibilityFilter,
+): boolean =>
+  filter === 'all' ||
+  (filter === 'eligible' ? Boolean(miner.ossIsEligible) : !miner.ossIsEligible);
+
+const passesDiscoveryEligibility = (
+  miner: MinerStats,
+  filter: EligibilityFilter,
+): boolean => {
+  const ok = Boolean(miner.discoveriesIsEligible ?? miner.isIssueEligible);
+  return filter === 'all' || (filter === 'eligible' ? ok : !ok);
+};
+
+const passesSingleProgramEligibility = (
+  miner: MinerStats,
+  filter: EligibilityFilter,
+): boolean =>
+  filter === 'all' ||
+  (filter === 'eligible' ? Boolean(miner.isEligible) : !miner.isEligible);
 
 const compareMiners = (
   a: MinerStats,
@@ -94,6 +149,10 @@ const compareMiners = (
       return a.totalPRs - b.totalPRs;
     case 'totalIssues':
       return (a.totalIssues ?? 0) - (b.totalIssues ?? 0);
+    case 'issueDiscoveryScore':
+      return (
+        Number(a.issueDiscoveryScore ?? 0) - Number(b.issueDiscoveryScore ?? 0)
+      );
     case 'credibility':
       return (a.credibility ?? 0) - (b.credibility ?? 0);
     default:
@@ -134,20 +193,25 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
         serialize: (value: ViewMode): string => value,
         resetPageOnChange: false,
       },
-      eligible: {
-        paramKey: ELIGIBLE_QUERY_PARAM,
-        parse: (raw: string | null): EligibilityFilter =>
-          raw === 'true' ? 'eligible' : raw === 'false' ? 'ineligible' : 'all',
-        serialize: (value: EligibilityFilter): string | null =>
-          value === 'all' ? null : value === 'eligible' ? 'true' : 'false',
-      },
       search: {
         paramKey: SEARCH_QUERY_PARAM,
         parse: (raw: string | null): string => raw ?? '',
         serialize: (value: string): string | null => value.trim() || null,
       },
+      eligible:
+        variant === 'watchlist'
+          ? inactiveEligibilitySlot('minersEligibleUnusedLegacy')
+          : eligibleUrlField(ELIGIBLE_QUERY_PARAM),
+      eligibleOss:
+        variant === 'watchlist'
+          ? eligibleUrlField(OSS_ELIGIBLE_QUERY_PARAM)
+          : inactiveEligibilitySlot('minersEligibleOssUnused'),
+      eligibleDiscovery:
+        variant === 'watchlist'
+          ? eligibleUrlField(DISC_ELIGIBLE_QUERY_PARAM)
+          : inactiveEligibilitySlot('minersEligibleDiscUnused'),
     }),
-    [],
+    [variant],
   );
 
   const {
@@ -156,16 +220,9 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     setSort: handleSortChange,
     page: storedVisibleCount,
     setPage: setVisibleCount,
-    filters: {
-      view: viewMode,
-      eligible: eligibilityFilter,
-      search: searchQuery,
-    },
+    filters,
     setFilter,
-  } = useDataTableParams<
-    SortOption,
-    { view: ViewMode; eligible: EligibilityFilter; search: string }
-  >({
+  } = useDataTableParams<SortOption, TopMinersUrlFilters>({
     sortKeys: allowedSortKeys,
     defaultSortKey: 'totalScore',
     // Reuse the hook's `page` slot for our "show more" count — setSort and
@@ -173,6 +230,13 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     paramKeys: { page: VISIBLE_QUERY_PARAM },
     filters: filtersConfig,
   });
+
+  const viewMode = filters.view;
+  const searchQuery = filters.search;
+  const eligibleOssFilter: EligibilityFilter =
+    variant === 'watchlist' ? filters.eligibleOss : filters.eligible;
+  const eligibleDiscoveryFilter: EligibilityFilter =
+    variant === 'watchlist' ? filters.eligibleDiscovery : 'all';
 
   // `page` is 0 when no visible param is set — clamp to the initial batch.
   const visibleCount =
@@ -192,8 +256,19 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     [setFilter],
   );
 
-  const handleEligibilityChange = useCallback(
-    (nextFilter: EligibilityFilter) => setFilter('eligible', nextFilter),
+  const handleEligibleOssChange = useCallback(
+    (next: EligibilityFilter) => {
+      if (variant === 'watchlist') {
+        setFilter('eligibleOss', next);
+      } else {
+        setFilter('eligible', next);
+      }
+    },
+    [setFilter, variant],
+  );
+
+  const handleEligibleDiscoveryChange = useCallback(
+    (next: EligibilityFilter) => setFilter('eligibleDiscovery', next),
     [setFilter],
   );
 
@@ -202,8 +277,19 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     [setFilter],
   );
 
+  // Rank is computed on the full sorted leaderboard so each miner keeps their
+  // true position regardless of filters. Filtering (search / eligibility) then
+  // only hides rows without renumbering the ones that remain. Sort direction
+  // is included so the list view's asc/desc toggle ranks consistently.
+  const rankedMiners = useMemo(() => {
+    const directionMultiplier = sortDirection === 'asc' ? 1 : -1;
+    return [...miners]
+      .sort((a, b) => compareMiners(a, b, sortOption) * directionMultiplier)
+      .map((miner, index) => ({ ...miner, rank: index + 1 }));
+  }, [miners, sortOption, sortDirection]);
+
   const filteredMiners = useMemo(() => {
-    let result = miners;
+    let result = rankedMiners;
 
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
@@ -214,17 +300,24 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       );
     }
 
-    if (eligibilityFilter === 'eligible') {
-      result = result.filter((m) => m.isEligible);
-    } else if (eligibilityFilter === 'ineligible') {
-      result = result.filter((m) => !m.isEligible);
-    }
+    result = result.filter((m) => {
+      if (variant === 'watchlist') {
+        return (
+          passesOssEligibility(m, eligibleOssFilter) &&
+          passesDiscoveryEligibility(m, eligibleDiscoveryFilter)
+        );
+      }
+      return passesSingleProgramEligibility(m, eligibleOssFilter);
+    });
 
-    const directionMultiplier = sortDirection === 'asc' ? 1 : -1;
-    return [...result]
-      .sort((a, b) => compareMiners(a, b, sortOption) * directionMultiplier)
-      .map((miner, index) => ({ ...miner, rank: index + 1 }));
-  }, [miners, searchQuery, eligibilityFilter, sortOption, sortDirection]);
+    return result;
+  }, [
+    rankedMiners,
+    searchQuery,
+    variant,
+    eligibleOssFilter,
+    eligibleDiscoveryFilter,
+  ]);
 
   useEffect(() => {
     if (visibleCount <= filteredMiners.length) return;
@@ -323,6 +416,25 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                 value={eligibilityFilter}
                 onChange={handleEligibilityChange}
               />
+                alignItems: 'center',
+                gap: 1,
+                flexWrap: 'wrap',
+                justifyContent: 'flex-end',
+              }}
+            >
+              {variant === 'watchlist' ? (
+                <WatchlistEligibilityBar
+                  ossValue={eligibleOssFilter}
+                  discoveryValue={eligibleDiscoveryFilter}
+                  onOssChange={handleEligibleOssChange}
+                  onDiscoveryChange={handleEligibleDiscoveryChange}
+                />
+              ) : (
+                <EligibilityToggle
+                  value={eligibleOssFilter}
+                  onChange={handleEligibleOssChange}
+                />
+              )}
               <ViewModeToggle
                 viewMode={viewMode}
                 onChange={handleViewModeChange}
@@ -432,6 +544,31 @@ interface SortButtonsProps {
   variant: LeaderboardVariant;
 }
 
+type SortButtonOption = { label: string; value: SortOption };
+
+const getSortButtonOptions = (
+  variant: LeaderboardVariant,
+): SortButtonOption[] => {
+  const scoreLabel = variant === 'watchlist' ? 'OSS' : 'Score';
+  const earnings = { label: 'Earnings', value: 'usdPerDay' as const };
+  const prs = { label: 'PRs', value: 'totalPRs' as const };
+  const issues = { label: 'Issues', value: 'totalIssues' as const };
+  const discovery = {
+    label: 'Discovery',
+    value: 'issueDiscoveryScore' as const,
+  };
+  const credibility = { label: 'Credibility', value: 'credibility' as const };
+  const score = { label: scoreLabel, value: 'totalScore' as const };
+
+  if (variant === 'watchlist') {
+    return [score, discovery, earnings, prs, issues, credibility];
+  }
+  if (variant === 'discoveries') {
+    return [score, earnings, issues, credibility];
+  }
+  return [score, earnings, prs, credibility];
+};
+
 const SortButtons: React.FC<SortButtonsProps> = ({
   sortOption,
   sortDirection,
@@ -446,22 +583,12 @@ const SortButtons: React.FC<SortButtonsProps> = ({
       justifyContent: 'center',
     }}
   >
-    {[
-      { label: 'Score', value: 'totalScore' },
-      { label: 'Earnings', value: 'usdPerDay' },
-      ...(variant !== 'discoveries'
-        ? [{ label: 'PRs', value: 'totalPRs' as const }]
-        : []),
-      ...(variant === 'discoveries' || variant === 'watchlist'
-        ? [{ label: 'Issues', value: 'totalIssues' as const }]
-        : []),
-      { label: 'Credibility', value: 'credibility' },
-    ].map((option) => {
+    {getSortButtonOptions(variant).map((option) => {
       const isActive = sortOption === option.value;
       return (
         <Box
           key={option.value}
-          onClick={() => onSortChange(option.value as SortOption)}
+          onClick={() => onSortChange(option.value)}
           sx={(theme) => ({
             px: 1.5,
             height: 32,
@@ -583,9 +710,216 @@ const ViewModeToggle: React.FC<ViewModeToggleProps> = ({
   );
 };
 
+interface WatchlistEligibilityBarProps {
+  ossValue: EligibilityFilter;
+  discoveryValue: EligibilityFilter;
+  onOssChange: (next: EligibilityFilter) => void;
+  onDiscoveryChange: (next: EligibilityFilter) => void;
+}
+
+const WatchlistEligibilityBar: React.FC<WatchlistEligibilityBarProps> = ({
+  ossValue,
+  discoveryValue,
+  onOssChange,
+  onDiscoveryChange,
+}) => {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const open = Boolean(anchorEl);
+  const popoverId = open ? 'watchlist-eligibility-popover' : undefined;
+  const hasActiveFilter = ossValue !== 'all' || discoveryValue !== 'all';
+  const ariaFilterSummary = `OSS ${ossValue}, Discovery ${discoveryValue}`;
+
+  return (
+    <>
+      <Tooltip
+        title="Eligibility filters — OSS and Discovery (both apply)"
+        arrow
+      >
+        <Box
+          component="button"
+          type="button"
+          id="watchlist-eligibility-trigger"
+          aria-label={`Eligibility${hasActiveFilter ? ', filters applied' : ''}. ${ariaFilterSummary}.`}
+          aria-describedby={popoverId}
+          aria-controls={open ? popoverId : undefined}
+          aria-expanded={open}
+          aria-haspopup="true"
+          onClick={(e) => {
+            setAnchorEl((prev) => (prev ? null : e.currentTarget));
+          }}
+          sx={(theme) => ({
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 1,
+            pl: 1,
+            pr: 0.75,
+            py: 0.5,
+            minHeight: 32,
+            borderRadius: 2,
+            border: `1px solid ${theme.palette.border.light}`,
+            backgroundColor: alpha(theme.palette.background.default, 0.45),
+            cursor: 'pointer',
+            textAlign: 'left',
+            transition: 'background-color 0.15s, border-color 0.15s',
+            '&:hover': {
+              backgroundColor: alpha(theme.palette.text.primary, 0.04),
+              borderColor: theme.palette.border.medium,
+            },
+            '&:focus-visible': {
+              outline: `2px solid ${theme.palette.status.info}`,
+              outlineOffset: 2,
+            },
+          })}
+        >
+          <TuneOutlinedIcon
+            sx={{
+              fontSize: '1.1rem',
+              color: 'text.secondary',
+              flexShrink: 0,
+            }}
+          />
+          <Typography
+            component="span"
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              color: 'text.primary',
+              lineHeight: 1.2,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Eligibility
+            {hasActiveFilter ? (
+              <Box
+                component="span"
+                sx={{
+                  ml: 0.75,
+                  display: 'inline-block',
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  backgroundColor: 'status.info',
+                  verticalAlign: 'middle',
+                }}
+                aria-hidden
+              />
+            ) : null}
+          </Typography>
+          <KeyboardArrowDownIcon
+            sx={{
+              fontSize: '1.15rem',
+              color: 'text.secondary',
+              flexShrink: 0,
+              transform: open ? 'rotate(-180deg)' : 'none',
+              transition: 'transform 0.2s ease',
+            }}
+          />
+        </Box>
+      </Tooltip>
+      <Popover
+        id={popoverId}
+        open={open}
+        anchorEl={anchorEl}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{
+          paper: {
+            elevation: 8,
+            sx: (theme) => ({
+              mt: 0.75,
+              boxSizing: 'border-box',
+              width: 'fit-content',
+              maxWidth: 'min(300px, calc(100vw - 24px))',
+              minWidth: 0,
+              overflowY: 'visible',
+              overflowX: 'hidden',
+              borderRadius: 2,
+              border: `1px solid ${theme.palette.border.light}`,
+              backgroundImage: 'none',
+              backgroundColor: theme.palette.background.paper,
+              boxShadow: theme.shadows[12],
+            }),
+          },
+        }}
+      >
+        <Box
+          sx={{
+            p: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: 2,
+            boxSizing: 'border-box',
+            maxWidth: '100%',
+          }}
+        >
+          <Box sx={{ maxWidth: '100%' }}>
+            <Typography
+              variant="subtitle2"
+              sx={{ fontWeight: 700, fontFamily: FONTS.mono, mb: 0.5 }}
+            >
+              Eligibility
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                display: 'block',
+                lineHeight: 1.5,
+                maxWidth: '15rem',
+              }}
+            >
+              Filter pinned miners by OSS track and Issue discovery eligibility.
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+            <Typography
+              component="div"
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                color: 'text.secondary',
+                textTransform: 'uppercase',
+              }}
+            >
+              OSS contributions
+            </Typography>
+            <EligibilityToggle value={ossValue} onChange={onOssChange} />
+          </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+            <Typography
+              component="div"
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                color: 'text.secondary',
+                textTransform: 'uppercase',
+              }}
+            >
+              Issue discovery
+            </Typography>
+            <EligibilityToggle
+              value={discoveryValue}
+              onChange={onDiscoveryChange}
+            />
+          </Box>
+        </Box>
+      </Popover>
+    </>
+  );
+};
+
 interface EligibilityToggleProps {
   value: EligibilityFilter;
   onChange: (next: EligibilityFilter) => void;
+  /** Tighter pills for the dual watchlist bar. */
+  compact?: boolean;
 }
 
 const ELIGIBILITY_OPTIONS: Array<{ value: EligibilityFilter; label: string }> =
@@ -598,14 +932,16 @@ const ELIGIBILITY_OPTIONS: Array<{ value: EligibilityFilter; label: string }> =
 const EligibilityToggle: React.FC<EligibilityToggleProps> = ({
   value,
   onChange,
+  compact = false,
 }) => (
   <Box
     sx={(theme) => ({
       display: 'inline-flex',
-      gap: 0.5,
-      p: 0.5,
-      borderRadius: 2,
+      gap: compact ? 0.35 : 0.5,
+      p: compact ? 0.35 : 0.5,
+      borderRadius: 1.75,
       backgroundColor: theme.palette.surface.light,
+      flexShrink: 0,
     })}
   >
     {ELIGIBILITY_OPTIONS.map((option) => {
@@ -618,12 +954,12 @@ const EligibilityToggle: React.FC<EligibilityToggleProps> = ({
           aria-pressed={isActive}
           onClick={() => onChange(option.value)}
           sx={(theme) => ({
-            px: 1.5,
-            height: 24,
+            px: compact ? 1 : 1.5,
+            height: compact ? 22 : 24,
             display: 'flex',
             alignItems: 'center',
             border: 0,
-            borderRadius: 1.5,
+            borderRadius: 1.25,
             backgroundColor: isActive
               ? alpha(theme.palette.text.primary, 0.15)
               : 'transparent',
@@ -632,7 +968,7 @@ const EligibilityToggle: React.FC<EligibilityToggleProps> = ({
               : theme.palette.text.tertiary,
             cursor: 'pointer',
             fontFamily: FONTS.mono,
-            fontSize: '0.72rem',
+            fontSize: compact ? '0.65rem' : '0.72rem',
             fontWeight: isActive ? 600 : 500,
             lineHeight: 1,
             transition: 'all 0.2s ease',

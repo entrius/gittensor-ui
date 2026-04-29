@@ -7,6 +7,7 @@ import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { LinkBox } from '../common/linkBehavior';
 import { type MinerStats, FONTS } from './types';
 import { ActivitySidebarCards } from './ActivitySidebarCards';
+import { useEligibilityFilteredMiners } from './useEligibilityFilteredMiners';
 
 // Re-export MinerStats for backward compatibility
 export type { MinerStats } from './types';
@@ -29,25 +30,26 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
     'earners',
   );
 
-  // Stats (Use original unfiltered list for stats)
+  const filteredMiners = useEligibilityFilteredMiners(miners);
+
   const topEarners = useMemo(
     () =>
-      [...miners]
+      [...filteredMiners]
         .sort((a, b) => (b.usdPerDay || 0) - (a.usdPerDay || 0))
         .slice(0, 5),
-    [miners],
+    [filteredMiners],
   );
 
   const mostActive = useMemo(
     () =>
-      [...miners]
+      [...filteredMiners]
         .sort((a, b) =>
           variant === 'discoveries'
             ? (b.totalIssues || 0) - (a.totalIssues || 0)
             : (b.totalPRs || 0) - (a.totalPRs || 0),
         )
         .slice(0, 5),
-    [miners, variant],
+    [filteredMiners, variant],
   );
 
   return (
