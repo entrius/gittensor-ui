@@ -182,7 +182,7 @@ const DashboardFeaturedWorkSection: React.FC<DashboardFeaturedWorkProps> = ({
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: '56px minmax(0, 1fr)',
+            gridTemplateColumns: '64px minmax(0, 1fr)',
             columnGap: 1.15,
             alignItems: 'center',
             minWidth: 0,
@@ -193,8 +193,8 @@ const DashboardFeaturedWorkSection: React.FC<DashboardFeaturedWorkProps> = ({
             src={getGithubAvatarSrc(owner)}
             alt={owner}
             sx={{
-              width: 56,
-              height: 56,
+              width: 64,
+              height: 64,
               bgcolor: theme.palette.surface.light,
               border: `1px solid ${border}`,
               '& .MuiSvgIcon-root': { fontSize: 29 },
