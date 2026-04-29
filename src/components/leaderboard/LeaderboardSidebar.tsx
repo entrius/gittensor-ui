@@ -6,6 +6,8 @@ import { STATUS_COLORS, scrollbarSx } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { LinkBox } from '../common/linkBehavior';
 import { type MinerStats, FONTS } from './types';
+import { ActivitySidebarCards } from './ActivitySidebarCards';
+import { useEligibilityFilteredMiners } from './useEligibilityFilteredMiners';
 
 // Re-export MinerStats for backward compatibility
 export type { MinerStats } from './types';
@@ -28,37 +30,26 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
     'earners',
   );
 
-  // Stats (Use original unfiltered list for stats)
+  const filteredMiners = useEligibilityFilteredMiners(miners);
+
   const topEarners = useMemo(
     () =>
-      [...miners]
+      [...filteredMiners]
         .sort((a, b) => (b.usdPerDay || 0) - (a.usdPerDay || 0))
         .slice(0, 5),
-    [miners],
+    [filteredMiners],
   );
 
   const mostActive = useMemo(
     () =>
-      [...miners]
+      [...filteredMiners]
         .sort((a, b) =>
           variant === 'discoveries'
             ? (b.totalIssues || 0) - (a.totalIssues || 0)
             : (b.totalPRs || 0) - (a.totalPRs || 0),
         )
         .slice(0, 5),
-    [miners, variant],
-  );
-
-  // Network Stats Data
-  const networkStats = useMemo(
-    () => ({
-      totalMiners: miners.length,
-      eligible: miners.filter((m) => m.isEligible).length,
-      totalPRs: miners.reduce((acc, m) => acc + (m.totalPRs || 0), 0),
-      totalIssues: miners.reduce((acc, m) => acc + (m.totalIssues || 0), 0),
-      dailyPool: miners.reduce((acc, m) => acc + (m.usdPerDay || 0), 0),
-    }),
-    [miners],
+    [filteredMiners, variant],
   );
 
   return (
@@ -66,40 +57,10 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
       spacing={2}
       sx={{ height: '100%', overflow: 'auto', pr: 1, ...scrollbarSx }}
     >
-      {/* CARD 1: Network Stats */}
-      <SectionCard title="Network Stats" sx={{ flexShrink: 0 }}>
-        <Box
-          sx={{
-            pt: 1,
-            px: 2,
-            pb: 2,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-          }}
-        >
-          <StatRow label="Total Miners" value={networkStats.totalMiners} />
-          <StatRow
-            label={variant === 'discoveries' ? 'Issues Eligible' : 'Eligible'}
-            value={networkStats.eligible}
-          />
-          <StatRow
-            label={variant === 'discoveries' ? 'Total Issues' : 'Total PRs'}
-            value={
-              variant === 'discoveries'
-                ? networkStats.totalIssues
-                : networkStats.totalPRs
-            }
-          />
-          <StatRow
-            label="Daily Pool"
-            value={`$${networkStats.dailyPool.toLocaleString()}`}
-            valueColor={STATUS_COLORS.merged}
-          />
-        </Box>
-      </SectionCard>
+      {/* Activity Cards: PR Activity, Issue Activity, Code Impact */}
+      <ActivitySidebarCards miners={miners} />
 
-      {/* CARD 2: Leaderboard Lists (Tabs) */}
+      {/* Leaderboard Lists (Tabs) */}
       <SectionCard
         title={leaderboardType === 'earners' ? 'Top Earners' : 'Most Active'}
         action={
@@ -131,42 +92,6 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
     </Stack>
   );
 };
-
-interface StatRowProps {
-  label: string;
-  value: number | string;
-  valueColor?: string;
-}
-
-const StatRow: React.FC<StatRowProps> = ({ label, value, valueColor }) => (
-  <Box
-    sx={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    }}
-  >
-    <Typography
-      sx={{
-        fontFamily: FONTS.mono,
-        fontSize: '0.85rem',
-        color: STATUS_COLORS.open,
-      }}
-    >
-      {label}
-    </Typography>
-    <Typography
-      sx={(theme) => ({
-        fontFamily: FONTS.mono,
-        fontWeight: 600,
-        fontSize: '1.1rem',
-        color: valueColor ?? theme.palette.text.primary,
-      })}
-    >
-      {value}
-    </Typography>
-  </Box>
-);
 
 interface LeaderboardTabsProps {
   activeTab: 'earners' | 'active';
@@ -315,10 +240,11 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
         display: 'flex',
         alignItems: 'center',
         py: 1,
+        px: 2,
+        mx: -2,
         cursor: 'pointer',
         '&:hover': {
           backgroundColor: alpha(theme.palette.text.primary, 0.03),
-          borderRadius: 1,
         },
       })}
     >

@@ -45,6 +45,7 @@ import IconButton from '@mui/material/IconButton';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
 import { STATUS_COLORS, DIFF_COLORS, scrollbarSx } from '../../theme';
+import { useClipboardCopy } from '../../hooks/useClipboardCopy';
 
 interface PRFile {
   sha: string;
@@ -573,6 +574,8 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
           width: '100%',
           minWidth: 'max-content',
           tableLayout: 'auto',
+          borderCollapse: 'separate',
+          borderSpacing: 0,
         }}
       >
         <TableBody>
@@ -600,7 +603,8 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                       color: 'status.open',
                       fontFamily: 'inherit',
                       fontSize: '12px',
-                      zIndex: 2,
+                      zIndex: 5,
+                      isolation: 'isolate',
                     }}
                   >
                     ...
@@ -643,8 +647,11 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                     left: 0,
                     width: '50px',
                     minWidth: '50px',
-                    backgroundColor:
-                      bg === 'transparent' ? 'background.paper' : bg,
+                    backgroundColor: 'background.paper',
+                    // Isolated sticky cells paint their own layer, so preserve diff tint via a same-color gradient.
+                    ...(bg !== 'transparent' && {
+                      backgroundImage: `linear-gradient(${bg}, ${bg})`,
+                    }),
                     color: 'status.open',
                     borderRight: '1px solid',
                     borderColor: 'border.light',
@@ -656,7 +663,8 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                     fontFamily: 'inherit',
                     fontSize: '12px',
                     lineHeight: '24px',
-                    zIndex: 2,
+                    zIndex: 5,
+                    isolation: 'isolate',
                   }}
                 >
                   {ln}
@@ -1078,14 +1086,14 @@ const PRFileDiffViewer: React.FC<{
     return parseDiff(file.patch);
   }, [file.patch]);
 
-  const [copied, setCopied] = useState(false);
+  const { copied, copy, liveRegion } = useClipboardCopy({
+    copiedMessage: 'File path copied to clipboard',
+  });
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const handleCopyPath = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(file.filename);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    void copy(file.filename);
   };
 
   if (!file.patch) {
@@ -1188,6 +1196,7 @@ const PRFileDiffViewer: React.FC<{
               <IconButton
                 size="small"
                 onClick={handleCopyPath}
+                aria-label="Copy file path"
                 sx={{ color: 'status.open', ml: 1, p: 0.5 }}
               >
                 {copied ? (
@@ -1197,6 +1206,7 @@ const PRFileDiffViewer: React.FC<{
                 )}
               </IconButton>
             </Tooltip>
+            {liveRegion}
           </Box>
 
           <Box

@@ -29,9 +29,8 @@ export const AboutContent: React.FC = () => {
     >
       <Box
         sx={{
-          maxWidth: 1000,
           width: '100%',
-          px: { xs: 2, sm: 3, md: 4 },
+          maxWidth: '100%',
         }}
       >
         {/* 1. Context: What is Gittensor? */}
@@ -185,12 +184,24 @@ export const AboutContent: React.FC = () => {
                     borderColor: 'border.subtle',
                   }}
                 >
-                  <Box sx={{ color: 'secondary.main', mb: 2 }}>{card.icon}</Box>
+                  <Box
+                    sx={{
+                      color: 'secondary.main',
+                      mb: 2,
+                      display: 'flex',
+                      justifyContent: { xs: 'center', md: 'flex-start' },
+                    }}
+                  >
+                    {card.icon}
+                  </Box>
                   <Typography
                     variant="h6"
                     fontWeight="bold"
                     gutterBottom
-                    sx={{ color: 'text.primary' }}
+                    sx={{
+                      color: 'text.primary',
+                      textAlign: { xs: 'center', md: 'left' },
+                    }}
                   >
                     {card.title}
                   </Typography>
