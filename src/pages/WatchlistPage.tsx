@@ -62,7 +62,11 @@ import {
   useAllPrs,
   useMinersIssues,
 } from '../api';
-import type { CommitLog, Repository } from '../api/models/Dashboard';
+import type {
+  CommitLog,
+  MinerIssue,
+  Repository,
+} from '../api/models/Dashboard';
 import { mapAllMinersToStats } from '../utils/minerMapper';
 import {
   useWatchlist,
@@ -88,7 +92,6 @@ import theme, {
   scrollbarSx,
 } from '../theme';
 import FilterButton from '../components/FilterButton';
-import type { CommitLog, MinerIssue } from '../api/models/Dashboard';
 import { getRepositoryOwnerAvatarBackground } from '../components/leaderboard/types';
 
 const TAB_ORDER: readonly WatchlistCategory[] = [
