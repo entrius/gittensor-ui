@@ -416,29 +416,33 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                 value={eligibilityFilter}
                 onChange={handleEligibilityChange}
               />
-                alignItems: 'center',
-                gap: 1,
-                flexWrap: 'wrap',
-                justifyContent: 'flex-end',
-              }}
-            >
-              {variant === 'watchlist' ? (
-                <WatchlistEligibilityBar
-                  ossValue={eligibleOssFilter}
-                  discoveryValue={eligibleDiscoveryFilter}
-                  onOssChange={handleEligibleOssChange}
-                  onDiscoveryChange={handleEligibleDiscoveryChange}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  flexWrap: 'wrap',
+                  justifyContent: 'flex-end',
+                }}
+              >
+                {variant === 'watchlist' ? (
+                  <WatchlistEligibilityBar
+                    ossValue={eligibleOssFilter}
+                    discoveryValue={eligibleDiscoveryFilter}
+                    onOssChange={handleEligibleOssChange}
+                    onDiscoveryChange={handleEligibleDiscoveryChange}
+                  />
+                ) : (
+                  <EligibilityToggle
+                    value={eligibleOssFilter}
+                    onChange={handleEligibleOssChange}
+                  />
+                )}
+                <ViewModeToggle
+                  viewMode={viewMode}
+                  onChange={handleViewModeChange}
                 />
-              ) : (
-                <EligibilityToggle
-                  value={eligibleOssFilter}
-                  onChange={handleEligibleOssChange}
-                />
-              )}
-              <ViewModeToggle
-                viewMode={viewMode}
-                onChange={handleViewModeChange}
-              />
+              </Box>
             </Box>
           </Box>
         </Box>
