@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Box, useMediaQuery } from '@mui/material';
 import { Page } from '../../components/layout';
 import { SEO } from '../../components';
-import theme from '../../theme';
+import theme, { scrollbarSx } from '../../theme';
 import { type TrendTimeRange } from './dashboardData';
 import useDashboardData from './useDashboardData';
 import ActiveNetwork from './views/ActiveNetwork';
+import DashboardFeaturedWorkSection from './views/DashboardFeaturedWork';
 import DashboardTopContributors from './views/DashboardTopContributors';
 import LiveSidebar from './views/LiveSidebar';
 
@@ -21,7 +22,9 @@ const DashboardFeaturePage: React.FC = () => {
     overview,
     trendLabels,
     trendSeries,
+    featuredWork,
     featuredContributors,
+    featuredDiscoveryContributors,
     isLoading,
   } = useDashboardData(range);
 
@@ -64,19 +67,7 @@ const DashboardFeaturePage: React.FC = () => {
               overflow: showSidebarRight ? 'auto' : 'visible',
               minWidth: 0,
               pr: showSidebarRight ? 0.75 : 0,
-              '&::-webkit-scrollbar': {
-                width: '8px',
-              },
-              '&::-webkit-scrollbar-track': {
-                backgroundColor: 'transparent',
-              },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: (muiTheme) => muiTheme.palette.border.light,
-                borderRadius: '4px',
-                '&:hover': {
-                  backgroundColor: (muiTheme) => muiTheme.palette.border.medium,
-                },
-              },
+              ...scrollbarSx,
             }}
           >
             <ActiveNetwork
@@ -91,6 +82,20 @@ const DashboardFeaturePage: React.FC = () => {
 
             <DashboardTopContributors
               contributors={featuredContributors}
+              isLoading={isLoading}
+              viewAllHref="/top-miners"
+            />
+
+            <DashboardTopContributors
+              title="Featured Discoverers"
+              contributors={featuredDiscoveryContributors}
+              isLoading={isLoading}
+              mode="issues"
+              viewAllHref="/discoveries"
+            />
+
+            <DashboardFeaturedWorkSection
+              items={featuredWork}
               isLoading={isLoading}
             />
           </Box>

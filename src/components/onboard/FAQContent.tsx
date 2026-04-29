@@ -11,7 +11,7 @@ export const FAQContent: React.FC = () => (
       width: '100%',
     }}
   >
-    <Stack gap={{ xs: 2, sm: 3 }} sx={{ maxWidth: 900, width: '100%' }}>
+    <Stack gap={{ xs: 2, sm: 3 }} sx={{ width: '100%', maxWidth: '100%' }}>
       <FAQ
         question="What is an incentive mechanism?"
         answer="A set of rules, guidelines, and restrictions on how to judge, score, and rank a group of contestants. The goal usually to elicit or influence a specific behavior or outcome. In the Bittensor ecosystem, this is the foundation of a subnet."
@@ -128,8 +128,8 @@ export const FAQContent: React.FC = () => (
           <>
             You must contribute to an incentivized repository listed in our
             master list. To become eligible for rewards, you need at least 5
-            merged PRs with a token score of 5 or higher, 80% credibility, and a
-            GitHub account that is at least 180 days old. Check the{' '}
+            merged PRs with a token score of 5 or higher and 80% credibility.
+            Check the{' '}
             <a
               href="https://docs.gittensor.io/oss-contributions.html"
               target="_blank"

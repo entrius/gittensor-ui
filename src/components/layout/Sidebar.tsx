@@ -1,46 +1,114 @@
 import React from 'react';
 import {
+  Badge,
   Box,
   Button,
   Stack,
   Typography,
   ButtonBase,
   Divider,
+  Tooltip,
 } from '@mui/material';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useWatchlist } from '../../hooks/useWatchlist';
+import { useLocation } from 'react-router-dom';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import GroupsIcon from '@mui/icons-material/Groups';
+import AutoStoriesIcon from '@mui/icons-material/AutoStories';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import BugReportIcon from '@mui/icons-material/BugReport';
+import FolderCopyIcon from '@mui/icons-material/FolderCopy';
+import SchoolIcon from '@mui/icons-material/School';
+import { useLinkBehavior } from '../common/linkBehavior';
+import { useWatchlistTotalCount } from '../../hooks/useWatchlist';
+
+const LOGO_IMG_FILTER =
+  'brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))';
+
+const COLLAPSED_LOGO_TOOLTIP_POPPER = {
+  popperOptions: {
+    modifiers: [
+      {
+        name: 'offset',
+        options: {
+          offset: [-10, 0],
+        },
+      },
+    ],
+  },
+};
+
+const NAV_ICON_FONT = '1.2rem';
+const NAV_LABEL_FONT = '0.95rem';
+
+const FOOTER_LINKS: ReadonlyArray<{ label: string; href: string }> = [
+  { label: 'Docs', href: 'https://docs.gittensor.io' },
+  {
+    label: 'Community',
+    href: 'https://docs.learnbittensor.org/resources/community-links',
+  },
+  { label: 'Github', href: 'https://github.com/entrius/gittensor' },
+  { label: 'X', href: 'https://x.com/gittensor_io' },
+];
+
+const footerLinkSx = {
+  color: 'text.primary',
+  fontSize: '0.65rem',
+  textDecoration: 'none',
+  '&:hover': { textDecoration: 'underline' },
+} as const;
+
+const footerDividerSx = {
+  borderColor: 'border.medium',
+  mx: 0.5,
+  height: '12px',
+  alignSelf: 'center',
+} as const;
 
 interface SidebarProps {
   onNavigate?: () => void;
+  collapsed?: boolean;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
-  const navigate = useNavigate();
+const GittensorLogoImg: React.FC<{ heightPx: number }> = ({ heightPx }) => (
+  <img
+    src="/gt-logo.svg"
+    alt="Gittensor"
+    style={{
+      height: `${heightPx}px`,
+      width: 'auto',
+      filter: LOGO_IMG_FILTER,
+    }}
+  />
+);
+
+const Sidebar: React.FC<SidebarProps> = ({ onNavigate, collapsed = false }) => {
   const location = useLocation();
-  const { count: watchlistCount } = useWatchlist();
+  const watchlistCount = useWatchlistTotalCount();
 
-  const handleNavigate = (path: string) => {
-    navigate(path);
-    onNavigate?.(); // Call onNavigate if provided (for mobile drawer closing)
-  };
-
-  const navItems: Array<{
-    label: string;
-    path: string;
-    badge?: string | number;
-  }> = [
-    { label: 'dashboard', path: '/dashboard' },
-    { label: 'oss contributions', path: '/top-miners' },
-    { label: 'discoveries', path: '/discoveries', badge: 'new' },
+  const navItems = [
+    { label: 'dashboard', path: '/dashboard', icon: <DashboardIcon /> },
+    { label: 'oss contributions', path: '/top-miners', icon: <GroupsIcon /> },
+    {
+      label: 'discoveries',
+      path: '/discoveries',
+      badge: 'new',
+      icon: <AutoStoriesIcon />,
+    },
     {
       label: 'watchlist',
       path: '/watchlist',
-      badge: watchlistCount > 0 ? watchlistCount : undefined,
+      badge: watchlistCount > 0 ? String(watchlistCount) : undefined,
+      icon: <VisibilityIcon />,
     },
-    { label: 'bounties', path: '/bounties' },
-    { label: 'repositories', path: '/repositories' },
-    { label: 'onboard', path: '/onboard' },
+    { label: 'bounties', path: '/bounties', icon: <BugReportIcon /> },
+    { label: 'repositories', path: '/repositories', icon: <FolderCopyIcon /> },
+    { label: 'onboard', path: '/onboard', icon: <SchoolIcon /> },
   ];
+
+  const logoLink = (
+    <SidebarLogoLink onNavigate={onNavigate} collapsed={collapsed}>
+      <GittensorLogoImg heightPx={collapsed ? 30 : 60} />
+    </SidebarLogoLink>
+  );
 
   return (
     <Box
@@ -49,86 +117,51 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        px: 3,
-        py: 4,
+        px: collapsed ? 1.5 : 3,
+        pb: 4,
+        pt: collapsed ? 8 : 4,
       }}
     >
-      {/* Logo */}
-      <ButtonBase
-        disableRipple
-        onClick={() => handleNavigate('/')}
-        sx={{
-          mb: 3,
-          justifyContent: 'center',
-          width: '100%',
-          py: 1,
-        }}
-      >
-        <img
-          src="/gt-logo.svg"
-          alt="Gittensor"
-          style={{
-            height: '60px',
-            width: 'auto',
-            filter:
-              'brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))',
-          }}
-        />
-      </ButtonBase>
-
-      {/* Navigation */}
-      <Stack direction="column" spacing={2}>
-        {navItems.map((item) => (
-          <Button
-            key={item.path}
-            onClick={() => handleNavigate(item.path)}
+      {collapsed ? (
+        <Tooltip
+          title="Gittensor"
+          placement="right"
+          arrow
+          PopperProps={COLLAPSED_LOGO_TOOLTIP_POPPER}
+        >
+          <Box
+            component="span"
             sx={{
-              justifyContent: 'flex-start',
-              py: 1.5,
-              px: 2,
-              color: 'text.primary',
-              fontSize: '0.95rem',
-              textTransform: 'none',
-              backgroundColor: location.pathname.startsWith(item.path)
-                ? 'border.light'
-                : 'transparent',
-              borderLeft: location.pathname.startsWith(item.path)
-                ? '2px solid'
-                : '2px solid transparent',
-              borderColor: location.pathname.startsWith(item.path)
-                ? 'text.primary'
-                : 'transparent',
-              borderRadius: 0,
-              textAlign: 'left',
-              '&:hover': {
-                backgroundColor: 'surface.light',
-                color: 'primary.main',
-              },
+              display: 'block',
+              width: '100%',
+              lineHeight: 0,
             }}
           >
-            {item.label}
-            {item.badge && (
-              <Typography
-                component="span"
-                sx={{
-                  fontSize: '0.65rem',
-                  color: 'secondary.main',
-                  fontStyle: 'italic',
-                  ml: 1,
-                }}
-              >
-                {item.badge}
-              </Typography>
-            )}
-          </Button>
+            {logoLink}
+          </Box>
+        </Tooltip>
+      ) : (
+        logoLink
+      )}
+
+      <Stack direction="column" spacing={2}>
+        {navItems.map((item) => (
+          <SidebarNavLink
+            key={item.path}
+            path={item.path}
+            label={item.label}
+            badge={item.badge}
+            icon={item.icon}
+            isActive={location.pathname.startsWith(item.path)}
+            onNavigate={onNavigate}
+            collapsed={collapsed}
+          />
         ))}
       </Stack>
 
-      {/* Spacer to push footer to bottom */}
       <Box sx={{ flexGrow: 1 }} />
 
-      {/* Footer */}
-      <Box sx={{ mt: 2 }}>
+      <Box sx={{ mt: 2, display: collapsed ? 'none' : 'block' }}>
         <Divider sx={{ borderColor: 'border.medium', mb: 2 }} />
         <Stack direction="column" spacing={1} alignItems="center">
           <Stack
@@ -138,96 +171,27 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
             flexWrap="wrap"
             justifyContent="center"
           >
-            <Typography
-              variant="caption"
-              component="a"
-              href="https://docs.gittensor.io"
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{
-                color: 'text.primary',
-                fontSize: '0.65rem',
-                textDecoration: 'none',
-                '&:hover': { textDecoration: 'underline' },
-              }}
-            >
-              Docs
-            </Typography>
-            <Divider
-              orientation="vertical"
-              flexItem
-              sx={{
-                borderColor: 'border.medium',
-                mx: 0.5,
-                height: '12px',
-                alignSelf: 'center',
-              }}
-            />
-            <Typography
-              variant="caption"
-              component="a"
-              href="https://docs.learnbittensor.org/resources/community-links"
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{
-                color: 'text.primary',
-                fontSize: '0.65rem',
-                textDecoration: 'none',
-                '&:hover': { textDecoration: 'underline' },
-              }}
-            >
-              Community
-            </Typography>
-            <Divider
-              orientation="vertical"
-              flexItem
-              sx={{
-                borderColor: 'border.medium',
-                mx: 0.5,
-                height: '12px',
-                alignSelf: 'center',
-              }}
-            />
-            <Typography
-              variant="caption"
-              component="a"
-              href="https://github.com/entrius/gittensor"
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{
-                color: 'text.primary',
-                fontSize: '0.65rem',
-                textDecoration: 'none',
-                '&:hover': { textDecoration: 'underline' },
-              }}
-            >
-              Github
-            </Typography>
-            <Divider
-              orientation="vertical"
-              flexItem
-              sx={{
-                borderColor: 'border.medium',
-                mx: 0.5,
-                height: '12px',
-                alignSelf: 'center',
-              }}
-            />
-            <Typography
-              variant="caption"
-              component="a"
-              href="https://x.com/gittensor_io"
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{
-                color: 'text.primary',
-                fontSize: '0.65rem',
-                textDecoration: 'none',
-                '&:hover': { textDecoration: 'underline' },
-              }}
-            >
-              X
-            </Typography>
+            {FOOTER_LINKS.map((link, index) => (
+              <React.Fragment key={link.href}>
+                {index > 0 && (
+                  <Divider
+                    orientation="vertical"
+                    flexItem
+                    sx={footerDividerSx}
+                  />
+                )}
+                <Typography
+                  variant="caption"
+                  component="a"
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={footerLinkSx}
+                >
+                  {link.label}
+                </Typography>
+              </React.Fragment>
+            ))}
           </Stack>
           <Typography
             variant="caption"
@@ -242,6 +206,182 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
       </Box>
     </Box>
   );
+};
+
+const SidebarLogoLink: React.FC<{
+  onNavigate?: () => void;
+  collapsed?: boolean;
+  children: React.ReactNode;
+}> = ({ onNavigate, collapsed = false, children }) => {
+  const linkProps = useLinkBehavior<HTMLAnchorElement>('/', {
+    onClick: () => onNavigate?.(),
+  });
+  return (
+    <ButtonBase
+      component="a"
+      disableRipple
+      {...linkProps}
+      sx={{
+        mb: 3,
+        justifyContent: 'center',
+        width: '100%',
+        minHeight: collapsed ? 'auto' : 72,
+        py: collapsed ? 0 : 1,
+      }}
+    >
+      {children}
+    </ButtonBase>
+  );
+};
+
+const SidebarNavLink: React.FC<{
+  path: string;
+  label: string;
+  badge?: string;
+  icon: React.ReactNode;
+  isActive: boolean;
+  onNavigate?: () => void;
+  collapsed?: boolean;
+}> = ({
+  path,
+  label,
+  badge,
+  icon,
+  isActive,
+  onNavigate,
+  collapsed = false,
+}) => {
+  const linkProps = useLinkBehavior<HTMLAnchorElement>(path, {
+    onClick: () => onNavigate?.(),
+  });
+
+  const iconNode =
+    collapsed && badge ? (
+      <Badge
+        badgeContent={badge}
+        color="secondary"
+        overlap="rectangular"
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        sx={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          '& .MuiBadge-badge': {
+            fontSize: badge === 'new' ? '0.45rem' : '0.55rem',
+            height: 'auto',
+            minWidth: '12px',
+            py: 0.25,
+            px: 0.5,
+            lineHeight: 1.1,
+            fontStyle: badge === 'new' ? 'italic' : 'normal',
+          },
+        }}
+      >
+        <Box
+          component="span"
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {icon}
+        </Box>
+      </Badge>
+    ) : (
+      icon
+    );
+
+  const expandedLabel = !collapsed && (
+    <Box
+      component="span"
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        columnGap: 1,
+        rowGap: 0.25,
+        minWidth: 0,
+        flex: '1 1 auto',
+        textAlign: 'left',
+      }}
+    >
+      <Box
+        component="span"
+        sx={{
+          lineHeight: 1.35,
+          fontSize: NAV_LABEL_FONT,
+          color: 'inherit',
+        }}
+      >
+        {label}
+      </Box>
+      {badge && (
+        <Typography
+          component="span"
+          sx={{
+            fontSize: '0.65rem',
+            color: 'secondary.main',
+            fontStyle: 'italic',
+            lineHeight: 1,
+            flexShrink: 0,
+          }}
+        >
+          {badge}
+        </Typography>
+      )}
+    </Box>
+  );
+
+  const button = (
+    <Button
+      component="a"
+      {...linkProps}
+      sx={{
+        justifyContent: collapsed ? 'center' : 'flex-start',
+        alignItems: 'center',
+        minWidth: 0,
+        py: collapsed ? 1.25 : 1.5,
+        px: collapsed ? 1 : 2,
+        color: '#ffffff',
+        textDecoration: 'none',
+        fontSize: NAV_LABEL_FONT,
+        textTransform: 'none',
+        backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+        borderLeft: collapsed
+          ? 'none'
+          : isActive
+            ? '2px solid #ffffff'
+            : '2px solid transparent',
+        borderRadius: collapsed ? 1.5 : 0,
+        textAlign: collapsed ? 'center' : 'left',
+        gap: collapsed ? 0 : 1,
+        '& .MuiSvgIcon-root': {
+          fontSize: NAV_ICON_FONT,
+          display: 'block',
+          flexShrink: 0,
+        },
+        '&:hover': {
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          color: 'primary.main',
+        },
+      }}
+    >
+      {iconNode}
+      {expandedLabel}
+    </Button>
+  );
+
+  if (collapsed) {
+    return (
+      <Tooltip title={label} placement="right" arrow>
+        {button}
+      </Tooltip>
+    );
+  }
+
+  return button;
 };
 
 export default Sidebar;

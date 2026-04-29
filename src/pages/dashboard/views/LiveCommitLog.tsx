@@ -10,10 +10,15 @@ import {
   alpha,
   Avatar,
   Chip,
+  Tooltip,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { formatDistanceToNow } from 'date-fns';
+import { LinkBox } from '../../../components/common/linkBehavior';
 import { useInfiniteCommitLog } from '../../../api';
-import theme, { REPO_OWNER_AVATAR_BACKGROUNDS } from '../../../theme';
+import theme, {
+  REPO_OWNER_AVATAR_BACKGROUNDS,
+  scrollbarSx,
+} from '../../../theme';
 
 const MONTH_SHORT = [
   'Jan',
@@ -38,6 +43,12 @@ const formatUtcTimestamp = (iso: string): string => {
   const mm = String(d.getUTCMinutes()).padStart(2, '0');
   const ss = String(d.getUTCSeconds()).padStart(2, '0');
   return `${month} ${day}, ${hh}:${mm}:${ss} UTC`;
+};
+
+const formatRelativeActivityTime = (iso: string): string => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return formatDistanceToNow(d, { addSuffix: true });
 };
 
 interface CommitLogEntry {
@@ -116,8 +127,8 @@ const getScoreColor = (score: string) => {
 const CommitLogItem: React.FC<{
   entry: CommitLogEntry;
   isNew: boolean;
-}> = ({ entry, isNew }) => {
-  const navigate = useNavigate();
+  innerRef?: React.Ref<HTMLAnchorElement>;
+}> = ({ entry, isNew, innerRef }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
@@ -130,18 +141,15 @@ const CommitLogItem: React.FC<{
   else if (isClosed)
     status = { label: 'CLOSED', color: theme.palette.status.closed };
   const timestampRaw = entry.mergedAt || entry.prCreatedAt;
-  const timestamp = timestampRaw
-    ? formatUtcTimestamp(timestampRaw)
+  const relativeTime = timestampRaw
+    ? formatRelativeActivityTime(timestampRaw)
     : 'Loading...';
 
-  return (
-    <Box
-      onClick={() =>
-        navigate(
-          `/miners/pr?repo=${entry.repository}&number=${entry.pullRequestNumber}`,
-          { state: { backLabel: 'Back to Dashboard' } },
-        )
-      }
+  const content = (
+    <LinkBox
+      href={`/miners/pr?repo=${entry.repository}&number=${entry.pullRequestNumber}`}
+      linkState={{ backLabel: 'Back to Dashboard' }}
+      ref={innerRef}
       sx={{
         p: isMobile ? 0.75 : isTablet ? 1.25 : 1,
         borderRadius: 3,
@@ -238,9 +246,25 @@ const CommitLogItem: React.FC<{
                 backgroundColor: alpha(status.color, 0.1),
               }}
             />
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              {timestamp}
-            </Typography>
+            {timestampRaw ? (
+              <Tooltip
+                title={formatUtcTimestamp(timestampRaw)}
+                placement="top"
+                enterDelay={400}
+              >
+                <Typography
+                  component="span"
+                  variant="caption"
+                  sx={{ color: 'text.secondary' }}
+                >
+                  {relativeTime}
+                </Typography>
+              </Tooltip>
+            ) : (
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                {relativeTime}
+              </Typography>
+            )}
           </Stack>
           <Typography
             sx={{
@@ -258,51 +282,89 @@ const CommitLogItem: React.FC<{
           </Typography>
         </Box>
 
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
+        <LiveCommitFooter
+          author={entry.author}
+          additions={entry.additions}
+          deletions={entry.deletions}
+          score={entry.score}
+        />
+      </Stack>
+    </LinkBox>
+  );
+
+  return content;
+};
+
+interface LiveCommitFooterProps {
+  author: string;
+  additions: number;
+  deletions: number;
+  score: string;
+}
+
+function LiveCommitFooter({
+  author,
+  additions,
+  deletions,
+  score,
+}: LiveCommitFooterProps) {
+  return (
+    <Stack
+      direction="row"
+      justifyContent="space-between"
+      alignItems="center"
+      gap={1}
+      sx={{
+        pt: 1,
+        minWidth: 0,
+        borderTop: `1px solid ${theme.palette.border.subtle}`,
+      }}
+    >
+      <Tooltip title={author} placement="top" arrow>
+        <Typography
+          variant="caption"
           sx={{
-            pt: 1,
-            borderTop: `1px solid ${theme.palette.border.subtle}`,
+            color: 'text.secondary',
+            minWidth: 0,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
           }}
         >
-          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            by {entry.author}
+          by {author}
+        </Typography>
+      </Tooltip>
+      <Stack direction="row" spacing={2} sx={{ flexShrink: 0 }}>
+        <Stack direction="row" spacing={0.5} alignItems="center">
+          <Typography
+            variant="caption"
+            sx={{ color: theme.palette.diff.additions, fontWeight: 600 }}
+          >
+            +{additions}
           </Typography>
-          <Stack direction="row" spacing={2}>
-            <Stack direction="row" spacing={0.5} alignItems="center">
-              <Typography
-                variant="caption"
-                sx={{ color: theme.palette.diff.additions, fontWeight: 600 }}
-              >
-                +{entry.additions}
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                /
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{ color: theme.palette.diff.deletions, fontWeight: 600 }}
-              >
-                -{entry.deletions}
-              </Typography>
-            </Stack>
-            <Typography
-              variant="caption"
-              sx={{
-                color: getScoreColor(entry.score),
-                fontWeight: 600,
-              }}
-            >
-              SCORE: {parseFloat(entry.score).toFixed(2)}
-            </Typography>
-          </Stack>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            /
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{ color: theme.palette.diff.deletions, fontWeight: 600 }}
+          >
+            -{deletions}
+          </Typography>
         </Stack>
+        <Typography
+          variant="caption"
+          sx={{
+            color: getScoreColor(score),
+            fontWeight: 600,
+          }}
+        >
+          SCORE: {parseFloat(score).toFixed(2)}
+        </Typography>
       </Stack>
-    </Box>
+    </Stack>
   );
-};
+}
 
 const LiveCommitLog: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -314,8 +376,17 @@ const LiveCommitLog: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<CommitStatusFilter>('all');
   const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
+  const [, setRelativeTimeTick] = useState(0);
   const logContainerRef = useRef<HTMLDivElement>(null);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    const id = window.setInterval(
+      () => setRelativeTimeTick((n) => n + 1),
+      60_000,
+    );
+    return () => window.clearInterval(id);
+  }, []);
 
   const apiCommits = useMemo<CommitLogEntry[]>(
     () => data?.pages.flat() ?? [],
@@ -535,13 +606,7 @@ const LiveCommitLog: React.FC = () => {
               overflowY: 'auto',
               overflowX: 'hidden',
               pr: 1,
-              '&::-webkit-scrollbar': { width: '6px' },
-              '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: theme.palette.border.light,
-                borderRadius: '3px',
-                '&:hover': { backgroundColor: theme.palette.border.medium },
-              },
+              ...scrollbarSx,
             }}
           >
             {showWaitingForActivity ? (

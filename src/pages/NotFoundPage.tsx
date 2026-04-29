@@ -1,4 +1,5 @@
 import React from 'react';
+import { scrollbarSx } from '../theme';
 import { Box, Button, Stack, Typography, alpha } from '@mui/material';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
 import HomeIcon from '@mui/icons-material/Home';
@@ -33,7 +34,6 @@ const NotFoundPage: React.FC = () => {
         />
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: { xs: '1.5rem', md: '2rem' },
             fontWeight: 600,
             color: 'text.primary',
@@ -43,7 +43,6 @@ const NotFoundPage: React.FC = () => {
         </Typography>
         <Typography
           sx={{
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.85rem',
             color: (t) => alpha(t.palette.text.primary, 0.5),
             lineHeight: 1.6,
@@ -56,7 +55,6 @@ const NotFoundPage: React.FC = () => {
           component="pre"
           sx={{
             width: '100%',
-            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.75rem',
             color: (t) => alpha(t.palette.text.primary, 0.4),
             border: '1px solid',
@@ -67,6 +65,7 @@ const NotFoundPage: React.FC = () => {
             overflow: 'auto',
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-all',
+            ...scrollbarSx,
           }}
         >
           {location.pathname}

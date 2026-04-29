@@ -1,8 +1,19 @@
 import React, { useState } from 'react';
-import { Box, Typography, Stack, Button, Tabs, Tab } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  ButtonBase,
+  Tabs,
+  Tab,
+  Tooltip,
+} from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { alpha } from '@mui/material/styles';
+import CheckIcon from '@mui/icons-material/Check';
+import { alpha, darken } from '@mui/material/styles';
+import { scrollbarSx, tooltipSlotProps } from '../../theme';
+import { useClipboardCopy } from '../../hooks/useClipboardCopy';
 
 const MONO = '"JetBrains Mono", monospace';
 
@@ -49,13 +60,10 @@ const CodeBlock: React.FC<{
   children: string;
   label?: string;
 }> = ({ children, label }) => {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(children.trim());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const { copied, copy, liveRegion } = useClipboardCopy({
+    copiedMessage: 'Command copied to clipboard',
+  });
+  const command = children.trim();
 
   return (
     <Box sx={{ mb: 2 }}>
@@ -84,6 +92,7 @@ const CodeBlock: React.FC<{
           p: 2,
           pr: 5,
           overflow: 'auto',
+          ...scrollbarSx,
         }}
       >
         <Typography
@@ -98,24 +107,42 @@ const CodeBlock: React.FC<{
             lineHeight: 1.6,
           }}
         >
-          {children.trim()}
+          {command}
         </Typography>
-        <Box
-          onClick={handleCopy}
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            cursor: 'pointer',
-            color: copied ? 'success.main' : 'text.tertiary',
-            '&:hover': {
-              color: copied ? 'success.main' : 'text.secondary',
-            },
-            transition: 'color 0.2s',
-          }}
+        <Tooltip
+          title={copied ? 'Copied!' : 'Copy'}
+          placement="left"
+          slotProps={tooltipSlotProps}
         >
-          <ContentCopyIcon sx={{ fontSize: 16 }} />
-        </Box>
+          <ButtonBase
+            onClick={() => void copy(command)}
+            aria-label="Copy command"
+            disableRipple
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              p: 0.5,
+              borderRadius: '4px',
+              color: copied ? 'success.main' : 'text.tertiary',
+              '&:hover': {
+                color: copied ? 'success.main' : 'text.secondary',
+              },
+              '&:focus-visible, &.Mui-focusVisible': {
+                outline: (theme) => `2px solid ${theme.palette.primary.main}`,
+                outlineOffset: '2px',
+              },
+              transition: 'color 0.2s',
+            }}
+          >
+            {copied ? (
+              <CheckIcon sx={{ fontSize: 16 }} />
+            ) : (
+              <ContentCopyIcon sx={{ fontSize: 16 }} />
+            )}
+          </ButtonBase>
+        </Tooltip>
+        {liveRegion}
       </Box>
     </Box>
   );
@@ -401,7 +428,7 @@ export const GettingStarted: React.FC = () => {
   const [activeStep, setActiveStep] = useState(0);
 
   return (
-    <Box sx={{ maxWidth: 1000, mx: 'auto', px: { xs: 2, md: 4 }, py: 4 }}>
+    <Box sx={{ width: '100%', maxWidth: '100%', py: 4 }}>
       <Typography
         variant="h4"
         fontWeight="bold"
@@ -422,8 +449,8 @@ export const GettingStarted: React.FC = () => {
           sx={{
             position: 'absolute',
             top: 24,
-            left: '3%',
-            right: '3%',
+            left: { xs: 0, md: 'calc(100% / 14)' },
+            width: { xs: '100%', md: 'calc(100% * 6 / 7)' },
             height: 2,
             background: (theme) =>
               `linear-gradient(90deg, ${theme.palette.border.subtle} 0%, ${theme.palette.border.medium} 50%, ${theme.palette.border.subtle} 100%)`,
@@ -432,12 +459,16 @@ export const GettingStarted: React.FC = () => {
           }}
         />
 
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          spacing={{ xs: 2, md: 0 }}
-          justifyContent="space-between"
-          alignItems={{ xs: 'flex-start', md: 'flex-start' }}
-          sx={{ position: 'relative', zIndex: 1 }}
+        <Box
+          sx={{
+            display: { xs: 'flex', md: 'grid' },
+            flexDirection: { xs: 'column' },
+            gap: { xs: 2, md: 0 },
+            gridTemplateColumns: { md: 'repeat(7, minmax(0, 1fr))' },
+            alignItems: { xs: 'flex-start', md: 'flex-start' },
+            position: 'relative',
+            zIndex: 1,
+          }}
         >
           {steps.map((item, index) => (
             <Box
@@ -448,7 +479,8 @@ export const GettingStarted: React.FC = () => {
                 flexDirection: { xs: 'row', md: 'column' },
                 alignItems: 'center',
                 gap: { xs: 1.5, md: 1 },
-                width: { xs: '100%', md: 'auto' },
+                width: { xs: '100%', md: '100%' },
+                minWidth: 0,
                 cursor: 'pointer',
                 '&:hover .step-circle': {
                   borderColor: 'border.medium',
@@ -464,8 +496,8 @@ export const GettingStarted: React.FC = () => {
                   bgcolor: (theme) =>
                     activeStep === index
                       ? index === steps.length - 1
-                        ? alpha(theme.palette.secondary.main, 0.15)
-                        : alpha(theme.palette.primary.main, 0.15)
+                        ? darken(theme.palette.secondary.main, 0.85)
+                        : darken(theme.palette.primary.main, 0.85)
                       : theme.palette.background.default,
                   border: '2px solid',
                   borderColor: item.active
@@ -529,7 +561,7 @@ export const GettingStarted: React.FC = () => {
               </Box>
             </Box>
           ))}
-        </Stack>
+        </Box>
       </Box>
 
       <Box

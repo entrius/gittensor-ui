@@ -3,11 +3,13 @@ import React, { useMemo } from 'react';
 import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
 
-import { useNavigate } from 'react-router-dom';
+import { LinkBox } from '../components/common/linkBehavior';
 import { Page } from '../components/layout';
 import { TopRepositoriesTable, SEO } from '../components';
-import { useAllPrs, useReposAndWeights } from '../api';
+import { useAllPrs, useAllMiners, useReposAndWeights } from '../api';
 import { type CommitLog } from '../api/models/Dashboard';
+import { buildRepoDiscoveryRollupFromMiners } from '../utils/ExplorerUtils';
+import { isMergedPr } from '../utils/prStatus';
 
 const FONTS = { mono: '"JetBrains Mono", monospace' } as const;
 
@@ -15,56 +17,57 @@ const FONTS = { mono: '"JetBrains Mono", monospace' } as const;
 const ROW_HEIGHT = 40; // px – keeps every row exactly the same across cards
 
 const HighlightRow: React.FC<{
-  onClick: () => void;
+  href: string;
+  linkState?: Record<string, unknown>;
   avatar: string;
   avatarBg?: (theme: Theme) => string;
   label: React.ReactNode;
   right: React.ReactNode;
-}> = ({ onClick, avatar, avatarBg, label, right }) => (
-  <Box
-    onClick={onClick}
-    sx={(theme) => ({
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      height: ROW_HEIGHT,
-      py: 0,
-      px: 1,
-      borderRadius: 1,
-      cursor: 'pointer',
-      transition: 'background 0.15s',
-      mx: -1,
-      '&:hover': { backgroundColor: theme.palette.surface.light },
-    })}
-  >
-    <Box
+}> = ({ href, linkState, avatar, avatarBg = 'transparent', label, right }) => {
+  return (
+    <LinkBox
+      href={href}
+      linkState={linkState}
       sx={{
         display: 'flex',
         alignItems: 'center',
-        gap: 1.5,
-        overflow: 'hidden',
-        mr: 2,
-        flex: 1,
+        justifyContent: 'space-between',
+        height: ROW_HEIGHT,
+        py: 0,
+        px: 1,
+        borderRadius: 1,
+        cursor: 'pointer',
+        transition: 'background 0.15s',
+        mx: -1,
+        '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
       }}
     >
-      <Avatar
-        src={avatar}
-        sx={(theme) => ({
-          width: 24,
-          height: 24,
-          flexShrink: 0,
-          border: '1px solid',
-          borderColor: theme.palette.border.light,
-          backgroundColor: avatarBg
-            ? avatarBg(theme)
-            : theme.palette.surface.transparent,
-        })}
-      />
-      {label}
-    </Box>
-    {right}
-  </Box>
-);
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          overflow: 'hidden',
+          mr: 2,
+          flex: 1,
+        }}
+      >
+        <Avatar
+          src={avatar}
+          sx={{
+            width: 24,
+            height: 24,
+            flexShrink: 0,
+            border: '1px solid rgba(255,255,255,0.1)',
+            backgroundColor: avatarBg,
+          }}
+        />
+        {label}
+      </Box>
+      {right}
+    </LinkBox>
+  );
+};
 
 const getAvatarBg = (name: string) => {
   const owner = name.split('/')[0];
@@ -112,9 +115,13 @@ const cardSx = (theme: Theme) => ({
 });
 
 // ── Page ────────────────────────────────────────────────────────────────────
-const RepositoriesPage: React.FC = () => {
-  const navigate = useNavigate();
+const REPO_LINK_STATE = { backLabel: 'Back to Repositories' } as const;
+const getRepoHref = (name: string) =>
+  `/miners/repository?name=${encodeURIComponent(name)}`;
+const getPrHref = (name: string, number: number) =>
+  `/miners/pr?repo=${encodeURIComponent(name)}&number=${number}`;
 
+const RepositoriesPage: React.FC = () => {
   const formatRelativeTime = (date: Date) => {
     const now = new Date();
     if (date > now) return 'just now';
@@ -131,17 +138,11 @@ const RepositoriesPage: React.FC = () => {
   };
 
   const { data: allPRs, isLoading: isLoadingPRs } = useAllPrs();
+  const { data: allMiners, isLoading: isLoadingMiners } = useAllMiners();
   const { data: reposWithWeights, isLoading: isLoadingRepos } =
     useReposAndWeights();
 
-  const isLoading = isLoadingPRs || isLoadingRepos;
-
-  const handleSelectRepository = (repositoryFullName: string) => {
-    navigate(
-      `/miners/repository?name=${encodeURIComponent(repositoryFullName)}`,
-      { state: { backLabel: 'Back to Repositories' } },
-    );
-  };
+  const isLoading = isLoadingPRs || isLoadingRepos || isLoadingMiners;
 
   // ── Main table stats ────────────────────────────────────────────────────
   const repoStats = useMemo(() => {
@@ -155,8 +156,7 @@ const RepositoriesPage: React.FC = () => {
     if (allPRs) {
       allPRs.forEach((pr: CommitLog) => {
         if (!pr?.repository) return;
-        // Only count merged PRs for the main table stats
-        if (!pr.mergedAt) return;
+        if (!isMergedPr(pr)) return;
 
         const repoKey = pr.repository.toLowerCase();
         const cur = prStatsMap.get(repoKey) || {
@@ -171,9 +171,16 @@ const RepositoriesPage: React.FC = () => {
       });
     }
 
+    const discoveryByRepo = buildRepoDiscoveryRollupFromMiners(
+      allPRs,
+      allMiners,
+    );
+
     return reposWithWeights
       .map((repo) => {
-        const s = prStatsMap.get(repo.fullName.toLowerCase());
+        const key = repo.fullName.toLowerCase();
+        const s = prStatsMap.get(key);
+        const d = discoveryByRepo.get(key);
         return {
           repository: repo.fullName,
           totalScore: s?.totalScore || 0,
@@ -181,10 +188,13 @@ const RepositoriesPage: React.FC = () => {
           uniqueMiners: s?.uniqueMiners || new Set<string>(),
           weight: repo.weight ? parseFloat(String(repo.weight)) : 0,
           inactiveAt: repo.inactiveAt,
+          discoveryScore: d?.discoveryScore ?? 0,
+          discoveryIssues: d?.discoveryIssues ?? 0,
+          discoveryContributors: d?.discoveryContributors ?? new Set<string>(),
         };
       })
       .sort((a, b) => b.totalScore - a.totalScore);
-  }, [allPRs, reposWithWeights]);
+  }, [allPRs, allMiners, reposWithWeights]);
 
   // ── Trending: repos with biggest % score increase in the last 7 days ──
   // Excludes brand-new repos (no prior score) so only genuine growth shows
@@ -367,7 +377,8 @@ const RepositoriesPage: React.FC = () => {
                     trendingRepos.map((repo) => (
                       <HighlightRow
                         key={repo.name}
-                        onClick={() => handleSelectRepository(repo.name)}
+                        href={getRepoHref(repo.name)}
+                        linkState={REPO_LINK_STATE}
                         avatar={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
                         avatarBg={getAvatarBg(repo.name)}
                         label={
@@ -435,7 +446,8 @@ const RepositoriesPage: React.FC = () => {
                     topCollateralRepos.map((repo) => (
                       <HighlightRow
                         key={repo.name}
-                        onClick={() => handleSelectRepository(repo.name)}
+                        href={getRepoHref(repo.name)}
+                        linkState={REPO_LINK_STATE}
                         avatar={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
                         avatarBg={getAvatarBg(repo.name)}
                         label={
@@ -497,12 +509,8 @@ const RepositoriesPage: React.FC = () => {
                     recentPrs.map((pr) => (
                       <HighlightRow
                         key={`${pr.name}-${pr.number}`}
-                        onClick={() =>
-                          navigate(
-                            `/miners/pr?repo=${encodeURIComponent(pr.name)}&number=${pr.number}`,
-                            { state: { backLabel: 'Back to Repositories' } },
-                          )
-                        }
+                        href={getPrHref(pr.name, pr.number)}
+                        linkState={REPO_LINK_STATE}
                         avatar={`https://avatars.githubusercontent.com/${pr.name.split('/')[0]}`}
                         avatarBg={getAvatarBg(pr.name)}
                         label={
@@ -566,6 +574,31 @@ const RepositoriesPage: React.FC = () => {
                 </Box>
               </>
             ) : null}
+            {!isLoading && recentPrs.length === 0 ? (
+              <>
+                <SectionHeader>Recent Pull Requests</SectionHeader>
+                <Box
+                  sx={{
+                    flex: 1,
+                    minHeight: ROW_HEIGHT * 5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Typography
+                    sx={(theme) => ({
+                      color: alpha(theme.palette.text.primary, 0.3),
+                      fontSize: '0.8rem',
+                      p: 1,
+                      textAlign: 'center',
+                    })}
+                  >
+                    No merged PRs today
+                  </Typography>
+                </Box>
+              </>
+            ) : null}
           </Card>
         </Box>
 
@@ -583,7 +616,8 @@ const RepositoriesPage: React.FC = () => {
           <TopRepositoriesTable
             repositories={repoStats}
             isLoading={isLoading}
-            onSelectRepository={handleSelectRepository}
+            getRepositoryHref={getRepoHref}
+            linkState={REPO_LINK_STATE}
           />
         </Card>
       </Box>

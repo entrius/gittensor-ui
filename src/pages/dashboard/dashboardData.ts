@@ -9,11 +9,8 @@
  */
 import { type CommitLog, type MinerEvaluation } from '../../api';
 import { type IssueBounty } from '../../api/models/Issues';
-import {
-  getIssueStatusLabel,
-  getPrStatusLabel,
-  parseNumber,
-} from '../../utils';
+import { getPrStatusLabel, parseNumber } from '../../utils';
+import { formatTokenAmount } from '../../utils/format';
 
 export type PresetTimeRange = '1d' | '7d' | '35d';
 export type TrendTimeRange = PresetTimeRange | 'all';
@@ -34,14 +31,16 @@ export interface DashboardOverviewMetric {
   delta: string;
 }
 
+export interface DashboardOverviewPool {
+  metrics: DashboardOverviewMetric[];
+  chartSegments: Array<{ label: string; value: number }>;
+  chartCenterLabel: string;
+}
+
 export interface DashboardOverviewSection {
   title: string;
-  metrics: DashboardOverviewMetric[];
-  chartSegments: Array<{
-    label: string;
-    value: number;
-  }>;
-  chartCenterLabel: string;
+  eligible: DashboardOverviewPool;
+  ineligible: DashboardOverviewPool;
 }
 
 export interface DashboardKpi {
@@ -60,6 +59,32 @@ export interface DashboardFeaturedContributor {
     unit: string;
   }>;
   repos: string[];
+}
+
+export type DashboardFeaturedWorkKind = 'pr' | 'issue';
+
+export interface DashboardFeaturedWork {
+  id: string;
+  kind: DashboardFeaturedWorkKind;
+  prNumber?: number;
+  issueId?: number;
+  githubNumber: number;
+  featuredLabel: string;
+  repository: string;
+  title: string;
+  score: number;
+  statusLabel: string;
+  statusTone: 'merged' | 'open' | 'closed';
+  authorLabel: string;
+  githubUsername?: string;
+  openedAt: string | null;
+  additions: number;
+  deletions: number;
+  metrics: Array<{
+    label: string;
+    value: string;
+    tone?: 'positive' | 'negative' | 'neutral';
+  }>;
 }
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -148,13 +173,6 @@ const formatTrendBucketLabel = (timestamp: number, range: TrendTimeRange) => {
     }).format(new Date(timestamp));
   }
 
-  if (range === 'all') {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-    }).format(new Date(timestamp));
-  }
-
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
@@ -221,6 +239,13 @@ const bucketTimestamps = (
   return values;
 };
 
+const optionalCredibilityMetrics = (
+  credibility: unknown,
+): Array<{ value: string; unit: string }> => {
+  const n = parseNumber(credibility as number);
+  return n > 0 ? [{ value: `${Math.round(n * 100)}%`, unit: 'Cred.' }] : [];
+};
+
 const formatDelta = (
   currentValue: number,
   previousValue: number,
@@ -267,18 +292,18 @@ export const buildDashboardTrendData = (
     buckets,
   );
 
+  const seriesByKey: Record<TrendSeriesKey, number[]> = {
+    mergedPrs: mergedPrValues,
+    issuesResolved: resolvedIssueValues,
+    prsOpened: openedPrValues,
+    issuesOpened: openedIssueValues,
+  };
+
   return {
     labels: buckets.map((bucket) => bucket.label),
     series: TREND_SERIES_KEYS.map((key) => ({
       key,
-      values:
-        key === 'mergedPrs'
-          ? mergedPrValues
-          : key === 'prsOpened'
-            ? openedPrValues
-            : key === 'issuesResolved'
-              ? resolvedIssueValues
-              : openedIssueValues,
+      values: seriesByKey[key],
     })),
   };
 };
@@ -295,7 +320,12 @@ const getPrOverviewMetrics = (prs: CommitLog[], window: WindowBounds) => {
     const normalizedState = getPrStatusLabel(pr);
     const createdInWindow = isWithinWindow(toTimestamp(pr.prCreatedAt), window);
     const mergedInWindow = isWithinWindow(toTimestamp(pr.mergedAt), window);
-    const closedInWindow = isWithinWindow(toTimestamp(pr.closedAt), window);
+    // API does not currently return closedAt for PRs — fall back to
+    // prCreatedAt so closed PRs are still tracked within the window.
+    const closedInWindow = isWithinWindow(
+      toTimestamp(pr.closedAt ?? pr.prCreatedAt),
+      window,
+    );
 
     if (createdInWindow) {
       statusCounts.open += 1;
@@ -321,50 +351,24 @@ const getPrOverviewMetrics = (prs: CommitLog[], window: WindowBounds) => {
   };
 };
 
-const getIssueOverviewMetrics = (
-  issues: IssueBounty[],
-  window: WindowBounds,
-) => {
-  const statusCounts = {
-    total: 0,
-    solved: 0,
-    open: 0,
-    closed: 0,
-  };
-
-  issues.forEach((issue) => {
-    const normalizedStatus = getIssueStatusLabel(issue);
-    const createdInWindow = isWithinWindow(
-      toTimestamp(issue.createdAt),
-      window,
-    );
-    const solvedInWindow = isWithinWindow(
-      toTimestamp(issue.completedAt),
-      window,
-    );
-    const closedInWindow = isWithinWindow(toTimestamp(issue.closedAt), window);
-
-    if (createdInWindow) {
-      statusCounts.open += 1;
-      statusCounts.total += 1;
-    }
-
-    if (normalizedStatus === 'Solved' && solvedInWindow) {
-      statusCounts.solved += 1;
-      statusCounts.total += 1;
-    }
-
-    if (normalizedStatus === 'Closed' && closedInWindow) {
-      statusCounts.closed += 1;
-      statusCounts.total += 1;
-    }
+// Issue discovery metrics are sourced from per-miner aggregates (which
+// reflect every discovered issue) rather than the /issues endpoint (which
+// only returns bounty-backed issues — far fewer). Aggregates are all-time
+// totals, so the Issue Discoveries card is not windowed by the range filter.
+const getIssueOverviewMetricsFromMiners = (miners: MinerEvaluation[]) => {
+  let solved = 0;
+  let closed = 0;
+  let open = 0;
+  miners.forEach((miner) => {
+    solved += miner.totalSolvedIssues ?? 0;
+    closed += miner.totalClosedIssues ?? 0;
+    open += miner.totalOpenIssues ?? 0;
   });
-
   return {
-    total: statusCounts.total,
-    solved: statusCounts.solved,
-    open: statusCounts.open,
-    closed: statusCounts.closed,
+    total: solved + open + closed,
+    solved,
+    open,
+    closed,
   };
 };
 
@@ -375,115 +379,127 @@ const formatCenterPercent = (resolved: number, total: number) => {
 
 export const buildDashboardOverview = (
   prs: CommitLog[],
-  issues: IssueBounty[],
+  miners: MinerEvaluation[],
   range: TrendTimeRange,
   now = new Date(),
 ): DashboardOverviewSection[] => {
   const currentWindow = getWindowBounds(range, now);
   const previousWindow = getPreviousWindowBounds(range, now);
 
-  const currentPrMetrics = getPrOverviewMetrics(prs, currentWindow);
-  const previousPrMetrics = previousWindow
-    ? getPrOverviewMetrics(prs, previousWindow)
+  const eligibleIds = new Set(
+    miners.filter((m) => m.isEligible).map((m) => m.githubId),
+  );
+  const eligiblePrs = prs.filter(
+    (pr) => pr.githubId && eligibleIds.has(pr.githubId),
+  );
+  const ineligiblePrs = prs.filter(
+    (pr) => !pr.githubId || !eligibleIds.has(pr.githubId),
+  );
+
+  const eligibleMiners = miners.filter((m) => m.isIssueEligible);
+  const ineligibleMiners = miners.filter((m) => !m.isIssueEligible);
+
+  const currentEligiblePrMetrics = getPrOverviewMetrics(
+    eligiblePrs,
+    currentWindow,
+  );
+  const previousEligiblePrMetrics = previousWindow
+    ? getPrOverviewMetrics(eligiblePrs, previousWindow)
     : null;
-  const currentIssueMetrics = getIssueOverviewMetrics(issues, currentWindow);
-  const previousIssueMetrics = previousWindow
-    ? getIssueOverviewMetrics(issues, previousWindow)
+
+  const currentIneligiblePrMetrics = getPrOverviewMetrics(
+    ineligiblePrs,
+    currentWindow,
+  );
+  const previousIneligiblePrMetrics = previousWindow
+    ? getPrOverviewMetrics(ineligiblePrs, previousWindow)
     : null;
+
+  const eligibleIssueMetrics =
+    getIssueOverviewMetricsFromMiners(eligibleMiners);
+  const ineligibleIssueMetrics =
+    getIssueOverviewMetricsFromMiners(ineligibleMiners);
+
   const getMetricDelta = (currentValue: number, previousValue?: number) =>
     range === 'all' || previousValue === undefined
       ? '0%'
       : formatDelta(currentValue, previousValue);
 
+  const buildPrPool = (
+    current: ReturnType<typeof getPrOverviewMetrics>,
+    previous: ReturnType<typeof getPrOverviewMetrics> | null,
+  ): DashboardOverviewPool => ({
+    chartSegments: [
+      { label: 'Merged', value: current.merged },
+      { label: 'Open', value: current.open },
+      { label: 'Closed', value: current.closed },
+    ],
+    chartCenterLabel: formatCenterPercent(
+      current.merged,
+      current.merged + current.closed,
+    ),
+    metrics: [
+      {
+        label: 'Total',
+        value: current.total,
+        delta: getMetricDelta(current.total, previous?.total),
+      },
+      {
+        label: 'Merged',
+        value: current.merged,
+        delta: getMetricDelta(current.merged, previous?.merged),
+      },
+      {
+        label: 'Open',
+        value: current.open,
+        delta: getMetricDelta(current.open, previous?.open),
+      },
+      {
+        label: 'Closed',
+        value: current.closed,
+        delta: getMetricDelta(current.closed, previous?.closed),
+      },
+    ],
+  });
+
+  const buildIssuePool = (
+    issueMetrics: ReturnType<typeof getIssueOverviewMetricsFromMiners>,
+  ): DashboardOverviewPool => ({
+    chartSegments: [
+      { label: 'Solved', value: issueMetrics.solved },
+      { label: 'Open', value: issueMetrics.open },
+      { label: 'Closed', value: issueMetrics.closed },
+    ],
+    chartCenterLabel: formatCenterPercent(
+      issueMetrics.solved,
+      issueMetrics.solved + issueMetrics.closed,
+    ),
+    // Issue metrics come from per-miner aggregates (all-time totals), so
+    // there is no previous-window comparison available — deltas are '0%'.
+    metrics: [
+      { label: 'Total', value: issueMetrics.total, delta: '0%' },
+      { label: 'Solved', value: issueMetrics.solved, delta: '0%' },
+      { label: 'Open', value: issueMetrics.open, delta: '0%' },
+      { label: 'Closed', value: issueMetrics.closed, delta: '0%' },
+    ],
+  });
+
   return [
     {
       title: 'OSS Contributions',
-      chartSegments: [
-        { label: 'Merged', value: currentPrMetrics.merged },
-        { label: 'Open', value: currentPrMetrics.open },
-        { label: 'Closed', value: currentPrMetrics.closed },
-      ],
-      chartCenterLabel: formatCenterPercent(
-        currentPrMetrics.merged,
-        currentPrMetrics.total,
+      eligible: buildPrPool(
+        currentEligiblePrMetrics,
+        previousEligiblePrMetrics,
       ),
-      metrics: [
-        {
-          label: 'Total',
-          value: currentPrMetrics.total,
-          delta: getMetricDelta(
-            currentPrMetrics.total,
-            previousPrMetrics?.total,
-          ),
-        },
-        {
-          label: 'Merged',
-          value: currentPrMetrics.merged,
-          delta: getMetricDelta(
-            currentPrMetrics.merged,
-            previousPrMetrics?.merged,
-          ),
-        },
-        {
-          label: 'Open',
-          value: currentPrMetrics.open,
-          delta: getMetricDelta(currentPrMetrics.open, previousPrMetrics?.open),
-        },
-        {
-          label: 'Closed',
-          value: currentPrMetrics.closed,
-          delta: getMetricDelta(
-            currentPrMetrics.closed,
-            previousPrMetrics?.closed,
-          ),
-        },
-      ],
+      ineligible: buildPrPool(
+        currentIneligiblePrMetrics,
+        previousIneligiblePrMetrics,
+      ),
     },
     {
       title: 'Issue Discoveries',
-      chartSegments: [
-        { label: 'Solved', value: currentIssueMetrics.solved },
-        { label: 'Open', value: currentIssueMetrics.open },
-        { label: 'Closed', value: currentIssueMetrics.closed },
-      ],
-      chartCenterLabel: formatCenterPercent(
-        currentIssueMetrics.solved,
-        currentIssueMetrics.total,
-      ),
-      metrics: [
-        {
-          label: 'Total',
-          value: currentIssueMetrics.total,
-          delta: getMetricDelta(
-            currentIssueMetrics.total,
-            previousIssueMetrics?.total,
-          ),
-        },
-        {
-          label: 'Solved',
-          value: currentIssueMetrics.solved,
-          delta: getMetricDelta(
-            currentIssueMetrics.solved,
-            previousIssueMetrics?.solved,
-          ),
-        },
-        {
-          label: 'Open',
-          value: currentIssueMetrics.open,
-          delta: getMetricDelta(
-            currentIssueMetrics.open,
-            previousIssueMetrics?.open,
-          ),
-        },
-        {
-          label: 'Closed',
-          value: currentIssueMetrics.closed,
-          delta: getMetricDelta(
-            currentIssueMetrics.closed,
-            previousIssueMetrics?.closed,
-          ),
-        },
-      ],
+      eligible: buildIssuePool(eligibleIssueMetrics),
+      ineligible: buildIssuePool(ineligibleIssueMetrics),
     },
   ];
 };
@@ -549,10 +565,11 @@ const getTopContributorRepos = (prs: CommitLog[], githubId: string) => {
   >();
 
   prs.forEach((pr) => {
+    const mergedAt = toTimestamp(pr.mergedAt);
     if (
       pr.githubId !== githubId ||
       !pr.repository ||
-      !isWithinWindow(toTimestamp(pr.mergedAt), currentWindow)
+      !isWithinWindow(mergedAt, currentWindow)
     ) {
       return;
     }
@@ -565,10 +582,7 @@ const getTopContributorRepos = (prs: CommitLog[], githubId: string) => {
 
     existing.mergedPrs += 1;
     existing.totalScore += parseNumber(pr.score);
-    existing.lastMergedAt = Math.max(
-      existing.lastMergedAt,
-      toTimestamp(pr.mergedAt) ?? 0,
-    );
+    existing.lastMergedAt = Math.max(existing.lastMergedAt, mergedAt ?? 0);
 
     repoStats.set(pr.repository, existing);
   });
@@ -657,14 +671,7 @@ const pickTopOssContributor = (
         value: Math.round(parseNumber(topOssMiner.totalScore)).toLocaleString(),
         unit: 'Score',
       },
-      ...(parseNumber(topOssMiner.credibility) > 0
-        ? [
-            {
-              value: `${Math.round(parseNumber(topOssMiner.credibility) * 100)}%`,
-              unit: 'Cred.',
-            },
-          ]
-        : []),
+      ...optionalCredibilityMetrics(topOssMiner.credibility),
     ],
     repos: getTopContributorRepos(prs, topOssMiner.githubId),
   };
@@ -692,14 +699,7 @@ const pickMostMergedPrMiner = (
         value: `${mostMergedPrMiner.totalMergedPrs ?? 0}`,
         unit: 'Merged',
       },
-      ...(parseNumber(mostMergedPrMiner.credibility) > 0
-        ? [
-            {
-              value: `${Math.round(parseNumber(mostMergedPrMiner.credibility) * 100)}%`,
-              unit: 'Cred.',
-            },
-          ]
-        : []),
+      ...optionalCredibilityMetrics(mostMergedPrMiner.credibility),
     ],
     repos: getTopContributorRepos(prs, mostMergedPrMiner.githubId),
   };
@@ -717,6 +717,400 @@ export const buildFeaturedContributors = (
   if (topOssMiner) contributors.push(topOssMiner);
   if (mostMergedPrMiner) contributors.push(mostMergedPrMiner);
   if (highestScoringMergedAuthor) contributors.push(highestScoringMergedAuthor);
+
+  return contributors;
+};
+
+const mapPrStatusTone = (
+  statusLabel: ReturnType<typeof getPrStatusLabel>,
+): 'merged' | 'open' | 'closed' => {
+  if (statusLabel === 'Merged') return 'merged';
+  if (statusLabel === 'Closed') return 'closed';
+  return 'open';
+};
+
+const mapIssueStatusTone = (
+  status: IssueBounty['status'],
+): 'merged' | 'open' | 'closed' => {
+  if (status === 'completed') return 'merged';
+  if (status === 'cancelled') return 'closed';
+  return 'open';
+};
+
+const getIssueStatusLabel = (status: IssueBounty['status']) => {
+  if (status === 'completed') return 'Completed';
+  if (status === 'cancelled') return 'Closed';
+  return 'Open';
+};
+
+const getIssueDisplayAmount = (issue: IssueBounty): number => {
+  const target = parseNumber(issue.targetBounty);
+  const current = parseNumber(issue.bountyAmount);
+  return target > 0 ? target : current;
+};
+
+export const buildFeaturedWork = (
+  prs: CommitLog[],
+  issues: IssueBounty[],
+): DashboardFeaturedWork[] => {
+  const currentWindow = getWindowBounds(CURRENT_LOOKBACK_WINDOW);
+  const selectedRepos = new Set<string>();
+  const selectedOrgs = new Set<string>();
+  const selectedAuthors = new Set<string>();
+
+  const isCandidateAllowed = (
+    repository: string,
+    authorLabel: string,
+    allowOrgAuthorDuplicates = false,
+  ) => {
+    const normalizedRepo = repository.toLowerCase();
+    const org = (repository.split('/')[0] || '').toLowerCase();
+    const author = (authorLabel || 'unknown').toLowerCase();
+    if (!normalizedRepo || !org) return false;
+    if (selectedRepos.has(normalizedRepo)) return false;
+    if (allowOrgAuthorDuplicates) return true;
+    return !selectedOrgs.has(org) && !selectedAuthors.has(author);
+  };
+
+  const markAsSelected = (repository: string, authorLabel: string) => {
+    selectedRepos.add(repository.toLowerCase());
+    selectedOrgs.add((repository.split('/')[0] || '').toLowerCase());
+    selectedAuthors.add((authorLabel || 'unknown').toLowerCase());
+  };
+
+  const pickFirstDiverse = <T>(
+    sortedLists: T[][],
+    getRepository: (item: T) => string,
+    getAuthor: (item: T) => string,
+  ): T | undefined => {
+    for (const list of sortedLists) {
+      const found =
+        list.find((item) =>
+          isCandidateAllowed(getRepository(item), getAuthor(item)),
+        ) ??
+        list.find((item) =>
+          isCandidateAllowed(getRepository(item), getAuthor(item), true),
+        );
+      if (found) return found;
+    }
+    return undefined;
+  };
+
+  const mergedPrs = [...prs].filter(
+    (pr) =>
+      getPrStatusLabel(pr) === 'Merged' &&
+      isWithinWindow(toTimestamp(pr.mergedAt ?? pr.prCreatedAt), currentWindow),
+  );
+  const allWindowPrs = [...prs].filter((pr) =>
+    isWithinWindow(toTimestamp(pr.prCreatedAt), currentWindow),
+  );
+
+  const toPrCard = (
+    pr: CommitLog,
+    featuredLabel: string,
+  ): DashboardFeaturedWork => {
+    const score = parseNumber(pr.score);
+    const additions = parseNumber(pr.additions);
+    const deletions = parseNumber(pr.deletions);
+    const commits = parseNumber(pr.commitCount);
+    const baseMetrics: DashboardFeaturedWork['metrics'] = [
+      { label: 'Score', value: score.toFixed(2) },
+      {
+        label: 'Changes',
+        value: `+${additions.toLocaleString()} / -${deletions.toLocaleString()}`,
+        tone: 'positive',
+      },
+      { label: 'Commits', value: commits.toLocaleString() },
+    ];
+    if (featuredLabel === 'Largest PR') {
+      baseMetrics[0] = {
+        label: 'Additions',
+        value: `+${additions.toLocaleString()}`,
+        tone: 'positive',
+      };
+      baseMetrics[1] = {
+        label: 'Deletions',
+        value: `-${deletions.toLocaleString()}`,
+        tone: 'negative',
+      };
+      baseMetrics[2] = {
+        label: 'Net Changes',
+        value: `+${(additions - deletions).toLocaleString()}`,
+        tone: 'positive',
+      };
+    } else if (featuredLabel === 'Most Commits PR') {
+      baseMetrics[0] = { label: 'Commits', value: commits.toLocaleString() };
+      baseMetrics[2] = { label: 'Score', value: score.toFixed(2) };
+    } else if (featuredLabel === 'Newest Merged PR') {
+      const mergedAt = toTimestamp(pr.mergedAt);
+      const ageDays =
+        mergedAt === null
+          ? null
+          : Math.max(0, Math.floor((currentWindow.endMs - mergedAt) / DAY_MS));
+      baseMetrics[0] = {
+        label: 'Merged',
+        value:
+          ageDays === null
+            ? '-'
+            : `${ageDays} day${ageDays === 1 ? '' : 's'} ago`,
+      };
+      baseMetrics[2] = { label: 'Score', value: score.toFixed(2) };
+    }
+
+    const statusLabel = getPrStatusLabel(pr);
+
+    return {
+      id: `pr-${featuredLabel}-${pr.repository}-${pr.pullRequestNumber}`,
+      kind: 'pr',
+      prNumber: pr.pullRequestNumber,
+      githubNumber: pr.pullRequestNumber,
+      featuredLabel,
+      repository: pr.repository,
+      title: pr.pullRequestTitle || `PR #${pr.pullRequestNumber}`,
+      score,
+      statusLabel,
+      statusTone: mapPrStatusTone(statusLabel),
+      authorLabel: pr.author || 'unknown',
+      githubUsername: pr.author || undefined,
+      openedAt: pr.mergedAt ?? pr.prCreatedAt ?? null,
+      additions,
+      deletions,
+      metrics: baseMetrics,
+    };
+  };
+
+  const pickPr = (
+    featuredLabel: string,
+    sortFn: (a: CommitLog, b: CommitLog) => number,
+  ) => {
+    const mergedSorted = [...mergedPrs].sort(sortFn);
+    const allSorted = [...allWindowPrs].sort(sortFn);
+    const candidate =
+      pickFirstDiverse(
+        [mergedSorted, allSorted],
+        (pr) => pr.repository,
+        (pr) => pr.author || 'unknown',
+      ) ??
+      mergedSorted.find((pr) => Boolean(pr.repository)) ??
+      allSorted.find((pr) => Boolean(pr.repository));
+    if (!candidate) return undefined;
+    markAsSelected(candidate.repository, candidate.author || 'unknown');
+    return toPrCard(candidate, featuredLabel);
+  };
+
+  const rankedHighestBountyIssues = [...issues]
+    .filter((issue) =>
+      isWithinWindow(
+        toTimestamp(issue.completedAt ?? issue.createdAt),
+        currentWindow,
+      ),
+    )
+    .sort((a, b) => {
+      const bountyDiff = getIssueDisplayAmount(b) - getIssueDisplayAmount(a);
+      if (bountyDiff !== 0) return bountyDiff;
+      return (
+        (toTimestamp(b.completedAt ?? b.createdAt) ?? 0) -
+        (toTimestamp(a.completedAt ?? a.createdAt) ?? 0)
+      );
+    });
+  const rankedCompletedIssues = rankedHighestBountyIssues.filter(
+    (issue) => issue.status === 'completed',
+  );
+
+  const fallbackIssuePool = [...issues].sort(
+    (a, b) => getIssueDisplayAmount(b) - getIssueDisplayAmount(a),
+  );
+
+  const toIssueCard = (
+    issue: IssueBounty,
+    featuredLabel: string,
+  ): DashboardFeaturedWork => {
+    const payoutAmount = getIssueDisplayAmount(issue);
+    const author = issue.authorLogin || 'open bounty';
+    const statusLabel = getIssueStatusLabel(issue.status);
+    return {
+      id: `issue-${featuredLabel}-${issue.id}`,
+      kind: 'issue',
+      issueId: issue.id,
+      githubNumber: issue.issueNumber,
+      featuredLabel,
+      repository: issue.repositoryFullName,
+      title: issue.title || `Issue #${issue.issueNumber}`,
+      score: payoutAmount,
+      statusLabel,
+      statusTone: mapIssueStatusTone(issue.status),
+      authorLabel: author,
+      githubUsername: issue.authorLogin || undefined,
+      openedAt: issue.completedAt ?? issue.closedAt ?? issue.createdAt ?? null,
+      additions: payoutAmount,
+      deletions: 0,
+      metrics: [
+        { label: 'Payout', value: `${formatTokenAmount(payoutAmount, 2)} ل` },
+        { label: 'Issue #', value: `#${issue.issueNumber}` },
+      ],
+    };
+  };
+
+  const pickIssue = (featuredLabel: string, pool: IssueBounty[]) => {
+    const candidate =
+      pickFirstDiverse(
+        [pool, fallbackIssuePool],
+        (issue) => issue.repositoryFullName,
+        (issue) => issue.authorLogin || 'open bounty',
+      ) ??
+      pool[0] ??
+      fallbackIssuePool[0];
+    if (!candidate) return undefined;
+    markAsSelected(
+      candidate.repositoryFullName,
+      candidate.authorLogin || 'open bounty',
+    );
+    return toIssueCard(candidate, featuredLabel);
+  };
+
+  const picks: Array<DashboardFeaturedWork | undefined> = [
+    pickPr('Top PR by Score', (a, b) => {
+      const scoreDiff = parseNumber(b.score) - parseNumber(a.score);
+      if (scoreDiff !== 0) return scoreDiff;
+      return (toTimestamp(b.mergedAt) ?? 0) - (toTimestamp(a.mergedAt) ?? 0);
+    }),
+    pickPr('Largest PR', (a, b) => {
+      const aChanges = parseNumber(a.additions) + parseNumber(a.deletions);
+      const bChanges = parseNumber(b.additions) + parseNumber(b.deletions);
+      if (bChanges !== aChanges) return bChanges - aChanges;
+      return parseNumber(b.score) - parseNumber(a.score);
+    }),
+    pickPr('Most Commits PR', (a, b) => {
+      const commitDiff =
+        parseNumber(b.commitCount) - parseNumber(a.commitCount);
+      if (commitDiff !== 0) return commitDiff;
+      return parseNumber(b.score) - parseNumber(a.score);
+    }),
+    pickPr('Newest Merged PR', (a, b) => {
+      const dateDiff =
+        (toTimestamp(b.mergedAt) ?? 0) - (toTimestamp(a.mergedAt) ?? 0);
+      if (dateDiff !== 0) return dateDiff;
+      return parseNumber(b.score) - parseNumber(a.score);
+    }),
+    pickIssue('Top Completed Issue', rankedCompletedIssues),
+    pickIssue('Highest Bounty Issue', rankedHighestBountyIssues),
+  ];
+
+  return picks.filter((entry): entry is DashboardFeaturedWork =>
+    Boolean(entry),
+  );
+};
+
+const pickTopDiscoveryMiner = (
+  prs: CommitLog[],
+  miners: MinerEvaluation[],
+): DashboardFeaturedContributor | undefined => {
+  const top = [...miners]
+    .filter((m) => m.isIssueEligible && parseNumber(m.issueDiscoveryScore) > 0)
+    .sort((a, b) => {
+      const diff =
+        parseNumber(b.issueDiscoveryScore) - parseNumber(a.issueDiscoveryScore);
+      return diff !== 0 ? diff : a.id - b.id;
+    })[0];
+
+  if (!top) return undefined;
+
+  return {
+    featuredLabel: 'Top Discovery Miner',
+    githubId: top.githubId,
+    githubUsername: top.githubUsername,
+    name: top.githubUsername ?? top.githubId,
+    metrics: [
+      {
+        value: Math.round(
+          parseNumber(top.issueDiscoveryScore),
+        ).toLocaleString(),
+        unit: 'Score',
+      },
+      ...optionalCredibilityMetrics(top.issueCredibility),
+    ],
+    repos: getTopContributorRepos(prs, top.githubId),
+  };
+};
+
+const pickMostSolvedIssuesMiner = (
+  prs: CommitLog[],
+  miners: MinerEvaluation[],
+): DashboardFeaturedContributor | undefined => {
+  const top = [...miners]
+    .filter((m) => m.isIssueEligible && (m.totalValidSolvedIssues ?? 0) > 0)
+    .sort((a, b) => {
+      const diff =
+        (b.totalValidSolvedIssues ?? 0) - (a.totalValidSolvedIssues ?? 0);
+      if (diff !== 0) return diff;
+      return (
+        parseNumber(b.issueDiscoveryScore) - parseNumber(a.issueDiscoveryScore)
+      );
+    })[0];
+
+  if (!top) return undefined;
+
+  return {
+    featuredLabel: 'Most Solved Issues',
+    githubId: top.githubId,
+    githubUsername: top.githubUsername,
+    name: top.githubUsername ?? top.githubId,
+    metrics: [
+      {
+        value: `${top.totalValidSolvedIssues ?? 0}`,
+        unit: 'Solved',
+      },
+      ...optionalCredibilityMetrics(top.issueCredibility),
+    ],
+    repos: getTopContributorRepos(prs, top.githubId),
+  };
+};
+
+const pickHighestIssueTokenScoreMiner = (
+  prs: CommitLog[],
+  miners: MinerEvaluation[],
+): DashboardFeaturedContributor | undefined => {
+  const top = [...miners]
+    .filter((m) => m.isIssueEligible && parseNumber(m.issueTokenScore) > 0)
+    .sort((a, b) => {
+      const diff =
+        parseNumber(b.issueTokenScore) - parseNumber(a.issueTokenScore);
+      return diff !== 0 ? diff : a.id - b.id;
+    })[0];
+
+  if (!top) return undefined;
+
+  return {
+    featuredLabel: 'Highest-Scoring Issue Author',
+    githubId: top.githubId,
+    githubUsername: top.githubUsername,
+    name: top.githubUsername ?? top.githubId,
+    metrics: [
+      {
+        value: Math.round(parseNumber(top.issueTokenScore)).toLocaleString(),
+        unit: 'Score',
+      },
+    ],
+    repos: getTopContributorRepos(prs, top.githubId),
+  };
+};
+
+export const buildFeaturedDiscoveryContributors = (
+  prs: CommitLog[],
+  miners: MinerEvaluation[],
+): DashboardFeaturedContributor[] => {
+  const topDiscoveryMiner = pickTopDiscoveryMiner(prs, miners);
+  const mostSolvedIssuesMiner = pickMostSolvedIssuesMiner(prs, miners);
+  const highestIssueTokenScoreMiner = pickHighestIssueTokenScoreMiner(
+    prs,
+    miners,
+  );
+  const contributors: DashboardFeaturedContributor[] = [];
+
+  if (topDiscoveryMiner) contributors.push(topDiscoveryMiner);
+  if (mostSolvedIssuesMiner) contributors.push(mostSolvedIssuesMiner);
+  if (highestIssueTokenScoreMiner)
+    contributors.push(highestIssueTokenScoreMiner);
 
   return contributors;
 };

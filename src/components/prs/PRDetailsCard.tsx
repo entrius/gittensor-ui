@@ -5,14 +5,20 @@ import {
   Typography,
   CircularProgress,
   Avatar,
-  Grid,
   alpha,
   Tooltip,
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import ReactECharts from 'echarts-for-react';
 import { usePullRequestDetails } from '../../api';
-import { useNavigate } from 'react-router-dom';
-import theme, { RANK_COLORS, STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
+import theme, {
+  CHART_COLORS,
+  STATUS_COLORS,
+  TEXT_OPACITY,
+  tooltipSlotProps,
+} from '../../theme';
+import { parseNumber } from '../../utils';
 import { buildMultiplierGrid } from '../../utils/multiplierDefs';
 
 interface PRDetailsCardProps {
@@ -26,11 +32,14 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   pullRequestNumber,
   hideHeader = false,
 }) => {
-  const navigate = useNavigate();
   // Fetch detailed PR data directly
   const { data: prDetails, isLoading: isDetailsLoading } =
     usePullRequestDetails(repository, pullRequestNumber);
 
+  const repoLinkProps = useLinkBehavior<HTMLAnchorElement>(
+    `/miners/repository?name=${encodeURIComponent(repository)}`,
+    { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
+  );
   if (isDetailsLoading) {
     return (
       <Card
@@ -73,42 +82,112 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   }
 
   const [owner] = repository.split('/');
-
   const isOpenPR = prDetails.prState === 'OPEN';
-
-  // Score/Collateral is now shown in header, so only show other stats here
-  const statItems = [
-    {
-      label: 'Base Score',
-      value: parseFloat(prDetails.baseScore ?? '0').toFixed(2),
-      rank: null,
-      color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
-    },
+  const multipliers = buildMultiplierGrid(prDetails, isOpenPR);
+  const structuralScoreNum = parseNumber(prDetails.structuralScore);
+  const leafScoreNum = parseNumber(prDetails.leafScore);
+  const showTokenDonut = structuralScoreNum > 0 || leafScoreNum > 0;
+  const tokenScoreValue = parseNumber(prDetails.tokenScore);
+  const scoreSubValue = (raw: unknown, num: number) =>
+    raw != null ? `Score ${num.toFixed(2)}` : undefined;
+  type DetailItem = {
+    label: string;
+    value: string;
+    subValue?: string;
+    tooltip?: string;
+    additions?: number;
+    deletions?: number;
+    isMonospace?: boolean;
+  };
+  const detailItems: DetailItem[] = [
+    { label: 'Base Score', value: parseNumber(prDetails.baseScore).toFixed(2) },
     {
       label: 'Tokens Scored',
       value: (prDetails.totalNodesScored ?? 0).toLocaleString(),
-      rank: null,
+    },
+    { label: 'Token Score', value: tokenScoreValue.toFixed(2) },
+    {
+      label: 'Structural',
+      value: String(prDetails.structuralCount ?? '-'),
+      subValue: scoreSubValue(prDetails.structuralScore, structuralScoreNum),
+      tooltip:
+        'Functions, classes, and modules scored via AST analysis. Structural nodes carry more weight per node because they represent high-value code organization.',
     },
     {
-      label: 'Token Score',
-      value: parseFloat(prDetails.tokenScore ?? '0').toFixed(2),
-      rank: null,
+      label: 'Leaf',
+      value: String(prDetails.leafCount ?? '-'),
+      subValue: scoreSubValue(prDetails.leafScore, leafScoreNum),
+      tooltip:
+        'Individual statements and expressions scored via AST analysis. More leaf nodes means a larger diff, but structural nodes contribute more score per node.',
     },
     {
       label: 'Changes',
       value: '',
-      rank: null,
       additions: prDetails.additions,
       deletions: prDetails.deletions,
     },
-    {
-      label: 'Commits',
-      value: prDetails.commits,
-      rank: null,
-    },
+    { label: 'Commits', value: String(prDetails.commits ?? '-') },
+    ...(prDetails.hotkey
+      ? [{ label: 'Hotkey', value: prDetails.hotkey, isMonospace: true }]
+      : []),
   ];
-
-  const multipliers = buildMultiplierGrid(prDetails, isOpenPR);
+  const tokenDonutOption = showTokenDonut
+    ? {
+        backgroundColor: 'transparent',
+        title: {
+          text: tokenScoreValue.toFixed(2),
+          subtext: 'Token Score',
+          left: 'center',
+          top: '38%',
+          textStyle: {
+            color: theme.palette.text.primary,
+            fontSize: 24,
+            fontWeight: 'bold',
+          },
+          subtextStyle: {
+            color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+            fontSize: 11,
+            fontWeight: 500,
+          },
+        },
+        tooltip: {
+          trigger: 'item',
+          formatter: '{b}: {c} ({d}%)',
+          backgroundColor: alpha(theme.palette.common.black, 0.9),
+          borderColor: alpha(theme.palette.common.white, 0.15),
+          borderWidth: 1,
+          textStyle: { color: theme.palette.text.primary },
+        },
+        series: [
+          {
+            name: 'Token Composition',
+            type: 'pie',
+            radius: ['58%', '72%'],
+            avoidLabelOverlap: false,
+            itemStyle: {
+              borderRadius: 6,
+              borderColor: theme.palette.background.paper,
+              borderWidth: 3,
+            },
+            label: { show: false, position: 'center' },
+            emphasis: { label: { show: false }, scale: true, scaleSize: 5 },
+            labelLine: { show: false },
+            data: [
+              {
+                value: structuralScoreNum,
+                name: 'Structural',
+                itemStyle: { color: CHART_COLORS.merged },
+              },
+              {
+                value: leafScoreNum,
+                name: 'Leaf',
+                itemStyle: { color: CHART_COLORS.open },
+              },
+            ],
+          },
+        ],
+      }
+    : null;
 
   return (
     <Card
@@ -124,13 +203,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
       {!hideHeader && (
         <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box
-            onClick={() =>
-              navigate(
-                `/miners/repository?name=${encodeURIComponent(repository)}`,
-                { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
-              )
-            }
+            component="a"
+            {...repoLinkProps}
             sx={{
+              ...linkResetSx,
               cursor: 'pointer',
               transition: 'transform 0.2s',
               '&:hover': {
@@ -213,15 +289,10 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography
-                onClick={() =>
-                  navigate(
-                    `/miners/repository?name=${encodeURIComponent(repository)}`,
-                    {
-                      state: { backLabel: `Back to PR #${pullRequestNumber}` },
-                    },
-                  )
-                }
+                component="a"
+                {...repoLinkProps}
                 sx={{
+                  ...linkResetSx,
                   color: alpha(
                     theme.palette.common.white,
                     TEXT_OPACITY.tertiary,
@@ -242,28 +313,165 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
         </Box>
       )}
 
-      {/* Stats Grid */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        {statItems.map((item, index) => (
-          <Grid item xs={12} sm={6} md={4} lg={2.4} key={index}>
+      <Box
+        sx={{
+          border: `1px solid ${theme.palette.border.light}`,
+          borderRadius: 3,
+          p: { xs: 2, sm: 2.5 },
+          mb: 3,
+          backgroundColor: alpha(theme.palette.common.white, 0.015),
+        }}
+      >
+        <Typography
+          sx={{
+            color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
+            fontSize: '0.8rem',
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+            fontWeight: 600,
+            mb: 2,
+          }}
+        >
+          Score Story
+        </Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 1,
+            justifyContent: { md: 'center' },
+          }}
+        >
+          {multipliers.map((m, index) => {
+            const numeric = parseFloat(m.value);
+            const accent = isNaN(numeric)
+              ? theme.palette.text.tertiary
+              : numeric > 1
+                ? STATUS_COLORS.success
+                : numeric < 1
+                  ? STATUS_COLORS.warningOrange
+                  : theme.palette.text.tertiary;
+            const chip = (
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  px: 1.75,
+                  py: 1,
+                  borderRadius: 1.5,
+                  border: `1px solid ${alpha(accent, 0.35)}`,
+                  backgroundColor: alpha(accent, 0.1),
+                  cursor: m.isCredibility ? 'help' : 'default',
+                }}
+              >
+                <Typography
+                  sx={{
+                    color: alpha(
+                      theme.palette.common.white,
+                      TEXT_OPACITY.secondary,
+                    ),
+                    fontSize: '0.75rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    fontWeight: 600,
+                  }}
+                >
+                  {m.label}
+                </Typography>
+                <Typography
+                  sx={{
+                    color: accent,
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  {m.value}
+                </Typography>
+                {m.isCredibility && (
+                  <InfoOutlinedIcon
+                    sx={{ fontSize: '0.85rem', color: accent, opacity: 0.7 }}
+                  />
+                )}
+              </Box>
+            );
+            return m.isCredibility ? (
+              <Tooltip
+                key={index}
+                title={
+                  <Box sx={{ p: 0.5 }}>
+                    <Typography
+                      sx={{ fontSize: '0.75rem', fontWeight: 600, mb: 1 }}
+                    >
+                      Credibility Multiplier
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: '0.7rem',
+                        color: alpha(theme.palette.common.white, 0.9),
+                      }}
+                    >
+                      Based on your PR success rate, scaled to reward
+                      consistency.
+                    </Typography>
+                  </Box>
+                }
+                arrow
+                placement="top"
+                slotProps={tooltipSlotProps}
+              >
+                {chip}
+              </Tooltip>
+            ) : (
+              <React.Fragment key={index}>{chip}</React.Fragment>
+            );
+          })}
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            md: showTokenDonut ? 'minmax(0, 1fr) 220px' : '1fr',
+          },
+          gap: 2,
+          alignItems: 'start',
+        }}
+      >
+        <Box
+          sx={{
+            border: `1px solid ${theme.palette.border.light}`,
+            borderRadius: 3,
+            overflow: 'hidden',
+          }}
+        >
+          {detailItems.map((item, index, arr) => (
             <Box
+              key={index}
               sx={{
-                backgroundColor: 'transparent',
-                borderRadius: 3,
-                border: `1px solid ${theme.palette.border.light}`,
-                p: 2.5,
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: '180px 1fr' },
+                alignItems: 'center',
+                rowGap: 0.5,
+                columnGap: 2,
+                px: { xs: 2, sm: 2.5 },
+                py: 1.5,
+                borderBottom:
+                  index < arr.length - 1
+                    ? `1px solid ${theme.palette.border.subtle}`
+                    : undefined,
+                '&:hover': {
+                  backgroundColor: alpha(theme.palette.common.white, 0.02),
+                },
               }}
             >
               <Box
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 1,
-                  mb: 1,
+                  gap: 0.5,
                 }}
               >
                 <Typography
@@ -280,381 +488,108 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                 >
                   {item.label}
                 </Typography>
-                {item.rank && (
+                {item.tooltip && (
+                  <Tooltip
+                    title={item.tooltip}
+                    arrow
+                    slotProps={tooltipSlotProps}
+                  >
+                    <InfoOutlinedIcon
+                      sx={{ fontSize: '0.75rem', cursor: 'help', opacity: 0.5 }}
+                    />
+                  </Tooltip>
+                )}
+              </Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  flexWrap: 'wrap',
+                  gap: 1.5,
+                }}
+              >
+                {item.additions !== undefined &&
+                item.deletions !== undefined ? (
                   <Box
                     sx={{
-                      backgroundColor: 'background.default',
-                      borderRadius: '2px',
-                      width: '20px',
-                      height: '20px',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      border: '1px solid',
-                      borderColor:
-                        item.rank === 1
-                          ? alpha(RANK_COLORS.first, 0.4)
-                          : item.rank === 2
-                            ? alpha(RANK_COLORS.second, 0.4)
-                            : item.rank === 3
-                              ? alpha(RANK_COLORS.third, 0.4)
-                              : alpha(theme.palette.common.white, 0.15),
-                      boxShadow:
-                        item.rank === 1
-                          ? `0 0 12px ${alpha(RANK_COLORS.first, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.first, 0.2)}`
-                          : item.rank === 2
-                            ? `0 0 12px ${alpha(RANK_COLORS.second, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.second, 0.2)}`
-                            : item.rank === 3
-                              ? `0 0 12px ${alpha(RANK_COLORS.third, 0.4)}, 0 0 4px ${alpha(RANK_COLORS.third, 0.2)}`
-                              : 'none',
+                      gap: 0.75,
                     }}
                   >
                     <Typography
                       component="span"
                       sx={{
-                        color:
-                          item.rank === 1
-                            ? RANK_COLORS.first
-                            : item.rank === 2
-                              ? RANK_COLORS.second
-                              : item.rank === 3
-                                ? RANK_COLORS.third
-                                : alpha(theme.palette.common.white, 0.6),
-                        fontSize: '0.6rem',
+                        color: alpha(theme.palette.diff.additions, 0.9),
+                        fontSize: '1rem',
                         fontWeight: 600,
-                        lineHeight: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
                       }}
                     >
-                      {item.rank}
+                      +{item.additions}
+                    </Typography>
+                    <Typography
+                      component="span"
+                      sx={{
+                        color: alpha(
+                          theme.palette.common.white,
+                          TEXT_OPACITY.muted,
+                        ),
+                        fontSize: '1rem',
+                      }}
+                    >
+                      /
+                    </Typography>
+                    <Typography
+                      component="span"
+                      sx={{
+                        color: alpha(theme.palette.diff.deletions, 0.9),
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                      }}
+                    >
+                      -{item.deletions}
                     </Typography>
                   </Box>
-                )}
-              </Box>
-              {item.additions !== undefined && item.deletions !== undefined ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                ) : (
                   <Typography
-                    component="span"
                     sx={{
-                      color: alpha(theme.palette.diff.additions, 0.8),
-                      fontSize: '1.5rem',
+                      color: theme.palette.text.primary,
+                      fontSize: '1rem',
                       fontWeight: 600,
+                      fontFamily: item.isMonospace ? 'monospace' : undefined,
+                      wordBreak: 'break-all',
                     }}
                   >
-                    +{item.additions}
+                    {item.value}
                   </Typography>
+                )}
+                {item.subValue && (
                   <Typography
-                    component="span"
                     sx={{
                       color: alpha(
                         theme.palette.common.white,
-                        TEXT_OPACITY.muted,
+                        TEXT_OPACITY.tertiary,
                       ),
-                      fontSize: '1.5rem',
-                      fontWeight: 400,
+                      fontSize: '0.8rem',
+                      fontWeight: 500,
                     }}
                   >
-                    /
+                    {item.subValue}
                   </Typography>
-                  <Typography
-                    component="span"
-                    sx={{
-                      color: alpha(theme.palette.diff.deletions, 0.8),
-                      fontSize: '1.5rem',
-                      fontWeight: 600,
-                    }}
-                  >
-                    -{item.deletions}
-                  </Typography>
-                </Box>
-              ) : (
-                <Typography
-                  sx={{
-                    color: item.color || theme.palette.text.primary,
-                    fontSize: '1.5rem',
-                    fontWeight: 600,
-                    wordBreak: 'break-all',
-                  }}
-                >
-                  {item.value}
-                </Typography>
-              )}
-            </Box>
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* Multipliers Breakdown */}
-      <Box sx={{ mb: 3 }}>
-        <Typography
-          sx={{
-            color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
-            fontSize: '0.8rem',
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            fontWeight: 600,
-            mb: 2,
-          }}
-        >
-          {isOpenPR ? 'Collateral Multipliers' : 'Score Multipliers'}
-        </Typography>
-        <Grid container spacing={2}>
-          {multipliers.map((item, index) => {
-            const isCredibilityItem = item.isCredibility === true;
-
-            const content = (
-              <Box
-                sx={{
-                  backgroundColor: alpha(theme.palette.common.white, 0.03),
-                  borderRadius: 2,
-                  border: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
-                  p: 2,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  textAlign: 'center',
-                  cursor: isCredibilityItem ? 'help' : 'default',
-                }}
-              >
-                <Typography
-                  sx={{
-                    color: alpha(
-                      theme.palette.common.white,
-                      TEXT_OPACITY.tertiary,
-                    ),
-                    fontSize: '0.7rem',
-                    mb: 0.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                  }}
-                >
-                  {item.label}
-                  {isCredibilityItem && (
-                    <InfoOutlinedIcon sx={{ fontSize: '0.7rem' }} />
-                  )}
-                </Typography>
-                <Typography
-                  sx={{
-                    color: 'text.primary',
-                    fontSize: '1.1rem',
-                    fontWeight: 600,
-                  }}
-                >
-                  {item.value}
-                </Typography>
-              </Box>
-            );
-
-            return (
-              <Grid item xs={6} sm={4} md={2} key={index}>
-                {isCredibilityItem ? (
-                  <Tooltip
-                    title={
-                      <Box sx={{ p: 0.5 }}>
-                        <Typography
-                          sx={{ fontSize: '0.75rem', fontWeight: 600, mb: 1 }}
-                        >
-                          Credibility Multiplier
-                        </Typography>
-                        <Typography
-                          sx={{
-                            fontSize: '0.7rem',
-                            color: alpha(theme.palette.common.white, 0.9),
-                          }}
-                        >
-                          This multiplier is based on your PR success rate,
-                          scaled to reward consistency.
-                        </Typography>
-                      </Box>
-                    }
-                    arrow
-                    placement="top"
-                    slotProps={{
-                      tooltip: {
-                        sx: {
-                          backgroundColor: 'surface.tooltip',
-                          border: `1px solid ${alpha(theme.palette.common.white, 0.15)}`,
-                          borderRadius: '8px',
-                          maxWidth: 280,
-                        },
-                      },
-                      arrow: {
-                        sx: {
-                          color: 'surface.tooltip',
-                        },
-                      },
-                    }}
-                  >
-                    {content}
-                  </Tooltip>
-                ) : (
-                  content
                 )}
-              </Grid>
-            );
-          })}
-        </Grid>
-      </Box>
-
-      {/* Additional Info */}
-      <Grid container spacing={2}>
-        {/* Author */}
-        <Grid item xs={12} sm={6}>
-          <Box
-            sx={{
-              backgroundColor: 'transparent',
-              borderRadius: 3,
-              border: `1px solid ${theme.palette.border.light}`,
-              p: 2.5,
-              height: '100%',
-            }}
-          >
-            <Typography
-              sx={{
-                color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-                fontSize: '0.7rem',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                fontWeight: 600,
-                mb: 1.5,
-              }}
-            >
-              Author
-            </Typography>
-            <Box
-              onClick={() =>
-                navigate(`/miners/details?githubId=${prDetails.githubId}`, {
-                  state: { backLabel: `Back to PR #${pullRequestNumber}` },
-                })
-              }
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.5,
-                cursor: 'pointer',
-                '&:hover': {
-                  '& .MuiTypography-root': {
-                    color: 'primary.main',
-                    textDecoration: 'underline',
-                  },
-                },
-                transition: 'color 0.2s',
-              }}
-            >
-              <Avatar
-                src={`https://avatars.githubusercontent.com/${prDetails.authorLogin}`}
-                alt={prDetails.authorLogin}
-                sx={{ width: 32, height: 32 }}
-              />
-              <Typography
-                sx={{
-                  color: 'text.primary',
-                  fontSize: '0.95rem',
-                  fontWeight: 500,
-                  transition: 'color 0.2s',
-                }}
-              >
-                {prDetails.authorLogin}
-              </Typography>
+              </Box>
             </Box>
-          </Box>
-        </Grid>
-
-        {/* Merged Date */}
-        <Grid item xs={12} sm={6}>
+          ))}
+        </Box>
+        {showTokenDonut && tokenDonutOption && (
           <Box
             sx={{
-              backgroundColor: 'transparent',
-              borderRadius: 3,
               border: `1px solid ${theme.palette.border.light}`,
-              p: 2.5,
-              height: '100%',
-            }}
-          >
-            <Typography
-              sx={{
-                color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-                fontSize: '0.7rem',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                fontWeight: 600,
-                mb: 1.5,
-              }}
-            >
-              Merged
-            </Typography>
-            <Typography
-              sx={{
-                color: 'text.primary',
-                fontSize: '0.95rem',
-                fontWeight: 500,
-              }}
-            >
-              {prDetails.mergedAt
-                ? new Date(prDetails.mergedAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })
-                : 'Not Merged'}
-            </Typography>
-          </Box>
-        </Grid>
-
-        {/* Hotkey */}
-        {prDetails.hotkey && (
-          <Grid item xs={12}>
-            <Box
-              sx={{
-                backgroundColor: 'transparent',
-                borderRadius: 3,
-                border: `1px solid ${theme.palette.border.light}`,
-                p: 2.5,
-              }}
-            >
-              <Typography
-                sx={{
-                  color: alpha(
-                    theme.palette.common.white,
-                    TEXT_OPACITY.tertiary,
-                  ),
-                  fontSize: '0.7rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px',
-                  fontWeight: 600,
-                  mb: 1.5,
-                }}
-              >
-                Hotkey
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: '0.85rem',
-                  wordBreak: 'break-all',
-                }}
-              >
-                {prDetails.hotkey}
-              </Typography>
-            </Box>
-          </Grid>
-        )}
-
-        {/* GitHub Link */}
-        <Grid item xs={12}>
-          <Box
-            sx={{
-              backgroundColor: 'transparent',
               borderRadius: 3,
-              border: `1px solid ${theme.palette.border.light}`,
-              p: 2.5,
+              p: 2,
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'space-between',
             }}
           >
             <Typography
@@ -663,27 +598,66 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                   theme.palette.common.white,
                   TEXT_OPACITY.secondary,
                 ),
-                fontSize: '0.85rem',
+                fontSize: '0.7rem',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                fontWeight: 600,
+                mb: 1,
+                alignSelf: 'flex-start',
               }}
             >
-              View this pull request on GitHub
+              Token Composition
             </Typography>
-            <a
-              href={`https://github.com/${repository}/pull/${pullRequestNumber}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                color: STATUS_COLORS.info,
-                textDecoration: 'none',
-                fontSize: '0.85rem',
-                fontWeight: 500,
+            <Box sx={{ width: '100%', height: 160 }}>
+              <ReactECharts
+                option={tokenDonutOption}
+                style={{ height: '100%', width: '100%' }}
+                opts={{ renderer: 'svg' }}
+                notMerge
+              />
+            </Box>
+            <Box
+              sx={{
+                display: 'flex',
+                gap: 1.5,
+                mt: 1,
+                flexWrap: 'wrap',
+                justifyContent: 'center',
               }}
             >
-              Open →
-            </a>
+              {[
+                { label: 'Structural', color: CHART_COLORS.merged },
+                { label: 'Leaf', color: CHART_COLORS.open },
+              ].map(({ label, color }) => (
+                <Box
+                  key={label}
+                  sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                >
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      backgroundColor: color,
+                    }}
+                  />
+                  <Typography
+                    sx={{
+                      color: alpha(
+                        theme.palette.common.white,
+                        TEXT_OPACITY.tertiary,
+                      ),
+                      fontSize: '0.7rem',
+                    }}
+                  >
+                    {label}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
           </Box>
-        </Grid>
-      </Grid>
+        )}
+      </Box>
     </Card>
   );
 };

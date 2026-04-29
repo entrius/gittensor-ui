@@ -444,9 +444,7 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
                     lineHeight: 1.45,
                     wordBreak: 'break-word',
                   }}
-                >
-                  {insight.description}
-                </Typography>
+                />
               </Box>
             </Box>
           );
@@ -456,7 +454,7 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
       <Typography
         sx={{
           mt: 2,
-          textAlign: 'right',
+          textAlign: { xs: 'center', sm: 'right' },
           fontSize: '0.72rem',
           color: (t) => alpha(t.palette.text.primary, 0.35),
         }}

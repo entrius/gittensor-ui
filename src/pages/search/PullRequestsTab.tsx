@@ -2,9 +2,8 @@ import React from 'react';
 import { Box } from '@mui/material';
 import { type CommitLog } from '../../api/models/Dashboard';
 import { getGithubAvatarSrc } from '../../utils';
-import SearchResultsTable, {
-  type SearchResultsTableColumn,
-} from './SearchResultsTable';
+import { type DataTableColumn } from '../../components/common/DataTable';
+import SearchResultsCard from './SearchResultsCard';
 import {
   SearchAvatarContentCell,
   SearchTruncatedText,
@@ -23,7 +22,7 @@ const formatPrDateOrStatus = (pr: CommitLog) => {
   return 'Open';
 };
 
-const prColumns: SearchResultsTableColumn<CommitLog>[] = [
+const prColumns: DataTableColumn<CommitLog>[] = [
   {
     key: 'prNumber',
     header: 'PR #',
@@ -134,7 +133,8 @@ type PullRequestsTabProps = {
   isLoading: boolean;
   onPageChange: (newPage: number) => void;
   onRowsPerPageChange: (rowsPerPage: number) => void;
-  onSelectPr: (repository: string, pullRequestNumber: number) => void;
+  getPrHref: (pr: CommitLog) => string;
+  linkState?: Record<string, unknown>;
   page: number;
   paginatedPrResults: CommitLog[];
   prResults: CommitLog[];
@@ -147,14 +147,15 @@ const PullRequestsTab: React.FC<PullRequestsTabProps> = ({
   isLoading,
   onPageChange,
   onRowsPerPageChange,
-  onSelectPr,
+  getPrHref,
+  linkState,
   page,
   paginatedPrResults,
   prResults,
   rowsPerPage,
   rowsPerPageOptions,
 }) => (
-  <SearchResultsTable
+  <SearchResultsCard
     columns={prColumns}
     emptyLabel="No pull request matches."
     errorLabel="Failed to load pull requests for search."
@@ -163,9 +164,8 @@ const PullRequestsTab: React.FC<PullRequestsTabProps> = ({
     isLoading={isLoading}
     minWidth={960}
     onPageChange={onPageChange}
-    onRowClick={(pr: CommitLog) =>
-      onSelectPr(pr.repository, pr.pullRequestNumber)
-    }
+    getRowHref={getPrHref}
+    linkState={linkState}
     onRowsPerPageChange={onRowsPerPageChange}
     page={page}
     rows={paginatedPrResults}
