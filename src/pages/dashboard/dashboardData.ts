@@ -355,9 +355,10 @@ const getPrOverviewMetrics = (prs: CommitLog[], window: WindowBounds) => {
   };
 };
 
-// Issue discovery headline counts: per-miner aggregates (full discovery scope).
-// Deltas for preset ranges use {@link getPrOverviewMetrics} on issue-linked PRs
-// (see {@link isIssueDiscoveryContributionPr}) split by issue-eligibility track.
+// Issue discovery metrics are sourced from per-miner aggregates (which
+// reflect every discovered issue) rather than the /issues endpoint (which
+// only returns bounty-backed issues - far fewer). Aggregates are all-time
+// totals, so the Issue Discoveries card is not windowed by the range filter.
 const getIssueOverviewMetricsFromMiners = (miners: MinerEvaluation[]) => {
   let solved = 0;
   let closed = 0;
@@ -555,18 +556,12 @@ export const buildDashboardOverview = (
       {
         label: 'Total',
         value: display.total,
-        delta: getMetricDelta(
-          flowCurrent?.total ?? 0,
-          flowPrevious?.total,
-        ),
+        delta: getMetricDelta(flowCurrent?.total ?? 0, flowPrevious?.total),
       },
       {
         label: 'Solved',
         value: display.solved,
-        delta: getMetricDelta(
-          flowCurrent?.merged ?? 0,
-          flowPrevious?.merged,
-        ),
+        delta: getMetricDelta(flowCurrent?.merged ?? 0, flowPrevious?.merged),
       },
       {
         label: 'Open',
@@ -576,10 +571,7 @@ export const buildDashboardOverview = (
       {
         label: 'Closed',
         value: display.closed,
-        delta: getMetricDelta(
-          flowCurrent?.closed ?? 0,
-          flowPrevious?.closed,
-        ),
+        delta: getMetricDelta(flowCurrent?.closed ?? 0, flowPrevious?.closed),
       },
     ],
   });
