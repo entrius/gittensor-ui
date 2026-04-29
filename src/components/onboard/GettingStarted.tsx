@@ -449,8 +449,8 @@ export const GettingStarted: React.FC = () => {
           sx={{
             position: 'absolute',
             top: 24,
-            left: { xs: 0, md: 'calc(100% / 14)' },
-            width: { xs: '100%', md: 'calc(100% * 6 / 7)' },
+            left: '5%',
+            right: '5%',
             height: 2,
             background: (theme) =>
               `linear-gradient(90deg, ${theme.palette.border.subtle} 0%, ${theme.palette.border.medium} 50%, ${theme.palette.border.subtle} 100%)`,
