@@ -28,36 +28,6 @@ export type CommitsTrend = {
   linesCommitted: number | string; // API returns string, needs conversion
 };
 
-// Mirror API (snake_case) — kept as-is to avoid a transform layer.
-export type MinerIssue = {
-  repo_full_name: string;
-  issue_number: number;
-  title: string;
-  state: 'OPEN' | 'CLOSED' | string;
-  state_reason?: string | null;
-  author_github_id?: string | null;
-  author_login?: string | null;
-  created_at?: string | null;
-  closed_at?: string | null;
-  updated_at?: string | null;
-  is_transferred?: boolean;
-  solved_by_pr?: number | null;
-  solving_pr?: {
-    pr_number: number;
-    state?: string;
-    merged_at?: string | null;
-    repo_full_name?: string;
-  } | null;
-  labels?: Array<{ name: string }>;
-};
-
-export type MinerIssuesResponse = {
-  github_id: string;
-  since: string;
-  generated_at: string;
-  issues: MinerIssue[];
-};
-
 /**
  * Dashboard statistics
  *
