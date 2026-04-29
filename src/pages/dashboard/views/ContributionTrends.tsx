@@ -32,14 +32,16 @@ interface ContributionTrendsProps {
   onRangeChange: (range: TrendTimeRange) => void;
 }
 
-const TREND_SERIES_PRESENTATION: Record<
-  TrendSeriesKey,
-  {
-    label: string;
-    colorOpacity: number;
-    lineWidth: number;
-    lineOpacity: number;
-  }
+const TREND_SERIES_PRESENTATION: Partial<
+  Record<
+    TrendSeriesKey,
+    {
+      label: string;
+      colorOpacity: number;
+      lineWidth: number;
+      lineOpacity: number;
+    }
+  >
 > = {
   mergedPrs: {
     label: 'Merged PRs',
@@ -48,7 +50,7 @@ const TREND_SERIES_PRESENTATION: Record<
     lineOpacity: 1,
   },
   issuesResolved: {
-    label: 'Issues Resolved',
+    label: 'Bounties Completed',
     colorOpacity: 0.85,
     lineWidth: 2.5,
     lineOpacity: 0.9,
@@ -58,12 +60,6 @@ const TREND_SERIES_PRESENTATION: Record<
     colorOpacity: 0.35,
     lineWidth: 1.75,
     lineOpacity: 0.6,
-  },
-  issuesOpened: {
-    label: 'Issues Opened',
-    colorOpacity: 0.3,
-    lineWidth: 1.5,
-    lineOpacity: 0.5,
   },
 };
 
@@ -75,7 +71,7 @@ const getTrendSeriesBaseColor = (theme: Theme, seriesKey: TrendSeriesKey) =>
 const getTrendSeriesColor = (theme: Theme, seriesKey: TrendSeriesKey) =>
   alpha(
     getTrendSeriesBaseColor(theme, seriesKey),
-    TREND_SERIES_PRESENTATION[seriesKey].colorOpacity,
+    TREND_SERIES_PRESENTATION[seriesKey]?.colorOpacity ?? 1,
   );
 
 const ContributionTrends: React.FC<ContributionTrendsProps> = ({
@@ -88,9 +84,14 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
   const theme = useTheme();
   const [hiddenSeries, setHiddenSeries] = useState<TrendSeriesKey[]>([]);
 
+  const presentedSeries = useMemo(
+    () => series.filter((entry) => TREND_SERIES_PRESENTATION[entry.key]),
+    [series],
+  );
+
   const visibleSeries = useMemo(
-    () => series.filter((entry) => !hiddenSeries.includes(entry.key)),
-    [series, hiddenSeries],
+    () => presentedSeries.filter((entry) => !hiddenSeries.includes(entry.key)),
+    [presentedSeries, hiddenSeries],
   );
 
   const chartOption = useMemo(() => {
@@ -190,22 +191,25 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
         axisLine: { show: false },
         axisTick: { show: false },
       },
-      series: visibleSeries.map((series) => ({
-        name: TREND_SERIES_PRESENTATION[series.key].label,
-        type: 'line',
-        smooth: 0.2,
-        showSymbol: false,
-        symbol: 'circle',
-        data: series.values,
-        lineStyle: {
-          width: TREND_SERIES_PRESENTATION[series.key].lineWidth,
-          color: getTrendSeriesColor(theme, series.key),
-          opacity: TREND_SERIES_PRESENTATION[series.key].lineOpacity,
-        },
-        emphasis: {
-          focus: 'series',
-        },
-      })),
+      series: visibleSeries.map((series) => {
+        const presentation = TREND_SERIES_PRESENTATION[series.key]!;
+        return {
+          name: presentation.label,
+          type: 'line',
+          smooth: 0.2,
+          showSymbol: false,
+          symbol: 'circle',
+          data: series.values,
+          lineStyle: {
+            width: presentation.lineWidth,
+            color: getTrendSeriesColor(theme, series.key),
+            opacity: presentation.lineOpacity,
+          },
+          emphasis: {
+            focus: 'series',
+          },
+        };
+      }),
     };
   }, [labels, range, theme, visibleSeries]);
 
@@ -215,7 +219,7 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
         return current.filter((key) => key !== seriesKey);
       }
 
-      if (current.length >= series.length - 1) {
+      if (current.length >= presentedSeries.length - 1) {
         return current;
       }
 
@@ -309,9 +313,9 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
             flexWrap="wrap"
             sx={{ mb: 1.1 }}
           >
-            {series.map((entry) => {
+            {presentedSeries.map((entry) => {
               const isHidden = hiddenSeries.includes(entry.key);
-              const presentation = TREND_SERIES_PRESENTATION[entry.key];
+              const presentation = TREND_SERIES_PRESENTATION[entry.key]!;
               const seriesColor = getTrendSeriesColor(theme, entry.key);
 
               return (
