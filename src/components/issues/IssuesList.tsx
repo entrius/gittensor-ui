@@ -40,6 +40,7 @@ import {
 import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
+import { WatchlistButton } from '../common';
 import BountyProgress from './BountyProgress';
 import FilterButton from '../FilterButton';
 import { BountyCard } from './BountyCard';
@@ -66,13 +67,16 @@ type SortKey =
   | 'status'
   | 'funding'
   | 'solver'
-  | 'date';
+  | 'date'
+  | 'watch';
 
 interface IssuesListProps {
   issues: IssueBounty[];
   isLoading?: boolean;
   getIssueHref?: (id: number) => string;
   linkState?: Record<string, unknown>;
+  /** When true, filter/view state is local only and does not read/write URL (e.g. embedded on Watchlist). */
+  disableUrlSync?: boolean;
 }
 
 const truncateAddress = (address: string | null): string => {
@@ -150,15 +154,19 @@ const IssuesList: React.FC<IssuesListProps> = ({
   isLoading = false,
   getIssueHref,
   linkState,
+  disableUrlSync = false,
 }) => {
   const theme = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const filterType = useMemo<FilterType>(() => {
+  const filterFromUrl = useMemo<FilterType>(() => {
     const f = searchParams.get('filter');
     if (f === 'available' || f === 'pending' || f === 'history') return f;
     return 'all';
   }, [searchParams]);
+
+  const [embeddedFilter, setEmbeddedFilter] = useState<FilterType>('all');
+  const filterType = disableUrlSync ? embeddedFilter : filterFromUrl;
 
   const [storedViewMode, setStoredViewMode] = useState<IssuesViewMode>(
     readStoredIssuesViewMode,
@@ -166,10 +174,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const viewMode = useMemo(
     () =>
       getIssuesViewModeFromQuery(
-        searchParams.get(ISSUES_VIEW_QUERY_PARAM),
+        disableUrlSync ? null : searchParams.get(ISSUES_VIEW_QUERY_PARAM),
         storedViewMode,
       ),
-    [searchParams, storedViewMode],
+    [searchParams, storedViewMode, disableUrlSync],
   );
 
   const [sortKey, setSortKey] = useState<SortKey>('id');
@@ -185,6 +193,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
   const syncParams = useCallback(
     (overrides: { filter?: FilterType; view?: IssuesViewMode }) => {
+      if (disableUrlSync) return;
       const f = overrides.filter ?? filterType;
       const v = overrides.view ?? viewMode;
       const params: Record<string, string> = {};
@@ -192,12 +201,19 @@ const IssuesList: React.FC<IssuesListProps> = ({
       if (v === 'cards') params.view = 'cards';
       setSearchParams(params, { replace: true });
     },
-    [filterType, viewMode, setSearchParams],
+    [filterType, viewMode, setSearchParams, disableUrlSync],
   );
 
   const handleFilterChange = useCallback(
-    (f: FilterType) => syncParams({ filter: f }),
-    [syncParams],
+    (f: FilterType) => {
+      if (disableUrlSync) {
+        setEmbeddedFilter(f);
+        setPage(0);
+        return;
+      }
+      syncParams({ filter: f });
+    },
+    [disableUrlSync, syncParams],
   );
 
   const handleViewModeChange = useCallback(
@@ -209,9 +225,11 @@ const IssuesList: React.FC<IssuesListProps> = ({
         setRowsPerPage(nextRows);
         setPage(0);
       }
-      syncParams({ view: nextMode });
+      if (!disableUrlSync) {
+        syncParams({ view: nextMode });
+      }
     },
-    [rowsPerPage, syncParams],
+    [rowsPerPage, syncParams, disableUrlSync],
   );
 
   const counts = useMemo(
@@ -665,6 +683,21 @@ const IssuesList: React.FC<IssuesListProps> = ({
         ),
     };
 
+    const watchColumn: DataTableColumn<IssueBounty, SortKey> = {
+      key: 'watch',
+      header: '★',
+      width: '52px',
+      align: 'center',
+      cellSx: { p: 0 },
+      renderCell: (issue) => (
+        <WatchlistButton
+          category="bounties"
+          itemKey={String(issue.id)}
+          size="small"
+        />
+      ),
+    };
+
     const dateColumn: DataTableColumn<IssueBounty, SortKey> = {
       key: 'date',
       header: 'Date',
@@ -705,6 +738,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         bountyColumn('Target Bounty', '140px'),
         fundingColumn,
         statusColumn('110px'),
+        watchColumn,
       ];
     }
     if (filterType === 'history') {
@@ -720,6 +754,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         solverColumn,
         statusColumn('110px'),
         dateColumn,
+        watchColumn,
       ];
     }
     return [
@@ -728,6 +763,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
       issueColumn,
       bountyColumn('Bounty', '120px'),
       statusColumn('110px'),
+      watchColumn,
     ];
   }, [filterType, theme, taoPrice, alphaPrice]);
 
@@ -1022,10 +1058,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
           linkState={linkState}
           minWidth={
             filterType === 'history'
-              ? '1000px'
+              ? '1052px'
               : filterType === 'pending'
-                ? '900px'
-                : '750px'
+                ? '952px'
+                : '802px'
           }
           emptyState={emptyState}
           pagination={pagination}

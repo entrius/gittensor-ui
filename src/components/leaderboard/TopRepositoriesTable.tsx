@@ -103,6 +103,8 @@ interface TopRepositoriesTableProps {
   isLoading?: boolean;
   getRepositoryHref: (repositoryFullName: string) => string;
   linkState?: Record<string, unknown>;
+  /** When true, table state is local only and does not read/write URL params (e.g. embedded on Watchlist). */
+  disableUrlSync?: boolean;
 }
 
 const VALID_SORT_COLUMNS: SortColumn[] = [
@@ -132,21 +134,28 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   isLoading,
   getRepositoryHref,
   linkState,
+  disableUrlSync = false,
 }) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Read initial state from URL params, falling back to defaults
-  const urlRows = parseInt(searchParams.get('rows') || '0', 10);
-  const urlPage = parseInt(searchParams.get('page') || '0', 10);
-  const urlSort = searchParams.get('sort') as SortColumn;
-  const urlDir = searchParams.get('dir') as SortDirection;
-  const urlSearch = searchParams.get('search') || '';
-  const urlStatusFilter = searchParams.get('status') as
-    | 'all'
-    | 'active'
-    | 'inactive'
-    | null;
+  const urlRows = disableUrlSync
+    ? 0
+    : parseInt(searchParams.get('rows') || '0', 10);
+  const urlPage = disableUrlSync
+    ? 0
+    : parseInt(searchParams.get('page') || '0', 10);
+  const urlSort = (
+    disableUrlSync ? null : searchParams.get('sort')
+  ) as SortColumn;
+  const urlDir = (
+    disableUrlSync ? null : searchParams.get('dir')
+  ) as SortDirection;
+  const urlSearch = disableUrlSync ? '' : searchParams.get('search') || '';
+  const urlStatusFilter = (
+    disableUrlSync ? null : searchParams.get('status')
+  ) as 'all' | 'active' | 'inactive' | null;
 
   const [searchQuery, setSearchQuery] = useState(urlSearch);
   const [statusFilter, setStatusFilter] = useState<
@@ -183,10 +192,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const viewMode = useMemo(
     () =>
       getRepositoriesViewModeFromQuery(
-        searchParams.get(REPOSITORIES_VIEW_QUERY_PARAM),
+        disableUrlSync ? null : searchParams.get(REPOSITORIES_VIEW_QUERY_PARAM),
         storedViewMode,
       ),
-    [searchParams, storedViewMode],
+    [searchParams, storedViewMode, disableUrlSync],
   );
   const isInitialMount = useRef(true);
   const theme = useTheme();
@@ -219,6 +228,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   // Sync filter state to URL params (replace, don't push)
   const syncToUrl = useCallback(
     (overrides?: Record<string, string | undefined>) => {
+      if (disableUrlSync) return;
       const params: Record<string, string> = {};
       const rows = overrides?.rows ?? String(rowsPerPage);
       const pg = overrides?.page ?? String(page);
@@ -247,6 +257,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       statusFilter,
       viewMode,
       setSearchParams,
+      disableUrlSync,
     ],
   );
 

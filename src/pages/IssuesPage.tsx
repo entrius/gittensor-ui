@@ -1,11 +1,12 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Box, Stack, Typography, alpha } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { IssueStats, IssuesList } from '../components/issues';
-import { useIssuesStats, useIssues } from '../api';
+import { useIssuesStats } from '../api';
+import { useMergedAllIssues } from '../hooks/useMergedAllIssues';
 
 const ISSUE_LINK_STATE = { backLabel: 'Back to Bounties' } as const;
 const getIssueHref = (id: number) => `/bounties/details?id=${id}`;
@@ -26,35 +27,7 @@ const IssuesPage: React.FC = () => {
   }, [tabParam, navigate]);
 
   const statsQuery = useIssuesStats();
-  const activeIssuesQuery = useIssues('active');
-  const registeredIssuesQuery = useIssues('registered');
-  const historyIssuesQuery = useIssues('completed,cancelled');
-
-  const allIssues = useMemo(() => {
-    const seen = new Set<number>();
-    const result = [];
-    for (const issue of [
-      ...(activeIssuesQuery.data || []),
-      ...(registeredIssuesQuery.data || []),
-      ...(historyIssuesQuery.data || []),
-    ]) {
-      if (!seen.has(issue.id)) {
-        seen.add(issue.id);
-        result.push(issue);
-      }
-    }
-    return result;
-  }, [
-    activeIssuesQuery.data,
-    registeredIssuesQuery.data,
-    historyIssuesQuery.data,
-  ]);
-
-  // Show loading skeleton only while no data is available yet
-  const isLoading =
-    activeIssuesQuery.isLoading &&
-    registeredIssuesQuery.isLoading &&
-    historyIssuesQuery.isLoading;
+  const { issues: allIssues, isLoading } = useMergedAllIssues();
 
   return (
     <Page title="Issue Bounties">
