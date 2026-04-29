@@ -49,6 +49,15 @@ export interface RepoStats {
   weight: number;
   rank?: number;
   inactiveAt?: string | null;
+  /** Issue discovery track score (UI: "Issue score"; miner stats + merged multiplier PRs). */
+  discoveryScore: number;
+  /**
+   * Completed/solved discovery issues (pro-rated — excludes open-issue totals).
+   * Aligned with OSS row: merged PRs only.
+   */
+  discoveryIssues: number;
+  /** Identities with non-zero pro-rated discovery score/issues in this repo. */
+  discoveryContributors: Set<string>;
 }
 
 export type LeaderboardVariant = 'oss' | 'discoveries' | 'watchlist';
@@ -58,6 +67,7 @@ export type SortOption =
   | 'usdPerDay'
   | 'totalPRs'
   | 'totalIssues'
+  | 'issueDiscoveryScore'
   | 'credibility';
 
 export const FONTS = {

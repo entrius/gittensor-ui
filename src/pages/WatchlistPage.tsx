@@ -1,18 +1,46 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Box,
-  Typography,
-  Button,
   alpha,
-  Stack,
-  Dialog,
-  DialogTitle,
-  DialogActions,
-  Tab,
-  Tabs,
+  Avatar,
   Badge,
+  Box,
+  Button,
+  Card,
+  Chip,
+  Collapse,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogTitle,
+  FormControl,
+  FormControlLabel,
+  Grid,
+  IconButton,
+  InputAdornment,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
+  Switch,
+  Tab,
+  TablePagination,
+  Tabs,
+  TextField,
+  Tooltip,
+  Typography,
   useMediaQuery,
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
+import ViewListIcon from '@mui/icons-material/ViewList';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ReactECharts from 'echarts-for-react';
+import StarIcon from '@mui/icons-material/Star';
+import PersonIcon from '@mui/icons-material/Person';
+import FolderIcon from '@mui/icons-material/Folder';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
 import {
@@ -21,7 +49,13 @@ import {
   SEO,
   WatchlistButton,
 } from '../components';
+import { MinerComparisonRadar } from '../components/miners';
+import {
+  DataTable,
+  type DataTableColumn,
+} from '../components/common/DataTable';
 import { LinkBox } from '../components/common/linkBehavior';
+import type { CommitLog, Repository } from '../api/models/Dashboard';
 import { useAllMiners, useAllPrs, useReposAndWeights, useIssues } from '../api';
 import { mapAllMinersToStats } from '../utils/minerMapper';
 import {
@@ -30,10 +64,24 @@ import {
   serializePRKey,
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
-import { isMergedPr, isClosedUnmergedPr } from '../utils/prStatus';
+import { useWatchedPRs, type WatchedPRSource } from '../hooks/useWatchedPRs';
+import {
+  isMergedPr,
+  isClosedUnmergedPr,
+  getPrStatusCounts,
+} from '../utils/prStatus';
+import { filterPrs, type PrStatusFilter } from '../utils/prTable';
 import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatTokenAmount } from '../utils/format';
-import theme, { STATUS_COLORS, scrollbarSx } from '../theme';
+import theme, {
+  CHART_COLORS,
+  STATUS_COLORS,
+  TEXT_OPACITY,
+  UI_COLORS,
+  scrollbarSx,
+} from '../theme';
+import { getRepositoryOwnerAvatarBackground } from '../components/leaderboard/types';
+import FilterButton from '../components/FilterButton';
 
 const TAB_ORDER: readonly WatchlistCategory[] = [
   'miners',
@@ -79,7 +127,7 @@ const TAB_DISCOVERY: Record<
   prs: {
     label: 'repositories',
     path: '/repositories',
-    hint: 'Open a pull request and star it to monitor its scoring here.',
+    hint: 'Star a pull request, miner, or repository to populate this tab.',
   },
 };
 
@@ -87,6 +135,8 @@ const tabFromParam = (param: string | null): WatchlistCategory =>
   TAB_ORDER.includes(param as WatchlistCategory)
     ? (param as WatchlistCategory)
     : 'miners';
+
+const MAX_COMPARE = 4;
 
 const WatchlistPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -97,10 +147,16 @@ const WatchlistPage: React.FC = () => {
   const counts = useWatchlistCounts();
   const { ids, count, clear } = useWatchlist(activeTab);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
 
-  const isEmpty = count === 0;
+  const tabHasContent =
+    activeTab === 'prs'
+      ? counts.prs + counts.miners + counts.repos > 0
+      : count > 0;
+  const isEmpty = !tabHasContent;
   const noun = TAB_NOUN[activeTab];
   const discovery = TAB_DISCOVERY[activeTab];
+  const canCompare = activeTab === 'miners' && count >= 2;
 
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
   const showSidebarRight = !isEmpty && isLargeScreen;
@@ -124,6 +180,7 @@ const WatchlistPage: React.FC = () => {
   const handleClear = () => {
     clear();
     setConfirmOpen(false);
+    setCompareOpen(false);
   };
 
   const handleTabChange = (_event: React.SyntheticEvent, next: unknown) => {
@@ -189,21 +246,35 @@ const WatchlistPage: React.FC = () => {
             >
               Your watchlist — {count}{' '}
               {count === 1 ? `${noun.single} pinned` : `${noun.plural} pinned`}.
+              {activeTab === 'prs' &&
+                ' Also shows PRs from watched miners and repositories.'}{' '}
               Stored locally in this browser.
             </Typography>
-            {count > 0 && (
-              <Button
-                size="small"
-                onClick={() => setConfirmOpen(true)}
-                sx={{
-                  fontSize: '0.75rem',
-                  textTransform: 'none',
-                  color: 'text.secondary',
-                }}
-              >
-                Clear {noun.plural}
-              </Button>
-            )}
+            <Stack direction="row" spacing={1} alignItems="center">
+              {canCompare && (
+                <Button
+                  size="small"
+                  variant={compareOpen ? 'contained' : 'outlined'}
+                  onClick={() => setCompareOpen((v) => !v)}
+                  sx={{ fontSize: '0.75rem', textTransform: 'none' }}
+                >
+                  {compareOpen ? 'Hide comparison' : 'Compare'}
+                </Button>
+              )}
+              {count > 0 && (
+                <Button
+                  size="small"
+                  onClick={() => setConfirmOpen(true)}
+                  sx={{
+                    fontSize: '0.75rem',
+                    textTransform: 'none',
+                    color: 'text.secondary',
+                  }}
+                >
+                  Clear {noun.plural}
+                </Button>
+              )}
+            </Stack>
           </Stack>
 
           <Box sx={{ borderBottom: '1px solid', borderColor: 'border.light' }}>
@@ -212,17 +283,23 @@ const WatchlistPage: React.FC = () => {
               onChange={handleTabChange}
               variant="scrollable"
               scrollButtons="auto"
-              sx={{
-                minHeight: 40,
+              sx={(t) => ({
+                minHeight: 48,
                 '& .MuiTab-root': {
-                  minHeight: 40,
-                  fontSize: '0.83rem',
-                  fontWeight: 500,
+                  minHeight: 48,
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
                   textTransform: 'none',
-                  color: 'text.secondary',
-                  '&.Mui-selected': { color: 'primary.main' },
+                  color: t.palette.text.secondary,
+                  '&.Mui-selected': {
+                    color: t.palette.text.primary,
+                  },
                 },
-              }}
+                '& .MuiTabs-indicator': {
+                  backgroundColor: t.palette.text.primary,
+                  height: 2,
+                },
+              })}
             >
               {TAB_ORDER.map((cat) => (
                 <Tab
@@ -286,7 +363,7 @@ const WatchlistPage: React.FC = () => {
               </Button>
             </Box>
           ) : activeTab === 'miners' ? (
-            <MinersList itemKeys={ids} />
+            <MinersList itemKeys={ids} compareOpen={compareOpen} />
           ) : activeTab === 'repos' ? (
             <ReposList itemKeys={ids} />
           ) : activeTab === 'bounties' ? (
@@ -335,7 +412,7 @@ const WatchlistPage: React.FC = () => {
             mb: 3,
           }}
         >
-          Clear all {count} pinned {count === 1 ? noun.single : noun.plural}?
+          Clear all {count} pinned miner(s)?
         </DialogTitle>
         <DialogActions sx={{ p: 0 }}>
           <Button
@@ -463,24 +540,141 @@ const StatusPill: React.FC<StatusPillProps> = ({
   </Typography>
 );
 
-const MinersList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
+const MinersList: React.FC<{ itemKeys: string[]; compareOpen: boolean }> = ({
+  itemKeys,
+  compareOpen,
+}) => {
   const { data: allMinersStats, isLoading } = useAllMiners();
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const watchedSet = useMemo(() => new Set(itemKeys), [itemKeys]);
 
-  const minerStats = useMemo(() => {
-    const all = mapAllMinersToStats(allMinersStats ?? []);
-    return all
-      .filter((m) => watchedSet.has(m.githubId))
-      .map((m) => ({
-        ...m,
-        // Watchlist cards should be enabled if miner is eligible for either
-        // OSS contributions or Issue Discoveries.
-        isEligible: Boolean(m.ossIsEligible || m.discoveriesIsEligible),
-      }));
-  }, [allMinersStats, watchedSet]);
+  const allMinerStats = useMemo(
+    () => mapAllMinersToStats(allMinersStats ?? []),
+    [allMinersStats],
+  );
+
+  const minerStats = useMemo(
+    () =>
+      allMinerStats
+        .filter((m) => watchedSet.has(m.githubId))
+        .map((m) => ({
+          ...m,
+          // Watchlist cards should be enabled if miner is eligible for either
+          // OSS contributions or Issue Discoveries.
+          isEligible: Boolean(m.ossIsEligible || m.discoveriesIsEligible),
+        })),
+    [allMinerStats, watchedSet],
+  );
+
+  const needsPicker = minerStats.length > MAX_COMPARE;
+
+  const comparisonMiners = useMemo(() => {
+    if (!needsPicker) return minerStats;
+    const picked = selectedIds
+      .map((id) => minerStats.find((m) => m.githubId === id))
+      .filter((m): m is (typeof minerStats)[number] => Boolean(m));
+    if (picked.length === 0) return minerStats.slice(0, MAX_COMPARE);
+    return picked.slice(0, MAX_COMPARE);
+  }, [minerStats, selectedIds, needsPicker]);
+
+  const toggleSelected = (githubId: string) => {
+    setSelectedIds((prev) => {
+      const current =
+        prev.length > 0
+          ? prev
+          : minerStats.slice(0, MAX_COMPARE).map((m) => m.githubId);
+      if (current.includes(githubId)) {
+        return current.filter((id) => id !== githubId);
+      }
+      if (current.length >= MAX_COMPARE) return current;
+      return [...current, githubId];
+    });
+  };
+
+  const colorForMiner = (githubId: string) => {
+    const idx = comparisonMiners.findIndex((m) => m.githubId === githubId);
+    return idx >= 0
+      ? CHART_COLORS.series[idx % CHART_COLORS.series.length]
+      : null;
+  };
+
+  const showCompare = compareOpen && minerStats.length >= 2;
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box
+      sx={{
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: { xs: 2, sm: 1.5 },
+      }}
+    >
+      {showCompare && (
+        <Paper
+          variant="outlined"
+          sx={{
+            p: { xs: 2, sm: 2.5 },
+            backgroundColor: 'surface.subtle',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1.5,
+          }}
+        >
+          {needsPicker && (
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 0.75,
+                alignItems: 'center',
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: '0.75rem',
+                  color: (t) => alpha(t.palette.text.primary, 0.6),
+                  mr: 0.5,
+                }}
+              >
+                Pick up to {MAX_COMPARE}:
+              </Typography>
+              {minerStats.map((m) => {
+                const color = colorForMiner(m.githubId);
+                const active = Boolean(color);
+                return (
+                  <Chip
+                    key={m.githubId}
+                    label={m.author || m.githubId}
+                    size="small"
+                    clickable
+                    onClick={() => toggleSelected(m.githubId)}
+                    sx={{
+                      fontSize: '0.72rem',
+                      height: 24,
+                      borderRadius: 1.5,
+                      border: '1px solid',
+                      borderColor: active
+                        ? color!
+                        : (t) => alpha(t.palette.common.white, 0.15),
+                      backgroundColor: active ? `${color}22` : 'transparent',
+                      color: active ? color! : 'text.secondary',
+                      '&:hover': {
+                        backgroundColor: active
+                          ? `${color}33`
+                          : (t) => alpha(t.palette.common.white, 0.05),
+                      },
+                    }}
+                  />
+                );
+              })}
+            </Box>
+          )}
+          <MinerComparisonRadar
+            miners={comparisonMiners}
+            allMiners={allMinerStats}
+          />
+        </Paper>
+      )}
       <TopMinersTable
         miners={minerStats}
         isLoading={isLoading}
@@ -495,32 +689,1031 @@ const MinersList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   );
 };
 
-const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
-  const { data: repos } = useReposAndWeights();
-  const items = useMemo(() => {
-    if (!repos) return [];
-    const set = new Set(itemKeys.map((k) => k.toLowerCase()));
-    return repos.filter((r) => set.has(r.fullName.toLowerCase()));
-  }, [repos, itemKeys]);
+type WatchedRepoStats = Repository & {
+  totalScore: number;
+  totalPRs: number;
+  uniqueMiners: Set<string>;
+};
+
+const isRepoActive = (repo: Repository): boolean => !repo.inactiveAt;
+
+type RepoStatusFilter = 'all' | 'active' | 'inactive';
+
+type RepoSortKey =
+  | 'name'
+  | 'weight'
+  | 'status'
+  | 'totalScore'
+  | 'totalPRs'
+  | 'contributors';
+
+const repoCellSx = { py: 1.5 } as const;
+
+const repoStatusMeta = (repo: Repository) => {
+  const active = isRepoActive(repo);
+  return {
+    label: active ? 'ACTIVE' : 'INACTIVE',
+    color: active ? STATUS_COLORS.success : STATUS_COLORS.closed,
+  };
+};
+
+const getRepoHref = (repo: Repository) =>
+  `/miners/repository?name=${encodeURIComponent(repo.fullName)}`;
+
+const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
+  {
+    key: 'name',
+    header: 'Repository',
+    width: '32%',
+    sortKey: 'name',
+    cellSx: repoCellSx,
+    renderCell: (repo) => (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+        <Avatar
+          src={`https://avatars.githubusercontent.com/${repo.fullName.split('/')[0]}`}
+          sx={{
+            width: 20,
+            height: 20,
+            flexShrink: 0,
+            backgroundColor: getRepositoryOwnerAvatarBackground(
+              repo.fullName.split('/')[0] || '',
+            ),
+          }}
+        />
+        <Typography
+          sx={{
+            fontSize: '0.78rem',
+            fontWeight: 500,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {repo.fullName}
+        </Typography>
+      </Box>
+    ),
+  },
+  {
+    key: 'weight',
+    header: 'Weight',
+    width: '100px',
+    align: 'right',
+    sortKey: 'weight',
+    cellSx: repoCellSx,
+    renderCell: (repo) => (
+      <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+        {parseFloat(String(repo.weight)).toFixed(2)}
+      </Typography>
+    ),
+  },
+  {
+    key: 'totalScore',
+    header: 'Total Score',
+    width: '110px',
+    align: 'right',
+    sortKey: 'totalScore',
+    cellSx: repoCellSx,
+    renderCell: (repo) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color: repo.totalScore > 0 ? 'text.primary' : 'text.secondary',
+        }}
+      >
+        {formatRepoMetric(repo.totalScore, 2)}
+      </Typography>
+    ),
+  },
+  {
+    key: 'totalPRs',
+    header: 'PRs',
+    width: '70px',
+    align: 'right',
+    sortKey: 'totalPRs',
+    cellSx: repoCellSx,
+    renderCell: (repo) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color: repo.totalPRs > 0 ? 'text.primary' : 'text.secondary',
+        }}
+      >
+        {formatRepoMetric(repo.totalPRs)}
+      </Typography>
+    ),
+  },
+  {
+    key: 'contributors',
+    header: 'Contributors',
+    width: '110px',
+    align: 'right',
+    sortKey: 'contributors',
+    cellSx: repoCellSx,
+    renderCell: (repo) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color: repo.uniqueMiners.size > 0 ? 'text.primary' : 'text.secondary',
+        }}
+      >
+        {formatRepoMetric(repo.uniqueMiners.size)}
+      </Typography>
+    ),
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    width: '110px',
+    align: 'center',
+    sortKey: 'status',
+    cellSx: repoCellSx,
+    renderCell: (repo) => {
+      const { label, color } = repoStatusMeta(repo);
+      return (
+        <Chip
+          variant="status"
+          label={label}
+          sx={{ color, borderColor: color }}
+        />
+      );
+    },
+  },
+  {
+    key: 'watch',
+    header: '\u2605',
+    width: '52px',
+    align: 'center',
+    cellSx: { p: 0 },
+    renderCell: (repo) => (
+      <WatchlistButton category="repos" itemKey={repo.fullName} size="small" />
+    ),
+  },
+];
+
+type ReposViewMode = 'list' | 'cards';
+
+const ReposViewModeToggle: React.FC<{
+  viewMode: ReposViewMode;
+  onChange: (mode: ReposViewMode) => void;
+}> = ({ viewMode, onChange }) => {
+  const options: {
+    value: ReposViewMode;
+    label: string;
+    Icon: typeof ViewListIcon;
+  }[] = [
+    { value: 'list', label: 'List view', Icon: ViewListIcon },
+    { value: 'cards', label: 'Card view', Icon: ViewModuleIcon },
+  ];
 
   return (
-    <Stack spacing={0.5} sx={{ width: '100%' }}>
-      {items.map((repo) => (
-        <WatchedItemRow
-          key={repo.fullName}
-          href={`/miners/repository?name=${encodeURIComponent(repo.fullName)}`}
-          primary={repo.fullName}
-          actions={
-            <>
-              <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary' }}>
-                weight {parseFloat(String(repo.weight)).toFixed(2)}
-              </Typography>
-              <WatchlistButton category="repos" itemKey={repo.fullName} />
-            </>
-          }
+    <Box
+      sx={(theme) => ({
+        display: 'inline-flex',
+        alignItems: 'center',
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: theme.palette.border.light,
+        overflow: 'hidden',
+      })}
+      role="group"
+      aria-label="Toggle view mode"
+    >
+      {options.map(({ value, label, Icon }) => {
+        const isActive = viewMode === value;
+        return (
+          <Tooltip key={value} title={label} placement="top" arrow>
+            <IconButton
+              onClick={() => onChange(value)}
+              size="small"
+              aria-label={label}
+              aria-pressed={isActive}
+              sx={(theme) => ({
+                borderRadius: 0,
+                padding: '6px 10px',
+                color: isActive
+                  ? theme.palette.text.primary
+                  : theme.palette.text.tertiary,
+                backgroundColor: isActive
+                  ? theme.palette.surface.light
+                  : 'transparent',
+                '&:hover': {
+                  backgroundColor: theme.palette.surface.light,
+                  color: theme.palette.text.primary,
+                },
+              })}
+            >
+              <Icon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        );
+      })}
+    </Box>
+  );
+};
+
+const formatRepoMetric = (value: number, decimals = 0): string =>
+  value > 0 ? (decimals > 0 ? value.toFixed(decimals) : String(value)) : '-';
+
+const RepoMetricCell: React.FC<{ label: string; value: string }> = ({
+  label,
+  value,
+}) => (
+  <Box
+    sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      minWidth: 0,
+    }}
+  >
+    <Typography
+      sx={(theme) => ({
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: '0.65rem',
+        color: theme.palette.text.tertiary,
+        textTransform: 'uppercase',
+        letterSpacing: '0.04em',
+        whiteSpace: 'nowrap',
+      })}
+    >
+      {label}
+    </Typography>
+    <Typography
+      sx={{
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: '0.9rem',
+        fontWeight: 600,
+        color: value === '-' ? 'text.secondary' : 'text.primary',
+        lineHeight: 1.2,
+      }}
+    >
+      {value}
+    </Typography>
+  </Box>
+);
+
+const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
+  repo,
+  maxWeight,
+}) => {
+  const { label, color } = repoStatusMeta(repo);
+  const owner = repo.fullName.split('/')[0] || '';
+  const weight = parseFloat(String(repo.weight)) || 0;
+  const isInactive = !!repo.inactiveAt;
+  const weightPct =
+    maxWeight > 0 ? Math.max(0, Math.min(100, (weight / maxWeight) * 100)) : 0;
+
+  return (
+    <Card
+      elevation={0}
+      sx={(theme) => ({
+        p: 2,
+        height: '100%',
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: theme.palette.border.light,
+        backgroundColor: theme.palette.surface.transparent,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1.5,
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        opacity: isInactive ? 0.5 : 1,
+        '&:hover': {
+          backgroundColor: theme.palette.surface.light,
+          borderColor: theme.palette.border.medium,
+        },
+      })}
+    >
+      {/* Header: avatar + full name + status pill + star */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+        <Avatar
+          src={`https://avatars.githubusercontent.com/${owner}`}
+          alt={owner}
+          sx={(theme) => ({
+            width: 28,
+            height: 28,
+            flexShrink: 0,
+            border: '1px solid',
+            borderColor: theme.palette.border.medium,
+            backgroundColor: getRepositoryOwnerAvatarBackground(owner),
+          })}
         />
-      ))}
-    </Stack>
+        <LinkBox
+          href={getRepoHref(repo)}
+          linkState={{ backLabel: 'Back to Watchlist' }}
+          sx={{ flex: 1, minWidth: 0, display: 'block' }}
+        >
+          <Tooltip title={repo.fullName} placement="top" arrow>
+            <Typography
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.85rem',
+                fontWeight: 500,
+                color: 'text.primary',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {repo.fullName}
+            </Typography>
+          </Tooltip>
+        </LinkBox>
+        <Typography
+          component="span"
+          sx={(theme) => ({
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.65rem',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+            px: 0.75,
+            py: 0.25,
+            borderRadius: '4px',
+            flexShrink: 0,
+            color,
+            backgroundColor: alpha(
+              isInactive
+                ? theme.palette.status.closed
+                : theme.palette.status.success,
+              0.12,
+            ),
+          })}
+        >
+          {label === 'ACTIVE' ? 'Active' : 'Inactive'}
+        </Typography>
+        <WatchlistButton
+          category="repos"
+          itemKey={repo.fullName}
+          size="small"
+        />
+      </Box>
+
+      {/* Weight + progress bar */}
+      <Box>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: 0.5,
+          }}
+        >
+          <Typography
+            sx={(theme) => ({
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.65rem',
+              color: theme.palette.text.tertiary,
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            })}
+          >
+            Weight
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              color: 'text.primary',
+            }}
+          >
+            {weight.toFixed(2)}
+          </Typography>
+        </Box>
+        <Box
+          aria-hidden="true"
+          sx={(theme) => ({
+            position: 'relative',
+            height: 4,
+            borderRadius: 2,
+            backgroundColor: alpha(theme.palette.text.primary, 0.08),
+            overflow: 'hidden',
+          })}
+        >
+          <Box
+            sx={(theme) => ({
+              position: 'absolute',
+              inset: 0,
+              width: `${weightPct}%`,
+              backgroundColor: theme.palette.primary.main,
+              borderRadius: 2,
+              transition: 'width 0.3s ease',
+            })}
+          />
+        </Box>
+      </Box>
+
+      {/* Metrics grid */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: '1.4fr 0.6fr 1fr',
+          gap: 1.5,
+          pt: 0.5,
+        }}
+      >
+        <RepoMetricCell
+          label="Total Score"
+          value={formatRepoMetric(repo.totalScore, 2)}
+        />
+        <RepoMetricCell label="PRs" value={formatRepoMetric(repo.totalPRs)} />
+        <RepoMetricCell
+          label="Contributors"
+          value={formatRepoMetric(repo.uniqueMiners.size)}
+        />
+      </Box>
+    </Card>
+  );
+};
+
+const REPO_ROWS_OPTIONS = [10, 25, 50] as const;
+
+const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
+  const { data: repos } = useReposAndWeights();
+  const { data: allPrs } = useAllPrs();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<RepoStatusFilter>('all');
+  const [viewMode, setViewMode] = useState<ReposViewMode>('list');
+  const [showChart, setShowChart] = useState(false);
+  const [useLogScale, setUseLogScale] = useState(false);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [page, setPage] = useState(0);
+  const [sortField, setSortField] = useState<RepoSortKey>('weight');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (field: RepoSortKey) => {
+    if (sortField === field) {
+      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder(field === 'name' ? 'asc' : 'desc');
+    }
+    setPage(0);
+  };
+
+  const items = useMemo<WatchedRepoStats[]>(() => {
+    if (!repos) return [];
+    const set = new Set(itemKeys.map((k) => k.toLowerCase()));
+
+    const prStatsMap = new Map<
+      string,
+      { totalScore: number; totalPRs: number; uniqueMiners: Set<string> }
+    >();
+    if (allPrs) {
+      allPrs.forEach((pr: CommitLog) => {
+        if (!pr?.repository) return;
+        if (!pr.mergedAt) return;
+        const key = pr.repository.toLowerCase();
+        const cur = prStatsMap.get(key) || {
+          totalScore: 0,
+          totalPRs: 0,
+          uniqueMiners: new Set<string>(),
+        };
+        cur.totalScore += parseFloat(pr.score || '0');
+        cur.totalPRs += 1;
+        if (pr.author) cur.uniqueMiners.add(pr.author);
+        prStatsMap.set(key, cur);
+      });
+    }
+
+    return repos
+      .filter((r) => set.has(r.fullName.toLowerCase()))
+      .map((r) => {
+        const s = prStatsMap.get(r.fullName.toLowerCase());
+        return {
+          ...r,
+          totalScore: s?.totalScore || 0,
+          totalPRs: s?.totalPRs || 0,
+          uniqueMiners: s?.uniqueMiners || new Set<string>(),
+        };
+      });
+  }, [repos, allPrs, itemKeys]);
+
+  const counts = useMemo(
+    () => ({
+      all: items.length,
+      active: items.filter(isRepoActive).length,
+      inactive: items.filter((r) => !isRepoActive(r)).length,
+    }),
+    [items],
+  );
+
+  const filtered = useMemo(() => {
+    let result = items;
+    if (statusFilter === 'active') result = result.filter(isRepoActive);
+    else if (statusFilter === 'inactive')
+      result = result.filter((r) => !isRepoActive(r));
+
+    const q = searchQuery.trim().toLowerCase();
+    if (q) result = result.filter((r) => r.fullName.toLowerCase().includes(q));
+
+    setPage(0);
+    return result;
+  }, [items, statusFilter, searchQuery]);
+
+  const sorted = useMemo(() => {
+    const dir = sortOrder === 'asc' ? 1 : -1;
+    const cmpStr = (a = '', b = '') => a.localeCompare(b) * dir;
+    const cmpNum = (a = 0, b = 0) => (a - b) * dir;
+    return [...filtered].sort((a, b) => {
+      switch (sortField) {
+        case 'name':
+          return cmpStr(a.fullName, b.fullName);
+        case 'weight':
+          return cmpNum(
+            parseFloat(String(a.weight)),
+            parseFloat(String(b.weight)),
+          );
+        case 'status':
+          return cmpNum(isRepoActive(a) ? 1 : 0, isRepoActive(b) ? 1 : 0);
+        case 'totalScore':
+          return cmpNum(a.totalScore, b.totalScore);
+        case 'totalPRs':
+          return cmpNum(a.totalPRs, b.totalPRs);
+        case 'contributors':
+          return cmpNum(a.uniqueMiners.size, b.uniqueMiners.size);
+        default:
+          return 0;
+      }
+    });
+  }, [filtered, sortField, sortOrder]);
+
+  const paged = useMemo(
+    () => sorted.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
+    [sorted, page, rowsPerPage],
+  );
+
+  const maxWeight = useMemo(
+    () =>
+      items.reduce((m, r) => Math.max(m, parseFloat(String(r.weight)) || 0), 0),
+    [items],
+  );
+
+  const chartOption = useMemo(() => {
+    const white = UI_COLORS.white;
+    const borderSubtle = alpha(white, 0.08);
+    const textColor = alpha(white, 0.85);
+    const gridColor = borderSubtle;
+    const tooltipLabelColor = alpha(white, TEXT_OPACITY.secondary);
+    const primaryColor = UI_COLORS.white;
+
+    const chartData = paged.map((repo) => ({
+      name: repo.fullName.split('/')[1] || repo.fullName,
+      repository: repo.fullName,
+      value: parseFloat(String(repo.weight)) || 0,
+    }));
+
+    const barGradient = {
+      type: 'linear' as const,
+      x: 0,
+      y: 0,
+      x2: 0,
+      y2: 1,
+      colorStops: [
+        { offset: 0, color: alpha(CHART_COLORS.open, 0.8) },
+        { offset: 0.5, color: alpha(CHART_COLORS.open, 0.6) },
+        { offset: 1, color: alpha(CHART_COLORS.open, 0.4) },
+      ],
+    };
+
+    const seriesData = chartData.map((item) => ({
+      value: item.value,
+      repository: item.repository,
+      itemStyle: {
+        color: barGradient,
+        borderRadius: [6, 6, 0, 0],
+        shadowColor: alpha(CHART_COLORS.open, 0.2),
+        shadowBlur: 12,
+      },
+    }));
+
+    return {
+      backgroundColor: 'transparent',
+      title: {
+        text: 'Repository Weights',
+        subtext: 'Values match the current sort and page',
+        left: 'center',
+        top: 20,
+        textStyle: { color: primaryColor, fontSize: 18, fontWeight: 600 },
+        subtextStyle: {
+          color: alpha(white, TEXT_OPACITY.tertiary),
+          fontSize: 12,
+        },
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow',
+          shadowStyle: { color: borderSubtle },
+        },
+        backgroundColor: UI_COLORS.surfaceTooltip,
+        borderColor: alpha(white, 0.15),
+        borderWidth: 1,
+        textStyle: { color: primaryColor, fontSize: 12 },
+        padding: [12, 16],
+        formatter: (params: unknown) => {
+          if (!Array.isArray(params)) return '';
+          const data = params[0] as { dataIndex: number };
+          const item = seriesData[data.dataIndex];
+          return `
+            <div style="font-family: 'JetBrains Mono', monospace;">
+              <div style="font-weight: 600; margin-bottom: 8px; font-size: 13px;">
+                ${item.repository}
+              </div>
+              <div style="color: ${tooltipLabelColor};">Weight: <span style="color: ${primaryColor}; font-weight: 600;">${item.value.toFixed(2)}</span></div>
+            </div>
+          `;
+        },
+      },
+      grid: {
+        left: '3%',
+        right: '3%',
+        bottom: '18%',
+        top: '18%',
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: chartData.map((item) => item.name),
+        axisLabel: {
+          color: textColor,
+          fontSize: 11,
+          interval: 0,
+          rotate: 45,
+          margin: 12,
+          formatter: (label: string) =>
+            label.length > 15 ? `${label.substring(0, 12)}...` : label,
+        },
+        axisLine: { lineStyle: { color: gridColor, width: 1 } },
+        axisTick: { show: false },
+      },
+      yAxis: {
+        type: useLogScale ? 'log' : 'value',
+        min: useLogScale ? 0.01 : 0,
+        logBase: 10,
+        name: 'Weight',
+        nameTextStyle: { color: textColor, fontSize: 12 },
+        axisLabel: {
+          color: textColor,
+          fontSize: 11,
+          formatter: (value: number) => value.toFixed(2),
+        },
+        splitLine: {
+          lineStyle: { color: gridColor, type: 'dashed', opacity: 0.5 },
+        },
+        axisLine: { show: false },
+        axisTick: { show: false },
+      },
+      series: [
+        {
+          data: seriesData,
+          type: 'bar',
+          barWidth: '60%',
+        },
+      ],
+    };
+  }, [paged, useLogScale]);
+
+  return (
+    <Card
+      elevation={0}
+      sx={{
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'border.light',
+        backgroundColor: 'transparent',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Toolbar */}
+      <Box
+        sx={{
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          borderBottom: '1px solid',
+          borderColor: 'border.light',
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+          <FilterButton
+            label="All"
+            count={counts.all}
+            color={STATUS_COLORS.neutral}
+            isActive={statusFilter === 'all'}
+            onClick={() => setStatusFilter('all')}
+          />
+          <FilterButton
+            label="Active"
+            count={counts.active}
+            color={STATUS_COLORS.success}
+            isActive={statusFilter === 'active'}
+            onClick={() => setStatusFilter('active')}
+          />
+          <FilterButton
+            label="Inactive"
+            count={counts.inactive}
+            color={STATUS_COLORS.closed}
+            isActive={statusFilter === 'inactive'}
+            onClick={() => setStatusFilter('inactive')}
+          />
+        </Box>
+        <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+          <IconButton
+            onClick={() => setShowChart((v) => !v)}
+            size="small"
+            sx={{
+              color: showChart ? 'text.primary' : 'text.tertiary',
+              border: '1px solid',
+              borderColor: 'border.light',
+              borderRadius: 2,
+              padding: '6px',
+              '&:hover': {
+                backgroundColor: 'surface.light',
+                borderColor: 'border.medium',
+              },
+            }}
+          >
+            {showChart ? (
+              <TableChartIcon fontSize="small" />
+            ) : (
+              <BarChartIcon fontSize="small" />
+            )}
+          </IconButton>
+        </Tooltip>
+        {showChart && (
+          <FormControlLabel
+            control={
+              <Switch
+                checked={useLogScale}
+                onChange={(e) => setUseLogScale(e.target.checked)}
+                size="small"
+                sx={{
+                  '& .MuiSwitch-switchBase.Mui-checked': {
+                    color: 'primary.main',
+                  },
+                  '& .MuiSwitch-track': { backgroundColor: 'border.medium' },
+                }}
+              />
+            }
+            label={
+              <Typography
+                variant="body2"
+                sx={{ fontSize: '0.8rem', color: 'text.secondary' }}
+              >
+                Log Scale
+              </Typography>
+            }
+          />
+        )}
+        <FormControl size="small">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              variant="body2"
+              sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
+            >
+              Rows:
+            </Typography>
+            <Select
+              value={rowsPerPage}
+              onChange={(e) => {
+                setRowsPerPage(e.target.value as number);
+                setPage(0);
+              }}
+              sx={{
+                color: 'text.primary',
+                backgroundColor: 'background.default',
+                fontSize: '0.8rem',
+                height: '36px',
+                borderRadius: 2,
+                minWidth: '80px',
+                '& fieldset': { borderColor: 'border.light' },
+                '&:hover fieldset': { borderColor: 'border.medium' },
+                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                '& .MuiSelect-select': { py: 0.75 },
+              }}
+            >
+              {REPO_ROWS_OPTIONS.map((n) => (
+                <MenuItem key={n} value={n}>
+                  {n}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+        </FormControl>
+        <TextField
+          placeholder="Search repositories..."
+          size="small"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            width: '220px',
+            '& .MuiOutlinedInput-root': {
+              color: 'text.primary',
+              fontFamily: '"JetBrains Mono", monospace',
+              backgroundColor: 'background.default',
+              fontSize: '0.8rem',
+              height: '36px',
+              borderRadius: 2,
+              '& fieldset': { borderColor: 'border.light' },
+              '&:hover fieldset': { borderColor: 'border.medium' },
+              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+            },
+          }}
+        />
+        <Box sx={{ ml: 'auto' }}>
+          <ReposViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+        </Box>
+      </Box>
+
+      {viewMode === 'cards' && (
+        <Box
+          sx={{
+            px: 2,
+            pb: 2,
+            pt: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: 1,
+            borderBottom: '1px solid',
+            borderColor: 'border.light',
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
+          >
+            Sort:
+          </Typography>
+          <Select
+            size="small"
+            value={sortField}
+            onChange={(e) => {
+              const next = e.target.value as RepoSortKey;
+              setSortField(next);
+              setSortOrder(next === 'name' ? 'asc' : 'desc');
+              setPage(0);
+            }}
+            sx={{
+              color: 'text.primary',
+              backgroundColor: 'background.default',
+              fontSize: '0.8rem',
+              height: '36px',
+              borderRadius: 2,
+              minWidth: '140px',
+              '& fieldset': { borderColor: 'border.light' },
+              '&:hover fieldset': { borderColor: 'border.medium' },
+              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+              '& .MuiSelect-select': { py: 0.75 },
+            }}
+          >
+            <MenuItem value="weight">Weight</MenuItem>
+            <MenuItem value="totalScore">Total Score</MenuItem>
+            <MenuItem value="totalPRs">PRs</MenuItem>
+            <MenuItem value="contributors">Contributors</MenuItem>
+            <MenuItem value="name">Repository</MenuItem>
+            <MenuItem value="status">Status</MenuItem>
+          </Select>
+          <Tooltip title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}>
+            <IconButton
+              onClick={() => {
+                setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+                setPage(0);
+              }}
+              size="small"
+              aria-label={
+                sortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'
+              }
+              sx={{
+                color: 'text.primary',
+                border: '1px solid',
+                borderColor: 'border.light',
+                borderRadius: 2,
+                padding: '6px',
+                '&:hover': {
+                  backgroundColor: 'surface.light',
+                  borderColor: 'border.medium',
+                },
+              }}
+            >
+              {sortOrder === 'asc' ? (
+                <ArrowUpwardIcon fontSize="small" />
+              ) : (
+                <ArrowDownwardIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
+        </Box>
+      )}
+
+      <Collapse in={showChart}>
+        <Box
+          sx={{
+            p: 2,
+            borderBottom: '1px solid',
+            borderColor: 'border.light',
+            height: '500px',
+            backgroundColor: 'surface.subtle',
+          }}
+        >
+          {showChart && paged.length > 0 && (
+            <ReactECharts
+              option={chartOption}
+              style={{ height: '100%', width: '100%' }}
+              notMerge
+            />
+          )}
+        </Box>
+      </Collapse>
+
+      {/* Content */}
+      {viewMode === 'list' ? (
+        <DataTable<WatchedRepoStats, RepoSortKey>
+          columns={repoColumns}
+          rows={paged}
+          getRowKey={(repo) => repo.fullName}
+          getRowHref={getRepoHref}
+          linkState={{ backLabel: 'Back to Watchlist' }}
+          minWidth="900px"
+          stickyHeader
+          emptyLabel="No watched repositories found."
+          sort={{
+            field: sortField,
+            order: sortOrder,
+            onChange: handleSort,
+          }}
+        />
+      ) : (
+        <Box
+          sx={{
+            p: 2,
+            overflowY: 'auto',
+            ...scrollbarSx,
+          }}
+        >
+          {paged.length === 0 ? (
+            <Typography
+              sx={{
+                color: 'text.secondary',
+                textAlign: 'center',
+                py: 4,
+                fontSize: '0.85rem',
+              }}
+            >
+              No watched repositories found.
+            </Typography>
+          ) : (
+            <Grid container spacing={2} alignItems="stretch">
+              {paged.map((repo) => (
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  key={repo.fullName}
+                  sx={{ display: 'flex' }}
+                >
+                  <Box sx={{ width: '100%' }}>
+                    <RepoCard repo={repo} maxWeight={maxWeight} />
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+      )}
+      <TablePagination
+        rowsPerPageOptions={[]}
+        component="div"
+        count={filtered.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={(_e, newPage) => setPage(newPage)}
+        onRowsPerPageChange={() => {}}
+        showFirstButton
+        showLastButton
+        sx={{
+          borderTop: '1px solid',
+          borderColor: 'border.light',
+          color: 'text.secondary',
+        }}
+      />
+    </Card>
   );
 };
 
@@ -571,53 +1764,753 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   );
 };
 
-const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
-  const { data: allPrs } = useAllPrs();
-  const items = useMemo(() => {
-    if (!allPrs) return [];
-    const set = new Set(itemKeys);
-    return allPrs.filter((pr) =>
-      set.has(serializePRKey(pr.repository, pr.pullRequestNumber)),
-    );
-  }, [allPrs, itemKeys]);
+const prStatusMeta = (pr: CommitLog) => {
+  const merged = isMergedPr(pr);
+  const closed = isClosedUnmergedPr(pr);
+  const label = merged ? 'MERGED' : closed ? 'CLOSED' : 'OPEN';
+  const color = merged
+    ? STATUS_COLORS.merged
+    : closed
+      ? STATUS_COLORS.closed
+      : STATUS_COLORS.open;
+  return { label, color };
+};
 
+type PrSortKey = 'pr' | 'title' | 'repo' | 'author' | 'score';
+
+const prCellSx = { py: 1.5 } as const;
+
+const SOURCE_META: Record<
+  WatchedPRSource,
+  { label: string; tooltip: string; Icon: typeof StarIcon; color: string }
+> = {
+  starred: {
+    label: 'Starred',
+    tooltip: 'You starred this pull request',
+    Icon: StarIcon,
+    color: '#facc15',
+  },
+  miner: {
+    label: 'Miner',
+    tooltip: 'From a watched miner',
+    Icon: PersonIcon,
+    color: '#60a5fa',
+  },
+  repo: {
+    label: 'Repo',
+    tooltip: 'From a watched repository',
+    Icon: FolderIcon,
+    color: '#a78bfa',
+  },
+};
+
+const SOURCE_RENDER_ORDER: WatchedPRSource[] = ['starred', 'miner', 'repo'];
+
+const WatchedSourceBadges: React.FC<{ sources: WatchedPRSource[] }> = ({
+  sources,
+}) => {
+  if (sources.length === 0) return null;
+  const present = new Set(sources);
   return (
-    <Stack spacing={0.5} sx={{ width: '100%' }}>
-      {items.map((pr) => {
-        const key = serializePRKey(pr.repository, pr.pullRequestNumber);
-        const merged = isMergedPr(pr);
-        const closed = isClosedUnmergedPr(pr);
-        const statusLabel = merged ? 'Merged' : closed ? 'Closed' : 'Open';
-        const statusColor = merged
-          ? STATUS_COLORS.merged
-          : closed
-            ? STATUS_COLORS.closed
-            : STATUS_COLORS.open;
+    <Stack
+      direction="row"
+      spacing={0.5}
+      alignItems="center"
+      role="list"
+      aria-label="Reasons this PR is in your watchlist"
+    >
+      {SOURCE_RENDER_ORDER.filter((s) => present.has(s)).map((s) => {
+        const { label, tooltip, Icon, color } = SOURCE_META[s];
         return (
-          <WatchedItemRow
-            key={key}
-            href={`/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`}
-            primary={`#${pr.pullRequestNumber} ${pr.pullRequestTitle}`}
-            secondary={`${pr.repository} · ${pr.author}`}
-            actions={
-              <>
-                <StatusPill
-                  label={statusLabel}
-                  color={statusColor}
-                  background={alpha(statusColor, 0.12)}
-                />
-                <Typography
-                  sx={{ fontSize: '0.75rem', color: 'text.secondary' }}
-                >
-                  {parseFloat(pr.score || '0').toFixed(2)}
-                </Typography>
-                <WatchlistButton category="prs" itemKey={key} />
-              </>
-            }
-          />
+          <Tooltip key={s} title={tooltip} placement="top" arrow>
+            <Box
+              role="listitem"
+              aria-label={label}
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 22,
+                height: 22,
+                borderRadius: 1,
+                backgroundColor: alpha(color, 0.14),
+                border: '1px solid',
+                borderColor: alpha(color, 0.35),
+                color,
+              }}
+            >
+              <Icon sx={{ fontSize: '0.85rem' }} />
+            </Box>
+          </Tooltip>
         );
       })}
     </Stack>
+  );
+};
+
+const buildPrColumns = (
+  sourcesByKey: Map<string, WatchedPRSource[]>,
+): DataTableColumn<CommitLog, PrSortKey>[] => [
+  {
+    key: 'pr',
+    header: 'PR',
+    width: '70px',
+    sortKey: 'pr',
+    cellSx: prCellSx,
+    renderCell: (pr) => (
+      <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+        #{pr.pullRequestNumber}
+      </Typography>
+    ),
+  },
+  {
+    key: 'title',
+    header: 'Title',
+    width: '30%',
+    sortKey: 'title',
+    cellSx: prCellSx,
+    renderCell: (pr) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 500,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {pr.pullRequestTitle}
+      </Typography>
+    ),
+  },
+  {
+    key: 'repo',
+    header: 'Repository',
+    width: '20%',
+    sortKey: 'repo',
+    cellSx: prCellSx,
+    renderCell: (pr) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          color: 'text.secondary',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {pr.repository}
+      </Typography>
+    ),
+  },
+  {
+    key: 'author',
+    header: 'Author',
+    width: '14%',
+    sortKey: 'author',
+    cellSx: prCellSx,
+    renderCell: (pr) => (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+        <Avatar
+          src={`https://avatars.githubusercontent.com/${pr.author}`}
+          sx={{ width: 20, height: 20, flexShrink: 0 }}
+        />
+        <Typography
+          sx={{
+            fontSize: '0.75rem',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {pr.author}
+        </Typography>
+      </Box>
+    ),
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    width: '90px',
+    align: 'center',
+    cellSx: prCellSx,
+    renderCell: (pr) => {
+      const { label, color } = prStatusMeta(pr);
+      return (
+        <Chip
+          variant="status"
+          label={label}
+          sx={{ color, borderColor: color }}
+        />
+      );
+    },
+  },
+  {
+    key: 'score',
+    header: 'Score',
+    width: '80px',
+    align: 'right',
+    sortKey: 'score',
+    cellSx: prCellSx,
+    renderCell: (pr) => (
+      <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+        {parseFloat(pr.score || '0').toFixed(2)}
+      </Typography>
+    ),
+  },
+  {
+    key: 'source',
+    header: 'Why',
+    width: '92px',
+    align: 'center',
+    cellSx: prCellSx,
+    renderCell: (pr) => (
+      <WatchedSourceBadges
+        sources={
+          sourcesByKey.get(
+            serializePRKey(pr.repository, pr.pullRequestNumber),
+          ) ?? []
+        }
+      />
+    ),
+  },
+  {
+    key: 'watch',
+    header: '★',
+    width: '52px',
+    align: 'center',
+    cellSx: { p: 0 },
+    renderCell: (pr) => (
+      <WatchlistButton
+        category="prs"
+        itemKey={serializePRKey(pr.repository, pr.pullRequestNumber)}
+        size="small"
+      />
+    ),
+  },
+];
+
+type PRsViewMode = 'list' | 'cards';
+
+const PRsViewModeToggle: React.FC<{
+  viewMode: PRsViewMode;
+  onChange: (mode: PRsViewMode) => void;
+}> = ({ viewMode, onChange }) => {
+  const options: {
+    value: PRsViewMode;
+    label: string;
+    Icon: typeof ViewListIcon;
+  }[] = [
+    { value: 'list', label: 'List view', Icon: ViewListIcon },
+    { value: 'cards', label: 'Card view', Icon: ViewModuleIcon },
+  ];
+
+  return (
+    <Box
+      sx={(t) => ({
+        display: 'inline-flex',
+        alignItems: 'center',
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: t.palette.border.light,
+        overflow: 'hidden',
+      })}
+      role="group"
+      aria-label="Toggle view mode"
+    >
+      {options.map(({ value, label, Icon }) => {
+        const isActive = viewMode === value;
+        return (
+          <Tooltip key={value} title={label} placement="top" arrow>
+            <IconButton
+              onClick={() => onChange(value)}
+              size="small"
+              aria-label={label}
+              aria-pressed={isActive}
+              sx={(t) => ({
+                borderRadius: 0,
+                padding: '6px 10px',
+                color: isActive
+                  ? t.palette.text.primary
+                  : t.palette.text.tertiary,
+                backgroundColor: isActive
+                  ? t.palette.surface.light
+                  : 'transparent',
+                '&:hover': {
+                  backgroundColor: t.palette.surface.light,
+                  color: t.palette.text.primary,
+                },
+              })}
+            >
+              <Icon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        );
+      })}
+    </Box>
+  );
+};
+
+const getPrHref = (pr: CommitLog) =>
+  `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`;
+
+const PRCard: React.FC<{
+  pr: CommitLog;
+  sources?: WatchedPRSource[];
+}> = ({ pr, sources = [] }) => {
+  const { label, color } = prStatusMeta(pr);
+  const key = serializePRKey(pr.repository, pr.pullRequestNumber);
+  return (
+    <Card
+      elevation={0}
+      sx={(t) => ({
+        p: 1,
+        backgroundColor: t.palette.background.default,
+        backdropFilter: 'blur(12px)',
+        border: '1px solid',
+        borderColor: alpha(color, 0.3),
+        borderRadius: 2,
+        cursor: 'pointer',
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1,
+        boxShadow: `0 2px 8px ${alpha(t.palette.background.default, 0.1)}`,
+        '&:hover': {
+          backgroundColor: t.palette.surface.elevated,
+          borderColor: alpha(color, 0.5),
+          transform: 'translateY(-2px)',
+          boxShadow: `0 8px 24px -6px ${alpha(t.palette.background.default, 0.6)}`,
+        },
+      })}
+    >
+      {/* Row 1: repo + status + star */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+        }}
+      >
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={1}
+          sx={{ minWidth: 0 }}
+        >
+          <Avatar
+            src={`https://avatars.githubusercontent.com/${pr.repository.split('/')[0]}`}
+            sx={{
+              width: 20,
+              height: 20,
+              flexShrink: 0,
+              border: '1px solid',
+              borderColor: 'border.medium',
+            }}
+          />
+          <Typography
+            sx={{
+              fontSize: '0.72rem',
+              color: 'text.secondary',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {pr.repository}
+          </Typography>
+        </Stack>
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={0.5}
+          sx={{ flexShrink: 0 }}
+        >
+          <Chip
+            variant="status"
+            label={label}
+            size="small"
+            sx={{
+              color,
+              borderColor: alpha(color, 0.3),
+              backgroundColor: alpha(color, 0.08),
+            }}
+          />
+          <WatchedSourceBadges sources={sources} />
+          <WatchlistButton category="prs" itemKey={key} size="small" />
+        </Stack>
+      </Box>
+
+      {/* Row 2: title (linkable) */}
+      <LinkBox
+        href={getPrHref(pr)}
+        linkState={{ backLabel: 'Back to Watchlist' }}
+        sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}
+      >
+        <Typography
+          sx={{
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            color: 'text.primary',
+            lineHeight: 1.4,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}
+        >
+          #{pr.pullRequestNumber} {pr.pullRequestTitle}
+        </Typography>
+
+        {/* Row 3: footer stats */}
+        <Box
+          sx={(t) => ({
+            mt: 'auto',
+            backgroundColor: alpha(t.palette.background.default, 0.2),
+            borderRadius: 1.5,
+            p: 1,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          })}
+        >
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Avatar
+              src={`https://avatars.githubusercontent.com/${pr.author}`}
+              sx={{ width: 18, height: 18 }}
+            />
+            <Typography
+              sx={{
+                fontSize: '0.72rem',
+                color: 'text.secondary',
+              }}
+            >
+              {pr.author}
+            </Typography>
+          </Stack>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <Typography
+                sx={{
+                  fontSize: '0.7rem',
+                  color: 'diff.additions',
+                  fontWeight: 600,
+                }}
+              >
+                +{pr.additions}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: '0.7rem',
+                  color: 'text.tertiary',
+                }}
+              >
+                /
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: '0.7rem',
+                  color: 'diff.deletions',
+                  fontWeight: 600,
+                }}
+              >
+                -{pr.deletions}
+              </Typography>
+            </Stack>
+            <Typography
+              sx={{
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                color: 'text.primary',
+              }}
+            >
+              {parseFloat(pr.score || '0').toFixed(2)}
+            </Typography>
+          </Stack>
+        </Box>
+      </LinkBox>
+    </Card>
+  );
+};
+
+const PR_ROWS_OPTIONS = [10, 25, 50] as const;
+
+const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
+  const { items, sourcesByKey, isLoading } = useWatchedPRs(itemKeys);
+  const prColumns = useMemo(() => buildPrColumns(sourcesByKey), [sourcesByKey]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
+  const [viewMode, setViewMode] = useState<PRsViewMode>('list');
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [page, setPage] = useState(0);
+  const [sortField, setSortField] = useState<PrSortKey>('score');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (field: PrSortKey) => {
+    if (sortField === field) {
+      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder(
+        field === 'title' || field === 'author' || field === 'repo'
+          ? 'asc'
+          : 'desc',
+      );
+    }
+    setPage(0);
+  };
+
+  const counts = useMemo(() => getPrStatusCounts(items), [items]);
+
+  const filtered = useMemo(() => {
+    const result = filterPrs(items, {
+      statusFilter,
+      searchQuery,
+      includeNumber: true,
+    });
+    setPage(0);
+    return result;
+  }, [items, statusFilter, searchQuery]);
+
+  const sorted = useMemo(() => {
+    const dir = sortOrder === 'asc' ? 1 : -1;
+    const cmpStr = (a = '', b = '') => a.localeCompare(b) * dir;
+    const cmpNum = (a = 0, b = 0) => (a - b) * dir;
+    return [...filtered].sort((a, b) => {
+      switch (sortField) {
+        case 'pr':
+          return cmpNum(a.pullRequestNumber, b.pullRequestNumber);
+        case 'title':
+          return cmpStr(a.pullRequestTitle, b.pullRequestTitle);
+        case 'repo':
+          return cmpStr(a.repository, b.repository);
+        case 'author':
+          return cmpStr(a.author, b.author);
+        case 'score':
+          return cmpNum(parseFloat(a.score || '0'), parseFloat(b.score || '0'));
+        default:
+          return 0;
+      }
+    });
+  }, [filtered, sortField, sortOrder]);
+
+  const paged = useMemo(
+    () => sorted.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
+    [sorted, page, rowsPerPage],
+  );
+
+  return (
+    <Card
+      elevation={0}
+      sx={{
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'border.light',
+        backgroundColor: 'transparent',
+        overflow: 'hidden',
+        maxHeight: '85vh',
+        display: 'flex',
+        flexDirection: 'column',
+        '& .MuiTableContainer-root': {
+          flex: 1,
+          overflowY: 'auto',
+          ...scrollbarSx,
+        },
+      }}
+    >
+      {/* Toolbar */}
+      <Box
+        sx={{
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          borderBottom: '1px solid',
+          borderColor: 'border.light',
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+          <FilterButton
+            label="All"
+            count={counts.all}
+            color={STATUS_COLORS.neutral}
+            isActive={statusFilter === 'all'}
+            onClick={() => setStatusFilter('all')}
+          />
+          <FilterButton
+            label="Open"
+            count={counts.open}
+            color={STATUS_COLORS.open}
+            isActive={statusFilter === 'open'}
+            onClick={() => setStatusFilter('open')}
+          />
+          <FilterButton
+            label="Merged"
+            count={counts.merged}
+            color={STATUS_COLORS.merged}
+            isActive={statusFilter === 'merged'}
+            onClick={() => setStatusFilter('merged')}
+          />
+          <FilterButton
+            label="Closed"
+            count={counts.closed}
+            color={STATUS_COLORS.closed}
+            isActive={statusFilter === 'closed'}
+            onClick={() => setStatusFilter('closed')}
+          />
+        </Box>
+        <FormControl size="small">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              variant="body2"
+              sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
+            >
+              Rows:
+            </Typography>
+            <Select
+              value={rowsPerPage}
+              onChange={(e) => {
+                setRowsPerPage(e.target.value as number);
+                setPage(0);
+              }}
+              sx={{
+                color: 'text.primary',
+                backgroundColor: 'background.default',
+                fontSize: '0.8rem',
+                height: '36px',
+                borderRadius: 2,
+                minWidth: '80px',
+                '& fieldset': { borderColor: 'border.light' },
+                '&:hover fieldset': { borderColor: 'border.medium' },
+                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                '& .MuiSelect-select': { py: 0.75 },
+              }}
+            >
+              {PR_ROWS_OPTIONS.map((n) => (
+                <MenuItem key={n} value={n}>
+                  {n}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+        </FormControl>
+        <TextField
+          placeholder="Search PRs..."
+          size="small"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            width: '220px',
+            '& .MuiOutlinedInput-root': {
+              color: 'text.primary',
+              backgroundColor: 'background.default',
+              fontSize: '0.8rem',
+              height: '36px',
+              borderRadius: 2,
+              '& fieldset': { borderColor: 'border.light' },
+              '&:hover fieldset': { borderColor: 'border.medium' },
+              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+            },
+          }}
+        />
+        <Box sx={{ ml: 'auto' }}>
+          <PRsViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+        </Box>
+      </Box>
+
+      {/* Content */}
+      {viewMode === 'list' ? (
+        <DataTable<CommitLog, PrSortKey>
+          columns={prColumns}
+          rows={paged}
+          getRowKey={(pr) =>
+            serializePRKey(pr.repository, pr.pullRequestNumber)
+          }
+          getRowHref={getPrHref}
+          linkState={{ backLabel: 'Back to Watchlist' }}
+          minWidth="750px"
+          stickyHeader
+          isLoading={isLoading && items.length === 0}
+          emptyLabel="No watched pull requests found."
+          sort={{
+            field: sortField,
+            order: sortOrder,
+            onChange: handleSort,
+          }}
+        />
+      ) : (
+        <Box
+          sx={{
+            p: 2,
+            overflowY: 'auto',
+            ...scrollbarSx,
+          }}
+        >
+          {isLoading && paged.length === 0 ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : paged.length === 0 ? (
+            <Typography
+              sx={{
+                color: 'text.secondary',
+                textAlign: 'center',
+                py: 4,
+                fontSize: '0.85rem',
+              }}
+            >
+              No watched pull requests found.
+            </Typography>
+          ) : (
+            <Grid container spacing={2} alignItems="stretch">
+              {paged.map((pr) => (
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  key={serializePRKey(pr.repository, pr.pullRequestNumber)}
+                  sx={{ display: 'flex' }}
+                >
+                  <Box sx={{ width: '100%' }}>
+                    <PRCard
+                      pr={pr}
+                      sources={sourcesByKey.get(
+                        serializePRKey(pr.repository, pr.pullRequestNumber),
+                      )}
+                    />
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+      )}
+      <TablePagination
+        rowsPerPageOptions={[]}
+        component="div"
+        count={filtered.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={(_e, newPage) => setPage(newPage)}
+        onRowsPerPageChange={() => {}}
+        showFirstButton
+        showLastButton
+        sx={{
+          borderTop: '1px solid',
+          borderColor: 'border.light',
+          color: 'text.secondary',
+        }}
+      />
+    </Card>
   );
 };
 
