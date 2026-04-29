@@ -1023,14 +1023,22 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         {/* Row 1: All Controls */}
         <Box
           sx={{
-            p: 2,
+            p: { xs: 1.5, md: 2 },
             display: 'flex',
-            alignItems: 'center',
-            gap: 2,
-            flexWrap: 'wrap',
+            flexDirection: { xs: 'column', md: 'row' },
+            alignItems: { xs: 'stretch', md: 'center' },
+            gap: { xs: 1.25, md: 2 },
           }}
         >
-          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 0.5,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              width: { xs: '100%', md: 'auto' },
+            }}
+          >
             <FilterButton
               label="All"
               count={rankedRepositories.length}
@@ -1066,137 +1074,148 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             />
           </Box>
 
-          <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
-            <IconButton
-              onClick={() => setShowChart(!showChart)}
-              size="small"
-              sx={{
-                color: showChart ? 'text.primary' : 'text.tertiary',
-                border: '1px solid',
-                borderColor: 'border.light',
-                borderRadius: 2,
-                padding: '6px',
-                '&:hover': {
-                  backgroundColor: 'surface.light',
-                  borderColor: 'border.medium',
-                },
-              }}
-            >
-              {showChart ? (
-                <TableChartIcon fontSize="small" />
-              ) : (
-                <BarChartIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Tooltip>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: { xs: 'space-between', md: 'flex-end' },
+              gap: 1,
+              flexWrap: 'wrap',
+              width: { xs: '100%', md: 'auto' },
+            }}
+          >
+            <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+              <IconButton
+                onClick={() => setShowChart(!showChart)}
+                size="small"
+                sx={{
+                  color: showChart ? 'text.primary' : 'text.tertiary',
+                  border: '1px solid',
+                  borderColor: 'border.light',
+                  borderRadius: 2,
+                  padding: '6px',
+                  '&:hover': {
+                    backgroundColor: 'surface.light',
+                    borderColor: 'border.medium',
+                  },
+                }}
+              >
+                {showChart ? (
+                  <TableChartIcon fontSize="small" />
+                ) : (
+                  <BarChartIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
 
-          {showChart && (
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={useLogScale}
-                  onChange={(e) => setUseLogScale(e.target.checked)}
-                  size="small"
-                  sx={{
-                    '& .MuiSwitch-switchBase.Mui-checked': {
-                      color: 'primary.main',
-                    },
-                    '& .MuiSwitch-track': {
-                      backgroundColor: 'border.medium',
-                    },
-                  }}
-                />
-              }
-              label={
+            {showChart && (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={useLogScale}
+                    onChange={(e) => setUseLogScale(e.target.checked)}
+                    size="small"
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': {
+                        color: 'primary.main',
+                      },
+                      '& .MuiSwitch-track': {
+                        backgroundColor: 'border.medium',
+                      },
+                    }}
+                  />
+                }
+                label={
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontSize: '0.8rem',
+                      color: 'text.secondary',
+                    }}
+                  >
+                    Log Scale
+                  </Typography>
+                }
+              />
+            )}
+
+            <FormControl size="small">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Typography
                   variant="body2"
                   sx={{
-                    fontSize: '0.8rem',
                     color: 'text.secondary',
+                    fontSize: '0.8rem',
                   }}
                 >
-                  Log Scale
+                  Rows:
                 </Typography>
-              }
-            />
-          )}
+                <Select
+                  value={rowsPerPage}
+                  onChange={(e) => {
+                    const newRows = e.target.value as number;
+                    setRowsPerPage(newRows);
+                    setPage(0);
+                    syncToUrl({ rows: String(newRows), page: '0' });
+                  }}
+                  sx={{
+                    color: 'text.primary',
+                    backgroundColor: 'background.default',
+                    fontSize: '0.8rem',
+                    height: '36px',
+                    borderRadius: 2,
+                    minWidth: '80px',
+                    '& fieldset': { borderColor: 'border.light' },
+                    '&:hover fieldset': {
+                      borderColor: 'border.medium',
+                    },
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                    '& .MuiSelect-select': { py: 0.75 },
+                  }}
+                >
+                  {(viewMode === 'cards'
+                    ? REPOSITORIES_CARD_ROWS
+                    : REPOSITORIES_LIST_ROWS
+                  ).map((n) => (
+                    <MenuItem key={n} value={n}>
+                      {n}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Box>
+            </FormControl>
 
-          <FormControl size="small">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography
-                variant="body2"
+            {isMobileSearchVisible ? (
+              searchInput
+            ) : isMobile ? (
+              <IconButton
+                size="small"
+                onClick={() => setIsMobileSearchOpen(true)}
                 sx={{
-                  color: 'text.secondary',
-                  fontSize: '0.8rem',
-                }}
-              >
-                Rows:
-              </Typography>
-              <Select
-                value={rowsPerPage}
-                onChange={(e) => {
-                  const newRows = e.target.value as number;
-                  setRowsPerPage(newRows);
-                  setPage(0);
-                  syncToUrl({ rows: String(newRows), page: '0' });
-                }}
-                sx={{
-                  color: 'text.primary',
-                  backgroundColor: 'background.default',
-                  fontSize: '0.8rem',
-                  height: '36px',
+                  color: 'text.tertiary',
+                  border: '1px solid',
+                  borderColor: 'border.light',
                   borderRadius: 2,
-                  minWidth: '80px',
-                  '& fieldset': { borderColor: 'border.light' },
-                  '&:hover fieldset': {
+                  width: 36,
+                  height: 36,
+                  '&:hover': {
+                    backgroundColor: 'surface.light',
                     borderColor: 'border.medium',
                   },
-                  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                  '& .MuiSelect-select': { py: 0.75 },
                 }}
               >
-                {(viewMode === 'cards'
-                  ? REPOSITORIES_CARD_ROWS
-                  : REPOSITORIES_LIST_ROWS
-                ).map((n) => (
-                  <MenuItem key={n} value={n}>
-                    {n}
-                  </MenuItem>
-                ))}
-              </Select>
+                <SearchIcon sx={{ fontSize: '1rem' }} />
+              </IconButton>
+            ) : (
+              searchInput
+            )}
+
+            <Box sx={{ ml: { xs: 0, md: 'auto' } }}>
+              <ViewModeToggle
+                viewMode={viewMode}
+                onChange={handleViewModeChange}
+              />
             </Box>
-          </FormControl>
-
-          {isMobileSearchVisible ? (
-            searchInput
-          ) : isMobile ? (
-            <IconButton
-              size="small"
-              onClick={() => setIsMobileSearchOpen(true)}
-              sx={{
-                color: 'text.tertiary',
-                border: '1px solid',
-                borderColor: 'border.light',
-                borderRadius: 2,
-                width: 36,
-                height: 36,
-                '&:hover': {
-                  backgroundColor: 'surface.light',
-                  borderColor: 'border.medium',
-                },
-              }}
-            >
-              <SearchIcon sx={{ fontSize: '1rem' }} />
-            </IconButton>
-          ) : (
-            searchInput
-          )}
-
-          <Box sx={{ ml: 'auto' }}>
-            <ViewModeToggle
-              viewMode={viewMode}
-              onChange={handleViewModeChange}
-            />
           </Box>
         </Box>
 
