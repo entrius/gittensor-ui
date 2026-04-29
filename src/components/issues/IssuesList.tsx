@@ -839,131 +839,141 @@ const IssuesList: React.FC<IssuesListProps> = ({
             count={counts.history}
             color={theme.palette.status.neutral}
           />
-
-          <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
-            <IconButton
-              onClick={() => setShowChart(!showChart)}
-              size="small"
-              sx={{
-                color: showChart
-                  ? theme.palette.text.primary
-                  : alpha(theme.palette.common.white, TEXT_OPACITY.muted),
-                border: `1px solid ${theme.palette.border.light}`,
-                borderRadius: 2,
-                padding: '6px',
-                '&:hover': {
-                  backgroundColor: theme.palette.surface.subtle,
-                  borderColor: theme.palette.border.medium,
-                },
-              }}
-            >
-              {showChart ? (
-                <TableChartIcon fontSize="small" />
-              ) : (
-                <BarChartIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Tooltip>
         </Stack>
 
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: { xs: 'space-between', md: 'flex-end' },
-            flexWrap: 'wrap',
-            gap: 1,
-            width: { xs: '100%', md: 'auto' },
-          }}
+        <Stack
+          direction="row"
+          spacing={0.75}
+          alignItems="center"
+          flexWrap="wrap"
+          useFlexGap
+          sx={{ width: { xs: '100%', md: 'auto' } }}
         >
-          {/* Rows selector */}
-          <FormControl size="small">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography
-                variant="body2"
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: { xs: 'space-between', md: 'flex-end' },
+              flexWrap: 'wrap',
+              gap: 1,
+              width: { xs: '100%', md: 'auto' },
+            }}
+          >
+            <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+              <IconButton
+                onClick={() => setShowChart(!showChart)}
+                size="small"
                 sx={{
-                  color: alpha(
-                    theme.palette.common.white,
-                    TEXT_OPACITY.secondary,
-                  ),
-                  fontSize: '0.8rem',
+                  color: showChart
+                    ? theme.palette.text.primary
+                    : alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+                  border: `1px solid ${theme.palette.border.light}`,
+                  borderRadius: 2,
+                  padding: '6px',
+                  '&:hover': {
+                    backgroundColor: theme.palette.surface.subtle,
+                    borderColor: theme.palette.border.medium,
+                  },
                 }}
               >
-                Rows:
-              </Typography>
-              <Select
-                value={rowsPerPage}
-                onChange={(e) => {
-                  setRowsPerPage(e.target.value as number);
-                  setPage(0);
-                }}
-                sx={{
+                {showChart ? (
+                  <TableChartIcon fontSize="small" />
+                ) : (
+                  <BarChartIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
+            {/* Rows selector */}
+            <FormControl size="small">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: alpha(
+                      theme.palette.common.white,
+                      TEXT_OPACITY.secondary,
+                    ),
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  Rows:
+                </Typography>
+                <Select
+                  value={rowsPerPage}
+                  onChange={(e) => {
+                    setRowsPerPage(e.target.value as number);
+                    setPage(0);
+                  }}
+                  sx={{
+                    color: theme.palette.text.primary,
+                    backgroundColor: alpha(theme.palette.common.black, 0.4),
+                    fontSize: '0.8rem',
+                    height: '36px',
+                    borderRadius: 2,
+                    minWidth: '80px',
+                    '& fieldset': { borderColor: theme.palette.border.light },
+                    '&:hover fieldset': {
+                      borderColor: theme.palette.border.medium,
+                    },
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                    '& .MuiSelect-select': { py: 0.75 },
+                  }}
+                >
+                  {validRows.map((n) => (
+                    <MenuItem key={n} value={n}>
+                      {n}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Box>
+            </FormControl>
+
+            {/* Search */}
+            <TextField
+              placeholder="Search..."
+              size="small"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon
+                      sx={{
+                        color: alpha(
+                          theme.palette.common.white,
+                          TEXT_OPACITY.muted,
+                        ),
+                        fontSize: '1rem',
+                      }}
+                    />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                width: { xs: '100%', sm: '200px' },
+                '& .MuiOutlinedInput-root': {
                   color: theme.palette.text.primary,
                   backgroundColor: alpha(theme.palette.common.black, 0.4),
-                  fontSize: '0.8rem',
+                  fontSize: { xs: '0.75rem', sm: '0.8rem' },
                   height: '36px',
                   borderRadius: 2,
-                  minWidth: '80px',
                   '& fieldset': { borderColor: theme.palette.border.light },
                   '&:hover fieldset': {
                     borderColor: theme.palette.border.medium,
                   },
                   '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                  '& .MuiSelect-select': { py: 0.75 },
-                }}
-              >
-                {validRows.map((n) => (
-                  <MenuItem key={n} value={n}>
-                    {n}
-                  </MenuItem>
-                ))}
-              </Select>
-            </Box>
-          </FormControl>
-
-          {/* Search */}
-          <TextField
-            placeholder="Search..."
-            size="small"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon
-                    sx={{
-                      color: alpha(
-                        theme.palette.common.white,
-                        TEXT_OPACITY.muted,
-                      ),
-                      fontSize: '1rem',
-                    }}
-                  />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              width: { xs: '100%', sm: '200px' },
-              '& .MuiOutlinedInput-root': {
-                color: theme.palette.text.primary,
-                backgroundColor: alpha(theme.palette.common.black, 0.4),
-                fontSize: { xs: '0.75rem', sm: '0.8rem' },
-                height: '36px',
-                borderRadius: 2,
-                '& fieldset': { borderColor: theme.palette.border.light },
-                '&:hover fieldset': { borderColor: theme.palette.border.medium },
-                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-              },
-            }}
-          />
-
-          <Box sx={{ ml: { xs: 0, md: 'auto' } }}>
-            <ViewModeToggle
-              viewMode={viewMode}
-              onChange={handleViewModeChange}
+                },
+              }}
             />
+
+            <Box sx={{ ml: { xs: 0, md: 'auto' } }}>
+              <ViewModeToggle
+                viewMode={viewMode}
+                onChange={handleViewModeChange}
+              />
+            </Box>
           </Box>
-        </Box>
+        </Stack>
       </Box>
 
       <Collapse in={showChart}>
