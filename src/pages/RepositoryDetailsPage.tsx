@@ -24,6 +24,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import CodeIcon from '@mui/icons-material/Code';
 import BugReportIcon from '@mui/icons-material/BugReport';
@@ -56,20 +57,17 @@ interface TabPanelProps {
 }
 
 const mobileRepoTitleFontSx = {
-  fontFamily:
-    '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
   fontWeight: 700,
   fontSize: 'clamp(1.45rem, 5.5vw, 1.9rem)',
   lineHeight: 1.25,
-  color: '#fff',
+  color: 'text.primary',
   m: 0,
 };
 
 const repoDetailTabsSx = {
   '& .MuiTab-root': {
     color: STATUS_COLORS.open,
-    fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+    fontFamily: (theme: Theme) => theme.typography.fontFamily,
     textTransform: 'none',
     fontWeight: 500,
     minHeight: '48px',
@@ -137,6 +135,7 @@ const MobileRepoHeading = memo(function MobileRepoHeading({
           aria-hidden
           sx={{
             ...mobileRepoTitleFontSx,
+            fontFamily: (theme) => theme.typography.fontFamily,
             position: 'absolute',
             visibility: 'hidden',
             whiteSpace: 'nowrap',
@@ -157,6 +156,7 @@ const MobileRepoHeading = memo(function MobileRepoHeading({
           aria-level={1}
           sx={{
             ...mobileRepoTitleFontSx,
+            fontFamily: (theme) => theme.typography.fontFamily,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
@@ -250,9 +250,9 @@ const RepositoryDetailsPage: React.FC = () => {
         <Chip
           label="Tracked"
           sx={{
-            backgroundColor: 'rgba(46, 125, 50, 0.15)',
-            color: '#66bb6a',
-            border: '1px solid rgba(102, 187, 106, 0.35)',
+            backgroundColor: alpha(STATUS_COLORS.success, 0.15),
+            color: 'status.success',
+            border: `1px solid ${alpha(STATUS_COLORS.success, 0.35)}`,
             fontSize: '0.75rem',
             height: '24px',
             fontWeight: 600,
@@ -262,9 +262,9 @@ const RepositoryDetailsPage: React.FC = () => {
           <Chip
             label={inactiveLabel}
             sx={{
-              backgroundColor: 'rgba(211, 47, 47, 0.1)',
-              color: '#ff5252',
-              border: '1px solid rgba(255, 82, 82, 0.3)',
+              backgroundColor: alpha(STATUS_COLORS.error, 0.1),
+              color: 'status.error',
+              border: `1px solid ${alpha(STATUS_COLORS.error, 0.3)}`,
               fontSize: '0.75rem',
               height: '24px',
               fontWeight: 600,
@@ -414,7 +414,7 @@ const RepositoryDetailsPage: React.FC = () => {
                         alt=""
                         variant="rounded"
                         imgProps={{ loading: 'lazy', decoding: 'async' }}
-                        sx={{
+                        sx={(theme) => ({
                           width: 40,
                           height: 40,
                           borderRadius: '4px',
@@ -431,15 +431,15 @@ const RepositoryDetailsPage: React.FC = () => {
                           },
                           backgroundColor:
                             owner === 'opentensor'
-                              ? '#ffffff'
+                              ? theme.palette.text.primary
                               : owner === 'bitcoin'
-                                ? '#F7931A'
+                                ? theme.palette.status.warningOrange
                                 : 'surface.subtle',
                           color:
                             owner === 'opentensor' || owner === 'bitcoin'
-                              ? '#121212'
+                              ? theme.palette.background.default
                               : 'text.secondary',
-                        }}
+                        })}
                       >
                         {(owner.slice(0, 2) || '?').toUpperCase()}
                       </Avatar>
@@ -498,7 +498,7 @@ const RepositoryDetailsPage: React.FC = () => {
                     <Typography
                       variant="h4"
                       sx={(theme) => ({
-                        fontFamily: '"JetBrains Mono", monospace',
+                        fontFamily: theme.typography.fontFamily,
                         fontWeight: 600,
                         color: theme.palette.text.primary,
                       })}
