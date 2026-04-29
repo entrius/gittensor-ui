@@ -411,7 +411,9 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         <DataTable<RepositoryIssue>
           columns={columns}
           rows={sortedIssues}
-          getRowKey={(issue) => `${issue.number}-${issue.repositoryFullName}`}
+          getRowKey={(issue) =>
+            `${issue.number}-${issue.prNumber}-${issue.repositoryFullName}`
+          }
           stickyHeader
           size="medium"
           header={headerToolbar}
