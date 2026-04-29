@@ -7,6 +7,7 @@ import {
   BackButton,
   MinerActivity,
   MinerInsightsCard,
+  MinerIssuesTable,
   MinerOpenDiscoveryIssuesByRepo,
   MinerPRsTable,
   MinerRepositoriesTable,
@@ -28,6 +29,7 @@ const ISSUE_TABS = [
   'overview',
   'activity',
   'open-issues',
+  'issues',
   'repositories',
 ] as const;
 type MinerDetailsTab = (typeof PR_TABS)[number] | (typeof ISSUE_TABS)[number];
@@ -213,6 +215,7 @@ const MinerDetailsPage: React.FC = () => {
               {viewMode === 'prs' && (
                 <Tab value="pull-requests" label="Pull Requests" />
               )}
+              {viewMode === 'issues' && <Tab value="issues" label="Issues" />}
               <Tab value="repositories" label="Repositories" />
             </Tabs>
           </Box>
@@ -234,6 +237,7 @@ const MinerDetailsPage: React.FC = () => {
             {activeTab === 'pull-requests' && (
               <MinerPRsTable githubId={githubId} />
             )}
+            {activeTab === 'issues' && <MinerIssuesTable githubId={githubId} />}
             {activeTab === 'repositories' && (
               <MinerRepositoriesTable githubId={githubId} viewMode={viewMode} />
             )}

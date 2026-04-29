@@ -30,6 +30,7 @@ import {
   echartsRadarChrome,
   echartsTransparentBackground,
 } from '../../utils/echarts/gittensorChartTheme';
+import { parseNumber } from '../../utils/ExplorerUtils';
 import TrustBadge from './TrustBadge';
 import CredibilityChart from './CredibilityChart';
 import PerformanceRadar from './PerformanceRadar';
