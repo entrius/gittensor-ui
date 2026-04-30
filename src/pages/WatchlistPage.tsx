@@ -5,6 +5,8 @@ import React, {
   useState,
   useRef,
 } from 'react';
+import axios from 'axios';
+import { useQueries } from '@tanstack/react-query';
 import {
   Avatar,
   Box,
@@ -84,6 +86,7 @@ import {
 import {
   useWatchlist,
   useWatchlistCounts,
+  getWatchlistIssueMeta,
   serializePRKey,
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
@@ -3541,18 +3544,39 @@ const ISSUE_STATUS_FILTERS: readonly IssueStatusFilter[] = [
   'resolved',
   'closed',
 ];
+/** UI labels — `resolved` is "Solved" to match MinerOpenDiscoveryIssuesByRepo. */
+const ISSUE_FILTER_LABELS: Record<IssueStatusFilter, string> = {
+  all: 'All',
+  open: 'Open',
+  resolved: 'Solved',
+  closed: 'Closed',
+};
+
 const issueCellSx = { py: 1.5 } as const;
 
+// Same buckets as MinerOpenDiscoveryIssuesByRepo (`isOpenIssue` / `isSolvedIssue` /
+// `isClosedIssue`): open = not closed; solved = closed + linked PR; else closed.
+const minerWatchlistIssueClosed = (issue: MinerIssue): boolean => {
+  if ((issue.state ?? '').toUpperCase() === 'CLOSED') return true;
+  const ca = issue.closed_at;
+  return ca != null && String(ca).trim() !== '';
+};
+
+const minerWatchlistIssueLinkedPr = (issue: MinerIssue): number | null => {
+  const n = issue.solving_pr?.pr_number ?? issue.solved_by_pr;
+  return typeof n === 'number' && Number.isFinite(n) ? n : null;
+};
+
 const issueState = (issue: MinerIssue): Exclude<IssueStatusFilter, 'all'> => {
-  if ((issue.state_reason ?? '').toLowerCase() === 'completed')
-    return 'resolved';
-  return issue.state === 'CLOSED' ? 'closed' : 'open';
+  if (!minerWatchlistIssueClosed(issue)) return 'open';
+  if (minerWatchlistIssueLinkedPr(issue) != null) return 'resolved';
+  return 'closed';
 };
 
 const issueStatusMeta = (issue: MinerIssue) => {
   const s = issueState(issue);
   if (s === 'resolved')
-    return { label: 'RESOLVED', color: STATUS_COLORS.merged };
+    return { label: 'SOLVED', color: STATUS_COLORS.merged };
   if (s === 'closed') return { label: 'CLOSED', color: STATUS_COLORS.closed };
   return { label: 'OPEN', color: STATUS_COLORS.open };
 };
@@ -4013,7 +4037,6 @@ const IssueCard: React.FC<{
 
 const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   const issueQueries = useMinersIssues(minerIds, minerIds.length > 0);
-  const isLoading = issueQueries.some((q) => q.isLoading);
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
 
   const { ids: starredIssueIds } = useWatchlist('issues');
@@ -4024,6 +4047,100 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
     [watchedRepoIds],
   );
   const watchedMinerSet = useMemo(() => new Set(minerIds), [minerIds]);
+  const apiBaseUrl = import.meta.env.VITE_REACT_APP_BASE_URL;
+  const storedIssueMetaByKey = useMemo(() => {
+    const map = new Map<
+      string,
+      { state: 'OPEN' | 'CLOSED'; stateReason: string | null; solvedByPr: number | null }
+    >();
+    starredIssueIds.forEach((key) => {
+      const meta = getWatchlistIssueMeta(key);
+      if (!meta) return;
+      const isSolved = meta.status === 'solved';
+      const isClosed = meta.status === 'closed' || isSolved;
+      map.set(key, {
+        state: isClosed ? 'CLOSED' : 'OPEN',
+        stateReason: null,
+        solvedByPr: isSolved ? meta.prNumber ?? null : null,
+      });
+    });
+    return map;
+  }, [starredIssueIds]);
+
+  const starredParsedKeys = useMemo(
+    () =>
+      starredIssueIds
+        .map((key) => ({ key, parsed: parseIssueKey(key) }))
+        .filter(
+          (
+            entry,
+          ): entry is {
+            key: string;
+            parsed: { repoFullName: string; issueNumber: number };
+          } => entry.parsed !== null,
+        ),
+    [starredIssueIds],
+  );
+  const starredRepos = useMemo(
+    () =>
+      Array.from(
+        new Set(starredParsedKeys.map((entry) => entry.parsed.repoFullName)),
+      ),
+    [starredParsedKeys],
+  );
+  const starredRepoIssueQueries = useQueries({
+    queries: starredRepos.map((repoFullName) => ({
+      queryKey: ['watchlistRepoIssuesFallback', repoFullName],
+      queryFn: async () => {
+        const requestUrl = apiBaseUrl
+          ? `${apiBaseUrl}/repos/${encodeURIComponent(repoFullName)}/issues`
+          : `/repos/${encodeURIComponent(repoFullName)}/issues`;
+        const { data } = await axios.get(requestUrl);
+        return Array.isArray(data) ? data : [];
+      },
+      retry: false,
+      staleTime: 5 * 60 * 1000,
+      enabled: true,
+    })),
+  });
+  const starredIssueMetaByKey = useMemo(() => {
+    const map = new Map<
+      string,
+      { state: 'OPEN' | 'CLOSED'; stateReason: string | null; solvedByPr: number | null }
+    >();
+    starredRepoIssueQueries.forEach((q) => {
+      (q.data ?? []).forEach((issue: unknown) => {
+        if (!issue || typeof issue !== 'object') return;
+        const entry = issue as {
+          repositoryFullName?: string;
+          number?: number;
+          closedAt?: string | null;
+          prNumber?: number | null;
+          state_reason?: string | null;
+          stateReason?: string | null;
+        };
+        if (
+          typeof entry.repositoryFullName !== 'string' ||
+          typeof entry.number !== 'number'
+        ) {
+          return;
+        }
+        const isClosed = Boolean(entry.closedAt);
+        const rawReason = entry.state_reason ?? entry.stateReason ?? null;
+        const stateReason =
+          typeof rawReason === 'string' && rawReason.trim() !== ''
+            ? rawReason.trim()
+            : null;
+        const hasLinkedPr = typeof entry.prNumber === 'number';
+        map.set(`${entry.repositoryFullName}#${entry.number}`, {
+          state: isClosed ? 'CLOSED' : 'OPEN',
+          stateReason,
+          solvedByPr: hasLinkedPr ? entry.prNumber ?? null : null,
+        });
+      });
+    });
+    return map;
+  }, [starredRepoIssueQueries]);
 
   // Flatten + dedupe issues across all watched miners.
   const mirroredItems = useMemo<MinerIssue[]>(() => {
@@ -4058,22 +4175,24 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
         .map((key) => {
           const parsed = parseIssueKey(key);
           if (!parsed) return null;
+          const meta = storedIssueMetaByKey.get(key) ?? starredIssueMetaByKey.get(key);
           return {
             repo_full_name: parsed.repoFullName,
             issue_number: parsed.issueNumber,
             title: `${parsed.repoFullName} #${parsed.issueNumber}`,
-            state: 'OPEN',
-            state_reason: null,
+            state: meta?.state ?? 'OPEN',
+            state_reason: meta?.stateReason ?? null,
             author_github_id: null,
             author_login: null,
             created_at: null,
-            closed_at: null,
+            closed_at: meta?.state === 'CLOSED' ? '' : null,
             updated_at: null,
+            solved_by_pr: meta?.solvedByPr ?? null,
             labels: [],
           } as MinerIssue;
         })
         .filter((issue): issue is MinerIssue => issue !== null),
-    [starredIssueIds, mirroredIssueKeys],
+    [starredIssueIds, mirroredIssueKeys, starredIssueMetaByKey, storedIssueMetaByKey],
   );
 
   const items = useMemo<MinerIssue[]>(() => {
@@ -4109,6 +4228,10 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
     () => buildIssueColumns(sourcesByKey),
     [sourcesByKey],
   );
+
+  const isLoading =
+    issueQueries.some((q) => q.isLoading) ||
+    starredRepoIssueQueries.some((q) => q.isLoading);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<IssueStatusFilter>('all');
@@ -4232,7 +4355,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
                 {ISSUE_STATUS_FILTERS.map((s) => (
                   <FilterButton
                     key={s}
-                    label={s[0].toUpperCase() + s.slice(1)}
+                    label={ISSUE_FILTER_LABELS[s]}
                     count={counts[s]}
                     color={issueStatusColor(s)}
                     isActive={statusFilter === s}
