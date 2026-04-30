@@ -25,6 +25,7 @@ import {
   echartsMutedCartesianAxisColors,
   echartsTransparentBackground,
 } from '../../../utils/echarts/gittensorChartTheme';
+import { CHART_COLORS } from '../../../theme';
 
 interface ContributionTrendsProps {
   range: TrendTimeRange;
@@ -94,28 +95,36 @@ const TREND_SERIES_PRESENTATION: Record<
   },
   issuesResolved: {
     label: 'Issues Resolved',
-    colorOpacity: 0.85,
+    colorOpacity: 0.9,
     lineWidth: 2.5,
-    lineOpacity: 0.9,
+    lineOpacity: 0.95,
   },
   prsOpened: {
     label: 'PRs Opened',
-    colorOpacity: 0.35,
-    lineWidth: 1.75,
-    lineOpacity: 0.6,
+    colorOpacity: 0.85,
+    lineWidth: 2,
+    lineOpacity: 0.9,
   },
   issuesOpened: {
     label: 'Issues Opened',
-    colorOpacity: 0.3,
-    lineWidth: 1.5,
-    lineOpacity: 0.5,
+    colorOpacity: 0.8,
+    lineWidth: 1.75,
+    lineOpacity: 0.85,
   },
 };
 
-const getTrendSeriesBaseColor = (theme: Theme, seriesKey: TrendSeriesKey) =>
-  seriesKey === 'mergedPrs' || seriesKey === 'prsOpened'
-    ? theme.palette.diff.additions
-    : theme.palette.status.award;
+const getTrendSeriesBaseColor = (theme: Theme, seriesKey: TrendSeriesKey) => {
+  switch (seriesKey) {
+    case 'mergedPrs':
+      return theme.palette.diff.additions;
+    case 'issuesResolved':
+      return theme.palette.status.award;
+    case 'prsOpened':
+      return theme.palette.status.info;
+    case 'issuesOpened':
+      return CHART_COLORS.series[3];
+  }
+};
 
 const getTrendSeriesColor = (theme: Theme, seriesKey: TrendSeriesKey) =>
   alpha(
