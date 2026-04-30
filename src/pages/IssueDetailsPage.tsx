@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -23,6 +23,7 @@ import ListAltIcon from '@mui/icons-material/ListAlt';
 const IssueDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const idParam = searchParams.get('id');
   const id = idParam ? parseInt(idParam, 10) : 0;
   const [tabValue, setTabValue] = useState(0);
@@ -157,7 +158,8 @@ const IssueDetailsPage: React.FC = () => {
                 <IssueSubmissionsTable
                   submissions={submissions}
                   isLoading={isLoadingSubmissions}
-                  backLabel={`Back to Issue #${issue.issueNumber}`}
+                  backLabel="Back"
+                  backTo={`${location.pathname}${location.search}`}
                 />
               )}
             </Box>

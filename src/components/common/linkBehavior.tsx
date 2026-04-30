@@ -9,6 +9,7 @@ import {
 import type { SxProps, Theme } from '@mui/material/styles';
 
 type LinkState = Record<string, unknown> | undefined;
+type LinkClickHandler = (e: React.MouseEvent<HTMLAnchorElement>) => void;
 
 const isModifiedEvent = (e: React.MouseEvent): boolean =>
   e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
@@ -68,25 +69,41 @@ type LinkProps = {
   linkState?: LinkState;
   /** When true, navigation replaces the current history entry instead of pushing. */
   replace?: boolean;
+  onClick?: LinkClickHandler;
+  target?: string;
 };
+
+type LinkBoxProps = Omit<
+  BoxProps<'a'>,
+  'component' | 'href' | 'onClick' | 'target'
+> &
+  LinkProps;
+
+type LinkTableRowProps = Omit<
+  TableRowProps<'a'>,
+  'component' | 'href' | 'onClick' | 'target'
+> &
+  LinkProps;
 
 /**
  * A `Box` that renders as `<a href>` with SPA + native new-tab behavior.
  * Drop-in replacement for any `<Box onClick={() => navigate(...)}>` row.
  */
-export const LinkBox = forwardRef<HTMLAnchorElement, BoxProps & LinkProps>(
-  ({ href, linkState, replace, sx, ...rest }, ref) => {
+export const LinkBox = forwardRef<HTMLAnchorElement, LinkBoxProps>(
+  ({ href, linkState, replace, onClick, target, sx, ...rest }, ref) => {
     const linkProps = useLinkBehavior<HTMLAnchorElement>(href, {
       state: linkState,
       replace,
+      onClick,
+      target,
     });
     return (
       <Box
+        {...rest}
         component="a"
         ref={ref}
-        {...linkProps}
         sx={mergeSx(linkResetSx, sx)}
-        {...rest}
+        {...linkProps}
       />
     );
   },
@@ -97,21 +114,23 @@ LinkBox.displayName = 'LinkBox';
  * A `TableRow` that renders as `<a href>`. Drop-in replacement for any
  * `<TableRow onClick={() => navigate(...)}>` row.
  */
-export const LinkTableRow = forwardRef<
-  HTMLAnchorElement,
-  TableRowProps & LinkProps
->(({ href, linkState, sx, ...rest }, ref) => {
-  const linkProps = useLinkBehavior<HTMLAnchorElement>(href, {
-    state: linkState,
-  });
-  return (
-    <TableRow
-      component="a"
-      ref={ref}
-      {...linkProps}
-      sx={mergeSx(linkResetSx, sx)}
-      {...rest}
-    />
-  );
-});
+export const LinkTableRow = forwardRef<HTMLAnchorElement, LinkTableRowProps>(
+  ({ href, linkState, replace, onClick, target, sx, ...rest }, ref) => {
+    const linkProps = useLinkBehavior<HTMLAnchorElement>(href, {
+      state: linkState,
+      replace,
+      onClick,
+      target,
+    });
+    return (
+      <TableRow
+        {...rest}
+        component="a"
+        ref={ref}
+        sx={mergeSx(linkResetSx, sx)}
+        {...linkProps}
+      />
+    );
+  },
+);
 LinkTableRow.displayName = 'LinkTableRow';
