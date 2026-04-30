@@ -18,7 +18,9 @@ import { MinersList } from './MinersList';
 import { SearchInput } from '../common/SearchInput';
 import { STATUS_COLORS } from '../../theme';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
+import { useWatchlist } from '../../hooks/useWatchlist';
 import { type SortOrder } from '../../utils/ExplorerUtils';
+import { compareByWatchlist } from '../../utils/watchlistSort';
 import {
   type MinerStats,
   type SortOption,
@@ -72,7 +74,7 @@ interface TopMinersTableProps {
 
 const getAllowedSortOptions = (variant: LeaderboardVariant): SortOption[] => {
   if (variant === 'discoveries')
-    return ['totalScore', 'usdPerDay', 'totalIssues', 'credibility'];
+    return ['totalScore', 'usdPerDay', 'totalIssues', 'credibility', 'watch'];
   if (variant === 'watchlist')
     return [
       'totalScore',
@@ -81,8 +83,9 @@ const getAllowedSortOptions = (variant: LeaderboardVariant): SortOption[] => {
       'totalIssues',
       'issueDiscoveryScore',
       'credibility',
+      'watch',
     ];
-  return ['totalScore', 'usdPerDay', 'totalPRs', 'credibility'];
+  return ['totalScore', 'usdPerDay', 'totalPRs', 'credibility', 'watch'];
 };
 
 type EligibilityFilter = 'all' | 'eligible' | 'ineligible';
@@ -139,6 +142,7 @@ const compareMiners = (
   a: MinerStats,
   b: MinerStats,
   option: SortOption,
+  isWatched: (key: string) => boolean,
 ): number => {
   switch (option) {
     case 'totalScore':
@@ -155,6 +159,8 @@ const compareMiners = (
       );
     case 'credibility':
       return (a.credibility ?? 0) - (b.credibility ?? 0);
+    case 'watch':
+      return compareByWatchlist(a, b, (m) => m.githubId, isWatched);
     default:
       return 0;
   }
@@ -172,6 +178,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     () => getAllowedSortOptions(variant),
     [variant],
   );
+
+  const { isWatched } = useWatchlist('miners');
 
   // Stable filter configs — values are destructured below.
   // `view` always writes the URL param (never returns null) — otherwise
@@ -282,11 +290,11 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   // only hides rows without renumbering the ones that remain. Sort direction
   // is included so the list view's asc/desc toggle ranks consistently.
   const rankedMiners = useMemo(() => {
-    const directionMultiplier = sortDirection === 'asc' ? 1 : -1;
+    const dir = sortDirection === 'asc' ? 1 : -1;
     return [...miners]
-      .sort((a, b) => compareMiners(a, b, sortOption) * directionMultiplier)
+      .sort((a, b) => compareMiners(a, b, sortOption, isWatched) * dir)
       .map((miner, index) => ({ ...miner, rank: index + 1 }));
-  }, [miners, sortOption, sortDirection]);
+  }, [miners, sortOption, sortDirection, isWatched]);
 
   const filteredMiners = useMemo(() => {
     let result = rankedMiners;
