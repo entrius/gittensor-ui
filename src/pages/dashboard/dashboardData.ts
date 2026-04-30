@@ -69,6 +69,8 @@ export interface DashboardFeaturedContributor {
   /** Segments for the credibility donut (e.g. Merged/Open/Closed). */
   segments?: Array<{ label: string; value: number }>;
   score?: number;
+  mergedPrs?: number;
+  closedPrs?: number;
   solvedIssues?: number;
   earnings?: { usdPerDay: number; lifetimeUsd: number };
 }
@@ -647,16 +649,21 @@ const getHighestScoringMergedAuthor = (
   if (!topPr?.githubId) return undefined;
 
   const miner = miners.find((m) => m.githubId === topPr.githubId);
+  const prScore = Math.round(parseNumber(topPr.score));
   return {
     githubId: topPr.githubId,
     githubUsername: topPr.author || undefined,
     featuredLabel: 'Highest-Scoring PR Author',
     name: topPr.author ?? topPr.githubId,
+    score: prScore,
+    mergedPrs: miner?.totalMergedPrs ?? 0,
+    closedPrs: miner?.totalClosedPrs ?? 0,
+    earnings: {
+      usdPerDay: miner?.usdPerDay ?? 0,
+      lifetimeUsd: miner?.lifetimeUsd ?? 0,
+    },
     metrics: [
-      {
-        value: Math.round(parseNumber(topPr.score)).toLocaleString(),
-        unit: 'Score',
-      },
+      { value: prScore.toLocaleString(), unit: 'Score' },
       ...optionalCredibilityMetrics(miner?.credibility),
     ],
     repos: topPr.repository ? [topPr.repository] : [],
@@ -697,6 +704,13 @@ const pickTopOssContributor = (
     githubId: topOssMiner.githubId,
     githubUsername: topOssMiner.githubUsername,
     name: topOssMiner.githubUsername ?? topOssMiner.githubId,
+    score: Math.round(parseNumber(topOssMiner.totalScore)),
+    mergedPrs: topOssMiner.totalMergedPrs ?? 0,
+    closedPrs: topOssMiner.totalClosedPrs ?? 0,
+    earnings: {
+      usdPerDay: topOssMiner.usdPerDay ?? 0,
+      lifetimeUsd: topOssMiner.lifetimeUsd ?? 0,
+    },
     metrics: [
       {
         value: Math.round(parseNumber(topOssMiner.totalScore)).toLocaleString(),
@@ -735,6 +749,13 @@ const pickMostMergedPrMiner = (
     githubId: mostMergedPrMiner.githubId,
     githubUsername: mostMergedPrMiner.githubUsername,
     name: mostMergedPrMiner.githubUsername ?? mostMergedPrMiner.githubId,
+    score: Math.round(parseNumber(mostMergedPrMiner.totalScore)),
+    mergedPrs: mostMergedPrMiner.totalMergedPrs ?? 0,
+    closedPrs: mostMergedPrMiner.totalClosedPrs ?? 0,
+    earnings: {
+      usdPerDay: mostMergedPrMiner.usdPerDay ?? 0,
+      lifetimeUsd: mostMergedPrMiner.lifetimeUsd ?? 0,
+    },
     metrics: [
       {
         value: `${mostMergedPrMiner.totalMergedPrs ?? 0}`,
