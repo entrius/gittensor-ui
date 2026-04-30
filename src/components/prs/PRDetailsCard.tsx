@@ -153,11 +153,14 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
         },
         tooltip: {
           trigger: 'item',
+          confine: true,
           formatter: '{b}: {c} ({d}%)',
           backgroundColor: alpha(theme.palette.common.black, 0.9),
           borderColor: alpha(theme.palette.common.white, 0.15),
           borderWidth: 1,
           textStyle: { color: theme.palette.text.primary },
+          extraCssText:
+            'max-width: 90vw; white-space: normal; word-break: break-word;',
         },
         series: [
           {
@@ -196,7 +199,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
         borderRadius: 3,
         border: `1px solid ${theme.palette.border.light}`,
         backgroundColor: 'transparent',
-        p: 3,
+        p: { xs: 2, sm: 3 },
       }}
       elevation={0}
     >
