@@ -16,6 +16,7 @@ import { STATUS_COLORS } from '../../theme';
 import { isMergedPr } from '../../utils/prStatus';
 import { parseNumber } from '../../utils/ExplorerUtils';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
+import { getMinerHref } from '../../routes.helpers';
 
 interface RepositoryContributorsTableProps {
   repositoryFullName: string;
@@ -210,7 +211,9 @@ const RepositoryContributorsTable: React.FC<
       cellSx: { minWidth: 0 },
       renderCell: (c) => (
         <LinkBox
-          href={`/miners/details?githubId=${encodeURIComponent(c.githubId)}&mode=${programTab === 'issues' ? 'issues' : 'prs'}`}
+          href={getMinerHref(c.githubId, {
+            mode: programTab === 'issues' ? 'issues' : 'prs',
+          })}
           linkState={{
             backLabel: `Back to ${repositoryFullName}`,
           }}

@@ -4,6 +4,7 @@ import { format, parseISO } from 'date-fns';
 import type { CommitLog } from '../api';
 import { LinkBox } from './common/linkBehavior';
 import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../theme';
+import { getPrHref } from '../routes.helpers';
 
 interface DayPRsPanelProps {
   date: string;
@@ -97,7 +98,7 @@ const DayPRsPanel: React.FC<DayPRsPanelProps> = ({ date, prs, username }) => {
           {dayPRs.map((pr, idx) => {
             const dotColor = prStateColor(pr);
             const stateLabel = prStateLabel(pr);
-            const detailsHref = `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`;
+            const detailsHref = getPrHref(pr.repository, pr.pullRequestNumber);
             const timeLabel = pr.mergedAt
               ? format(new Date(pr.mergedAt), 'h:mm a')
               : '';

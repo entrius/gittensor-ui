@@ -21,6 +21,7 @@ import theme, {
 import { parseNumber } from '../../utils';
 import { buildMultiplierGrid } from '../../utils/multiplierDefs';
 import PRTimeDecayChart from './PRTimeDecayChart';
+import { getRepoHref } from '../../routes.helpers';
 
 interface PRDetailsCardProps {
   repository: string;
@@ -38,7 +39,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     usePullRequestDetails(repository, pullRequestNumber);
 
   const repoLinkProps = useLinkBehavior<HTMLAnchorElement>(
-    `/miners/repository?name=${encodeURIComponent(repository)}`,
+    getRepoHref(repository),
     { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
   );
   if (isDetailsLoading) {

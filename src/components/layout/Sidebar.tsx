@@ -348,7 +348,7 @@ const SidebarNavLink: React.FC<{
         textDecoration: 'none',
         fontSize: NAV_LABEL_FONT,
         textTransform: 'none',
-        backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+        backgroundColor: isActive ? 'border.light' : 'transparent',
         borderLeft: collapsed
           ? 'none'
           : isActive
@@ -363,7 +363,7 @@ const SidebarNavLink: React.FC<{
           flexShrink: 0,
         },
         '&:hover': {
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          backgroundColor: 'surface.light',
           color: 'primary.main',
         },
       }}

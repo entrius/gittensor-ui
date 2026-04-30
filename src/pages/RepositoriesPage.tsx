@@ -10,8 +10,10 @@ import { useAllPrs, useAllMiners, useReposAndWeights } from '../api';
 import { type CommitLog } from '../api/models/Dashboard';
 import { buildRepoDiscoveryRollupFromMiners } from '../utils/ExplorerUtils';
 import { isMergedPr } from '../utils/prStatus';
+import { getRepoHref, getPrHref } from '../routes.helpers';
+import { MONO_FONT } from '../theme';
 
-const FONTS = { mono: '"JetBrains Mono", monospace' } as const;
+const FONTS = { mono: MONO_FONT } as const;
 
 // ── Shared row style ────────────────────────────────────────────────────────
 const ROW_HEIGHT = 40; // px – keeps every row exactly the same across cards
@@ -39,7 +41,7 @@ const HighlightRow: React.FC<{
         cursor: 'pointer',
         transition: 'background 0.15s',
         mx: -1,
-        '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
+        '&:hover': { backgroundColor: 'surface.light' },
       }}
     >
       <Box
@@ -58,7 +60,8 @@ const HighlightRow: React.FC<{
             width: 24,
             height: 24,
             flexShrink: 0,
-            border: '1px solid rgba(255,255,255,0.1)',
+            border: '1px solid',
+            borderColor: 'border.light',
             backgroundColor: avatarBg,
           }}
         />
@@ -116,10 +119,6 @@ const cardSx = (theme: Theme) => ({
 
 // ── Page ────────────────────────────────────────────────────────────────────
 const REPO_LINK_STATE = { backLabel: 'Back to Repositories' } as const;
-const getRepoHref = (name: string) =>
-  `/miners/repository?name=${encodeURIComponent(name)}`;
-const getPrHref = (name: string, number: number) =>
-  `/miners/pr?repo=${encodeURIComponent(name)}&number=${number}`;
 
 const RepositoriesPage: React.FC = () => {
   const formatRelativeTime = (date: Date) => {

@@ -10,6 +10,7 @@ import {
   sectionContainerSx,
   sectionTitleSx,
 } from './featuredWorkStyles';
+import { getPrHref, getRepoHref } from '../../../routes.helpers';
 
 interface DashboardFeaturedWorkProps {
   items: FeaturedWorkRepo[];
@@ -25,10 +26,9 @@ const MAX_COLUMNS_SM = 2;
 const MAX_COLUMNS_LG = 3;
 
 const buildPrDetailUrl = (repo: string, prNumber: number): string =>
-  `/miners/pr?repo=${encodeURIComponent(repo)}&number=${encodeURIComponent(String(prNumber))}`;
+  getPrHref(repo, prNumber);
 
-const buildRepoDetailUrl = (repo: string): string =>
-  `/miners/repository?name=${encodeURIComponent(repo)}`;
+const buildRepoDetailUrl = (repo: string): string => getRepoHref(repo);
 
 const computeGridColumns = (
   itemCount: number,

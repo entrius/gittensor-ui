@@ -28,6 +28,7 @@ import {
 import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
 import { tooltipSlotProps } from '../../theme';
+import { getPrHref } from '../../routes.helpers';
 
 type PrSortField = 'number' | 'repository' | 'score' | 'lines' | 'date';
 type SortDir = 'asc' | 'desc';
@@ -207,10 +208,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
 
   const handleRowClick = useCallback(
     (pr: CommitLog) => {
-      navigate(
-        `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
-        { state: { backLabel: `Back to ${prs?.[0]?.author || githubId}` } },
-      );
+      navigate(getPrHref(pr.repository, pr.pullRequestNumber), {
+        state: { backLabel: `Back to ${prs?.[0]?.author || githubId}` },
+      });
     },
     [navigate, prs, githubId],
   );

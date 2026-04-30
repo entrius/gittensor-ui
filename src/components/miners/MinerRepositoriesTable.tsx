@@ -20,6 +20,7 @@ import RankBadge from './RankBadge';
 import EmptyStateMessage from './EmptyStateMessage';
 import TablePagination from './TablePagination';
 import { searchFieldSx } from './MinerRepositoriesTable.styles';
+import { getRepoHref } from '../../routes.helpers';
 import {
   type RepoSortField,
   type IssueRepoSortField,
@@ -156,7 +157,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     const owner = repository.split('/')[0];
     return (
       <LinkBox
-        href={`/miners/repository?name=${encodeURIComponent(repository)}`}
+        href={getRepoHref(repository)}
         linkState={{ backLabel: `Back to ${backLabel}` }}
         sx={{
           display: 'flex',

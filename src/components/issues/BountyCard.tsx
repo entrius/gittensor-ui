@@ -22,7 +22,7 @@ import {
   formatDate,
   formatAlphaToUsd,
 } from '../../utils/format';
-import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { STATUS_COLORS, SURFACE_OPACITY, TEXT_OPACITY } from '../../theme';
 
 interface BountyCardProps {
   issue: IssueBounty;
@@ -139,11 +139,19 @@ export const BountyCard: React.FC<BountyCardProps> = ({
           category="bounties"
           itemKey={String(issue.id)}
           size="small"
-          sx={{
-            backgroundColor: 'rgba(255,255,255,0.08)',
+          sx={(theme) => ({
+            backgroundColor: alpha(
+              theme.palette.common.white,
+              SURFACE_OPACITY.divider,
+            ),
             borderRadius: '50%',
-            '&:hover': { backgroundColor: 'rgba(255,255,255,0.15)' },
-          }}
+            '&:hover': {
+              backgroundColor: alpha(
+                theme.palette.common.white,
+                SURFACE_OPACITY.emphasis,
+              ),
+            },
+          })}
         />
       </Box>
 

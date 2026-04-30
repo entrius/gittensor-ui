@@ -12,10 +12,10 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
 import { alpha, darken } from '@mui/material/styles';
-import { scrollbarSx, tooltipSlotProps } from '../../theme';
+import { MONO_FONT, scrollbarSx, tooltipSlotProps } from '../../theme';
 import { useClipboardCopy } from '../../hooks/useClipboardCopy';
 
-const MONO = '"JetBrains Mono", monospace';
+const MONO = MONO_FONT;
 
 const steps = [
   {

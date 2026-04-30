@@ -6,6 +6,14 @@ import {
 } from '@mui/material/styles';
 
 // Shared Color Constants (exported for use outside MUI components)
+/**
+ * App-wide monospace stack. Body inherits this via `MuiCssBaseline`, but a
+ * handful of components (MUI Typography variants, ECharts, etc.) override
+ * fontFamily and need to opt back in explicitly — import this rather than
+ * re-declaring the string at the call site.
+ */
+export const MONO_FONT = '"JetBrains Mono", monospace';
+
 export const UI_COLORS = {
   white: '#ffffff',
   black: '#000000',
@@ -120,6 +128,22 @@ export const TEXT_OPACITY = {
   ghost: 0.2,
 } as const;
 
+/**
+ * White-on-dark surface opacities for backgrounds and dividers. Use with
+ * `alpha(theme.palette.common.white, SURFACE_OPACITY.X)` rather than
+ * hardcoding `rgba(255,255,255,X)`. Most components should prefer the
+ * already-themed `palette.surface.*` and `palette.border.*` tokens; this
+ * map covers the gaps (e.g. an emphasized hover at 0.15).
+ */
+export const SURFACE_OPACITY = {
+  subtle: 0.02,
+  light: 0.05,
+  hover: 0.06,
+  divider: 0.08,
+  active: 0.1,
+  emphasis: 0.15,
+} as const;
+
 /** Theme-driven markdown document body (README, CONTRIBUTING, etc.). */
 export const markdownDocumentPaperSx = (theme: Theme): SxProps<Theme> => ({
   p: { xs: 2, md: 5 },
@@ -176,7 +200,7 @@ export const markdownDocumentPaperSx = (theme: Theme): SxProps<Theme> => ({
     padding: '0.2em 0.4em',
     borderRadius: '6px',
     fontSize: '85%',
-    fontFamily: '"JetBrains Mono", monospace',
+    fontFamily: MONO_FONT,
   },
   '& pre': {
     backgroundColor: theme.palette.surface.elevated,
@@ -218,7 +242,7 @@ export const headerCellStyle = {
   backgroundColor: 'surface.tooltip',
   backdropFilter: 'blur(8px)',
   color: 'text.secondary',
-  fontFamily: '"JetBrains Mono", monospace',
+  fontFamily: MONO_FONT,
   fontWeight: 500,
   fontSize: '0.75rem',
   borderBottom: '1px solid',
@@ -230,7 +254,7 @@ export const headerCellStyle = {
 
 export const bodyCellStyle = {
   color: 'text.primary',
-  fontFamily: '"JetBrains Mono", monospace',
+  fontFamily: MONO_FONT,
   borderBottom: '1px solid',
   borderColor: 'border.light',
   fontSize: '0.85rem',
@@ -498,7 +522,7 @@ const theme = createTheme({
   typography: {
     // JetBrains Mono is the app-wide default — every component inherits it
     // without needing an explicit fontFamily prop.
-    fontFamily: '"JetBrains Mono", monospace',
+    fontFamily: MONO_FONT,
     dataValue: {
       fontWeight: 500,
       letterSpacing: '0.02em',
@@ -564,7 +588,7 @@ const theme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          fontFamily: '"JetBrains Mono", monospace',
+          fontFamily: MONO_FONT,
         },
       },
     },
@@ -592,7 +616,7 @@ const theme = createTheme({
           props: { variant: 'back' },
           style: {
             color: 'rgba(255, 255, 255, 0.7)',
-            fontFamily: '"JetBrains Mono", monospace',
+            fontFamily: MONO_FONT,
             fontSize: '0.8rem',
             fontWeight: 500,
             letterSpacing: '0.5px',
@@ -629,7 +653,7 @@ const theme = createTheme({
       },
       styleOverrides: {
         root: {
-          fontFamily: '"JetBrains Mono", monospace',
+          fontFamily: MONO_FONT,
           fontSize: '0.75rem',
           fontWeight: 600,
           borderRadius: '6px',

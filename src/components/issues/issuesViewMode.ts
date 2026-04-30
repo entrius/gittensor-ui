@@ -1,51 +1,31 @@
-export type IssuesViewMode = 'cards' | 'list';
+import {
+  CARD_LIST_VIEW_QUERY_PARAM,
+  CARD_ROW_SIZES,
+  DEFAULT_CARD_ROWS,
+  DEFAULT_LIST_ROWS,
+  LIST_ROW_SIZES,
+  VALID_ROW_SIZES,
+  cardListViewModeFromQuery,
+  clampCardListRows,
+  createCardListViewModeStorage,
+  type CardListViewMode,
+} from '../../utils/cardListViewMode';
 
-export const ISSUES_VIEW_QUERY_PARAM = 'view';
+export type IssuesViewMode = CardListViewMode;
+
+export const ISSUES_VIEW_QUERY_PARAM = CARD_LIST_VIEW_QUERY_PARAM;
 export const ISSUES_VIEW_STORAGE_KEY = 'issues:viewMode';
 
-export const readStoredIssuesViewMode = (): IssuesViewMode => {
-  try {
-    return window.localStorage.getItem(ISSUES_VIEW_STORAGE_KEY) === 'cards'
-      ? 'cards'
-      : 'list';
-  } catch {
-    return 'list';
-  }
-};
+const storage = createCardListViewModeStorage(ISSUES_VIEW_STORAGE_KEY);
+export const readStoredIssuesViewMode = storage.read;
+export const writeStoredIssuesViewMode = storage.write;
 
-export const writeStoredIssuesViewMode = (mode: IssuesViewMode): void => {
-  try {
-    window.localStorage.setItem(ISSUES_VIEW_STORAGE_KEY, mode);
-  } catch {
-    // localStorage unavailable (private mode, quota) — preference won't persist
-  }
-};
+export const getIssuesViewModeFromQuery = cardListViewModeFromQuery;
 
-export const getIssuesViewModeFromQuery = (
-  value: string | null,
-  fallback: IssuesViewMode,
-): IssuesViewMode => {
-  if (value === 'cards') return 'cards';
-  if (value === 'list') return 'list';
-  return fallback;
-};
+export const ISSUES_LIST_ROWS = LIST_ROW_SIZES;
+export const ISSUES_CARD_ROWS = CARD_ROW_SIZES;
+export const ISSUES_VALID_ROWS = VALID_ROW_SIZES;
+export const ISSUES_DEFAULT_LIST_ROWS = DEFAULT_LIST_ROWS;
+export const ISSUES_DEFAULT_CARD_ROWS = DEFAULT_CARD_ROWS;
 
-// Card grid: 3 cols (lg/md), 2 (sm), 1 (xs). Sizes divisible by 1, 2, 3 so
-// the last row of cards is never partial.
-export const ISSUES_LIST_ROWS = [10, 25, 50] as const;
-export const ISSUES_CARD_ROWS = [12, 24, 48] as const;
-export const ISSUES_VALID_ROWS: readonly number[] = [
-  ...ISSUES_LIST_ROWS,
-  ...ISSUES_CARD_ROWS,
-];
-export const ISSUES_DEFAULT_LIST_ROWS = 10;
-export const ISSUES_DEFAULT_CARD_ROWS = 12;
-
-export const clampRowsForIssuesView = (
-  rows: number,
-  mode: IssuesViewMode,
-): number => {
-  const options = mode === 'cards' ? ISSUES_CARD_ROWS : ISSUES_LIST_ROWS;
-  if ((options as readonly number[]).includes(rows)) return rows;
-  return mode === 'cards' ? ISSUES_DEFAULT_CARD_ROWS : ISSUES_DEFAULT_LIST_ROWS;
-};
+export const clampRowsForIssuesView = clampCardListRows;
