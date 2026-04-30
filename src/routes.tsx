@@ -8,7 +8,7 @@ export type AppRoute = Omit<PathRouteProps, 'path'> & {
 };
 
 // main menu pages
-const HomePage = React.lazy(() => import('./pages/HomePage'));
+const HomePage = React.lazy(() => import('./pages/home/HomePage'));
 // AboutPage and FAQPage deleted — redirects inline below
 const DashboardPage = React.lazy(
   () => import('./pages/dashboard/DashboardPage'),
@@ -31,7 +31,7 @@ const WatchlistPage = React.lazy(() => import('./pages/WatchlistPage'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 
 const routesArray: AppRoute[] = [
-  { name: 'home', path: '/', element: <HomePage />, showGlobalSearch: true },
+  { name: 'home', path: '/', element: <HomePage /> },
   {
     name: 'dashboard',
     path: '/dashboard',

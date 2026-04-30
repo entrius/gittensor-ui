@@ -1,5 +1,5 @@
-export { default as HomePage } from './HomePage';
-export * from './HomePage';
+export { default as HomePage } from './home/HomePage';
+export * from './home/HomePage';
 
 export { default as LoadingPage } from './LoadingPage';
 export * from './LoadingPage';
