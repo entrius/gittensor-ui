@@ -57,8 +57,7 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
       spacing={2}
       sx={{ height: '100%', overflow: 'auto', pr: 1, ...scrollbarSx }}
     >
-      {/* Activity Cards: PR Activity, Issue Activity, Code Impact */}
-      <ActivitySidebarCards miners={miners} />
+      <ActivitySidebarCards miners={miners} variant={variant} />
 
       {/* Leaderboard Lists (Tabs) */}
       <SectionCard
