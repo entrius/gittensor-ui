@@ -28,7 +28,6 @@ const ISSUE_TABS = [
   'overview',
   'activity',
   'open-issues',
-  'issues',
   'repositories',
 ] as const;
 type MinerDetailsTab = (typeof PR_TABS)[number] | (typeof ISSUE_TABS)[number];

@@ -812,7 +812,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
       >
         <TextField
           size="small"
-          placeholder="Search by title, repo, or issue..."
+          placeholder="Search by title, repo, or issue #..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           InputProps={{
