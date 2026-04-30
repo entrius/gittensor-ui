@@ -21,7 +21,8 @@ const KpiBox: React.FC<{
   return (
     <Box
       sx={{
-        flexShrink: 0,
+        flex: 1,
+        minWidth: 'max-content',
         px: { xs: 1, sm: 1.5 },
         py: 0.85,
         borderRight: isLast
