@@ -361,7 +361,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               <Tooltip
                 title={scoreTooltip}
                 arrow
-                placement="left"
+                placement="top"
+                followCursor
                 slotProps={tooltipSlotProps}
               >
                 <Typography
