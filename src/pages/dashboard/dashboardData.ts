@@ -18,7 +18,6 @@ import {
   isIssueDiscoveryContributionPr,
   parseNumber,
 } from '../../utils';
-import { formatTokenAmount } from '../../utils/format';
 
 export type PresetTimeRange = '1d' | '7d' | '35d';
 export type TrendTimeRange = PresetTimeRange | 'all';
