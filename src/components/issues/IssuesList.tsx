@@ -189,10 +189,17 @@ const IssuesList: React.FC<IssuesListProps> = ({
     (overrides: { filter?: FilterType; view?: IssuesViewMode }) => {
       const f = overrides.filter ?? filterType;
       const v = overrides.view ?? viewMode;
-      const params: Record<string, string> = {};
-      if (f !== 'all') params.filter = f;
-      if (v === 'cards') params.view = 'cards';
-      setSearchParams(params, { replace: true });
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (f !== 'all') next.set('filter', f);
+          else next.delete('filter');
+          if (v === 'cards') next.set(ISSUES_VIEW_QUERY_PARAM, 'cards');
+          else next.delete(ISSUES_VIEW_QUERY_PARAM);
+          return next;
+        },
+        { replace: true },
+      );
     },
     [filterType, viewMode, setSearchParams],
   );
