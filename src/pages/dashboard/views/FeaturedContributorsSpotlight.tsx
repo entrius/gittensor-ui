@@ -4,6 +4,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { RANK_COLORS } from '../../../theme';
 import { getGithubAvatarSrc } from '../../../utils';
+import { credibilityColor } from '../../../utils/format';
 import { type DashboardFeaturedContributor } from '../dashboardData';
 
 const FONTS = { mono: '"JetBrains Mono", ui-monospace, monospace' } as const;
@@ -74,23 +75,23 @@ const KpiBox: React.FC<{
 };
 
 interface Props {
-  discoverers: DashboardFeaturedContributor[];
+  contributors: DashboardFeaturedContributor[];
   isLoading?: boolean;
   viewAllHref?: string;
 }
 
-const DiscovererCard: React.FC<{
-  d: DashboardFeaturedContributor;
+const ContributorCard: React.FC<{
+  c: DashboardFeaturedContributor;
   rank: number;
   onClick: () => void;
   maxScore: number;
-  maxSolved: number;
-}> = ({ d, rank, onClick, maxScore, maxSolved }) => {
+  maxMerged: number;
+}> = ({ c, rank, onClick, maxScore, maxMerged }) => {
   const theme = useTheme();
   const accent = ACCENT[rank] ?? theme.palette.text.primary;
-  const avatarUsername = d.githubUsername ?? d.githubId;
-  const cred = d.credibility ?? 0;
-  const earn = d.earnings?.usdPerDay ?? 0;
+  const avatarUsername = c.githubUsername ?? c.githubId;
+  const cred = c.credibility ?? 0;
+  const earn = c.earnings?.usdPerDay ?? 0;
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -104,9 +105,9 @@ const DiscovererCard: React.FC<{
 
   const repoPills = useMemo(
     () =>
-      d.repos.slice(0, 3).map((repo, idx) => (
+      c.repos.slice(0, 3).map((repo, idx) => (
         <Box
-          key={`${d.githubId}-${repo}`}
+          key={`${c.githubId}-${repo}`}
           sx={{
             ...mono,
             fontSize: '0.58rem',
@@ -120,12 +121,12 @@ const DiscovererCard: React.FC<{
             whiteSpace: 'nowrap',
           }}
         >
-          {idx === 2 && d.repos.length > 3
-            ? `+${d.repos.length - 2}`
+          {idx === 2 && c.repos.length > 3
+            ? `+${c.repos.length - 2}`
             : repo.split('/').pop() || repo}
         </Box>
       )),
-    [d.repos, d.githubId, theme],
+    [c.repos, c.githubId, theme],
   );
 
   return (
@@ -160,14 +161,26 @@ const DiscovererCard: React.FC<{
       {/* Left: rank + avatar + identity */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 }, minWidth: 0 }}>
         <Typography
-          sx={{ ...mono, fontSize: '0.7rem', fontWeight: 700, color: accent, width: 22, flexShrink: 0 }}
+          sx={{
+            ...mono,
+            fontSize: '0.7rem',
+            fontWeight: 700,
+            color: accent,
+            width: 22,
+            flexShrink: 0,
+          }}
         >
           #{rank + 1}
         </Typography>
         <Avatar
           src={getGithubAvatarSrc(avatarUsername)}
           alt={avatarUsername}
-          sx={{ width: 36, height: 36, border: `1.5px solid ${alpha(theme.palette.common.white, 0.14)}`, flexShrink: 0 }}
+          sx={{
+            width: 36,
+            height: 36,
+            border: `1.5px solid ${alpha(theme.palette.common.white, 0.14)}`,
+            flexShrink: 0,
+          }}
         />
         <Box sx={{ minWidth: 0 }}>
           <Typography
@@ -182,10 +195,18 @@ const DiscovererCard: React.FC<{
               mb: 0.2,
             }}
           >
-            {d.name}
+            {c.name}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.45, minWidth: 0 }}>
-            <Box sx={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: accent, flexShrink: 0 }} />
+            <Box
+              sx={{
+                width: 5,
+                height: 5,
+                borderRadius: '50%',
+                backgroundColor: accent,
+                flexShrink: 0,
+              }}
+            />
             <Typography
               sx={{
                 ...mono,
@@ -197,9 +218,12 @@ const DiscovererCard: React.FC<{
                 textOverflow: 'ellipsis',
               }}
             >
-              {d.featuredLabel}
+              {c.featuredLabel}
               {earn > 0 && (
-                <Box component="span" sx={{ color: theme.palette.status.success, ml: 0.5 }}>
+                <Box
+                  component="span"
+                  sx={{ color: theme.palette.status.success, ml: 0.5 }}
+                >
                   ${Math.round(earn)}/d
                 </Box>
               )}
@@ -220,32 +244,54 @@ const DiscovererCard: React.FC<{
               backgroundColor: alpha(accent, 0.07),
             }}
           >
-            <Typography sx={{ ...mono, fontSize: '1.05rem', fontWeight: 800, color: accent, lineHeight: 1 }}>
-              {(d.score ?? 0).toLocaleString()}
+            <Typography
+              sx={{ ...mono, fontSize: '1.05rem', fontWeight: 800, color: accent, lineHeight: 1 }}
+            >
+              {(c.score ?? 0).toLocaleString()}
             </Typography>
-            <Typography sx={{ ...mono, fontSize: '0.48rem', color: alpha(theme.palette.text.primary, 0.35), mt: 0.15 }}>
-              discovery score
+            <Typography
+              sx={{ ...mono, fontSize: '0.48rem', color: alpha(theme.palette.text.primary, 0.35), mt: 0.15 }}
+            >
+              contributor score
             </Typography>
           </Box>
           <Box>
-            <Typography sx={{ ...mono, fontSize: '1.05rem', fontWeight: 800, color: theme.palette.text.primary, lineHeight: 1 }}>
-              {d.solvedIssues ?? 0}
+            <Typography
+              sx={{ ...mono, fontSize: '1.05rem', fontWeight: 800, color: theme.palette.text.primary, lineHeight: 1 }}
+            >
+              {c.mergedPrs ?? 0}
             </Typography>
-            <Typography sx={{ ...mono, fontSize: '0.48rem', color: alpha(theme.palette.text.primary, 0.35), mt: 0.15 }}>
-              solved issues
+            <Typography
+              sx={{ ...mono, fontSize: '0.48rem', color: alpha(theme.palette.text.primary, 0.35), mt: 0.15 }}
+            >
+              merged PRs
             </Typography>
           </Box>
         </Box>
         {cred > 0 && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Box
-              sx={{ flex: 1, height: 3, borderRadius: 99, backgroundColor: alpha(theme.palette.common.white, 0.07), overflow: 'hidden' }}
+              sx={{
+                flex: 1,
+                height: 3,
+                borderRadius: 99,
+                backgroundColor: alpha(theme.palette.common.white, 0.07),
+                overflow: 'hidden',
+              }}
             >
               <Box
-                sx={{ width: `${Math.round(cred * 100)}%`, height: '100%', borderRadius: 99, backgroundColor: accent, transition: 'width 0.5s ease' }}
+                sx={{
+                  width: `${Math.round(cred * 100)}%`,
+                  height: '100%',
+                  borderRadius: 99,
+                  backgroundColor: accent,
+                  transition: 'width 0.5s ease',
+                }}
               />
             </Box>
-            <Typography sx={{ ...mono, fontSize: '0.52rem', color: alpha(theme.palette.text.primary, 0.38), whiteSpace: 'nowrap' }}>
+            <Typography
+              sx={{ ...mono, fontSize: '0.52rem', color: alpha(theme.palette.text.primary, 0.38), whiteSpace: 'nowrap' }}
+            >
               {Math.round(cred * 100)}% cred
             </Typography>
           </Box>
@@ -259,7 +305,9 @@ const DiscovererCard: React.FC<{
             {repoPills}
           </Box>
         )}
-        <Typography sx={{ ...mono, fontSize: '0.72rem', color: alpha(theme.palette.text.primary, 0.2), flexShrink: 0 }}>
+        <Typography
+          sx={{ ...mono, fontSize: '0.72rem', color: alpha(theme.palette.text.primary, 0.2), flexShrink: 0 }}
+        >
           →
         </Typography>
       </Box>
@@ -267,8 +315,8 @@ const DiscovererCard: React.FC<{
   );
 };
 
-const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
-  discoverers,
+const FeaturedContributorsSpotlight: React.FC<Props> = ({
+  contributors,
   isLoading = false,
   viewAllHref,
 }) => {
@@ -277,32 +325,32 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
 
   const open = useCallback(
     (githubId: string) =>
-      navigate(
-        `/miners/details?githubId=${encodeURIComponent(githubId)}&mode=issues`,
-        { state: { backTo: '/dashboard' } },
-      ),
+      navigate(`/miners/details?githubId=${encodeURIComponent(githubId)}`, {
+        state: { backTo: '/dashboard' },
+      }),
     [navigate],
   );
 
   const kpis = useMemo(() => {
-    if (discoverers.length === 0) return null;
-    const topScore = Math.max(...discoverers.map((d) => d.score ?? 0));
-    const totalSolved = discoverers.reduce((s, d) => s + (d.solvedIssues ?? 0), 0);
-    const uniqueRepos = new Set(discoverers.flatMap((d) => d.repos)).size;
-    const totalEarnings = discoverers.reduce(
-      (s, d) => s + (d.earnings?.usdPerDay ?? 0),
+    if (contributors.length === 0) return null;
+    const topScore = Math.max(...contributors.map((c) => c.score ?? 0));
+    const totalMerged = contributors.reduce((s, c) => s + (c.mergedPrs ?? 0), 0);
+    const totalClosed = contributors.reduce((s, c) => s + (c.closedPrs ?? 0), 0);
+    const uniqueRepos = new Set(contributors.flatMap((c) => c.repos)).size;
+    const totalEarnings = contributors.reduce(
+      (s, c) => s + (c.earnings?.usdPerDay ?? 0),
       0,
     );
-    return { topScore, totalSolved, uniqueRepos, totalEarnings };
-  }, [discoverers]);
+    return { topScore, totalMerged, totalClosed, uniqueRepos, totalEarnings };
+  }, [contributors]);
 
   const maxScore = useMemo(
-    () => Math.max(...discoverers.map((d) => d.score ?? 0), 1),
-    [discoverers],
+    () => Math.max(...contributors.map((c) => c.score ?? 0), 1),
+    [contributors],
   );
-  const maxSolved = useMemo(
-    () => Math.max(...discoverers.map((d) => d.solvedIssues ?? 0), 1),
-    [discoverers],
+  const maxMerged = useMemo(
+    () => Math.max(...contributors.map((c) => c.mergedPrs ?? 0), 1),
+    [contributors],
   );
 
   return (
@@ -334,7 +382,7 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
               color: theme.palette.text.primary,
             }}
           >
-            Featured Discoverers
+            Featured Contributors
           </Typography>
           <Box
             sx={{
@@ -343,16 +391,16 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
               fontWeight: 700,
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
-              color: RANK_COLORS.first,
-              backgroundColor: alpha(RANK_COLORS.first, 0.1),
-              border: `1px solid ${alpha(RANK_COLORS.first, 0.22)}`,
+              color: theme.palette.status.success,
+              backgroundColor: alpha(theme.palette.status.success, 0.1),
+              border: `1px solid ${alpha(theme.palette.status.success, 0.22)}`,
               borderRadius: 99,
               px: 0.8,
               py: 0.22,
               whiteSpace: 'nowrap',
             }}
           >
-            Issues 35d
+            OSS 35d
           </Box>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -391,7 +439,7 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
           mb: 1.25,
         }}
       >
-        Issue discovery leaders by score, solved issues output, and repository impact.
+        OSS contribution leaders by score, merged PR output, and repository impact.
       </Typography>
 
       {/* KPI strip */}
@@ -409,18 +457,18 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
           <KpiBox
             title="Highlighted score"
             value={kpis.topScore.toLocaleString()}
-            sub={`${discoverers.length} discoverers`}
-            accentColor={RANK_COLORS.first}
+            sub={`${contributors.length} miners`}
+            accentColor={theme.palette.status.success}
           />
           <KpiBox
-            title="Solved Issues"
-            value={kpis.totalSolved.toLocaleString()}
+            title="Merged PRs"
+            value={kpis.totalMerged.toLocaleString()}
             sub="all time"
           />
           <KpiBox
-            title="Active Discoverers"
-            value={String(discoverers.length)}
-            sub="this period"
+            title="Closed PRs"
+            value={kpis.totalClosed.toLocaleString()}
+            sub="reviewed work"
           />
           <KpiBox
             title="Repos touched"
@@ -448,20 +496,20 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
         >
           <CircularProgress size={28} />
         </Box>
-      ) : discoverers.length === 0 ? (
+      ) : contributors.length === 0 ? (
         <Typography sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>
-          No discoverer highlights available.
+          No contributor highlights available.
         </Typography>
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
-          {discoverers.map((d, i) => (
-            <DiscovererCard
-              key={`${d.featuredLabel}-${d.githubId}`}
-              d={d}
+          {contributors.map((c, i) => (
+            <ContributorCard
+              key={`${c.featuredLabel}-${c.githubId}`}
+              c={c}
               rank={i}
-              onClick={() => open(d.githubId)}
+              onClick={() => open(c.githubId)}
               maxScore={maxScore}
-              maxSolved={maxSolved}
+              maxMerged={maxMerged}
             />
           ))}
         </Box>
@@ -470,4 +518,4 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
   );
 };
 
-export default FeaturedDiscoverersSpotlight;
+export default FeaturedContributorsSpotlight;
