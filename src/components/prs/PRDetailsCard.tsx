@@ -20,6 +20,7 @@ import theme, {
 } from '../../theme';
 import { parseNumber } from '../../utils';
 import { buildMultiplierGrid } from '../../utils/multiplierDefs';
+import PRTimeDecayChart from './PRTimeDecayChart';
 
 interface PRDetailsCardProps {
   repository: string;
@@ -428,6 +429,13 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
           })}
         </Box>
       </Box>
+
+      <PRTimeDecayChart
+        mergedAt={prDetails.mergedAt}
+        prState={prDetails.prState}
+        timeDecayMultiplier={prDetails.timeDecayMultiplier}
+        earnedScore={prDetails.earnedScore}
+      />
 
       <Box
         sx={{
