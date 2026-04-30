@@ -119,7 +119,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         return;
       }
       setSortKey(key);
-      setSortDirection('asc');
+      setSortDirection(key === 'title' || key === 'status' ? 'asc' : 'desc');
     },
     [sortKey],
   );
