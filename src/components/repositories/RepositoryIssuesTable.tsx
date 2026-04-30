@@ -23,6 +23,7 @@ import {
   type DataTableColumn,
 } from '../../components/common/DataTable';
 import { formatTokenAmount, getLowerText, type SortOrder } from '../../utils';
+import { WatchlistButton } from '../../components/common';
 import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
 import {
   getIssueStatusMeta,
@@ -42,6 +43,9 @@ type SortKey =
   | 'linkedPr'
   | 'created'
   | 'closed';
+
+const issueWatchlistKey = (issue: RepositoryIssue): string =>
+  `${issue.repositoryFullName}#${issue.number}`;
 
 const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   repositoryFullName,
@@ -266,6 +270,18 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       sortKey: 'closed',
       renderCell: (issue) =>
         issue.closedAt ? new Date(issue.closedAt).toLocaleDateString() : '-',
+    },
+    {
+      key: 'watch',
+      header: '★',
+      align: 'center',
+      renderCell: (issue) => (
+        <WatchlistButton
+          category="issues"
+          itemKey={issueWatchlistKey(issue)}
+          size="small"
+        />
+      ),
     },
   ];
 
