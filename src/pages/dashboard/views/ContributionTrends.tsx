@@ -329,6 +329,8 @@ const buildContributionTrendChartOption = ({
     color: visibleSeries.map((entry) => getTrendSeriesColor(theme, entry.key)),
     tooltip: {
       trigger: 'axis',
+      confine: true,
+      appendTo: () => document.body,
       axisPointer: {
         type: chartMode === 'bar' ? 'shadow' : 'line',
         lineStyle: {
