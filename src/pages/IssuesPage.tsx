@@ -6,9 +6,9 @@ import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { IssueStats, IssuesList } from '../components/issues';
 import { useIssuesStats, useIssues } from '../api';
+import { getBountyHref as getIssueHref } from '../routes.helpers';
 
 const ISSUE_LINK_STATE = { backLabel: 'Back to Bounties' } as const;
-const getIssueHref = (id: number) => `/bounties/details?id=${id}`;
 
 const IssuesPage: React.FC = () => {
   const navigate = useNavigate();

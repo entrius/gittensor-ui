@@ -41,7 +41,7 @@ export const WatchlistButton: React.FC<WatchlistButtonProps> = ({
           '&:hover': {
             color: 'warning.light',
             transform: 'scale(1.08)',
-            backgroundColor: 'rgba(255,255,255,0.06)',
+            backgroundColor: 'surface.light',
           },
           ...sx,
         }}

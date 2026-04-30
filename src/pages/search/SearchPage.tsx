@@ -8,6 +8,7 @@ import MinerTab from './MinerTab';
 import PullRequestsTab from './PullRequestsTab';
 import RepositoryTab from './RepositoryTab';
 import { MIN_SEARCH_QUERY_LENGTH, useSearchResults } from './searchData';
+import * as routeHelpers from '../../routes.helpers';
 
 const ROWS_PER_PAGE_OPTIONS = [10, 25, 50];
 const SEARCH_TABS = ['miners', 'repositories', 'prs', 'issues'] as const;
@@ -165,16 +166,16 @@ const SearchPage: React.FC = () => {
   };
 
   const getMinerHref = (miner: { githubId: string }) =>
-    `/miners/details?githubId=${encodeURIComponent(miner.githubId)}`;
+    routeHelpers.getMinerHref(miner.githubId);
 
   const getRepositoryHref = (repo: { fullName: string }) =>
-    `/miners/repository?name=${encodeURIComponent(repo.fullName)}`;
+    routeHelpers.getRepoHref(repo.fullName);
 
   const getPrHref = (pr: { repository: string; pullRequestNumber: number }) =>
-    `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`;
+    routeHelpers.getPrHref(pr.repository, pr.pullRequestNumber);
 
   const getIssueHref = (issue: { id: number }) =>
-    `/bounties/details?id=${issue.id}`;
+    routeHelpers.getBountyHref(issue.id);
 
   return (
     <Page title="Search">

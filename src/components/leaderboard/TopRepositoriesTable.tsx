@@ -66,6 +66,7 @@ import { RankIcon } from './RankIcon';
 import { getRepositoryOwnerAvatarBackground, type RepoStats } from './types';
 import {
   CHART_COLORS,
+  MONO_FONT,
   STATUS_COLORS,
   TEXT_OPACITY,
   UI_COLORS,
@@ -1385,7 +1386,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 Repository not in tracked list. Open details for{' '}
                 <Typography
                   component="span"
-                  sx={{ fontFamily: '"JetBrains Mono", monospace' }}
+                  sx={{ fontFamily: MONO_FONT }}
                 >
                   {trimmedSearch}
                 </Typography>

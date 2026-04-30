@@ -10,10 +10,10 @@ import {
 import { useAllMiners } from '../api';
 import { mapAllMinersToStats } from '../utils/minerMapper';
 import theme, { scrollbarSx } from '../theme';
+import { getMinerHref as buildMinerHref } from '../routes.helpers';
 
 const MINER_LINK_STATE = { backLabel: 'Back to Leaderboard' } as const;
-const getMinerHref = (miner: MinerStats) =>
-  `/miners/details?githubId=${miner.githubId}`;
+const getMinerHref = (miner: MinerStats) => buildMinerHref(miner.githubId);
 
 const TopMinersPage: React.FC = () => {
   const allMinerStatsQuery = useAllMiners();

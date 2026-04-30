@@ -10,10 +10,11 @@ import {
 import { useAllMiners } from '../api';
 import theme, { scrollbarSx } from '../theme';
 import { parseNumber } from '../utils/ExplorerUtils';
+import { getMinerHref as buildMinerHref } from '../routes.helpers';
 
 const MINER_LINK_STATE = { backLabel: 'Back to Discoveries' } as const;
 const getMinerHref = (miner: MinerStats) =>
-  `/miners/details?githubId=${miner.githubId}&mode=issues&tab=open-issues`;
+  buildMinerHref(miner.githubId, { mode: 'issues', tab: 'open-issues' });
 
 const DiscoveriesPage: React.FC = () => {
   const allMinerStatsQuery = useAllMiners();

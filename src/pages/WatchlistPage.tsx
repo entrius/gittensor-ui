@@ -86,6 +86,7 @@ import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import theme, {
   CHART_COLORS,
   LABEL_COLORS,
+  MONO_FONT,
   STATUS_COLORS,
   TEXT_OPACITY,
   UI_COLORS,
@@ -93,6 +94,7 @@ import theme, {
 } from '../theme';
 import FilterButton from '../components/FilterButton';
 import { getRepositoryOwnerAvatarBackground } from '../components/leaderboard/types';
+import * as routeHelpers from '../routes.helpers';
 
 const TAB_ORDER: readonly WatchlistCategory[] = [
   'miners',
@@ -571,9 +573,7 @@ const MinersList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       <TopMinersTable
         miners={minerStats}
         isLoading={isLoading}
-        getMinerHref={(m) =>
-          `/miners/details?githubId=${encodeURIComponent(m.githubId)}`
-        }
+        getMinerHref={(m) => routeHelpers.getMinerHref(m.githubId)}
         linkState={{ backLabel: 'Back to Watchlist' }}
         variant="watchlist"
         showDualEligibilityBadges
@@ -611,7 +611,7 @@ const repoStatusMeta = (repo: Repository) => {
 };
 
 const getRepoHref = (repo: Repository) =>
-  `/miners/repository?name=${encodeURIComponent(repo.fullName)}`;
+  routeHelpers.getRepoHref(repo.fullName);
 
 const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   {
@@ -825,7 +825,7 @@ const RepoMetricCell: React.FC<{ label: string; value: string }> = ({
   >
     <Typography
       sx={(theme) => ({
-        fontFamily: '"JetBrains Mono", monospace',
+        fontFamily: MONO_FONT,
         fontSize: '0.65rem',
         color: theme.palette.text.tertiary,
         textTransform: 'uppercase',
@@ -837,7 +837,7 @@ const RepoMetricCell: React.FC<{ label: string; value: string }> = ({
     </Typography>
     <Typography
       sx={{
-        fontFamily: '"JetBrains Mono", monospace',
+        fontFamily: MONO_FONT,
         fontSize: '0.9rem',
         fontWeight: 600,
         color: value === '-' ? 'text.secondary' : 'text.primary',
@@ -904,7 +904,7 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
           <Tooltip title={repo.fullName} placement="top" arrow>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
+                fontFamily: MONO_FONT,
                 fontSize: '0.85rem',
                 fontWeight: 500,
                 color: 'text.primary',
@@ -920,7 +920,7 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
         <Typography
           component="span"
           sx={(theme) => ({
-            fontFamily: '"JetBrains Mono", monospace',
+            fontFamily: MONO_FONT,
             fontSize: '0.65rem',
             fontWeight: 600,
             textTransform: 'uppercase',
@@ -959,7 +959,7 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
         >
           <Typography
             sx={(theme) => ({
-              fontFamily: '"JetBrains Mono", monospace',
+              fontFamily: MONO_FONT,
               fontSize: '0.65rem',
               color: theme.palette.text.tertiary,
               textTransform: 'uppercase',
@@ -970,7 +970,7 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
           </Typography>
           <Typography
             sx={{
-              fontFamily: '"JetBrains Mono", monospace',
+              fontFamily: MONO_FONT,
               fontSize: '0.75rem',
               fontWeight: 600,
               color: 'text.primary',
@@ -1417,7 +1417,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             width: '220px',
             '& .MuiOutlinedInput-root': {
               color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
+              fontFamily: MONO_FONT,
               backgroundColor: 'background.default',
               fontSize: '0.8rem',
               height: '36px',
@@ -1627,7 +1627,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         return (
           <WatchedItemRow
             key={issue.id}
-            href={`/bounties/details?id=${issue.id}`}
+            href={routeHelpers.getBountyHref(issue.id)}
             primary={
               issue.title || `${issue.repositoryFullName} #${issue.issueNumber}`
             }
@@ -1946,7 +1946,7 @@ const PRsViewModeToggle: React.FC<{
 };
 
 const getPrHref = (pr: CommitLog) =>
-  `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`;
+  routeHelpers.getPrHref(pr.repository, pr.pullRequestNumber);
 
 const PRCard: React.FC<{
   pr: CommitLog;

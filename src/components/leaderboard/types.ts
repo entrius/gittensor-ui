@@ -1,4 +1,5 @@
 import {
+  MONO_FONT,
   RANK_COLORS,
   REPO_OWNER_AVATAR_BACKGROUNDS,
   STATUS_COLORS,
@@ -72,7 +73,7 @@ export type SortOption =
   | 'watch';
 
 export const FONTS = {
-  mono: '"JetBrains Mono", monospace',
+  mono: MONO_FONT,
 } as const;
 
 export const getRankColors = (rank: number) => {

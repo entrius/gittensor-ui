@@ -18,6 +18,7 @@ import { useMinerIssues } from '../../api';
 import { type MinerIssue } from '../../api/models/Dashboard';
 import { getRepositoryOwnerAvatarSrc, paginateItems } from '../../utils';
 import { LABEL_COLORS } from '../../theme';
+import { getPrHref } from '../../routes.helpers';
 import {
   DataTable,
   type DataTableColumn,
@@ -308,7 +309,7 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
         const repo = issue.solving_pr?.repo_full_name ?? issue.repo_full_name;
         return (
           <RouterLink
-            to={`/miners/pr?repo=${encodeURIComponent(repo)}&number=${prNumber}`}
+            to={getPrHref(repo, prNumber)}
             style={{
               color: 'inherit',
               textDecoration: 'none',

@@ -19,6 +19,7 @@ import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
 import theme, { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
 import FilterButton from '../FilterButton';
+import { getPrHref } from '../../routes.helpers';
 
 type PrSortField =
   | 'pullRequestNumber'
@@ -119,7 +120,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   const handleRowClick = useCallback(
     (pr: CommitLog) => {
       navigate(
-        `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
+        getPrHref(pr.repository, pr.pullRequestNumber),
         { state: { backLabel: `Back to ${repositoryFullName}` } },
       );
     },

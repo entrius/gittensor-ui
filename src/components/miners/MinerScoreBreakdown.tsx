@@ -27,6 +27,7 @@ import {
   type CommitLog,
 } from '../../api';
 import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
+import { getPrHref } from '../../routes.helpers';
 import {
   parseNumber,
   calculateOpenIssueThreshold,
@@ -126,7 +127,7 @@ interface PrScoreRowProps {
 const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr }) => {
   const [expanded, setExpanded] = useState(false);
   const prLinkProps = useLinkBehavior<HTMLAnchorElement>(
-    `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
+    getPrHref(pr.repository, pr.pullRequestNumber),
   );
 
   // Fetch full PR details (with all multipliers) — cached by React Query

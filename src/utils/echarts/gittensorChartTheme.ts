@@ -1,9 +1,9 @@
 import { alpha, type Theme } from '@mui/material/styles';
-import { TEXT_OPACITY } from '../../theme';
+import { MONO_FONT, TEXT_OPACITY } from '../../theme';
 
 export function echartsFontFamily(theme: Theme): string {
   const ff = theme.typography.fontFamily;
-  return typeof ff === 'string' ? ff : '"JetBrains Mono", monospace';
+  return typeof ff === 'string' ? ff : MONO_FONT;
 }
 
 export function echartsTransparentBackground() {

@@ -59,7 +59,7 @@ const LeaderboardTableSkeleton: React.FC<LeaderboardTableSkeletonProps> = ({
                 variant="text"
                 width={col.barWidth}
                 sx={{
-                  bgcolor: 'rgba(255,255,255,0.06)',
+                  bgcolor: 'surface.light',
                   ml: col.align === 'right' ? 'auto' : 0,
                 }}
               />

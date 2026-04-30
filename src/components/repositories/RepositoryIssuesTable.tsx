@@ -30,6 +30,7 @@ import {
 } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
 import FilterButton from '../FilterButton';
+import { getBountyHref } from '../../routes.helpers';
 
 interface RepositoryIssuesTableProps {
   repositoryFullName: string;
@@ -295,7 +296,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
               return (
                 <LinkBox
                   key={bounty.id}
-                  href={`/bounties/details?id=${bounty.id}`}
+                  href={getBountyHref(bounty.id)}
                   linkState={{ backLabel: `Back to ${repositoryFullName}` }}
                   sx={{
                     display: 'flex',

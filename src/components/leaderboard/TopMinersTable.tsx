@@ -28,7 +28,12 @@ import {
   FONTS,
 } from './types';
 
-type ViewMode = 'cards' | 'list';
+import {
+  createCardListViewModeStorage,
+  type CardListViewMode,
+} from '../../utils/cardListViewMode';
+
+type ViewMode = CardListViewMode;
 
 // Re-export MinerStats for backward compatibility
 export type { MinerStats } from './types';
@@ -45,23 +50,12 @@ const VIEW_STORAGE_KEY = 'leaderboard:viewMode';
 // Sort state (`sort`, `dir`) is owned by `useDataTableParams`. We reuse the
 // `page` param slot for our "show more" count via the paramKeys override.
 
-const readStoredViewMode = (): ViewMode => {
-  try {
-    return window.localStorage.getItem(VIEW_STORAGE_KEY) === 'list'
-      ? 'list'
-      : 'cards';
-  } catch {
-    return 'cards';
-  }
-};
-
-const writeStoredViewMode = (mode: ViewMode) => {
-  try {
-    window.localStorage.setItem(VIEW_STORAGE_KEY, mode);
-  } catch {
-    // localStorage unavailable (private mode, quota) — preference won't persist
-  }
-};
+const viewModeStorage = createCardListViewModeStorage(
+  VIEW_STORAGE_KEY,
+  'cards',
+);
+const readStoredViewMode = viewModeStorage.read;
+const writeStoredViewMode = viewModeStorage.write;
 
 interface TopMinersTableProps {
   miners: MinerStats[];

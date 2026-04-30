@@ -31,6 +31,7 @@ import {
 } from '../../api';
 import { useClipboardCopy } from '../../hooks/useClipboardCopy';
 import {
+  MONO_FONT,
   RANK_COLORS,
   STATUS_COLORS,
   RISK_COLORS,
@@ -212,7 +213,7 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
   const hotkeyTextSx = {
     color: 'inherit',
     fontSize: { xs: '0.55rem', sm: '0.65rem' },
-    fontFamily: '"JetBrains Mono", monospace',
+    fontFamily: MONO_FONT,
     wordBreak: 'normal',
     lineHeight: 1,
   } as const;

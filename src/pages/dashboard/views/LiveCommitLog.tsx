@@ -20,6 +20,7 @@ import theme, {
   REPO_OWNER_AVATAR_BACKGROUNDS,
   scrollbarSx,
 } from '../../../theme';
+import { getPrHref } from '../../../routes.helpers';
 
 const MONTH_SHORT = [
   'Jan',
@@ -148,7 +149,7 @@ const CommitLogItem: React.FC<{
 
   const content = (
     <LinkBox
-      href={`/miners/pr?repo=${entry.repository}&number=${entry.pullRequestNumber}`}
+      href={getPrHref(entry.repository, entry.pullRequestNumber)}
       linkState={{ backLabel: 'Back to Dashboard' }}
       ref={innerRef}
       sx={{

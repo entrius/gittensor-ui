@@ -10,8 +10,9 @@ import {
   getRepositoryOwnerAvatarSrc,
 } from '../../utils';
 import { type PullRequestDetails } from '../../api/models/Dashboard';
-import { STATUS_COLORS } from '../../theme';
+import { MONO_FONT, STATUS_COLORS } from '../../theme';
 import { getRepositoryOwnerAvatarBackground } from '../leaderboard/types';
+import { getRepoHref, getMinerHref } from '../../routes.helpers';
 interface PRHeaderProps {
   repository: string;
   pullRequestNumber: number;
@@ -25,11 +26,11 @@ const PRHeader: React.FC<PRHeaderProps> = ({
 }) => {
   const [owner] = repository.split('/');
   const repoLinkProps = useLinkBehavior<HTMLAnchorElement>(
-    `/miners/repository?name=${encodeURIComponent(repository)}`,
+    getRepoHref(repository),
     { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
   );
   const authorLinkProps = useLinkBehavior<HTMLAnchorElement>(
-    `/miners/details?githubId=${prDetails.githubId ?? ''}`,
+    getMinerHref(prDetails.githubId ?? ''),
     { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
   );
   const githubPrUrl = `https://github.com/${repository}/pull/${pullRequestNumber}`;
@@ -151,7 +152,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               borderColor: alpha(STATUS_COLORS.info, 0.5),
               backgroundColor: alpha(STATUS_COLORS.info, 0.1),
               textTransform: 'none',
-              fontFamily: '"JetBrains Mono", monospace',
+              fontFamily: MONO_FONT,
               fontSize: { xs: '0.75rem', sm: '0.8rem' },
               fontWeight: 600,
               px: { xs: 0.75, sm: 1.5 },

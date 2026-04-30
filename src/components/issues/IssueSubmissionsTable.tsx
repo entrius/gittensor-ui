@@ -17,6 +17,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
+import { getMinerHref, getPrHref } from '../../routes.helpers';
 
 interface IssueSubmissionsTableProps {
   submissions: IssueSubmission[] | undefined;
@@ -65,7 +66,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
         submission.authorGithubId ? (
           <LinkBox
             component={Typography}
-            href={`/miners/details?githubId=${submission.authorGithubId}`}
+            href={getMinerHref(submission.authorGithubId)}
             linkState={linkState}
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
             sx={{
@@ -192,7 +193,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
             </Box>
           }
           getRowHref={(submission) =>
-            `/miners/pr?repo=${encodeURIComponent(submission.repositoryFullName)}&number=${submission.number}`
+            getPrHref(submission.repositoryFullName, submission.number)
           }
           linkState={linkState}
         />

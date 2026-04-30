@@ -7,6 +7,12 @@ import React, {
 } from 'react';
 import { scrollbarSx } from '../../theme';
 import {
+  getMinerHref,
+  getRepoHref,
+  getPrHref,
+  getBountyHref,
+} from '../../routes.helpers';
+import {
   Box,
   ButtonBase,
   CircularProgress,
@@ -305,7 +311,7 @@ const GlobalSearchBar: React.FC = () => {
   const navItems: NavItem[] = useMemo(() => {
     const items: NavItem[] = [];
     minerResults.forEach((miner) => {
-      const href = `/miners/details?githubId=${encodeURIComponent(miner.githubId)}`;
+      const href = getMinerHref(miner.githubId);
       items.push({
         key: `miner-${miner.githubId}`,
         kind: 'miner',
@@ -316,7 +322,7 @@ const GlobalSearchBar: React.FC = () => {
       });
     });
     repositoryResults.forEach((repo) => {
-      const href = `/miners/repository?name=${encodeURIComponent(repo.fullName)}`;
+      const href = getRepoHref(repo.fullName);
       items.push({
         key: `repo-${repo.fullName}`,
         kind: 'repo',
@@ -327,7 +333,7 @@ const GlobalSearchBar: React.FC = () => {
       });
     });
     prResults.forEach((pr) => {
-      const href = `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`;
+      const href = getPrHref(pr.repository, pr.pullRequestNumber);
       items.push({
         key: `pr-${pr.repository}-${pr.pullRequestNumber}`,
         kind: 'pr',
@@ -338,7 +344,7 @@ const GlobalSearchBar: React.FC = () => {
       });
     });
     issueResults.forEach((issue) => {
-      const href = `/bounties/details?id=${issue.id}`;
+      const href = getBountyHref(issue.id);
       items.push({
         key: `issue-${issue.id}`,
         kind: 'issue',
