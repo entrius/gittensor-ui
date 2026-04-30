@@ -155,16 +155,35 @@ const DiscovererCard: React.FC<{
       }}
     >
       {/* Left: rank + avatar + identity */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 }, minWidth: 0 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: { xs: 1, sm: 1.5 },
+          minWidth: 0,
+        }}
+      >
         <Typography
-          sx={{ ...mono, fontSize: '0.7rem', fontWeight: 700, color: accent, width: 22, flexShrink: 0 }}
+          sx={{
+            ...mono,
+            fontSize: '0.7rem',
+            fontWeight: 700,
+            color: accent,
+            width: 22,
+            flexShrink: 0,
+          }}
         >
           #{rank + 1}
         </Typography>
         <Avatar
           src={getGithubAvatarSrc(avatarUsername)}
           alt={avatarUsername}
-          sx={{ width: 36, height: 36, border: `1.5px solid ${alpha(theme.palette.common.white, 0.14)}`, flexShrink: 0 }}
+          sx={{
+            width: 36,
+            height: 36,
+            border: `1.5px solid ${alpha(theme.palette.common.white, 0.14)}`,
+            flexShrink: 0,
+          }}
         />
         <Box sx={{ minWidth: 0 }}>
           <Typography
@@ -181,8 +200,23 @@ const DiscovererCard: React.FC<{
           >
             {d.name}
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.45, minWidth: 0 }}>
-            <Box sx={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: accent, flexShrink: 0 }} />
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.45,
+              minWidth: 0,
+            }}
+          >
+            <Box
+              sx={{
+                width: 5,
+                height: 5,
+                borderRadius: '50%',
+                backgroundColor: accent,
+                flexShrink: 0,
+              }}
+            />
             <Typography
               sx={{
                 ...mono,
@@ -196,7 +230,10 @@ const DiscovererCard: React.FC<{
             >
               {d.featuredLabel}
               {earn > 0 && (
-                <Box component="span" sx={{ color: theme.palette.status.success, ml: 0.5 }}>
+                <Box
+                  component="span"
+                  sx={{ color: theme.palette.status.success, ml: 0.5 }}
+                >
                   ${Math.round(earn)}/d
                 </Box>
               )}
@@ -206,8 +243,21 @@ const DiscovererCard: React.FC<{
       </Box>
 
       {/* Center: stats + cred */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.55, minWidth: { xs: 130, sm: 190, md: 210 } }}>
-        <Box sx={{ display: 'flex', gap: { xs: 1.5, sm: 2 }, alignItems: 'flex-end' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.55,
+          minWidth: { xs: 130, sm: 190, md: 210 },
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            gap: { xs: 1.5, sm: 2 },
+            alignItems: 'flex-end',
+          }}
+        >
           <Box
             sx={{
               px: 0.7,
@@ -217,18 +267,48 @@ const DiscovererCard: React.FC<{
               backgroundColor: alpha(accent, 0.07),
             }}
           >
-            <Typography sx={{ ...mono, fontSize: '1.05rem', fontWeight: 800, color: accent, lineHeight: 1 }}>
+            <Typography
+              sx={{
+                ...mono,
+                fontSize: '1.05rem',
+                fontWeight: 800,
+                color: accent,
+                lineHeight: 1,
+              }}
+            >
               {(d.score ?? 0).toLocaleString()}
             </Typography>
-            <Typography sx={{ ...mono, fontSize: '0.48rem', color: alpha(theme.palette.text.primary, 0.35), mt: 0.15 }}>
+            <Typography
+              sx={{
+                ...mono,
+                fontSize: '0.48rem',
+                color: alpha(theme.palette.text.primary, 0.35),
+                mt: 0.15,
+              }}
+            >
               discovery score
             </Typography>
           </Box>
           <Box>
-            <Typography sx={{ ...mono, fontSize: '1.05rem', fontWeight: 800, color: theme.palette.text.primary, lineHeight: 1 }}>
+            <Typography
+              sx={{
+                ...mono,
+                fontSize: '1.05rem',
+                fontWeight: 800,
+                color: theme.palette.text.primary,
+                lineHeight: 1,
+              }}
+            >
               {d.solvedIssues ?? 0}
             </Typography>
-            <Typography sx={{ ...mono, fontSize: '0.48rem', color: alpha(theme.palette.text.primary, 0.35), mt: 0.15 }}>
+            <Typography
+              sx={{
+                ...mono,
+                fontSize: '0.48rem',
+                color: alpha(theme.palette.text.primary, 0.35),
+                mt: 0.15,
+              }}
+            >
               solved issues
             </Typography>
           </Box>
@@ -236,13 +316,32 @@ const DiscovererCard: React.FC<{
         {cred > 0 && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Box
-              sx={{ flex: 1, height: 3, borderRadius: 99, backgroundColor: alpha(theme.palette.common.white, 0.07), overflow: 'hidden' }}
+              sx={{
+                flex: 1,
+                height: 3,
+                borderRadius: 99,
+                backgroundColor: alpha(theme.palette.common.white, 0.07),
+                overflow: 'hidden',
+              }}
             >
               <Box
-                sx={{ width: `${Math.round(cred * 100)}%`, height: '100%', borderRadius: 99, backgroundColor: accent, transition: 'width 0.5s ease' }}
+                sx={{
+                  width: `${Math.round(cred * 100)}%`,
+                  height: '100%',
+                  borderRadius: 99,
+                  backgroundColor: accent,
+                  transition: 'width 0.5s ease',
+                }}
               />
             </Box>
-            <Typography sx={{ ...mono, fontSize: '0.52rem', color: alpha(theme.palette.text.primary, 0.38), whiteSpace: 'nowrap' }}>
+            <Typography
+              sx={{
+                ...mono,
+                fontSize: '0.52rem',
+                color: alpha(theme.palette.text.primary, 0.38),
+                whiteSpace: 'nowrap',
+              }}
+            >
               {Math.round(cred * 100)}% cred
             </Typography>
           </Box>
@@ -250,13 +349,27 @@ const DiscovererCard: React.FC<{
       </Box>
 
       {/* Right: repo pills + arrow */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.4 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          gap: 0.4,
+        }}
+      >
         {repoPills.length > 0 && (
           <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 0.4 }}>
             {repoPills}
           </Box>
         )}
-        <Typography sx={{ ...mono, fontSize: '0.72rem', color: alpha(theme.palette.text.primary, 0.2), flexShrink: 0 }}>
+        <Typography
+          sx={{
+            ...mono,
+            fontSize: '0.72rem',
+            color: alpha(theme.palette.text.primary, 0.2),
+            flexShrink: 0,
+          }}
+        >
           →
         </Typography>
       </Box>
@@ -284,7 +397,10 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
   const kpis = useMemo(() => {
     if (discoverers.length === 0) return null;
     const topScore = Math.max(...discoverers.map((d) => d.score ?? 0));
-    const totalSolved = discoverers.reduce((s, d) => s + (d.solvedIssues ?? 0), 0);
+    const totalSolved = discoverers.reduce(
+      (s, d) => s + (d.solvedIssues ?? 0),
+      0,
+    );
     const uniqueRepos = new Set(discoverers.flatMap((d) => d.repos)).size;
     const totalEarnings = discoverers.reduce(
       (s, d) => s + (d.earnings?.usdPerDay ?? 0),
@@ -292,7 +408,6 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
     );
     return { topScore, totalSolved, uniqueRepos, totalEarnings };
   }, [discoverers]);
-
 
   return (
     <Box
@@ -314,7 +429,14 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
           mb: 0.4,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            flexWrap: 'wrap',
+          }}
+        >
           <Typography
             sx={{
               ...mono,
@@ -380,7 +502,8 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
           mb: 1.25,
         }}
       >
-        Issue discovery leaders by score, solved issues output, and repository impact.
+        Issue discovery leaders by score, solved issues output, and repository
+        impact.
       </Typography>
 
       {/* KPI strip */}

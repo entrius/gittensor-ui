@@ -155,7 +155,14 @@ const ContributorCard: React.FC<{
       }}
     >
       {/* Left: rank + avatar + identity */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 }, minWidth: 0 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: { xs: 1, sm: 1.5 },
+          minWidth: 0,
+        }}
+      >
         <Typography
           sx={{
             ...mono,
@@ -193,7 +200,14 @@ const ContributorCard: React.FC<{
           >
             {c.name}
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.45, minWidth: 0 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.45,
+              minWidth: 0,
+            }}
+          >
             <Box
               sx={{
                 width: 5,
@@ -229,8 +243,21 @@ const ContributorCard: React.FC<{
       </Box>
 
       {/* Center: stats + cred */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.55, minWidth: { xs: 130, sm: 190, md: 210 } }}>
-        <Box sx={{ display: 'flex', gap: { xs: 1.5, sm: 2 }, alignItems: 'flex-end' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.55,
+          minWidth: { xs: 130, sm: 190, md: 210 },
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            gap: { xs: 1.5, sm: 2 },
+            alignItems: 'flex-end',
+          }}
+        >
           <Box
             sx={{
               px: 0.7,
@@ -241,24 +268,46 @@ const ContributorCard: React.FC<{
             }}
           >
             <Typography
-              sx={{ ...mono, fontSize: '1.05rem', fontWeight: 800, color: accent, lineHeight: 1 }}
+              sx={{
+                ...mono,
+                fontSize: '1.05rem',
+                fontWeight: 800,
+                color: accent,
+                lineHeight: 1,
+              }}
             >
               {(c.score ?? 0).toLocaleString()}
             </Typography>
             <Typography
-              sx={{ ...mono, fontSize: '0.48rem', color: alpha(theme.palette.text.primary, 0.35), mt: 0.15 }}
+              sx={{
+                ...mono,
+                fontSize: '0.48rem',
+                color: alpha(theme.palette.text.primary, 0.35),
+                mt: 0.15,
+              }}
             >
               contributor score
             </Typography>
           </Box>
           <Box>
             <Typography
-              sx={{ ...mono, fontSize: '1.05rem', fontWeight: 800, color: theme.palette.text.primary, lineHeight: 1 }}
+              sx={{
+                ...mono,
+                fontSize: '1.05rem',
+                fontWeight: 800,
+                color: theme.palette.text.primary,
+                lineHeight: 1,
+              }}
             >
               {c.mergedPrs ?? 0}
             </Typography>
             <Typography
-              sx={{ ...mono, fontSize: '0.48rem', color: alpha(theme.palette.text.primary, 0.35), mt: 0.15 }}
+              sx={{
+                ...mono,
+                fontSize: '0.48rem',
+                color: alpha(theme.palette.text.primary, 0.35),
+                mt: 0.15,
+              }}
             >
               merged PRs
             </Typography>
@@ -286,7 +335,12 @@ const ContributorCard: React.FC<{
               />
             </Box>
             <Typography
-              sx={{ ...mono, fontSize: '0.52rem', color: alpha(theme.palette.text.primary, 0.38), whiteSpace: 'nowrap' }}
+              sx={{
+                ...mono,
+                fontSize: '0.52rem',
+                color: alpha(theme.palette.text.primary, 0.38),
+                whiteSpace: 'nowrap',
+              }}
             >
               {Math.round(cred * 100)}% cred
             </Typography>
@@ -295,14 +349,26 @@ const ContributorCard: React.FC<{
       </Box>
 
       {/* Right: repo pills + arrow */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.4 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          gap: 0.4,
+        }}
+      >
         {repoPills.length > 0 && (
           <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 0.4 }}>
             {repoPills}
           </Box>
         )}
         <Typography
-          sx={{ ...mono, fontSize: '0.72rem', color: alpha(theme.palette.text.primary, 0.2), flexShrink: 0 }}
+          sx={{
+            ...mono,
+            fontSize: '0.72rem',
+            color: alpha(theme.palette.text.primary, 0.2),
+            flexShrink: 0,
+          }}
         >
           →
         </Typography>
@@ -330,8 +396,14 @@ const FeaturedContributorsSpotlight: React.FC<Props> = ({
   const kpis = useMemo(() => {
     if (contributors.length === 0) return null;
     const topScore = Math.max(...contributors.map((c) => c.score ?? 0));
-    const totalMerged = contributors.reduce((s, c) => s + (c.mergedPrs ?? 0), 0);
-    const totalClosed = contributors.reduce((s, c) => s + (c.closedPrs ?? 0), 0);
+    const totalMerged = contributors.reduce(
+      (s, c) => s + (c.mergedPrs ?? 0),
+      0,
+    );
+    const totalClosed = contributors.reduce(
+      (s, c) => s + (c.closedPrs ?? 0),
+      0,
+    );
     const uniqueRepos = new Set(contributors.flatMap((c) => c.repos)).size;
     const totalEarnings = contributors.reduce(
       (s, c) => s + (c.earnings?.usdPerDay ?? 0),
@@ -339,7 +411,6 @@ const FeaturedContributorsSpotlight: React.FC<Props> = ({
     );
     return { topScore, totalMerged, totalClosed, uniqueRepos, totalEarnings };
   }, [contributors]);
-
 
   return (
     <Box
@@ -361,7 +432,14 @@ const FeaturedContributorsSpotlight: React.FC<Props> = ({
           mb: 0.4,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            flexWrap: 'wrap',
+          }}
+        >
           <Typography
             sx={{
               ...mono,
@@ -427,7 +505,8 @@ const FeaturedContributorsSpotlight: React.FC<Props> = ({
           mb: 1.25,
         }}
       >
-        OSS contribution leaders by score, merged PR output, and repository impact.
+        OSS contribution leaders by score, merged PR output, and repository
+        impact.
       </Typography>
 
       {/* KPI strip */}
