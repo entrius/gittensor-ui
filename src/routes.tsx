@@ -5,6 +5,8 @@ export type AppRoute = Omit<PathRouteProps, 'path'> & {
   name: string;
   path: string;
   showGlobalSearch?: boolean;
+  /** When true, renders without the AppLayout shell (no sidebar / nav). */
+  standalone?: boolean;
 };
 
 // main menu pages
@@ -31,7 +33,7 @@ const WatchlistPage = React.lazy(() => import('./pages/WatchlistPage'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 
 const routesArray: AppRoute[] = [
-  { name: 'home', path: '/', element: <HomePage />, showGlobalSearch: true },
+  { name: 'home', path: '/', element: <HomePage />, standalone: true },
   {
     name: 'dashboard',
     path: '/dashboard',
