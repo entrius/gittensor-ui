@@ -57,6 +57,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { WatchlistButton } from '../common';
 import { truncateText } from '../../utils';
+import { useWatchlist } from '../../hooks/useWatchlist';
+import { compareByWatchlist } from '../../utils/watchlistSort';
 import { RankIcon } from './RankIcon';
 import { getRepositoryOwnerAvatarBackground, type RepoStats } from './types';
 import {
@@ -84,7 +86,8 @@ type SortColumn =
   | 'contributors'
   | 'discoveryScore'
   | 'discoveryIssues'
-  | 'discoveryContributors';
+  | 'discoveryContributors'
+  | 'watch';
 type SortDirection = 'asc' | 'desc';
 type ViewMode = RepositoriesViewMode;
 
@@ -115,6 +118,7 @@ const VALID_SORT_COLUMNS: SortColumn[] = [
   'discoveryScore',
   'discoveryIssues',
   'discoveryContributors',
+  'watch',
 ];
 
 /** List view: show numeric zeros when the row has OSS activity (avoids PRs > 0 with OSS score "-"). */
@@ -189,6 +193,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     [searchParams, storedViewMode],
   );
   const isInitialMount = useRef(true);
+  const { isWatched } = useWatchlist('repos');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const trimmedSearch = searchQuery.trim();
@@ -301,6 +306,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           comparison =
             a.discoveryContributors.size - b.discoveryContributors.size;
           break;
+        case 'watch':
+          comparison = compareByWatchlist(a, b, (r) => r.repository, isWatched);
+          break;
         default:
           // Default to totalScore descending (original behavior)
           comparison = b.totalScore - a.totalScore;
@@ -311,7 +319,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
 
     // Then add rank based on sorted order
     return sorted.map((repo, index) => ({ ...repo, rank: index + 1 }));
-  }, [repositories, sortColumn, sortDirection]);
+  }, [repositories, sortColumn, sortDirection, isWatched]);
 
   const filteredRepositories = useMemo(() => {
     let filtered = rankedRepositories;
@@ -408,6 +416,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         value: (r) => r.totalScore || 0,
       },
       repository: {
+        title: 'OSS score by repository',
+        yAxis: 'OSS score',
+        value: (r) => r.totalScore || 0,
+      },
+      watch: {
         title: 'OSS score by repository',
         yAxis: 'OSS score',
         value: (r) => r.totalScore || 0,
@@ -714,7 +727,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const renderSortHeader = (
     column: SortColumn,
     label: string,
-    align: 'left' | 'right' = 'left',
+    align: 'left' | 'right' | 'center' = 'left',
   ) => (
     <Box
       onClick={() => handleSort(column)}
@@ -726,9 +739,14 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         userSelect: 'none',
         width: '100%',
         height: '100%',
-        px: 2,
+        px: align === 'center' ? 0.5 : 2,
         py: 1,
-        justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
+        justifyContent:
+          align === 'right'
+            ? 'flex-end'
+            : align === 'center'
+              ? 'center'
+              : 'flex-start',
       }}
     >
       {label}
@@ -963,9 +981,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'watch',
-      header: '★',
+      header: renderSortHeader('watch', '★', 'center'),
       width: '52px',
       align: 'center',
+      headerSx: sortableHeaderSx,
       cellSx: { p: 0 },
       renderCell: (repo) =>
         repo.repository ? (

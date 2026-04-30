@@ -28,23 +28,32 @@ export const useLinkBehavior = <E extends Element = HTMLElement>(
     state?: LinkState;
     replace?: boolean;
     onClick?: (e: React.MouseEvent<E>) => void;
+    target?: string;
   } = {},
 ) => {
   const navigate = useNavigate();
-  const { state, replace, onClick } = options;
+  const { state, replace, onClick, target } = options;
+  const isExternal = target === '_blank' || /^https?:\/\//i.test(href);
 
   const handleClick = useCallback(
     (e: React.MouseEvent<E>) => {
       onClick?.(e);
       if (e.defaultPrevented) return;
       if (isModifiedEvent(e)) return;
+      if (isExternal) return; // let the native <a> open in new tab
       e.preventDefault();
       navigate(href, { state, replace });
     },
-    [href, state, replace, navigate, onClick],
+    [href, state, replace, navigate, onClick, isExternal],
   );
 
-  return { href, onClick: handleClick } as const;
+  return {
+    href,
+    onClick: handleClick,
+    ...(isExternal
+      ? { target: target ?? '_blank', rel: 'noopener noreferrer' }
+      : {}),
+  } as const;
 };
 
 const mergeSx = (base: SxProps<Theme>, extra: SxProps<Theme> | undefined) =>
