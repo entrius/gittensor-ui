@@ -1,5 +1,29 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import axios, { type AxiosError } from 'axios';
+
+export const useMirrorApiQueries = <TResponse = unknown, TSelect = TResponse>(
+  queryName: string,
+  urls: string[],
+  options?: {
+    enabled?: boolean;
+    select?: (data: TResponse) => TSelect;
+  },
+) => {
+  const baseUrl = import.meta.env.VITE_REACT_APP_MIRROR_BASE_URL;
+  return useQueries({
+    queries: urls.map((url) => ({
+      queryKey: ['mirror', queryName, url] as const,
+      queryFn: async () => {
+        const requestUrl = baseUrl ? `${baseUrl}${url}` : url;
+        const { data } = await axios.get(requestUrl);
+        return data as TResponse;
+      },
+      select: options?.select,
+      retry: false,
+      enabled: options?.enabled ?? true,
+    })),
+  });
+};
 
 export const useApiQuery = <TResponse = void, TSelect = TResponse>(
   queryName: string,
