@@ -68,6 +68,9 @@ export interface DashboardFeaturedContributor {
   credibility?: number;
   /** Segments for the credibility donut (e.g. Merged/Open/Closed). */
   segments?: Array<{ label: string; value: number }>;
+  score?: number;
+  solvedIssues?: number;
+  earnings?: { usdPerDay: number; lifetimeUsd: number };
 }
 
 type FeaturedWorkStatusTone = 'merged' | 'open' | 'closed';
@@ -932,6 +935,12 @@ const pickTopDiscoveryMiner = (
     githubId: top.githubId,
     githubUsername: top.githubUsername,
     name: top.githubUsername ?? top.githubId,
+    score: Math.round(parseNumber(top.issueDiscoveryScore)),
+    solvedIssues: top.totalValidSolvedIssues ?? 0,
+    earnings: {
+      usdPerDay: top.usdPerDay ?? 0,
+      lifetimeUsd: top.lifetimeUsd ?? 0,
+    },
     metrics: [
       {
         value: Math.round(
@@ -980,6 +989,12 @@ const pickMostSolvedIssuesMiner = (
     githubId: top.githubId,
     githubUsername: top.githubUsername,
     name: top.githubUsername ?? top.githubId,
+    score: Math.round(parseNumber(top.issueDiscoveryScore)),
+    solvedIssues: top.totalValidSolvedIssues ?? 0,
+    earnings: {
+      usdPerDay: top.usdPerDay ?? 0,
+      lifetimeUsd: top.lifetimeUsd ?? 0,
+    },
     metrics: [
       {
         value: `${top.totalValidSolvedIssues ?? 0}`,
@@ -1023,6 +1038,12 @@ const pickHighestIssueTokenScoreMiner = (
     githubId: top.githubId,
     githubUsername: top.githubUsername,
     name: top.githubUsername ?? top.githubId,
+    score: Math.round(parseNumber(top.issueTokenScore)),
+    solvedIssues: top.totalValidSolvedIssues ?? 0,
+    earnings: {
+      usdPerDay: top.usdPerDay ?? 0,
+      lifetimeUsd: top.lifetimeUsd ?? 0,
+    },
     metrics: [
       {
         value: Math.round(parseNumber(top.issueTokenScore)).toLocaleString(),
