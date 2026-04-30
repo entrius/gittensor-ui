@@ -14,6 +14,25 @@ import {
 } from '../../api';
 import { type IssueBounty } from '../../api/models/Issues';
 import { getPrStatusLabel, parseNumber } from '../../utils';
+import {
+  DASHBOARD_DAY_MS,
+  DASHBOARD_HOUR_MS,
+  DASHBOARD_WEEK_MS,
+  isWithinWindow,
+  toTimestamp,
+  type WindowBounds,
+} from './dashboardTime';
+export {
+  buildDailyDiscoveryPulse,
+  getPreviousRollingWindowBounds,
+  getRollingWindowBounds,
+} from './dashboardDiscoveryPulse';
+export type {
+  DashboardDiscoveryKpi,
+  DashboardDiscoveryPulse,
+  DashboardFeaturedDiscoverer,
+} from './dashboardDiscoveryPulse';
+export type { WindowBounds } from './dashboardTime';
 
 export type PresetTimeRange = '1d' | '7d' | '35d';
 export type TrendTimeRange = PresetTimeRange | 'all';
@@ -62,12 +81,18 @@ export interface DashboardFeaturedContributor {
     unit: string;
   }>;
   repos: string[];
-  /** Earnings in USD per day (displayed prominently like miner cards). */
+  /** Earnings in USD per day, aligned with the Top Miners `usdPerDay` value. */
   usdPerDay?: number;
   /** Credibility as 0-1 fraction (rendered as donut ring). */
   credibility?: number;
   /** Segments for the credibility donut (e.g. Merged/Open/Closed). */
   segments?: Array<{ label: string; value: number }>;
+  // Rich numeric fields for visual layouts (stat tiles, gauges, etc.)
+  score?: number;
+  mergedPrs?: number;
+  totalPrs?: number;
+  closedPrs?: number;
+  uniqueReposCount?: number;
 }
 
 type FeaturedWorkStatusTone = 'merged' | 'open' | 'closed';
@@ -99,18 +124,27 @@ interface FeaturedWorkConfig {
   readonly windowLabel: string;
 }
 
-const HOUR_MS = 60 * 60 * 1000;
-const DAY_MS = 24 * HOUR_MS;
-const WEEK_MS = 7 * DAY_MS;
 const GITTENSOR_START_MS = Date.UTC(2025, 11, 1, 0, 0, 0);
 
 const RANGE_CONFIG: Record<
   PresetTimeRange,
   { windowMs: number; bucketMs: number; points: number }
 > = {
-  '1d': { windowMs: DAY_MS, bucketMs: 3 * HOUR_MS, points: 8 },
-  '7d': { windowMs: 7 * DAY_MS, bucketMs: DAY_MS, points: 7 },
-  '35d': { windowMs: 35 * DAY_MS, bucketMs: DAY_MS, points: 35 },
+  '1d': {
+    windowMs: DASHBOARD_DAY_MS,
+    bucketMs: 3 * DASHBOARD_HOUR_MS,
+    points: 8,
+  },
+  '7d': {
+    windowMs: 7 * DASHBOARD_DAY_MS,
+    bucketMs: DASHBOARD_DAY_MS,
+    points: 7,
+  },
+  '35d': {
+    windowMs: 35 * DASHBOARD_DAY_MS,
+    bucketMs: DASHBOARD_DAY_MS,
+    points: 35,
+  },
 };
 
 const TREND_SERIES_KEYS: TrendSeriesKey[] = [
@@ -120,20 +154,6 @@ const TREND_SERIES_KEYS: TrendSeriesKey[] = [
   'issuesOpened',
 ];
 const CURRENT_LOOKBACK_WINDOW: PresetTimeRange = '35d';
-
-type WindowBounds = {
-  startMs: number;
-  endMs: number;
-};
-
-const toTimestamp = (value?: string | null): number | null => {
-  if (!value) return null;
-  const timestamp = new Date(value).getTime();
-  return Number.isFinite(timestamp) ? timestamp : null;
-};
-
-const isWithinWindow = (timestamp: number | null, window: WindowBounds) =>
-  timestamp !== null && timestamp >= window.startMs && timestamp < window.endMs;
 
 export const getRangeConfig = (range: PresetTimeRange) => RANGE_CONFIG[range];
 
@@ -212,17 +232,17 @@ const buildTrendBuckets = (
 
   const firstWeekStart = getUtcWeekStart(GITTENSOR_START_MS);
   const currentWeekStart = getUtcWeekStart(now.getTime());
-  const endExclusive = currentWeekStart + WEEK_MS;
+  const endExclusive = currentWeekStart + DASHBOARD_WEEK_MS;
   const buckets: Array<{ startMs: number; endMs: number; label: string }> = [];
 
   for (
     let bucketStart = firstWeekStart;
     bucketStart < endExclusive;
-    bucketStart += WEEK_MS
+    bucketStart += DASHBOARD_WEEK_MS
   ) {
     buckets.push({
       startMs: bucketStart,
-      endMs: bucketStart + WEEK_MS,
+      endMs: bucketStart + DASHBOARD_WEEK_MS,
       label: formatTrendBucketLabel(bucketStart, range),
     });
   }
@@ -616,6 +636,38 @@ const getTopContributorRepos = (prs: CommitLog[], githubId: string) => {
     .map(([repo]) => repo);
 };
 
+const buildMinerRichFields = (
+  m: MinerEvaluation,
+  scoreOverride?: number,
+): Required<
+  Pick<
+    DashboardFeaturedContributor,
+    | 'score'
+    | 'credibility'
+    | 'mergedPrs'
+    | 'totalPrs'
+    | 'closedPrs'
+    | 'uniqueReposCount'
+    | 'usdPerDay'
+  >
+> => ({
+  score: scoreOverride ?? Math.round(parseNumber(m.totalScore)),
+  credibility: parseNumber(m.credibility),
+  mergedPrs: parseNumber(m.totalMergedPrs),
+  totalPrs: parseNumber(m.totalPrs),
+  closedPrs: parseNumber(m.totalClosedPrs),
+  uniqueReposCount: parseNumber(m.uniqueReposCount),
+  usdPerDay: parseNumber(m.usdPerDay),
+});
+
+const buildMinerSegments = (
+  m: MinerEvaluation,
+): Array<{ label: string; value: number }> => [
+  { label: 'Merged', value: parseNumber(m.totalMergedPrs) },
+  { label: 'Open', value: parseNumber(m.totalOpenPrs) },
+  { label: 'Closed', value: parseNumber(m.totalClosedPrs) },
+];
+
 const getHighestScoringMergedAuthor = (
   prs: CommitLog[],
   miners: MinerEvaluation[],
@@ -644,26 +696,21 @@ const getHighestScoringMergedAuthor = (
   if (!topPr?.githubId) return undefined;
 
   const miner = miners.find((m) => m.githubId === topPr.githubId);
+  const prScore = Math.round(parseNumber(topPr.score));
+  const rich = miner ? buildMinerRichFields(miner, prScore) : undefined;
   return {
     githubId: topPr.githubId,
     githubUsername: topPr.author || undefined,
     featuredLabel: 'Highest-Scoring PR Author',
     name: topPr.author ?? topPr.githubId,
+    score: prScore,
+    ...(rich ?? {}),
     metrics: [
-      {
-        value: Math.round(parseNumber(topPr.score)).toLocaleString(),
-        unit: 'Score',
-      },
+      { value: prScore.toLocaleString(), unit: 'Score' },
       ...optionalCredibilityMetrics(miner?.credibility),
     ],
     repos: topPr.repository ? [topPr.repository] : [],
-    usdPerDay: parseNumber(miner?.usdPerDay),
-    credibility: parseNumber(miner?.credibility),
-    segments: [
-      { label: 'Merged', value: parseNumber(miner?.totalMergedPrs) },
-      { label: 'Open', value: parseNumber(miner?.totalOpenPrs) },
-      { label: 'Closed', value: parseNumber(miner?.totalClosedPrs) },
-    ],
+    segments: miner ? buildMinerSegments(miner) : [],
   };
 };
 
@@ -689,26 +736,19 @@ const pickTopOssContributor = (
 
   if (!topOssMiner) return undefined;
 
+  const rich = buildMinerRichFields(topOssMiner);
   return {
     featuredLabel: 'Top OSS Miner',
     githubId: topOssMiner.githubId,
     githubUsername: topOssMiner.githubUsername,
     name: topOssMiner.githubUsername ?? topOssMiner.githubId,
+    ...rich,
     metrics: [
-      {
-        value: Math.round(parseNumber(topOssMiner.totalScore)).toLocaleString(),
-        unit: 'Score',
-      },
+      { value: rich.score.toLocaleString(), unit: 'Score' },
       ...optionalCredibilityMetrics(topOssMiner.credibility),
     ],
     repos: getTopContributorRepos(prs, topOssMiner.githubId),
-    usdPerDay: parseNumber(topOssMiner.usdPerDay),
-    credibility: parseNumber(topOssMiner.credibility),
-    segments: [
-      { label: 'Merged', value: parseNumber(topOssMiner.totalMergedPrs) },
-      { label: 'Open', value: parseNumber(topOssMiner.totalOpenPrs) },
-      { label: 'Closed', value: parseNumber(topOssMiner.totalClosedPrs) },
-    ],
+    segments: buildMinerSegments(topOssMiner),
   };
 };
 
@@ -727,26 +767,55 @@ const pickMostMergedPrMiner = (
 
   if (!mostMergedPrMiner) return undefined;
 
+  const rich = buildMinerRichFields(mostMergedPrMiner);
   return {
     featuredLabel: 'Most Merged PRs',
     githubId: mostMergedPrMiner.githubId,
     githubUsername: mostMergedPrMiner.githubUsername,
     name: mostMergedPrMiner.githubUsername ?? mostMergedPrMiner.githubId,
+    ...rich,
     metrics: [
-      {
-        value: `${mostMergedPrMiner.totalMergedPrs ?? 0}`,
-        unit: 'Merged',
-      },
+      { value: `${mostMergedPrMiner.totalMergedPrs ?? 0}`, unit: 'Merged' },
       ...optionalCredibilityMetrics(mostMergedPrMiner.credibility),
     ],
     repos: getTopContributorRepos(prs, mostMergedPrMiner.githubId),
-    usdPerDay: parseNumber(mostMergedPrMiner.usdPerDay),
-    credibility: parseNumber(mostMergedPrMiner.credibility),
-    segments: [
-      { label: 'Merged', value: parseNumber(mostMergedPrMiner.totalMergedPrs) },
-      { label: 'Open', value: parseNumber(mostMergedPrMiner.totalOpenPrs) },
-      { label: 'Closed', value: parseNumber(mostMergedPrMiner.totalClosedPrs) },
+    segments: buildMinerSegments(mostMergedPrMiner),
+  };
+};
+
+const pickHighestTokenScoreMiner = (
+  prs: CommitLog[],
+  miners: MinerEvaluation[],
+  exclude: Set<string> = new Set(),
+): DashboardFeaturedContributor | undefined => {
+  const top = [...miners]
+    .filter(
+      (m) => parseNumber(m.totalTokenScore) > 0 && !exclude.has(m.githubId),
+    )
+    .sort((a, b) => {
+      const diff =
+        parseNumber(b.totalTokenScore) - parseNumber(a.totalTokenScore);
+      return diff !== 0 ? diff : a.id - b.id;
+    })[0];
+
+  if (!top) return undefined;
+
+  const rich = buildMinerRichFields(top);
+  return {
+    featuredLabel: 'Highest Token Score',
+    githubId: top.githubId,
+    githubUsername: top.githubUsername,
+    name: top.githubUsername ?? top.githubId,
+    ...rich,
+    metrics: [
+      {
+        value: Math.round(parseNumber(top.totalTokenScore)).toLocaleString(),
+        unit: 'Tokens',
+      },
+      ...optionalCredibilityMetrics(top.credibility),
     ],
+    repos: getTopContributorRepos(prs, top.githubId),
+    segments: buildMinerSegments(top),
   };
 };
 
@@ -760,6 +829,7 @@ export const buildFeaturedContributors = (
     () => pickTopOssContributor(prs, miners, seen),
     () => pickMostMergedPrMiner(prs, miners, seen),
     () => getHighestScoringMergedAuthor(prs, miners, seen),
+    () => pickHighestTokenScoreMiner(prs, miners, seen),
   ];
   for (const pick of pickers) {
     const c = pick();
@@ -883,7 +953,7 @@ export const buildFeaturedWork = (
 ): FeaturedWorkRepo[] => {
   const config: FeaturedWorkConfig = FEATURED_WORK_CONFIG;
   const now: number = Date.now();
-  const cutoff: number = now - config.windowHours * HOUR_MS;
+  const cutoff: number = now - config.windowHours * DASHBOARD_HOUR_MS;
 
   const inactiveRepos: InactiveRepoSet = buildInactiveRepoSet(repos);
 
@@ -905,159 +975,4 @@ export const buildFeaturedWork = (
         RepoAccumulator,
       ]): FeaturedWorkRepo => buildRepoEntry(repoPrs, totalScore, config),
     );
-};
-
-const pickTopDiscoveryMiner = (
-  prs: CommitLog[],
-  miners: MinerEvaluation[],
-  exclude: Set<string> = new Set(),
-): DashboardFeaturedContributor | undefined => {
-  const top = [...miners]
-    .filter(
-      (m) =>
-        m.isIssueEligible &&
-        parseNumber(m.issueDiscoveryScore) > 0 &&
-        !exclude.has(m.githubId),
-    )
-    .sort((a, b) => {
-      const diff =
-        parseNumber(b.issueDiscoveryScore) - parseNumber(a.issueDiscoveryScore);
-      return diff !== 0 ? diff : a.id - b.id;
-    })[0];
-
-  if (!top) return undefined;
-
-  return {
-    featuredLabel: 'Top Discovery Miner',
-    githubId: top.githubId,
-    githubUsername: top.githubUsername,
-    name: top.githubUsername ?? top.githubId,
-    metrics: [
-      {
-        value: Math.round(
-          parseNumber(top.issueDiscoveryScore),
-        ).toLocaleString(),
-        unit: 'Score',
-      },
-      ...optionalCredibilityMetrics(top.issueCredibility),
-    ],
-    repos: getTopContributorRepos(prs, top.githubId),
-    usdPerDay: parseNumber(top.usdPerDay),
-    credibility: parseNumber(top.issueCredibility),
-    segments: [
-      { label: 'Solved', value: parseNumber(top.totalValidSolvedIssues) },
-      { label: 'Open', value: parseNumber(top.totalOpenIssues) },
-      { label: 'Closed', value: parseNumber(top.totalClosedIssues) },
-    ],
-  };
-};
-
-const pickMostSolvedIssuesMiner = (
-  prs: CommitLog[],
-  miners: MinerEvaluation[],
-  exclude: Set<string> = new Set(),
-): DashboardFeaturedContributor | undefined => {
-  const top = [...miners]
-    .filter(
-      (m) =>
-        m.isIssueEligible &&
-        (m.totalValidSolvedIssues ?? 0) > 0 &&
-        !exclude.has(m.githubId),
-    )
-    .sort((a, b) => {
-      const diff =
-        (b.totalValidSolvedIssues ?? 0) - (a.totalValidSolvedIssues ?? 0);
-      if (diff !== 0) return diff;
-      return (
-        parseNumber(b.issueDiscoveryScore) - parseNumber(a.issueDiscoveryScore)
-      );
-    })[0];
-
-  if (!top) return undefined;
-
-  return {
-    featuredLabel: 'Most Solved Issues',
-    githubId: top.githubId,
-    githubUsername: top.githubUsername,
-    name: top.githubUsername ?? top.githubId,
-    metrics: [
-      {
-        value: `${top.totalValidSolvedIssues ?? 0}`,
-        unit: 'Solved',
-      },
-      ...optionalCredibilityMetrics(top.issueCredibility),
-    ],
-    repos: getTopContributorRepos(prs, top.githubId),
-    usdPerDay: parseNumber(top.usdPerDay),
-    credibility: parseNumber(top.issueCredibility),
-    segments: [
-      { label: 'Solved', value: parseNumber(top.totalValidSolvedIssues) },
-      { label: 'Open', value: parseNumber(top.totalOpenIssues) },
-      { label: 'Closed', value: parseNumber(top.totalClosedIssues) },
-    ],
-  };
-};
-
-const pickHighestIssueTokenScoreMiner = (
-  prs: CommitLog[],
-  miners: MinerEvaluation[],
-  exclude: Set<string> = new Set(),
-): DashboardFeaturedContributor | undefined => {
-  const top = [...miners]
-    .filter(
-      (m) =>
-        m.isIssueEligible &&
-        parseNumber(m.issueTokenScore) > 0 &&
-        !exclude.has(m.githubId),
-    )
-    .sort((a, b) => {
-      const diff =
-        parseNumber(b.issueTokenScore) - parseNumber(a.issueTokenScore);
-      return diff !== 0 ? diff : a.id - b.id;
-    })[0];
-
-  if (!top) return undefined;
-
-  return {
-    featuredLabel: 'Highest-Scoring Issue Author',
-    githubId: top.githubId,
-    githubUsername: top.githubUsername,
-    name: top.githubUsername ?? top.githubId,
-    metrics: [
-      {
-        value: Math.round(parseNumber(top.issueTokenScore)).toLocaleString(),
-        unit: 'Score',
-      },
-      ...optionalCredibilityMetrics(top.issueCredibility),
-    ],
-    repos: getTopContributorRepos(prs, top.githubId),
-    usdPerDay: parseNumber(top.usdPerDay),
-    credibility: parseNumber(top.issueCredibility),
-    segments: [
-      { label: 'Solved', value: parseNumber(top.totalValidSolvedIssues) },
-      { label: 'Open', value: parseNumber(top.totalOpenIssues) },
-      { label: 'Closed', value: parseNumber(top.totalClosedIssues) },
-    ],
-  };
-};
-
-export const buildFeaturedDiscoveryContributors = (
-  prs: CommitLog[],
-  miners: MinerEvaluation[],
-): DashboardFeaturedContributor[] => {
-  const seen = new Set<string>();
-  const contributors: DashboardFeaturedContributor[] = [];
-  const pickers: Array<() => DashboardFeaturedContributor | undefined> = [
-    () => pickTopDiscoveryMiner(prs, miners, seen),
-    () => pickMostSolvedIssuesMiner(prs, miners, seen),
-    () => pickHighestIssueTokenScoreMiner(prs, miners, seen),
-  ];
-  for (const pick of pickers) {
-    const c = pick();
-    if (c) {
-      seen.add(c.githubId);
-      contributors.push(c);
-    }
-  }
-  return contributors;
 };

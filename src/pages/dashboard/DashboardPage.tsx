@@ -6,8 +6,9 @@ import theme, { scrollbarSx } from '../../theme';
 import { type TrendTimeRange } from './dashboardData';
 import useDashboardData from './useDashboardData';
 import ActiveNetwork from './views/ActiveNetwork';
+import DashboardFeaturedDiscoverers from './views/DashboardFeaturedDiscoverers';
 import DashboardFeaturedWorkSection from './views/DashboardFeaturedWork';
-import DashboardTopContributors from './views/DashboardTopContributors';
+import FeaturedContributorsSpotlight from './views/FeaturedContributorsSpotlight';
 import LiveSidebar from './views/LiveSidebar';
 
 const DashboardFeaturePage: React.FC = () => {
@@ -25,7 +26,9 @@ const DashboardFeaturePage: React.FC = () => {
     featuredWork,
     isFeaturedWorkLoading,
     featuredContributors,
-    featuredDiscoveryContributors,
+    discoveryPulse,
+    isDiscoveryPulseLoading,
+    isDiscoveryPulseError,
     isLoading,
   } = useDashboardData(range);
 
@@ -81,18 +84,17 @@ const DashboardFeaturePage: React.FC = () => {
               onRangeChange={setRange}
             />
 
-            <DashboardTopContributors
+            <FeaturedContributorsSpotlight
               contributors={featuredContributors}
               isLoading={isLoading}
               viewAllHref="/top-miners"
             />
 
-            <DashboardTopContributors
-              title="Featured Discoverers"
-              contributors={featuredDiscoveryContributors}
-              isLoading={isLoading}
-              mode="issues"
-              viewAllHref="/top-miners?timeline=discoveries"
+            <DashboardFeaturedDiscoverers
+              pulse={discoveryPulse}
+              isLoading={isDiscoveryPulseLoading}
+              isError={isDiscoveryPulseError}
+              viewAllHref="/discoveries"
             />
 
             <DashboardFeaturedWorkSection
