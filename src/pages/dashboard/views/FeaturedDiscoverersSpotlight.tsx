@@ -467,7 +467,15 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
             Issues 35d
           </Box>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            flex: 1,
+            justifyContent: 'flex-end',
+          }}
+        >
           <Typography
             sx={{
               ...mono,
