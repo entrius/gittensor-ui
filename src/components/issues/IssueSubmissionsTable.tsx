@@ -22,15 +22,23 @@ interface IssueSubmissionsTableProps {
   submissions: IssueSubmission[] | undefined;
   isLoading: boolean;
   backLabel?: string;
+  backTo?: string;
 }
 
 const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
   submissions,
   isLoading,
   backLabel,
+  backTo,
 }) => {
   const theme = useTheme();
-  const linkState = backLabel ? { backLabel } : undefined;
+  const linkState =
+    backLabel || backTo
+      ? {
+          ...(backLabel ? { backLabel } : {}),
+          ...(backTo ? { backTo } : {}),
+        }
+      : undefined;
 
   const columns: DataTableColumn<IssueSubmission>[] = [
     {
@@ -64,7 +72,6 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
       renderCell: (submission) =>
         submission.authorGithubId ? (
           <LinkBox
-            component={Typography}
             href={`/miners/details?githubId=${submission.authorGithubId}`}
             linkState={linkState}
             onClick={(e: React.MouseEvent) => e.stopPropagation()}

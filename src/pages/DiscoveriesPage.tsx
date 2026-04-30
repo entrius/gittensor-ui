@@ -11,7 +11,7 @@ import { useAllMiners } from '../api';
 import theme, { scrollbarSx } from '../theme';
 import { parseNumber } from '../utils/ExplorerUtils';
 
-const MINER_LINK_STATE = { backLabel: 'Back to Discoveries' } as const;
+const MINER_LINK_STATE = { backLabel: 'Back' } as const;
 const getMinerHref = (miner: MinerStats) =>
   `/miners/details?githubId=${miner.githubId}&mode=issues&tab=open-issues`;
 

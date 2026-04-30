@@ -6,7 +6,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 interface BackButtonProps {
   /** Text to display on the button (used as fallback if no state-based label) */
   label?: string;
-  /** Path to navigate to when clicked (used as fallback if no history) */
+  /** Path to navigate to when clicked */
   to: string;
   /** Additional margin bottom (in theme spacing units) */
   mb?: number;
@@ -19,17 +19,19 @@ const BackButton: React.FC<BackButtonProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const state = (location.state as { backTo?: string }) || {};
+  const state =
+    (location.state as { backLabel?: string; backTo?: string } | null) || {};
   const canGoBack = typeof window !== 'undefined' && window.history.length > 1;
+  const displayLabel = state.backLabel || label;
 
   const handleClick = () => {
-    if (canGoBack) {
-      navigate(-1);
+    if (state.backTo) {
+      navigate(state.backTo);
       return;
     }
 
-    if (state.backTo) {
-      navigate(state.backTo);
+    if (canGoBack) {
+      navigate(-1);
       return;
     }
 
@@ -43,7 +45,7 @@ const BackButton: React.FC<BackButtonProps> = ({
       onClick={handleClick}
       sx={{ mb, alignSelf: 'flex-start' }}
     >
-      {label}
+      {displayLabel}
     </Button>
   );
 };

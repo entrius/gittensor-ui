@@ -11,7 +11,7 @@ import { useAllMiners } from '../api';
 import { mapAllMinersToStats } from '../utils/minerMapper';
 import theme, { scrollbarSx } from '../theme';
 
-const MINER_LINK_STATE = { backLabel: 'Back to Leaderboard' } as const;
+const MINER_LINK_STATE = { backLabel: 'Back' } as const;
 const getMinerHref = (miner: MinerStats) =>
   `/miners/details?githubId=${miner.githubId}`;
 
