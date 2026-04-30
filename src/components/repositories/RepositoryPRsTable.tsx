@@ -15,7 +15,9 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
+import { WatchlistButton } from '../../components/common';
 import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
+import { serializePRKey } from '../../hooks/useWatchlist';
 import theme, { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
 import FilterButton from '../FilterButton';
@@ -312,6 +314,18 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       sortKey: 'mergedAt',
       renderCell: (pr) =>
         pr.mergedAt ? new Date(pr.mergedAt).toLocaleDateString() : '-',
+    },
+    {
+      key: 'watch',
+      header: '★',
+      align: 'center',
+      renderCell: (pr) => (
+        <WatchlistButton
+          category="prs"
+          itemKey={serializePRKey(pr.repository, pr.pullRequestNumber)}
+          size="small"
+        />
+      ),
     },
   ];
 
