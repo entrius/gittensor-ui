@@ -778,7 +778,6 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
             sx={{
               color: 'text.primary',
               fontSize: { xs: '0.95rem', sm: '1.1rem' },
-              fontWeight: 500,
             }}
           >
             {title}
@@ -813,7 +812,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
       >
         <TextField
           size="small"
-          placeholder="Search by title, repo, or issue #..."
+          placeholder="Search by title, repo, or issue..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           InputProps={{
@@ -830,7 +829,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
           }}
           sx={{
             maxWidth: 400,
-            minWidth: 260,
+            minWidth: 350,
             '& .MuiOutlinedInput-root': {
               fontSize: '0.8rem',
               color: 'text.primary',
@@ -1131,7 +1130,6 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
               sx={{
                 color: 'text.primary',
                 fontSize: { xs: '0.95rem', sm: '1.1rem' },
-                fontWeight: 500,
               }}
             >
               Other open discovery issues
