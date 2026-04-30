@@ -21,8 +21,7 @@ const KpiBox: React.FC<{
   return (
     <Box
       sx={{
-        flex: 1,
-        minWidth: 0,
+        flexShrink: 0,
         px: { xs: 1, sm: 1.5 },
         py: 0.85,
         borderRight: isLast
@@ -83,9 +82,7 @@ const DiscovererCard: React.FC<{
   d: DashboardFeaturedContributor;
   rank: number;
   onClick: () => void;
-  maxScore: number;
-  maxSolved: number;
-}> = ({ d, rank, onClick, maxScore, maxSolved }) => {
+}> = ({ d, rank, onClick }) => {
   const theme = useTheme();
   const accent = ACCENT[rank] ?? theme.palette.text.primary;
   const avatarUsername = d.githubUsername ?? d.githubId;
@@ -136,7 +133,7 @@ const DiscovererCard: React.FC<{
       onKeyDown={handleKeyDown}
       sx={{
         display: 'grid',
-        gridTemplateColumns: '1fr auto 1fr',
+        gridTemplateColumns: { xs: '1fr auto auto', sm: '1fr auto 1fr' },
         alignItems: 'center',
         columnGap: { xs: 1, sm: 1.5 },
         px: 1.25,
@@ -296,14 +293,6 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
     return { topScore, totalSolved, uniqueRepos, totalEarnings };
   }, [discoverers]);
 
-  const maxScore = useMemo(
-    () => Math.max(...discoverers.map((d) => d.score ?? 0), 1),
-    [discoverers],
-  );
-  const maxSolved = useMemo(
-    () => Math.max(...discoverers.map((d) => d.solvedIssues ?? 0), 1),
-    [discoverers],
-  );
 
   return (
     <Box
@@ -403,7 +392,8 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
             borderRadius: 1.5,
             border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
             backgroundColor: alpha(theme.palette.common.white, 0.02),
-            overflow: 'hidden',
+            overflowX: 'auto',
+            overflowY: 'hidden',
           }}
         >
           <KpiBox
@@ -460,8 +450,6 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
               d={d}
               rank={i}
               onClick={() => open(d.githubId)}
-              maxScore={maxScore}
-              maxSolved={maxSolved}
             />
           ))}
         </Box>

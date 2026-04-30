@@ -4,7 +4,6 @@ import { alpha, useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { RANK_COLORS } from '../../../theme';
 import { getGithubAvatarSrc } from '../../../utils';
-import { credibilityColor } from '../../../utils/format';
 import { type DashboardFeaturedContributor } from '../dashboardData';
 
 const FONTS = { mono: '"JetBrains Mono", ui-monospace, monospace' } as const;
@@ -22,8 +21,7 @@ const KpiBox: React.FC<{
   return (
     <Box
       sx={{
-        flex: 1,
-        minWidth: 0,
+        flexShrink: 0,
         px: { xs: 1, sm: 1.5 },
         py: 0.85,
         borderRight: isLast
@@ -84,9 +82,7 @@ const ContributorCard: React.FC<{
   c: DashboardFeaturedContributor;
   rank: number;
   onClick: () => void;
-  maxScore: number;
-  maxMerged: number;
-}> = ({ c, rank, onClick, maxScore, maxMerged }) => {
+}> = ({ c, rank, onClick }) => {
   const theme = useTheme();
   const accent = ACCENT[rank] ?? theme.palette.text.primary;
   const avatarUsername = c.githubUsername ?? c.githubId;
@@ -137,7 +133,7 @@ const ContributorCard: React.FC<{
       onKeyDown={handleKeyDown}
       sx={{
         display: 'grid',
-        gridTemplateColumns: '1fr auto 1fr',
+        gridTemplateColumns: { xs: '1fr auto auto', sm: '1fr auto 1fr' },
         alignItems: 'center',
         columnGap: { xs: 1, sm: 1.5 },
         px: 1.25,
@@ -344,14 +340,6 @@ const FeaturedContributorsSpotlight: React.FC<Props> = ({
     return { topScore, totalMerged, totalClosed, uniqueRepos, totalEarnings };
   }, [contributors]);
 
-  const maxScore = useMemo(
-    () => Math.max(...contributors.map((c) => c.score ?? 0), 1),
-    [contributors],
-  );
-  const maxMerged = useMemo(
-    () => Math.max(...contributors.map((c) => c.mergedPrs ?? 0), 1),
-    [contributors],
-  );
 
   return (
     <Box
@@ -451,7 +439,8 @@ const FeaturedContributorsSpotlight: React.FC<Props> = ({
             borderRadius: 1.5,
             border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
             backgroundColor: alpha(theme.palette.common.white, 0.02),
-            overflow: 'hidden',
+            overflowX: 'auto',
+            overflowY: 'hidden',
           }}
         >
           <KpiBox
@@ -508,8 +497,6 @@ const FeaturedContributorsSpotlight: React.FC<Props> = ({
               c={c}
               rank={i}
               onClick={() => open(c.githubId)}
-              maxScore={maxScore}
-              maxMerged={maxMerged}
             />
           ))}
         </Box>
