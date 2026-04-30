@@ -22,6 +22,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
+import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
 import { formatTokenAmount } from '../../utils/format';
 import {
   getIssueStatusMeta,
@@ -125,16 +126,23 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       key: 'title',
       header: 'Title',
       renderCell: (issue) => (
-        <Box
-          sx={{
-            maxWidth: '400px',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
+        <ScrollAwareTooltip
+          title={issue.title}
+          arrow
+          placement="top-start"
+          enterDelay={200}
         >
-          {issue.title}
-        </Box>
+          <Box
+            sx={{
+              maxWidth: '400px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {issue.title}
+          </Box>
+        </ScrollAwareTooltip>
       ),
     },
     {
@@ -399,11 +407,36 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          // Bounded scroll ancestor for the sticky header inside DataTable.
+          // Restructure so only the body scrolls — the header sits above the
+          // scroll area, so the scrollbar never appears next to the header row.
           '& .MuiTableContainer-root': {
+            overflow: 'visible',
+          },
+          '& .MuiTable-root': {
+            display: 'block',
+          },
+          '& .MuiTableHead-root': {
+            display: 'block',
+            // Reserve space matching the body's scrollbar gutter so columns line up.
+            paddingRight: '8px',
+            backgroundColor: theme.palette.surface.tooltip,
+          },
+          '& .MuiTableHead-root .MuiTableRow-root': {
+            display: 'table',
+            tableLayout: 'fixed',
+            width: '100%',
+          },
+          '& .MuiTableBody-root': {
+            display: 'block',
             maxHeight: '500px',
-            overflow: 'auto',
+            overflowY: 'auto',
+            scrollbarGutter: 'stable',
             ...scrollbarSx,
+          },
+          '& .MuiTableBody-root .MuiTableRow-root': {
+            display: 'table',
+            tableLayout: 'fixed',
+            width: '100%',
           },
         }}
         elevation={0}
