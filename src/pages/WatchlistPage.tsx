@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   alpha,
   Avatar,
@@ -55,8 +55,18 @@ import {
   type DataTableColumn,
 } from '../components/common/DataTable';
 import { LinkBox } from '../components/common/linkBehavior';
-import type { CommitLog, Repository } from '../api/models/Dashboard';
-import { useAllMiners, useAllPrs, useReposAndWeights, useIssues } from '../api';
+import {
+  useAllMiners,
+  useReposAndWeights,
+  useIssues,
+  useAllPrs,
+  useMinersIssues,
+} from '../api';
+import type {
+  CommitLog,
+  MinerIssue,
+  Repository,
+} from '../api/models/Dashboard';
 import { mapAllMinersToStats } from '../utils/minerMapper';
 import {
   useWatchlist,
@@ -75,19 +85,21 @@ import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatTokenAmount } from '../utils/format';
 import theme, {
   CHART_COLORS,
+  LABEL_COLORS,
   STATUS_COLORS,
   TEXT_OPACITY,
   UI_COLORS,
   scrollbarSx,
 } from '../theme';
-import { getRepositoryOwnerAvatarBackground } from '../components/leaderboard/types';
 import FilterButton from '../components/FilterButton';
+import { getRepositoryOwnerAvatarBackground } from '../components/leaderboard/types';
 
 const TAB_ORDER: readonly WatchlistCategory[] = [
   'miners',
   'repos',
   'bounties',
   'prs',
+  'issues',
 ] as const;
 
 const TAB_LABELS: Record<WatchlistCategory, string> = {
@@ -95,6 +107,7 @@ const TAB_LABELS: Record<WatchlistCategory, string> = {
   repos: 'Repositories',
   bounties: 'Bounties',
   prs: 'Pull Requests',
+  issues: 'Issues',
 };
 
 const TAB_NOUN: Record<WatchlistCategory, { single: string; plural: string }> =
@@ -103,6 +116,7 @@ const TAB_NOUN: Record<WatchlistCategory, { single: string; plural: string }> =
     repos: { single: 'repository', plural: 'repositories' },
     bounties: { single: 'bounty', plural: 'bounties' },
     prs: { single: 'pull request', plural: 'pull requests' },
+    issues: { single: 'issue', plural: 'issues' },
   };
 
 const TAB_DISCOVERY: Record<
@@ -129,6 +143,11 @@ const TAB_DISCOVERY: Record<
     path: '/repositories',
     hint: 'Star a pull request, miner, or repository to populate this tab.',
   },
+  issues: {
+    label: 'leaderboard',
+    path: '/top-miners',
+    hint: 'Star miners to aggregate their issues here.',
+  },
 };
 
 const tabFromParam = (param: string | null): WatchlistCategory =>
@@ -152,7 +171,9 @@ const WatchlistPage: React.FC = () => {
   const tabHasContent =
     activeTab === 'prs'
       ? counts.prs + counts.miners + counts.repos > 0
-      : count > 0;
+      : activeTab === 'issues'
+        ? counts.miners > 0
+        : count > 0;
   const isEmpty = !tabHasContent;
   const noun = TAB_NOUN[activeTab];
   const discovery = TAB_DISCOVERY[activeTab];
@@ -317,7 +338,11 @@ const WatchlistPage: React.FC = () => {
                         },
                       }}
                     >
-                      <Box sx={{ pr: counts[cat] > 0 ? 1.5 : 0 }}>
+                      <Box
+                        sx={{
+                          pr: counts[cat] > 0 ? 1.5 : 0,
+                        }}
+                      >
                         {TAB_LABELS[cat]}
                       </Box>
                     </Badge>
@@ -368,6 +393,8 @@ const WatchlistPage: React.FC = () => {
             <ReposList itemKeys={ids} />
           ) : activeTab === 'bounties' ? (
             <BountiesList itemKeys={ids} />
+          ) : activeTab === 'issues' ? (
+            <IssuesList minerIds={minerIds} />
           ) : (
             <PRsList itemKeys={ids} />
           )}
@@ -2487,6 +2514,765 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                         serializePRKey(pr.repository, pr.pullRequestNumber),
                       )}
                     />
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+      )}
+      <TablePagination
+        rowsPerPageOptions={[]}
+        component="div"
+        count={filtered.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={(_e, newPage) => setPage(newPage)}
+        onRowsPerPageChange={() => {}}
+        showFirstButton
+        showLastButton
+        sx={{
+          borderTop: '1px solid',
+          borderColor: 'border.light',
+          color: 'text.secondary',
+        }}
+      />
+    </Card>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// IssuesList — mirrors PRsList shell (toolbar + DataTable + card grid +
+// pagination) but for issues authored by every starred miner. Source: mirror
+// API `/miners/{githubId}/issues`, fanned out via `useMinersIssues`.
+// ---------------------------------------------------------------------------
+
+type IssueStatusFilter = 'all' | 'open' | 'resolved' | 'closed';
+type IssueSortKey = 'issue' | 'title' | 'repo' | 'author' | 'date';
+
+const ISSUE_STATUS_FILTERS: readonly IssueStatusFilter[] = [
+  'all',
+  'open',
+  'resolved',
+  'closed',
+];
+const ISSUE_ROWS_OPTIONS = [10, 25, 50] as const;
+const issueCellSx = { py: 1.5 } as const;
+
+const issueState = (issue: MinerIssue): Exclude<IssueStatusFilter, 'all'> => {
+  if ((issue.state_reason ?? '').toLowerCase() === 'completed')
+    return 'resolved';
+  return issue.state === 'CLOSED' ? 'closed' : 'open';
+};
+
+const issueStatusMeta = (issue: MinerIssue) => {
+  const s = issueState(issue);
+  if (s === 'resolved')
+    return { label: 'RESOLVED', color: STATUS_COLORS.merged };
+  if (s === 'closed') return { label: 'CLOSED', color: STATUS_COLORS.closed };
+  return { label: 'OPEN', color: STATUS_COLORS.open };
+};
+
+const issueDate = (issue: MinerIssue): string =>
+  issue.updated_at || issue.closed_at || issue.created_at || '';
+
+const issueKey = (issue: MinerIssue) =>
+  `${issue.repo_full_name}#${issue.issue_number}`;
+
+const issueStatusColor = (s: IssueStatusFilter): string => {
+  switch (s) {
+    case 'all':
+      return STATUS_COLORS.neutral;
+    case 'open':
+      return STATUS_COLORS.open;
+    case 'resolved':
+      return STATUS_COLORS.merged;
+    case 'closed':
+      return STATUS_COLORS.closed;
+  }
+};
+
+const filterIssues = (
+  items: MinerIssue[],
+  opts: { statusFilter: IssueStatusFilter; searchQuery: string },
+): MinerIssue[] => {
+  const q = opts.searchQuery.trim().toLowerCase();
+  return items.filter((i) => {
+    if (opts.statusFilter !== 'all' && issueState(i) !== opts.statusFilter)
+      return false;
+    if (!q) return true;
+    return (
+      (i.title || '').toLowerCase().includes(q) ||
+      i.repo_full_name.toLowerCase().includes(q) ||
+      String(i.issue_number).includes(q)
+    );
+  });
+};
+
+const getIssueCounts = (items: MinerIssue[]) => {
+  const c: Record<IssueStatusFilter, number> = {
+    all: items.length,
+    open: 0,
+    resolved: 0,
+    closed: 0,
+  };
+  items.forEach((i) => (c[issueState(i)] += 1));
+  return c;
+};
+
+const buildIssueColumns = (
+  sourcesByKey: Map<string, WatchedPRSource[]>,
+): DataTableColumn<MinerIssue, IssueSortKey>[] => [
+  {
+    key: 'issue',
+    header: 'Issue',
+    width: '70px',
+    sortKey: 'issue',
+    cellSx: issueCellSx,
+    renderCell: (i) => (
+      <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+        #{i.issue_number}
+      </Typography>
+    ),
+  },
+  {
+    key: 'title',
+    header: 'Title',
+    width: '34%',
+    sortKey: 'title',
+    cellSx: issueCellSx,
+    renderCell: (i) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 500,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {i.title || '—'}
+      </Typography>
+    ),
+  },
+  {
+    key: 'repo',
+    header: 'Repository',
+    width: '24%',
+    sortKey: 'repo',
+    cellSx: issueCellSx,
+    renderCell: (i) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          color: 'text.secondary',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {i.repo_full_name}
+      </Typography>
+    ),
+  },
+  {
+    key: 'author',
+    header: 'Author',
+    width: '14%',
+    sortKey: 'author',
+    cellSx: issueCellSx,
+    renderCell: (i) => {
+      const login = i.author_login || i.author_github_id;
+      if (!login)
+        return (
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: (t) => alpha(t.palette.text.primary, 0.4),
+            }}
+          >
+            —
+          </Typography>
+        );
+      return (
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}
+        >
+          <Avatar
+            src={`https://avatars.githubusercontent.com/${login}`}
+            sx={{ width: 20, height: 20, flexShrink: 0 }}
+          />
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {login}
+          </Typography>
+        </Box>
+      );
+    },
+  },
+  {
+    key: 'pr',
+    header: 'PR',
+    width: '70px',
+    align: 'center',
+    cellSx: issueCellSx,
+    renderCell: (i) => {
+      const prNumber = i.solving_pr?.pr_number ?? i.solved_by_pr ?? null;
+      if (!prNumber)
+        return (
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: (t) => alpha(t.palette.text.primary, 0.4),
+            }}
+          >
+            —
+          </Typography>
+        );
+      return (
+        <Typography sx={{ fontSize: '0.75rem', fontWeight: 500 }}>
+          #{prNumber}
+        </Typography>
+      );
+    },
+  },
+  {
+    key: 'labels',
+    header: 'Labels',
+    width: '18%',
+    cellSx: issueCellSx,
+    renderCell: (i) => {
+      const labels = i.labels ?? [];
+      if (labels.length === 0) {
+        return (
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: (t) => alpha(t.palette.text.primary, 0.4),
+            }}
+          >
+            —
+          </Typography>
+        );
+      }
+      return (
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+          {labels.map((l) => {
+            // Map known label names to project theme colors. Unknown labels
+            // fall back to the neutral text-primary tint.
+            const name = l.name.toLowerCase();
+            const known =
+              name in LABEL_COLORS
+                ? LABEL_COLORS[name as keyof typeof LABEL_COLORS]
+                : null;
+            return (
+              <Chip
+                key={l.name}
+                label={l.name}
+                size="small"
+                sx={(t) => ({
+                  fontSize: '0.65rem',
+                  height: 18,
+                  textTransform: 'lowercase',
+                  color: known ?? t.palette.text.primary,
+                  backgroundColor: alpha(known ?? t.palette.text.primary, 0.12),
+                  border: '1px solid',
+                  borderColor: alpha(known ?? t.palette.text.primary, 0.3),
+                })}
+              />
+            );
+          })}
+        </Box>
+      );
+    },
+  },
+  {
+    key: 'date',
+    header: 'Date',
+    width: '120px',
+    align: 'right',
+    sortKey: 'date',
+    cellSx: issueCellSx,
+    renderCell: (i) => {
+      const d = issueDate(i);
+      return (
+        <Typography
+          sx={{
+            fontSize: '0.75rem',
+            color: (t) => alpha(t.palette.text.primary, 0.6),
+          }}
+        >
+          {d ? new Date(d).toLocaleDateString() : '-'}
+        </Typography>
+      );
+    },
+  },
+  {
+    key: 'source',
+    header: 'Why',
+    width: '92px',
+    align: 'center',
+    cellSx: issueCellSx,
+    renderCell: (i) => (
+      <WatchedSourceBadges sources={sourcesByKey.get(issueKey(i)) ?? []} />
+    ),
+  },
+  {
+    key: 'watch',
+    header: '★',
+    width: '52px',
+    align: 'center',
+    cellSx: { p: 0 },
+    renderCell: (i) => (
+      <WatchlistButton category="issues" itemKey={issueKey(i)} size="small" />
+    ),
+  },
+];
+
+const getIssueHref = (issue: MinerIssue): string =>
+  `https://github.com/${issue.repo_full_name}/issues/${issue.issue_number}`;
+
+const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
+  const { label, color } = issueStatusMeta(issue);
+  const prNumber = issue.solving_pr?.pr_number ?? issue.solved_by_pr ?? null;
+  return (
+    <Card
+      elevation={0}
+      sx={(t) => ({
+        p: 1,
+        backgroundColor: t.palette.background.default,
+        backdropFilter: 'blur(12px)',
+        border: '1px solid',
+        borderColor: alpha(color, 0.3),
+        borderRadius: 2,
+        cursor: 'pointer',
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1,
+        boxShadow: `0 2px 8px ${alpha(t.palette.background.default, 0.1)}`,
+        '&:hover': {
+          backgroundColor: t.palette.surface.elevated,
+          borderColor: alpha(color, 0.5),
+          transform: 'translateY(-2px)',
+          boxShadow: `0 8px 24px -6px ${alpha(t.palette.background.default, 0.6)}`,
+        },
+      })}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+        }}
+      >
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={1}
+          sx={{ minWidth: 0 }}
+        >
+          <Avatar
+            src={`https://avatars.githubusercontent.com/${issue.repo_full_name.split('/')[0]}`}
+            sx={{
+              width: 20,
+              height: 20,
+              flexShrink: 0,
+              border: '1px solid',
+              borderColor: 'border.medium',
+            }}
+          />
+          <Typography
+            sx={{
+              fontSize: '0.72rem',
+              color: 'text.secondary',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {issue.repo_full_name}
+          </Typography>
+        </Stack>
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={0.5}
+          sx={{ flexShrink: 0 }}
+        >
+          <Chip
+            variant="status"
+            label={label}
+            size="small"
+            sx={{
+              color,
+              borderColor: alpha(color, 0.3),
+              backgroundColor: alpha(color, 0.08),
+            }}
+          />
+          <WatchlistButton
+            category="issues"
+            itemKey={issueKey(issue)}
+            size="small"
+          />
+        </Stack>
+      </Box>
+
+      <LinkBox
+        href={getIssueHref(issue)}
+        sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}
+      >
+        <Typography
+          sx={{
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            color: 'text.primary',
+            lineHeight: 1.4,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}
+        >
+          #{issue.issue_number} {issue.title}
+        </Typography>
+
+        <Box
+          sx={(t) => ({
+            mt: 'auto',
+            backgroundColor: alpha(t.palette.background.default, 0.2),
+            borderRadius: 1.5,
+            p: 1,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          })}
+        >
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            sx={{ minWidth: 0 }}
+          >
+            {issue.author_login && (
+              <Avatar
+                src={`https://avatars.githubusercontent.com/${issue.author_login}`}
+                sx={{ width: 18, height: 18, flexShrink: 0 }}
+              />
+            )}
+            <Typography
+              sx={{
+                fontSize: '0.72rem',
+                color: 'text.secondary',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {issue.author_login || '—'}
+            </Typography>
+          </Stack>
+          {prNumber ? (
+            <Typography
+              sx={{
+                fontSize: '0.72rem',
+                color: 'primary.main',
+                fontWeight: 500,
+              }}
+            >
+              PR #{prNumber}
+            </Typography>
+          ) : (
+            <Typography
+              sx={{
+                fontSize: '0.72rem',
+                color: (t) => alpha(t.palette.text.primary, 0.4),
+              }}
+            >
+              No PR
+            </Typography>
+          )}
+        </Box>
+      </LinkBox>
+    </Card>
+  );
+};
+
+const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
+  const issueQueries = useMinersIssues(minerIds, minerIds.length > 0);
+  const isLoading = issueQueries.some((q) => q.isLoading);
+
+  const { ids: starredIssueIds } = useWatchlist('issues');
+  const { ids: watchedRepoIds } = useWatchlist('repos');
+  const starredSet = useMemo(() => new Set(starredIssueIds), [starredIssueIds]);
+  const watchedRepoSet = useMemo(
+    () => new Set(watchedRepoIds.map((r) => r.toLowerCase())),
+    [watchedRepoIds],
+  );
+  const watchedMinerSet = useMemo(() => new Set(minerIds), [minerIds]);
+
+  const sourcesByKey = useMemo(() => {
+    const map = new Map<string, WatchedPRSource[]>();
+    issueQueries.forEach((q) => {
+      (q.data ?? []).forEach((issue) => {
+        const key = issueKey(issue);
+        if (map.has(key)) return;
+        const sources: WatchedPRSource[] = [];
+        if (starredSet.has(key)) sources.push('starred');
+        if (
+          issue.author_github_id &&
+          watchedMinerSet.has(issue.author_github_id)
+        ) {
+          sources.push('miner');
+        }
+        if (watchedRepoSet.has(issue.repo_full_name.toLowerCase())) {
+          sources.push('repo');
+        }
+        map.set(key, sources);
+      });
+    });
+    return map;
+  }, [issueQueries, starredSet, watchedMinerSet, watchedRepoSet]);
+
+  const issueColumns = useMemo(
+    () => buildIssueColumns(sourcesByKey),
+    [sourcesByKey],
+  );
+
+  // Flatten + dedupe issues across all watched miners.
+  const items = useMemo<MinerIssue[]>(() => {
+    const map = new Map<string, MinerIssue>();
+    issueQueries.forEach((q) => {
+      (q.data ?? []).forEach((issue) => {
+        const key = issueKey(issue);
+        const existing = map.get(key);
+        if (!existing) {
+          map.set(key, issue);
+          return;
+        }
+        // Prefer the most-recently-updated record.
+        if (issueDate(issue) > issueDate(existing)) map.set(key, issue);
+      });
+    });
+    return Array.from(map.values());
+  }, [issueQueries]);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<IssueStatusFilter>('all');
+  const [viewMode, setViewMode] = useState<PRsViewMode>('list');
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [page, setPage] = useState(0);
+  const [sortField, setSortField] = useState<IssueSortKey>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (field: IssueSortKey) => {
+    if (sortField === field) {
+      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
+    setPage(0);
+  };
+
+  const counts = useMemo(() => getIssueCounts(items), [items]);
+
+  const filtered = useMemo(
+    () => filterIssues(items, { statusFilter, searchQuery }),
+    [items, statusFilter, searchQuery],
+  );
+
+  useEffect(() => {
+    setPage(0);
+  }, [statusFilter, searchQuery]);
+
+  const sorted = useMemo(() => {
+    const dir = sortOrder === 'asc' ? 1 : -1;
+    const cmpStr = (a = '', b = '') => a.localeCompare(b) * dir;
+    const cmpNum = (a = 0, b = 0) => (a - b) * dir;
+    return [...filtered].sort((a, b) => {
+      switch (sortField) {
+        case 'issue':
+          return cmpNum(a.issue_number, b.issue_number);
+        case 'title':
+          return cmpStr(a.title, b.title);
+        case 'repo':
+          return cmpStr(a.repo_full_name, b.repo_full_name);
+        case 'author':
+          return cmpStr(a.author_login ?? '', b.author_login ?? '');
+        case 'date':
+          return cmpStr(issueDate(a), issueDate(b));
+        default:
+          return 0;
+      }
+    });
+  }, [filtered, sortField, sortOrder]);
+
+  const paged = useMemo(
+    () => sorted.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
+    [sorted, page, rowsPerPage],
+  );
+
+  return (
+    <Card
+      elevation={0}
+      sx={{
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'border.light',
+        backgroundColor: 'transparent',
+        overflow: 'hidden',
+        maxHeight: '85vh',
+        display: 'flex',
+        flexDirection: 'column',
+        '& .MuiTableContainer-root': {
+          flex: 1,
+          overflowY: 'auto',
+          ...scrollbarSx,
+        },
+      }}
+    >
+      <Box
+        sx={{
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          borderBottom: '1px solid',
+          borderColor: 'border.light',
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+          {ISSUE_STATUS_FILTERS.map((s) => (
+            <FilterButton
+              key={s}
+              label={s[0].toUpperCase() + s.slice(1)}
+              count={counts[s]}
+              color={issueStatusColor(s)}
+              isActive={statusFilter === s}
+              onClick={() => setStatusFilter(s)}
+            />
+          ))}
+        </Box>
+        <FormControl size="small">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              variant="body2"
+              sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
+            >
+              Rows:
+            </Typography>
+            <Select
+              value={rowsPerPage}
+              onChange={(e) => {
+                setRowsPerPage(e.target.value as number);
+                setPage(0);
+              }}
+              sx={{
+                color: 'text.primary',
+                backgroundColor: 'background.default',
+                fontSize: '0.8rem',
+                height: '36px',
+                borderRadius: 2,
+                minWidth: '80px',
+                '& fieldset': { borderColor: 'border.light' },
+                '&:hover fieldset': { borderColor: 'border.medium' },
+                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                '& .MuiSelect-select': { py: 0.75 },
+              }}
+            >
+              {ISSUE_ROWS_OPTIONS.map((n) => (
+                <MenuItem key={n} value={n}>
+                  {n}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+        </FormControl>
+        <TextField
+          placeholder="Search issues..."
+          size="small"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            width: '220px',
+            '& .MuiOutlinedInput-root': {
+              color: 'text.primary',
+              backgroundColor: 'background.default',
+              fontSize: '0.8rem',
+              height: '36px',
+              borderRadius: 2,
+              '& fieldset': { borderColor: 'border.light' },
+              '&:hover fieldset': { borderColor: 'border.medium' },
+              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+            },
+          }}
+        />
+        <Box sx={{ ml: 'auto' }}>
+          <PRsViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+        </Box>
+      </Box>
+
+      {viewMode === 'list' ? (
+        <DataTable<MinerIssue, IssueSortKey>
+          columns={issueColumns}
+          rows={paged}
+          getRowKey={(i) => issueKey(i)}
+          getRowHref={getIssueHref}
+          minWidth="750px"
+          stickyHeader
+          isLoading={isLoading && items.length === 0}
+          emptyLabel="No issues found for the watched miners."
+          sort={{
+            field: sortField,
+            order: sortOrder,
+            onChange: handleSort,
+          }}
+        />
+      ) : (
+        <Box sx={{ p: 2, overflowY: 'auto', ...scrollbarSx }}>
+          {isLoading && paged.length === 0 ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : paged.length === 0 ? (
+            <Typography
+              sx={{
+                color: 'text.secondary',
+                textAlign: 'center',
+                py: 4,
+                fontSize: '0.85rem',
+              }}
+            >
+              No issues found for the watched miners.
+            </Typography>
+          ) : (
+            <Grid container spacing={2} alignItems="stretch">
+              {paged.map((i) => (
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  key={issueKey(i)}
+                  sx={{ display: 'flex' }}
+                >
+                  <Box sx={{ width: '100%' }}>
+                    <IssueCard issue={i} />
                   </Box>
                 </Grid>
               ))}
