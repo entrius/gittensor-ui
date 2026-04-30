@@ -1613,8 +1613,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           uniqueMiners: s?.uniqueMiners || new Set<string>(),
           discoveryScore: d?.discoveryScore ?? 0,
           discoveryIssues: d?.discoveryIssues ?? 0,
-          discoveryContributors:
-            d?.discoveryContributors ?? new Set<string>(),
+          discoveryContributors: d?.discoveryContributors ?? new Set<string>(),
         };
       });
   }, [repos, allPrs, allMiners, itemKeys]);
