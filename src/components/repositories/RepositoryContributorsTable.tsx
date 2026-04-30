@@ -16,12 +16,19 @@ import { STATUS_COLORS } from '../../theme';
 import { isMergedPr } from '../../utils/prStatus';
 import { parseNumber } from '../../utils/ExplorerUtils';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
+import { useSessionStoredState } from '../../hooks/useSessionStoredState';
 
 interface RepositoryContributorsTableProps {
   repositoryFullName: string;
 }
 
 type ContributorsProgramTab = 'oss' | 'issues';
+const CONTRIBUTORS_PROGRAM_TABS: ContributorsProgramTab[] = ['oss', 'issues'];
+const isContributorsProgramTab = (
+  value: unknown,
+): value is ContributorsProgramTab =>
+  typeof value === 'string' &&
+  (CONTRIBUTORS_PROGRAM_TABS as string[]).includes(value);
 
 interface ContributorRow {
   rank: number;
@@ -50,7 +57,11 @@ const RepositoryContributorsTable: React.FC<
   const { data: allMinersStats, isLoading: isMinersLoading } = useAllMiners();
 
   const [visibleCount, setVisibleCount] = useState(7);
-  const [programTab, setProgramTab] = useState<ContributorsProgramTab>('oss');
+  const [programTab, setProgramTab] = useSessionStoredState<ContributorsProgramTab>(
+    'repository:contributors:programTab',
+    'oss',
+    isContributorsProgramTab,
+  );
 
   useEffect(() => {
     setVisibleCount(7);

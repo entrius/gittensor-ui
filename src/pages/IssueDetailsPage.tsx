@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -16,7 +16,11 @@ import {
   IssueConversation,
 } from '../components/issues';
 import { useIssueDetails, useIssueSubmissions } from '../api';
+import { useSessionStoredState } from '../hooks/useSessionStoredState';
 import { STATUS_COLORS } from '../theme';
+
+const isIssueDetailsTab = (value: unknown): value is number =>
+  typeof value === 'number' && (value === 0 || value === 1);
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 
@@ -25,7 +29,11 @@ const IssueDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const idParam = searchParams.get('id');
   const id = idParam ? parseInt(idParam, 10) : 0;
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useSessionStoredState<number>(
+    'issueDetails:tab',
+    0,
+    isIssueDetailsTab,
+  );
 
   const { data: issue, isLoading: isLoadingDetails } = useIssueDetails(id);
   const { data: submissions, isLoading: isLoadingSubmissions } =

@@ -32,9 +32,13 @@ import {
   selectMinerIssueScanRepos,
   useMinerRepositoriesOpenIssues,
 } from '../../hooks/useMinerRepositoriesOpenIssues';
+import { useSessionStoredState } from '../../hooks/useSessionStoredState';
 import { type RepositoryIssue } from '../../api/models/Miner';
 
 type IssueFilter = 'all' | 'open' | 'solved' | 'closed';
+const ISSUE_FILTERS: IssueFilter[] = ['all', 'open', 'solved', 'closed'];
+const isIssueFilter = (value: unknown): value is IssueFilter =>
+  typeof value === 'string' && (ISSUE_FILTERS as string[]).includes(value);
 type IssueSortField = 'number' | 'repository' | 'opened';
 type SortDir = 'asc' | 'desc';
 
@@ -223,14 +227,22 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
     useMinerGithubData(githubId);
 
   // Mine section state
-  const [mineFilter, setMineFilter] = useState<IssueFilter>('all');
+  const [mineFilter, setMineFilter] = useSessionStoredState<IssueFilter>(
+    'minerOpenIssues:mine:filter',
+    'all',
+    isIssueFilter,
+  );
   const [mineSearch, setMineSearch] = useState('');
   const [mineSortField, setMineSortField] = useState<IssueSortField>('opened');
   const [mineSortDir, setMineSortDir] = useState<SortDir>('desc');
   const [minePage, setMinePage] = useState(0);
 
   // Other section state
-  const [otherFilter, setOtherFilter] = useState<IssueFilter>('all');
+  const [otherFilter, setOtherFilter] = useSessionStoredState<IssueFilter>(
+    'minerOpenIssues:other:filter',
+    'all',
+    isIssueFilter,
+  );
   const [otherSearch, setOtherSearch] = useState('');
   const [otherSortField, setOtherSortField] =
     useState<IssueSortField>('opened');
