@@ -20,6 +20,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { useLanguagesAndWeights } from '../../api';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import {
   echartsAxisTooltipChrome,
   echartsBarChartTitle,
@@ -367,6 +368,18 @@ const LanguageWeightsTable: React.FC = () => {
                     }}
                   />
                 </InputAdornment>
+              ),
+              endAdornment: (
+                <ClearSearchAdornment
+                  visible={Boolean(searchQuery)}
+                  onClear={() => setSearchQuery('')}
+                  sx={{
+                    color: alpha(
+                      theme.palette.common.white,
+                      TEXT_OPACITY.muted,
+                    ),
+                  }}
+                />
               ),
             }}
             sx={{

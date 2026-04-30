@@ -52,6 +52,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../components/common/DataTable';
+import { ClearSearchAdornment } from '../components/common/ClearSearchAdornment';
 import { LinkBox } from '../components/common/linkBehavior';
 import {
   useAllMiners,
@@ -1411,6 +1412,12 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                 <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
               </InputAdornment>
             ),
+            endAdornment: (
+              <ClearSearchAdornment
+                visible={Boolean(searchQuery)}
+                onClear={() => setSearchQuery('')}
+              />
+            ),
           }}
           sx={{
             width: '220px',
@@ -2309,6 +2316,12 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                 <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
               </InputAdornment>
             ),
+            endAdornment: (
+              <ClearSearchAdornment
+                visible={Boolean(searchQuery)}
+                onClear={() => setSearchQuery('')}
+              />
+            ),
           }}
           sx={{
             width: '220px',
@@ -3095,6 +3108,12 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
               <InputAdornment position="start">
                 <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
               </InputAdornment>
+            ),
+            endAdornment: (
+              <ClearSearchAdornment
+                visible={Boolean(searchQuery)}
+                onClear={() => setSearchQuery('')}
+              />
             ),
           }}
           sx={{

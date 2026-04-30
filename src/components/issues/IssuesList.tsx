@@ -37,6 +37,7 @@ import {
   formatDate,
   formatAlphaToUsd,
 } from '../../utils/format';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
@@ -929,6 +930,12 @@ const IssuesList: React.FC<IssuesListProps> = ({
                   }}
                 />
               </InputAdornment>
+            ),
+            endAdornment: (
+              <ClearSearchAdornment
+                visible={Boolean(searchQuery)}
+                onClear={() => setSearchQuery('')}
+              />
             ),
           }}
           sx={{

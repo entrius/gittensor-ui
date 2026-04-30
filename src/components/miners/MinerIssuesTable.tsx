@@ -22,6 +22,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
 
@@ -467,6 +468,15 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
                 }}
               />
             </InputAdornment>
+          ),
+          endAdornment: (
+            <ClearSearchAdornment
+              visible={Boolean(searchQuery)}
+              onClear={() => {
+                setSearchQuery('');
+                setPage(0);
+              }}
+            />
           ),
         }}
         sx={{

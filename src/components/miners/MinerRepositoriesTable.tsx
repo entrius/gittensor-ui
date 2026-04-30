@@ -16,6 +16,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import RankBadge from './RankBadge';
 import EmptyStateMessage from './EmptyStateMessage';
 import TablePagination from './TablePagination';
@@ -418,6 +419,15 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                 }}
               />
             </InputAdornment>
+          ),
+          endAdornment: (
+            <ClearSearchAdornment
+              visible={Boolean(searchQuery)}
+              onClear={() => {
+                setSearchQuery('');
+                setPage(0);
+              }}
+            />
           ),
         }}
         sx={searchFieldSx}
