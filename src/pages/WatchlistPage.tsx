@@ -1678,7 +1678,7 @@ const SOURCE_META: Record<
 > = {
   starred: {
     label: 'Starred',
-    tooltip: 'You starred this pull request',
+    tooltip: 'You starred this issue',
     Icon: StarIcon,
     color: '#facc15',
   },
@@ -2468,6 +2468,17 @@ const issueDate = (issue: MinerIssue): string =>
 const issueKey = (issue: MinerIssue) =>
   `${issue.repo_full_name}#${issue.issue_number}`;
 
+const parseIssueKey = (
+  key: string,
+): { repoFullName: string; issueNumber: number } | null => {
+  const idx = key.lastIndexOf('#');
+  if (idx <= 0 || idx >= key.length - 1) return null;
+  const repoFullName = key.slice(0, idx);
+  const issueNumber = Number(key.slice(idx + 1));
+  if (!Number.isFinite(issueNumber)) return null;
+  return { repoFullName, issueNumber };
+};
+
 const issueStatusColor = (s: IssueStatusFilter): string => {
   switch (s) {
     case 'all':
@@ -2896,7 +2907,6 @@ const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
 
 const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   const issueQueries = useMinersIssues(minerIds, minerIds.length > 0);
-  const isLoading = issueQueries.some((q) => q.isLoading);
 
   const { ids: starredIssueIds } = useWatchlist('issues');
   const { ids: watchedRepoIds } = useWatchlist('repos');
@@ -2907,36 +2917,8 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   );
   const watchedMinerSet = useMemo(() => new Set(minerIds), [minerIds]);
 
-  const sourcesByKey = useMemo(() => {
-    const map = new Map<string, WatchedPRSource[]>();
-    issueQueries.forEach((q) => {
-      (q.data ?? []).forEach((issue) => {
-        const key = issueKey(issue);
-        if (map.has(key)) return;
-        const sources: WatchedPRSource[] = [];
-        if (starredSet.has(key)) sources.push('starred');
-        if (
-          issue.author_github_id &&
-          watchedMinerSet.has(issue.author_github_id)
-        ) {
-          sources.push('miner');
-        }
-        if (watchedRepoSet.has(issue.repo_full_name.toLowerCase())) {
-          sources.push('repo');
-        }
-        map.set(key, sources);
-      });
-    });
-    return map;
-  }, [issueQueries, starredSet, watchedMinerSet, watchedRepoSet]);
-
-  const issueColumns = useMemo(
-    () => buildIssueColumns(sourcesByKey),
-    [sourcesByKey],
-  );
-
   // Flatten + dedupe issues across all watched miners.
-  const items = useMemo<MinerIssue[]>(() => {
+  const mirroredItems = useMemo<MinerIssue[]>(() => {
     const map = new Map<string, MinerIssue>();
     issueQueries.forEach((q) => {
       (q.data ?? []).forEach((issue) => {
@@ -2952,6 +2934,75 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
     });
     return Array.from(map.values());
   }, [issueQueries]);
+
+  const mirroredIssueKeys = useMemo(() => {
+    const keys = new Set<string>();
+    mirroredItems.forEach((issue) => keys.add(issueKey(issue)));
+    return keys;
+  }, [mirroredItems]);
+
+  // Starred issues should always render, even when miner mirror feeds
+  // do not contain them. Build a minimal row from the serialized key.
+  const starredFallbackItems = useMemo<MinerIssue[]>(
+    () =>
+      starredIssueIds
+        .filter((key) => !mirroredIssueKeys.has(key))
+        .map((key) => {
+          const parsed = parseIssueKey(key);
+          if (!parsed) return null;
+          return {
+            repo_full_name: parsed.repoFullName,
+            issue_number: parsed.issueNumber,
+            title: `${parsed.repoFullName} #${parsed.issueNumber}`,
+            state: 'OPEN',
+            state_reason: null,
+            author_github_id: null,
+            author_login: null,
+            created_at: null,
+            closed_at: null,
+            updated_at: null,
+            labels: [],
+          } as MinerIssue;
+        })
+        .filter((issue): issue is MinerIssue => issue !== null),
+    [starredIssueIds, mirroredIssueKeys],
+  );
+
+  const items = useMemo<MinerIssue[]>(() => {
+    const map = new Map<string, MinerIssue>();
+    [...mirroredItems, ...starredFallbackItems].forEach((issue) => {
+      const key = issueKey(issue);
+      const existing = map.get(key);
+      if (!existing || issueDate(issue) > issueDate(existing)) {
+        map.set(key, issue);
+      }
+    });
+    return Array.from(map.values());
+  }, [mirroredItems, starredFallbackItems]);
+
+  const sourcesByKey = useMemo(() => {
+    const map = new Map<string, WatchedPRSource[]>();
+    items.forEach((issue) => {
+      const key = issueKey(issue);
+      const sources: WatchedPRSource[] = [];
+      if (starredSet.has(key)) sources.push('starred');
+      if (issue.author_github_id && watchedMinerSet.has(issue.author_github_id)) {
+        sources.push('miner');
+      }
+      if (watchedRepoSet.has(issue.repo_full_name.toLowerCase())) {
+        sources.push('repo');
+      }
+      map.set(key, sources);
+    });
+    return map;
+  }, [items, starredSet, watchedMinerSet, watchedRepoSet]);
+
+  const issueColumns = useMemo(
+    () => buildIssueColumns(sourcesByKey),
+    [sourcesByKey],
+  );
+
+  const isLoading = issueQueries.some((q) => q.isLoading);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<IssueStatusFilter>('all');
