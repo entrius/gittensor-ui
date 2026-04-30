@@ -39,6 +39,10 @@ const DiscoveriesPage: React.FC = () => {
       linesDeleted: parseNumber(stat.totalDeletions),
       hotkey: stat.hotkey || 'N/A',
       uniqueReposCount: parseNumber(stat.uniqueReposCount),
+      // OSS credibility surfaces as a sortable column in TopMinersTable; the
+      // discoveries-track score lives on issueCredibility so the column
+      // shouldn't read it.
+      credibility: parseNumber(stat.credibility),
       issueCredibility: parseNumber(stat.issueCredibility),
       isEligible: stat.isIssueEligible ?? false,
       ossIsEligible: stat.isEligible ?? false,

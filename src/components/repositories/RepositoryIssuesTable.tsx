@@ -23,6 +23,7 @@ import {
   type DataTableColumn,
 } from '../../components/common/DataTable';
 import { formatTokenAmount } from '../../utils/format';
+import { dedupeRepositoryIssues } from '../../utils/dedupeRepositoryIssues';
 import {
   getIssueStatusMeta,
   getBountyAmountColor,
@@ -42,21 +43,27 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   const { data: bounties } = useRepoIssues(repositoryFullName);
   const [filter, setFilter] = useState<'all' | 'open' | 'closed'>('all');
 
-  const counts = useMemo(() => {
-    if (!issues) return { total: 0, open: 0, closed: 0 };
-    return {
-      total: issues.length,
-      open: issues.filter((issue) => !issue.closedAt).length,
-      closed: issues.filter((issue) => issue.closedAt).length,
-    };
-  }, [issues]);
+  // The API can return the same issue multiple times (multiple miners
+  // independently surfaced it); dedup before rendering so filter counts and
+  // React keys agree with the visible row set.
+  const uniqueIssues = useMemo(() => dedupeRepositoryIssues(issues), [issues]);
+
+  const counts = useMemo(
+    () => ({
+      total: uniqueIssues.length,
+      open: uniqueIssues.filter((issue) => !issue.closedAt).length,
+      closed: uniqueIssues.filter((issue) => issue.closedAt).length,
+    }),
+    [uniqueIssues],
+  );
 
   const filteredIssues = useMemo(() => {
-    if (!issues) return [];
-    if (filter === 'open') return issues.filter((issue) => !issue.closedAt);
-    if (filter === 'closed') return issues.filter((issue) => issue.closedAt);
-    return issues;
-  }, [issues, filter]);
+    if (filter === 'open')
+      return uniqueIssues.filter((issue) => !issue.closedAt);
+    if (filter === 'closed')
+      return uniqueIssues.filter((issue) => issue.closedAt);
+    return uniqueIssues;
+  }, [uniqueIssues, filter]);
 
   const sortedIssues = useMemo(
     () =>
@@ -414,6 +421,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
           getRowKey={(issue) => `${issue.number}-${issue.repositoryFullName}`}
           stickyHeader
           size="medium"
+          minWidth={720}
           header={headerToolbar}
           emptyState={
             <Box sx={{ p: 4, textAlign: 'center' }}>
