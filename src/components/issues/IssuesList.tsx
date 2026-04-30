@@ -188,10 +188,19 @@ const IssuesList: React.FC<IssuesListProps> = ({
     (overrides: { filter?: FilterType; view?: IssuesViewMode }) => {
       const f = overrides.filter ?? filterType;
       const v = overrides.view ?? viewMode;
-      const params: Record<string, string> = {};
-      if (f !== 'all') params.filter = f;
-      if (v === 'cards') params.view = 'cards';
-      setSearchParams(params, { replace: true });
+      // Preserve unrelated query params (e.g. the watchlist's `tab=bounties`)
+      // by mutating in place instead of replacing the whole search string.
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (f === 'all') next.delete('filter');
+          else next.set('filter', f);
+          if (v === 'cards') next.set(ISSUES_VIEW_QUERY_PARAM, 'cards');
+          else next.delete(ISSUES_VIEW_QUERY_PARAM);
+          return next;
+        },
+        { replace: true },
+      );
     },
     [filterType, viewMode, setSearchParams],
   );

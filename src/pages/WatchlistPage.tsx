@@ -53,6 +53,7 @@ import {
   SEO,
   WatchlistButton,
 } from '../components';
+import { IssuesList as BountyIssuesList } from '../components/issues';
 import {
   DataTable,
   type DataTableColumn,
@@ -84,8 +85,6 @@ import {
   getPrStatusCounts,
 } from '../utils/prStatus';
 import { filterPrs, type PrStatusFilter } from '../utils/prTable';
-import { getIssueStatusMeta } from '../utils/issueStatus';
-import { formatTokenAmount } from '../utils/format';
 import { compareByWatchlist } from '../utils/watchlistSort';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import theme, {
@@ -515,91 +514,6 @@ const WatchlistPage: React.FC = () => {
     </Page>
   );
 };
-
-const rowSx = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: 2,
-  px: 1.5,
-  py: 1.25,
-  borderRadius: 1,
-  transition: 'background 0.15s',
-  '&:hover': { backgroundColor: 'surface.light' },
-};
-
-const primaryTextSx = {
-  fontSize: '0.85rem',
-  color: 'text.primary',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-};
-
-const secondaryTextSx = {
-  fontSize: '0.7rem',
-  color: 'text.secondary',
-  mt: 0.25,
-};
-
-interface WatchedItemRowProps {
-  href: string;
-  primary: React.ReactNode;
-  secondary?: React.ReactNode;
-  actions: React.ReactNode;
-}
-
-// LinkBox wraps only the navigable text area (not the whole row) so the
-// star button — a real <button> — is a sibling of the <a>, not a descendant.
-// Keeps middle-click / Cmd-click / "Open in new tab" working natively while
-// avoiding invalid interactive-inside-anchor HTML.
-const WatchedItemRow: React.FC<WatchedItemRowProps> = ({
-  href,
-  primary,
-  secondary,
-  actions,
-}) => (
-  <Box sx={rowSx}>
-    <LinkBox
-      href={href}
-      linkState={{ backLabel: 'Back to Watchlist' }}
-      sx={{ display: 'block', minWidth: 0, flex: 1 }}
-    >
-      <Typography sx={primaryTextSx}>{primary}</Typography>
-      {secondary !== undefined && (
-        <Typography sx={secondaryTextSx}>{secondary}</Typography>
-      )}
-    </LinkBox>
-    <Stack direction="row" spacing={2} alignItems="center">
-      {actions}
-    </Stack>
-  </Box>
-);
-
-interface StatusPillProps {
-  label: string;
-  color: string;
-  background: string;
-}
-
-const StatusPill: React.FC<StatusPillProps> = ({
-  label,
-  color,
-  background,
-}) => (
-  <Typography
-    sx={{
-      fontSize: '0.72rem',
-      color,
-      backgroundColor: background,
-      px: 1,
-      py: 0.25,
-      borderRadius: 0.75,
-    }}
-  >
-    {label}
-  </Typography>
-);
 
 /* ─── OptionsLabel: section header inside popovers ─── */
 const OptionsLabel: React.FC<{ children: React.ReactNode }> = ({
@@ -1906,8 +1820,12 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   );
 };
 
+const BOUNTIES_LINK_STATE = { backLabel: 'Back to Watchlist' } as const;
+const getBountyHref = (id: number) => `/bounties/details?id=${id}`;
+
 const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
-  const { data: allIssues } = useIssues();
+  const { data: allIssues, isLoading } = useIssues();
+
   const items = useMemo(() => {
     if (!allIssues) return [];
     // Stored keys and issue ids are compared as strings to avoid any
@@ -1917,39 +1835,12 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   }, [allIssues, itemKeys]);
 
   return (
-    <Stack spacing={0.5} sx={{ width: '100%' }}>
-      {items.map((issue) => {
-        const meta = getIssueStatusMeta(issue.status);
-        return (
-          <WatchedItemRow
-            key={issue.id}
-            href={`/bounties/details?id=${issue.id}`}
-            primary={
-              issue.title || `${issue.repositoryFullName} #${issue.issueNumber}`
-            }
-            secondary={`${issue.repositoryFullName} #${issue.issueNumber}`}
-            actions={
-              <>
-                <StatusPill
-                  label={meta.text}
-                  color={meta.color}
-                  background={meta.bgColor}
-                />
-                <Typography
-                  sx={{ fontSize: '0.75rem', color: 'status.success' }}
-                >
-                  {formatTokenAmount(issue.bountyAmount)} ل
-                </Typography>
-                <WatchlistButton
-                  category="bounties"
-                  itemKey={String(issue.id)}
-                />
-              </>
-            }
-          />
-        );
-      })}
-    </Stack>
+    <BountyIssuesList
+      issues={items}
+      isLoading={isLoading}
+      getIssueHref={getBountyHref}
+      linkState={BOUNTIES_LINK_STATE}
+    />
   );
 };
 
