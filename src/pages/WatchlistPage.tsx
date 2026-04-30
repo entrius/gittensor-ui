@@ -2130,6 +2130,110 @@ const PRCard: React.FC<{
 const PR_ROWS_OPTIONS_LIST = [10, 25, 50] as const;
 const PR_ROWS_OPTIONS_CARDS = [12, 24, 48] as const;
 
+interface WatchlistToolbarSearchOptions {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  openButtonLabel: string;
+}
+
+const WATCHLIST_TOOLBAR_SEARCH_FIELD_SX = {
+  '& .MuiOutlinedInput-root': {
+    color: 'text.primary',
+    backgroundColor: 'background.default',
+    fontSize: '0.8rem',
+    height: '36px',
+    borderRadius: 2,
+    '& fieldset': { borderColor: 'border.light' },
+    '&:hover fieldset': { borderColor: 'border.medium' },
+    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+  },
+} as const;
+
+const WATCHLIST_MOBILE_SEARCH_BUTTON_SX = {
+  color: 'text.tertiary',
+  border: '1px solid',
+  borderColor: 'border.light',
+  borderRadius: 2,
+  width: 36,
+  height: 36,
+  '&:hover': {
+    backgroundColor: 'surface.light',
+    borderColor: 'border.medium',
+  },
+} as const;
+
+const useWatchlistToolbarSearch = ({
+  value,
+  onChange,
+  placeholder,
+  openButtonLabel,
+}: WatchlistToolbarSearchOptions) => {
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const trimmedSearch = value.trim();
+  const isMobileSearchVisible =
+    isMobile && (isMobileSearchOpen || !!trimmedSearch);
+
+  const searchInput = (
+    <TextField
+      placeholder={placeholder}
+      size="small"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onBlur={() => {
+        if (isMobile && !trimmedSearch) {
+          setIsMobileSearchOpen(false);
+        }
+      }}
+      autoFocus={isMobileSearchOpen}
+      InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
+          </InputAdornment>
+        ),
+      }}
+      sx={{
+        width: '220px',
+        ...(isMobileSearchVisible
+          ? {
+              width: '100%',
+              flexBasis: { xs: '100%', sm: 'auto' },
+              order: { xs: 10, sm: 'initial' },
+            }
+          : {}),
+        ...WATCHLIST_TOOLBAR_SEARCH_FIELD_SX,
+      }}
+    />
+  );
+
+  return {
+    searchControl: isMobileSearchVisible ? (
+      searchInput
+    ) : isMobile ? (
+      <IconButton
+        size="small"
+        aria-label={openButtonLabel}
+        onClick={() => setIsMobileSearchOpen(true)}
+        sx={WATCHLIST_MOBILE_SEARCH_BUTTON_SX}
+      >
+        <SearchIcon sx={{ fontSize: '1rem' }} />
+      </IconButton>
+    ) : (
+      searchInput
+    ),
+    trailingControlSx: {
+      ml: 'auto',
+      width: isMobileSearchVisible ? { xs: '100%', sm: 'auto' } : 'auto',
+      display: 'flex',
+      justifyContent: isMobileSearchVisible
+        ? { xs: 'flex-end', sm: 'flex-start' }
+        : 'flex-start',
+    } as const,
+  };
+};
+
 const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { items, sourcesByKey, isLoading } = useWatchedPRs(itemKeys);
   const prColumns = useMemo(() => buildPrColumns(sourcesByKey), [sourcesByKey]);
@@ -2141,8 +2245,12 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const [page, setPage] = useState(0);
   const [sortField, setSortField] = useState<PrSortKey>('score');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { searchControl, trailingControlSx } = useWatchlistToolbarSearch({
+    value: searchQuery,
+    onChange: setSearchQuery,
+    placeholder: 'Search PRs...',
+    openButtonLabel: 'Open PR search',
+  });
 
   const handleSort = (field: PrSortKey) => {
     if (sortField === field) {
@@ -2159,9 +2267,6 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   };
 
   const counts = useMemo(() => getPrStatusCounts(items), [items]);
-  const trimmedSearch = searchQuery.trim();
-  const isMobileSearchVisible =
-    isMobile && (isMobileSearchOpen || !!trimmedSearch);
 
   const filtered = useMemo(() => {
     const result = filterPrs(items, {
@@ -2203,54 +2308,6 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const paged = useMemo(
     () => sorted.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
     [sorted, page, rowsPerPage],
-  );
-
-  const searchAdornment = (
-    <InputAdornment position="start">
-      <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
-    </InputAdornment>
-  );
-
-  const searchFieldBaseSx = {
-    '& .MuiOutlinedInput-root': {
-      color: 'text.primary',
-      backgroundColor: 'background.default',
-      fontSize: '0.8rem',
-      height: '36px',
-      borderRadius: 2,
-      '& fieldset': { borderColor: 'border.light' },
-      '&:hover fieldset': { borderColor: 'border.medium' },
-      '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-    },
-  } as const;
-
-  const searchInput = (
-    <TextField
-      placeholder="Search PRs..."
-      size="small"
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-      onBlur={() => {
-        if (isMobile && !trimmedSearch) {
-          setIsMobileSearchOpen(false);
-        }
-      }}
-      autoFocus={isMobileSearchOpen}
-      InputProps={{
-        startAdornment: searchAdornment,
-      }}
-      sx={{
-        width: '220px',
-        ...(isMobileSearchVisible
-          ? {
-              width: '100%',
-              flexBasis: { xs: '100%', sm: 'auto' },
-              order: { xs: 10, sm: 'initial' },
-            }
-          : {}),
-        ...searchFieldBaseSx,
-      }}
-    />
   );
 
   return (
@@ -2354,42 +2411,9 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           </Box>
         </FormControl>
 
-        {isMobileSearchVisible ? (
-          searchInput
-        ) : isMobile ? (
-          <IconButton
-            size="small"
-            aria-label="Open PR search"
-            onClick={() => setIsMobileSearchOpen(true)}
-            sx={{
-              color: 'text.tertiary',
-              border: '1px solid',
-              borderColor: 'border.light',
-              borderRadius: 2,
-              width: 36,
-              height: 36,
-              '&:hover': {
-                backgroundColor: 'surface.light',
-                borderColor: 'border.medium',
-              },
-            }}
-          >
-            <SearchIcon sx={{ fontSize: '1rem' }} />
-          </IconButton>
-        ) : (
-          searchInput
-        )}
+        {searchControl}
 
-        <Box
-          sx={{
-            ml: 'auto',
-            width: isMobileSearchVisible ? { xs: '100%', sm: 'auto' } : 'auto',
-            display: 'flex',
-            justifyContent: isMobileSearchVisible
-              ? { xs: 'flex-end', sm: 'flex-start' }
-              : 'flex-start',
-          }}
-        >
+        <Box sx={trailingControlSx}>
           <PRsViewModeToggle
             viewMode={viewMode}
             onChange={(next) => {
@@ -3025,8 +3049,12 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   const [page, setPage] = useState(0);
   const [sortField, setSortField] = useState<IssueSortKey>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { searchControl, trailingControlSx } = useWatchlistToolbarSearch({
+    value: searchQuery,
+    onChange: setSearchQuery,
+    placeholder: 'Search issues...',
+    openButtonLabel: 'Open issues search',
+  });
 
   const handleSort = (field: IssueSortKey) => {
     if (sortField === field) {
@@ -3039,9 +3067,6 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   };
 
   const counts = useMemo(() => getIssueCounts(items), [items]);
-  const trimmedSearch = searchQuery.trim();
-  const isMobileSearchVisible =
-    isMobile && (isMobileSearchOpen || !!trimmedSearch);
 
   const filtered = useMemo(
     () => filterIssues(items, { statusFilter, searchQuery }),
@@ -3077,54 +3102,6 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   const paged = useMemo(
     () => sorted.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
     [sorted, page, rowsPerPage],
-  );
-
-  const searchAdornment = (
-    <InputAdornment position="start">
-      <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
-    </InputAdornment>
-  );
-
-  const searchFieldBaseSx = {
-    '& .MuiOutlinedInput-root': {
-      color: 'text.primary',
-      backgroundColor: 'background.default',
-      fontSize: '0.8rem',
-      height: '36px',
-      borderRadius: 2,
-      '& fieldset': { borderColor: 'border.light' },
-      '&:hover fieldset': { borderColor: 'border.medium' },
-      '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-    },
-  } as const;
-
-  const searchInput = (
-    <TextField
-      placeholder="Search issues..."
-      size="small"
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-      onBlur={() => {
-        if (isMobile && !trimmedSearch) {
-          setIsMobileSearchOpen(false);
-        }
-      }}
-      autoFocus={isMobileSearchOpen}
-      InputProps={{
-        startAdornment: searchAdornment,
-      }}
-      sx={{
-        width: '220px',
-        ...(isMobileSearchVisible
-          ? {
-              width: '100%',
-              flexBasis: { xs: '100%', sm: 'auto' },
-              order: { xs: 10, sm: 'initial' },
-            }
-          : {}),
-        ...searchFieldBaseSx,
-      }}
-    />
   );
 
   return (
@@ -3205,42 +3182,9 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
           </Box>
         </FormControl>
 
-        {isMobileSearchVisible ? (
-          searchInput
-        ) : isMobile ? (
-          <IconButton
-            size="small"
-            aria-label="Open issues search"
-            onClick={() => setIsMobileSearchOpen(true)}
-            sx={{
-              color: 'text.tertiary',
-              border: '1px solid',
-              borderColor: 'border.light',
-              borderRadius: 2,
-              width: 36,
-              height: 36,
-              '&:hover': {
-                backgroundColor: 'surface.light',
-                borderColor: 'border.medium',
-              },
-            }}
-          >
-            <SearchIcon sx={{ fontSize: '1rem' }} />
-          </IconButton>
-        ) : (
-          searchInput
-        )}
+        {searchControl}
 
-        <Box
-          sx={{
-            ml: 'auto',
-            width: isMobileSearchVisible ? { xs: '100%', sm: 'auto' } : 'auto',
-            display: 'flex',
-            justifyContent: isMobileSearchVisible
-              ? { xs: 'flex-end', sm: 'flex-start' }
-              : 'flex-start',
-          }}
-        >
+        <Box sx={trailingControlSx}>
           <PRsViewModeToggle viewMode={viewMode} onChange={setViewMode} />
         </Box>
       </Box>
