@@ -38,6 +38,7 @@ import {
   isOutsideScoringWindow,
 } from '../../utils/ExplorerUtils';
 import { formatTokenAmount } from '../../utils/format';
+import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 
 type ViewMode = 'prs' | 'issues';
 
@@ -173,7 +174,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
         }}
       >
         <Avatar
-          src={`https://avatars.githubusercontent.com/${owner}`}
+          src={getRepositoryOwnerAvatarSrc(owner)}
           alt={owner}
           sx={{
             width: 24,

@@ -24,7 +24,7 @@ import {
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
 import { useMinerGithubData, useMinerPRs } from '../../api';
-import { paginateItems } from '../../utils';
+import { getRepositoryOwnerAvatarSrc, paginateItems } from '../../utils';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import ExplorerFilterButton from './ExplorerFilterButton';
@@ -473,7 +473,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
                 }}
               >
                 <Avatar
-                  src={`https://avatars.githubusercontent.com/${owner}`}
+                  src={getRepositoryOwnerAvatarSrc(owner)}
                   alt={owner}
                   sx={{
                     width: 20,
@@ -641,7 +641,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
                 }}
               >
                 <Avatar
-                  src={`https://avatars.githubusercontent.com/${owner}`}
+                  src={getRepositoryOwnerAvatarSrc(owner)}
                   alt={owner}
                   sx={{
                     width: 20,
