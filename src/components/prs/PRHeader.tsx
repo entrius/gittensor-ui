@@ -4,7 +4,11 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
-import { formatDate, formatUsdEstimate } from '../../utils';
+import {
+  formatDate,
+  formatUsdEstimate,
+  getRepositoryOwnerAvatarSrc,
+} from '../../utils';
 import { type PullRequestDetails } from '../../api/models/Dashboard';
 import { STATUS_COLORS } from '../../theme';
 import { getRepositoryOwnerAvatarBackground } from '../leaderboard/types';
@@ -77,7 +81,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
         }}
       >
         <Avatar
-          src={`https://avatars.githubusercontent.com/${owner}`}
+          src={getRepositoryOwnerAvatarSrc(owner)}
           alt={owner}
           sx={{
             width: { xs: 48, sm: 64 },

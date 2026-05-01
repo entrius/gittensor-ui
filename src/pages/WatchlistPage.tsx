@@ -81,6 +81,7 @@ import {
 } from '../utils/prStatus';
 import { filterPrs, type PrStatusFilter } from '../utils/prTable';
 import { compareByWatchlist } from '../utils/watchlistSort';
+import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import theme, {
   CHART_COLORS,
   LABEL_COLORS,
@@ -423,7 +424,7 @@ const WatchlistPage: React.FC = () => {
             mb: 3,
           }}
         >
-          Clear all {count} pinned miner(s)?
+          Clear all {count} pinned {count === 1 ? noun.single : noun.plural}?
         </DialogTitle>
         <DialogActions sx={{ p: 0 }}>
           <Button
@@ -539,7 +540,7 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
     renderCell: (repo) => (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
         <Avatar
-          src={`https://avatars.githubusercontent.com/${repo.fullName.split('/')[0]}`}
+          src={getRepositoryOwnerAvatarSrc(repo.fullName.split('/')[0])}
           sx={{
             width: 20,
             height: 20,
@@ -801,7 +802,7 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
       {/* Header: avatar + full name + status pill + star */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
         <Avatar
-          src={`https://avatars.githubusercontent.com/${owner}`}
+          src={getRepositoryOwnerAvatarSrc(owner)}
           alt={owner}
           sx={(theme) => ({
             width: 28,
@@ -1884,7 +1885,7 @@ const PRCard: React.FC<{
           sx={{ minWidth: 0 }}
         >
           <Avatar
-            src={`https://avatars.githubusercontent.com/${pr.repository.split('/')[0]}`}
+            src={getRepositoryOwnerAvatarSrc(pr.repository.split('/')[0])}
             sx={{
               width: 20,
               height: 20,
