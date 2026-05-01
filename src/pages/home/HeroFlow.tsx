@@ -12,14 +12,12 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { useStats } from '../../api';
-
-const DAILY_ALPHA_EMISSIONS = 2952;
+import { useDailyAlphaEmissions } from '../../hooks/useMonthlyRewards';
 
 const VIEWBOX_W = 1200;
-const VIEWBOX_H = 360;
+const VIEWBOX_H = 280;
 const STAGE_X = { code: 180, ai: 600, output: 980 };
 const AI_Y = VIEWBOX_H / 2;
-const OUTPUT_Y = { owner: 70, miners: 180, validators: 290 };
 
 const drift1 = keyframes`
   0%, 100% { transform: translate3d(-6%, -6%, 0); }
@@ -61,60 +59,21 @@ const polar = (cx: number, cy: number, r: number, angleDeg: number) => {
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 };
 
-type OutputKey = 'owner' | 'miners' | 'validators';
-interface OutputConfig {
-  key: OutputKey;
-  y: number;
-  pct: number;
-  label: string;
-  tone: 'primary' | 'secondary' | 'tertiary';
-  highlight?: boolean;
-}
-
-const OUTPUTS: OutputConfig[] = [
-  {
-    key: 'owner',
-    y: OUTPUT_Y.owner,
-    pct: 0.18,
-    label: 'Subnet owner',
-    tone: 'tertiary',
-  },
-  {
-    key: 'miners',
-    y: OUTPUT_Y.miners,
-    pct: 0.41,
-    label: 'Miners (you)',
-    tone: 'primary',
-    highlight: true,
-  },
-  {
-    key: 'validators',
-    y: OUTPUT_Y.validators,
-    pct: 0.41,
-    label: 'Validators + nominators',
-    tone: 'secondary',
-  },
-];
+// Subnet 74 emissions are split 18 / 41 / 41 between subnet owner /
+// miners / validators+nominators on-chain. The hero only surfaces the
+// miner slice — that is the audience for this product.
+const MINER_SHARE = 0.41;
 
 const HeroFlow: React.FC = () => {
   const { data: stats } = useStats();
   const taoPrice = stats?.prices?.tao?.data?.price ?? null;
   const alphaPrice = stats?.prices?.alpha?.data?.price ?? null;
+  const dailyEmissions = useDailyAlphaEmissions();
 
-  const dailyByKey = useMemo(() => {
-    if (!taoPrice || !alphaPrice) {
-      return { owner: null, miners: null, validators: null } as Record<
-        OutputKey,
-        number | null
-      >;
-    }
-    const dailyTotal = taoPrice * alphaPrice * DAILY_ALPHA_EMISSIONS;
-    return {
-      owner: dailyTotal * 0.18,
-      miners: dailyTotal * 0.41,
-      validators: dailyTotal * 0.41,
-    };
-  }, [taoPrice, alphaPrice]);
+  const minerDailyUsd = useMemo(() => {
+    if (!taoPrice || !alphaPrice) return null;
+    return taoPrice * alphaPrice * dailyEmissions * MINER_SHARE;
+  }, [taoPrice, alphaPrice, dailyEmissions]);
 
   const aiCenter = { x: STAGE_X.ai, y: AI_Y };
   const nodePositions = aiNodes.map((n) => ({
@@ -296,30 +255,20 @@ const HeroFlow: React.FC = () => {
               })}
             />
 
-            {/* AI → 3 outputs: branching curved paths */}
-            {OUTPUTS.map((out) => (
-              <Box
-                key={`branch-${out.key}`}
-                component="path"
-                d={`M ${STAGE_X.ai + 150} ${AI_Y} C ${
-                  (STAGE_X.ai + STAGE_X.output) / 2
-                } ${AI_Y}, ${(STAGE_X.ai + STAGE_X.output) / 2} ${out.y}, ${
-                  STAGE_X.output - 60
-                } ${out.y}`}
-                fill="none"
-                sx={(theme) => ({
-                  stroke:
-                    out.tone === 'primary'
-                      ? theme.palette.diff.additions
-                      : out.tone === 'secondary'
-                        ? theme.palette.status.award
-                        : alpha(theme.palette.text.primary, 0.45),
-                  strokeWidth: out.highlight ? 2.5 : 1.8,
-                  strokeDasharray: '8 8',
-                  animation: `${dashFlow} 1.2s linear infinite`,
-                })}
-              />
-            ))}
+            {/* AI → Miners: straight dashed flow line */}
+            <Box
+              component="line"
+              x1={STAGE_X.ai + 150}
+              y1={AI_Y}
+              x2={STAGE_X.output - 60}
+              y2={AI_Y}
+              sx={(theme) => ({
+                stroke: theme.palette.diff.additions,
+                strokeWidth: 2.5,
+                strokeDasharray: '8 8',
+                animation: `${dashFlow} 1.2s linear infinite`,
+              })}
+            />
           </Box>
 
           {/* Stage overlays */}
@@ -339,19 +288,12 @@ const HeroFlow: React.FC = () => {
             <StageLabel title="AI evaluation" sub="subnet 74" />
           </StageBlock>
 
-          {/* 3 branched output nodes */}
-          {OUTPUTS.map((out) => (
-            <OutputNode
-              key={out.key}
-              xPct={(STAGE_X.output / VIEWBOX_W) * 100}
-              yPct={(out.y / VIEWBOX_H) * 100}
-              pct={out.pct}
-              label={out.label}
-              dailyUsd={dailyByKey[out.key]}
-              tone={out.tone}
-              highlight={out.highlight}
-            />
-          ))}
+          <OutputNode
+            xPct={(STAGE_X.output / VIEWBOX_W) * 100}
+            yPct={(AI_Y / VIEWBOX_H) * 100}
+            label="Miners (you)"
+            dailyUsd={minerDailyUsd}
+          />
         </Box>
 
         <Stack
@@ -575,12 +517,9 @@ const formatUsd = (n: number) =>
 const OutputNode: React.FC<{
   xPct: number;
   yPct: number;
-  pct: number;
   label: string;
   dailyUsd: number | null;
-  tone: 'primary' | 'secondary' | 'tertiary';
-  highlight?: boolean;
-}> = ({ xPct, yPct, pct, label, dailyUsd, tone, highlight }) => (
+}> = ({ xPct, yPct, label, dailyUsd }) => (
   <Stack
     direction="row"
     alignItems="center"
@@ -590,17 +529,11 @@ const OutputNode: React.FC<{
       left: `${xPct}%`,
       top: `${yPct}%`,
       transform: 'translate(-50%, -50%)',
-      px: { xs: 1.25, sm: 1.5 },
-      py: { xs: 0.75, sm: 0.9 },
+      px: { xs: 1.5, sm: 1.75 },
+      py: { xs: 1, sm: 1.1 },
       borderRadius: 2,
-      border: `1px solid ${
-        highlight
-          ? alpha(theme.palette.diff.additions, 0.5)
-          : theme.palette.border.light
-      }`,
-      backgroundColor: highlight
-        ? alpha(theme.palette.diff.additions, 0.08)
-        : alpha(theme.palette.background.default, 0.7),
+      border: `1px solid ${alpha(theme.palette.diff.additions, 0.5)}`,
+      backgroundColor: alpha(theme.palette.diff.additions, 0.08),
       backdropFilter: 'blur(4px)',
       pointerEvents: 'none',
       whiteSpace: 'nowrap',
@@ -611,59 +544,31 @@ const OutputNode: React.FC<{
         width: 10,
         height: 10,
         borderRadius: '50%',
-        backgroundColor:
-          tone === 'primary'
-            ? theme.palette.diff.additions
-            : tone === 'secondary'
-              ? theme.palette.status.award
-              : alpha(theme.palette.text.primary, 0.4),
-        boxShadow:
-          tone === 'primary'
-            ? `0 0 6px ${theme.palette.diff.additions}`
-            : tone === 'secondary'
-              ? `0 0 6px ${theme.palette.status.award}`
-              : 'none',
+        backgroundColor: theme.palette.diff.additions,
+        boxShadow: `0 0 6px ${theme.palette.diff.additions}`,
         flexShrink: 0,
       })}
     />
-    <Stack spacing={0}>
-      <Stack direction="row" alignItems="baseline" spacing={0.75}>
-        <Typography
-          sx={(theme) => ({
-            fontFamily: '"JetBrains Mono", monospace',
-            fontWeight: 700,
-            fontSize: { xs: '0.9rem', sm: '1rem' },
-            color: highlight
-              ? theme.palette.diff.additions
-              : theme.palette.text.primary,
-            lineHeight: 1,
-          })}
-        >
-          {Math.round(pct * 100)}%
-        </Typography>
-        <Typography
-          sx={{
-            fontSize: { xs: '0.72rem', sm: '0.78rem' },
-            color: 'text.secondary',
-            lineHeight: 1,
-          }}
-        >
-          {label}
-        </Typography>
-      </Stack>
+    <Stack spacing={0.4}>
+      <Typography
+        sx={{
+          fontSize: { xs: '0.78rem', sm: '0.85rem' },
+          color: 'text.secondary',
+          lineHeight: 1,
+        }}
+      >
+        {label}
+      </Typography>
       <Typography
         sx={(theme) => ({
           fontFamily: '"JetBrains Mono", monospace',
-          fontSize: { xs: '0.7rem', sm: '0.75rem' },
-          color: highlight
-            ? theme.palette.text.primary
-            : theme.palette.text.tertiary,
-          fontWeight: highlight ? 700 : 500,
-          mt: 0.4,
+          fontSize: { xs: '0.95rem', sm: '1.05rem' },
+          fontWeight: 700,
+          color: theme.palette.diff.additions,
           lineHeight: 1,
         })}
       >
-        {dailyUsd !== null ? `${formatUsd(dailyUsd)} / day` : '— / day'}
+        {dailyUsd !== null ? `${formatUsd(dailyUsd)} / day` : '—'}
       </Typography>
     </Stack>
   </Stack>
@@ -675,14 +580,6 @@ const MarketStrip: React.FC = () => {
   const alphaData = stats?.prices?.alpha?.data ?? null;
   const taoPrice = taoData?.price ?? null;
   const alphaPrice = alphaData?.price ?? null;
-
-  const dailyTotalUsd = useMemo(
-    () =>
-      taoPrice && alphaPrice
-        ? taoPrice * alphaPrice * DAILY_ALPHA_EMISSIONS
-        : null,
-    [taoPrice, alphaPrice],
-  );
 
   if (!taoPrice && !alphaPrice) return null;
 
@@ -706,18 +603,6 @@ const MarketStrip: React.FC = () => {
         value={alphaPrice !== null ? `${alphaPrice.toFixed(4)} τ` : '—'}
         change={alphaData?.percentChange24h}
       />
-      <Sep />
-      <MarketChip
-        symbol="Emit"
-        value={`${DAILY_ALPHA_EMISSIONS.toLocaleString()} α/day`}
-        hint={
-          dailyTotalUsd !== null
-            ? `≈ $${dailyTotalUsd.toLocaleString(undefined, {
-                maximumFractionDigits: 0,
-              })}`
-            : undefined
-        }
-      />
     </Stack>
   );
 };
@@ -737,8 +622,7 @@ const MarketChip: React.FC<{
   symbol: string;
   value: string;
   change?: number | null;
-  hint?: string;
-}> = ({ symbol, value, change, hint }) => {
+}> = ({ symbol, value, change }) => {
   const hasChange =
     change !== null && change !== undefined && Number.isFinite(change);
   return (
@@ -796,19 +680,6 @@ const MarketChip: React.FC<{
           )}
           {Math.abs(change as number).toFixed(2)}%
         </Stack>
-      ) : null}
-      {hint ? (
-        <Typography
-          component="span"
-          sx={{
-            fontFamily: 'inherit',
-            fontSize: 'inherit',
-            color: 'text.tertiary',
-            ml: 0.25,
-          }}
-        >
-          {hint}
-        </Typography>
       ) : null}
     </Stack>
   );

@@ -4,6 +4,7 @@ import { Page } from '../components/layout';
 import { SEO } from '../components';
 import HeroFlow from './home/HeroFlow';
 import HowItWorks from './home/HowItWorks';
+import TopContributors from './home/TopContributors';
 import StarterBounties from './home/StarterBounties';
 
 const HomePage: React.FC = () => (
@@ -23,6 +24,7 @@ const HomePage: React.FC = () => (
     >
       <HeroFlow />
       <HowItWorks />
+      <TopContributors />
       <StarterBounties />
     </Box>
   </Page>

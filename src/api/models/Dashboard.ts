@@ -39,6 +39,11 @@ export type Stats = {
   recentLinesChanged: string | number;
   totalIssues: number;
   totalCommits: string | number;
+  /**
+   * Live daily alpha emission for subnet 74, sourced from chain state.
+   * Falls back to the hardcoded constant when missing.
+   */
+  dailyAlphaEmissions?: number | string;
   prices?: {
     tao: {
       data: {
