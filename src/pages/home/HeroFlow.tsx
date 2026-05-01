@@ -12,7 +12,10 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { useStats } from '../../api';
-import { useDailyAlphaEmissions } from '../../hooks/useMonthlyRewards';
+import {
+  useDailyAlphaEmissions,
+  useMonthlyRewards,
+} from '../../hooks/useMonthlyRewards';
 
 const VIEWBOX_W = 1200;
 const VIEWBOX_H = 280;
@@ -296,10 +299,16 @@ const HeroFlow: React.FC = () => {
           />
         </Box>
 
+        <MonthlyPoolTile />
+
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           spacing={1.5}
-          sx={{ mt: { xs: 1, sm: 2 } }}
+          sx={{
+            mt: { xs: 1, sm: 2 },
+            width: '100%',
+            maxWidth: HERO_BLOCK_MAX_WIDTH,
+          }}
         >
           <Button
             component={RouterLink}
@@ -310,7 +319,7 @@ const HeroFlow: React.FC = () => {
             sx={{
               textTransform: 'none',
               fontWeight: 600,
-              px: 3.5,
+              flex: 1,
               borderRadius: 2,
             }}
           >
@@ -324,7 +333,7 @@ const HeroFlow: React.FC = () => {
             sx={{
               textTransform: 'none',
               fontWeight: 600,
-              px: 3.5,
+              flex: 1,
               borderRadius: 2,
             }}
           >
@@ -574,6 +583,71 @@ const OutputNode: React.FC<{
   </Stack>
 );
 
+const HERO_BLOCK_MAX_WIDTH = 480;
+
+const MonthlyPoolTile: React.FC = () => {
+  const monthly = useMonthlyRewards();
+
+  return (
+    <Box
+      sx={(theme) => ({
+        mt: { xs: 2, sm: 2.5 },
+        width: '100%',
+        maxWidth: HERO_BLOCK_MAX_WIDTH,
+        px: { xs: 3, sm: 4 },
+        py: { xs: 2, sm: 2.5 },
+        borderRadius: 2,
+        border: `1px solid ${theme.palette.border.light}`,
+        backgroundColor: alpha(theme.palette.background.default, 0.5),
+        backdropFilter: 'blur(6px)',
+        textAlign: 'center',
+      })}
+    >
+      <Typography
+        sx={{
+          fontSize: '0.7rem',
+          textTransform: 'uppercase',
+          letterSpacing: '0.18em',
+          fontWeight: 700,
+          color: 'text.secondary',
+          mb: 0.75,
+        }}
+      >
+        Monthly emission pool
+      </Typography>
+      <Typography
+        sx={(theme) => ({
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: { xs: '2rem', sm: '2.6rem' },
+          fontWeight: 700,
+          color: theme.palette.text.primary,
+          letterSpacing: '-0.02em',
+          lineHeight: 1,
+        })}
+      >
+        {monthly !== undefined
+          ? `$${monthly.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}`
+          : '—'}
+      </Typography>
+      <Typography
+        sx={{
+          mt: 0.85,
+          fontSize: { xs: '0.78rem', sm: '0.85rem' },
+          color: 'text.secondary',
+          lineHeight: 1.5,
+          maxWidth: 360,
+          mx: 'auto',
+        }}
+      >
+        Compete for rewards by contributing quality code to open source.
+      </Typography>
+    </Box>
+  );
+};
+
 const MarketStrip: React.FC = () => {
   const { data: stats } = useStats();
   const taoData = stats?.prices?.tao?.data ?? null;
@@ -629,24 +703,34 @@ const MarketChip: React.FC<{
     <Stack
       direction="row"
       alignItems="center"
-      spacing={0.5}
-      sx={{
-        fontSize: { xs: '0.7rem', sm: '0.78rem' },
+      spacing={0.6}
+      sx={(theme) => ({
+        px: 1,
+        py: 0.4,
+        borderRadius: 999,
+        border: `1px solid ${theme.palette.border.light}`,
+        backgroundColor: alpha(theme.palette.background.default, 0.5),
+        fontSize: { xs: '0.78rem', sm: '0.85rem' },
         lineHeight: 1,
-      }}
+      })}
     >
-      <Typography
+      <Box
         component="span"
-        sx={{
+        sx={(theme) => ({
+          px: 0.7,
+          py: 0.2,
+          borderRadius: 999,
+          backgroundColor: alpha(theme.palette.diff.additions, 0.18),
+          color: theme.palette.diff.additions,
           fontFamily: 'inherit',
-          fontSize: 'inherit',
-          fontWeight: 700,
-          color: 'text.tertiary',
-          letterSpacing: '0.05em',
-        }}
+          fontSize: '0.72rem',
+          fontWeight: 800,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+        })}
       >
         {symbol}
-      </Typography>
+      </Box>
       <Typography
         component="span"
         sx={{
@@ -674,9 +758,9 @@ const MarketChip: React.FC<{
           })}
         >
           {(change as number) >= 0 ? (
-            <ArrowDropUpIcon sx={{ fontSize: '0.95rem', mx: -0.25 }} />
+            <ArrowDropUpIcon sx={{ fontSize: '1rem', mx: -0.25 }} />
           ) : (
-            <ArrowDropDownIcon sx={{ fontSize: '0.95rem', mx: -0.25 }} />
+            <ArrowDropDownIcon sx={{ fontSize: '1rem', mx: -0.25 }} />
           )}
           {Math.abs(change as number).toFixed(2)}%
         </Stack>
