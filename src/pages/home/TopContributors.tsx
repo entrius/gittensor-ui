@@ -52,16 +52,29 @@ const TopContributors: React.FC = () => {
         </Typography>
         <Typography
           component={RouterLink}
-          to="/top-miners"
-          sx={{
+          to="/dashboard"
+          sx={(theme) => ({
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.5,
+            px: 1.5,
+            py: 0.6,
+            borderRadius: 999,
             fontSize: '0.78rem',
-            color: 'primary.main',
+            fontWeight: 700,
+            color: theme.palette.status.award,
+            backgroundColor: alpha(theme.palette.status.award, 0.12),
+            border: `1px solid ${alpha(theme.palette.status.award, 0.45)}`,
             textDecoration: 'none',
-            fontWeight: 600,
-            '&:hover': { textDecoration: 'underline' },
-          }}
+            boxShadow: `0 0 12px ${alpha(theme.palette.status.award, 0.25)}`,
+            transition: 'box-shadow 0.18s, background-color 0.18s',
+            '&:hover': {
+              backgroundColor: alpha(theme.palette.status.award, 0.2),
+              boxShadow: `0 0 18px ${alpha(theme.palette.status.award, 0.5)}`,
+            },
+          })}
         >
-          See full leaderboard →
+          Go to dashboard →
         </Typography>
       </Stack>
       <Grid container spacing={{ xs: 1.5, sm: 2 }}>

@@ -1,14 +1,5 @@
 import React, { useMemo } from 'react';
-import {
-  Box,
-  Button,
-  Stack,
-  Typography,
-  alpha,
-  keyframes,
-} from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { Box, Stack, Typography, alpha, keyframes } from '@mui/material';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { useStats } from '../../api';
@@ -300,46 +291,6 @@ const HeroFlow: React.FC = () => {
         </Box>
 
         <MonthlyPoolTile />
-
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={1.5}
-          sx={{
-            mt: { xs: 1, sm: 2 },
-            width: '100%',
-            maxWidth: HERO_BLOCK_MAX_WIDTH,
-          }}
-        >
-          <Button
-            component={RouterLink}
-            to="/dashboard"
-            variant="contained"
-            size="large"
-            endIcon={<ArrowForwardIcon />}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 600,
-              flex: 1,
-              borderRadius: 2,
-            }}
-          >
-            Go to dashboard
-          </Button>
-          <Button
-            component={RouterLink}
-            to="/onboard"
-            variant="outlined"
-            size="large"
-            sx={{
-              textTransform: 'none',
-              fontWeight: 600,
-              flex: 1,
-              borderRadius: 2,
-            }}
-          >
-            How it works
-          </Button>
-        </Stack>
       </Stack>
     </Box>
   );
