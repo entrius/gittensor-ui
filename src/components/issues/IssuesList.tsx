@@ -425,7 +425,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
       },
       yAxis: {
         type: 'value',
-        name: 'Bounty (α)',
+        name: 'Bounty (ل)',
         nameTextStyle: { color: textColor, fontFamily: 'JetBrains Mono' },
         axisLabel: { color: textColor, fontFamily: 'JetBrains Mono' },
         splitLine: { lineStyle: { color: gridColor, type: 'dashed' } },
