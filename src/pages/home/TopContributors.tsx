@@ -81,7 +81,10 @@ const TopContributors: React.FC = () => {
                   p: 2,
                   borderRadius: 2,
                   border: `1px solid ${theme.palette.border.light}`,
-                  backgroundColor: alpha(theme.palette.background.default, 0.45),
+                  backgroundColor: alpha(
+                    theme.palette.background.default,
+                    0.45,
+                  ),
                   textDecoration: 'none',
                   color: 'inherit',
                   transition:
