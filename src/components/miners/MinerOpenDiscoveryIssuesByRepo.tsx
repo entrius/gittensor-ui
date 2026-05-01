@@ -1011,8 +1011,10 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
       )}
       {isAuthorFallbackError && !isDataLoading && (
         <Alert severity="warning" sx={{ borderRadius: 2 }}>
-          Could not load all authored open issues from GitHub right now. Showing
-          indexed results only.
+          Could not load all authored open issues from GitHub right now. This is
+          often caused by restricted visibility (private activity), where the
+          index feed can&apos;t retrieve author details for issues you&apos;ve
+          created. Showing indexed results only.
         </Alert>
       )}
 
