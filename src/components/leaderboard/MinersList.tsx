@@ -1,9 +1,10 @@
 import React from 'react';
-import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
+import { Avatar, Box, Card, Typography } from '@mui/material';
 import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS, scrollbarSx } from '../../theme';
 import { getGithubAvatarSrc, type SortOrder } from '../../utils/ExplorerUtils';
 import { DataTable, type DataTableColumn, WatchlistButton } from '../common';
+import { ScrollAwareTooltip } from '../common/ScrollAwareTooltip';
 import { RankIcon } from './RankIcon';
 import {
   type LeaderboardVariant,
@@ -249,7 +250,7 @@ const MinerIdentityCell: React.FC<MinerIdentityCellProps> = ({ miner }) => {
           borderColor: 'border.medium',
         }}
       />
-      <Tooltip title={username} placement="top">
+      <ScrollAwareTooltip title={username} placement="top">
         <Typography
           component="span"
           sx={{
@@ -265,7 +266,7 @@ const MinerIdentityCell: React.FC<MinerIdentityCellProps> = ({ miner }) => {
         >
           {username}
         </Typography>
-      </Tooltip>
+      </ScrollAwareTooltip>
     </Box>
   );
 };
@@ -302,7 +303,7 @@ const MinerActivitySegments: React.FC<MinerActivitySegmentsProps> = ({
       }}
     >
       {segments.map((segment, i) => (
-        <Tooltip
+        <ScrollAwareTooltip
           key={segment.label}
           title={segment.label}
           arrow
@@ -324,7 +325,7 @@ const MinerActivitySegments: React.FC<MinerActivitySegmentsProps> = ({
               {segment.value}
             </Typography>
           </Box>
-        </Tooltip>
+        </ScrollAwareTooltip>
       ))}
     </Box>
   );
