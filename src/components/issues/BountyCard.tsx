@@ -48,14 +48,19 @@ export const BountyCard: React.FC<BountyCardProps> = ({
     alphaPrice ?? 0,
   );
   const isPending = issue.status === 'registered';
-  const isHistory =
-    issue.status === 'completed' || issue.status === 'cancelled';
+  const isCompleted = issue.status === 'completed';
+  const isCancelled = issue.status === 'cancelled';
+  const isHistory = isCompleted || isCancelled;
   const bountyLabel = isPending
     ? 'Target Bounty'
-    : isHistory
+    : isCompleted
       ? 'Payout'
       : 'Bounty';
-  const bountyColor = isPending ? STATUS_COLORS.award : STATUS_COLORS.merged;
+  const bountyColor = isPending
+    ? STATUS_COLORS.award
+    : isCancelled
+      ? STATUS_COLORS.error
+      : STATUS_COLORS.merged;
 
   const linkProps = useLinkBehavior<HTMLAnchorElement>(href ?? '', {
     state: linkState,
@@ -254,8 +259,8 @@ export const BountyCard: React.FC<BountyCardProps> = ({
         />
       )}
 
-      {/* History: solver + date */}
-      {isHistory && (
+      {/* History: solver + date (only for completed, cancelled has no solver) */}
+      {isCompleted && (
         <Box
           sx={{
             display: 'flex',
