@@ -8,6 +8,7 @@ import {
   Link,
   CircularProgress,
   Chip,
+  useTheme,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import ReactMarkdown from 'react-markdown';
@@ -18,7 +19,7 @@ import {
   type PullRequestComment,
   type PullRequestDetails,
 } from '../../api/models/Dashboard';
-import { STATUS_COLORS, UI_COLORS, scrollbarSx } from '../../theme';
+import { scrollbarSx } from '../../theme';
 import 'github-markdown-css/github-markdown-dark.css'; // Import standard GitHub Dark styles
 
 /** A comment or the PR description rendered in the conversation timeline. */
@@ -41,6 +42,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
   pullRequestNumber,
   prDetails,
 }) => {
+  const theme = useTheme();
   const {
     data: comments,
     isLoading,
@@ -83,23 +85,23 @@ const PRComments: React.FC<PRCommentsProps> = ({
 
   const colors = {
     canvas: {
-      default: UI_COLORS.black,
-      subtle: UI_COLORS.surfaceElevated,
-      box: UI_COLORS.black,
+      default: theme.palette.background.default,
+      subtle: theme.palette.surface.elevated,
+      box: theme.palette.background.default,
     },
     border: {
-      default: alpha(UI_COLORS.white, 0.1),
-      muted: alpha(UI_COLORS.white, 0.08),
+      default: theme.palette.border.light,
+      muted: theme.palette.border.subtle,
     },
     fg: {
-      default: alpha(UI_COLORS.white, 0.85),
-      muted: STATUS_COLORS.open,
+      default: theme.palette.text.primary,
+      muted: theme.palette.status.open,
     },
     accent: {
-      fg: STATUS_COLORS.info,
+      fg: theme.palette.status.info,
     },
     timeline: {
-      line: alpha(UI_COLORS.white, 0.1),
+      line: theme.palette.border.light,
     },
   };
 
@@ -148,8 +150,9 @@ const PRComments: React.FC<PRCommentsProps> = ({
                 sx={{
                   width: { xs: 32, sm: 40 },
                   height: { xs: 32, sm: 40 },
-                  border: `1px solid ${alpha(UI_COLORS.white, 0.1)}`,
-                  backgroundColor: UI_COLORS.black,
+                  border: '1px solid',
+                  borderColor: 'border.light',
+                  backgroundColor: 'background.default',
                 }}
               />
             </Link>
@@ -261,8 +264,8 @@ const PRComments: React.FC<PRCommentsProps> = ({
                     variant="status"
                     label="Description"
                     sx={{
-                      color: STATUS_COLORS.info,
-                      borderColor: alpha(STATUS_COLORS.info, 0.4),
+                      color: theme.palette.status.info,
+                      borderColor: alpha(theme.palette.status.info, 0.4),
                     }}
                   />
                 )}
@@ -321,7 +324,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
                   padding: '0.2em 0.4em',
                   margin: 0,
                   fontSize: '85%',
-                  backgroundColor: alpha(STATUS_COLORS.neutral, 0.4),
+                  backgroundColor: theme.palette.highlight.neutral,
                   borderRadius: '6px',
                 },
                 '& pre': {
@@ -330,7 +333,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
                   p: 2,
                   borderRadius: '6px',
                   overflow: 'auto',
-                  backgroundColor: UI_COLORS.surfaceElevated,
+                  backgroundColor: colors.canvas.subtle,
                   border: `1px solid ${colors.border.default}`,
                   '& code': {
                     backgroundColor: 'transparent',
@@ -350,7 +353,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
                 },
                 '& th': { fontWeight: 600 },
                 '& tr:nth-of-type(2n)': {
-                  backgroundColor: UI_COLORS.surfaceElevated,
+                  backgroundColor: colors.canvas.subtle,
                 },
                 '& hr': {
                   height: '0.25em',

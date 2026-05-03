@@ -1,0 +1,685 @@
+[33m2bbed55[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/881-light-mode[m[33m, [m[1;31morigin/feat/881-light-mode[m[33m)[m feat(theme): implement GitHub-aligned light mode with centralized color tokens
+[33mfd06932[m[33m ([m[1;33mtag: [m[1;33mrelease-20260430-025529[m[33m, [m[1;32mtest[m[33m)[m fix(repository): polish PR/issue tables with title tooltips and isolated body scroll (#876)
+[33m111b37c[m fix(ui): bounty card polish + watchlist card view fixes (#832)
+[33maef70eb[m fix(pr): make PR details page mobile responsive (#824)
+[33m27119e8[m feat(dashboard): add bar chart mode to contribution trends (#864)
+[33mc9d970b[m feat: Add PR time decay scoring chart (#836)
+[33m4cdb662[m feat(tables): make the watchlist column sortable in tables (#834)
+[33mce19564[m feat(watchlist): add Issues tab aggregating issues from starred miners (#801)
+[33m58a7f9d[m feat(dashboard): improve Featured Work selection logic and card design (#825)
+[33m174bb37[m fix(ui): stack repository status filters on narrow viewports (#683)
+[33ma1b5d67[m fix onboard page stepper issues (#664)
+[33m28eca81[m Fix miner insight type chip overflow on narrow viewports (#648)
+[33mae5cbb4[m feat(watchlist): add searchable, sortable Repositories explorer with card view (#671)
+[33m1cad794[m feat(watchlist): discovery score on cards & list, dual eligibility popover (#821)
+[33md969cfa[m feat(miner-details): add Issues tab on Issue Discovery view (#797)
+[33m9c19f22[m feat(layout): collapsible desktop sidebar with icon rail, badges, and nav polish (#760)
+[33med7bca3[m refactor: Charts: shared ECharts theme helpers + migrate Dashboard, Repositories, Onboard, and miner charts (#611)
+[33m88b2e8f[m fix: Miner details: Repositories tab respects OSS vs Issue Discovery mode (#601)
+[33m61a9dc8[m feature(watchlist): add side-by-side miner comparison on the Watchlist page (#594)
+[33m95fc932[m feat(issues): redesign open issues overview as table-style with filters, sorting, and search (#805)
+[33m5ea5b7e[m Feat/bounty card view implementation (#803)
+[33m5ee6e25[m feat(watchlist): show why each PR is in the Pull Requests tab (#799)
+[33m15f11c7[m[33m ([m[1;33mtag: [m[1;33mrelease-20260428-024011[m[33m)[m feat: onboard tab content width inconsistency (#795)
+[33mdd21d06[m Repositories leaderboard: align OSS vs issue-track metrics (cards, list, rollups) (#793)
+[33m67192bb[m fix: show centered empty state in Recent Pull Requests card (#701)
+[33me61a45b[m feat: centralized dashboard for reported github issues (#753)
+[33m6be4ee3[m feat(watchlist): show issue discovery counts in Miners list view (#786)
+[33mba9d5b6[m feat(watchlist): auto-show PRs from watched miners and repos on PR tab (#789)
+[33m0e4fe91[m[33m ([m[1;33mtag: [m[1;33mrelease-20260426-175952[m[33m)[m feat: Bounties table tooltips(repository + date) (#774)
+[33m78df7ed[m feat: dashboard live activity relative time (#769)
+[33m73bdeaf[m perf: correct navigation and add "View All" link for featured cards (#751)
+[33m2fecb12[m Feat/repositories card watchlist star (#673)
+[33mcd46eba[m Feat/watchlist pr datatable (#667)
+[33m0e465f8[m feat(activity): add day-detail toggle to contribution heatmap (#657)
+[33m038120d[m fix: shrink credibility tooltip width and improve line break (#655)
+[33mad64848[m feat(repo): OSS vs Issue Discovery tabs on Top Miner Contributors (#781)
+[33m66784ee[m Feat/miner card badge layout (#779)
+[33m40d397f[m fix(onboard): sync Languages chart with table page and filters (#623)
+[33md72cf47[m fix watchlist clear modal pluralization issue (#619)
+[33mc8f2a8a[m fix(a11y): make copy controls keyboard reachable and clipboard safe (#593)
+[33mee598a9[m fix(dashboard): keep live activity "by user" on one row and clip long usernames (#766)
+[33ma2747f0[m feat(sidebar): respect eligibility filter on contributions, discoveries, and watchlist (#756)
+[33mdda5ef1[m feat(dashboard): add Featured Work cards for top PRs and issues (#742)
+[33m468579c[m fix: sync Onboard Languages chart with current table page (#586)
+[33mf5f9fba[m style(onboard): make section tabs sticky while scrolling (#746)
+[33m69713d9[m refactor: remove unused barrel re-exports and dead helpers (#733)
+[33meeb7fca[m refactor: migrate remaining tables to shared DataTable (#747) (#748)
+[33m3089cca[m[33m ([m[1;33mtag: [m[1;33mrelease-20260423-173853[m[33m)[m Fix mobile clipping of trust badge in Miner Activity header (#650)
+[33mccd3e51[m feat(layout): add collapsible sidebar with show/hide toggle (#510)
+[33m872529c[m feat: redesign PR details overview tab with inline header chips and token composition donut (#642)
+[33m102d1a3[m fix(miner): use contribution(s) copy in activity heatmap (#625)
+[33mc5f6c56[m Fix Watchlist OSS Englible Display (#662)
+[33m42d50f9[m fix(leaderboard): preserve true miner rank when search or eligibility filter is applied (#661)
+[33mbd396b9[m feature(tooltip in chart): right content in tooltip becomes vertically-aligned (#620)
+[33mec8e33f[m fix: replace URL on miner mode toggle instead of pushing new history entry (#654)
+[33m331b9a6[m fix: show tooltips on first tap on mobile (#645)
+[33mf219bab[m fix: hide connector line behind active step in onboarding stepper (#605)
+[33m10b68b8[m fix: Repositories hub: global search on route + aligned width with other hubs (#604)
+[33m2a82cc6[m feat: Miners Activity status card on the watchlist page (#714)
+[33m862f546[m feat(miner): show credibility rank on profile stat tiles (#597)
+[33mf8d8843[m feat: add Featured Discoveries section to dashboard  (#727)
+[33mff691b5[m fix(pagination): make prev/next controls keyboard accessible (#591)
+[33mfa6d681[m feat: add eligible vs ineligible perfectages (#720)
+[33m380b8ce[m fix:Onboard → Getting Started: align stepper connector with circle centers at narrow desktop widths (#572)
+[33mad816b9[m[33m ([m[1;33mtag: [m[1;33mrelease-20260422-002312[m[33m)[m fix(pr): improve mobile Files Changed layout and fix rendering/perf issues (#546)
+[33m940472b[m feat: add rightSideBar that shows new info for the miners in watchlis… (#563)
+[33mdde7698[m fix(mobile): restructure Miner Details header and profile card for better UX (#531)
+[33m4e60cc1[m change mobile layout of miner detail page (#581)
+[33m331e58c[m fix(dashboard): track closed PRs/issues and use miner aggregates for issue totals (#556)
+[33m27c7fbf[m refactor: keep consistency for tables across all pages (#541)
+[33m66548e9[m fix(mobile): improve onboarding card alignment and visual consistency (#535)
+[33mb95fb24[m refactor: remove redundant inline fontFamily strings (#588)
+[33m9395673[m fix: add external-link icon to bounties docs hint (#559)
+[33m2938e1f[m Migrate remaining tables onto shared DataTable + useDataTableParams (#545)
+[33mf782afe[m fix: polish sidebar hover and watchlist dialog styling (#544)
+[33m91a42ac[m feat(miners): add status filter to PR Score Breakdown on miner details page (#527)
+[33ma788e40[m fix: prevent mobile clipping of issue discovery toggle label (#519)
+[33m81cac48[m feat(repositories): add card view toggle to Repositories page (#464)
+[33md99b63e[m feat: expand watchlist to track repos, bounties, and pull requests (#452)
+[33mf4a1637[m feat(leaderboard): add list view to miners leaderboard (#444)
+[33ma005f57[m feature: place oss eligibility badge below miner name consistently (#521)
+[33m2cb5113[m fix(discoveries): remove duplicate issue stats row from miner cards (#518)
+[33mcf93947[m Refactor/extract shared price formatters (#494)
+[33m3423377[m fix: repository chart unusable when sorted by Weight (#467)
+[33m8b7b190[m fix(issues): align KPI label with “Available Issues” tab wording (#451)
+[33m735f9af[m feat(top-repositories): improve mobile search interaction (#442)
+[33m8a19ab8[m[33m ([m[1;33mtag: [m[1;33mrelease-20260417-183308[m[33m)[m fix: improve the FAQ expressions and add a new entry for issue discoveries (#471)
+[33m9b3f13d[m *fix(routing): correct PR and repository detail fallbacks to registered routes (#469)
+[33m5fa3af7[m fix: inconsistent scrollbar usage across 10+ files and components (#463)
+[33m7c8e83c[m Fix Watchlist eligibility ambiguity (OSS vs Discoveries) (#500)
+[33m787ba38[m feat: display structural and leaf token score breakdown in score views (#488)
+[33mb53f2a2[m search input width updated in repositories route page (#483)
+[33mbe45385[m feat(leaderboard): replace eligibility toggle with tri-state segmented filter (#479)
+[33md282fbe[m Copy Button UX Improvement — Getting Started Page (#459)
+[33m5f1cbce[m feat: add pre-commit hooks with husky and lint-staged (#441)
+[33m65dcb66[m feat: dual donut charts, issue stats, and Issues sort on watchlist cards (#439)
+[33m3046749[m feat: open any row in a new tab (#266) (#313)
+[33m2348f26[m feat: grey out stale repos and scores outside 35-day scoring window (#438)
+[33mcfc6cc4[m refactor: replace hardcoded colors and date formatting with theme tokens and utilities (#392)
+[33m4f9c6ee[m fix: improve bounties help text spacing in header (#388)
+[33m7a437ae[m fix: use issue counts for MinerCard donut chart on discoveries page (#380)
+[33md33129a[m refactor: extract shared PR table helpers and remove duplicate status filter type (#333)
+[33maaa0f27[m[33m ([m[1;33mtag: [m[1;33mrelease-20260416-225905[m[33m)[m feat(bounties): add sortable columns and align sorting UX with repository tables (#417)
+[33ma69aa79[m fix: add FAQ tab to Onboard and redirect orphaned /about and /faq routes (#422)
+[33m525d22a[m fix: correct issue credibility formula and add missing stat tooltips (#411)
+[33m4924dcc[m refactor: extract duplicated tooltipSlotProps to shared theme constant (#430)
+[33m8bc2512[m [UX] feat: add loading skeletons for leaderboard tables (#357)
+[33maca1384[m fix: remove irrelevant PRs sort from discoveries leaderboard (#378)
+[33ma583fc6[m fix: improve mobile responsiveness in SectionCard and TopMinersTable (#407)
+[33m4f0a4da[m refactor: replace remaining any types with strict ECharts and parse-d… (#406)
+[33m0e8ed86[m refactor: replace duplicated bounty status helpers in RepositoryIssuesTable with shared issueStatus utils (#404)
+[33m46c9e69[m feat: persist filters and list state in URL query params (#367)
+[33m2d6100e[m refactor: remove unused useHistoricalTrend hook from DashboardApi (#369)
+[33m7accc77[m feat: add Active/Inactive filter buttons to repositories table (#381)
+[33m9210d15[m refactor: standardize numeric parsing in MinerScoreCard and MinerScoreBreakdown (#352)
+[33mf022e36[m refactor: replace hardcoded colors with theme tokens (#361)
+[33mf34f806[m fix: redesign 404 page with recovery actions and consistent styling (#383)
+[33m421ce57[m Persist miner PR filter in URL (#390)
+[33m500809e[m fix(miner-activity): show contribution heatmap tooltips immediately on hover (#371)
+[33md0c6fae[m fix: move issue score breakdown to Overview tab, remove mislabeled Issues tab (#366)
+[33madac534[m refactor: extract MONO_FONT constant to theme.ts and replace all hardcoded font strings (#342)
+[33m1bae694[m Refactor/remove use issue (#359)
+[33m8767fea[m fix(layout): prevent mobile scroll area from hiding under fixed header (#365)
+[33maedbaec[m feat: display code density and label multiplier in score breakdowns (#356)
+[33m2adddcf[m Feat/repositories chart table parity (#308)
+[33m3d9c9e3[m fix: discoveries miner card shows issue stats only (#292)
+[33m6b87ad0[m chore: remove scheduler and poller workflows (#431)
+[33mdaab861[m chore: use PAT for release push so admin bypass applies
+[33mc978c6b[m chore: add release workflows (promote, schedule, source-lock) (#427)
+[33m619762f[m chore: reconcile main into test (graph fix) (#419)
+[33m653024c[m chore: reconcile main into test (#412)
+[33m11bfe6e[m chore: merge main into test to reconcile diverged histories
+[33m12a621e[m refactor: remove dead TopPRsTable component (#346)
+[33m980eed9[m feat: add miner watchlist with localStorage persistence (#331)
+[33m1b0339d[m refactor: use shared TablePagination in MinerPRsTabl (#344)
+[33mf7310cb[m fix: use parseFloat instead of Number() to prevent NaN in PR score display (#337)
+[33m965e210[m refactor: remove dead MinerFocusCard component (#341)
+[33mc493ee7[m refactor: replace hardcoded colors with theme tokens in PRDetailsCard, AboutPage, Scoring, AppLayout (#339)
+[33mc9f66ce[m feat: add codeDensity, label, and labelMultiplier to PR API models (#348)
+[33m3c3d21d[m refactor: replace hardcoded colors in issue components with theme tokens (#335)
+[33mbe72976[m fix: remove N+1 PR details requests from LiveCommitLog (#332)
+[33mf3e517d[m refactor: extract duplicated headerCellStyle/bodyCellStyle into shared files (#327)
+[33mef666c6[m Show percentage in dashboard overview donut center (#328)
+[33m1033c77[m fix: add mergedAt fallback to merged PR detection in stats and utils (#325)
+[33mff03d78[m feat: group Scoring cards into OSS / Discovery sub-tabs (#306)
+[33mb161bc9[m refactor: replace inline FilterButton in TopMinersTable with shared component (#326)
+[33m8844e9d[m feat: add live activity status filter tabs to dashboard sidebar (#304)
+[33mb6f796d[m refactor: Replace hardcoded colors in repository components with theme tokens (#324)
+[33m406abe5[m feat: add two-tier ErrorBoundary with graceful fallback UI (#322)
+[33m04e3f8a[m refactor(miners): replace hardcoded colors with theme tokens (#314)
+[33m674b084[m fix: back button and scroll-to-top issues on tabbed pages (#312)
+[33mf6ad1f2[m fix: persist Top Miners filters in URL (#299)
+[33m7a17913[m fix: abort in-flight fetches in repo viewers to prevent stale content (#298)
+[33ma45ebf6[m feat: make Repository Pull Requests table columns sortable (#283)
+[33m6a1166f[m fix: hide default webkit scrollbar button artifact in repo weights table (#281)
+[33ma96c558[m Redesign dashboard UI and align cards with theme styling (#272)
+[33m07d81f3[m fix: apply themed scrollbars to PR files changed panels (#310)
+[33mef05f27[m fix(miners): Score sort matches displayed value and Repository is sortable (#279)
+[33m4dbcaba[m feat: add docs link to Bounties page header (#274)
+[33m14eab0a[m fix: send Insights docs link to issue-discovery doc in Discovery mode… (#268)
+[33m702ff09[m refactor: extract duplicated cell styles from leaderboard tables into shared constants (#270)
+[33m467fb7c[m refactor(pages): replace hardcoded colors with theme tokens (#263)
+[33mbcb0b20[m refactor(prs): replace hardcoded colors with theme tokens (#262)
+[33m7d6e8d2[m feat: introduce RowLink primitive and migrate leaderboard (#266) (#269)
+[33m256bb4d[m refactor: replace sidebar, FAQ, and selection hardcoded colors with theme tokens (#259)
+[33m8931bf2[m refactor(leaderboard): replace hardcoded colors with theme tokens (#256)
+[33m16c39ea[m refactor(dashboard): replace hardcoded colors with theme tokens (#252)
+[33mcb8d364[m fix: adjust zIndex for AppBar in AppLayout component (#243)
+[33m7e480b9[m feat: add issue-specific tab components for issue discovery mode (#242)
+[33m4340d1d[m fix: repo casing, react state, unstable list key (#261)
+[33m38247f9[m fix: unify scrollbar styles across code viewer and app (#249)
+[33mdae7714[m fix: add rel="noopener noreferrer" to remaining target="_blank" links (#257)
+[33mb2383c0[m refactor: remove dead IssueDiscoveryScoreCard and standardize numeric parsing in DiscoveriesPage (#241)
+[33ma4046b0[m refactor: Extract repeated border and text color literals to theme constants (#216)
+[33m02e787e[m feat(miner): click-to-copy hotkey on MinerScoreCard (#240)
+[33m59cbd89[m refactor: Extract duplicated FilterButton into shared component (#217)
+[33m0915232[m refactor: Extract duplicated formatDate to shared utils (#214)
+[33mf3f3fc2[m fix: onboard step7 active bg color (#209)
+[33me14cff0[m refactor: extract duplicated PR status helpers to shared utils (#220)
+[33mcbf1560[m fix: NaN numeric rendering and standardize integer parsing (#255)
+[33mdf02739[m chore: remove dayjs, consolidate date logic on date-fns (#234)
+[33mdcba4dc[m refactor: extract duplicated issue status metadata to shared utils (#219)
+[33m2c94063[m refactor: Extract duplicated credibilityColor to shared utils (#215)
+[33m5243d5e[m Add issue leaderboard metrics to Discoveries without removing PR views (#180)
+[33mbccfc3b[m fix: correct back for repository page, and correct commiter (#204)
+[33mfd34e87[m feat: unify miner detail page with PR/Issue Discovery mode toggle (#179)
+[33m3a4e411[m fix: repo check tab of repository page (#202)
+[33m096753e[m fix: persist Overview tab score breakdown page number across navigation (#201)
+[33m831db9e[m fix: rename PR Success Ratio to Credibility for consistency (#162) (#205)
+[33m33ebf43[m fix: use 'day(s)' in contribution heatmap label (#239)
+[33m10d9824[m fix: persist PR list page number across navigation (#198)
+[33m471bc2a[m fix: rename /issues route to /bounties (#192)
+[33m27292c6[m refactor: Extract duplicated getRankIcon into shared RankIcon component (#160)
+[33m14cee40[m feat(search): add keyboard navigation and global shortcuts (Cmd+K, /, arrow keys) (#195)
+[33m1ed6682[m fix(onboard): correct scoring facts and add Issue Discovery across About, Scoring, and Getting Started pages (#167)
+[33ma9a59fb[m refactor: Replace any types with strict TypeScript types (#154)
+[33m42c71fb[m fix: assign rank badges after sorting on Top Miners page (#169)
+[33md3aa763[m refactor: Extract duplicated truncateText to shared utils (#157)
+[33m94e9c26[m fix: correct hardcoded credibility thresholds (75% → 80%) (#193)
+[33maa8f93f[m fix: correct FAQ reward description and credibility formula (#185)
+[33m0101a6e[m fix: reset page to 0 when author filter chip is removed (#159)
+[33m53da8a9[m refactor: Replace any types with parse-diff library types in PRFilesChanged (#156)
+[33ma389a2f[m Fix(UI): prevent repository name overflow in repositories table (#136)
+[33m17a2768[m fix: correct Step 7 credibility threshold to 80% (#188)
+[33maf1aebc[m fix: correct OSS Eligible badge tooltip credibility threshold (90% -> 80%) (#177)
+[33m9c83f10[m Fix leaderboard page after tier removal (#131)
+[33m3d8a40d[m refactor: Extract duplicated monthly rewards calculation into shared hook (#155)
+[33m23425f4[m fix: prevent PR status chart text overflow at lg breakpoint (#144)
+[33mde4fcc5[m Fix/leaderboard sidebar duplicate key (#124)
+[33mf02831e[m style: format code with prettier
+[33m953ae02[m fix: simplify markdown renderers to a single resolveRelativeUrl helper
+[33mb0d1409[m fix: lint error
+[33m94c7888[m fix: add MarkdownRenderers in index.ts
+[33m2d06528[m fix: extract shared LinkRenderer and ImageRenderer into MarkdownRenderers.tsx
+[33mf84fec7[m fix: readme relative links
+[33m31a43ad[m feat: unify miner detail page with PR/Issue Discovery mode toggle (#179)
+[33m597b537[m fix: repo check tab of repository page (#202)
+[33m766b971[m fix: persist Overview tab score breakdown page number across navigation (#201)
+[33m3e3aa4a[m fix: rename PR Success Ratio to Credibility for consistency (#162) (#205)
+[33m57b39ee[m fix: use 'day(s)' in contribution heatmap label (#239)
+[33m4be9940[m fix: persist PR list page number across navigation (#198)
+[33m51c94b5[m fix: rename /issues route to /bounties (#192)
+[33ma96ba56[m refactor: Extract duplicated getRankIcon into shared RankIcon component (#160)
+[33m31530aa[m feat(search): add keyboard navigation and global shortcuts (Cmd+K, /, arrow keys) (#195)
+[33me030b4b[m fix(onboard): correct scoring facts and add Issue Discovery across About, Scoring, and Getting Started pages (#167)
+[33m9c7c14f[m refactor: Replace any types with strict TypeScript types (#154)
+[33m6d04f23[m fix: assign rank badges after sorting on Top Miners page (#169)
+[33m2b32118[m refactor: Extract duplicated truncateText to shared utils (#157)
+[33m42e7d18[m fix: correct hardcoded credibility thresholds (75% → 80%) (#193)
+[33m266717d[m fix: correct FAQ reward description and credibility formula (#185)
+[33mf369040[m fix: reset page to 0 when author filter chip is removed (#159)
+[33m18c02cf[m refactor: Replace any types with parse-diff library types in PRFilesChanged (#156)
+[33mb9dacb3[m Fix(UI): prevent repository name overflow in repositories table (#136)
+[33m89c743c[m fix: correct Step 7 credibility threshold to 80% (#188)
+[33m13381b6[m fix: correct OSS Eligible badge tooltip credibility threshold (90% -> 80%) (#177)
+[33m1ae56ad[m Fix leaderboard page after tier removal (#131)
+[33m9526209[m refactor: Extract duplicated monthly rewards calculation into shared hook (#155)
+[33m9d61af1[m fix: prevent PR status chart text overflow at lg breakpoint (#144)
+[33m8b27631[m Fix/leaderboard sidebar duplicate key (#124)
+[33ma4d0395[m style: format code with prettier
+[33m2c02856[m fix: simplify markdown renderers to a single resolveRelativeUrl helper
+[33m8e8426d[m fix: lint error
+[33me467013[m fix: add MarkdownRenderers in index.ts
+[33mb6aeb85[m fix: extract shared LinkRenderer and ImageRenderer into MarkdownRenderers.tsx
+[33m10d63b0[m fix: readme relative links
+[33mfdd5eb1[m Issue discovery (#132)
+[33m4196662[m fix: render issue and PR descriptions with proper GitHub-style formatting
+[33m38e7670[m style: auto-format code with prettier/eslint
+[33m27be411[m remove tier system from UI, align with backend flat eligibility model
+[33m2d34576[m update API models: remove tiers, predictions, stale columns; add isEligible
+[33mde813e5[m Display additional acceptable branches on repository page (#123)
+[33m33894df[m feat: Enhance miner repositories table with token score, filters, and pagination (#118)
+[33m2b2b50f[m feat: add global search and dedicated search page (#119)
+[33m1166d3c[m fix: block untracked repositories on details route and clarify tracked-only behavior (#120)
+[33m5a578c8[m feat: Surface Review Quality Multiplier in PR Details Page (#114)
+[33m582cef8[m add review multiplier pill (#109)
+[33m5a77da3[m Predictions api (#108)
+[33m0191774[m update models (#107)
+[33m5297a9a[m fix: mobile responsiveness and polish for miner details page redesign (#98)
+[33md51f9d3[m Fix: Update scoring documentation links (#103)
+[33mbfe17a2[m feat: tier detail page (#99)
+[33m85c19c1[m adjust format.yml for external PRs (#100)
+[33mf0e9eb8[m Merge pull request #94 from entrius/test
+[33m78b58a2[m Merge pull request #93 from entrius/misc
+[33m6997222[m minor adjust
+[33mba318d2[m Merge pull request #92 from entrius/os-update
+[33md70147b[m os ready
+[33mdf8cb14[m Merge pull request #91 from entrius/test
+[33m5043420[m Merge pull request #90 from entrius/feat/add-docs-link
+[33mcfa978e[m feat: add Docs link to sidebar footer
+[33mc186ac9[m Merge pull request #89 from entrius/feat/issue-details-redesign
+[33m39f08a6[m style: auto-format code with prettier/eslint
+[33m325121a[m no hardcoded hex colors
+[33m9635ab6[m style: auto-format code with prettier/eslint
+[33ma550d6d[m refactor: Adjust issue list table column widths, order, and increase issue title maximum width.
+[33mecb42fa[m feat: Introduce tabbed UI on issue details page, separating issue conversation from submissions with a new `IssueConversation` component.
+[33m343e63d[m Merge origin/test into fix/issues-list-display with conflict resolution
+[33m84ab9df[m feat: add issue title and repo avatar to issues list
+[33m60571c0[m Fix issue title display and update API models for repositories
+[33mb7585e2[m Merge pull request #85 from entrius/test
+[33m40b3ebc[m Merge pull request #88 from entrius/bounty-submissions
+[33mcbc9583[m style: auto-format code with prettier/eslint
+[33m5d8dc22[m use diff green color
+[33m3feae2b[m use theme colors instead of hardcoding everywhere
+[33mf4ef26b[m Merge pull request #87 from entrius/submission-status-fix
+[33m3fe2c2b[m style: auto-format code with prettier/eslint
+[33m1ea9a84[m Merge pull request #86 from entrius/fix/repo-page-sections
+[33m4b6734b[m Fixed submission status on dashboard
+[33m669dc95[m fix: update repo page section styling to match dashboard
+[33mcf3d57f[m fix: Ensure PR statistics only count merged pull requests and use case-insensitive repository matching.
+[33m08c814f[m feat(repos): replace Recently Added with Most Collateral Staked
+[33mc4400da[m fix(repos): update Recently Added and Recent PRs logic
+[33m463e8b3[m Merge pull request #84 from entrius/fix/trending-use-merged-at
+[33m74a12e3[m fix: use mergedAt for trending repos date bucketing
+[33m42b4109[m Merge pull request #83 from entrius/test
+[33m7c7a56f[m style: auto-format code with prettier/eslint
+[33mbc713a9[m baclink page fix
+[33m236b5fe[m Merge pull request #82 from entrius/backlink-fix-2
+[33md9e6255[m fixed backlinks more
+[33mf3265a2[m Merge pull request #81 from entrius/backlink-fix
+[33m5acd228[m backlink text fixes
+[33m8222994[m Merge pull request #80 from entrius/feat/bounty-og-image-integration
+[33mf63d281[m style: auto-format code with prettier/eslint
+[33m2098362[m update issues to show $ amounts
+[33m599da9b[m cleanup
+[33m0034819[m modularize
+[33m9d4f41d[m update meta injector for issue bounty og images
+[33m338162a[m style: auto-format code with prettier/eslint
+[33m69ea034[m Merge branch 'test' into feat/bounty-og-image-integration
+[33mdfe550a[m Merge pull request #79 from entrius/issues-v0
+[33m501a7f2[m style: auto-format code with prettier/eslint
+[33mfb9111a[m feat: integrate dynamic bounty OG images in issue details
+[33m0f049ca[m feat: Update PR details back button navigation, introduce custom date formatting and tier color utilities, and rename "Recent PRs" section.
+[33mda7d685[m feat: Refactor repository highlight cards into reusable components, update trending repository logic, and add 'Recently Added' and 'Recent PRs' sections with `date-fns` formatting.
+[33m067e6df[m feat: Add tooltips to repository names, adjust responsive grid columns from `md` to `lg`, and remove unused scroll-to-view logic and fixed card minimum heights.
+[33m671f34d[m Merge branch 'issues-v0' of https://github.com/entrius/gittensor-ui into issues-v0
+[33m08c27e7[m feat: Implement UI enhancements for the repository table and trending repositories section, including layout and styling adjustments.
+[33m32a2c00[m Merge branch 'test' into issues-v0
+[33m252f994[m style: Adjust repository item text color and remove bold font weight.
+[33m46fe17b[m feat: Add trending, first contribution, and highest paying repository highlight sections to the RepositoriesPage.
+[33m74c8aba[m refactor: Remove descriptive text and consolidate padding in the leaderboard table header.
+[33mba6b5e1[m feat: Consolidate repository and pull request views into a single 'Repositories' page and add inactive status display.
+[33m7bde4f9[m UI Cleanup for handoff
+[33mea720fa[m Merge pull request #78 from entrius/feat/clarify-credibility-ui
+[33m4aa3e51[m style: auto-format code with prettier/eslint
+[33mcab873b[m Clarify credibility UI metrics in PR details and Tier Performance
+[33m57eca5a[m Merge pull request #77 from entrius/test
+[33maed881c[m Merge pull request #76 from entrius/open-pr-threshold
+[33mc00551e[m style: auto-format code with prettier/eslint
+[33md53533f[m update pr threshold
+[33m57dad10[m Small issue detail page tweaks
+[33me9e92ea[m Fixed stats totals, added issue detail pages, submissions, etc
+[33m16e8a5a[m Api changes to serve all issue states
+[33m5b268b7[m v0 mvp base
+[33m53d9dc9[m Merge pull request #75 from entrius/test
+[33m4b3c818[m Merge pull request #74 from entrius/redis-cache
+[33m2bab40b[m update CD to no longer refresh redis cache
+[33m666bf1e[m Merge pull request #73 from entrius/low-value-pr-removal
+[33m7780600[m style: auto-format code with prettier/eslint
+[33m69926fa[m fix build errors
+[33ma994e36[m Removed low value PR functionality
+[33mcfdd3d2[m Merge pull request #72 from entrius/test
+[33mebf62de[m Merge pull request #71 from entrius/updatedAt-in-miner-scorecard
+[33m421490f[m new updatedat chip
+[33me812051[m Merge pull request #70 from entrius/test
+[33mcc4f8f1[m Merge pull request #69 from entrius/tagline-removed
+[33m915eed9[m removed tagline from ui
+[33m84449b6[m Merge pull request #68 from entrius/test
+[33mcace178[m type fixes pr details card
+[33m350cdae[m Merge pull request #67 from entrius/fix-pr-details
+[33med126b4[m patch pr details page
+[33m3051520[m Merge pull request #66 from entrius/test
+[33mb37c29e[m hotfix account for null values
+[33me6eabeb[m Merge pull request #65 from entrius/token-scoring
+[33m5e2ca6b[m style: auto-format code with prettier/eslint
+[33m4373bbc[m adjust miner scorecard
+[33mefcf9d7[m languages table update
+[33m30f0a85[m lots of token-scoring updates
+[33m1190ee0[m Merge pull request #63 from entrius/test
+[33m50ce844[m Merge pull request #64 from entrius/build-error
+[33m9f7a5c2[m fix build issue
+[33m42a29e4[m Merge pull request #62 from entrius/cleanup
+[33mc8c2e1b[m style: auto-format code with prettier/eslint
+[33m6171474[m cleanup
+[33m9a96d84[m Merge pull request #60 from entrius/feature/leaderboard-tier-badges
+[33m640979a[m style: auto-format code with prettier/eslint
+[33ma14e6a2[m right margin stuff on leaderboard, make fit better
+[33m370b1f4[m leaderboard break points
+[33me2eacc2[m make tier sections fit better
+[33me83eb59[m spacing for leaderboard to be bigger
+[33m049c3a3[m Merge pull request #59 from entrius/feature/leaderboard-tier-badges
+[33m4e317ce[m style: auto-format code with prettier/eslint
+[33m8b601e9[m header all black and tier titles
+[33m2e4a0da[m remove headers from sections
+[33mec84386[m Merge pull request #57 from entrius/fix/pr-payout-display
+[33m14623f8[m Merge pull request #58 from entrius/fix/case-insensitive-repo-matching
+[33mded0b3a[m center buttons on top card
+[33mecae048[m dont show ID and just show github user name
+[33m11414ab[m making it more like x scrolling on main section of the leaderboard
+[33mea6d531[m card on leaderboard redesign
+[33m8f1c359[m leaderboard reformat
+[33m192a646[m make $ on table view look better
+[33m1b923b2[m Add tier badges to leaderboard table
+[33mb533540[m style: auto-format code with prettier/eslint
+[33m13ba062[m fix: case-insensitive repository matching for URL params
+[33m269c83a[m style: auto-format code with prettier/eslint
+[33m6bf88b2[m Update PR display to handle null payout values
+[33m871197f[m Merge pull request #56 from entrius/surfacing-low-value-pr
+[33m43ebf91[m style: auto-format code with prettier/eslint
+[33mf282dc9[m Added issues,  fixed ContributedRepositories, total merged Prs on repos page, etc
+[33m87d335d[m style: grey low value PR styling with cursor-following tooltips
+[33m42cc8fe[m style: auto-format code with prettier/eslint
+[33m9af0d42[m Better surfacing of low value PRs
+[33m8df1f9b[m Merge pull request #55 from entrius/test
+[33m3a7c944[m Merge pull request #54 from entrius/unique-repos-requirement
+[33mc51536e[m Added unique repo tier unlock requirements
+[33mf9eee18[m Merge pull request #52 from entrius/fix/live-activity-sorting
+[33mbcf7ad0[m Merge branch 'feature/standardize-status-badges' into fix/live-activity-sorting
+[33mdd0deeb[m style: auto-format code with prettier/eslint
+[33m40aee97[m tier badge update
+[33m70165f5[m style: improve clarity of tier progress fraction display
+[33m32f682f[m feat: Add locale-specific number formatting to estimated earnings and introduce explicit daily/monthly labels with enhanced typography.
+[33md334b2c[m style: remove tilde from earnings display
+[33mafd6581[m style: redesign earnings card to show daily and monthly on same row
+[33m14d9fd9[m feat: Add lifetime USD earnings to score card values and integrate tier display next to miner name.
+[33mb23d9a8[m feat: simplify open risk/earnings card styles and show maintenance reqs for unlocked tiers
+[33m1475011[m Merge branch 'feature/standardize-status-badges' into fix/live-activity-sorting
+[33m584e714[m feat: standardizing status badge colors and shape
+[33m6f090af[m style: auto-format code with prettier/eslint
+[33m4de28d1[m fix: live activity sorting to prioritize creation date if merged date is missing
+[33m7f559e6[m Merge pull request #50 from entrius/fix/dashboard-scaling
+[33m37e59aa[m style: auto-format code with prettier/eslint
+[33me4de989[m consistency across components
+[33m3e3b445[m style: auto-format code with prettier/eslint
+[33m69260dd[m Merge branch 'test' into fix/dashboard-scaling
+[33m92a181d[m Merge pull request #51 from entrius/global-activity-patch
+[33m588fc58[m style: auto-format code with prettier/eslint
+[33mf305317[m api refactors
+[33mdf9fcea[m style: auto-format code with prettier/eslint
+[33m6d59700[m refactor: migrate TierPerformanceTable layout from flexbox to CSS Grid and remove explicit column widths and margins
+[33m418d1be[m feat: enhance LiveCommitLog by displaying full date in timestamps and sorting entries by newest first.
+[33m154f4fb[m feat: enhance live commit log with detailed PR status, improved styling, and real-time update animations.
+[33m1de9adb[m miner page PR section feat: Add "closed" status filter option with corresponding UI buttons and counts to the PRs table, and update filtering logic to use `prState`.
+[33m9a6d5de[m fix: adjust dashboard scaling for mobile and desktop views
+[33m6b0ecf4[m Merge pull request #49 from entrius/hotfix
+[33m6b683c9[m hotfix deployment error
+[33me04755f[m Merge pull request #48 from entrius/feat/repo-check-redesign
+[33md53d1ec[m Merge pull request #47 from entrius/payouts
+[33mff6ff9e[m style: auto-format code with prettier/eslint
+[33m9f061d9[m lifetime earnings avail
+[33m259f9c9[m style: auto-format code with prettier/eslint
+[33mf4d6daf[m weight column in top repos page show 2 decimal points
+[33m02fdc88[m feat: redesign repo check tab layout and issue analysis cards
+[33m64e1a35[m style: auto-format code with prettier/eslint
+[33m030090a[m consolidate chip theming, rearrange minerscorecard
+[33m308d584[m minor cleanup
+[33m41ebc2f[m Merge branch 'test' into payouts
+[33m75a8b3a[m Merge pull request #44 from entrius/fix/chart-styles
+[33m25ffea1[m Merge branch 'feature/onboard-redesign' into fix/chart-styles
+[33m0639cdd[m remove comments
+[33m017fc14[m style: auto-format code with prettier/eslint
+[33madff727[m /day on PR + miner pages and leaderboards
+[33m2209281[m docs: clarify how contributors get paid in "Freedom to Build" description on About page.
+[33m9758629[m style: refresh `RoadmapContent` box appearance and update descriptive text content.
+[33m00a7060[m style: auto-format code with prettier/eslint
+[33meb9f07f[m style(roadmap): remove redundant Project Roadmap header
+[33m63915e7[m style(roadmap): center align text in phase cards & remove animations
+[33m9bbb6a5[m docs(roadmap): expand competitor list in vision statement
+[33m1bc32c7[m style(roadmap): revert vision section to single-stack layout
+[33m05ffb05[m feat(roadmap): redesign with premium timeline layout and icons
+[33m09aefa9[m add to FAQ
+[33m52c5fa7[m style(faq): darken answer text color for better readability
+[33mc4a98e6[m docs(faq): link to external subnet docs
+[33m6b57418[m docs(faq): link to official bittensor miner documentation
+[33mc1d03cd[m docs(faq): link directly to external scoring documentation
+[33m602a443[m docs(faq): add common miner questions and clarify repo tier unlocking
+[33m9c78eea[m feat: Dynamically display estimated monthly rewards, update feature descriptions, and remove card hover effects on the About page.
+[33mc14efc2[m redesign feat: Remove Onboard page hero, enable navigation from AboutContent, and update Getting Started layout and styling.
+[33m1cf2d7f[m move about to first tab
+[33m0a5b988[m Fix chart overflow clipping and styles
+[33mba8d803[m Merge pull request #43 from entrius/open-pr-tips
+[33m1baf1ad[m potential score added
+[33md6bbeef[m Merge pull request #42 from entrius/test
+[33m8e283dc[m Open PRs to dynamically show threshold tooltip using new config endpoint
+[33mbe95dc8[m Open PR penalty tooltip
+[33m8868e78[m Merge pull request #41 from entrius/feature/pr-comments-visuals
+[33mbd0f0f9[m remove comments
+[33m8330e60[m update lock file
+[33m5f615c1[m add build CI
+[33m0c6dbb8[m merge test and format
+[33mc3ea95e[m Merge branch 'test' into feature/pr-comments-visuals
+[33m20fd4ee[m Merge pull request #40 from entrius/fix/repo-prs-tab
+[33m01900a4[m use yarn instead of npm in CI
+[33m3b384c6[m add formatting ci
+[33m47d2076[m refactoring, modularity, formatting
+[33mc74b510[m Merge branch 'test' into fix/repo-prs-tab
+[33mcb187eb[m patch
+[33m72a78c0[m Merge pull request #39 from entrius/tier-unlock-hints
+[33m02a3595[m formatting, modularizing
+[33md9f5332[m feat: add PR conversation tab with GitHub-like HTML rendering
+[33mc8d0346[m final formating for dashboard
+[33mc1a9b3b[m feat: Adjust leaderboard chart responsive layout to use `lg` breakpoint instead of `md`.
+[33mff7d11e[m fix: ensure activity sections consistently display in a row layout
+[33mef62068[m feat: Add responsive TierRepoCard component, enhance leaderboard chart responsiveness, and refine dashboard layout.
+[33m362e9f7[m Tier unlock hints + info hover hints on definitions
+[33m12c860e[m dashbaord +x PFP repos link feat: Add initial tier filtering to the Top Repositories page via URL query parameter from Global Activity Viz.
+[33m2e3c912[m feat: Dim leaderboard table rows for repositories with zero total score.
+[33mb3d826b[m feat: display all repositories in the Top Repos table, including those without pull requests.
+[33m15b14df[m feat: replace score-based top repositories calculation and display with tiered repository grouping and visualization.
+[33mf98aa09[m style: Update MinerActivityViz layout and change "PR Success Ratio" label to "M.O.C Ratio".
+[33m9b8de34[m feat: Implement dynamic heatmap scaling for tier statistics in GlobalActivityViz by calculating max values and applying variable opacity.
+[33m1d6720b[m refactor: update GlobalActivityViz table layout to use flexbox for headers and rows, and adjust chart title vertical alignment.
+[33m4146f44[m feat: Reordered and resized dashboard grid items, moving the combined stats card and adjusting heatmap and top repos widths.
+[33m6fcd411[m feat: Increase font sizes and adjust credibility gauge styling in GlobalActivityViz.
+[33m22a6654[m change to "unranked"
+[33mfec0b46[m refactor: update table layout and styling, removing the 'Tier Performance' title and adding conditional row borders.
+[33mafacbbf[m feat: enhance tier performance statistics with detailed metrics like credibility, total score, and unique repositories, and adjust UI layout.
+[33ma6de1d4[m Move KPI cards: style: Adjust KPI card subtitle opacity and reorder dashboard KPI cards.
+[33m5b525e9[m fix: Adjust credibility percentage text vertical alignment in GlobalActivityViz. the % in circles on dashboard
+[33m8d795d5[m refactor: reimplement `GlobalActivityViz` layout using multiple `Card` components within a `Grid` and update no-data state styling.
+[33m149e894[m dashboard feat: Refactor global activity visualization to segment PR success metrics and charts by active, inactive, and tiered miners.
+[33m3b71758[m feat: Add PR status filtering and display to the TopPRsTable component.
+[33m6fabe36[m feat: visually distinguish inactive miners based on current tier
+[33meff6951[m fix: use global PR data in repository PR tab for consistency
+[33medef811[m Merge remote-tracking branch 'origin/test'
+[33ma9bd5ea[m Merge pull request #38 from entrius/miner-page-fixes
+[33mf52a1bc[m Leaderboard to show all active miners and github names correctly
+[33mdaca760[m Merge pull request #37 from entrius/test
+[33m9775350[m Merge pull request #36 from entrius/feature/visualization-animations
+[33mab64235[m Miner page to still show for miners with 0 stats/contributions
+[33ma951600[m Enhance chart and table animations: smoother transitions, staggered entrance, and dynamic timing
+[33ma94cf54[m Merge branch 'test'
+[33me019451[m patch empty dashboard crash
+[33m6abfb40[m Merge pull request #35 from entrius/feature/diff-ux-improvements
+[33m2f4d971[m minimize console errors, update wrangler file
+[33m1a1d8de[m Merge branch 'test' into feature/diff-ux-improvements
+[33ma32c04f[m feat: Conditionally render `PRFilesChanged` component based on tab selection.
+[33m2b737fb[m improving code diffs for unified view
+[33m5633a82[m feat: Add horizontal scroll synchronization and sticky chunk headers to the split diff view.
+[33mea6d849[m feat: Enhance Diff UX with Split View, Minimap, and Interactive Navigation
+[33mbd01a7a[m Merge pull request #34 from entrius/minor-adjustments
+[33m296bafd[m Minor Adjustments to multiple pages
+[33m0d2e7b1[m dashboard to show total lines changed
+[33m04f3805[m Merge pull request #33 from entrius/feature/dashboard-improvements
+[33mf278e64[m ignore buildinfo
+[33m2dd5b2e[m remove extraneous wrapper
+[33m8370c89[m fix console errors
+[33m8f7c964[m format
+[33mce66383[m Merge remote-tracking branch 'origin/test' into feature/dashboard-improvements # Please enter a commit message to explain why this merge is necessary, # especially if it merges an updated upstream into a topic branch. # # Lines starting with '#' will be ignored, and an empty message aborts # the commit.
+[33mbb656ca[m match test branch
+[33mf2d235d[m feat: enhance dashboard with global activity viz and leaderboard charts
+[33m41bfb3f[m Merge pull request #32 from entrius/consolidate-docs
+[33mb480a2f[m offload docs to docs site
+[33me8590ca[m Merge pull request #31 from entrius/feature/split-miners-page
+[33m878eb4d[m minor cleanup
+[33ma01a67b[m format
+[33m0917711[m right margin top contributors section changes
+[33m131796a[m cleanup
+[33m545915c[m feat: add repository maintainers display to repo details page
+[33mf77b37b[m hater or cock ride warning messages
+[33m303fb02[m Enhance leaderboard visualizations: Log scale, improved tooltips, and animations
+[33md602ec8[m feat: implement professional data visualizations with tier-based coloring
+[33mbc2d446[m feat: add character limits to table columns to prevent text wrapping
+[33m3abcdd3[m feat: add tier filtering, sortable columns, and standardize leaderboard tables
+[33mb20b3f0[m Redesign Developer Activity section with professional data visualization
+[33m6c3dfce[m feat: consolidate PR tabs, add filters and counts, improve UI
+[33madbbfa6[m feat: normalize miner radar chart metrics using network-wide statistics for improved comparison.
+[33ma9b0fb7[m Fix Metric Overview radar chart and Developer Activity visualization
+[33m676c1ea[m feat: add premium 90-day contribution activity graph to miner details
+[33m81f7110[m Enhance Code tab: GitHub-style file browser, image rendering, and UI improvements
+[33m4da333c[m Refine repository details: minimal stats, added contributing tab, layout improvements
+[33ma783699[m fix: downgrade echarts to 5.6.0 to fix TopPRsPage crash
+[33m29c177b[m feat: enhance repository details with readme tab, fix contributors table, and update api routing
+[33mfa2eb86[m idk just to work
+[33mcc0b941[m small updates to include open/closed prs in various spots
+[33m93e13a7[m fix: Update repository details back button destination to `/top-repos`.
+[33m0f9c7ed[m style(miners): remove KPI hover effects and link functionality
+[33m3fa2b91[m style(miners): remove status column and filter chips from PR table
+[33m8a30e9a[m style(miners): improve grid layout and KPI readability with subvalue separation
+[33m878cb14[m style(miners): improve KPI card aesthetics and professionalism
+[33mb225dda[m style(miners): enhance KPI cards with better visuals, gradients, and icons
+[33m72197a9[m feat(miners): display open PRs, collateral, and status filters on miner details
+[33mf603ff3[m fix minor bugs, add new endpoint api
+[33m648fc91[m feat: Enhance PR and Miner details with score breakdown and credibility metrics
+[33m0f8668d[m feat: new page: onboard: Implement new onboarding flow with OnboardPage and related components, and refactor AboutPage content export.
+[33mb7422ae[m feat: split miners page into separate leaderboard, prs, and repos pages
+[33m2304485[m credibility
+[33m6610450[m fix build errors
+[33m1269d67[m add tier filtering
+[33m51880b4[m update models
+[33m3fd225c[m Merge pull request #30 from entrius/github-acct-data
+[33md752550[m new api details
+[33medec3d7[m Squash merge test into main
+[33mc13845b[m Merge pull request #28 from entrius/patch
+[33m253b4e2[m only clear cache on main push
+[33md7a5fc3[m add auto cache purge on deploy to PROD
+[33m3c84e9e[m patch table pagination bug
+[33m8b0bd0f[m add env example
+[33m270b1df[m Merge pull request #27 from entrius/test
+[33m70278ad[m Merge pull request #26 from entrius/update-injector
+[33m2fd8566[m Merge pull request #25 from entrius/revert-24-update-injector
+[33m65990cb[m Revert "Update injector"
+[33m9352ade[m Merge pull request #24 from entrius/update-injector
+[33m4a883ce[m updated cloudflare injector
+[33m2d3f56e[m Squash merge test into main
+[33m1cd417e[m fix syntax issue
+[33m7bc1bc5[m add new deployment step
+[33m81e4464[m dashboard links go to internal pages
+[33m2d8d4c0[m Squash merge test into main
+[33m0391aa0[m Merge pull request #22 from entrius/roadmap
+[33m4e9c510[m mango roadmap
+[33mcd383ae[m Merge branch 'test'
+[33m42be1f3[m Feature/UI various changes (#19)
+[33md3127ce[m update injector script
+[33macce274[m update injector to cache bust social crawlers
+[33m66dccae[m Test (#18)
+[33m4567532[m cleanup, fix cloudflare worker script
+[33me634658[m cloudflare files
+[33m81c8434[m remove random .png
+[33mba3018a[m api image gen endpoints
+[33m50d8cc1[m grab correct logo
+[33m92a6d71[m undo
+[33mcf595d8[m feat: Update OG Image with Dynamic Stats & New Design (#17)
+[33mf1a095b[m Merge pull request #16 from entrius/test
+[33mde8dde7[m Merge pull request #15 from entrius/feature/ui-ux-improvements
+[33m881af87[m touchups
+[33m64aaa71[m feat: Make repository rows clickable in leaderboard
+[33m705bc77[m feat: Add ranking badges to repository stats showing position across all repositories
+[33mc658c1a[m feat: Add background colors for bitcoin and bittensor
+[33me50cd11[m Repo pages feat: Add repository filtering and details view with contributor rankings
+[33m84028ba[m feat: Add responsive design to MinerPRsTable and fix MinerScoreCard type safety
+[33m4fcb9e4[m feat: Add ranking badges to leaderboard and miner stats with styled rank indicators
+[33m5eb7bec[m feat: Remove base score from UI components and use stricly weighted scores
+[33maffe458[m Replace trophy icons with emoji medals for top 3 ranks in leaderboard
+[33m9053fc3[m github picture for repos on dashboard
+[33m9e0344e[m github pictures for repo owner. add background for bitcoin and bittensor
+[33mbb78ada[m include language weights tab to have same functionality showing rows per page
+[33mc5da305[m feat: add rows per page selector and improve table pagination UX
+[33m34b4dec[m Merge pull request #13 from entrius/test
+[33m13a49e8[m Merge pull request #12 from entrius/fix/utc-dates-and-chart-display
+[33m337ee0f[m fix: use UTC dates consistently across chart and live activity
+[33mb11d9a9[m patch weight sorting
+[33me67f6d4[m Merge pull request #10 from entrius/miner-dash-fixes
+[33m02d7aca[m Miner dash table to populate additions and deletions using new api response data
+[33m10370c3[m Merge branch 'test'
+[33m9cb6bf1[m new about page copy
+[33mddbc9bb[m Test (#9)
+[33m007b1ea[m live miners in leaderboard
+[33m0316f10[m update x link, remove deprecated files
+[33m9c0d64c[m Merge branch 'test' into feature/ui-improvements-miners-repos
+[33m6bc949b[m remove a table
+[33m793037c[m tighten up
+[33m2ba88e2[m make search bars black
+[33mffc62a2[m Update landing page to match main branch with monthly rewards banner
+[33m7927310[m feat: replace Chip components with Typography for score displays across leaderboards and tables
+[33m64cb790[m Merge branch 'test'
+[33mb163f8d[m revert: restore DashboardPage to main branch version
+[33m6f71a54[m feat: improve UI consistency across miners and repositories pages
+[33me1f0780[m feat: add monthly rewards display to dashboard and landing page (#8)
+[33mf4b0767[m pagination (#7)
+[33m9708cf2[m aneurism
+[33md067500[m update workflow to catch deploy errors
+[33m9521ea3[m Merge branch 'main' into test
+[33ma32c29f[m update env variable name in env.d
+[33m4bb30c6[m Activity scroll (#6)
+[33ma6dcc49[m Squash merge integrate-paginate into test
+[33m8413ec7[m merged test
+[33m582d293[m fixed merged maybe
+[33mdc47714[m Merge pull request #4 from entrius/feature/live-commit-activity
+[33md6af5ef[m Small tweaks to fit in contributed repositories table width wise. Smaller commit activity column. Updated FAQ details
+[33mba19831[m feat: add live commit activity sidebar with real-time updates
+[33m964ac2a[m Squash merge main into test
+[33m37dd870[m resolve conflicts
+[33me09df0d[m Feature/api proxy UI improvements (#3)
+[33m26006d2[m Squash merge test into main
+[33m4763f14[m dashboard scrollability added
+[33mae07b45[m Grant layout/style redesign (#2)
+[33m8df1831[m Merge branch 'test'
+[33m81f46b7[m Revert "Squash merge test into main"
+[33mfa9a360[m Reapply "change tagline"
+[33m6a099ca[m Revert "change tagline"
+[33m08e37ca[m Squash merge test into main
+[33m834af3d[m tweak the repo tables
+[33m55b64de[m change tagline
+[33m33a93c2[m tidy up faq page
+[33m16320e2[m update X link
+[33m22c58fa[m change table dashboard title
+[33m573d62e[m logic for inactive_at
+[33mdd9343a[m faq's and language weights
+[33m44c9e99[m ok final things
+[33m2f1ee38[m nitpicks
+[33mfbc91d1[m fix /home to /
+[33m5646b6d[m minor fixes, details
+[33m4ec3b38[m revamp UI
+[33m6f540c9[m add repository weight pagination and lots of aesthetic changes
+[33m9cf5c45[m revamp look and add repositories tab
+[33m37f9d96[m add stuff
+[33m74aba85[m date fixes
+[33m54ce27f[m integrated api endpoints
+[33m56158d3[m update docmpose
+[33mdc59c64[m remove script
+[33m42e82cd[m localhost only
+[33mbe5e141[m add the actual CD jobs
+[33m989eae4[m add logo, test new repo CD
+[33m6e228f2[m Add files via upload

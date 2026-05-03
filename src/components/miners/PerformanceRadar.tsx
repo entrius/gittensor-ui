@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
 import { Box, Typography, alpha, useTheme } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
-import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { TEXT_OPACITY } from '../../theme';
 import {
   echartsRadarChrome,
   echartsTransparentBackground,
 } from '../../utils/echarts/gittensorChartTheme';
+import { useChartColors } from '../../hooks/useChartColors';
 
 interface PerformanceRadarProps {
   credibility: number;
@@ -25,6 +26,7 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
   avgRepoWeight,
 }) => {
   const theme = useTheme();
+  const { merged: radarColor } = useChartColors();
 
   const chartOption = useMemo(
     () => ({
@@ -47,13 +49,8 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
       series: [
         {
           type: 'radar',
-          lineStyle: {
-            width: 2,
-            color: STATUS_COLORS.merged,
-          },
-          areaStyle: {
-            color: `${STATUS_COLORS.merged}33`,
-          },
+          lineStyle: { width: 2, color: radarColor },
+          areaStyle: { color: alpha(radarColor, 0.2) },
           data: [
             {
               value: [
@@ -67,7 +64,7 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
               name: 'Miner Stats',
               symbol: 'circle',
               symbolSize: 4,
-              itemStyle: { color: STATUS_COLORS.merged },
+              itemStyle: { color: radarColor },
             },
           ],
         },
@@ -81,6 +78,7 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
       totalPRs,
       avgRepoWeight,
       theme,
+      radarColor,
     ],
   );
 
@@ -95,7 +93,7 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
       <Typography
         variant="monoSmall"
         sx={{
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+          color: alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
           mb: 2,
           textAlign: 'center',
         }}

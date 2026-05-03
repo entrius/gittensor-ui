@@ -18,13 +18,14 @@ import {
 } from '../../api';
 import ContributionHeatmap from '../ContributionHeatmap';
 import DayPRsPanel from '../DayPRsPanel';
-import { CHART_COLORS, STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { TEXT_OPACITY } from '../../theme';
 import {
   echartsItemTooltipChrome,
   echartsRadarChrome,
   echartsTransparentBackground,
 } from '../../utils/echarts/gittensorChartTheme';
 import { parseNumber } from '../../utils/ExplorerUtils';
+import { useChartColors } from '../../hooks/useChartColors';
 import TrustBadge from './TrustBadge';
 import CredibilityChart from './CredibilityChart';
 import PerformanceRadar from './PerformanceRadar';
@@ -59,7 +60,7 @@ const LegendItem: React.FC<{ label: string; value: number; color: string }> = ({
       />
       <Typography
         sx={{
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+          color: alpha(theme.palette.text.primary, TEXT_OPACITY.tertiary),
           fontSize: '0.65rem',
         }}
       >
@@ -85,6 +86,11 @@ const IssueCredibilityChart: React.FC<{
   credibility: number;
 }> = ({ solved, open, closed, credibility }) => {
   const theme = useTheme();
+  const {
+    merged: chartMerged,
+    open: chartOpen,
+    closed: chartClosed,
+  } = useChartColors();
 
   const chartOption = useMemo(
     () => ({
@@ -100,7 +106,7 @@ const IssueCredibilityChart: React.FC<{
           fontWeight: 'bold',
         },
         subtextStyle: {
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+          color: alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
           fontSize: 11,
           fontWeight: 500,
         },
@@ -128,23 +134,28 @@ const IssueCredibilityChart: React.FC<{
             {
               value: solved,
               name: 'Solved',
-              itemStyle: { color: CHART_COLORS.merged },
+              itemStyle: { color: chartMerged },
             },
-            {
-              value: open,
-              name: 'Open',
-              itemStyle: { color: CHART_COLORS.open },
-            },
+            { value: open, name: 'Open', itemStyle: { color: chartOpen } },
             {
               value: closed,
               name: 'Closed',
-              itemStyle: { color: CHART_COLORS.closed },
+              itemStyle: { color: chartClosed },
             },
           ],
         },
       ],
     }),
-    [solved, open, closed, credibility, theme],
+    [
+      solved,
+      open,
+      closed,
+      credibility,
+      theme,
+      chartMerged,
+      chartOpen,
+      chartClosed,
+    ],
   );
 
   return (
@@ -158,7 +169,7 @@ const IssueCredibilityChart: React.FC<{
       <Typography
         variant="monoSmall"
         sx={{
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+          color: alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
           mb: 0.75,
           textAlign: 'center',
         }}
@@ -182,9 +193,9 @@ const IssueCredibilityChart: React.FC<{
           flexWrap: 'wrap',
         }}
       >
-        <LegendItem label="Solved" value={solved} color={CHART_COLORS.merged} />
-        <LegendItem label="Open" value={open} color={CHART_COLORS.open} />
-        <LegendItem label="Closed" value={closed} color={CHART_COLORS.closed} />
+        <LegendItem label="Solved" value={solved} color={chartMerged} />
+        <LegendItem label="Open" value={open} color={chartOpen} />
+        <LegendItem label="Closed" value={closed} color={chartClosed} />
       </Box>
     </Box>
   );
@@ -198,6 +209,7 @@ const IssuePerformanceRadar: React.FC<{
   tokenScore: number;
 }> = ({ credibility, solvedRatio, validRatio, volume, tokenScore }) => {
   const theme = useTheme();
+  const { merged: radarColor } = useChartColors();
 
   const chartOption = useMemo(
     () => ({
@@ -219,26 +231,29 @@ const IssuePerformanceRadar: React.FC<{
       series: [
         {
           type: 'radar',
-          lineStyle: {
-            width: 2,
-            color: STATUS_COLORS.merged,
-          },
-          areaStyle: {
-            color: `${STATUS_COLORS.merged}33`,
-          },
+          lineStyle: { width: 2, color: radarColor },
+          areaStyle: { color: alpha(radarColor, 0.2) },
           data: [
             {
               value: [credibility, solvedRatio, validRatio, volume, tokenScore],
               name: 'Issue Stats',
               symbol: 'circle',
               symbolSize: 4,
-              itemStyle: { color: STATUS_COLORS.merged },
+              itemStyle: { color: radarColor },
             },
           ],
         },
       ],
     }),
-    [credibility, solvedRatio, validRatio, volume, tokenScore, theme],
+    [
+      credibility,
+      solvedRatio,
+      validRatio,
+      volume,
+      tokenScore,
+      theme,
+      radarColor,
+    ],
   );
 
   return (
@@ -252,7 +267,7 @@ const IssuePerformanceRadar: React.FC<{
       <Typography
         variant="monoSmall"
         sx={{
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+          color: alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
           mb: 2,
           textAlign: 'center',
         }}

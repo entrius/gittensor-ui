@@ -28,7 +28,9 @@ import {
   Tabs,
   Badge,
   useMediaQuery,
+  useTheme,
 } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
@@ -79,15 +81,15 @@ import {
   getPrStatusCounts,
 } from '../utils/prStatus';
 import { filterPrs, type PrStatusFilter } from '../utils/prTable';
-import { getIssueStatusMeta } from '../utils/issueStatus';
+import { getIssueStatusMetaForTheme } from '../utils/issueStatus';
 import { formatTokenAmount } from '../utils/format';
 import { compareByWatchlist } from '../utils/watchlistSort';
-import theme, {
+import {
   CHART_COLORS,
   LABEL_COLORS,
-  STATUS_COLORS,
   TEXT_OPACITY,
   UI_COLORS,
+  WATCHLIST_COLORS,
   scrollbarSx,
 } from '../theme';
 import FilterButton from '../components/FilterButton';
@@ -163,6 +165,7 @@ const WatchlistPage: React.FC = () => {
   const counts = useWatchlistCounts();
   const { ids, count, clear } = useWatchlist(activeTab);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const theme = useTheme();
 
   const tabHasContent =
     activeTab === 'prs'
@@ -447,7 +450,7 @@ const WatchlistPage: React.FC = () => {
             sx={{
               textTransform: 'none',
               fontSize: '0.8rem',
-              color: 'common.white',
+              color: 'error.contrastText',
               backgroundColor: 'error.main',
               borderRadius: 2,
               px: 2,
@@ -601,11 +604,17 @@ type RepoSortKey =
 
 const repoCellSx = { py: 1.5 } as const;
 
-const repoStatusMeta = (repo: Repository) => {
+const repoStatusMeta = (
+  repo: Repository,
+  status?: Theme['palette']['status'],
+) => {
   const active = isRepoActive(repo);
   return {
     label: active ? 'ACTIVE' : 'INACTIVE',
-    color: active ? STATUS_COLORS.success : STATUS_COLORS.closed,
+    active,
+    color: active
+      ? (status?.success ?? UI_COLORS.lightSuccess)
+      : (status?.closed ?? UI_COLORS.lightDanger),
   };
 };
 
@@ -724,12 +733,17 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
     sortKey: 'status',
     cellSx: repoCellSx,
     renderCell: (repo) => {
-      const { label, color } = repoStatusMeta(repo);
+      const { label, active } = repoStatusMeta(repo);
       return (
         <Chip
           variant="status"
           label={label}
-          sx={{ color, borderColor: color }}
+          sx={(theme) => {
+            const color = active
+              ? theme.palette.status.success
+              : theme.palette.status.closed;
+            return { color, borderColor: color };
+          }}
         />
       );
     },
@@ -852,7 +866,8 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
   repo,
   maxWeight,
 }) => {
-  const { label, color } = repoStatusMeta(repo);
+  const theme = useTheme();
+  const { label, color } = repoStatusMeta(repo, theme.palette.status);
   const owner = repo.fullName.split('/')[0] || '';
   const weight = parseFloat(String(repo.weight)) || 0;
   const isInactive = !!repo.inactiveAt;
@@ -1027,6 +1042,7 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
 const REPO_ROWS_OPTIONS = [10, 25, 50] as const;
 
 const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
+  const theme = useTheme();
   const { data: repos } = useReposAndWeights();
   const { data: allPrs } = useAllPrs();
   const [searchQuery, setSearchQuery] = useState('');
@@ -1148,12 +1164,12 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   );
 
   const chartOption = useMemo(() => {
-    const white = UI_COLORS.white;
-    const borderSubtle = alpha(white, 0.08);
-    const textColor = alpha(white, 0.85);
+    const fg = theme.palette.text.primary;
+    const borderSubtle = alpha(fg, 0.08);
+    const textColor = alpha(fg, 0.85);
     const gridColor = borderSubtle;
-    const tooltipLabelColor = alpha(white, TEXT_OPACITY.secondary);
-    const primaryColor = UI_COLORS.white;
+    const tooltipLabelColor = alpha(fg, TEXT_OPACITY.secondary);
+    const primaryColor = fg;
 
     const chartData = paged.map((repo) => ({
       name: repo.fullName.split('/')[1] || repo.fullName,
@@ -1194,7 +1210,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         top: 20,
         textStyle: { color: primaryColor, fontSize: 18, fontWeight: 600 },
         subtextStyle: {
-          color: alpha(white, TEXT_OPACITY.tertiary),
+          color: alpha(fg, TEXT_OPACITY.tertiary),
           fontSize: 12,
         },
       },
@@ -1204,8 +1220,8 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           type: 'shadow',
           shadowStyle: { color: borderSubtle },
         },
-        backgroundColor: UI_COLORS.surfaceTooltip,
-        borderColor: alpha(white, 0.15),
+        backgroundColor: theme.palette.surface.tooltip,
+        borderColor: alpha(fg, 0.15),
         borderWidth: 1,
         textStyle: { color: primaryColor, fontSize: 12 },
         padding: [12, 16],
@@ -1270,7 +1286,12 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         },
       ],
     };
-  }, [paged, useLogScale]);
+  }, [
+    paged,
+    useLogScale,
+    theme.palette.surface.tooltip,
+    theme.palette.text.primary,
+  ]);
 
   return (
     <Card
@@ -1298,21 +1319,21 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           <FilterButton
             label="All"
             count={counts.all}
-            color={STATUS_COLORS.neutral}
+            color={theme.palette.status.neutral}
             isActive={statusFilter === 'all'}
             onClick={() => setStatusFilter('all')}
           />
           <FilterButton
             label="Active"
             count={counts.active}
-            color={STATUS_COLORS.success}
+            color={theme.palette.status.success}
             isActive={statusFilter === 'active'}
             onClick={() => setStatusFilter('active')}
           />
           <FilterButton
             label="Inactive"
             count={counts.inactive}
-            color={STATUS_COLORS.closed}
+            color={theme.palette.status.closed}
             isActive={statusFilter === 'inactive'}
             onClick={() => setStatusFilter('inactive')}
           />
@@ -1610,6 +1631,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 };
 
 const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
+  const theme = useTheme();
   const { data: allIssues } = useIssues();
   const items = useMemo(() => {
     if (!allIssues) return [];
@@ -1622,7 +1644,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   return (
     <Stack spacing={0.5} sx={{ width: '100%' }}>
       {items.map((issue) => {
-        const meta = getIssueStatusMeta(issue.status);
+        const meta = getIssueStatusMetaForTheme(issue.status, theme);
         return (
           <WatchedItemRow
             key={issue.id}
@@ -1656,15 +1678,15 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   );
 };
 
-const prStatusMeta = (pr: CommitLog) => {
+const prStatusMeta = (pr: CommitLog, theme: Theme) => {
   const merged = isMergedPr(pr);
   const closed = isClosedUnmergedPr(pr);
   const label = merged ? 'MERGED' : closed ? 'CLOSED' : 'OPEN';
   const color = merged
-    ? STATUS_COLORS.merged
+    ? theme.palette.status.merged
     : closed
-      ? STATUS_COLORS.closed
-      : STATUS_COLORS.open;
+      ? theme.palette.status.closed
+      : theme.palette.status.open;
   return { label, color };
 };
 
@@ -1680,19 +1702,19 @@ const SOURCE_META: Record<
     label: 'Starred',
     tooltip: 'You starred this pull request',
     Icon: StarIcon,
-    color: '#facc15',
+    color: WATCHLIST_COLORS.starred,
   },
   miner: {
     label: 'Miner',
     tooltip: 'From a watched miner',
     Icon: PersonIcon,
-    color: '#60a5fa',
+    color: WATCHLIST_COLORS.miner,
   },
   repo: {
     label: 'Repo',
     tooltip: 'From a watched repository',
     Icon: FolderIcon,
-    color: '#a78bfa',
+    color: WATCHLIST_COLORS.repo,
   },
 };
 
@@ -1742,6 +1764,7 @@ const WatchedSourceBadges: React.FC<{ sources: WatchedPRSource[] }> = ({
 
 const buildPrColumns = (
   sourcesByKey: Map<string, WatchedPRSource[]>,
+  theme: Theme,
 ): DataTableColumn<CommitLog, PrSortKey>[] => [
   {
     key: 'pr',
@@ -1827,7 +1850,7 @@ const buildPrColumns = (
     align: 'center',
     cellSx: prCellSx,
     renderCell: (pr) => {
-      const { label, color } = prStatusMeta(pr);
+      const { label, color } = prStatusMeta(pr, theme);
       return (
         <Chip
           variant="status"
@@ -1951,15 +1974,19 @@ const PRCard: React.FC<{
   pr: CommitLog;
   sources?: WatchedPRSource[];
 }> = ({ pr, sources = [] }) => {
-  const { label, color } = prStatusMeta(pr);
+  const theme = useTheme();
+  const { label, color } = prStatusMeta(pr, theme);
   const key = serializePRKey(pr.repository, pr.pullRequestNumber);
   return (
     <Card
       elevation={0}
       sx={(t) => ({
         p: 1,
-        backgroundColor: t.palette.background.default,
-        backdropFilter: 'blur(12px)',
+        backgroundColor:
+          t.palette.mode === 'dark'
+            ? t.palette.background.default
+            : t.palette.background.paper,
+        backdropFilter: t.palette.mode === 'dark' ? 'blur(12px)' : 'none',
         border: '1px solid',
         borderColor: alpha(color, 0.3),
         borderRadius: 2,
@@ -1969,7 +1996,6 @@ const PRCard: React.FC<{
         display: 'flex',
         flexDirection: 'column',
         gap: 1,
-        boxShadow: `0 2px 8px ${alpha(t.palette.background.default, 0.1)}`,
         '&:hover': {
           backgroundColor: t.palette.surface.elevated,
           borderColor: alpha(color, 0.5),
@@ -2131,8 +2157,12 @@ const PR_ROWS_OPTIONS_LIST = [10, 25, 50] as const;
 const PR_ROWS_OPTIONS_CARDS = [12, 24, 48] as const;
 
 const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
+  const theme = useTheme();
   const { items, sourcesByKey, isLoading } = useWatchedPRs(itemKeys);
-  const prColumns = useMemo(() => buildPrColumns(sourcesByKey), [sourcesByKey]);
+  const prColumns = useMemo(
+    () => buildPrColumns(sourcesByKey, theme),
+    [sourcesByKey, theme],
+  );
   const { isWatched } = useWatchlist('prs');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
@@ -2234,28 +2264,28 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           <FilterButton
             label="All"
             count={counts.all}
-            color={STATUS_COLORS.neutral}
+            color={theme.palette.status.neutral}
             isActive={statusFilter === 'all'}
             onClick={() => setStatusFilter('all')}
           />
           <FilterButton
             label="Open"
             count={counts.open}
-            color={STATUS_COLORS.open}
+            color={theme.palette.status.open}
             isActive={statusFilter === 'open'}
             onClick={() => setStatusFilter('open')}
           />
           <FilterButton
             label="Merged"
             count={counts.merged}
-            color={STATUS_COLORS.merged}
+            color={theme.palette.status.merged}
             isActive={statusFilter === 'merged'}
             onClick={() => setStatusFilter('merged')}
           />
           <FilterButton
             label="Closed"
             count={counts.closed}
-            color={STATUS_COLORS.closed}
+            color={theme.palette.status.closed}
             isActive={statusFilter === 'closed'}
             onClick={() => setStatusFilter('closed')}
           />
@@ -2454,12 +2484,13 @@ const issueState = (issue: MinerIssue): Exclude<IssueStatusFilter, 'all'> => {
   return issue.state === 'CLOSED' ? 'closed' : 'open';
 };
 
-const issueStatusMeta = (issue: MinerIssue) => {
+const issueStatusMeta = (issue: MinerIssue, theme: Theme) => {
   const s = issueState(issue);
   if (s === 'resolved')
-    return { label: 'RESOLVED', color: STATUS_COLORS.merged };
-  if (s === 'closed') return { label: 'CLOSED', color: STATUS_COLORS.closed };
-  return { label: 'OPEN', color: STATUS_COLORS.open };
+    return { label: 'RESOLVED', color: theme.palette.status.merged };
+  if (s === 'closed')
+    return { label: 'CLOSED', color: theme.palette.status.closed };
+  return { label: 'OPEN', color: theme.palette.status.open };
 };
 
 const issueDate = (issue: MinerIssue): string =>
@@ -2468,16 +2499,19 @@ const issueDate = (issue: MinerIssue): string =>
 const issueKey = (issue: MinerIssue) =>
   `${issue.repo_full_name}#${issue.issue_number}`;
 
-const issueStatusColor = (s: IssueStatusFilter): string => {
+const issueStatusColor = (
+  s: IssueStatusFilter,
+  status: Theme['palette']['status'],
+): string => {
   switch (s) {
     case 'all':
-      return STATUS_COLORS.neutral;
+      return status.neutral;
     case 'open':
-      return STATUS_COLORS.open;
+      return status.open;
     case 'resolved':
-      return STATUS_COLORS.merged;
+      return status.merged;
     case 'closed':
-      return STATUS_COLORS.closed;
+      return status.closed;
   }
 };
 
@@ -2728,15 +2762,19 @@ const getIssueHref = (issue: MinerIssue): string =>
   `https://github.com/${issue.repo_full_name}/issues/${issue.issue_number}`;
 
 const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
-  const { label, color } = issueStatusMeta(issue);
+  const theme = useTheme();
+  const { label, color } = issueStatusMeta(issue, theme);
   const prNumber = issue.solving_pr?.pr_number ?? issue.solved_by_pr ?? null;
   return (
     <Card
       elevation={0}
       sx={(t) => ({
         p: 1,
-        backgroundColor: t.palette.background.default,
-        backdropFilter: 'blur(12px)',
+        backgroundColor:
+          t.palette.mode === 'dark'
+            ? t.palette.background.default
+            : t.palette.background.paper,
+        backdropFilter: t.palette.mode === 'dark' ? 'blur(12px)' : 'none',
         border: '1px solid',
         borderColor: alpha(color, 0.3),
         borderRadius: 2,
@@ -2746,7 +2784,6 @@ const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
         display: 'flex',
         flexDirection: 'column',
         gap: 1,
-        boxShadow: `0 2px 8px ${alpha(t.palette.background.default, 0.1)}`,
         '&:hover': {
           backgroundColor: t.palette.surface.elevated,
           borderColor: alpha(color, 0.5),
@@ -2895,6 +2932,7 @@ const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
 };
 
 const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
+  const theme = useTheme();
   const issueQueries = useMinersIssues(minerIds, minerIds.length > 0);
   const isLoading = issueQueries.some((q) => q.isLoading);
 
@@ -3044,7 +3082,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
               key={s}
               label={s[0].toUpperCase() + s.slice(1)}
               count={counts[s]}
-              color={issueStatusColor(s)}
+              color={issueStatusColor(s, theme.palette.status)}
               isActive={statusFilter === s}
               onClick={() => setStatusFilter(s)}
             />

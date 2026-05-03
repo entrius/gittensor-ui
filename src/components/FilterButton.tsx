@@ -1,12 +1,14 @@
 import React from 'react';
 import { Button, Box } from '@mui/material';
+import { modeActiveTabSx } from '../utils/themeUtils';
 
 interface FilterButtonProps {
   label: string;
   isActive: boolean;
   onClick: () => void;
   count?: number;
-  color: string;
+  /** Status color — used as solid active background in light mode */
+  color?: string;
   activeTextColor?: string;
 }
 
@@ -16,30 +18,31 @@ const FilterButton: React.FC<FilterButtonProps> = ({
   onClick,
   count,
   color,
-  activeTextColor = 'text.primary',
 }) => (
   <Button
     size="small"
     onClick={onClick}
-    sx={{
-      color: isActive ? activeTextColor : 'text.tertiary',
-      backgroundColor: isActive ? 'border.subtle' : 'transparent',
-      borderRadius: '6px',
-      px: 2,
+    sx={(theme) => ({
+      ...modeActiveTabSx(theme, isActive, {
+        activeColor: color ?? theme.palette.status.neutral,
+        darkHoverAlpha: 0.12,
+      }),
+      borderRadius: '8px',
+      px: 1.5,
+      py: 0.45,
       minWidth: 'auto',
       textTransform: 'none',
       fontSize: '0.8rem',
-      border: isActive ? `1px solid ${color}` : '1px solid transparent',
-      '&:hover': {
-        backgroundColor: 'border.light',
-      },
-    }}
+      fontWeight: isActive ? 600 : 400,
+      border: 'none',
+      transition: 'background-color 0.18s ease, color 0.18s ease',
+    })}
   >
-    {label}{' '}
+    {label}
     {count !== undefined && (
       <Box
         component="span"
-        sx={{ opacity: 0.6, ml: '6px', fontSize: '0.75rem' }}
+        sx={{ opacity: 0.7, ml: '5px', fontSize: '0.72rem' }}
       >
         {count}
       </Box>

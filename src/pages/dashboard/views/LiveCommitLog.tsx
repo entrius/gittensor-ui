@@ -13,6 +13,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { formatDistanceToNow } from 'date-fns';
+import { modeActiveTabSx } from '../../../utils/themeUtils';
 import { LinkBox } from '../../../components/common/linkBehavior';
 import { useInfiniteCommitLog } from '../../../api';
 import theme, {
@@ -120,7 +121,7 @@ const getScoreColor = (score: string) => {
   const scoreNum = parseFloat(score);
   if (isNaN(scoreNum)) return theme.palette.text.secondary;
   if (scoreNum >= 10) return theme.palette.text.primary;
-  if (scoreNum >= 5) return alpha(theme.palette.common.white, 0.69);
+  if (scoreNum >= 5) return alpha(theme.palette.text.primary, 0.69);
   return theme.palette.text.secondary;
 };
 
@@ -150,40 +151,53 @@ const CommitLogItem: React.FC<{
       href={`/miners/pr?repo=${entry.repository}&number=${entry.pullRequestNumber}`}
       linkState={{ backLabel: 'Back to Dashboard' }}
       ref={innerRef}
-      sx={{
-        p: isMobile ? 0.75 : isTablet ? 1.25 : 1,
-        borderRadius: 3,
-        border: '1px solid',
-        borderColor: isNew
-          ? theme.palette.secondary.main
-          : theme.palette.border.light,
-        backgroundColor: theme.palette.surface.subtle,
-        backdropFilter: 'blur(8px)',
-        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        animation: isNew ? 'slideIn 0.5s ease-out' : undefined,
-        cursor: 'pointer',
-        position: 'relative',
-        overflow: 'hidden',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: `linear-gradient(90deg, ${alpha(status.color, 0.1)} 0%, transparent 100%)`,
-          opacity: 0.5,
-        },
-        '&:hover': {
-          borderColor: status.color,
-          transform: 'translateX(4px)',
-          boxShadow: `0 0 20px ${alpha(status.color, 0.1)}`,
-          '&::before': { opacity: 0.8 },
-        },
-        '@keyframes slideIn': {
-          from: { opacity: 0, transform: 'translateX(-20px)' },
-          to: { opacity: 1, transform: 'translateX(0)' },
-        },
+      sx={(t) => {
+        const isDark = t.palette.mode === 'dark';
+        return {
+          p: isMobile ? 0.75 : isTablet ? 1.25 : 1,
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: isNew
+            ? t.palette.secondary.main
+            : t.palette.border.light,
+          borderLeft: isDark
+            ? undefined
+            : `3px solid ${alpha(status.color, 0.7)}`,
+          backgroundColor: isDark
+            ? t.palette.surface.subtle
+            : t.palette.background.paper,
+          backdropFilter: isDark ? 'blur(8px)' : 'none',
+          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          animation: isNew ? 'slideIn 0.5s ease-out' : undefined,
+          cursor: 'pointer',
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': isDark
+            ? {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: `linear-gradient(90deg, ${alpha(status.color, 0.1)} 0%, transparent 100%)`,
+                opacity: 0.5,
+              }
+            : {},
+          '&:hover': {
+            borderColor: isDark ? status.color : t.palette.border.light,
+            borderLeft: isDark ? undefined : `3px solid ${status.color}`,
+            transform: 'translateX(4px)',
+            boxShadow: isDark
+              ? `0 0 20px ${alpha(status.color, 0.1)}`
+              : `0 2px 8px ${alpha(status.color, 0.12)}`,
+            '&::before': isDark ? { opacity: 0.8 } : {},
+          },
+          '@keyframes slideIn': {
+            from: { opacity: 0, transform: 'translateX(-20px)' },
+            to: { opacity: 1, transform: 'translateX(0)' },
+          },
+        };
       }}
     >
       <Stack
@@ -535,10 +549,17 @@ const LiveCommitLog: React.FC = () => {
               mb: '1px',
               display: 'inline-flex',
               alignSelf: 'center',
-              gap: 0.5,
-              p: 0.5,
-              borderRadius: 2,
-              backgroundColor: t.palette.surface.light,
+              gap: 0.35,
+              p: 0.4,
+              borderRadius: '50px',
+              backgroundColor:
+                t.palette.mode === 'dark'
+                  ? t.palette.surface.light
+                  : t.palette.surface.control,
+              border:
+                t.palette.mode === 'dark'
+                  ? 'none'
+                  : `1px solid ${t.palette.border.light}`,
             })}
           >
             {COMMIT_STATUS_FILTERS.map((filter) => {
@@ -552,33 +573,42 @@ const LiveCommitLog: React.FC = () => {
                   type="button"
                   aria-pressed={selected}
                   onClick={() => setStatusFilter(filter)}
-                  sx={(t) => ({
-                    px: isMobile ? 1.35 : 1.6,
-                    height: isMobile ? 22 : 24,
-                    display: 'flex',
-                    alignItems: 'center',
-                    border: 0,
-                    borderRadius: 1.5,
-                    backgroundColor: selected
-                      ? alpha(t.palette.text.primary, 0.15)
-                      : 'transparent',
-                    color: selected
-                      ? t.palette.text.primary
-                      : alpha(option.color, 0.82),
-                    cursor: 'pointer',
-                    fontSize: isMobile ? '0.68rem' : '0.72rem',
-                    fontWeight: selected ? 600 : 500,
-                    lineHeight: 1,
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      backgroundColor: alpha(t.palette.text.primary, 0.1),
-                      color: t.palette.text.primary,
-                    },
-                    '&:focus-visible': {
-                      outline: `1px solid ${option.color}`,
-                      outlineOffset: 1,
-                    },
-                  })}
+                  sx={(t) => {
+                    const isDark = t.palette.mode === 'dark';
+                    const activeColor =
+                      filter === 'all'
+                        ? t.palette.status.neutral
+                        : option.color;
+                    const tabSx = modeActiveTabSx(t, selected, {
+                      activeColor,
+                      darkAlpha: 0.15,
+                      darkHoverAlpha: 0.18,
+                    });
+                    return {
+                      px: isMobile ? 1.35 : 1.6,
+                      height: isMobile ? 22 : 24,
+                      display: 'flex',
+                      alignItems: 'center',
+                      border: 0,
+                      borderRadius: '50px',
+                      cursor: 'pointer',
+                      fontSize: isMobile ? '0.68rem' : '0.72rem',
+                      fontWeight: selected ? 600 : 500,
+                      lineHeight: 1,
+                      transition:
+                        'background-color 0.18s ease, color 0.18s ease',
+                      '&:focus-visible': {
+                        outline: `1px solid ${option.color}`,
+                        outlineOffset: 1,
+                      },
+                      ...tabSx,
+                      // Dark inactive: preserve colored status labels instead of grey
+                      color:
+                        !selected && isDark
+                          ? alpha(option.color, 0.82)
+                          : tabSx.color,
+                    };
+                  }}
                 >
                   {option.filterLabel}
                 </Box>

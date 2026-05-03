@@ -16,7 +16,6 @@ import {
   IssueConversation,
 } from '../components/issues';
 import { useIssueDetails, useIssueSubmissions } from '../api';
-import { STATUS_COLORS } from '../theme';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 
@@ -114,7 +113,7 @@ const IssueDetailsPage: React.FC = () => {
                 aria-label="issue details tabs"
                 sx={(theme) => ({
                   '& .MuiTab-root': {
-                    color: STATUS_COLORS.open,
+                    color: 'status.open',
                     fontFamily:
                       '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
                     textTransform: 'none',

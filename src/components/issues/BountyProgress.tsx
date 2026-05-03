@@ -7,7 +7,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { formatTokenAmount } from '../../utils/format';
-import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { TEXT_OPACITY } from '../../theme';
 
 interface BountyProgressProps {
   bountyAmount: string;
@@ -36,15 +36,15 @@ const BountyProgress: React.FC<BountyProgressProps> = ({
           '& .MuiLinearProgress-bar': {
             borderRadius: 3,
             backgroundColor: isFunded
-              ? STATUS_COLORS.merged
-              : STATUS_COLORS.info,
+              ? theme.palette.status.merged
+              : theme.palette.status.info,
           },
         }}
       />
       <Typography
         sx={{
           fontSize: '0.65rem',
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+          color: alpha(theme.palette.text.primary, TEXT_OPACITY.tertiary),
           mt: 0.5,
           textAlign: 'center',
         }}

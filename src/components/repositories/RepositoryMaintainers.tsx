@@ -10,7 +10,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { useRepositoryMaintainers } from '../../api';
-import { STATUS_COLORS } from '../../theme';
 
 interface RepositoryMaintainersProps {
   repositoryFullName: string;
@@ -60,7 +59,7 @@ const RepositoryMaintainers: React.FC<RepositoryMaintainersProps> = ({
         Maintainers{' '}
         <Typography
           component="span"
-          sx={{ color: STATUS_COLORS.open, fontSize: '0.8em' }}
+          sx={{ color: 'status.open', fontSize: '0.8em' }}
         >
           ({maintainers.length})
         </Typography>

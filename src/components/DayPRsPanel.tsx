@@ -3,7 +3,7 @@ import { Box, Card, Typography, alpha, useTheme } from '@mui/material';
 import { format, parseISO } from 'date-fns';
 import type { CommitLog } from '../api';
 import { LinkBox } from './common/linkBehavior';
-import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../theme';
+import { TEXT_OPACITY, scrollbarSx } from '../theme';
 
 interface DayPRsPanelProps {
   date: string;
@@ -11,10 +11,13 @@ interface DayPRsPanelProps {
   username: string;
 }
 
-const prStateColor = (pr: CommitLog) => {
-  if (pr.mergedAt) return STATUS_COLORS.merged;
-  if (pr.prState === 'CLOSED') return STATUS_COLORS.closed;
-  return STATUS_COLORS.info;
+const prStateColor = (
+  pr: CommitLog,
+  palette: { status: { merged: string; closed: string; info: string } },
+) => {
+  if (pr.mergedAt) return palette.status.merged;
+  if (pr.prState === 'CLOSED') return palette.status.closed;
+  return palette.status.info;
 };
 
 const prStateLabel = (pr: CommitLog) => {
@@ -66,7 +69,7 @@ const DayPRsPanel: React.FC<DayPRsPanelProps> = ({ date, prs, username }) => {
         </Typography>
         <Typography
           sx={{
-            color: alpha(theme.palette.common.white, TEXT_OPACITY.faint),
+            color: alpha(theme.palette.text.primary, TEXT_OPACITY.faint),
             fontSize: '0.75rem',
             mt: 0.25,
           }}
@@ -79,7 +82,7 @@ const DayPRsPanel: React.FC<DayPRsPanelProps> = ({ date, prs, username }) => {
         <Box sx={{ px: 2.5, py: 4, textAlign: 'center' }}>
           <Typography
             sx={{
-              color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+              color: alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
               fontSize: '0.85rem',
             }}
           >
@@ -95,7 +98,7 @@ const DayPRsPanel: React.FC<DayPRsPanelProps> = ({ date, prs, username }) => {
           }}
         >
           {dayPRs.map((pr, idx) => {
-            const dotColor = prStateColor(pr);
+            const dotColor = prStateColor(pr, theme.palette);
             const stateLabel = prStateLabel(pr);
             const detailsHref = `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`;
             const timeLabel = pr.mergedAt
@@ -155,7 +158,7 @@ const DayPRsPanel: React.FC<DayPRsPanelProps> = ({ date, prs, username }) => {
                     <Typography
                       sx={{
                         color: alpha(
-                          theme.palette.common.white,
+                          theme.palette.text.primary,
                           TEXT_OPACITY.faint,
                         ),
                         fontSize: '0.7rem',

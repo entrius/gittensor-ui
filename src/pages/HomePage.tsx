@@ -37,10 +37,15 @@ const HomePage: React.FC = () => {
             sx={(theme) => ({
               height: window.innerWidth < 600 ? '96px' : '128px',
               width: 'auto',
-              filter: `grayscale(100%) invert(1) drop-shadow(0 0 12px ${alpha(
-                theme.palette.text.primary,
-                0.8,
-              )})`,
+              // Dark: invert SVG to white with a subtle glow.
+              // Light: show the original dark artwork as-is (no inversion).
+              filter:
+                theme.palette.mode === 'dark'
+                  ? `brightness(0) invert(1) drop-shadow(0 0 12px ${alpha(
+                      theme.palette.text.primary,
+                      0.8,
+                    )})`
+                  : 'none',
             })}
           />
           <Typography
@@ -77,7 +82,8 @@ const HomePage: React.FC = () => {
                 background: alpha(theme.palette.background.default, 0.4),
                 border: '1px solid',
                 borderColor: theme.palette.border.light,
-                backdropFilter: 'blur(10px)',
+                backdropFilter:
+                  theme.palette.mode === 'dark' ? 'blur(10px)' : 'none',
                 boxShadow: `0 8px 32px ${alpha(theme.palette.background.default, 0.3)}`,
                 transition: 'all 0.3s ease-in-out',
                 '&:hover': {

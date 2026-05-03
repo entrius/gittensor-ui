@@ -14,7 +14,6 @@ import {
   useRepoBountySummary,
   useRepositoryConfig,
 } from '../../api';
-import { RANK_COLORS, STATUS_COLORS } from '../../theme';
 import { formatTokenAmount } from '../../utils/format';
 import { isMergedPr } from '../../utils/prStatus';
 
@@ -116,7 +115,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
         >
           <Typography
             variant="body2"
-            sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
+            sx={{ fontSize: '13px', color: 'status.open' }}
           >
             Weight
           </Typography>
@@ -143,7 +142,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
         >
           <Typography
             variant="body2"
-            sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
+            sx={{ fontSize: '13px', color: 'status.open' }}
           >
             Total Score
           </Typography>
@@ -170,7 +169,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
         >
           <Typography
             variant="body2"
-            sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
+            sx={{ fontSize: '13px', color: 'status.open' }}
           >
             Merged PRs
           </Typography>
@@ -195,7 +194,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
         >
           <Typography
             variant="body2"
-            sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
+            sx={{ fontSize: '13px', color: 'status.open' }}
           >
             Closed Issues
           </Typography>
@@ -225,14 +224,14 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
             >
               <Typography
                 variant="body2"
-                sx={{ fontSize: '13px', color: RANK_COLORS.first }}
+                sx={{ fontSize: '13px', color: 'status.award' }}
               >
                 Bounties
               </Typography>
               <Typography
                 variant="body2"
                 sx={{
-                  color: RANK_COLORS.first,
+                  color: 'status.award',
                   fontSize: '13px',
                   fontWeight: 600,
                 }}
@@ -252,7 +251,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
               >
                 <Typography
                   variant="body2"
-                  sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
+                  sx={{ fontSize: '13px', color: 'status.open' }}
                 >
                   Available Rewards
                 </Typography>
@@ -279,14 +278,14 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
               >
                 <Typography
                   variant="body2"
-                  sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
+                  sx={{ fontSize: '13px', color: 'status.open' }}
                 >
                   Total Paid Out
                 </Typography>
                 <Typography
                   variant="body2"
                   sx={{
-                    color: STATUS_COLORS.merged,
+                    color: theme.palette.status.merged,
                     fontSize: '13px',
                     fontWeight: 500,
                   }}
@@ -305,7 +304,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
               <Divider sx={{ borderColor: 'border.light', my: 0.5 }} />
               <Typography
                 variant="body2"
-                sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
+                sx={{ fontSize: '13px', color: 'status.open' }}
               >
                 Scorable Branches
               </Typography>

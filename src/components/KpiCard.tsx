@@ -8,7 +8,6 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import theme from '../theme';
 
 export interface KpiCardProps {
   title: string;
@@ -26,7 +25,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
   sx,
 }) => {
   const muiTheme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
   const isLarge = variant === 'large';
   const padding = isLarge
     ? { py: isMobile ? 1.6 : 2 }
@@ -48,8 +47,6 @@ const KpiCard: React.FC<KpiCardProps> = ({
     <Card
       sx={{
         borderRadius: 3,
-        border: `1px solid ${muiTheme.palette.border.light}`,
-        backgroundColor: 'transparent',
         height: '100%',
         ...sx,
       }}

@@ -8,6 +8,7 @@ import {
   Popover,
 } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
+import { modeActiveTabSx } from '../../utils/themeUtils';
 import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
@@ -16,7 +17,6 @@ import { SectionCard } from './SectionCard';
 import { MinerCard } from './MinerCard';
 import { MinersList } from './MinersList';
 import { SearchInput } from '../common/SearchInput';
-import { STATUS_COLORS } from '../../theme';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
 import { useWatchlist } from '../../hooks/useWatchlist';
 import { type SortOrder } from '../../utils/ExplorerUtils';
@@ -360,8 +360,11 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           top: 0,
           zIndex: 100,
           backgroundColor: (theme: Theme) =>
-            alpha(theme.palette.background.default, 0.65),
-          backdropFilter: 'blur(12px)',
+            theme.palette.mode === 'dark'
+              ? alpha(theme.palette.background.default, 0.65)
+              : theme.palette.background.paper,
+          backdropFilter: (theme: Theme) =>
+            theme.palette.mode === 'dark' ? 'blur(12px)' : 'none',
           borderBottom: (theme: Theme) =>
             `1px solid ${theme.palette.border.light}`,
           boxShadow: 'none',
@@ -493,7 +496,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
               cursor: 'pointer',
               transition: 'all 0.2s',
               backgroundColor: theme.palette.surface.subtle,
-              color: STATUS_COLORS.open,
+              color: 'status.open',
               '&:hover': {
                 backgroundColor: theme.palette.surface.light,
                 color: theme.palette.text.primary,
@@ -593,17 +596,9 @@ const SortButtons: React.FC<SortButtonsProps> = ({
             gap: 0.5,
             borderRadius: 2,
             cursor: 'pointer',
-            backgroundColor: isActive
-              ? alpha(theme.palette.text.primary, 0.1)
-              : 'transparent',
-            color: isActive ? theme.palette.text.primary : STATUS_COLORS.open,
-            border: '1px solid',
-            borderColor: isActive ? theme.palette.border.medium : 'transparent',
-            transition: 'all 0.2s',
-            '&:hover': {
-              backgroundColor: theme.palette.surface.light,
-              color: theme.palette.text.primary,
-            },
+            border: 'none',
+            transition: 'background-color 0.18s ease, color 0.18s ease',
+            ...modeActiveTabSx(theme, isActive, { darkAlpha: 0.1 }),
           })}
         >
           <Typography
@@ -618,7 +613,14 @@ const SortButtons: React.FC<SortButtonsProps> = ({
           {isActive && (
             <Typography
               component="span"
-              sx={{ fontSize: '0.7rem', opacity: 0.7 }}
+              sx={(t) => ({
+                fontSize: '0.65rem',
+                opacity: 0.85,
+                color:
+                  t.palette.mode === 'dark'
+                    ? 'inherit'
+                    : t.palette.common.white,
+              })}
             >
               {sortDirection === 'asc' ? '▲' : '▼'}
             </Typography>
@@ -680,21 +682,12 @@ const ViewModeToggle: React.FC<ViewModeToggleProps> = ({
                 border: 'none',
                 outline: 'none',
                 cursor: 'pointer',
-                backgroundColor: isActive
-                  ? alpha(theme.palette.text.primary, 0.1)
-                  : 'transparent',
-                color: isActive
-                  ? theme.palette.text.primary
-                  : STATUS_COLORS.open,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  backgroundColor: theme.palette.surface.light,
-                  color: theme.palette.text.primary,
-                },
+                transition: 'background-color 0.18s ease, color 0.18s ease',
                 '&:focus-visible': {
                   outline: `2px solid ${theme.palette.status.info}`,
                   outlineOffset: -2,
                 },
+                ...modeActiveTabSx(theme, isActive, { darkAlpha: 0.1 }),
               })}
             >
               <Icon sx={{ fontSize: '1.05rem' }} />
@@ -925,6 +918,20 @@ const ELIGIBILITY_OPTIONS: Array<{ value: EligibilityFilter; label: string }> =
     { value: 'ineligible', label: 'Ineligible' },
   ];
 
+const getEligibilityActiveColor = (
+  value: EligibilityFilter,
+  theme: Theme,
+): string => {
+  switch (value) {
+    case 'eligible':
+      return theme.palette.status.success;
+    case 'ineligible':
+      return theme.palette.status.closed;
+    default:
+      return theme.palette.status.neutral;
+  }
+};
+
 const EligibilityToggle: React.FC<EligibilityToggleProps> = ({
   value,
   onChange,
@@ -936,7 +943,8 @@ const EligibilityToggle: React.FC<EligibilityToggleProps> = ({
       gap: compact ? 0.35 : 0.5,
       p: compact ? 0.35 : 0.5,
       borderRadius: 1.75,
-      backgroundColor: theme.palette.surface.light,
+      backgroundColor: theme.palette.surface.control,
+      border: `1px solid ${theme.palette.mode === 'dark' ? 'transparent' : theme.palette.border.light}`,
       flexShrink: 0,
     })}
   >
@@ -956,26 +964,21 @@ const EligibilityToggle: React.FC<EligibilityToggleProps> = ({
             alignItems: 'center',
             border: 0,
             borderRadius: 1.25,
-            backgroundColor: isActive
-              ? alpha(theme.palette.text.primary, 0.15)
-              : 'transparent',
-            color: isActive
-              ? theme.palette.text.primary
-              : theme.palette.text.tertiary,
             cursor: 'pointer',
             fontFamily: FONTS.mono,
             fontSize: compact ? '0.65rem' : '0.72rem',
             fontWeight: isActive ? 600 : 500,
             lineHeight: 1,
-            transition: 'all 0.2s ease',
-            '&:hover': {
-              backgroundColor: alpha(theme.palette.text.primary, 0.1),
-              color: theme.palette.text.primary,
-            },
+            transition: 'background-color 0.18s ease, color 0.18s ease',
             '&:focus-visible': {
               outline: `1px solid ${theme.palette.border.medium}`,
               outlineOffset: 1,
             },
+            ...modeActiveTabSx(theme, isActive, {
+              activeColor: getEligibilityActiveColor(option.value, theme),
+              darkAlpha: 0.15,
+              darkHoverAlpha: 0.18,
+            }),
           })}
         >
           {option.label}

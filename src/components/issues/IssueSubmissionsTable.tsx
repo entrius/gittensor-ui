@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { IssueSubmission } from '../../api/models/Issues';
-import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { TEXT_OPACITY } from '../../theme';
 import { formatDate } from '../../utils/format';
 import { LinkBox } from '../common/linkBehavior';
 import {
@@ -41,7 +41,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
           #{submission.number}
           {submission.isWinner && (
             <EmojiEventsIcon
-              sx={{ fontSize: 16, color: STATUS_COLORS.award }}
+              sx={{ fontSize: 16, color: theme.palette.status.award }}
             />
           )}
         </Box>
@@ -70,7 +70,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
             sx={{
               fontSize: '0.85rem',
-              color: STATUS_COLORS.info,
+              color: theme.palette.status.info,
               cursor: 'pointer',
               '&:hover': { textDecoration: 'underline' },
             }}
@@ -78,7 +78,9 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
             {submission.authorLogin}
           </LinkBox>
         ) : (
-          <Typography sx={{ fontSize: '0.85rem', color: STATUS_COLORS.info }}>
+          <Typography
+            sx={{ fontSize: '0.85rem', color: theme.palette.status.info }}
+          >
             {submission.authorLogin}
           </Typography>
         ),
@@ -128,7 +130,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
         <Typography
           sx={{
             fontSize: '0.8rem',
-            color: alpha(theme.palette.common.white, 0.6),
+            color: alpha(theme.palette.text.primary, 0.6),
           }}
         >
           {formatDate(submission.prCreatedAt)}
@@ -156,7 +158,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
           sx={{
             fontSize: '0.8rem',
             fontWeight: 600,
-            color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+            color: alpha(theme.palette.text.primary, TEXT_OPACITY.tertiary),
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
           }}
@@ -181,7 +183,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
               <Typography
                 sx={{
                   color: alpha(
-                    theme.palette.common.white,
+                    theme.palette.text.primary,
                     TEXT_OPACITY.tertiary,
                   ),
                   fontSize: '0.9rem',

@@ -68,7 +68,7 @@ const CHART_MODE_TOGGLE_BACKGROUND_OPACITY = 0.035;
 const CHART_MODE_TOGGLE_SLIDER_INSET = 3;
 const CHART_MODE_TOGGLE_SLIDER_WIDTH = `calc(50% - ${CHART_MODE_TOGGLE_SLIDER_INSET}px)`;
 const CHART_MODE_TOGGLE_SLIDER_OPACITY = 0.95;
-const CHART_MODE_TOGGLE_SLIDER_SHADOW_OPACITY = 0.16;
+
 const CHART_MODE_TOGGLE_TRANSITION =
   'transform 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease';
 const CHART_MODE_TOGGLE_BUTTON_SIZE = {
@@ -151,7 +151,7 @@ const getChartModeToggleSx = (theme: Theme, chartMode: TrendChartMode) => ({
   position: 'relative',
   gap: 0,
   p: CHART_MODE_TOGGLE_PADDING,
-  borderRadius: 999,
+  borderRadius: '50px',
   border: `1px solid ${alpha(
     theme.palette.text.primary,
     CHART_MODE_TOGGLE_BORDER_OPACITY,
@@ -168,14 +168,16 @@ const getChartModeToggleSx = (theme: Theme, chartMode: TrendChartMode) => ({
     bottom: CHART_MODE_TOGGLE_SLIDER_INSET,
     left: CHART_MODE_TOGGLE_SLIDER_INSET,
     width: CHART_MODE_TOGGLE_SLIDER_WIDTH,
-    borderRadius: 999,
-    backgroundColor: alpha(
-      theme.palette.diff.additions,
-      CHART_MODE_TOGGLE_SLIDER_OPACITY,
-    ),
-    boxShadow: `0 8px 18px ${alpha(
-      theme.palette.diff.additions,
-      CHART_MODE_TOGGLE_SLIDER_SHADOW_OPACITY,
+    borderRadius: '50px',
+    backgroundColor:
+      theme.palette.mode === 'dark'
+        ? alpha(theme.palette.diff.additions, CHART_MODE_TOGGLE_SLIDER_OPACITY)
+        : theme.palette.status.success,
+    boxShadow: `0 4px 12px ${alpha(
+      theme.palette.mode === 'dark'
+        ? theme.palette.diff.additions
+        : theme.palette.status.success,
+      0.3,
     )}`,
     transform: getChartModeSliderOffset(chartMode),
     transition: CHART_MODE_TOGGLE_TRANSITION,
@@ -225,8 +227,14 @@ const buildContributionTrendChartOption = ({
   visibleSeries: DashboardTrendSeries[];
 }) => {
   const labelInterval = range === '35d' ? 6 : range === '7d' ? 0 : 'auto';
-  const tooltipPrimaryColor = theme.palette.text.primary;
-  const tooltipSecondaryColor = alpha(theme.palette.text.primary, 0.66);
+  const isDark = theme.palette.mode === 'dark';
+  const tooltipLabelColor = isDark
+    ? alpha(theme.palette.text.primary, 0.6)
+    : theme.palette.text.secondary;
+  const tooltipValueColor = theme.palette.text.primary;
+  const tooltipDateColor = isDark
+    ? theme.palette.text.primary
+    : theme.palette.text.secondary;
   const chartFontFamily = echartsFontFamily(theme);
   const {
     labelColor: chartLabelColor,
@@ -273,16 +281,17 @@ const buildContributionTrendChartOption = ({
         const rows = params
           .map(
             (entry) =>
-              `<div style="display:flex;justify-content:space-between;gap:24px;">
-                <span style="color:${tooltipSecondaryColor};">${entry.seriesName}</span>
-                <span style="color:${tooltipPrimaryColor};font-weight:700;">${entry.value}</span>
+              `<div style="display:flex;justify-content:space-between;gap:24px;align-items:baseline;">
+                <span style="color:${tooltipLabelColor};font-size:10px;">${entry.seriesName}</span>
+                <span style="color:${tooltipValueColor};font-weight:700;">${entry.value}</span>
               </div>`,
           )
           .join('');
 
+        const divider = `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : theme.palette.border.subtle}`;
         return `
-          <div style="display:grid;gap:6px;font-family:${chartFontFamily};">
-            <div style="color:${tooltipPrimaryColor};font-weight:700;">${params[0]?.axisValueLabel || ''}</div>
+          <div style="display:grid;gap:5px;font-family:${chartFontFamily};">
+            <div style="color:${tooltipDateColor};font-weight:600;font-size:11px;padding-bottom:4px;border-bottom:${divider};margin-bottom:1px;">${params[0]?.axisValueLabel || ''}</div>
             ${rows}
           </div>
         `;
@@ -509,11 +518,20 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
                 letterSpacing: '0.05em',
                 textTransform: 'uppercase',
                 '&.Mui-selected': {
-                  color: theme.palette.background.paper,
-                  backgroundColor: alpha(theme.palette.diff.additions, 0.95),
+                  color:
+                    theme.palette.mode === 'dark'
+                      ? theme.palette.background.paper
+                      : theme.palette.common.white,
+                  backgroundColor:
+                    theme.palette.mode === 'dark'
+                      ? alpha(theme.palette.diff.additions, 0.95)
+                      : theme.palette.status.success,
                 },
                 '&.Mui-selected:hover': {
-                  backgroundColor: alpha(theme.palette.diff.additions, 0.95),
+                  backgroundColor:
+                    theme.palette.mode === 'dark'
+                      ? alpha(theme.palette.diff.additions, 0.95)
+                      : theme.palette.status.success,
                 },
                 '&:hover': {
                   backgroundColor: alpha(theme.palette.text.primary, 0.06),
@@ -573,7 +591,7 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
                   sx={{
                     px: 0.95,
                     py: 0.48,
-                    borderRadius: 999,
+                    borderRadius: '50px',
                     border: isHidden
                       ? `1px solid ${theme.palette.border.subtle}`
                       : `1px solid ${theme.palette.border.light}`,

@@ -1121,7 +1121,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
             borderBottom: otherExpanded ? '1px solid' : 'none',
             borderColor: 'border.light',
             '&:hover': {
-              bgcolor: (t) => alpha(t.palette.common.white, 0.03),
+              bgcolor: (t) => alpha(t.palette.text.primary, 0.03),
             },
           }}
         >

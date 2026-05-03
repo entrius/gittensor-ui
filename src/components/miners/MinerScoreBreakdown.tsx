@@ -26,7 +26,7 @@ import {
   usePullRequestDetails,
   type CommitLog,
 } from '../../api';
-import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
+import { tooltipSlotProps } from '../../theme';
 import {
   parseNumber,
   calculateOpenIssueThreshold,
@@ -64,15 +64,16 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
   format = 'multiplier',
   pillColor,
 }) => {
+  const muiTheme = useTheme();
   const color =
     pillColor ??
     (format === 'multiplier'
       ? value === 1
-        ? STATUS_COLORS.neutral
+        ? muiTheme.palette.status.neutral
         : value > 1
-          ? STATUS_COLORS.success
-          : STATUS_COLORS.warningOrange
-      : STATUS_COLORS.neutral);
+          ? muiTheme.palette.status.success
+          : muiTheme.palette.status.warningOrange
+      : muiTheme.palette.status.neutral);
 
   const display =
     format === 'percent'
@@ -99,7 +100,7 @@ const MultiplierPill: React.FC<MultiplierPillProps> = ({
         <Typography
           sx={{
             fontSize: '0.62rem',
-            color: STATUS_COLORS.neutral,
+            color: muiTheme.palette.status.neutral,
             textTransform: 'uppercase',
           }}
         >
@@ -124,6 +125,7 @@ interface PrScoreRowProps {
 }
 
 const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr }) => {
+  const theme = useTheme();
   const [expanded, setExpanded] = useState(false);
   const prLinkProps = useLinkBehavior<HTMLAnchorElement>(
     `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
@@ -144,10 +146,10 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr }) => {
   const isStale = isMerged && isOutsideScoringWindow(pr.mergedAt);
 
   const statusColor = isMerged
-    ? STATUS_COLORS.merged
+    ? theme.palette.status.merged
     : isClosed
-      ? STATUS_COLORS.closed
-      : STATUS_COLORS.open;
+      ? theme.palette.status.closed
+      : theme.palette.status.open;
   const statusLabel = isMerged ? 'Merged' : isClosed ? 'Closed' : 'Open';
 
   const repoName = pr.repository.split('/').pop() || pr.repository;
@@ -235,7 +237,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr }) => {
             color: isClosed
               ? (t) => alpha(t.palette.text.primary, 0.3)
               : isOpen
-                ? STATUS_COLORS.warningOrange
+                ? theme.palette.status.warningOrange
                 : 'text.primary',
             opacity: isStale ? 0.4 : 1,
             flexShrink: 0,
@@ -370,7 +372,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr }) => {
                   component="span"
                   sx={{
                     fontSize: '0.65rem',
-                    color: STATUS_COLORS.warningOrange,
+                    color: theme.palette.status.warningOrange,
                   }}
                 >
                   collateral: -{collateral.toFixed(4)}
@@ -487,6 +489,7 @@ const MetricRow: React.FC<{
 );
 
 const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
+  const theme = useTheme();
   const { data: minerStats } = useMinerStats(githubId);
 
   if (!minerStats) return null;
@@ -582,7 +585,11 @@ const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
             <MetricRow
               label="Eligibility"
               value={isEligible ? 'Eligible' : 'Ineligible'}
-              color={isEligible ? STATUS_COLORS.success : STATUS_COLORS.neutral}
+              color={
+                isEligible
+                  ? theme.palette.status.success
+                  : theme.palette.status.neutral
+              }
               sub="Requires 7 valid solved issues"
             />
           </Grid>
@@ -601,7 +608,9 @@ const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
               label="Open Issues"
               value={String(openIssues)}
               color={
-                openIssues >= openThreshold ? STATUS_COLORS.error : undefined
+                openIssues >= openThreshold
+                  ? theme.palette.status.error
+                  : undefined
               }
               sub={`Threshold: ${openThreshold}`}
             />

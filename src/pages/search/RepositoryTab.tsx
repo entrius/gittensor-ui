@@ -12,10 +12,14 @@ import {
 import { type RepoSearchData } from './searchData';
 
 const getRankBadgeSx = (theme: Theme, rank: number) => {
+  const isDark = theme.palette.mode === 'dark';
   const rankAccentColor = rank <= 3 ? getRankColors(rank).color : null;
 
   return {
-    backgroundColor: theme.palette.background.default,
+    backgroundColor:
+      !isDark && rankAccentColor
+        ? rankAccentColor
+        : theme.palette.background.default,
     borderRadius: 0.5,
     minWidth: 22,
     height: 22,
@@ -26,11 +30,14 @@ const getRankBadgeSx = (theme: Theme, rank: number) => {
     px: 0.75,
     border: '1px solid',
     borderColor: rankAccentColor
-      ? alpha(rankAccentColor, 0.4)
+      ? !isDark
+        ? rankAccentColor
+        : alpha(rankAccentColor, 0.4)
       : theme.palette.border.light,
-    boxShadow: rankAccentColor
-      ? `0 0 12px ${alpha(rankAccentColor, 0.4)}, 0 0 4px ${alpha(rankAccentColor, 0.2)}`
-      : 'none',
+    boxShadow:
+      isDark && rankAccentColor
+        ? `0 0 12px ${alpha(rankAccentColor, 0.4)}, 0 0 4px ${alpha(rankAccentColor, 0.2)}`
+        : 'none',
   };
 };
 
@@ -48,15 +55,20 @@ const repositoryColumns: DataTableColumn<RepoSearchData>[] = [
       <Box sx={(theme) => getRankBadgeSx(theme, repo.rank)}>
         <Typography
           component="span"
-          sx={(theme) => ({
-            color:
-              (repo.rank <= 3 ? getRankColors(repo.rank).color : null) ||
-              theme.palette.text.secondary,
-
-            fontSize: '0.65rem',
-            fontWeight: 600,
-            lineHeight: 1,
-          })}
+          sx={(theme) => {
+            const isDark = theme.palette.mode === 'dark';
+            const rankColor =
+              repo.rank <= 3 ? getRankColors(repo.rank).color : null;
+            return {
+              color:
+                !isDark && rankColor
+                  ? theme.palette.common.white
+                  : rankColor || theme.palette.text.secondary,
+              fontSize: '0.65rem',
+              fontWeight: 600,
+              lineHeight: 1,
+            };
+          }}
         >
           {repo.rank}
         </Typography>

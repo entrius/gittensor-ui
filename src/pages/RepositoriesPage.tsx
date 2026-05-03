@@ -39,7 +39,7 @@ const HighlightRow: React.FC<{
         cursor: 'pointer',
         transition: 'background 0.15s',
         mx: -1,
-        '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
+        '&:hover': { backgroundColor: 'surface.light' },
       }}
     >
       <Box
@@ -58,7 +58,8 @@ const HighlightRow: React.FC<{
             width: 24,
             height: 24,
             flexShrink: 0,
-            border: '1px solid rgba(255,255,255,0.1)',
+            border: '1px solid',
+            borderColor: 'border.light',
             backgroundColor: avatarBg,
           }}
         />

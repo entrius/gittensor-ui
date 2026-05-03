@@ -38,7 +38,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         width,
         '& .MuiOutlinedInput-root': {
           color: theme.palette.text.primary,
-          backgroundColor: alpha(theme.palette.background.default, 0.24),
+          backgroundColor: theme.palette.surface.subtle,
           fontSize: '0.8rem',
           borderRadius: 2,
           height: 32,

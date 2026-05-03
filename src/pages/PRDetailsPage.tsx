@@ -13,7 +13,6 @@ import {
 } from '../components';
 import { usePullRequestDetails } from '../api';
 import { serializePRKey } from '../hooks/useWatchlist';
-import { STATUS_COLORS } from '../theme';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CodeIcon from '@mui/icons-material/Code';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
@@ -136,7 +135,7 @@ const PRDetailsPage: React.FC = () => {
                 allowScrollButtonsMobile={false}
                 sx={(theme) => ({
                   '& .MuiTab-root': {
-                    color: STATUS_COLORS.open,
+                    color: 'status.open',
                     fontFamily:
                       '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
                     textTransform: 'none',

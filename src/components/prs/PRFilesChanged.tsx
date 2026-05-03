@@ -22,6 +22,7 @@ import {
   TableContainer,
   TableRow,
   alpha,
+  useTheme,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -44,7 +45,7 @@ import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
-import { STATUS_COLORS, DIFF_COLORS, scrollbarSx } from '../../theme';
+import { DIFF_COLORS, scrollbarSx } from '../../theme';
 import { useClipboardCopy } from '../../hooks/useClipboardCopy';
 
 interface PRFile {
@@ -89,10 +90,8 @@ type SplitDiffRow =
   | { type: 'normal'; left: Change; right: Change }
   | { type: 'modify'; left: Change | null; right: Change | null };
 
-const selectedFileBackground = alpha(STATUS_COLORS.info, 0.15);
 const addedLineBackground = alpha(DIFF_COLORS.additions, 0.15);
 const deletedLineBackground = alpha(DIFF_COLORS.deletions, 0.15);
-const unchangedFileColor = alpha(STATUS_COLORS.open, 0.5);
 
 const buildFullTree = (
   allFilesParams: { path: string; type: 'blob' | 'tree' }[],
@@ -166,6 +165,8 @@ const FileTreeItem: React.FC<{
   onSelect: (file: PRFile) => void;
   selectedParams: { filename: string | null };
 }> = ({ node, level, onSelect, selectedParams }) => {
+  const theme = useTheme();
+  const unchangedFileColor = alpha(theme.palette.status.open, 0.5);
   // Auto-expand if it has changes, otherwise collapse to reduce noise in full tree
   const [open, setOpen] = useState(!!node.hasChanges);
   const hasChildren = Object.keys(node.children).length > 0;
@@ -214,12 +215,14 @@ const FileTreeItem: React.FC<{
           py: 0.25,
           minHeight: 28,
           height: 'auto',
-          backgroundColor: isSelected ? selectedFileBackground : 'transparent',
+          backgroundColor: isSelected
+            ? theme.palette.highlight.info
+            : 'transparent',
           borderLeft: '2px solid',
           borderLeftColor: isSelected ? 'status.info' : 'transparent',
           '&:hover': {
             backgroundColor: isSelected
-              ? selectedFileBackground
+              ? theme.palette.highlight.info
               : 'surface.light',
           },
           opacity: node.file || node.hasChanges ? 1 : 0.6, // Dim unchanged items
@@ -1291,6 +1294,7 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
   pullRequestNumber,
   headSha,
 }) => {
+  const theme = useTheme();
   // ... existing state ...
   const [files, setFiles] = useState<PRFile[]>([]);
   const [fullTreeData, setFullTreeData] = useState<any[]>([]);
@@ -1380,9 +1384,9 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
       <Box
         sx={{
           p: 3,
-          border: `1px solid ${alpha(STATUS_COLORS.error, 0.3)}`,
+          border: `1px solid ${alpha(theme.palette.status.error, 0.3)}`,
           borderRadius: 2,
-          backgroundColor: alpha(STATUS_COLORS.error, 0.05),
+          backgroundColor: alpha(theme.palette.status.error, 0.05),
           color: 'status.error',
           textAlign: 'center',
         }}
@@ -1475,7 +1479,7 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
                   py: 0.5,
                   '&.Mui-selected': {
                     color: 'text.primary',
-                    backgroundColor: selectedFileBackground,
+                    backgroundColor: theme.palette.highlight.info,
                     borderColor: 'status.info',
                   },
                   '&:hover': {

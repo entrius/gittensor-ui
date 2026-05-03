@@ -3,6 +3,7 @@ import { Box, Card, Typography, Tooltip, alpha, useTheme } from '@mui/material';
 import { ActivityCalendar } from 'react-activity-calendar';
 import {
   CONTRIBUTION_HEATMAP_SCALE,
+  CONTRIBUTION_HEATMAP_SCALE_LIGHT,
   TEXT_OPACITY,
   scrollbarSx,
 } from '../theme';
@@ -39,8 +40,10 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
   onDayClick,
 }) => {
   const theme = useTheme();
-  const heatmapLevels = [...CONTRIBUTION_HEATMAP_SCALE];
-  const heatmapTheme = { light: heatmapLevels, dark: heatmapLevels };
+  const heatmapTheme = {
+    light: [...CONTRIBUTION_HEATMAP_SCALE_LIGHT],
+    dark: [...CONTRIBUTION_HEATMAP_SCALE],
+  };
   const isEmpty = data.length === 0;
   const interactive = !!onDayClick;
 
@@ -60,7 +63,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
         <Typography
           variant="body2"
           sx={{
-            color: alpha(theme.palette.common.white, TEXT_OPACITY.faint),
+            color: alpha(theme.palette.text.primary, TEXT_OPACITY.faint),
             fontSize: '0.85rem',
             mt: 0.5,
           }}
@@ -83,7 +86,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
           >
             <Typography
               sx={{
-                color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+                color: alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
                 fontSize: '0.85rem',
                 textAlign: 'center',
               }}
@@ -93,7 +96,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
             {emptySubtitle && (
               <Typography
                 sx={{
-                  color: alpha(theme.palette.common.white, TEXT_OPACITY.ghost),
+                  color: alpha(theme.palette.text.primary, TEXT_OPACITY.ghost),
                   fontSize: '0.75rem',
                   textAlign: 'center',
                   mt: 0.5,
@@ -182,7 +185,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
         <Typography
           variant="caption"
           sx={{
-            color: alpha(theme.palette.common.white, 0.25),
+            color: alpha(theme.palette.text.primary, 0.25),
             display: 'block',
             fontStyle: 'italic',
             fontSize: '0.7rem',

@@ -50,7 +50,7 @@ export const AboutContent: React.FC = () => {
               <Typography
                 variant="body1"
                 sx={{
-                  color: alpha(theme.palette.common.white, 0.8),
+                  color: alpha(theme.palette.text.primary, 0.8),
                   lineHeight: 1.8,
                   fontSize: '1.05rem',
                   mb: 2,
@@ -64,7 +64,7 @@ export const AboutContent: React.FC = () => {
               <Typography
                 variant="body1"
                 sx={{
-                  color: alpha(theme.palette.common.white, 0.8),
+                  color: alpha(theme.palette.text.primary, 0.8),
                   lineHeight: 1.8,
                   fontSize: '1.05rem',
                 }}
@@ -82,7 +82,7 @@ export const AboutContent: React.FC = () => {
                 sx={{
                   p: 3,
                   borderRadius: 4,
-                  background: `linear-gradient(135deg, ${alpha(theme.palette.common.white, 0.05)} 0%, ${alpha(theme.palette.common.white, 0.02)} 100%)`,
+                  background: `linear-gradient(135deg, ${alpha(theme.palette.text.primary, 0.05)} 0%, ${alpha(theme.palette.text.primary, 0.02)} 100%)`,
                   border: `1px solid ${theme.palette.border.light}`,
                 }}
               >
@@ -179,7 +179,7 @@ export const AboutContent: React.FC = () => {
                     p: 4,
                     height: '100%',
                     borderRadius: 4,
-                    background: alpha(theme.palette.common.white, 0.02),
+                    background: alpha(theme.palette.text.primary, 0.02),
                     border: '1px solid',
                     borderColor: 'border.subtle',
                   }}
@@ -224,7 +224,7 @@ export const AboutContent: React.FC = () => {
             textAlign: 'center',
             p: 6,
             borderRadius: 4,
-            background: `linear-gradient(180deg, transparent 0%, ${alpha(theme.palette.common.white, 0.03)} 100%)`,
+            background: `linear-gradient(180deg, transparent 0%, ${alpha(theme.palette.text.primary, 0.03)} 100%)`,
             border: `1px solid ${theme.palette.border.light}`,
             mb: 8,
           }}
@@ -268,7 +268,7 @@ export const AboutContent: React.FC = () => {
             mt: { xs: 4, sm: 5, md: 6 },
             p: { xs: 3, sm: 4 },
             borderRadius: 3,
-            backgroundColor: alpha(theme.palette.common.black, 0.3),
+            backgroundColor: theme.palette.surface.subtle,
             border: `1px solid ${theme.palette.border.light}`,
             position: 'relative',
             overflow: 'hidden',
@@ -291,7 +291,7 @@ export const AboutContent: React.FC = () => {
           <Typography
             variant="body1"
             lineHeight={1.8}
-            color={alpha(theme.palette.common.white, 0.9)}
+            color={alpha(theme.palette.text.primary, 0.9)}
             fontSize={{ xs: '0.95rem', sm: '1rem' }}
             sx={{ mb: 2 }}
           >
@@ -317,7 +317,7 @@ export const AboutContent: React.FC = () => {
           <Typography
             variant="body1"
             lineHeight={1.8}
-            color={alpha(theme.palette.common.white, 0.9)}
+            color={alpha(theme.palette.text.primary, 0.9)}
             fontSize={{ xs: '0.95rem', sm: '1rem' }}
           >
             Review our codebase and get started mining by checking out the

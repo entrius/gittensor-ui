@@ -9,6 +9,7 @@ import {
   Divider,
   Tooltip,
 } from '@mui/material';
+import { useTheme, alpha } from '@mui/material/styles';
 import { useLocation } from 'react-router-dom';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import GroupsIcon from '@mui/icons-material/Groups';
@@ -19,9 +20,14 @@ import FolderCopyIcon from '@mui/icons-material/FolderCopy';
 import SchoolIcon from '@mui/icons-material/School';
 import { useLinkBehavior } from '../common/linkBehavior';
 import { useWatchlistTotalCount } from '../../hooks/useWatchlist';
+import { useThemeMode } from '../../hooks/useThemeMode';
 
-const LOGO_IMG_FILTER =
-  'brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))';
+// In dark mode the SVG logo is inverted to white with a glow; in light mode
+// the original dark artwork is preferred for contrast against a white surface.
+const buildLogoFilter = (mode: 'dark' | 'light') =>
+  mode === 'dark'
+    ? 'brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))'
+    : 'brightness(0)';
 
 const COLLAPSED_LOGO_TOOLTIP_POPPER = {
   popperOptions: {
@@ -68,14 +74,17 @@ interface SidebarProps {
   collapsed?: boolean;
 }
 
-const GittensorLogoImg: React.FC<{ heightPx: number }> = ({ heightPx }) => (
+const GittensorLogoImg: React.FC<{
+  heightPx: number;
+  mode: 'dark' | 'light';
+}> = ({ heightPx, mode }) => (
   <img
     src="/gt-logo.svg"
     alt="Gittensor"
     style={{
       height: `${heightPx}px`,
       width: 'auto',
-      filter: LOGO_IMG_FILTER,
+      filter: buildLogoFilter(mode),
     }}
   />
 );
@@ -83,6 +92,7 @@ const GittensorLogoImg: React.FC<{ heightPx: number }> = ({ heightPx }) => (
 const Sidebar: React.FC<SidebarProps> = ({ onNavigate, collapsed = false }) => {
   const location = useLocation();
   const watchlistCount = useWatchlistTotalCount();
+  const { mode } = useThemeMode();
 
   const navItems = [
     { label: 'dashboard', path: '/dashboard', icon: <DashboardIcon /> },
@@ -106,7 +116,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, collapsed = false }) => {
 
   const logoLink = (
     <SidebarLogoLink onNavigate={onNavigate} collapsed={collapsed}>
-      <GittensorLogoImg heightPx={collapsed ? 30 : 60} />
+      <GittensorLogoImg heightPx={collapsed ? 30 : 60} mode={mode} />
     </SidebarLogoLink>
   );
 
@@ -254,6 +264,11 @@ const SidebarNavLink: React.FC<{
   const linkProps = useLinkBehavior<HTMLAnchorElement>(path, {
     onClick: () => onNavigate?.(),
   });
+  const theme = useTheme();
+  const baseColor =
+    theme.palette.mode === 'dark'
+      ? theme.palette.common.white
+      : theme.palette.common.black;
 
   const iconNode =
     collapsed && badge ? (
@@ -344,15 +359,24 @@ const SidebarNavLink: React.FC<{
         minWidth: 0,
         py: collapsed ? 1.25 : 1.5,
         px: collapsed ? 1 : 2,
-        color: '#ffffff',
+        color:
+          theme.palette.mode === 'dark'
+            ? 'text.primary'
+            : isActive
+              ? theme.palette.primary.main
+              : theme.palette.text.secondary,
         textDecoration: 'none',
         fontSize: NAV_LABEL_FONT,
         textTransform: 'none',
-        backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+        backgroundColor: isActive
+          ? theme.palette.mode === 'dark'
+            ? alpha(baseColor, 0.1)
+            : theme.palette.surface.accent
+          : 'transparent',
         borderLeft: collapsed
           ? 'none'
           : isActive
-            ? '2px solid #ffffff'
+            ? `2px solid ${theme.palette.mode === 'dark' ? baseColor : theme.palette.primary.main}`
             : '2px solid transparent',
         borderRadius: collapsed ? 1.5 : 0,
         textAlign: collapsed ? 'center' : 'left',
@@ -363,7 +387,10 @@ const SidebarNavLink: React.FC<{
           flexShrink: 0,
         },
         '&:hover': {
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          backgroundColor:
+            theme.palette.mode === 'dark'
+              ? alpha(baseColor, 0.05)
+              : theme.palette.surface.light,
           color: 'primary.main',
         },
       }}
