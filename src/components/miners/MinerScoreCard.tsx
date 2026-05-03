@@ -42,6 +42,7 @@ import {
   parseNumber,
 } from '../../utils/ExplorerUtils';
 import { credibilityColor } from '../../utils/format';
+import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 
 const formatTimeAgo = (date: Date): string => {
   const now = new Date();
@@ -479,7 +480,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
         }}
       >
         <Avatar
-          src={`https://avatars.githubusercontent.com/${username}`}
+          src={getRepositoryOwnerAvatarSrc(username)}
           alt={username}
           sx={{
             width: { xs: 72, sm: 64 },

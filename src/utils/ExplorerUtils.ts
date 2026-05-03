@@ -8,11 +8,9 @@ import { type IssueBounty } from '../api/models/Issues';
 import { isMergedPr } from './prStatus';
 
 export const getGithubAvatarSrc = (username?: string | null) => {
-  if (username) {
-    return `https://avatars.githubusercontent.com/${username}`;
-  }
-
-  return '';
+  const normalized = username?.trim();
+  if (!normalized) return '';
+  return `https://github.com/${encodeURIComponent(normalized)}.png`;
 };
 
 // Parses numeric-like values and falls back when the value is missing or invalid.

@@ -16,6 +16,7 @@ import { STATUS_COLORS } from '../../theme';
 import { isMergedPr } from '../../utils/prStatus';
 import { parseNumber } from '../../utils/ExplorerUtils';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
+import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 
 interface RepositoryContributorsTableProps {
   repositoryFullName: string;
@@ -227,7 +228,7 @@ const RepositoryContributorsTable: React.FC<
           }}
         >
           <Avatar
-            src={`https://avatars.githubusercontent.com/${c.author}`}
+            src={getRepositoryOwnerAvatarSrc(c.author)}
             sx={{
               width: 20,
               height: 20,

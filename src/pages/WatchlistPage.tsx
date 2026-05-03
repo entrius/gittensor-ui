@@ -1804,7 +1804,7 @@ const buildPrColumns = (
     renderCell: (pr) => (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
         <Avatar
-          src={`https://avatars.githubusercontent.com/${pr.author}`}
+          src={getRepositoryOwnerAvatarSrc(pr.author)}
           sx={{ width: 20, height: 20, flexShrink: 0 }}
         />
         <Typography
@@ -2070,7 +2070,7 @@ const PRCard: React.FC<{
         >
           <Stack direction="row" alignItems="center" spacing={1}>
             <Avatar
-              src={`https://avatars.githubusercontent.com/${pr.author}`}
+              src={getRepositoryOwnerAvatarSrc(pr.author)}
               sx={{ width: 18, height: 18 }}
             />
             <Typography
@@ -2588,7 +2588,7 @@ const buildIssueColumns = (
           sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}
         >
           <Avatar
-            src={`https://avatars.githubusercontent.com/${login}`}
+            src={getRepositoryOwnerAvatarSrc(login)}
             sx={{ width: 20, height: 20, flexShrink: 0 }}
           />
           <Typography
@@ -2769,7 +2769,9 @@ const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
           sx={{ minWidth: 0 }}
         >
           <Avatar
-            src={`https://avatars.githubusercontent.com/${issue.repo_full_name.split('/')[0]}`}
+            src={getRepositoryOwnerAvatarSrc(
+              issue.repo_full_name.split('/')[0],
+            )}
             sx={{
               width: 20,
               height: 20,
@@ -2852,7 +2854,7 @@ const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
           >
             {issue.author_login && (
               <Avatar
-                src={`https://avatars.githubusercontent.com/${issue.author_login}`}
+                src={getRepositoryOwnerAvatarSrc(issue.author_login)}
                 sx={{ width: 18, height: 18, flexShrink: 0 }}
               />
             )}

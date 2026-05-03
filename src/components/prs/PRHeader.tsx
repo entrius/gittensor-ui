@@ -340,7 +340,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
               }}
             >
               <Avatar
-                src={`https://avatars.githubusercontent.com/${prDetails.authorLogin}`}
+                src={getRepositoryOwnerAvatarSrc(prDetails.authorLogin)}
                 alt={prDetails.authorLogin}
                 sx={{ width: 22, height: 22 }}
               />
