@@ -19,7 +19,7 @@ import {
   UI_COLORS,
   tooltipSlotProps,
 } from '../../theme';
-import { parseNumber } from '../../utils';
+import { getRepositoryOwnerAvatarSrc, parseNumber } from '../../utils';
 import { buildMultiplierGrid } from '../../utils/multiplierDefs';
 import PRTimeDecayChart from './PRTimeDecayChart';
 
@@ -227,7 +227,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             }}
           >
             <Avatar
-              src={`https://avatars.githubusercontent.com/${owner}`}
+              src={getRepositoryOwnerAvatarSrc(owner)}
               alt={owner}
               sx={{
                 width: 64,

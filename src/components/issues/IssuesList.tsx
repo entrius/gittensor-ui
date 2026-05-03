@@ -38,7 +38,9 @@ import {
   formatAlphaToUsd,
 } from '../../utils/format';
 import { getIssueStatusMetaForTheme } from '../../utils/issueStatus';
-import { TEXT_OPACITY } from '../../theme';
+import { getIssueStatusMeta } from '../../utils/issueStatus';
+import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
+import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import BountyProgress from './BountyProgress';
 import FilterButton from '../FilterButton';
@@ -501,7 +503,9 @@ const IssuesList: React.FC<IssuesListProps> = ({
             }}
           >
             <Avatar
-              src={`https://avatars.githubusercontent.com/${issue.repositoryFullName.split('/')[0]}`}
+              src={getRepositoryOwnerAvatarSrc(
+                issue.repositoryFullName.split('/')[0],
+              )}
               sx={{ width: 24, height: 24, borderRadius: 1, flexShrink: 0 }}
             />
             <Typography

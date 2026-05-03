@@ -56,9 +56,12 @@ import type { TooltipComponentFormatterCallbackParams } from 'echarts';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { WatchlistButton } from '../common';
-import { truncateText } from '../../utils';
+import {
+  compareByWatchlist,
+  getRepositoryOwnerAvatarSrc,
+  truncateText,
+} from '../../utils';
 import { useWatchlist } from '../../hooks/useWatchlist';
-import { compareByWatchlist } from '../../utils/watchlistSort';
 import { RankIcon } from './RankIcon';
 import { getRepositoryOwnerAvatarBackground, type RepoStats } from './types';
 import { CHART_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
@@ -775,53 +778,56 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       width: '30%',
       headerSx: sortableHeaderSx,
       cellSx: { pl: 1.5 },
-      renderCell: (repo) => (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            cursor: 'pointer',
-            '&:hover': {
-              '& .MuiTypography-root': {
-                color: 'primary.main',
-                textDecoration: 'underline',
-              },
-            },
-          }}
-        >
-          <Avatar
-            src={`https://avatars.githubusercontent.com/${(repo.repository || '').split('/')[0]}`}
-            alt={(repo.repository || '').split('/')[0]}
+      renderCell: (repo) => {
+        const owner = (repo.repository || '').split('/')[0] || '';
+        return (
+          <Box
             sx={{
-              width: 20,
-              height: 20,
-              border: '1px solid',
-              borderColor: 'border.medium',
-              backgroundColor: getRepositoryOwnerAvatarBackground(
-                (repo.repository || '').split('/')[0],
-              ),
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              cursor: 'pointer',
+              '&:hover': {
+                '& .MuiTypography-root': {
+                  color: 'primary.main',
+                  textDecoration: 'underline',
+                },
+              },
             }}
-          />
-          <Tooltip title={repo.repository || ''} placement="top">
-            <Typography
-              component="span"
+          >
+            <Avatar
+              src={getRepositoryOwnerAvatarSrc(owner) || undefined}
+              alt={owner}
               sx={{
-                color: 'text.primary',
-                fontWeight: 500,
-                transition: 'color 0.2s',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                maxWidth: '100%',
-                display: 'inline-block',
+                width: 20,
+                height: 20,
+                border: '1px solid',
+                borderColor: 'border.medium',
+                backgroundColor: getRepositoryOwnerAvatarBackground(owner),
               }}
             >
-              {truncateText(repo.repository || '', 40)}
-            </Typography>
-          </Tooltip>
-        </Box>
-      ),
+              {(owner[0] || '?').toUpperCase()}
+            </Avatar>
+            <Tooltip title={repo.repository || ''} placement="top">
+              <Typography
+                component="span"
+                sx={{
+                  color: 'text.primary',
+                  fontWeight: 500,
+                  transition: 'color 0.2s',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '100%',
+                  display: 'inline-block',
+                }}
+              >
+                {truncateText(repo.repository || '', 40)}
+              </Typography>
+            </Tooltip>
+          </Box>
+        );
+      },
     },
     {
       key: 'weight',

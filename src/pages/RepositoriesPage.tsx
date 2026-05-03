@@ -8,6 +8,7 @@ import { Page } from '../components/layout';
 import { TopRepositoriesTable, SEO } from '../components';
 import { useAllPrs, useAllMiners, useReposAndWeights } from '../api';
 import { type CommitLog } from '../api/models/Dashboard';
+import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import { buildRepoDiscoveryRollupFromMiners } from '../utils/ExplorerUtils';
 import { isMergedPr } from '../utils/prStatus';
 
@@ -380,7 +381,9 @@ const RepositoriesPage: React.FC = () => {
                         key={repo.name}
                         href={getRepoHref(repo.name)}
                         linkState={REPO_LINK_STATE}
-                        avatar={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
+                        avatar={getRepositoryOwnerAvatarSrc(
+                          repo.name.split('/')[0],
+                        )}
                         avatarBg={getAvatarBg(repo.name)}
                         label={
                           <Tooltip title={repo.name} arrow placement="top">
@@ -449,7 +452,9 @@ const RepositoriesPage: React.FC = () => {
                         key={repo.name}
                         href={getRepoHref(repo.name)}
                         linkState={REPO_LINK_STATE}
-                        avatar={`https://avatars.githubusercontent.com/${repo.name.split('/')[0]}`}
+                        avatar={getRepositoryOwnerAvatarSrc(
+                          repo.name.split('/')[0],
+                        )}
                         avatarBg={getAvatarBg(repo.name)}
                         label={
                           <Tooltip title={repo.name} arrow placement="top">
@@ -512,7 +517,9 @@ const RepositoriesPage: React.FC = () => {
                         key={`${pr.name}-${pr.number}`}
                         href={getPrHref(pr.name, pr.number)}
                         linkState={REPO_LINK_STATE}
-                        avatar={`https://avatars.githubusercontent.com/${pr.name.split('/')[0]}`}
+                        avatar={getRepositoryOwnerAvatarSrc(
+                          pr.name.split('/')[0],
+                        )}
                         avatarBg={getAvatarBg(pr.name)}
                         label={
                           <Box
