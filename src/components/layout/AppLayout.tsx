@@ -206,26 +206,6 @@ const AppLayout: React.FC = () => {
               <Box sx={{ flex: 1 }}>
                 <GlobalSearchBar />
               </Box>
-              <Tooltip title={themeToggleLabel} arrow>
-                <IconButton
-                  size="small"
-                  onClick={toggleMode}
-                  aria-label={themeToggleLabel}
-                  sx={{
-                    color: 'text.primary',
-                    border: '1px solid',
-                    borderColor: 'border.light',
-                    borderRadius: 1.5,
-                    flexShrink: 0,
-                  }}
-                >
-                  {isDark ? (
-                    <LightModeIcon fontSize="small" />
-                  ) : (
-                    <DarkModeIcon fontSize="small" />
-                  )}
-                </IconButton>
-              </Tooltip>
             </Box>
           )}
           <ErrorBoundary variant="inline" resetKey={location.pathname}>

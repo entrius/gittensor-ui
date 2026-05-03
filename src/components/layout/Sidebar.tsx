@@ -3,12 +3,15 @@ import {
   Badge,
   Box,
   Button,
+  IconButton,
   Stack,
   Typography,
   ButtonBase,
   Divider,
   Tooltip,
 } from '@mui/material';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { useTheme, alpha } from '@mui/material/styles';
 import { useLocation } from 'react-router-dom';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -92,7 +95,11 @@ const GittensorLogoImg: React.FC<{
 const Sidebar: React.FC<SidebarProps> = ({ onNavigate, collapsed = false }) => {
   const location = useLocation();
   const watchlistCount = useWatchlistTotalCount();
-  const { mode } = useThemeMode();
+  const { mode, toggleMode } = useThemeMode();
+  const isDark = mode === 'dark';
+  const themeToggleLabel = isDark
+    ? 'Switch to light mode'
+    : 'Switch to dark mode';
 
   const navItems = [
     { label: 'dashboard', path: '/dashboard', icon: <DashboardIcon /> },
@@ -171,49 +178,75 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, collapsed = false }) => {
 
       <Box sx={{ flexGrow: 1 }} />
 
-      <Box sx={{ mt: 2, display: collapsed ? 'none' : 'block' }}>
-        <Divider sx={{ borderColor: 'border.medium', mb: 2 }} />
-        <Stack direction="column" spacing={1} alignItems="center">
-          <Stack
-            direction="row"
-            spacing={0.5}
-            alignItems="center"
-            flexWrap="wrap"
-            justifyContent="center"
+      {collapsed ? (
+        <Tooltip title={themeToggleLabel} placement="right" arrow>
+          <IconButton
+            size="small"
+            onClick={toggleMode}
+            aria-label={themeToggleLabel}
+            sx={{ color: 'text.secondary', mx: 'auto', display: 'flex' }}
           >
-            {FOOTER_LINKS.map((link, index) => (
-              <React.Fragment key={link.href}>
-                {index > 0 && (
+            {isDark ? (
+              <LightModeIcon sx={{ fontSize: '1.1rem' }} />
+            ) : (
+              <DarkModeIcon sx={{ fontSize: '1.1rem' }} />
+            )}
+          </IconButton>
+        </Tooltip>
+      ) : (
+        <Box sx={{ mt: 2 }}>
+          <Divider sx={{ borderColor: 'border.medium', mb: 2 }} />
+          <Stack direction="column" spacing={1} alignItems="center">
+            <Stack
+              direction="row"
+              spacing={0.5}
+              alignItems="center"
+              flexWrap="wrap"
+              justifyContent="center"
+            >
+              <Tooltip title={themeToggleLabel} arrow>
+                <IconButton
+                  size="small"
+                  onClick={toggleMode}
+                  aria-label={themeToggleLabel}
+                  sx={{ p: 0.25, color: 'text.secondary' }}
+                >
+                  {isDark ? (
+                    <LightModeIcon sx={{ fontSize: '0.85rem' }} />
+                  ) : (
+                    <DarkModeIcon sx={{ fontSize: '0.85rem' }} />
+                  )}
+                </IconButton>
+              </Tooltip>
+              {FOOTER_LINKS.map((link) => (
+                <React.Fragment key={link.href}>
                   <Divider
                     orientation="vertical"
                     flexItem
                     sx={footerDividerSx}
                   />
-                )}
-                <Typography
-                  variant="caption"
-                  component="a"
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  sx={footerLinkSx}
-                >
-                  {link.label}
-                </Typography>
-              </React.Fragment>
-            ))}
+                  <Typography
+                    variant="caption"
+                    component="a"
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={footerLinkSx}
+                  >
+                    {link.label}
+                  </Typography>
+                </React.Fragment>
+              ))}
+            </Stack>
+            <Typography
+              variant="caption"
+              sx={{ fontSize: '0.6rem', color: 'text.secondary' }}
+            >
+              © Gittensor 2026
+            </Typography>
           </Stack>
-          <Typography
-            variant="caption"
-            sx={{
-              fontSize: '0.6rem',
-              color: 'text.secondary',
-            }}
-          >
-            © Gittensor 2026
-          </Typography>
-        </Stack>
-      </Box>
+        </Box>
+      )}
     </Box>
   );
 };

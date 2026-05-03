@@ -45,7 +45,7 @@ const HomePage: React.FC = () => {
                       theme.palette.text.primary,
                       0.8,
                     )})`
-                  : 'none',
+                  : 'brightness(0)',
             })}
           />
           <Typography
