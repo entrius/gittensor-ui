@@ -165,6 +165,7 @@ export const MinersList: React.FC<MinersListProps> = ({
       header: '\u2605',
       width: '52px',
       align: 'center',
+      sortKey: 'watch',
       cellSx: { p: 0 },
       renderCell: (miner) =>
         miner.githubId ? (
