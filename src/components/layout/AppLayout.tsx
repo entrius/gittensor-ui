@@ -138,7 +138,10 @@ const AppLayout: React.FC = () => {
           flexGrow: 1,
           maxWidth: '1920px', // Max content width for ultra-wide screens
           width: '100%',
-          height: { xs: `calc(100dvh - ${MOBILE_APP_BAR_HEIGHT}px)`, sm: '100dvh' },
+          height: {
+            xs: `calc(100dvh - ${MOBILE_APP_BAR_HEIGHT}px)`,
+            sm: '100dvh',
+          },
           mt: { xs: `${MOBILE_APP_BAR_HEIGHT}px`, sm: 0 },
           overflowY: 'auto',
           overflowX: 'hidden',
