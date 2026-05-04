@@ -16,13 +16,15 @@ import {
   Portal,
   useMediaQuery,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { alpha, type Theme } from '@mui/material/styles';
 import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import { MinerCard } from './MinerCard';
 import { MinersList } from './MinersList';
+import { SectionCard } from './SectionCard';
+import { SearchInput } from '../common/SearchInput';
 import theme, { STATUS_COLORS } from '../../theme';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
 import { useWatchlist } from '../../hooks/useWatchlist';
@@ -298,6 +300,11 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     [setFilter, variant],
   );
 
+  const handleSearchChange = useCallback(
+    (next: string) => setFilter('search', next),
+    [setFilter],
+  );
+
   const handleEligibleOssChange = useCallback(
     (next: EligibilityFilter) => {
       if (variant === 'watchlist') {
@@ -378,6 +385,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   useEffect(() => {
     setPortalTarget(document.getElementById('tabs-options-portal'));
   }, []);
+
+  const usePortal = Boolean(portalTarget && isLargeScreen);
 
   useEffect(() => {
     if (!observerTarget.current || remainingMiners <= 0) return;
@@ -509,98 +518,104 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
               </Box>
             </Box>
           </Box>
-  const usePortal = portalTarget && isLargeScreen;
-
-  return (
-    <Box sx={{ pt: 2 }}>
-      {/* On large screens: render controls expanded in the sidebar */}
-      {usePortal ? (
-        <Portal container={portalTarget}>
-          <ToolbarSidebarPanel
-            sortOption={sortOption}
-            sortDirection={sortDirection}
-            onSortChange={handleSortChange}
-            variant={variant}
-            viewMode={viewMode}
-            onViewModeChange={handleViewModeChange}
-            eligibleOssFilter={eligibleOssFilter}
-            eligibleDiscoveryFilter={eligibleDiscoveryFilter}
-            onEligibleOssChange={handleEligibleOssChange}
-            onEligibleDiscoveryChange={handleEligibleDiscoveryChange}
-          />
-        </Portal>
-      ) : (
-        <Box
-          sx={{
-            mb: 1.5,
-            px: 2,
-            display: 'flex',
-            justifyContent: 'flex-end',
-          }}
-        >
-          <ToolbarPopover
-            sortOption={sortOption}
-            sortDirection={sortDirection}
-            onSortChange={handleSortChange}
-            variant={variant}
-            viewMode={viewMode}
-            onViewModeChange={handleViewModeChange}
-            eligibleOssFilter={eligibleOssFilter}
-            eligibleDiscoveryFilter={eligibleDiscoveryFilter}
-            onEligibleOssChange={handleEligibleOssChange}
-            onEligibleDiscoveryChange={handleEligibleDiscoveryChange}
-          />
         </Box>
-      )}
+      </SectionCard>
 
-      <Box
-        sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}
-      >
-        {filteredMiners.length > 0 && viewMode === 'cards' && (
-          <Grid container spacing={2}>
-            {visibleMiners.map((miner) => (
-              <Grid item xs={12} sm={12} md={6} lg={4} xl={4} key={miner.id}>
-                <MinerCard
-                  miner={miner}
-                  variant={variant}
-                  href={getMinerHref(miner)}
-                  linkState={linkState}
-                  showDualEligibilityBadges={showDualEligibilityBadges}
-                />
-              </Grid>
-            ))}
-          </Grid>
-        )}
-
-        {filteredMiners.length > 0 && viewMode === 'list' && (
-          <MinersList
-            miners={visibleMiners}
-            variant={variant}
-            sortOption={sortOption}
-            sortDirection={sortDirection}
-            onSort={handleSortChange}
-            getHref={getMinerHref}
-            linkState={linkState}
-          />
-        )}
-
-        {remainingMiners > 0 && (
-          <Box ref={observerTarget} sx={{ height: 20, width: '100%' }} />
-        )}
-
-        {filteredMiners.length === 0 && (
+      <Box sx={{ pt: 2 }}>
+        {/* On large screens: render controls expanded in the sidebar */}
+        {usePortal ? (
+          <Portal container={portalTarget}>
+            <ToolbarSidebarPanel
+              sortOption={sortOption}
+              sortDirection={sortDirection}
+              onSortChange={handleSortChange}
+              variant={variant}
+              viewMode={viewMode}
+              onViewModeChange={handleViewModeChange}
+              eligibleOssFilter={eligibleOssFilter}
+              eligibleDiscoveryFilter={eligibleDiscoveryFilter}
+              onEligibleOssChange={handleEligibleOssChange}
+              onEligibleDiscoveryChange={handleEligibleDiscoveryChange}
+            />
+          </Portal>
+        ) : (
           <Box
-            sx={(theme) => ({
-              py: 8,
-              textAlign: 'center',
-              color: theme.palette.text.secondary,
-            })}
+            sx={{
+              mb: 1.5,
+              px: 2,
+              display: 'flex',
+              justifyContent: 'flex-end',
+            }}
           >
-            <Typography sx={{ fontFamily: FONTS.mono }}>
-              No miners found matching your filters.
-            </Typography>
+            <ToolbarPopover
+              sortOption={sortOption}
+              sortDirection={sortDirection}
+              onSortChange={handleSortChange}
+              variant={variant}
+              viewMode={viewMode}
+              onViewModeChange={handleViewModeChange}
+              eligibleOssFilter={eligibleOssFilter}
+              eligibleDiscoveryFilter={eligibleDiscoveryFilter}
+              onEligibleOssChange={handleEligibleOssChange}
+              onEligibleDiscoveryChange={handleEligibleDiscoveryChange}
+            />
           </Box>
         )}
+
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+          }}
+        >
+          {filteredMiners.length > 0 && viewMode === 'cards' && (
+            <Grid container spacing={2}>
+              {visibleMiners.map((miner) => (
+                <Grid item xs={12} sm={12} md={6} lg={4} xl={4} key={miner.id}>
+                  <MinerCard
+                    miner={miner}
+                    variant={variant}
+                    href={getMinerHref(miner)}
+                    linkState={linkState}
+                    showDualEligibilityBadges={showDualEligibilityBadges}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          )}
+
+          {filteredMiners.length > 0 && viewMode === 'list' && (
+            <MinersList
+              miners={visibleMiners}
+              variant={variant}
+              sortOption={sortOption}
+              sortDirection={sortDirection}
+              onSort={handleSortChange}
+              getHref={getMinerHref}
+              linkState={linkState}
+            />
+          )}
+
+          {remainingMiners > 0 && (
+            <Box ref={observerTarget} sx={{ height: 20, width: '100%' }} />
+          )}
+
+          {filteredMiners.length === 0 && (
+            <Box
+              sx={(theme) => ({
+                py: 8,
+                textAlign: 'center',
+                color: theme.palette.text.secondary,
+              })}
+            >
+              <Typography sx={{ fontFamily: FONTS.mono }}>
+                No miners found matching your filters.
+              </Typography>
+            </Box>
+          )}
+        </Box>
       </Box>
     </Box>
   );
@@ -647,14 +662,11 @@ const SortButtons: React.FC<SortButtonsProps> = ({
   <Box
     sx={{
       display: 'flex',
-      gap: { xs: 0.45, sm: 0.5 },
-      flexWrap: 'nowrap',
-      justifyContent: 'space-between',
-      width: '100%',
-      minWidth: 0,
       gap: 0.5,
       flexWrap: 'wrap',
       justifyContent: 'flex-start',
+      width: '100%',
+      minWidth: 0,
     }}
   >
     {getSortButtonOptions(variant).map((option) => {
