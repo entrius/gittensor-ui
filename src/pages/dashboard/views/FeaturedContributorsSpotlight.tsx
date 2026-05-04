@@ -62,7 +62,7 @@ const buildContributorKpis = (
     {
       label: 'Merged PRs',
       value: formatNumber(mergedPrs),
-      detail: 'all time',
+      detail: 'highlighted total',
       tone: 'positive',
     },
     {
@@ -73,7 +73,7 @@ const buildContributorKpis = (
     {
       label: 'Repos touched',
       value: repos.size.toLocaleString(),
-      detail: '35d context',
+      detail: 'highlighted span',
     },
     {
       label: 'Daily earnings',
@@ -119,7 +119,11 @@ const ContributorRow: React.FC<{
 
       <SpotlightIdentity
         avatarUsername={contributor.githubUsername ?? contributor.githubId}
-        label={contributor.featuredLabel}
+        label={
+          contributor.windowLabel
+            ? `${contributor.featuredLabel} · ${contributor.windowLabel}`
+            : contributor.featuredLabel
+        }
         markerColor={scoreTone}
         name={contributor.name}
         trailing={<SpotlightDailyEarnings value={contributor.usdPerDay} />}
@@ -174,10 +178,10 @@ const FeaturedContributorsSpotlight: React.FC<Props> = ({
     <SpotlightSection
       headingId="featured-contributors-heading"
       title="Featured Contributors"
-      chipLabel="OSS 35d"
+      chipLabel="Rolling 24h"
       chipColor={theme.palette.status.award}
       railColor={theme.palette.status.award}
-      subtitle="OSS contribution leaders by score, merged PR output, and repository impact."
+      subtitle="Top OSS contributors over the last 24h, with 3d/7d fallback when activity is light."
       viewAllAriaLabel="View all contributors"
       onViewAll={viewAllHref ? () => navigate(viewAllHref) : undefined}
     >

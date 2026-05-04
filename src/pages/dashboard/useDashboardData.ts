@@ -21,13 +21,13 @@ import {
   type MinerEvaluation,
   type Repository,
 } from '../../api/models';
-import { useDailyDiscoveryFilers } from '../../hooks/useDailyDiscoveryFilers';
+import { useRecentMirrorIssues } from '../../hooks/useRecentMirrorIssues';
 import {
   buildDashboardKpis,
   buildDashboardOverview,
   buildDashboardTrendData,
-  buildDailyDiscoveryPulse,
   buildFeaturedContributors,
+  buildFeaturedDiscoveries,
   buildFeaturedWork,
   type TrendTimeRange,
 } from './dashboardData';
@@ -85,17 +85,16 @@ export const useDashboardData = (range: TrendTimeRange) => {
     [datasets.miners.data, datasets.prs.data],
   );
 
-  const discoveryFilersQuery = useDailyDiscoveryFilers();
+  const recentMirrorIssuesQuery = useRecentMirrorIssues();
 
   const discoveryPulse = useMemo(
     () =>
-      buildDailyDiscoveryPulse(
+      buildFeaturedDiscoveries(
         datasets.prs.data,
         datasets.miners.data,
-        undefined,
-        discoveryFilersQuery.data,
+        recentMirrorIssuesQuery.data,
       ),
-    [datasets.miners.data, datasets.prs.data, discoveryFilersQuery.data],
+    [datasets.miners.data, datasets.prs.data, recentMirrorIssuesQuery.data],
   );
 
   const featuredWork = useMemo(
@@ -123,7 +122,6 @@ export const useDashboardData = (range: TrendTimeRange) => {
     discoveryPulse,
     isDiscoveryPulseLoading:
       datasets.prs.isLoading || datasets.miners.isLoading,
-    isDiscoveryPulseError: datasets.prs.isError || datasets.miners.isError,
     isLoading:
       datasets.prs.isLoading ||
       datasets.miners.isLoading ||

@@ -4,8 +4,9 @@
  * This module converts raw PR, issue, and miner datasets into UI-facing models
  * for trends, overview sections, KPIs, and featured contributors.
  *
- * Most dashboard sections are driven by the caller-provided time range.
- * Featured contributors intentionally use a fixed 35-day lookback window.
+ * Featured contributors use a 24h → 3d → 7d rolling-window ladder so the
+ * leaderboard is meaningful to check daily; the window widens only when the
+ * narrower one yields no eligible miner.
  */
 import {
   type CommitLog,
@@ -23,7 +24,7 @@ import {
   type WindowBounds,
 } from './dashboardTime';
 export {
-  buildDailyDiscoveryPulse,
+  buildFeaturedDiscoveries,
   getPreviousRollingWindowBounds,
   getRollingWindowBounds,
 } from './dashboardDiscoveryPulse';
@@ -31,6 +32,9 @@ export type {
   DashboardDiscoveryKpi,
   DashboardDiscoveryPulse,
   DashboardFeaturedDiscoverer,
+  DashboardFeaturedDiscovererAuthor,
+  FeaturedDiscovererRole,
+  RecentMirrorIssue,
 } from './dashboardDiscoveryPulse';
 export type { WindowBounds } from './dashboardTime';
 
@@ -73,6 +77,8 @@ export interface DashboardKpi {
 
 export interface DashboardFeaturedContributor {
   featuredLabel: string;
+  /** Window the row was sourced from, e.g. 'Last 24h'. */
+  windowLabel?: string;
   githubId: string;
   githubUsername?: string;
   name: string;
@@ -153,7 +159,6 @@ const TREND_SERIES_KEYS: TrendSeriesKey[] = [
   'prsOpened',
   'issuesOpened',
 ];
-const CURRENT_LOOKBACK_WINDOW: PresetTimeRange = '35d';
 
 export const getRangeConfig = (range: PresetTimeRange) => RANGE_CONFIG[range];
 
@@ -589,53 +594,6 @@ export const buildDashboardKpis = (
   ];
 };
 
-const getTopContributorRepos = (prs: CommitLog[], githubId: string) => {
-  const currentWindow = getWindowBounds(CURRENT_LOOKBACK_WINDOW);
-  const repoStats = new Map<
-    string,
-    { mergedPrs: number; totalScore: number; lastMergedAt: number }
-  >();
-
-  prs.forEach((pr) => {
-    const mergedAt = toTimestamp(pr.mergedAt);
-    if (
-      pr.githubId !== githubId ||
-      !pr.repository ||
-      !isWithinWindow(mergedAt, currentWindow)
-    ) {
-      return;
-    }
-
-    const existing = repoStats.get(pr.repository) ?? {
-      mergedPrs: 0,
-      totalScore: 0,
-      lastMergedAt: 0,
-    };
-
-    existing.mergedPrs += 1;
-    existing.totalScore += parseNumber(pr.score);
-    existing.lastMergedAt = Math.max(existing.lastMergedAt, mergedAt ?? 0);
-
-    repoStats.set(pr.repository, existing);
-  });
-
-  return [...repoStats.entries()]
-    .sort((a, b) => {
-      const mergedPrDiff = b[1].mergedPrs - a[1].mergedPrs;
-      if (mergedPrDiff !== 0) return mergedPrDiff;
-
-      const scoreDiff = b[1].totalScore - a[1].totalScore;
-      if (scoreDiff !== 0) return scoreDiff;
-
-      const mergedAtDiff = b[1].lastMergedAt - a[1].lastMergedAt;
-      if (mergedAtDiff !== 0) return mergedAtDiff;
-
-      return a[0].localeCompare(b[0]);
-    })
-    .slice(0, 3)
-    .map(([repo]) => repo);
-};
-
 const buildMinerRichFields = (
   m: MinerEvaluation,
   scoreOverride?: number,
@@ -668,154 +626,285 @@ const buildMinerSegments = (
   { label: 'Closed', value: parseNumber(m.totalClosedPrs) },
 ];
 
+// Rolling-window ladder for featured contributors. Mirrors the discoverers
+// section: prefer the narrowest window that yields a candidate so the row
+// reflects current activity rather than all-time totals (which barely
+// change day-to-day).
+const FEATURED_CONTRIBUTOR_WINDOW_LADDER_MS = [
+  DASHBOARD_DAY_MS,
+  3 * DASHBOARD_DAY_MS,
+  DASHBOARD_WEEK_MS,
+] as const;
+
+const formatContributorWindowLabel = (windowMs: number): string => {
+  if (windowMs <= DASHBOARD_DAY_MS) return 'Last 24h';
+  if (windowMs <= 3 * DASHBOARD_DAY_MS) return 'Last 3d';
+  return 'Last 7d';
+};
+
+interface AuthorWindowAggregate {
+  miner: MinerEvaluation;
+  prs: CommitLog[];
+  totalScore: number;
+  totalTokenScore: number;
+  repos: Set<string>;
+}
+
+const aggregatePrsByAuthor = (
+  prs: CommitLog[],
+  miners: MinerEvaluation[],
+  windowMs: number,
+  now: number,
+  exclude: Set<string>,
+): Map<string, AuthorWindowAggregate> => {
+  const minerById = new Map(miners.map((m) => [m.githubId, m]));
+  const cutoff = now - windowMs;
+  const agg = new Map<string, AuthorWindowAggregate>();
+  for (const pr of prs) {
+    if (!pr.githubId || exclude.has(pr.githubId)) continue;
+    if (getPrStatusLabel(pr) !== 'Merged') continue;
+    const ts = toTimestamp(pr.mergedAt);
+    if (ts === null || ts < cutoff) continue;
+    const miner = minerById.get(pr.githubId);
+    if (!miner) continue;
+    const cur = agg.get(pr.githubId) ?? {
+      miner,
+      prs: [],
+      totalScore: 0,
+      totalTokenScore: 0,
+      repos: new Set<string>(),
+    };
+    cur.prs.push(pr);
+    cur.totalScore += parseNumber(pr.score);
+    cur.totalTokenScore += parseNumber(pr.tokenScore);
+    if (pr.repository) cur.repos.add(pr.repository);
+    agg.set(pr.githubId, cur);
+  }
+  return agg;
+};
+
+const pickAuthorInWindowWithFallback = (
+  prs: CommitLog[],
+  miners: MinerEvaluation[],
+  exclude: Set<string>,
+  compare: (a: AuthorWindowAggregate, b: AuthorWindowAggregate) => number,
+  filter: (agg: AuthorWindowAggregate) => boolean = () => true,
+  now = Date.now(),
+): { aggregate: AuthorWindowAggregate; windowMs: number } | undefined => {
+  for (const windowMs of FEATURED_CONTRIBUTOR_WINDOW_LADDER_MS) {
+    const candidates = [
+      ...aggregatePrsByAuthor(prs, miners, windowMs, now, exclude).values(),
+    ]
+      .filter(filter)
+      .sort(compare);
+    if (candidates.length > 0) {
+      return { aggregate: candidates[0], windowMs };
+    }
+  }
+  return undefined;
+};
+
+const topAuthorRepos = (agg: AuthorWindowAggregate): string[] =>
+  [...agg.repos].slice(0, 3);
+
+/**
+ * Row: top single PR (by `pr.score`) merged inside the active window.
+ * Falls back to wider windows when the narrower one is empty.
+ */
 const getHighestScoringMergedAuthor = (
   prs: CommitLog[],
   miners: MinerEvaluation[],
   exclude: Set<string> = new Set(),
+  now = Date.now(),
 ): DashboardFeaturedContributor | undefined => {
-  const currentWindow = getWindowBounds(CURRENT_LOOKBACK_WINDOW);
+  for (const windowMs of FEATURED_CONTRIBUTOR_WINDOW_LADDER_MS) {
+    const cutoff = now - windowMs;
+    const topPr = [...prs]
+      .filter(
+        (pr) =>
+          !!pr.githubId &&
+          !exclude.has(pr.githubId) &&
+          getPrStatusLabel(pr) === 'Merged' &&
+          // Require an actual non-zero score; otherwise "highest-scoring"
+          // collapses to whichever zero-score PR sorts first, which is
+          // meaningless. Fall through to the next window when nothing
+          // qualifies.
+          parseNumber(pr.score) > 0 &&
+          (toTimestamp(pr.mergedAt) ?? 0) >= cutoff,
+      )
+      .sort((a, b) => {
+        const scoreDiff = parseNumber(b.score) - parseNumber(a.score);
+        if (scoreDiff !== 0) return scoreDiff;
+        const mergedAtDiff =
+          (toTimestamp(b.mergedAt) ?? 0) - (toTimestamp(a.mergedAt) ?? 0);
+        if (mergedAtDiff !== 0) return mergedAtDiff;
+        return b.pullRequestNumber - a.pullRequestNumber;
+      })[0];
 
-  const topPr = [...prs]
-    .filter(
-      (pr) =>
-        !!pr.githubId &&
-        !exclude.has(pr.githubId) &&
-        isWithinWindow(toTimestamp(pr.mergedAt), currentWindow),
-    )
-    .sort((a, b) => {
-      const scoreDiff = parseNumber(b.score) - parseNumber(a.score);
-      if (scoreDiff !== 0) return scoreDiff;
+    if (!topPr?.githubId) continue;
 
-      const mergedAtDiff =
-        (toTimestamp(b.mergedAt) ?? 0) - (toTimestamp(a.mergedAt) ?? 0);
-      if (mergedAtDiff !== 0) return mergedAtDiff;
-
-      return b.pullRequestNumber - a.pullRequestNumber;
-    })[0];
-
-  if (!topPr?.githubId) return undefined;
-
-  const miner = miners.find((m) => m.githubId === topPr.githubId);
-  const prScore = Math.round(parseNumber(topPr.score));
-  const rich = miner ? buildMinerRichFields(miner, prScore) : undefined;
-  return {
-    githubId: topPr.githubId,
-    githubUsername: topPr.author || undefined,
-    featuredLabel: 'Highest-Scoring PR Author',
-    name: topPr.author ?? topPr.githubId,
-    score: prScore,
-    ...(rich ?? {}),
-    metrics: [
-      { value: prScore.toLocaleString(), unit: 'Score' },
-      ...optionalCredibilityMetrics(miner?.credibility),
-    ],
-    repos: topPr.repository ? [topPr.repository] : [],
-    segments: miner ? buildMinerSegments(miner) : [],
-  };
+    const miner = miners.find((m) => m.githubId === topPr.githubId);
+    const prScore = Math.round(parseNumber(topPr.score));
+    // Override mergedPrs to 1 so the secondary metric reflects this single
+    // window PR rather than the miner's all-time total, which would
+    // contradict the row's "Last Nh/d" framing.
+    const rich = miner
+      ? { ...buildMinerRichFields(miner, prScore), mergedPrs: 1 }
+      : undefined;
+    return {
+      githubId: topPr.githubId,
+      githubUsername: topPr.author || undefined,
+      featuredLabel: 'Highest-scoring PR',
+      windowLabel: formatContributorWindowLabel(windowMs),
+      name: topPr.author ?? topPr.githubId,
+      score: prScore,
+      ...(rich ?? {}),
+      metrics: [
+        { value: prScore.toLocaleString(), unit: 'Score' },
+        ...optionalCredibilityMetrics(miner?.credibility),
+      ],
+      repos: topPr.repository ? [topPr.repository] : [],
+      segments: miner ? buildMinerSegments(miner) : [],
+    };
+  }
+  return undefined;
 };
 
+/**
+ * Row: miner with the highest summed `pr.score` across PRs merged in the
+ * active window. Falls back through the ladder when empty.
+ */
 const pickTopOssContributor = (
   prs: CommitLog[],
   miners: MinerEvaluation[],
   exclude: Set<string> = new Set(),
+  now = Date.now(),
 ): DashboardFeaturedContributor | undefined => {
-  const topOssMiner = [...miners]
-    .sort((a, b) => {
-      const scoreDiff = parseNumber(b.totalScore) - parseNumber(a.totalScore);
+  const picked = pickAuthorInWindowWithFallback(
+    prs,
+    miners,
+    exclude,
+    (a, b) => {
+      const scoreDiff = b.totalScore - a.totalScore;
       if (scoreDiff !== 0) return scoreDiff;
-
-      const mergedPrDiff = (b.totalMergedPrs ?? 0) - (a.totalMergedPrs ?? 0);
-      if (mergedPrDiff !== 0) return mergedPrDiff;
-
-      return a.id - b.id;
-    })
-    .find(
-      (miner) =>
-        parseNumber(miner.totalScore) > 0 && !exclude.has(miner.githubId),
-    );
-
-  if (!topOssMiner) return undefined;
-
-  const rich = buildMinerRichFields(topOssMiner);
+      return b.prs.length - a.prs.length;
+    },
+    (agg) => agg.totalScore > 0,
+    now,
+  );
+  if (!picked) return undefined;
+  const { aggregate, windowMs } = picked;
+  const score = Math.round(aggregate.totalScore);
+  const rich = {
+    ...buildMinerRichFields(aggregate.miner),
+    score,
+    mergedPrs: aggregate.prs.length,
+  };
   return {
-    featuredLabel: 'Top OSS Miner',
-    githubId: topOssMiner.githubId,
-    githubUsername: topOssMiner.githubUsername,
-    name: topOssMiner.githubUsername ?? topOssMiner.githubId,
+    featuredLabel: 'Top OSS contributor',
+    windowLabel: formatContributorWindowLabel(windowMs),
+    githubId: aggregate.miner.githubId,
+    githubUsername: aggregate.miner.githubUsername,
+    name: aggregate.miner.githubUsername ?? aggregate.miner.githubId,
     ...rich,
     metrics: [
-      { value: rich.score.toLocaleString(), unit: 'Score' },
-      ...optionalCredibilityMetrics(topOssMiner.credibility),
+      { value: score.toLocaleString(), unit: 'Score' },
+      ...optionalCredibilityMetrics(aggregate.miner.credibility),
     ],
-    repos: getTopContributorRepos(prs, topOssMiner.githubId),
-    segments: buildMinerSegments(topOssMiner),
+    repos: topAuthorRepos(aggregate),
+    segments: buildMinerSegments(aggregate.miner),
   };
 };
 
+/**
+ * Row: miner with the most PRs merged in the active window (ladder
+ * fallback when empty). Score tiebreak keeps the result deterministic.
+ */
 const pickMostMergedPrMiner = (
   prs: CommitLog[],
   miners: MinerEvaluation[],
   exclude: Set<string> = new Set(),
+  now = Date.now(),
 ): DashboardFeaturedContributor | undefined => {
-  const mostMergedPrMiner = [...miners]
-    .filter((m) => !exclude.has(m.githubId))
-    .sort((a, b) => {
-      const diff = (b.totalMergedPrs ?? 0) - (a.totalMergedPrs ?? 0);
-      if (diff !== 0) return diff;
+  const picked = pickAuthorInWindowWithFallback(
+    prs,
+    miners,
+    exclude,
+    (a, b) => {
+      const countDiff = b.prs.length - a.prs.length;
+      if (countDiff !== 0) return countDiff;
       return b.totalScore - a.totalScore;
-    })[0];
-
-  if (!mostMergedPrMiner) return undefined;
-
-  const rich = buildMinerRichFields(mostMergedPrMiner);
+    },
+    () => true,
+    now,
+  );
+  if (!picked) return undefined;
+  const { aggregate, windowMs } = picked;
+  const mergedPrs = aggregate.prs.length;
+  const rich = {
+    ...buildMinerRichFields(aggregate.miner),
+    score: Math.round(aggregate.totalScore),
+    mergedPrs,
+  };
   return {
-    featuredLabel: 'Most Merged PRs',
-    githubId: mostMergedPrMiner.githubId,
-    githubUsername: mostMergedPrMiner.githubUsername,
-    name: mostMergedPrMiner.githubUsername ?? mostMergedPrMiner.githubId,
+    featuredLabel: 'Most merged PRs',
+    windowLabel: formatContributorWindowLabel(windowMs),
+    githubId: aggregate.miner.githubId,
+    githubUsername: aggregate.miner.githubUsername,
+    name: aggregate.miner.githubUsername ?? aggregate.miner.githubId,
     ...rich,
     metrics: [
-      { value: `${mostMergedPrMiner.totalMergedPrs ?? 0}`, unit: 'Merged' },
-      ...optionalCredibilityMetrics(mostMergedPrMiner.credibility),
+      { value: `${mergedPrs}`, unit: 'Merged' },
+      ...optionalCredibilityMetrics(aggregate.miner.credibility),
     ],
-    repos: getTopContributorRepos(prs, mostMergedPrMiner.githubId),
-    segments: buildMinerSegments(mostMergedPrMiner),
+    repos: topAuthorRepos(aggregate),
+    segments: buildMinerSegments(aggregate.miner),
   };
 };
 
+/**
+ * Row: miner with the highest summed `pr.tokenScore` across PRs merged in
+ * the active window (ladder fallback when empty).
+ */
 const pickHighestTokenScoreMiner = (
   prs: CommitLog[],
   miners: MinerEvaluation[],
   exclude: Set<string> = new Set(),
+  now = Date.now(),
 ): DashboardFeaturedContributor | undefined => {
-  const top = [...miners]
-    .filter(
-      (m) => parseNumber(m.totalTokenScore) > 0 && !exclude.has(m.githubId),
-    )
-    .sort((a, b) => {
-      const diff =
-        parseNumber(b.totalTokenScore) - parseNumber(a.totalTokenScore);
-      return diff !== 0 ? diff : a.id - b.id;
-    })[0];
-
-  if (!top) return undefined;
-
-  const rich = buildMinerRichFields(top);
+  const picked = pickAuthorInWindowWithFallback(
+    prs,
+    miners,
+    exclude,
+    (a, b) => {
+      const tokenDiff = b.totalTokenScore - a.totalTokenScore;
+      if (tokenDiff !== 0) return tokenDiff;
+      return b.totalScore - a.totalScore;
+    },
+    (agg) => agg.totalTokenScore > 0,
+    now,
+  );
+  if (!picked) return undefined;
+  const { aggregate, windowMs } = picked;
+  const tokenTotal = Math.round(aggregate.totalTokenScore);
+  const rich = {
+    ...buildMinerRichFields(aggregate.miner),
+    score: Math.round(aggregate.totalScore),
+    mergedPrs: aggregate.prs.length,
+  };
   return {
-    featuredLabel: 'Highest Token Score',
-    githubId: top.githubId,
-    githubUsername: top.githubUsername,
-    name: top.githubUsername ?? top.githubId,
+    featuredLabel: 'Highest token score',
+    windowLabel: formatContributorWindowLabel(windowMs),
+    githubId: aggregate.miner.githubId,
+    githubUsername: aggregate.miner.githubUsername,
+    name: aggregate.miner.githubUsername ?? aggregate.miner.githubId,
     ...rich,
     metrics: [
-      {
-        value: Math.round(parseNumber(top.totalTokenScore)).toLocaleString(),
-        unit: 'Tokens',
-      },
-      ...optionalCredibilityMetrics(top.credibility),
+      { value: tokenTotal.toLocaleString(), unit: 'Tokens' },
+      ...optionalCredibilityMetrics(aggregate.miner.credibility),
     ],
-    repos: getTopContributorRepos(prs, top.githubId),
-    segments: buildMinerSegments(top),
+    repos: topAuthorRepos(aggregate),
+    segments: buildMinerSegments(aggregate.miner),
   };
 };
 

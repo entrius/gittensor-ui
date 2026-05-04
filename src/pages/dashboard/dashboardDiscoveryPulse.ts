@@ -1,11 +1,52 @@
+/**
+ * Builders for the dashboard "Featured Discoverers" section.
+ *
+ * Issue-discovery rewards in the gittensor subnet apply only inside a
+ * curated set of mirror-enabled repositories (currently 4: `entrius/allways`,
+ * `entrius/allways-ui`, `entrius/gittensor`, `entrius/gittensor-ui`). The
+ * "discoverer" is the miner who FILED the issue — they earn when another
+ * miner later solves it with a merged PR.
+ *
+ * The section surfaces exactly three rows, each answering a different
+ * question:
+ *   1. All-time: who has the highest cumulative `issueDiscoveryScore`
+ *      across every registered miner? Matches the Discoveries page
+ *      leaderboard (e.g. `#1 @bitloi score=50.10`).
+ *   2. Most active discoverer (24h → 3d → 7d ladder): who has filed the
+ *      most issues in the current rolling window? The window widens only
+ *      when the narrower one yields no eligible filer.
+ *   3. Highest-earning discoverer (24h → 3d → 7d ladder): among miners
+ *      who filed any issue in the current window, who has the highest
+ *      all-time `issueDiscoveryScore`? Requires a non-zero score in the
+ *      chosen window; otherwise widens to the next rung.
+ *
+ * Rows 2 and 3 depend on per-issue authorship which no backend endpoint
+ * exposes reliably today (see TODO notes in `useRecentMirrorIssues`), so
+ * issue authorship comes from a GitHub Search fallback.
+ */
 import { type CommitLog, type MinerEvaluation } from '../../api';
-import { isIssueDiscoveryMultiplierPr, parseNumber } from '../../utils';
+import { parseNumber } from '../../utils';
 import {
   DASHBOARD_HOUR_MS,
   isWithinWindow,
   toTimestamp,
   type WindowBounds,
 } from './dashboardTime';
+
+const ACTIVE_WINDOW_HOURS = 24;
+const INTERMEDIATE_WINDOW_HOURS = 3 * 24;
+const FALLBACK_WINDOW_HOURS = 7 * 24;
+
+/**
+ * Windows that rows 2 and 3 progressively widen through when the active
+ * window yields no candidate. Order matters: narrow first, widen only as
+ * needed.
+ */
+const DISCOVERER_WINDOW_LADDER: readonly number[] = [
+  ACTIVE_WINDOW_HOURS,
+  INTERMEDIATE_WINDOW_HOURS,
+  FALLBACK_WINDOW_HOURS,
+];
 
 export interface DashboardDiscoveryKpi {
   label: string;
@@ -14,23 +55,33 @@ export interface DashboardDiscoveryKpi {
   tone?: 'positive' | 'neutral' | 'warning';
 }
 
+export interface DashboardFeaturedDiscovererAuthor {
+  githubId?: string;
+  username: string;
+  displayName: string;
+  usdPerDay?: number;
+  credibility?: number;
+  issueTokenScore?: number;
+  issueDiscoveryScore?: number;
+  totalValidSolvedIssues?: number;
+}
+
+export type FeaturedDiscovererRole =
+  | 'all-time-top'
+  | 'most-active'
+  | 'highest-earning-filer';
+
 export interface DashboardFeaturedDiscoverer {
   id: string;
-  githubId?: string;
-  githubUsername?: string;
-  name: string;
-  avatarUsername?: string;
+  role: FeaturedDiscovererRole;
   roleLabel: string;
-  primaryMetric: string;
-  primaryMetricLabel: string;
-  secondaryMetric?: string;
-  secondaryMetricLabel?: string;
+  windowLabel: string;
+  author: DashboardFeaturedDiscovererAuthor;
+  primary: { label: string; value: string };
+  secondary: { label: string; value: string };
   repos: string[];
-  href?: string;
-  tone?: 'success' | 'neutral' | 'warning';
-  credibility?: number;
-  /** Earnings in USD per day, aligned with the Top Miners `usdPerDay` value. */
-  usdPerDay?: number;
+  href: string;
+  tone: 'success' | 'neutral' | 'warning';
 }
 
 export interface DashboardDiscoveryPulse {
@@ -40,61 +91,23 @@ export interface DashboardDiscoveryPulse {
 }
 
 /**
- * Externally-fetched issue record used to seed `linkedIssuesOpened` when the
- * `/prs` feed lacks `linkedIssues`. Populated by the dashboard's GitHub Search
- * fallback (see `useDailyDiscoveryFilers`).
+ * Shape of an issue as returned by `useRecentMirrorIssues`.
  */
-export interface DiscoveryIssueRecord {
+export interface RecentMirrorIssue {
   repositoryFullName: string;
   number: number;
+  title: string;
+  htmlUrl: string;
+  state: 'open' | 'closed';
   createdAt: string;
+  closedAt?: string | null;
   authorGithubId?: string | null;
   authorLogin?: string | null;
 }
 
-interface DailyDiscovererStats {
-  key: string;
-  githubId?: string;
-  githubUsername?: string;
-  name: string;
-  avatarUsername?: string;
-  repos: Set<string>;
-  linkedIssuesOpened: number;
-  discoveryPrsMerged: number;
-  discoveryScore: number;
-  lastActivityMs: number;
-  baselineIssueScore: number;
-  baselineCredibility: number;
-  usdPerDay: number;
-}
-
-interface DailyActorIdentity {
-  miner?: MinerEvaluation;
-  githubId?: string;
-  githubUsername?: string;
-  hotkey?: string;
-}
-
-interface DailyActivitySnapshot {
-  linkedIssuesOpened: number;
-  discoveryPrsMerged: number;
-  discoveryScore: number;
-  repos: Set<string>;
-  discoverers: Map<string, DailyDiscovererStats>;
-}
-
-interface MinerIndexes {
-  byGithubId: Map<string, MinerEvaluation>;
-  byUsername: Map<string, MinerEvaluation>;
-  byHotkey: Map<string, MinerEvaluation>;
-}
-
-const DAILY_DISCOVERY_WINDOW_HOURS = 24;
-const DISCOVERY_SPOTLIGHT_LIMIT = 3;
-
 export const getRollingWindowBounds = (
   now = new Date(),
-  windowHours = DAILY_DISCOVERY_WINDOW_HOURS,
+  windowHours = ACTIVE_WINDOW_HOURS,
 ): WindowBounds => {
   const endMs = now.getTime();
   return {
@@ -105,7 +118,7 @@ export const getRollingWindowBounds = (
 
 export const getPreviousRollingWindowBounds = (
   now = new Date(),
-  windowHours = DAILY_DISCOVERY_WINDOW_HOURS,
+  windowHours = ACTIVE_WINDOW_HOURS,
 ): WindowBounds => {
   const current = getRollingWindowBounds(now, windowHours);
   const windowMs = windowHours * DASHBOARD_HOUR_MS;
@@ -115,6 +128,11 @@ export const getPreviousRollingWindowBounds = (
   };
 };
 
+interface MinerIndexes {
+  byGithubId: Map<string, MinerEvaluation>;
+  byUsername: Map<string, MinerEvaluation>;
+}
+
 const normalizeLookupValue = (value?: string | null) =>
   value?.trim().toLowerCase() ?? '';
 
@@ -122,302 +140,366 @@ const buildMinerIndexes = (miners: MinerEvaluation[]): MinerIndexes => {
   const indexes: MinerIndexes = {
     byGithubId: new Map(),
     byUsername: new Map(),
-    byHotkey: new Map(),
   };
-
   miners.forEach((miner) => {
-    if (miner.githubId) {
-      indexes.byGithubId.set(miner.githubId, miner);
-    }
-
+    if (miner.githubId) indexes.byGithubId.set(miner.githubId, miner);
     const usernameKey = normalizeLookupValue(miner.githubUsername);
-    if (usernameKey) {
-      indexes.byUsername.set(usernameKey, miner);
-    }
-
-    if (miner.hotkey) {
-      indexes.byHotkey.set(miner.hotkey, miner);
-    }
+    if (usernameKey) indexes.byUsername.set(usernameKey, miner);
   });
-
   return indexes;
 };
 
-const shortHotkey = (hotkey: string) => {
-  if (hotkey.length <= 14) return hotkey;
-  return `${hotkey.slice(0, 6)}...${hotkey.slice(-4)}`;
+const resolveMinerFromIssue = (
+  issue: RecentMirrorIssue,
+  indexes: MinerIndexes,
+): MinerEvaluation | undefined => {
+  if (issue.authorGithubId) {
+    const byId = indexes.byGithubId.get(issue.authorGithubId);
+    if (byId) return byId;
+  }
+  const loginKey = normalizeLookupValue(issue.authorLogin);
+  if (loginKey) return indexes.byUsername.get(loginKey);
+  return undefined;
 };
 
-const getMinerDetailsHref = (githubId?: string) =>
-  githubId
-    ? `/miners/details?githubId=${encodeURIComponent(
-        githubId,
-      )}&mode=issues&tab=open-issues`
-    : undefined;
-
-const resolveUsernameActor = (
-  username: string | null | undefined,
-  indexes: MinerIndexes,
-): DailyActorIdentity | null => {
-  const normalizedUsername = normalizeLookupValue(username);
-  if (!normalizedUsername) return null;
-
-  const miner = indexes.byUsername.get(normalizedUsername);
-  return {
-    miner,
-    githubId: miner?.githubId,
-    githubUsername: miner?.githubUsername ?? username?.trim(),
-  };
-};
-
-const resolveGithubIdActor = (
-  githubId: string | null | undefined,
-  indexes: MinerIndexes,
-): DailyActorIdentity | null => {
-  if (!githubId) return null;
-
-  const miner = indexes.byGithubId.get(githubId);
-  return {
-    miner,
+const buildMinerDetailsHref = (githubId: string): string =>
+  `/miners/details?githubId=${encodeURIComponent(
     githubId,
-    githubUsername: miner?.githubUsername,
-  };
-};
-
-const resolvePrActor = (
-  pr: CommitLog,
-  indexes: MinerIndexes,
-): DailyActorIdentity | null => {
-  if (pr.githubId) {
-    const miner = indexes.byGithubId.get(pr.githubId);
-    return {
-      miner,
-      githubId: pr.githubId,
-      githubUsername: miner?.githubUsername ?? pr.author,
-    };
-  }
-
-  return resolveUsernameActor(pr.author, indexes);
-};
-
-const getDailyActorKey = (identity: DailyActorIdentity): string | null => {
-  if (identity.miner?.githubId) return `github:${identity.miner.githubId}`;
-  if (identity.githubId) return `github:${identity.githubId}`;
-
-  const usernameKey = normalizeLookupValue(identity.githubUsername);
-  if (usernameKey) return `user:${usernameKey}`;
-
-  if (identity.hotkey) return `hotkey:${identity.hotkey}`;
-  return null;
-};
-
-const ensureDailyDiscoverer = (
-  discoverers: Map<string, DailyDiscovererStats>,
-  identity: DailyActorIdentity,
-): DailyDiscovererStats | null => {
-  const key = getDailyActorKey(identity);
-  if (!key) return null;
-
-  const existing = discoverers.get(key);
-  if (existing) return existing;
-
-  const miner = identity.miner;
-  const githubId = miner?.githubId ?? identity.githubId;
-  const githubUsername = miner?.githubUsername ?? identity.githubUsername;
-  const name =
-    githubUsername ?? githubId ?? shortHotkey(identity.hotkey ?? key);
-
-  const stats: DailyDiscovererStats = {
-    key,
-    githubId,
-    githubUsername,
-    name,
-    avatarUsername: githubUsername,
-    repos: new Set(),
-    linkedIssuesOpened: 0,
-    discoveryPrsMerged: 0,
-    discoveryScore: 0,
-    lastActivityMs: 0,
-    baselineIssueScore: parseNumber(miner?.issueDiscoveryScore),
-    baselineCredibility: parseNumber(miner?.credibility),
-    usdPerDay: parseNumber(miner?.usdPerDay),
-  };
-
-  discoverers.set(key, stats);
-  return stats;
-};
-
-const addRepoContext = (
-  stats: DailyDiscovererStats,
-  repositoryFullName?: string | null,
-) => {
-  if (repositoryFullName) {
-    stats.repos.add(repositoryFullName);
-  }
-};
-
-const updateLastActivity = (
-  stats: DailyDiscovererStats,
-  timestamp: number | null,
-) => {
-  if (timestamp !== null) {
-    stats.lastActivityMs = Math.max(stats.lastActivityMs, timestamp);
-  }
-};
-
-const getLinkedIssueKey = (repositoryFullName: string, issueNumber: number) =>
-  `${repositoryFullName.toLowerCase()}#${issueNumber}`;
-
-const getDiscoveryPrScore = (pr: CommitLog) => {
-  const tokenScore = parseNumber(pr.tokenScore);
-  return tokenScore > 0 ? tokenScore : parseNumber(pr.score);
-};
-
-const recordLinkedIssue = (
-  snapshot: DailyActivitySnapshot,
-  discoverers: Map<string, DailyDiscovererStats>,
-  indexes: MinerIndexes,
-  seenLinkedIssues: Set<string>,
-  window: WindowBounds,
-  repoFullName: string,
-  issueNumber: number,
-  createdAtRaw: string | null | undefined,
-  authorGithubId: string | null | undefined,
-  authorLogin: string | null | undefined,
-) => {
-  if (!repoFullName) return;
-
-  const createdAt = toTimestamp(createdAtRaw ?? null);
-  if (!isWithinWindow(createdAt, window)) return;
-
-  const key = getLinkedIssueKey(repoFullName, issueNumber);
-  if (seenLinkedIssues.has(key)) return;
-  seenLinkedIssues.add(key);
-
-  snapshot.linkedIssuesOpened += 1;
-  snapshot.repos.add(repoFullName);
-
-  // Resolve the issue filer to a registered miner. Prefer GitHub ID (stable),
-  // fall back to login, and bail if neither maps to a miner — only registered
-  // miners are eligible for discovery rewards, so non-miner issue authors
-  // shouldn't appear in this section.
-  let identity = authorGithubId
-    ? resolveGithubIdActor(authorGithubId, indexes)
-    : null;
-  if (!identity?.miner && authorLogin) {
-    identity = resolveUsernameActor(authorLogin, indexes);
-  }
-  if (!identity?.miner) return;
-
-  const stats = ensureDailyDiscoverer(discoverers, identity);
-  if (!stats) return;
-
-  stats.linkedIssuesOpened += 1;
-  addRepoContext(stats, repoFullName);
-  updateLastActivity(stats, createdAt);
-};
-
-const buildDailyActivitySnapshot = (
-  prs: CommitLog[],
-  miners: MinerEvaluation[],
-  window: WindowBounds,
-  externalDiscoveryIssues: DiscoveryIssueRecord[] = [],
-): DailyActivitySnapshot => {
-  const indexes = buildMinerIndexes(miners);
-  const discoverers = new Map<string, DailyDiscovererStats>();
-  const seenLinkedIssues = new Set<string>();
-  const snapshot: DailyActivitySnapshot = {
-    linkedIssuesOpened: 0,
-    discoveryPrsMerged: 0,
-    discoveryScore: 0,
-    repos: new Set(),
-    discoverers,
-  };
-
-  prs.forEach((pr) => {
-    const mergedAt = toTimestamp(pr.mergedAt);
-    const isMergedDiscoveryPr =
-      isWithinWindow(mergedAt, window) && isIssueDiscoveryMultiplierPr(pr);
-
-    if (isMergedDiscoveryPr) {
-      const identity = resolvePrActor(pr, indexes);
-      const score = getDiscoveryPrScore(pr);
-
-      snapshot.discoveryPrsMerged += 1;
-      snapshot.discoveryScore += score;
-
-      const prStats = identity
-        ? ensureDailyDiscoverer(discoverers, identity)
-        : null;
-      if (prStats) {
-        prStats.discoveryPrsMerged += 1;
-        prStats.discoveryScore += score;
-        addRepoContext(prStats, pr.repository);
-        updateLastActivity(prStats, mergedAt);
-      }
-    }
-
-    // Walk linked issues for every PR (not just merged-discovery ones in the
-    // window) so that an issue opened today still counts when its closing PR
-    // is still open or has a different lifecycle state. Today the `/prs` feed
-    // never returns this field, but the loop is here so the section
-    // self-heals once backend ships fix (B) — see TODO above
-    // `buildDailyDiscovererRows`.
-    pr.linkedIssues?.forEach((issue) => {
-      recordLinkedIssue(
-        snapshot,
-        discoverers,
-        indexes,
-        seenLinkedIssues,
-        window,
-        pr.repository ?? '',
-        issue.number,
-        issue.createdAt,
-        issue.authorGithubId,
-        null,
-      );
-    });
-  });
-
-  // Frontend GitHub-Search fallback: feed externally-fetched issues into the
-  // same accounting path. Dedup against any in-PR linkedIssues via the shared
-  // `seenLinkedIssues` set.
-  externalDiscoveryIssues.forEach((issue) => {
-    recordLinkedIssue(
-      snapshot,
-      discoverers,
-      indexes,
-      seenLinkedIssues,
-      window,
-      issue.repositoryFullName,
-      issue.number,
-      issue.createdAt,
-      issue.authorGithubId,
-      issue.authorLogin,
-    );
-  });
-
-  return snapshot;
-};
+  )}&mode=issues&tab=open-issues`;
 
 const formatWholeNumber = (value: number) =>
   Math.round(value).toLocaleString('en-US');
 
-const formatDailyDelta = (currentValue: number, previousValue: number) => {
+const formatDecimal = (value: number, digits = 1) =>
+  value.toLocaleString('en-US', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
+
+/**
+ * Builds the author sub-object shared by all three role rows.
+ */
+const buildDiscovererAuthor = (
+  miner: MinerEvaluation,
+): DashboardFeaturedDiscovererAuthor => {
+  const username = miner.githubUsername ?? miner.githubId ?? 'unknown';
+  return {
+    githubId: miner.githubId,
+    username,
+    displayName: miner.githubUsername ?? username,
+    usdPerDay: parseNumber(miner.usdPerDay),
+    credibility: parseNumber(miner.credibility),
+    issueTokenScore: parseNumber(miner.issueTokenScore),
+    issueDiscoveryScore: parseNumber(miner.issueDiscoveryScore),
+    totalValidSolvedIssues:
+      typeof miner.totalValidSolvedIssues === 'number'
+        ? miner.totalValidSolvedIssues
+        : undefined,
+  };
+};
+
+const getRoleTone = (
+  role: FeaturedDiscovererRole,
+): DashboardFeaturedDiscoverer['tone'] => {
+  if (role === 'all-time-top') return 'success';
+  if (role === 'most-active') return 'neutral';
+  return 'warning';
+};
+
+/**
+ * Collects the mirror-repo names a given miner has filed issues in across
+ * the provided issue feed. Used to populate row 1's repo pills from the
+ * 7d window sample rather than a static list.
+ */
+const collectFilerRepos = (
+  githubId: string,
+  issues: RecentMirrorIssue[],
+  indexes: MinerIndexes,
+): string[] => {
+  const repos = new Set<string>();
+  issues.forEach((issue) => {
+    const miner = resolveMinerFromIssue(issue, indexes);
+    if (miner?.githubId === githubId && issue.repositoryFullName) {
+      repos.add(issue.repositoryFullName);
+    }
+  });
+  return [...repos];
+};
+
+/**
+ * Row 1: all-time top discoverer by `issueDiscoveryScore` (same metric the
+ * Discoveries page uses to rank miners). Miner ranking comes from the
+ * `/miners` payload so the row renders even before the GitHub Search feed
+ * resolves; repo pills enrich from the feed once it arrives.
+ */
+const pickAllTimeTopDiscoverer = (
+  miners: MinerEvaluation[],
+  issues: RecentMirrorIssue[],
+  indexes: MinerIndexes,
+): DashboardFeaturedDiscoverer | undefined => {
+  const scored = miners
+    .filter((m) => parseNumber(m.issueDiscoveryScore) > 0 && m.githubId)
+    .sort(
+      (a, b) =>
+        parseNumber(b.issueDiscoveryScore) - parseNumber(a.issueDiscoveryScore),
+    );
+  const winner = scored[0];
+  if (!winner || !winner.githubId) return undefined;
+
+  const author = buildDiscovererAuthor(winner);
+  return {
+    id: `all-time:${winner.githubId}`,
+    role: 'all-time-top',
+    roleLabel: 'Top discoverer',
+    windowLabel: 'All-time',
+    author,
+    primary: {
+      label: 'discovery score',
+      value: formatDecimal(author.issueDiscoveryScore ?? 0, 2),
+    },
+    secondary: {
+      label: 'valid solves',
+      value: formatWholeNumber(author.totalValidSolvedIssues ?? 0),
+    },
+    repos: collectFilerRepos(winner.githubId, issues, indexes),
+    href: buildMinerDetailsHref(winner.githubId),
+    tone: getRoleTone('all-time-top'),
+  };
+};
+
+/**
+ * Collects, per miner, the issues they filed within a given window.
+ */
+interface FilerAggregate {
+  miner: MinerEvaluation;
+  issues: RecentMirrorIssue[];
+  repos: Set<string>;
+}
+
+const aggregateFilers = (
+  issues: RecentMirrorIssue[],
+  indexes: MinerIndexes,
+  window: WindowBounds,
+): Map<string, FilerAggregate> => {
+  const agg = new Map<string, FilerAggregate>();
+  issues.forEach((issue) => {
+    const createdAtMs = toTimestamp(issue.createdAt);
+    if (!isWithinWindow(createdAtMs, window)) return;
+
+    const miner = resolveMinerFromIssue(issue, indexes);
+    if (!miner || !miner.githubId) return;
+
+    const existing = agg.get(miner.githubId);
+    if (existing) {
+      existing.issues.push(issue);
+      existing.repos.add(issue.repositoryFullName);
+    } else {
+      agg.set(miner.githubId, {
+        miner,
+        issues: [issue],
+        repos: new Set([issue.repositoryFullName]),
+      });
+    }
+  });
+  return agg;
+};
+
+/**
+ * Picks a discoverer using a comparator, widening through
+ * `DISCOVERER_WINDOW_LADDER` (24h → 3d → 7d) until a candidate appears.
+ * `rejectGithubIds` excludes miners already featured in earlier rows so
+ * the section never displays the same miner twice.
+ */
+const pickDiscovererWithFallback = (
+  issues: RecentMirrorIssue[],
+  indexes: MinerIndexes,
+  now: Date,
+  rejectGithubIds: ReadonlySet<string>,
+  compare: (a: FilerAggregate, b: FilerAggregate) => number,
+  filter?: (agg: FilerAggregate) => boolean,
+): { aggregate: FilerAggregate; windowHours: number } | undefined => {
+  for (const windowHours of DISCOVERER_WINDOW_LADDER) {
+    const bounds = getRollingWindowBounds(now, windowHours);
+    const filers = aggregateFilers(issues, indexes, bounds);
+    const candidates = [...filers.values()]
+      .filter(
+        (agg) =>
+          !!agg.miner.githubId && !rejectGithubIds.has(agg.miner.githubId),
+      )
+      .filter((agg) => (filter ? filter(agg) : true))
+      .sort(compare);
+    if (candidates.length > 0) {
+      return { aggregate: candidates[0], windowHours };
+    }
+  }
+  return undefined;
+};
+
+const formatWindowLabel = (windowHours: number): string => {
+  if (windowHours === ACTIVE_WINDOW_HOURS) return 'Last 24h';
+  if (windowHours === INTERMEDIATE_WINDOW_HOURS) return 'Last 3d';
+  return 'Last 7d';
+};
+
+const getIssueAgeHours = (issue: RecentMirrorIssue, now: Date): number => {
+  const ms = toTimestamp(issue.createdAt);
+  if (ms === null) return 0;
+  return Math.max(0, (now.getTime() - ms) / DASHBOARD_HOUR_MS);
+};
+
+const formatAgeLabel = (ageHours: number): string => {
+  if (ageHours < 1) {
+    const minutes = Math.max(1, Math.round(ageHours * 60));
+    return `${minutes}m ago`;
+  }
+  if (ageHours < 48) return `${Math.round(ageHours)}h ago`;
+  const days = Math.round(ageHours / 24);
+  return `${days}d ago`;
+};
+
+const getLatestIssueAgeHours = (
+  issues: RecentMirrorIssue[],
+  now: Date,
+): number => {
+  if (issues.length === 0) return 0;
+  return Math.min(...issues.map((i) => getIssueAgeHours(i, now)));
+};
+
+/**
+ * Row 2: miner who filed the most issues in the active window.
+ */
+const pickMostActiveDiscoverer = (
+  issues: RecentMirrorIssue[],
+  indexes: MinerIndexes,
+  now: Date,
+  rejectGithubIds: ReadonlySet<string>,
+): DashboardFeaturedDiscoverer | undefined => {
+  const picked = pickDiscovererWithFallback(
+    issues,
+    indexes,
+    now,
+    rejectGithubIds,
+    (a, b) => {
+      if (b.issues.length !== a.issues.length) {
+        return b.issues.length - a.issues.length;
+      }
+      const scoreDelta =
+        parseNumber(b.miner.issueDiscoveryScore) -
+        parseNumber(a.miner.issueDiscoveryScore);
+      if (scoreDelta !== 0) return scoreDelta;
+      // Deterministic tiebreakers so the picked row stays stable across
+      // refreshes when count and score are both equal (common when the
+      // 24h window is mostly empty and every filer scores 0).
+      const credDelta =
+        parseNumber(b.miner.credibility) - parseNumber(a.miner.credibility);
+      if (credDelta !== 0) return credDelta;
+      const aName = (a.miner.githubUsername ?? '').toLowerCase();
+      const bName = (b.miner.githubUsername ?? '').toLowerCase();
+      return aName.localeCompare(bName);
+    },
+  );
+  if (!picked || !picked.aggregate.miner.githubId) return undefined;
+
+  const { aggregate, windowHours } = picked;
+  const author = buildDiscovererAuthor(aggregate.miner);
+  const latestAgeHours = getLatestIssueAgeHours(aggregate.issues, now);
+  return {
+    id: `most-active:${aggregate.miner.githubId}`,
+    role: 'most-active',
+    roleLabel: 'Most active discoverer',
+    windowLabel: formatWindowLabel(windowHours),
+    author,
+    primary: {
+      label: aggregate.issues.length === 1 ? 'issue filed' : 'issues filed',
+      value: formatWholeNumber(aggregate.issues.length),
+    },
+    secondary: {
+      label: 'last filed',
+      value: formatAgeLabel(latestAgeHours),
+    },
+    repos: [...aggregate.repos],
+    href: buildMinerDetailsHref(aggregate.miner.githubId),
+    tone: getRoleTone('most-active'),
+  };
+};
+
+/**
+ * Row 3: among filers in the active window, the one with the highest
+ * all-time `issueDiscoveryScore` (same metric as the Discoveries page).
+ * Requires `issueDiscoveryScore > 0` so the row label ("Highest-earning
+ * discoverer") never displays against a zero score.
+ */
+const pickHighestEarningFiler = (
+  issues: RecentMirrorIssue[],
+  indexes: MinerIndexes,
+  now: Date,
+  rejectGithubIds: ReadonlySet<string>,
+): DashboardFeaturedDiscoverer | undefined => {
+  const picked = pickDiscovererWithFallback(
+    issues,
+    indexes,
+    now,
+    rejectGithubIds,
+    (a, b) => {
+      const delta =
+        parseNumber(b.miner.issueDiscoveryScore) -
+        parseNumber(a.miner.issueDiscoveryScore);
+      if (delta !== 0) return delta;
+      return b.issues.length - a.issues.length;
+    },
+    // Require a non-zero discovery score in the chosen window; otherwise
+    // the row 3 label ("Highest-earning discoverer") is misleading and
+    // falls through to the count tiebreak, duplicating row 2's intent.
+    // This is the guard that forces a 24h → 3d → 7d fallback whenever no
+    // filer in the current window has had an issue solved yet.
+    (agg) => parseNumber(agg.miner.issueDiscoveryScore) > 0,
+  );
+  if (!picked || !picked.aggregate.miner.githubId) return undefined;
+
+  const { aggregate, windowHours } = picked;
+  const author = buildDiscovererAuthor(aggregate.miner);
+  return {
+    id: `highest-earning:${aggregate.miner.githubId}`,
+    role: 'highest-earning-filer',
+    roleLabel: 'Highest-earning discoverer',
+    windowLabel: formatWindowLabel(windowHours),
+    author,
+    primary: {
+      label: 'discovery score',
+      value: formatDecimal(author.issueDiscoveryScore ?? 0, 2),
+    },
+    secondary: {
+      label: aggregate.issues.length === 1 ? 'issue filed' : 'issues filed',
+      value: formatWholeNumber(aggregate.issues.length),
+    },
+    repos: [...aggregate.repos],
+    href: buildMinerDetailsHref(aggregate.miner.githubId),
+    tone: getRoleTone('highest-earning-filer'),
+  };
+};
+
+// Below this previous-window count, percentage deltas (e.g. "+700%" off a
+// baseline of 1) are technically correct but visually misleading. We fall
+// back to absolute deltas in that regime.
+const ABSOLUTE_DELTA_THRESHOLD = 5;
+
+const formatWindowDelta = (currentValue: number, previousValue: number) => {
   if (currentValue === previousValue) return 'flat vs prev 24h';
   if (previousValue <= 0) {
     return currentValue > 0 ? 'new vs prev 24h' : 'flat vs prev 24h';
   }
-
-  const percentChange = ((currentValue - previousValue) / previousValue) * 100;
+  const absDelta = currentValue - previousValue;
+  if (previousValue < ABSOLUTE_DELTA_THRESHOLD) {
+    return `${absDelta > 0 ? '+' : ''}${absDelta} vs prev 24h`;
+  }
+  const percentChange = (absDelta / previousValue) * 100;
   const rounded = percentChange
     .toFixed(Math.abs(percentChange) >= 10 ? 0 : 1)
     .replace(/\.0$/, '');
-
   return `${percentChange > 0 ? '+' : ''}${rounded}% vs prev 24h`;
 };
 
-const getDailyKpiTone = (
+const getKpiTone = (
   currentValue: number,
   previousValue: number,
 ): DashboardDiscoveryKpi['tone'] => {
@@ -426,192 +508,137 @@ const getDailyKpiTone = (
   return 'neutral';
 };
 
-const getIssueDiscovererCount = (snapshot: DailyActivitySnapshot) =>
-  [...snapshot.discoverers.values()].filter(
-    (stats) => stats.linkedIssuesOpened > 0,
-  ).length;
+interface WindowSummary {
+  issueCount: number;
+  openCount: number;
+  filerCount: number;
+  repoCount: number;
+  totalIssueDiscoveryScore: number;
+}
 
-const mapNewLinkedIssuesKpi = (
-  current: DailyActivitySnapshot,
-  previous: DailyActivitySnapshot,
-): DashboardDiscoveryKpi => {
+const summarizeWindow = (
+  issues: RecentMirrorIssue[],
+  indexes: MinerIndexes,
+  bounds: WindowBounds,
+): WindowSummary => {
+  const filers = aggregateFilers(issues, indexes, bounds);
+  let issueCount = 0;
+  let openCount = 0;
+  const repos = new Set<string>();
+  let totalIssueDiscoveryScore = 0;
+  filers.forEach((agg) => {
+    issueCount += agg.issues.length;
+    openCount += agg.issues.filter((i) => i.state === 'open').length;
+    agg.repos.forEach((r) => repos.add(r));
+    totalIssueDiscoveryScore += parseNumber(agg.miner.issueDiscoveryScore);
+  });
   return {
-    label: 'New linked issues',
-    value: formatWholeNumber(current.linkedIssuesOpened),
-    delta: formatDailyDelta(
-      current.linkedIssuesOpened,
-      previous.linkedIssuesOpened,
-    ),
-    tone: getDailyKpiTone(
-      current.linkedIssuesOpened,
-      previous.linkedIssuesOpened,
-    ),
+    issueCount,
+    openCount,
+    filerCount: filers.size,
+    repoCount: repos.size,
+    totalIssueDiscoveryScore,
   };
 };
 
-const sortRepos = (repos: Set<string>) =>
-  [...repos].sort((a, b) => a.localeCompare(b));
+const buildDiscoveryKpis = (
+  issues: RecentMirrorIssue[],
+  indexes: MinerIndexes,
+  miners: MinerEvaluation[],
+  now: Date,
+): DashboardDiscoveryKpi[] => {
+  const current = summarizeWindow(issues, indexes, getRollingWindowBounds(now));
+  const previous = summarizeWindow(
+    issues,
+    indexes,
+    getPreviousRollingWindowBounds(now),
+  );
+  const eligibleMiners = miners.filter((m) => m.isIssueEligible).length;
+  const totalAllTimeIssueScore = miners.reduce(
+    (sum, m) => sum + parseNumber(m.issueDiscoveryScore),
+    0,
+  );
 
-const formatIssueCount = (value: number, singular: string) =>
-  `${formatWholeNumber(value)} ${singular}${value === 1 ? '' : 's'}`;
-
-const toDailyDiscoverer = (
-  stats: DailyDiscovererStats,
-  roleLabel: string,
-  primaryMetric: string,
-  primaryMetricLabel: string,
-  options?: {
-    secondaryMetric?: string;
-    secondaryMetricLabel?: string;
-    tone?: DashboardFeaturedDiscoverer['tone'];
-  },
-): DashboardFeaturedDiscoverer => ({
-  id: stats.key,
-  githubId: stats.githubId,
-  githubUsername: stats.githubUsername,
-  name: stats.name,
-  avatarUsername: stats.avatarUsername,
-  roleLabel,
-  primaryMetric,
-  primaryMetricLabel,
-  secondaryMetric: options?.secondaryMetric,
-  secondaryMetricLabel: options?.secondaryMetricLabel,
-  repos: sortRepos(stats.repos),
-  href: getMinerDetailsHref(stats.githubId),
-  tone: options?.tone ?? 'success',
-  credibility: stats.baselineCredibility,
-  usdPerDay: stats.usdPerDay,
-});
-
-// A "discoverer" is a miner who FILES an issue (per DiscoveriesPage copy):
-// > "Miners earn discovery rewards by filing quality issues that others solve
-// > via merged PRs."
-// PR authors who merge discovery-multiplier PRs are solvers, not discoverers,
-// and belong in the OSS / contributor flows — not here.
-//
-// Today this list is populated via `useDailyDiscoveryFilers`, a frontend
-// fallback that hits GitHub's Issues Search API directly because none of our
-// own endpoints expose the issue filer for fresh, non-bountied issues:
-//   - `/prs`                          → never returns `linkedIssues` (checked
-//                                       3382 PRs: 0 have the field).
-//   - `/repos/{repo}/issues`          → has fresh issues with `createdAt`,
-//                                       `closedAt`, `prNumber`, `title`. But
-//                                       `authorLogin`/`authorGithubId` are
-//                                       optional in the model and **never
-//                                       populated** by the current API
-//                                       (verified across 249 records).
-//   - `/issues`                       → only registered bounty records;
-//                                       fresh non-bountied issues are absent.
-//   - `/issues/{id}/details`          → has `authorLogin` but only for
-//                                       bountied issues.
-//   - `/miners/{id}`                  → aggregate counters only.
-//   - `/miners/{id}/issues` (mirror)  → has the right shape but lags ~85h
-//                                       behind GitHub.
-//
-// Any ONE of these backend changes lets us drop the GitHub-Search fallback
-// (lower latency, no third-party rate-limit risk):
-//   (A) Populate `authorLogin` + `authorGithubId` on `/repos/{repo}/issues`
-//       (smallest diff — model already declares both fields optional).
-//   (B) Add `linkedIssues: [{ number, authorGithubId, createdAt, state }]` to
-//       the /prs response.
-//   (C) Expose a dedicated `/discoveries/recent?windowHours=24` aggregate
-//       endpoint with authorship info.
-//   (D) Refresh the mirror snapshot hourly-or-less; shape is already correct.
-const buildDailyDiscovererRows = (
-  snapshot: DailyActivitySnapshot,
-): DashboardFeaturedDiscoverer[] => {
-  return [...snapshot.discoverers.values()]
-    .filter((entry) => entry.linkedIssuesOpened > 0)
-    .sort((a, b) => {
-      const issueDiff = b.linkedIssuesOpened - a.linkedIssuesOpened;
-      if (issueDiff !== 0) return issueDiff;
-
-      const baselineDiff = b.baselineIssueScore - a.baselineIssueScore;
-      if (baselineDiff !== 0) return baselineDiff;
-
-      return b.lastActivityMs - a.lastActivityMs;
-    })
-    .slice(0, DISCOVERY_SPOTLIGHT_LIMIT)
-    .map((stats, index) =>
-      toDailyDiscoverer(
-        stats,
-        index === 0 ? 'Top 24h Issue Discoverer' : '24h Issue Discoverer',
-        formatIssueCount(stats.linkedIssuesOpened, 'linked issue'),
-        'opened in 24h',
-        {
-          secondaryMetric: formatWholeNumber(stats.baselineIssueScore),
-          secondaryMetricLabel: 'baseline discovery score',
-        },
-      ),
-    );
+  return [
+    {
+      label: 'Issues filed',
+      value: formatWholeNumber(current.issueCount),
+      delta: formatWindowDelta(current.issueCount, previous.issueCount),
+      tone: getKpiTone(current.issueCount, previous.issueCount),
+    },
+    {
+      label: 'Open',
+      value: formatWholeNumber(current.openCount),
+      delta: formatWindowDelta(current.openCount, previous.openCount),
+      tone: getKpiTone(current.openCount, previous.openCount),
+    },
+    {
+      label: 'Active discoverers',
+      value: formatWholeNumber(current.filerCount),
+      delta: formatWindowDelta(current.filerCount, previous.filerCount),
+      tone: getKpiTone(current.filerCount, previous.filerCount),
+    },
+    {
+      label: 'Eligible miners',
+      value: formatWholeNumber(eligibleMiners),
+      delta: 'all-time',
+    },
+    {
+      label: 'Total issue score',
+      value: formatDecimal(totalAllTimeIssueScore, 0),
+      delta: 'all-time',
+    },
+  ];
 };
 
-const mapDailyDiscoveryKpis = (
-  current: DailyActivitySnapshot,
-  previous: DailyActivitySnapshot,
-): DashboardDiscoveryKpi[] => [
-  {
-    label: 'Discovery solves',
-    value: formatWholeNumber(current.discoveryPrsMerged),
-    delta: formatDailyDelta(
-      current.discoveryPrsMerged,
-      previous.discoveryPrsMerged,
-    ),
-    tone: getDailyKpiTone(
-      current.discoveryPrsMerged,
-      previous.discoveryPrsMerged,
-    ),
-  },
-  {
-    label: 'Discovery score',
-    value: formatWholeNumber(current.discoveryScore),
-    delta: formatDailyDelta(current.discoveryScore, previous.discoveryScore),
-    tone: getDailyKpiTone(current.discoveryScore, previous.discoveryScore),
-  },
-  mapNewLinkedIssuesKpi(current, previous),
-  {
-    label: 'Active discoverers',
-    value: formatWholeNumber(getIssueDiscovererCount(current)),
-    delta: formatDailyDelta(
-      getIssueDiscovererCount(current),
-      getIssueDiscovererCount(previous),
-    ),
-    tone: getDailyKpiTone(
-      getIssueDiscovererCount(current),
-      getIssueDiscovererCount(previous),
-    ),
-  },
-  {
-    label: 'Repos touched',
-    value: formatWholeNumber(current.repos.size),
-    delta: formatDailyDelta(current.repos.size, previous.repos.size),
-    tone: getDailyKpiTone(current.repos.size, previous.repos.size),
-  },
-];
-
-export const buildDailyDiscoveryPulse = (
-  prs: CommitLog[],
+/**
+ * Builds the Featured Discoverers section payload.
+ *
+ * @param _prs - Reserved for future KPI enrichment (e.g. "solved by"
+ *   linkage). Currently unused; kept in the signature so callers don't
+ *   need to change when backend fix ships linkedIssues on `/prs`.
+ * @param miners - Registered miners. Only issues filed by a registered
+ *   miner are eligible for discovery rewards, so non-miner issue authors
+ *   are dropped from rows 2 and 3.
+ * @param recentMirrorIssues - Issues returned by `useRecentMirrorIssues`
+ *   (GitHub Search fallback scoped to the 4 mirror repos).
+ * @param now - Injected clock for deterministic tests.
+ */
+export const buildFeaturedDiscoveries = (
+  _prs: CommitLog[],
   miners: MinerEvaluation[],
+  recentMirrorIssues: RecentMirrorIssue[] = [],
   now = new Date(),
-  externalDiscoveryIssues: DiscoveryIssueRecord[] = [],
 ): DashboardDiscoveryPulse => {
-  const currentSnapshot = buildDailyActivitySnapshot(
-    prs,
-    miners,
-    getRollingWindowBounds(now),
-    externalDiscoveryIssues,
+  const indexes = buildMinerIndexes(miners);
+
+  const row1 = pickAllTimeTopDiscoverer(miners, recentMirrorIssues, indexes);
+
+  const excludeAfterRow1 = new Set<string>();
+  if (row1?.author.githubId) excludeAfterRow1.add(row1.author.githubId);
+
+  const row2 = pickMostActiveDiscoverer(
+    recentMirrorIssues,
+    indexes,
+    now,
+    excludeAfterRow1,
   );
-  const previousSnapshot = buildDailyActivitySnapshot(
-    prs,
-    miners,
-    getPreviousRollingWindowBounds(now),
-    externalDiscoveryIssues,
+
+  const excludeAfterRow2 = new Set(excludeAfterRow1);
+  if (row2?.author.githubId) excludeAfterRow2.add(row2.author.githubId);
+
+  const row3 = pickHighestEarningFiler(
+    recentMirrorIssues,
+    indexes,
+    now,
+    excludeAfterRow2,
   );
-  const dailyDiscoverers = buildDailyDiscovererRows(currentSnapshot);
 
   return {
-    windowLabel: 'Last 24h',
-    kpis: mapDailyDiscoveryKpis(currentSnapshot, previousSnapshot),
-    discoverers: dailyDiscoverers,
+    windowLabel: 'Rolling 24h',
+    kpis: buildDiscoveryKpis(recentMirrorIssues, indexes, miners, now),
+    discoverers: [row1, row2, row3].filter(
+      (row): row is DashboardFeaturedDiscoverer => !!row,
+    ),
   };
 };

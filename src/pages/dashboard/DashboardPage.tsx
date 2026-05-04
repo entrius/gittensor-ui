@@ -28,7 +28,6 @@ const DashboardFeaturePage: React.FC = () => {
     featuredContributors,
     discoveryPulse,
     isDiscoveryPulseLoading,
-    isDiscoveryPulseError,
     isLoading,
   } = useDashboardData(range);
 
@@ -93,7 +92,6 @@ const DashboardFeaturePage: React.FC = () => {
             <DashboardFeaturedDiscoverers
               pulse={discoveryPulse}
               isLoading={isDiscoveryPulseLoading}
-              isError={isDiscoveryPulseError}
               viewAllHref="/discoveries"
             />
 

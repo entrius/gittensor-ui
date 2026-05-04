@@ -308,16 +308,18 @@ export const SpotlightRowShell: React.FC<SpotlightRowShellProps> = ({
     backgroundColor: theme.palette.common.black,
     display: 'grid',
     gridTemplateColumns: {
-      xs: '30px minmax(0, 1fr)',
+      xs: '30px minmax(0, 1fr) minmax(0, 1fr)',
       sm: '34px minmax(150px, 1.25fr) minmax(112px, 0.62fr) minmax(118px, 0.7fr) minmax(120px, 0.72fr) 18px',
     },
     gridTemplateAreas: {
+      // Primary + secondary share a single row at xs so the two metrics
+      // (e.g. contributor score / merged PRs) read as a pair instead of
+      // stacking vertically under each other.
       xs: `
-        "rank identity"
-        "rank primary"
-        "rank secondary"
-        "rank credibility"
-        "rank repos"
+        "rank identity identity"
+        "rank primary secondary"
+        "rank credibility credibility"
+        "rank repos repos"
       `,
       sm: `
         "rank identity primary secondary repos arrow"
@@ -442,10 +444,13 @@ export const SpotlightIdentity: React.FC<SpotlightIdentityProps> = ({
               fontWeight: 600,
               flex: '1 1 auto',
               minWidth: 0,
-              lineHeight: 1.25,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              lineHeight: 1.3,
+              // Allow the role+window label to wrap to a second line so
+              // longer copy (e.g. 'Highest-earning discoverer · Last 24h')
+              // stays readable in narrower row widths instead of being
+              // truncated with an ellipsis.
+              whiteSpace: 'normal',
+              overflowWrap: 'anywhere',
             }}
           >
             {label}
