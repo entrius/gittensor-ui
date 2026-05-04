@@ -1,11 +1,20 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+} from 'react';
 import {
   Box,
   Typography,
   CircularProgress,
+  Collapse,
   Grid,
   Tooltip,
   Popover,
+  Portal,
+  useMediaQuery,
 } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
 import { modeActiveTabSx } from '../../utils/themeUtils';
@@ -13,10 +22,10 @@ import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
-import { SectionCard } from './SectionCard';
 import { MinerCard } from './MinerCard';
 import { MinersList } from './MinersList';
 import { SearchInput } from '../common/SearchInput';
+import theme, { STATUS_COLORS } from '../../theme';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
 import { useWatchlist } from '../../hooks/useWatchlist';
 import { type SortOrder } from '../../utils/ExplorerUtils';
@@ -41,23 +50,35 @@ const DISC_ELIGIBLE_QUERY_PARAM = 'discElig';
 const VIEW_QUERY_PARAM = 'view';
 const SEARCH_QUERY_PARAM = 'search';
 const VISIBLE_QUERY_PARAM = 'visible';
-const VIEW_STORAGE_KEY = 'leaderboard:viewMode';
-// Sort state (`sort`, `dir`) is owned by `useDataTableParams`. We reuse the
-// `page` param slot for our "show more" count via the paramKeys override.
+const VIEW_STORAGE_KEY_LEADERBOARD = 'leaderboard:viewMode';
+const VIEW_STORAGE_KEY_WATCHLIST = 'watchlist:viewMode';
 
-const readStoredViewMode = (): ViewMode => {
+const readStoredViewMode = (
+  variant: 'watchlist' | 'oss' | 'discoveries' = 'oss',
+): ViewMode => {
+  const key =
+    variant === 'watchlist'
+      ? VIEW_STORAGE_KEY_WATCHLIST
+      : VIEW_STORAGE_KEY_LEADERBOARD;
+  const defaultValue = 'cards';
   try {
-    return window.localStorage.getItem(VIEW_STORAGE_KEY) === 'list'
-      ? 'list'
-      : 'cards';
+    const stored = window.localStorage.getItem(key);
+    return stored === 'list' || stored === 'cards' ? stored : defaultValue;
   } catch {
-    return 'cards';
+    return defaultValue;
   }
 };
 
-const writeStoredViewMode = (mode: ViewMode) => {
+const writeStoredViewMode = (
+  mode: ViewMode,
+  variant: 'watchlist' | 'oss' | 'discoveries' = 'oss',
+) => {
+  const key =
+    variant === 'watchlist'
+      ? VIEW_STORAGE_KEY_WATCHLIST
+      : VIEW_STORAGE_KEY_LEADERBOARD;
   try {
-    window.localStorage.setItem(VIEW_STORAGE_KEY, mode);
+    window.localStorage.setItem(key, mode);
   } catch {
     // localStorage unavailable (private mode, quota) — preference won't persist
   }
@@ -101,12 +122,27 @@ type TopMinersUrlFilters = {
   eligibleDiscovery: EligibilityFilter;
 };
 
-const eligibleUrlField = (paramKey: string) => ({
+const eligibleUrlField = (
+  paramKey: string,
+  defaultValue: EligibilityFilter,
+) => ({
   paramKey,
   parse: (raw: string | null): EligibilityFilter =>
-    raw === 'true' ? 'eligible' : raw === 'false' ? 'ineligible' : 'all',
-  serialize: (value: EligibilityFilter): string | null =>
-    value === 'all' ? null : value === 'eligible' ? 'true' : 'false',
+    raw === 'true'
+      ? 'eligible'
+      : raw === 'false'
+        ? 'ineligible'
+        : raw === 'all'
+          ? 'all'
+          : defaultValue,
+  serialize: (value: EligibilityFilter): string | null => {
+    if (value === defaultValue) return null;
+    return value === 'eligible'
+      ? 'true'
+      : value === 'ineligible'
+        ? 'false'
+        : 'all';
+  },
 });
 
 /** URL-inert slot: keeps a stable filter key for the data-table hook when a variant does not use it. */
@@ -197,7 +233,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             ? 'list'
             : raw === 'cards'
               ? 'cards'
-              : readStoredViewMode(),
+              : readStoredViewMode(variant),
         serialize: (value: ViewMode): string => value,
         resetPageOnChange: false,
       },
@@ -209,14 +245,14 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       eligible:
         variant === 'watchlist'
           ? inactiveEligibilitySlot('minersEligibleUnusedLegacy')
-          : eligibleUrlField(ELIGIBLE_QUERY_PARAM),
+          : eligibleUrlField(ELIGIBLE_QUERY_PARAM, 'eligible'),
       eligibleOss:
         variant === 'watchlist'
-          ? eligibleUrlField(OSS_ELIGIBLE_QUERY_PARAM)
+          ? eligibleUrlField(OSS_ELIGIBLE_QUERY_PARAM, 'all')
           : inactiveEligibilitySlot('minersEligibleOssUnused'),
       eligibleDiscovery:
         variant === 'watchlist'
-          ? eligibleUrlField(DISC_ELIGIBLE_QUERY_PARAM)
+          ? eligibleUrlField(DISC_ELIGIBLE_QUERY_PARAM, 'all')
           : inactiveEligibilitySlot('minersEligibleDiscUnused'),
     }),
     [variant],
@@ -258,10 +294,10 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       // returns null ('cards' is the default), the URL param is dropped and
       // the next render's parse falls back to localStorage — we need the new
       // value to be stored by that point.
-      writeStoredViewMode(nextMode);
+      writeStoredViewMode(nextMode, variant);
       setFilter('view', nextMode);
     },
-    [setFilter],
+    [setFilter, variant],
   );
 
   const handleEligibleOssChange = useCallback(
@@ -277,11 +313,6 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 
   const handleEligibleDiscoveryChange = useCallback(
     (next: EligibilityFilter) => setFilter('eligibleDiscovery', next),
-    [setFilter],
-  );
-
-  const handleSearchChange = useCallback(
-    (nextQuery: string) => setFilter('search', nextQuery),
     [setFilter],
   );
 
@@ -342,6 +373,36 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     filteredMiners.length - visibleMiners.length,
   );
 
+  const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setPortalTarget(document.getElementById('tabs-options-portal'));
+  }, []);
+
+  useEffect(() => {
+    if (!observerTarget.current || remainingMiners <= 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          const nextVisibleCount = Math.min(
+            visibleCount + MINERS_PAGE_SIZE,
+            filteredMiners.length,
+          );
+          setVisibleCount(
+            nextVisibleCount > MINERS_PAGE_SIZE ? nextVisibleCount : 0,
+          );
+        }
+      },
+      { root: null, rootMargin: '0px 0px 800px 0px', threshold: 0 },
+    );
+
+    observer.observe(observerTarget.current);
+    return () => observer.disconnect();
+  }, [remainingMiners, visibleCount, filteredMiners.length, setVisibleCount]);
+
   if (isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -397,53 +458,49 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
               />
             </Box>
           </Box>
+  const usePortal = portalTarget && isLargeScreen;
 
-          {/* Row 2: Sort tabs + Eligibility toggle */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 1,
-              flexWrap: 'wrap',
-            }}
-          >
-            <SortButtons
-              sortOption={sortOption}
-              sortDirection={sortDirection}
-              onSortChange={handleSortChange}
-              variant={variant}
-            />
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                flexWrap: 'wrap',
-                justifyContent: 'flex-end',
-              }}
-            >
-              {variant === 'watchlist' ? (
-                <WatchlistEligibilityBar
-                  ossValue={eligibleOssFilter}
-                  discoveryValue={eligibleDiscoveryFilter}
-                  onOssChange={handleEligibleOssChange}
-                  onDiscoveryChange={handleEligibleDiscoveryChange}
-                />
-              ) : (
-                <EligibilityToggle
-                  value={eligibleOssFilter}
-                  onChange={handleEligibleOssChange}
-                />
-              )}
-              <ViewModeToggle
-                viewMode={viewMode}
-                onChange={handleViewModeChange}
-              />
-            </Box>
-          </Box>
+  return (
+    <Box sx={{ pt: 2 }}>
+      {/* On large screens: render controls expanded in the sidebar */}
+      {usePortal ? (
+        <Portal container={portalTarget}>
+          <ToolbarSidebarPanel
+            sortOption={sortOption}
+            sortDirection={sortDirection}
+            onSortChange={handleSortChange}
+            variant={variant}
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            eligibleOssFilter={eligibleOssFilter}
+            eligibleDiscoveryFilter={eligibleDiscoveryFilter}
+            onEligibleOssChange={handleEligibleOssChange}
+            onEligibleDiscoveryChange={handleEligibleDiscoveryChange}
+          />
+        </Portal>
+      ) : (
+        <Box
+          sx={{
+            mb: 1.5,
+            px: 2,
+            display: 'flex',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <ToolbarPopover
+            sortOption={sortOption}
+            sortDirection={sortDirection}
+            onSortChange={handleSortChange}
+            variant={variant}
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            eligibleOssFilter={eligibleOssFilter}
+            eligibleDiscoveryFilter={eligibleDiscoveryFilter}
+            onEligibleOssChange={handleEligibleOssChange}
+            onEligibleDiscoveryChange={handleEligibleDiscoveryChange}
+          />
         </Box>
-      </SectionCard>
+      )}
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {filteredMiners.length > 0 && viewMode === 'cards' && (
@@ -579,7 +636,7 @@ const SortButtons: React.FC<SortButtonsProps> = ({
       display: 'flex',
       gap: 0.5,
       flexWrap: 'wrap',
-      justifyContent: 'center',
+      justifyContent: 'flex-start',
     }}
   >
     {getSortButtonOptions(variant).map((option) => {
@@ -987,5 +1044,364 @@ const EligibilityToggle: React.FC<EligibilityToggleProps> = ({
     })}
   </Box>
 );
+
+/* ─── ToolbarSidebarPanel: all controls rendered inline for sidebar ── */
+
+const sidebarLabelSx = {
+  fontFamily: FONTS.mono,
+  fontSize: '0.65rem',
+  fontWeight: 600,
+  color: 'text.secondary',
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+  mb: 1,
+} as const;
+
+const ToolbarSidebarPanel: React.FC<ToolbarPopoverProps> = (props) => {
+  const [open, setOpen] = useState(false);
+
+  const defaultOssFilter = props.variant === 'watchlist' ? 'all' : 'eligible';
+  const hasActiveFilter =
+    props.eligibleOssFilter !== defaultOssFilter ||
+    props.eligibleDiscoveryFilter !== 'all' ||
+    props.viewMode !== 'cards';
+
+  return (
+    <Box>
+      <Box
+        component="button"
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        sx={(t) => ({
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          border: 0,
+          background: 'none',
+          cursor: 'pointer',
+          p: 0,
+          color: t.palette.text.primary,
+        })}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+          <TuneOutlinedIcon
+            sx={{ fontSize: '1rem', color: 'text.secondary' }}
+          />
+          <Typography
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.8rem',
+              fontWeight: 600,
+            }}
+          >
+            Filters
+          </Typography>
+          {hasActiveFilter && (
+            <Box
+              component="span"
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                backgroundColor: 'status.info',
+              }}
+            />
+          )}
+        </Box>
+        <KeyboardArrowDownIcon
+          sx={{
+            fontSize: '1.1rem',
+            color: 'text.secondary',
+            transform: open ? 'rotate(-180deg)' : 'none',
+            transition: 'transform 0.2s ease',
+          }}
+        />
+      </Box>
+      <Collapse in={open}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+          <ToolbarSidebarPanelContent {...props} />
+        </Box>
+      </Collapse>
+    </Box>
+  );
+};
+
+const ToolbarSidebarPanelContent: React.FC<ToolbarPopoverProps> = ({
+  sortOption,
+  sortDirection,
+  onSortChange,
+  variant,
+  viewMode,
+  onViewModeChange,
+  eligibleOssFilter,
+  eligibleDiscoveryFilter,
+  onEligibleOssChange,
+  onEligibleDiscoveryChange,
+}) => (
+  <>
+    {/* Sort */}
+    <Box>
+      <Typography sx={sidebarLabelSx}>Sort by</Typography>
+      <SortButtons
+        sortOption={sortOption}
+        sortDirection={sortDirection}
+        onSortChange={onSortChange}
+        variant={variant}
+      />
+    </Box>
+
+    {/* Eligibility — always inline, no popovers */}
+    <Box>
+      <Typography sx={sidebarLabelSx}>Eligibility</Typography>
+      {variant === 'watchlist' ? (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Box>
+            <Typography
+              component="div"
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.6rem',
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                color: 'text.secondary',
+                textTransform: 'uppercase',
+                mb: 0.5,
+              }}
+            >
+              OSS
+            </Typography>
+            <EligibilityToggle
+              value={eligibleOssFilter}
+              onChange={onEligibleOssChange}
+              compact
+            />
+          </Box>
+          <Box>
+            <Typography
+              component="div"
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.6rem',
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                color: 'text.secondary',
+                textTransform: 'uppercase',
+                mb: 0.5,
+              }}
+            >
+              Discovery
+            </Typography>
+            <EligibilityToggle
+              value={eligibleDiscoveryFilter}
+              onChange={onEligibleDiscoveryChange}
+              compact
+            />
+          </Box>
+        </Box>
+      ) : (
+        <EligibilityToggle
+          value={eligibleOssFilter}
+          onChange={onEligibleOssChange}
+        />
+      )}
+    </Box>
+
+    {/* View mode */}
+    <Box>
+      <Typography sx={sidebarLabelSx}>View</Typography>
+      <ViewModeToggle viewMode={viewMode} onChange={onViewModeChange} />
+    </Box>
+  </>
+);
+
+/* ─── ToolbarPopover: single icon → all controls ─────────────── */
+
+interface ToolbarPopoverProps {
+  sortOption: SortOption;
+  sortDirection: SortOrder;
+  onSortChange: (option: SortOption) => void;
+  variant: LeaderboardVariant;
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
+  eligibleOssFilter: EligibilityFilter;
+  eligibleDiscoveryFilter: EligibilityFilter;
+  onEligibleOssChange: (next: EligibilityFilter) => void;
+  onEligibleDiscoveryChange: (next: EligibilityFilter) => void;
+}
+
+const ToolbarPopover: React.FC<ToolbarPopoverProps> = ({
+  sortOption,
+  sortDirection,
+  onSortChange,
+  variant,
+  viewMode,
+  onViewModeChange,
+  eligibleOssFilter,
+  eligibleDiscoveryFilter,
+  onEligibleOssChange,
+  onEligibleDiscoveryChange,
+}) => {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const open = Boolean(anchorEl);
+
+  const defaultOssFilter = variant === 'watchlist' ? 'all' : 'eligible';
+  const hasActiveFilter =
+    eligibleOssFilter !== defaultOssFilter || eligibleDiscoveryFilter !== 'all';
+
+  return (
+    <>
+      <Tooltip title="Sort & filter options" arrow>
+        <Box
+          component="button"
+          type="button"
+          onClick={(e) =>
+            setAnchorEl((prev) => (prev ? null : e.currentTarget))
+          }
+          sx={(theme) => ({
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.75,
+            px: 1.25,
+            py: 0.5,
+            minHeight: 32,
+            borderRadius: 2,
+            border: `1px solid ${theme.palette.border.light}`,
+            backgroundColor: open
+              ? alpha(theme.palette.text.primary, 0.06)
+              : 'transparent',
+            cursor: 'pointer',
+            transition: 'all 0.15s',
+            '&:hover': {
+              backgroundColor: alpha(theme.palette.text.primary, 0.04),
+              borderColor: theme.palette.border.medium,
+            },
+          })}
+        >
+          <TuneOutlinedIcon
+            sx={{ fontSize: '1rem', color: 'text.secondary' }}
+          />
+          <Typography
+            component="span"
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              color: 'text.secondary',
+            }}
+          >
+            Options
+          </Typography>
+          {hasActiveFilter && (
+            <Box
+              component="span"
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                backgroundColor: 'status.info',
+              }}
+            />
+          )}
+        </Box>
+      </Tooltip>
+
+      <Popover
+        open={open}
+        anchorEl={anchorEl}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{
+          paper: {
+            sx: (theme) => ({
+              mt: 1,
+              p: 2.5,
+              minWidth: 280,
+              borderRadius: 3,
+              border: `1px solid ${theme.palette.border.light}`,
+              backgroundColor: theme.palette.background.default,
+              backgroundImage: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2.5,
+            }),
+          },
+        }}
+      >
+        {/* Sort */}
+        <Box>
+          <Typography
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.65rem',
+              fontWeight: 600,
+              color: 'text.secondary',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              mb: 1,
+            }}
+          >
+            Sort by
+          </Typography>
+          <SortButtons
+            sortOption={sortOption}
+            sortDirection={sortDirection}
+            onSortChange={onSortChange}
+            variant={variant}
+          />
+        </Box>
+
+        {/* Eligibility */}
+        <Box>
+          <Typography
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.65rem',
+              fontWeight: 600,
+              color: 'text.secondary',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              mb: 1,
+            }}
+          >
+            Eligibility
+          </Typography>
+          {variant === 'watchlist' ? (
+            <WatchlistEligibilityBar
+              ossValue={eligibleOssFilter}
+              discoveryValue={eligibleDiscoveryFilter}
+              onOssChange={onEligibleOssChange}
+              onDiscoveryChange={onEligibleDiscoveryChange}
+            />
+          ) : (
+            <EligibilityToggle
+              value={eligibleOssFilter}
+              onChange={onEligibleOssChange}
+            />
+          )}
+        </Box>
+
+        {/* View mode */}
+        <Box>
+          <Typography
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.65rem',
+              fontWeight: 600,
+              color: 'text.secondary',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              mb: 1,
+            }}
+          >
+            View
+          </Typography>
+          <ViewModeToggle viewMode={viewMode} onChange={onViewModeChange} />
+        </Box>
+      </Popover>
+    </>
+  );
+};
 
 export default TopMinersTable;

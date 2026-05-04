@@ -8,16 +8,23 @@ import { credibilityColorFromPalette } from '../../utils/format';
 
 interface ActivitySidebarCardsProps {
   miners: MinerStats[];
+  defaultFilter?: 'eligible' | 'all';
+  /** Content to insert between the Miners Activity card and the rest. */
+  insertAfterFirstCard?: React.ReactNode;
 }
 
 export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
   miners: allMiners,
+  defaultFilter = 'eligible',
+  insertAfterFirstCard,
 }) => {
-  const miners = useEligibilityFilteredMiners(allMiners);
+  const miners = useEligibilityFilteredMiners(allMiners, defaultFilter);
   const minerActivityStats = useMemo(() => {
-    const all = miners.length;
-    const eligiblePr = miners.filter((m) => m.ossIsEligible).length;
-    const eligibleIssue = miners.filter((m) => m.discoveriesIsEligible).length;
+    const all = allMiners.length;
+    const eligiblePr = allMiners.filter((m) => m.ossIsEligible).length;
+    const eligibleIssue = allMiners.filter(
+      (m) => m.discoveriesIsEligible,
+    ).length;
     return {
       all,
       eligiblePr,
@@ -25,7 +32,7 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
       eligibleIssue,
       ineligibleIssue: Math.max(0, all - eligibleIssue),
     };
-  }, [miners]);
+  }, [allMiners]);
 
   const ossUsdPerDay = useMemo(
     () =>
@@ -174,6 +181,9 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
           />
         </Box>
       </SectionCard>
+
+      {/* Slot for injected content (e.g. options panel) */}
+      {insertAfterFirstCard}
 
       {/* CARD 2: PR Activity */}
       <SectionCard title="PR Activity" sx={{ flexShrink: 0 }}>
