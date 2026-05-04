@@ -21,13 +21,14 @@ import {
   type MinerEvaluation,
   type Repository,
 } from '../../api/models';
+import { useRecentMirrorIssues } from '../../hooks/useRecentMirrorIssues';
 import {
   buildDashboardKpis,
   buildDashboardOverview,
   buildDashboardTrendData,
   buildFeaturedContributors,
+  buildFeaturedDiscoveries,
   buildFeaturedWork,
-  buildFeaturedDiscoveryContributors,
   type TrendTimeRange,
 } from './dashboardData';
 
@@ -84,13 +85,16 @@ export const useDashboardData = (range: TrendTimeRange) => {
     [datasets.miners.data, datasets.prs.data],
   );
 
-  const featuredDiscoveryContributors = useMemo(
+  const recentMirrorIssuesQuery = useRecentMirrorIssues();
+
+  const discoveryPulse = useMemo(
     () =>
-      buildFeaturedDiscoveryContributors(
+      buildFeaturedDiscoveries(
         datasets.prs.data,
         datasets.miners.data,
+        recentMirrorIssuesQuery.data,
       ),
-    [datasets.miners.data, datasets.prs.data],
+    [datasets.miners.data, datasets.prs.data, recentMirrorIssuesQuery.data],
   );
 
   const featuredWork = useMemo(
@@ -115,7 +119,9 @@ export const useDashboardData = (range: TrendTimeRange) => {
     featuredWork,
     isFeaturedWorkLoading,
     featuredContributors,
-    featuredDiscoveryContributors,
+    discoveryPulse,
+    isDiscoveryPulseLoading:
+      datasets.prs.isLoading || datasets.miners.isLoading,
     isLoading:
       datasets.prs.isLoading ||
       datasets.miners.isLoading ||

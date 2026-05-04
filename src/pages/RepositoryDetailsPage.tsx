@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { formatDate } from '../utils/format';
+import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import {
   Alert,
   Box,
@@ -188,7 +189,7 @@ const RepositoryDetailsPage: React.FC = () => {
               <Grid item xs={12} md={8}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Avatar
-                    src={`https://avatars.githubusercontent.com/${owner}`}
+                    src={getRepositoryOwnerAvatarSrc(owner)}
                     variant="rounded"
                     sx={(theme) => ({
                       width: 32,
