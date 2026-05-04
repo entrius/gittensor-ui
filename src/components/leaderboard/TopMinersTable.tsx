@@ -391,10 +391,9 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
           <Box
             sx={{
               display: 'flex',
-              alignItems: { xs: 'stretch', sm: 'center' },
-              justifyContent: 'space-between',
+              flexDirection: 'column',
+              alignItems: 'stretch',
               gap: 1,
-              flexWrap: 'wrap',
             }}
           >
             <SortButtons
@@ -406,10 +405,11 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             <Box
               sx={{
                 display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
-                alignItems: { xs: 'center', sm: 'center' },
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
                 gap: 1,
-                width: { xs: '100%', sm: 'auto' },
+                width: '100%',
               }}
             >
               <Box
@@ -417,8 +417,9 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   gap: 1,
-                  flexWrap: 'wrap',
-                  justifyContent: 'flex-end',
+                  flexWrap: 'nowrap',
+                  justifyContent: 'space-between',
+                  width: '100%',
                 }}
               >
                 {variant === 'watchlist' ? (
@@ -578,9 +579,11 @@ const SortButtons: React.FC<SortButtonsProps> = ({
   <Box
     sx={{
       display: 'flex',
-      gap: 0.5,
-      flexWrap: 'wrap',
-      justifyContent: 'center',
+      gap: { xs: 0.45, sm: 0.5 },
+      flexWrap: 'nowrap',
+      justifyContent: 'space-between',
+      width: '100%',
+      minWidth: 0,
     }}
   >
     {getSortButtonOptions(variant).map((option) => {
@@ -590,13 +593,16 @@ const SortButtons: React.FC<SortButtonsProps> = ({
           key={option.value}
           onClick={() => onSortChange(option.value)}
           sx={(theme) => ({
-            px: 1.5,
-            height: 32,
+            px: { xs: 0.75, sm: 1.5 },
+            height: { xs: 30, sm: 32 },
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: 0.5,
             borderRadius: 2,
             cursor: 'pointer',
+            flex: 1,
+            minWidth: 0,
             backgroundColor: isActive
               ? alpha(theme.palette.text.primary, 0.1)
               : 'transparent',
@@ -613,8 +619,9 @@ const SortButtons: React.FC<SortButtonsProps> = ({
           <Typography
             sx={{
               fontFamily: FONTS.mono,
-              fontSize: '0.75rem',
+              fontSize: { xs: '0.62rem', sm: '0.75rem' },
               fontWeight: 600,
+              whiteSpace: 'nowrap',
             }}
           >
             {option.label}
@@ -937,8 +944,8 @@ const EligibilityToggle: React.FC<EligibilityToggleProps> = ({
   <Box
     sx={(theme) => ({
       display: 'inline-flex',
-      gap: compact ? 0.35 : 0.5,
-      p: compact ? 0.35 : 0.5,
+      gap: compact ? 0.3 : 0.28,
+      p: compact ? 0.3 : 0.35,
       borderRadius: 1.75,
       backgroundColor: theme.palette.surface.light,
       flexShrink: 0,
@@ -954,7 +961,7 @@ const EligibilityToggle: React.FC<EligibilityToggleProps> = ({
           aria-pressed={isActive}
           onClick={() => onChange(option.value)}
           sx={(theme) => ({
-            px: compact ? 1 : 1.5,
+            px: compact ? 0.9 : 1.2,
             height: compact ? 22 : 24,
             display: 'flex',
             alignItems: 'center',
