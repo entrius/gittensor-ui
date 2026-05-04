@@ -35,7 +35,7 @@ const KpiBox: React.FC<{
           ...mono,
           fontSize: '0.5rem',
           fontWeight: 600,
-          color: alpha(theme.palette.text.primary, 0.35),
+          color: alpha(theme.palette.text.primary, 0.7),
           textTransform: 'uppercase',
           letterSpacing: '0.08em',
           mb: 0.25,
@@ -63,7 +63,7 @@ const KpiBox: React.FC<{
           fontSize: '0.5rem',
           color: accentColor
             ? alpha(accentColor, 0.7)
-            : alpha(theme.palette.text.primary, 0.3),
+            : alpha(theme.palette.text.primary, 0.65),
           whiteSpace: 'nowrap',
         }}
       >
@@ -109,7 +109,7 @@ const DiscovererCard: React.FC<{
             ...mono,
             fontSize: '0.58rem',
             fontWeight: 600,
-            color: alpha(theme.palette.text.primary, 0.45),
+            color: alpha(theme.palette.text.primary, 0.8),
             backgroundColor: alpha(theme.palette.common.white, 0.04),
             border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
             borderRadius: 99,
@@ -223,7 +223,7 @@ const DiscovererCard: React.FC<{
                 ...mono,
                 fontSize: '0.58rem',
                 fontWeight: 500,
-                color: alpha(theme.palette.text.primary, 0.4),
+                color: alpha(theme.palette.text.primary, 0.75),
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -283,7 +283,7 @@ const DiscovererCard: React.FC<{
               sx={{
                 ...mono,
                 fontSize: '0.48rem',
-                color: alpha(theme.palette.text.primary, 0.35),
+                color: alpha(theme.palette.text.primary, 0.7),
                 mt: 0.15,
               }}
             >
@@ -306,7 +306,7 @@ const DiscovererCard: React.FC<{
               sx={{
                 ...mono,
                 fontSize: '0.48rem',
-                color: alpha(theme.palette.text.primary, 0.35),
+                color: alpha(theme.palette.text.primary, 0.7),
                 mt: 0.15,
               }}
             >
@@ -339,7 +339,7 @@ const DiscovererCard: React.FC<{
               sx={{
                 ...mono,
                 fontSize: '0.52rem',
-                color: alpha(theme.palette.text.primary, 0.38),
+                color: alpha(theme.palette.text.primary, 0.72),
                 whiteSpace: 'nowrap',
               }}
             >
@@ -367,7 +367,7 @@ const DiscovererCard: React.FC<{
           sx={{
             ...mono,
             fontSize: '0.72rem',
-            color: alpha(theme.palette.text.primary, 0.2),
+            color: alpha(theme.palette.text.primary, 0.55),
             flexShrink: 0,
           }}
         >
@@ -480,7 +480,7 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
             sx={{
               ...mono,
               fontSize: '0.55rem',
-              color: alpha(theme.palette.text.primary, 0.28),
+              color: alpha(theme.palette.text.primary, 0.6),
             }}
           >
             Updated with dashboard data
@@ -507,7 +507,7 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
         sx={{
           ...mono,
           fontSize: '0.58rem',
-          color: alpha(theme.palette.text.primary, 0.3),
+          color: alpha(theme.palette.text.primary, 0.65),
           mb: 1.25,
         }}
       >
