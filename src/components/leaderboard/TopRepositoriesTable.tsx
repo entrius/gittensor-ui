@@ -56,7 +56,12 @@ import type { TooltipComponentFormatterCallbackParams } from 'echarts';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { WatchlistButton } from '../common';
-import { truncateText } from '../../utils';
+import {
+  compareByWatchlist,
+  getRepositoryOwnerAvatarSrc,
+  truncateText,
+} from '../../utils';
+import { useWatchlist } from '../../hooks/useWatchlist';
 import { RankIcon } from './RankIcon';
 import { getRepositoryOwnerAvatarBackground, type RepoStats } from './types';
 import {
@@ -84,7 +89,8 @@ type SortColumn =
   | 'contributors'
   | 'discoveryScore'
   | 'discoveryIssues'
-  | 'discoveryContributors';
+  | 'discoveryContributors'
+  | 'watch';
 type SortDirection = 'asc' | 'desc';
 type ViewMode = RepositoriesViewMode;
 
@@ -115,6 +121,7 @@ const VALID_SORT_COLUMNS: SortColumn[] = [
   'discoveryScore',
   'discoveryIssues',
   'discoveryContributors',
+  'watch',
 ];
 
 /** List view: show numeric zeros when the row has OSS activity (avoids PRs > 0 with OSS score "-"). */
@@ -189,6 +196,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     [searchParams, storedViewMode],
   );
   const isInitialMount = useRef(true);
+  const { isWatched } = useWatchlist('repos');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const trimmedSearch = searchQuery.trim();
@@ -301,6 +309,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           comparison =
             a.discoveryContributors.size - b.discoveryContributors.size;
           break;
+        case 'watch':
+          comparison = compareByWatchlist(a, b, (r) => r.repository, isWatched);
+          break;
         default:
           // Default to totalScore descending (original behavior)
           comparison = b.totalScore - a.totalScore;
@@ -311,7 +322,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
 
     // Then add rank based on sorted order
     return sorted.map((repo, index) => ({ ...repo, rank: index + 1 }));
-  }, [repositories, sortColumn, sortDirection]);
+  }, [repositories, sortColumn, sortDirection, isWatched]);
 
   const filteredRepositories = useMemo(() => {
     let filtered = rankedRepositories;
@@ -408,6 +419,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         value: (r) => r.totalScore || 0,
       },
       repository: {
+        title: 'OSS score by repository',
+        yAxis: 'OSS score',
+        value: (r) => r.totalScore || 0,
+      },
+      watch: {
         title: 'OSS score by repository',
         yAxis: 'OSS score',
         value: (r) => r.totalScore || 0,
@@ -714,7 +730,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const renderSortHeader = (
     column: SortColumn,
     label: string,
-    align: 'left' | 'right' = 'left',
+    align: 'left' | 'right' | 'center' = 'left',
   ) => (
     <Box
       onClick={() => handleSort(column)}
@@ -726,9 +742,14 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         userSelect: 'none',
         width: '100%',
         height: '100%',
-        px: 2,
+        px: align === 'center' ? 0.5 : 2,
         py: 1,
-        justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
+        justifyContent:
+          align === 'right'
+            ? 'flex-end'
+            : align === 'center'
+              ? 'center'
+              : 'flex-start',
       }}
     >
       {label}
@@ -763,53 +784,56 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       width: '30%',
       headerSx: sortableHeaderSx,
       cellSx: { pl: 1.5 },
-      renderCell: (repo) => (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            cursor: 'pointer',
-            '&:hover': {
-              '& .MuiTypography-root': {
-                color: 'primary.main',
-                textDecoration: 'underline',
-              },
-            },
-          }}
-        >
-          <Avatar
-            src={`https://avatars.githubusercontent.com/${(repo.repository || '').split('/')[0]}`}
-            alt={(repo.repository || '').split('/')[0]}
+      renderCell: (repo) => {
+        const owner = (repo.repository || '').split('/')[0] || '';
+        return (
+          <Box
             sx={{
-              width: 20,
-              height: 20,
-              border: '1px solid',
-              borderColor: 'border.medium',
-              backgroundColor: getRepositoryOwnerAvatarBackground(
-                (repo.repository || '').split('/')[0],
-              ),
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              cursor: 'pointer',
+              '&:hover': {
+                '& .MuiTypography-root': {
+                  color: 'primary.main',
+                  textDecoration: 'underline',
+                },
+              },
             }}
-          />
-          <Tooltip title={repo.repository || ''} placement="top">
-            <Typography
-              component="span"
+          >
+            <Avatar
+              src={getRepositoryOwnerAvatarSrc(owner) || undefined}
+              alt={owner}
               sx={{
-                color: 'text.primary',
-                fontWeight: 500,
-                transition: 'color 0.2s',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                maxWidth: '100%',
-                display: 'inline-block',
+                width: 20,
+                height: 20,
+                border: '1px solid',
+                borderColor: 'border.medium',
+                backgroundColor: getRepositoryOwnerAvatarBackground(owner),
               }}
             >
-              {truncateText(repo.repository || '', 40)}
-            </Typography>
-          </Tooltip>
-        </Box>
-      ),
+              {(owner[0] || '?').toUpperCase()}
+            </Avatar>
+            <Tooltip title={repo.repository || ''} placement="top">
+              <Typography
+                component="span"
+                sx={{
+                  color: 'text.primary',
+                  fontWeight: 500,
+                  transition: 'color 0.2s',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '100%',
+                  display: 'inline-block',
+                }}
+              >
+                {truncateText(repo.repository || '', 40)}
+              </Typography>
+            </Tooltip>
+          </Box>
+        );
+      },
     },
     {
       key: 'weight',
@@ -963,9 +987,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'watch',
-      header: '★',
+      header: renderSortHeader('watch', '★', 'center'),
       width: '52px',
       align: 'center',
+      headerSx: sortableHeaderSx,
       cellSx: { p: 0 },
       renderCell: (repo) =>
         repo.repository ? (

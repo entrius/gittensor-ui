@@ -8,12 +8,18 @@
  * Keep pure domain/data builders out of this file.
  */
 import { useMemo } from 'react';
-import { useAllMiners, useAllPrs, useIssueDetails, useIssues } from '../../api';
+import {
+  useAllMiners,
+  useAllPrs,
+  useIssues,
+  useReposAndWeights,
+} from '../../api';
 import {
   type CommitLog,
   type DatasetState,
   type IssueBounty,
   type MinerEvaluation,
+  type Repository,
 } from '../../api/models';
 import {
   buildDashboardKpis,
@@ -29,12 +35,14 @@ type DashboardDatasets = {
   prs: DatasetState<CommitLog>;
   miners: DatasetState<MinerEvaluation>;
   issues: DatasetState<IssueBounty>;
+  repos: DatasetState<Repository>;
 };
 
 export const useDashboardData = (range: TrendTimeRange) => {
   const prsQuery = useAllPrs();
   const minersQuery = useAllMiners();
   const issuesQuery = useIssues();
+  const reposQuery = useReposAndWeights();
 
   const datasets: DashboardDatasets = {
     prs: {
@@ -51,6 +59,11 @@ export const useDashboardData = (range: TrendTimeRange) => {
       data: issuesQuery.data ?? [],
       isLoading: issuesQuery.isLoading,
       isError: issuesQuery.isError,
+    },
+    repos: {
+      data: reposQuery.data ?? [],
+      isLoading: reposQuery.isLoading,
+      isError: reposQuery.isError,
     },
   };
 
@@ -80,65 +93,18 @@ export const useDashboardData = (range: TrendTimeRange) => {
     [datasets.miners.data, datasets.prs.data],
   );
 
-  const preliminaryFeaturedWork = useMemo(
-    () => buildFeaturedWork(datasets.prs.data, datasets.issues.data),
-    [datasets.prs.data, datasets.issues.data],
-  );
-
-  const featuredIssueIds = useMemo(
-    () =>
-      preliminaryFeaturedWork
-        .filter((item) => item.kind === 'issue' && item.issueId)
-        .map((item) => item.issueId as number)
-        .slice(0, 2),
-    [preliminaryFeaturedWork],
-  );
-
-  const featuredIssueDetailsQueryA = useIssueDetails(featuredIssueIds[0] ?? 0);
-  const featuredIssueDetailsQueryB = useIssueDetails(featuredIssueIds[1] ?? 0);
-
-  const enrichedIssues = useMemo(() => {
-    const issues = datasets.issues.data;
-    const detailsByIssueId = new Map<number, IssueBounty>();
-    if (featuredIssueIds[0] && featuredIssueDetailsQueryA.data) {
-      detailsByIssueId.set(
-        featuredIssueIds[0],
-        featuredIssueDetailsQueryA.data,
-      );
-    }
-    if (featuredIssueIds[1] && featuredIssueDetailsQueryB.data) {
-      detailsByIssueId.set(
-        featuredIssueIds[1],
-        featuredIssueDetailsQueryB.data,
-      );
-    }
-    if (detailsByIssueId.size === 0) return issues;
-
-    return issues.map((issue): IssueBounty => {
-      const details = detailsByIssueId.get(issue.id);
-      if (!details) return issue;
-      return {
-        ...issue,
-        ...details,
-        authorLogin: details.authorLogin ?? issue.authorLogin ?? null,
-      };
-    });
-  }, [
-    datasets.issues.data,
-    featuredIssueIds,
-    featuredIssueDetailsQueryA.data,
-    featuredIssueDetailsQueryB.data,
-  ]);
-
   const featuredWork = useMemo(
-    () => buildFeaturedWork(datasets.prs.data, enrichedIssues),
-    [datasets.prs.data, enrichedIssues],
+    () => buildFeaturedWork(datasets.prs.data, datasets.repos.data),
+    [datasets.prs.data, datasets.repos.data],
   );
 
   const kpis = useMemo(
     () => buildDashboardKpis(datasets.prs.data, datasets.issues.data, range),
     [datasets.issues.data, datasets.prs.data, range],
   );
+
+  const isFeaturedWorkLoading =
+    datasets.prs.isLoading || datasets.repos.isLoading;
 
   return {
     datasets,
@@ -147,6 +113,7 @@ export const useDashboardData = (range: TrendTimeRange) => {
     trendLabels: trendData.labels,
     trendSeries: trendData.series,
     featuredWork,
+    isFeaturedWorkLoading,
     featuredContributors,
     featuredDiscoveryContributors,
     isLoading:

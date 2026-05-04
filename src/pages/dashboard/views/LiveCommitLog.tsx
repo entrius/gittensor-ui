@@ -15,6 +15,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { LinkBox } from '../../../components/common/linkBehavior';
 import { useInfiniteCommitLog } from '../../../api';
+import { getRepositoryOwnerAvatarSrc } from '../../../utils/avatar';
 import theme, {
   REPO_OWNER_AVATAR_BACKGROUNDS,
   scrollbarSx,
@@ -197,7 +198,7 @@ const CommitLogItem: React.FC<{
         >
           <Stack direction="row" alignItems="center" spacing={1}>
             <Avatar
-              src={`https://avatars.githubusercontent.com/${entry.repository.split('/')[0]}`}
+              src={getRepositoryOwnerAvatarSrc(entry.repository.split('/')[0])}
               sx={{
                 width: 16,
                 height: 16,

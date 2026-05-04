@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { formatDate } from '../utils/format';
+import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import {
   Alert,
   Box,
@@ -410,7 +411,7 @@ const RepositoryDetailsPage: React.FC = () => {
                       }}
                     >
                       <Avatar
-                        src={`https://avatars.githubusercontent.com/${owner}?s=128`}
+                        src={getRepositoryOwnerAvatarSrc(owner)}
                         alt=""
                         variant="rounded"
                         imgProps={{ loading: 'lazy', decoding: 'async' }}
@@ -481,7 +482,7 @@ const RepositoryDetailsPage: React.FC = () => {
                 <Box sx={{ display: { xs: 'none', md: 'block' } }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Avatar
-                      src={`https://avatars.githubusercontent.com/${owner}`}
+                      src={getRepositoryOwnerAvatarSrc(owner)}
                       variant="rounded"
                       sx={(theme) => ({
                         width: 32,
