@@ -20,7 +20,7 @@ export const UI_COLORS = {
   // existing brand colors (status greens/reds, info blue) read well on white.
   lightBg: '#ffffff', // GitHub canvas.default (page + cards)
   lightPaper: '#f6f8fa', // GitHub canvas.subtle (sidebar, secondary surfaces)
-  lightTextPrimary: '#1F2328', // GitHub fg.default
+  lightTextPrimary: '#24292f', // GitHub fg.default
   lightTextSecondary: '#636c76', // GitHub fg.muted
   lightTextTertiary: '#6e7781', // GitHub fg.subtle
   lightSurfaceElevated: '#f6f8fa', // GitHub canvas.subtle

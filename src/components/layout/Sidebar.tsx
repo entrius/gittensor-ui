@@ -7,7 +7,6 @@ import {
   Stack,
   Typography,
   ButtonBase,
-  Divider,
   Tooltip,
 } from '@mui/material';
 import LightModeIcon from '@mui/icons-material/LightMode';
@@ -57,20 +56,6 @@ const FOOTER_LINKS: ReadonlyArray<{ label: string; href: string }> = [
   { label: 'Github', href: 'https://github.com/entrius/gittensor' },
   { label: 'X', href: 'https://x.com/gittensor_io' },
 ];
-
-const footerLinkSx = {
-  color: 'text.primary',
-  fontSize: '0.65rem',
-  textDecoration: 'none',
-  '&:hover': { textDecoration: 'underline' },
-} as const;
-
-const footerDividerSx = {
-  borderColor: 'border.medium',
-  mx: 0.5,
-  height: '12px',
-  alignSelf: 'center',
-} as const;
 
 interface SidebarProps {
   onNavigate?: () => void;
@@ -194,57 +179,93 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, collapsed = false }) => {
           </IconButton>
         </Tooltip>
       ) : (
-        <Box sx={{ mt: 2 }}>
-          <Divider sx={{ borderColor: 'border.medium', mb: 2 }} />
-          <Stack direction="column" spacing={1} alignItems="center">
-            <Stack
-              direction="row"
-              spacing={0.5}
-              alignItems="center"
-              flexWrap="wrap"
-              justifyContent="center"
-            >
-              <Tooltip title={themeToggleLabel} arrow>
-                <IconButton
-                  size="small"
-                  onClick={toggleMode}
-                  aria-label={themeToggleLabel}
-                  sx={{ p: 0.25, color: 'text.secondary' }}
-                >
-                  {isDark ? (
-                    <LightModeIcon sx={{ fontSize: '0.85rem' }} />
-                  ) : (
-                    <DarkModeIcon sx={{ fontSize: '0.85rem' }} />
-                  )}
-                </IconButton>
-              </Tooltip>
-              {FOOTER_LINKS.map((link) => (
-                <React.Fragment key={link.href}>
-                  <Divider
-                    orientation="vertical"
-                    flexItem
-                    sx={footerDividerSx}
-                  />
-                  <Typography
-                    variant="caption"
-                    component="a"
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={footerLinkSx}
-                  >
-                    {link.label}
-                  </Typography>
-                </React.Fragment>
-              ))}
-            </Stack>
+        <Box
+          sx={(theme) => ({
+            mt: 2,
+            pt: 2.25,
+            borderTop: `1px solid ${theme.palette.border.light}`,
+          })}
+        >
+          {/* Links — horizontal natural flow with animated underline on hover */}
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              columnGap: 2,
+              rowGap: 0.75,
+              mb: 2,
+            }}
+          >
+            {FOOTER_LINKS.map((link) => (
+              <Typography
+                key={link.href}
+                component="a"
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={(theme) => ({
+                  position: 'relative',
+                  color: theme.palette.text.secondary,
+                  fontSize: '0.7rem',
+                  fontWeight: 500,
+                  letterSpacing: '0.01em',
+                  textDecoration: 'none',
+                  transition: 'color 0.2s ease',
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    left: 0,
+                    bottom: -2,
+                    width: 0,
+                    height: '1px',
+                    backgroundColor: theme.palette.text.primary,
+                    transition: 'width 0.2s ease',
+                  },
+                  '&:hover': {
+                    color: theme.palette.text.primary,
+                  },
+                  '&:hover::after': {
+                    width: '100%',
+                  },
+                })}
+              >
+                {link.label}
+              </Typography>
+            ))}
+          </Box>
+
+          {/* Bottom row — copyright left, toggle right */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
             <Typography
-              variant="caption"
-              sx={{ fontSize: '0.6rem', color: 'text.secondary' }}
+              sx={{
+                fontSize: '0.6rem',
+                color: 'text.disabled',
+                letterSpacing: '0.02em',
+              }}
             >
-              © Gittensor 2026
+              © 2026 Gittensor
             </Typography>
-          </Stack>
+            <Tooltip title={themeToggleLabel} arrow>
+              <IconButton
+                size="small"
+                onClick={toggleMode}
+                aria-label={themeToggleLabel}
+                sx={{ color: 'text.secondary' }}
+              >
+                {isDark ? (
+                  <LightModeIcon fontSize="small" />
+                ) : (
+                  <DarkModeIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
       )}
     </Box>
@@ -396,7 +417,7 @@ const SidebarNavLink: React.FC<{
           theme.palette.mode === 'dark'
             ? 'text.primary'
             : isActive
-              ? theme.palette.primary.main
+              ? theme.palette.text.primary
               : theme.palette.text.secondary,
         textDecoration: 'none',
         fontSize: NAV_LABEL_FONT,
@@ -409,7 +430,7 @@ const SidebarNavLink: React.FC<{
         borderLeft: collapsed
           ? 'none'
           : isActive
-            ? `2px solid ${theme.palette.mode === 'dark' ? baseColor : theme.palette.primary.main}`
+            ? `2px solid ${theme.palette.mode === 'dark' ? baseColor : theme.palette.text.primary}`
             : '2px solid transparent',
         borderRadius: collapsed ? 1.5 : 0,
         textAlign: collapsed ? 'center' : 'left',
@@ -424,7 +445,10 @@ const SidebarNavLink: React.FC<{
             theme.palette.mode === 'dark'
               ? alpha(baseColor, 0.05)
               : theme.palette.surface.light,
-          color: 'primary.main',
+          color:
+            theme.palette.mode === 'dark'
+              ? 'primary.main'
+              : theme.palette.text.primary,
         },
       }}
     >
