@@ -45,6 +45,7 @@ import IconButton from '@mui/material/IconButton';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
 import { STATUS_COLORS, DIFF_COLORS, scrollbarSx } from '../../theme';
+import { useClipboardCopy } from '../../hooks/useClipboardCopy';
 
 interface PRFile {
   sha: string;
@@ -1085,14 +1086,14 @@ const PRFileDiffViewer: React.FC<{
     return parseDiff(file.patch);
   }, [file.patch]);
 
-  const [copied, setCopied] = useState(false);
+  const { copied, copy, liveRegion } = useClipboardCopy({
+    copiedMessage: 'File path copied to clipboard',
+  });
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const handleCopyPath = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(file.filename);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    void copy(file.filename);
   };
 
   if (!file.patch) {
@@ -1174,12 +1175,18 @@ const PRFileDiffViewer: React.FC<{
               alignItems: 'center',
               gap: 1,
               overflow: 'hidden',
+              minWidth: 0,
+              flex: 1,
             }}
           >
             <Typography
               sx={{
-                fontSize: '0.9rem',
+                fontSize: { xs: '0.8rem', sm: '0.9rem' },
                 fontWeight: 600,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                minWidth: 0,
               }}
             >
               {file.filename}
@@ -1195,6 +1202,7 @@ const PRFileDiffViewer: React.FC<{
               <IconButton
                 size="small"
                 onClick={handleCopyPath}
+                aria-label="Copy file path"
                 sx={{ color: 'status.open', ml: 1, p: 0.5 }}
               >
                 {copied ? (
@@ -1204,13 +1212,15 @@ const PRFileDiffViewer: React.FC<{
                 )}
               </IconButton>
             </Tooltip>
+            {liveRegion}
           </Box>
 
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 2,
+              gap: { xs: 1, sm: 2 },
+              ml: 1,
               mr: 1,
               flexShrink: 0,
             }}
@@ -1218,7 +1228,7 @@ const PRFileDiffViewer: React.FC<{
             <Typography
               sx={{
                 color: 'diff.additions',
-                fontSize: '0.85rem',
+                fontSize: { xs: '0.8rem', sm: '0.85rem' },
                 fontWeight: 600,
               }}
             >
@@ -1227,7 +1237,7 @@ const PRFileDiffViewer: React.FC<{
             <Typography
               sx={{
                 color: 'diff.deletions',
-                fontSize: '0.85rem',
+                fontSize: { xs: '0.8rem', sm: '0.85rem' },
                 fontWeight: 600,
               }}
             >
@@ -1252,7 +1262,7 @@ const PRFileDiffViewer: React.FC<{
               flex: 1,
               overflowX: 'auto',
               overflowY: 'auto',
-              mr: '16px',
+              mr: { xs: 0, sm: '16px' },
               ...scrollbarSx,
             }}
           >
@@ -1263,11 +1273,13 @@ const PRFileDiffViewer: React.FC<{
             )}
           </Box>
 
-          {/* Minimap */}
-          <DiffMinimap
-            files={parsedDiff}
-            scrollContainerRef={scrollContainerRef}
-          />
+          {/* Minimap (hidden on mobile) */}
+          <Box sx={{ display: { xs: 'none', sm: 'flex' } }}>
+            <DiffMinimap
+              files={parsedDiff}
+              scrollContainerRef={scrollContainerRef}
+            />
+          </Box>
         </AccordionDetails>
       </Accordion>
     </Paper>
@@ -1381,14 +1393,14 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
   }
 
   return (
-    <Grid container spacing={3}>
+    <Grid container spacing={{ xs: 2, md: 3 }}>
       {/* Sidebar - File Tree */}
       <Grid item xs={12} md={3}>
         <Box
           sx={{
-            position: 'sticky',
-            top: 24,
-            maxHeight: 'calc(100vh - 100px)',
+            position: { xs: 'static', md: 'sticky' },
+            top: { md: 24 },
+            maxHeight: { xs: 280, md: 'calc(100vh - 100px)' },
             overflowY: 'auto',
             backgroundColor: 'background.paper',
             borderRadius: '8px',
@@ -1506,7 +1518,14 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
 
       {/* Content - File Diffs */}
       <Grid item xs={12} md={9}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pb: 20 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: { xs: 2, md: 3 },
+            pb: { xs: 4, md: 20 },
+          }}
+        >
           {files.map((file) => (
             <PRFileDiffViewer
               key={file.sha}

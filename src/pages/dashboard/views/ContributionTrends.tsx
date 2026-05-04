@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from 'react';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
 import {
   Box,
   Card,
@@ -16,6 +18,13 @@ import {
   type TrendSeriesKey,
   type TrendTimeRange,
 } from '../dashboardData';
+import {
+  echartsAxisTooltipChrome,
+  echartsFontFamily,
+  echartsGridLineChart,
+  echartsMutedCartesianAxisColors,
+  echartsTransparentBackground,
+} from '../../../utils/echarts/gittensorChartTheme';
 
 interface ContributionTrendsProps {
   range: TrendTimeRange;
@@ -24,6 +33,49 @@ interface ContributionTrendsProps {
   isLoading?: boolean;
   onRangeChange: (range: TrendTimeRange) => void;
 }
+
+type TrendChartMode = 'line' | 'bar';
+
+const TREND_CHART_ANIMATION_MS = 450;
+const TREND_CHART_AXIS_POINTER_WIDTH = 1;
+const TREND_CHART_AXIS_POINTER_OPACITY = 0.18;
+const TREND_CHART_AXIS_SHADOW_OPACITY = 0.04;
+const TREND_CHART_TOOLTIP_PADDING = [10, 12] as const;
+const TREND_CHART_TOOLTIP_FONT_SIZE = 11;
+const TREND_CHART_AXIS_LABEL_FONT_SIZE = 10;
+const TREND_CHART_Y_AXIS_SPLIT_COUNT = 4;
+const TREND_CHART_LINE_SMOOTHNESS = 0.2;
+
+const TREND_BAR_MAX_WIDTH = 18;
+const TREND_BAR_GAP = '24%';
+const TREND_BAR_CATEGORY_GAP = '36%';
+const TREND_BAR_RADIUS = [5, 5, 0, 0] as const;
+const TREND_BAR_BACKGROUND_OPACITY = 0.035;
+const TREND_BAR_SHADOW_OPACITY = 0.2;
+const TREND_BAR_HOVER_SHADOW_OPACITY = 0.32;
+const TREND_BAR_PRIMARY_SHADOW_BLUR = 8;
+const TREND_BAR_SECONDARY_SHADOW_BLUR = 4;
+const TREND_BAR_HOVER_SHADOW_BLUR = 12;
+const TREND_BAR_GRADIENT_STOPS = [
+  { offset: 0, opacity: 0.95 },
+  { offset: 0.55, opacity: 0.68 },
+  { offset: 1, opacity: 0.22 },
+] as const;
+
+const CHART_MODE_TOGGLE_PADDING = 0.25;
+const CHART_MODE_TOGGLE_BORDER_OPACITY = 0.08;
+const CHART_MODE_TOGGLE_BACKGROUND_OPACITY = 0.035;
+const CHART_MODE_TOGGLE_SLIDER_INSET = 3;
+const CHART_MODE_TOGGLE_SLIDER_WIDTH = `calc(50% - ${CHART_MODE_TOGGLE_SLIDER_INSET}px)`;
+const CHART_MODE_TOGGLE_SLIDER_OPACITY = 0.95;
+const CHART_MODE_TOGGLE_SLIDER_SHADOW_OPACITY = 0.16;
+const CHART_MODE_TOGGLE_TRANSITION =
+  'transform 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease';
+const CHART_MODE_TOGGLE_BUTTON_SIZE = {
+  width: 36,
+  height: 26,
+} as const;
+const CHART_MODE_TOGGLE_IDLE_TEXT_OPACITY = 0.58;
 
 const TREND_SERIES_PRESENTATION: Record<
   TrendSeriesKey,
@@ -71,6 +123,274 @@ const getTrendSeriesColor = (theme: Theme, seriesKey: TrendSeriesKey) =>
     TREND_SERIES_PRESENTATION[seriesKey].colorOpacity,
   );
 
+const getTrendSeriesBarFill = (theme: Theme, seriesKey: TrendSeriesKey) => {
+  const baseColor = getTrendSeriesBaseColor(theme, seriesKey);
+
+  return {
+    type: 'linear',
+    x: 0,
+    y: 0,
+    x2: 0,
+    y2: 1,
+    colorStops: TREND_BAR_GRADIENT_STOPS.map((stop) => ({
+      offset: stop.offset,
+      color: alpha(baseColor, stop.opacity),
+    })),
+  };
+};
+
+const getTrendBarShadowBlur = (seriesKey: TrendSeriesKey) =>
+  seriesKey === 'mergedPrs'
+    ? TREND_BAR_PRIMARY_SHADOW_BLUR
+    : TREND_BAR_SECONDARY_SHADOW_BLUR;
+
+const getChartModeSliderOffset = (chartMode: TrendChartMode) =>
+  chartMode === 'bar' ? 'translateX(100%)' : 'translateX(0)';
+
+const getChartModeToggleSx = (theme: Theme, chartMode: TrendChartMode) => ({
+  position: 'relative',
+  gap: 0,
+  p: CHART_MODE_TOGGLE_PADDING,
+  borderRadius: 999,
+  border: `1px solid ${alpha(
+    theme.palette.text.primary,
+    CHART_MODE_TOGGLE_BORDER_OPACITY,
+  )}`,
+  backgroundColor: alpha(
+    theme.palette.text.primary,
+    CHART_MODE_TOGGLE_BACKGROUND_OPACITY,
+  ),
+  overflow: 'hidden',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: CHART_MODE_TOGGLE_SLIDER_INSET,
+    bottom: CHART_MODE_TOGGLE_SLIDER_INSET,
+    left: CHART_MODE_TOGGLE_SLIDER_INSET,
+    width: CHART_MODE_TOGGLE_SLIDER_WIDTH,
+    borderRadius: 999,
+    backgroundColor: alpha(
+      theme.palette.diff.additions,
+      CHART_MODE_TOGGLE_SLIDER_OPACITY,
+    ),
+    boxShadow: `0 8px 18px ${alpha(
+      theme.palette.diff.additions,
+      CHART_MODE_TOGGLE_SLIDER_SHADOW_OPACITY,
+    )}`,
+    transform: getChartModeSliderOffset(chartMode),
+    transition: CHART_MODE_TOGGLE_TRANSITION,
+  },
+  '& .MuiToggleButtonGroup-grouped': {
+    zIndex: 1,
+    border: 0,
+    borderRadius: '999px !important',
+    px: 0,
+    py: 0,
+    minWidth: CHART_MODE_TOGGLE_BUTTON_SIZE.width,
+    width: CHART_MODE_TOGGLE_BUTTON_SIZE.width,
+    height: CHART_MODE_TOGGLE_BUTTON_SIZE.height,
+    color: alpha(
+      theme.palette.text.primary,
+      CHART_MODE_TOGGLE_IDLE_TEXT_OPACITY,
+    ),
+    fontSize: '0.66rem',
+    fontWeight: 700,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    '&.Mui-selected': {
+      color: theme.palette.background.paper,
+      backgroundColor: 'transparent',
+    },
+    '&.Mui-selected:hover': {
+      backgroundColor: 'transparent',
+    },
+    '&:hover': {
+      backgroundColor: 'transparent',
+      color: theme.palette.text.primary,
+    },
+  },
+});
+
+const buildContributionTrendChartOption = ({
+  chartMode,
+  labels,
+  range,
+  theme,
+  visibleSeries,
+}: {
+  chartMode: TrendChartMode;
+  labels: string[];
+  range: TrendTimeRange;
+  theme: Theme;
+  visibleSeries: DashboardTrendSeries[];
+}) => {
+  const labelInterval = range === '35d' ? 6 : range === '7d' ? 0 : 'auto';
+  const tooltipPrimaryColor = theme.palette.text.primary;
+  const tooltipSecondaryColor = alpha(theme.palette.text.primary, 0.66);
+  const chartFontFamily = echartsFontFamily(theme);
+  const {
+    labelColor: chartLabelColor,
+    axisLineColor: chartAxisLineColor,
+    splitLineColor: chartSplitLineColor,
+  } = echartsMutedCartesianAxisColors(theme);
+
+  return {
+    ...echartsTransparentBackground(),
+    animationDuration: TREND_CHART_ANIMATION_MS,
+    color: visibleSeries.map((entry) => getTrendSeriesColor(theme, entry.key)),
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: chartMode === 'bar' ? 'shadow' : 'line',
+        lineStyle: {
+          color: alpha(
+            theme.palette.text.primary,
+            TREND_CHART_AXIS_POINTER_OPACITY,
+          ),
+          width: TREND_CHART_AXIS_POINTER_WIDTH,
+        },
+        shadowStyle: {
+          color: alpha(
+            theme.palette.text.primary,
+            TREND_CHART_AXIS_SHADOW_OPACITY,
+          ),
+        },
+      },
+      ...echartsAxisTooltipChrome(theme),
+      padding: TREND_CHART_TOOLTIP_PADDING,
+      textStyle: {
+        color: theme.palette.text.primary,
+        fontFamily: chartFontFamily,
+        fontSize: TREND_CHART_TOOLTIP_FONT_SIZE,
+      },
+      formatter: (
+        params: Array<{
+          axisValueLabel: string;
+          seriesName: string;
+          value: number;
+        }>,
+      ) => {
+        const rows = params
+          .map(
+            (entry) =>
+              `<div style="display:flex;justify-content:space-between;gap:24px;">
+                <span style="color:${tooltipSecondaryColor};">${entry.seriesName}</span>
+                <span style="color:${tooltipPrimaryColor};font-weight:700;">${entry.value}</span>
+              </div>`,
+          )
+          .join('');
+
+        return `
+          <div style="display:grid;gap:6px;font-family:${chartFontFamily};">
+            <div style="color:${tooltipPrimaryColor};font-weight:700;">${params[0]?.axisValueLabel || ''}</div>
+            ${rows}
+          </div>
+        `;
+      },
+    },
+    grid: echartsGridLineChart(),
+    xAxis: {
+      type: 'category',
+      boundaryGap: chartMode === 'bar',
+      data: labels,
+      axisLabel: {
+        color: chartLabelColor,
+        fontFamily: chartFontFamily,
+        fontSize: TREND_CHART_AXIS_LABEL_FONT_SIZE,
+        interval: labelInterval,
+        hideOverlap: true,
+      },
+      axisLine: {
+        lineStyle: {
+          color: chartAxisLineColor,
+        },
+      },
+      axisTick: {
+        show: false,
+      },
+    },
+    yAxis: {
+      type: 'value',
+      min: 0,
+      splitNumber: TREND_CHART_Y_AXIS_SPLIT_COUNT,
+      axisLabel: {
+        color: chartLabelColor,
+        fontFamily: chartFontFamily,
+        fontSize: TREND_CHART_AXIS_LABEL_FONT_SIZE,
+      },
+      splitLine: {
+        lineStyle: {
+          color: chartSplitLineColor,
+          type: 'dashed',
+        },
+      },
+      axisLine: { show: false },
+      axisTick: { show: false },
+    },
+    series: visibleSeries.map((entry) => {
+      const presentation = TREND_SERIES_PRESENTATION[entry.key];
+      const color = getTrendSeriesColor(theme, entry.key);
+
+      if (chartMode === 'bar') {
+        return {
+          name: presentation.label,
+          type: 'bar',
+          data: entry.values,
+          barMaxWidth: TREND_BAR_MAX_WIDTH,
+          barGap: TREND_BAR_GAP,
+          barCategoryGap: TREND_BAR_CATEGORY_GAP,
+          showBackground: true,
+          backgroundStyle: {
+            color: alpha(
+              theme.palette.text.primary,
+              TREND_BAR_BACKGROUND_OPACITY,
+            ),
+            borderRadius: TREND_BAR_RADIUS,
+          },
+          itemStyle: {
+            color: getTrendSeriesBarFill(theme, entry.key),
+            borderRadius: TREND_BAR_RADIUS,
+            opacity: presentation.lineOpacity,
+            shadowBlur: getTrendBarShadowBlur(entry.key),
+            shadowColor: alpha(
+              getTrendSeriesBaseColor(theme, entry.key),
+              TREND_BAR_SHADOW_OPACITY,
+            ),
+          },
+          emphasis: {
+            focus: 'series',
+            itemStyle: {
+              opacity: 1,
+              shadowBlur: TREND_BAR_HOVER_SHADOW_BLUR,
+              shadowColor: alpha(
+                getTrendSeriesBaseColor(theme, entry.key),
+                TREND_BAR_HOVER_SHADOW_OPACITY,
+              ),
+            },
+          },
+        };
+      }
+
+      return {
+        name: presentation.label,
+        type: 'line',
+        smooth: TREND_CHART_LINE_SMOOTHNESS,
+        showSymbol: false,
+        symbol: 'circle',
+        data: entry.values,
+        lineStyle: {
+          width: presentation.lineWidth,
+          color,
+          opacity: presentation.lineOpacity,
+        },
+        emphasis: {
+          focus: 'series',
+        },
+      };
+    }),
+  };
+};
+
 const ContributionTrends: React.FC<ContributionTrendsProps> = ({
   range,
   labels,
@@ -80,6 +400,7 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
 }) => {
   const theme = useTheme();
   const [hiddenSeries, setHiddenSeries] = useState<TrendSeriesKey[]>([]);
+  const [chartMode, setChartMode] = useState<TrendChartMode>('line');
 
   const visibleSeries = useMemo(
     () => series.filter((entry) => !hiddenSeries.includes(entry.key)),
@@ -87,127 +408,14 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
   );
 
   const chartOption = useMemo(() => {
-    const labelInterval = range === '35d' ? 6 : range === '7d' ? 0 : 'auto';
-    const tooltipPrimaryColor = theme.palette.text.primary;
-    const tooltipSecondaryColor = alpha(theme.palette.text.primary, 0.66);
-    const tooltipFontFamily = theme.typography.fontFamily;
-    const chartLabelColor = alpha(theme.palette.text.primary, 0.64);
-    const chartAxisLineColor = alpha(theme.palette.text.primary, 0.08);
-    const chartSplitLineColor = alpha(theme.palette.text.primary, 0.07);
-    const chartFontFamily = theme.typography.fontFamily;
-
-    return {
-      backgroundColor: 'transparent',
-      animationDuration: 450,
-      color: visibleSeries.map((series) =>
-        getTrendSeriesColor(theme, series.key),
-      ),
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-          type: 'line',
-          lineStyle: {
-            color: alpha(theme.palette.text.primary, 0.18),
-            width: 1,
-          },
-        },
-        backgroundColor: theme.palette.surface.tooltip,
-        borderColor: alpha(theme.palette.text.primary, 0.14),
-        borderWidth: 1,
-        padding: [10, 12],
-        textStyle: {
-          color: theme.palette.text.primary,
-          fontFamily: theme.typography.fontFamily,
-          fontSize: 11,
-        },
-        formatter: (
-          params: Array<{
-            axisValueLabel: string;
-            seriesName: string;
-            value: number;
-          }>,
-        ) => {
-          const rows = params
-            .map(
-              (entry) =>
-                `<div style="display:flex;justify-content:space-between;gap:24px;">
-                  <span style="color:${tooltipSecondaryColor};">${entry.seriesName}</span>
-                  <span style="color:${tooltipPrimaryColor};font-weight:700;">${entry.value}</span>
-                </div>`,
-            )
-            .join('');
-
-          return `
-            <div style="display:grid;gap:6px;font-family:${tooltipFontFamily};">
-              <div style="color:${tooltipPrimaryColor};font-weight:700;">${params[0]?.axisValueLabel || ''}</div>
-              ${rows}
-            </div>
-          `;
-        },
-      },
-      grid: {
-        left: '3%',
-        right: '2%',
-        top: 20,
-        bottom: 28,
-        containLabel: true,
-      },
-      xAxis: {
-        type: 'category',
-        boundaryGap: false,
-        data: labels,
-        axisLabel: {
-          color: chartLabelColor,
-          fontFamily: chartFontFamily,
-          fontSize: 10,
-          interval: labelInterval,
-          hideOverlap: true,
-        },
-        axisLine: {
-          lineStyle: {
-            color: chartAxisLineColor,
-          },
-        },
-        axisTick: {
-          show: false,
-        },
-      },
-      yAxis: {
-        type: 'value',
-        min: 0,
-        splitNumber: 4,
-        axisLabel: {
-          color: chartLabelColor,
-          fontFamily: chartFontFamily,
-          fontSize: 10,
-        },
-        splitLine: {
-          lineStyle: {
-            color: chartSplitLineColor,
-            type: 'dashed',
-          },
-        },
-        axisLine: { show: false },
-        axisTick: { show: false },
-      },
-      series: visibleSeries.map((series) => ({
-        name: TREND_SERIES_PRESENTATION[series.key].label,
-        type: 'line',
-        smooth: 0.2,
-        showSymbol: false,
-        symbol: 'circle',
-        data: series.values,
-        lineStyle: {
-          width: TREND_SERIES_PRESENTATION[series.key].lineWidth,
-          color: getTrendSeriesColor(theme, series.key),
-          opacity: TREND_SERIES_PRESENTATION[series.key].lineOpacity,
-        },
-        emphasis: {
-          focus: 'series',
-        },
-      })),
-    };
-  }, [labels, range, theme, visibleSeries]);
+    return buildContributionTrendChartOption({
+      chartMode,
+      labels,
+      range,
+      theme,
+      visibleSeries,
+    });
+  }, [chartMode, labels, range, theme, visibleSeries]);
 
   const handleToggleSeries = (seriesKey: TrendSeriesKey) => {
     setHiddenSeries((current) => {
@@ -244,48 +452,81 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
           </Typography>
         </Box>
 
-        <ToggleButtonGroup
-          exclusive
-          value={range}
-          onChange={(
-            _event: React.MouseEvent<HTMLElement>,
-            nextRange: TrendTimeRange | null,
-          ) => {
-            if (nextRange) onRangeChange(nextRange);
-          }}
-          size="small"
-          aria-label="Contribution timeline time range"
-          sx={{
-            gap: 0.18,
-            '& .MuiToggleButtonGroup-grouped': {
-              border: 0,
-              borderRadius: '999px !important',
-              px: 0.8,
-              py: 0.24,
-              minWidth: 38,
-              color: alpha(theme.palette.text.primary, 0.58),
-              fontSize: '0.66rem',
-              fontWeight: 700,
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-              '&.Mui-selected': {
-                color: theme.palette.background.paper,
-                backgroundColor: alpha(theme.palette.diff.additions, 0.95),
-              },
-              '&.Mui-selected:hover': {
-                backgroundColor: alpha(theme.palette.diff.additions, 0.95),
-              },
-              '&:hover': {
-                backgroundColor: alpha(theme.palette.text.primary, 0.06),
-              },
-            },
-          }}
+        <Stack
+          direction="row"
+          spacing={0.75}
+          useFlexGap
+          flexWrap="wrap"
+          justifyContent={{ xs: 'flex-start', md: 'flex-end' }}
         >
-          <ToggleButton value="1d">1D</ToggleButton>
-          <ToggleButton value="7d">7D</ToggleButton>
-          <ToggleButton value="35d">35D</ToggleButton>
-          <ToggleButton value="all">All</ToggleButton>
-        </ToggleButtonGroup>
+          <ToggleButtonGroup
+            exclusive
+            value={chartMode}
+            onChange={(
+              _event: React.MouseEvent<HTMLElement>,
+              nextMode: TrendChartMode | null,
+            ) => {
+              if (nextMode) setChartMode(nextMode);
+            }}
+            size="small"
+            aria-label="Contribution timeline chart mode"
+            sx={getChartModeToggleSx(theme, chartMode)}
+          >
+            <ToggleButton
+              value="line"
+              aria-label="Line chart"
+              title="Line chart"
+            >
+              <ShowChartIcon fontSize="inherit" />
+            </ToggleButton>
+            <ToggleButton value="bar" aria-label="Bar chart" title="Bar chart">
+              <BarChartIcon fontSize="inherit" />
+            </ToggleButton>
+          </ToggleButtonGroup>
+
+          <ToggleButtonGroup
+            exclusive
+            value={range}
+            onChange={(
+              _event: React.MouseEvent<HTMLElement>,
+              nextRange: TrendTimeRange | null,
+            ) => {
+              if (nextRange) onRangeChange(nextRange);
+            }}
+            size="small"
+            aria-label="Contribution timeline time range"
+            sx={{
+              gap: 0.18,
+              '& .MuiToggleButtonGroup-grouped': {
+                border: 0,
+                borderRadius: '999px !important',
+                px: 0.8,
+                py: 0.24,
+                minWidth: 38,
+                color: alpha(theme.palette.text.primary, 0.58),
+                fontSize: '0.66rem',
+                fontWeight: 700,
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+                '&.Mui-selected': {
+                  color: theme.palette.background.paper,
+                  backgroundColor: alpha(theme.palette.diff.additions, 0.95),
+                },
+                '&.Mui-selected:hover': {
+                  backgroundColor: alpha(theme.palette.diff.additions, 0.95),
+                },
+                '&:hover': {
+                  backgroundColor: alpha(theme.palette.text.primary, 0.06),
+                },
+              },
+            }}
+          >
+            <ToggleButton value="1d">1D</ToggleButton>
+            <ToggleButton value="7d">7D</ToggleButton>
+            <ToggleButton value="35d">35D</ToggleButton>
+            <ToggleButton value="all">All</ToggleButton>
+          </ToggleButtonGroup>
+        </Stack>
       </Stack>
 
       <Card

@@ -12,8 +12,10 @@ import {
   Chip,
   Tooltip,
 } from '@mui/material';
+import { formatDistanceToNow } from 'date-fns';
 import { LinkBox } from '../../../components/common/linkBehavior';
 import { useInfiniteCommitLog } from '../../../api';
+import { getRepositoryOwnerAvatarSrc } from '../../../utils/avatar';
 import theme, {
   REPO_OWNER_AVATAR_BACKGROUNDS,
   scrollbarSx,
@@ -42,6 +44,12 @@ const formatUtcTimestamp = (iso: string): string => {
   const mm = String(d.getUTCMinutes()).padStart(2, '0');
   const ss = String(d.getUTCSeconds()).padStart(2, '0');
   return `${month} ${day}, ${hh}:${mm}:${ss} UTC`;
+};
+
+const formatRelativeActivityTime = (iso: string): string => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return formatDistanceToNow(d, { addSuffix: true });
 };
 
 interface CommitLogEntry {
@@ -134,8 +142,8 @@ const CommitLogItem: React.FC<{
   else if (isClosed)
     status = { label: 'CLOSED', color: theme.palette.status.closed };
   const timestampRaw = entry.mergedAt || entry.prCreatedAt;
-  const timestamp = timestampRaw
-    ? formatUtcTimestamp(timestampRaw)
+  const relativeTime = timestampRaw
+    ? formatRelativeActivityTime(timestampRaw)
     : 'Loading...';
 
   const content = (
@@ -190,7 +198,7 @@ const CommitLogItem: React.FC<{
         >
           <Stack direction="row" alignItems="center" spacing={1}>
             <Avatar
-              src={`https://avatars.githubusercontent.com/${entry.repository.split('/')[0]}`}
+              src={getRepositoryOwnerAvatarSrc(entry.repository.split('/')[0])}
               sx={{
                 width: 16,
                 height: 16,
@@ -239,9 +247,25 @@ const CommitLogItem: React.FC<{
                 backgroundColor: alpha(status.color, 0.1),
               }}
             />
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              {timestamp}
-            </Typography>
+            {timestampRaw ? (
+              <Tooltip
+                title={formatUtcTimestamp(timestampRaw)}
+                placement="top"
+                enterDelay={400}
+              >
+                <Typography
+                  component="span"
+                  variant="caption"
+                  sx={{ color: 'text.secondary' }}
+                >
+                  {relativeTime}
+                </Typography>
+              </Tooltip>
+            ) : (
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                {relativeTime}
+              </Typography>
+            )}
           </Stack>
           <Typography
             sx={{
@@ -353,8 +377,17 @@ const LiveCommitLog: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<CommitStatusFilter>('all');
   const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
+  const [, setRelativeTimeTick] = useState(0);
   const logContainerRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    const id = window.setInterval(
+      () => setRelativeTimeTick((n) => n + 1),
+      60_000,
+    );
+    return () => window.clearInterval(id);
+  }, []);
 
   const apiCommits = useMemo<CommitLogEntry[]>(
     () => data?.pages.flat() ?? [],

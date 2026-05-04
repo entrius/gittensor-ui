@@ -161,128 +161,140 @@ export const MinerCard: React.FC<MinerCardProps> = ({
           <Box
             sx={{
               minWidth: 0,
-              minHeight: 36,
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'space-between',
+              gap: 0.4,
               overflow: 'hidden',
             }}
           >
-            <Typography
-              sx={(theme) => ({
-                fontFamily: FONTS.mono,
-                fontSize: '1rem',
-                fontWeight: 700,
-                color: isEligible
-                  ? theme.palette.text.primary
-                  : theme.palette.text.tertiary,
-                opacity: isEligible ? 1 : INACTIVE_OPACITY,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              })}
+            {/* Name + rank on the same line */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: 0.75,
+                minWidth: 0,
+              }}
             >
-              {username}
-            </Typography>
-            <Typography
-              sx={(theme) => ({
-                fontFamily: FONTS.mono,
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                color: isEligible
-                  ? theme.palette.status.merged
-                  : theme.palette.text.tertiary,
-                opacity: isEligible ? 1 : INACTIVE_OPACITY,
-                lineHeight: 1,
-                mt: 0.1,
-              })}
+              <Typography
+                sx={(theme) => ({
+                  fontFamily: FONTS.mono,
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  color: isEligible
+                    ? theme.palette.text.primary
+                    : theme.palette.text.tertiary,
+                  opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                })}
+              >
+                {username}
+              </Typography>
+              <Typography
+                sx={(theme) => ({
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  color: isEligible
+                    ? theme.palette.status.merged
+                    : theme.palette.text.tertiary,
+                  opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                  lineHeight: 1,
+                  flexShrink: 0,
+                })}
+              >
+                #{miner.rank}
+              </Typography>
+            </Box>
+            {/* Badges under the name */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                flexWrap: 'wrap',
+                mt: 0.25,
+              }}
             >
-              #{miner.rank}
-            </Typography>
+              {showDualEligibilityBadges ? (
+                <>
+                  <Typography
+                    sx={(theme) => ({
+                      fontFamily: FONTS.mono,
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      border: `1px solid ${
+                        ossEligible
+                          ? alpha(theme.palette.status.merged, 0.45)
+                          : theme.palette.border.subtle
+                      }`,
+                      borderRadius: 1,
+                      px: 0.75,
+                      py: 0.25,
+                      letterSpacing: '0.06em',
+                      color: ossEligible
+                        ? theme.palette.status.merged
+                        : theme.palette.text.secondary,
+                      backgroundColor: ossEligible
+                        ? alpha(theme.palette.status.merged, 0.08)
+                        : theme.palette.surface.subtle,
+                    })}
+                  >
+                    OSS {ossEligible ? 'Eligible' : 'Ineligible'}
+                  </Typography>
+                  <Typography
+                    sx={(theme) => ({
+                      fontFamily: FONTS.mono,
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      border: `1px solid ${
+                        discoveriesEligible
+                          ? alpha(theme.palette.status.merged, 0.45)
+                          : theme.palette.border.subtle
+                      }`,
+                      borderRadius: 1,
+                      px: 0.75,
+                      py: 0.25,
+                      letterSpacing: '0.06em',
+                      color: discoveriesEligible
+                        ? theme.palette.status.merged
+                        : theme.palette.text.secondary,
+                      backgroundColor: discoveriesEligible
+                        ? alpha(theme.palette.status.merged, 0.08)
+                        : theme.palette.surface.subtle,
+                    })}
+                  >
+                    Issues {discoveriesEligible ? 'Eligible' : 'Ineligible'}
+                  </Typography>
+                </>
+              ) : !isEligible ? (
+                <Typography
+                  sx={(theme) => ({
+                    fontFamily: FONTS.mono,
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    color: theme.palette.text.secondary,
+                    textTransform: 'uppercase',
+                    border: `1px solid ${theme.palette.border.subtle}`,
+                    borderRadius: 1,
+                    px: 0.75,
+                    py: 0.25,
+                    letterSpacing: '0.06em',
+                    backgroundColor: theme.palette.surface.subtle,
+                  })}
+                >
+                  Ineligible
+                </Typography>
+              ) : null}
+            </Box>
           </Box>
         </Box>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.5,
-            flexShrink: 0,
-            flexWrap: 'wrap',
-            justifyContent: 'flex-end',
-          }}
-        >
-          {showDualEligibilityBadges ? (
-            <>
-              <Typography
-                sx={(theme) => ({
-                  fontFamily: FONTS.mono,
-                  fontSize: '0.65rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  border: `1px solid ${
-                    ossEligible
-                      ? alpha(theme.palette.status.merged, 0.45)
-                      : theme.palette.border.subtle
-                  }`,
-                  borderRadius: 1,
-                  px: 0.75,
-                  py: 0.25,
-                  letterSpacing: '0.06em',
-                  color: ossEligible
-                    ? theme.palette.status.merged
-                    : theme.palette.text.secondary,
-                  backgroundColor: ossEligible
-                    ? alpha(theme.palette.status.merged, 0.08)
-                    : theme.palette.surface.subtle,
-                })}
-              >
-                OSS {ossEligible ? 'Eligible' : 'Ineligible'}
-              </Typography>
-              <Typography
-                sx={(theme) => ({
-                  fontFamily: FONTS.mono,
-                  fontSize: '0.65rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  border: `1px solid ${
-                    discoveriesEligible
-                      ? alpha(theme.palette.status.merged, 0.45)
-                      : theme.palette.border.subtle
-                  }`,
-                  borderRadius: 1,
-                  px: 0.75,
-                  py: 0.25,
-                  letterSpacing: '0.06em',
-                  color: discoveriesEligible
-                    ? theme.palette.status.merged
-                    : theme.palette.text.secondary,
-                  backgroundColor: discoveriesEligible
-                    ? alpha(theme.palette.status.merged, 0.08)
-                    : theme.palette.surface.subtle,
-                })}
-              >
-                Issues {discoveriesEligible ? 'Eligible' : 'Ineligible'}
-              </Typography>
-            </>
-          ) : !isEligible ? (
-            <Typography
-              sx={(theme) => ({
-                fontFamily: FONTS.mono,
-                fontSize: '0.65rem',
-                fontWeight: 700,
-                color: theme.palette.text.secondary,
-                textTransform: 'uppercase',
-                border: `1px solid ${theme.palette.border.subtle}`,
-                borderRadius: 1,
-                px: 0.75,
-                py: 0.25,
-                letterSpacing: '0.06em',
-                backgroundColor: theme.palette.surface.subtle,
-              })}
-            >
-              Ineligible
-            </Typography>
-          ) : null}
+        {/* Watchlist button stays top-right */}
+        <Box sx={{ flexShrink: 0 }}>
           {miner.githubId && (
             <WatchlistButton
               category="miners"
@@ -408,10 +420,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
     : [inactiveColor, inactiveColor, inactiveColor];
 
   const issueSegments = getIssueSegments(miner);
-  const issueTotal =
-    (miner.totalSolvedIssues ?? 0) +
-    (miner.totalOpenIssues ?? 0) +
-    (miner.totalClosedIssues ?? 0);
+  const issueDiscoveryScore = Number(miner.issueDiscoveryScore ?? 0);
 
   return (
     <Box
@@ -455,7 +464,9 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
             pl: 1.5,
           })}
         >
-          <StatLabel isEligible={isEligible}>Score</StatLabel>
+          <StatLabel isEligible={isEligible}>
+            {variant === 'watchlist' ? 'OSS' : 'Score'}
+          </StatLabel>
           <Typography
             sx={{
               fontFamily: FONTS.mono,
@@ -472,23 +483,10 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
       {variant === 'watchlist' && (
         <Box
           sx={(theme) => ({
-            pt: 0.35,
+            pt: 0.75,
             borderTop: `1px solid ${theme.palette.border.light}`,
           })}
         >
-          <Typography
-            sx={{
-              fontFamily: FONTS.mono,
-              fontSize: '0.7rem',
-              fontWeight: 700,
-              color: muiTheme.palette.status.open,
-              textTransform: 'uppercase',
-              mb: 0.35,
-              letterSpacing: '0.04em',
-            }}
-          >
-            Issues
-          </Typography>
           <Box
             sx={{
               display: 'grid',
@@ -517,7 +515,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
                 pl: 1.5,
               })}
             >
-              <StatLabel isEligible={isEligible}>Total</StatLabel>
+              <StatLabel isEligible={isEligible}>Discovery</StatLabel>
               <Typography
                 sx={{
                   fontFamily: FONTS.mono,
@@ -528,7 +526,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
                   fontWeight: 700,
                 }}
               >
-                {issueTotal}
+                {issueDiscoveryScore.toFixed(2)}
               </Typography>
             </Box>
           </Box>

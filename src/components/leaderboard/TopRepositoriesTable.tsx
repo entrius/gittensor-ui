@@ -55,7 +55,13 @@ import ReactECharts from 'echarts-for-react';
 import type { TooltipComponentFormatterCallbackParams } from 'echarts';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
-import { truncateText } from '../../utils';
+import { WatchlistButton } from '../common';
+import {
+  compareByWatchlist,
+  getRepositoryOwnerAvatarSrc,
+  truncateText,
+} from '../../utils';
+import { useWatchlist } from '../../hooks/useWatchlist';
 import { RankIcon } from './RankIcon';
 import { getRepositoryOwnerAvatarBackground, type RepoStats } from './types';
 import {
@@ -65,6 +71,14 @@ import {
   UI_COLORS,
   scrollbarSx,
 } from '../../theme';
+import {
+  echartsAxisTooltipChrome,
+  echartsBarChartTitle,
+  echartsFontFamily,
+  echartsGridBarPaged,
+  echartsStrongAxisLabelColor,
+  echartsTransparentBackground,
+} from '../../utils/echarts/gittensorChartTheme';
 
 type SortColumn =
   | 'rank'
@@ -72,15 +86,21 @@ type SortColumn =
   | 'weight'
   | 'totalScore'
   | 'totalPRs'
-  | 'contributors';
+  | 'contributors'
+  | 'discoveryScore'
+  | 'discoveryIssues'
+  | 'discoveryContributors'
+  | 'watch';
 type SortDirection = 'asc' | 'desc';
 type ViewMode = RepositoriesViewMode;
 
+/** Card sort: classic metrics + Issues; issue score/contrib. sort via list headers / URL. */
 const CARD_SORT_OPTIONS: Array<{ value: SortColumn; label: string }> = [
   { value: 'weight', label: 'Weight' },
-  { value: 'totalScore', label: 'Total Score' },
+  { value: 'totalScore', label: 'OSS score' },
   { value: 'totalPRs', label: 'PRs' },
   { value: 'contributors', label: 'Contributors' },
+  { value: 'discoveryIssues', label: 'Issues' },
   { value: 'repository', label: 'Repository' },
 ];
 
@@ -98,7 +118,21 @@ const VALID_SORT_COLUMNS: SortColumn[] = [
   'totalScore',
   'totalPRs',
   'contributors',
+  'discoveryScore',
+  'discoveryIssues',
+  'discoveryContributors',
+  'watch',
 ];
+
+/** List view: show numeric zeros when the row has OSS activity (avoids PRs > 0 with OSS score "-"). */
+const repoHasOssActivity = (repo: RepoStats) =>
+  (repo.totalPRs ?? 0) > 0 || (repo.totalScore ?? 0) > 0;
+
+/** List view: show discovery numbers when any discovery dimension is non-zero. */
+const repoHasDiscoveryActivity = (repo: RepoStats) =>
+  (repo.discoveryIssues ?? 0) !== 0 ||
+  (repo.discoveryScore ?? 0) !== 0 ||
+  (repo.discoveryContributors?.size ?? 0) > 0;
 
 const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   repositories,
@@ -162,12 +196,33 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     [searchParams, storedViewMode],
   );
   const isInitialMount = useRef(true);
+  const { isWatched } = useWatchlist('repos');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const trimmedSearch = searchQuery.trim();
   const isMobileSearchVisible =
     isMobile && (isMobileSearchOpen || !!trimmedSearch);
   const isDirectRepoInput = /^[^/\s]+\/[^/\s]+$/.test(trimmedSearch);
+
+  const cardSortSelectOptions = useMemo(() => {
+    const opts = [...CARD_SORT_OPTIONS];
+    const inCardList = opts.some((o) => o.value === sortColumn);
+    if (
+      !inCardList &&
+      (sortColumn === 'discoveryScore' ||
+        sortColumn === 'discoveryContributors')
+    ) {
+      opts.push(
+        sortColumn === 'discoveryScore'
+          ? { value: 'discoveryScore' as const, label: 'Issue score' }
+          : {
+              value: 'discoveryContributors' as const,
+              label: 'Issue contributors',
+            },
+      );
+    }
+    return opts;
+  }, [sortColumn]);
 
   // Sync filter state to URL params (replace, don't push)
   const syncToUrl = useCallback(
@@ -244,6 +299,19 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         case 'contributors':
           comparison = a.uniqueMiners.size - b.uniqueMiners.size;
           break;
+        case 'discoveryScore':
+          comparison = a.discoveryScore - b.discoveryScore;
+          break;
+        case 'discoveryIssues':
+          comparison = a.discoveryIssues - b.discoveryIssues;
+          break;
+        case 'discoveryContributors':
+          comparison =
+            a.discoveryContributors.size - b.discoveryContributors.size;
+          break;
+        case 'watch':
+          comparison = compareByWatchlist(a, b, (r) => r.repository, isWatched);
+          break;
         default:
           // Default to totalScore descending (original behavior)
           comparison = b.totalScore - a.totalScore;
@@ -254,7 +322,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
 
     // Then add rank based on sorted order
     return sorted.map((repo, index) => ({ ...repo, rank: index + 1 }));
-  }, [repositories, sortColumn, sortDirection]);
+  }, [repositories, sortColumn, sortDirection, isWatched]);
 
   const filteredRepositories = useMemo(() => {
     let filtered = rankedRepositories;
@@ -294,13 +362,13 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     const chartData = pagedRepositories;
     const white = UI_COLORS.white;
     const borderSubtle = alpha(white, 0.08);
-    const borderLight = alpha(white, 0.1);
     const surfaceSubtle = alpha(white, 0.02);
-    const textColor = alpha(white, 0.85);
-    const gridColor = borderSubtle;
-    const tooltipBorderColor = borderLight;
+    const textColor = echartsStrongAxisLabelColor(theme);
+    const gridColor = theme.palette.border.subtle;
+    const tooltipBorderColor = alpha(theme.palette.text.primary, 0.14);
     const tooltipLabelColor = alpha(white, TEXT_OPACITY.secondary);
-    const primaryColor = UI_COLORS.white;
+    const primaryColor = theme.palette.text.primary;
+    const chartFont = echartsFontFamily(theme);
 
     const chartMetric: Record<
       SortColumn,
@@ -316,8 +384,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         value: (r) => r.weight || 0,
       },
       totalScore: {
-        title: 'Total Score',
-        yAxis: 'Total Score',
+        title: 'OSS score by repository',
+        yAxis: 'OSS score',
         value: (r) => r.totalScore || 0,
       },
       totalPRs: {
@@ -326,18 +394,38 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         value: (r) => r.totalPRs || 0,
       },
       contributors: {
-        title: 'Contributors by Repository',
+        title: 'OSS contributors by repository',
         yAxis: 'Contributors',
         value: (r) => r.uniqueMiners?.size || 0,
       },
+      discoveryScore: {
+        title: 'Issue score by repository',
+        yAxis: 'Issue score',
+        value: (r) => r.discoveryScore || 0,
+      },
+      discoveryIssues: {
+        title: 'Issues by repository',
+        yAxis: 'Issues',
+        value: (r) => r.discoveryIssues || 0,
+      },
+      discoveryContributors: {
+        title: 'Issue contributors by repository',
+        yAxis: 'Contributors',
+        value: (r) => r.discoveryContributors?.size || 0,
+      },
       rank: {
-        title: 'Total Score',
-        yAxis: 'Total Score',
+        title: 'OSS score by repository',
+        yAxis: 'OSS score',
         value: (r) => r.totalScore || 0,
       },
       repository: {
-        title: 'Total Score',
-        yAxis: 'Total Score',
+        title: 'OSS score by repository',
+        yAxis: 'OSS score',
+        value: (r) => r.totalScore || 0,
+      },
+      watch: {
+        title: 'OSS score by repository',
+        yAxis: 'OSS score',
         value: (r) => r.totalScore || 0,
       },
     };
@@ -346,7 +434,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       useLogScale &&
       sortColumn !== 'weight' &&
       sortColumn !== 'totalPRs' &&
-      sortColumn !== 'contributors';
+      sortColumn !== 'contributors' &&
+      sortColumn !== 'discoveryIssues' &&
+      sortColumn !== 'discoveryContributors';
 
     const barGradient = {
       type: 'linear',
@@ -373,6 +463,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       weight: item?.weight || 0,
       prs: item?.totalPRs || 0,
       contributors: item?.uniqueMiners?.size || 0,
+      ossScore: item?.totalScore || 0,
+      discoveryScore: item?.discoveryScore || 0,
+      discoveryIssues: item?.discoveryIssues || 0,
+      discoveryContributors: item?.discoveryContributors?.size || 0,
       itemStyle: {
         color: barGradient,
         borderRadius: [6, 6, 0, 0],
@@ -382,22 +476,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     }));
 
     return {
-      backgroundColor: 'transparent',
-      title: {
-        text: metric.title,
-        subtext: 'Values match the current table sort and page',
-        left: 'center',
-        top: 20,
-        textStyle: {
-          color: primaryColor,
-          fontSize: 18,
-          fontWeight: 600,
-        },
-        subtextStyle: {
-          color: alpha(white, TEXT_OPACITY.tertiary),
-          fontSize: 12,
-        },
-      },
+      ...echartsTransparentBackground(),
+      title: echartsBarChartTitle(
+        theme,
+        metric.title,
+        'Values match the current table sort and page',
+      ),
       tooltip: {
         trigger: 'axis',
         axisPointer: {
@@ -406,11 +490,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             color: borderSubtle,
           },
         },
-        backgroundColor: UI_COLORS.surfaceTooltip,
-        borderColor: alpha(white, 0.15),
-        borderWidth: 1,
+        ...echartsAxisTooltipChrome(theme),
         textStyle: {
           color: primaryColor,
+          fontFamily: chartFont,
           fontSize: 12,
         },
         padding: [12, 16],
@@ -424,27 +507,24 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 <span style="color: ${primaryColor}; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap;">${value}</span>`;
 
           return `
-            <div style="font-family: 'JetBrains Mono', monospace; display: grid; grid-template-columns: minmax(0, max-content); width: max-content; max-width: min(420px, 92vw); box-sizing: border-box;">
+            <div style="font-family: ${chartFont}; display: grid; grid-template-columns: minmax(0, max-content); width: max-content; max-width: min(420px, 92vw); box-sizing: border-box;">
               <div style="font-weight: 600; margin-bottom: 8px; font-size: 13px; line-height: 1.35;">
                 #${item.rank} ${item.repository}
               </div>
               <div style="margin-top: 0; padding-top: 8px; border-top: 1px solid ${tooltipBorderColor}; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; row-gap: 6px; align-items: baseline; min-width: 0;">
-                ${statRow('Total Score:', item.value.toFixed(2))}
+                ${statRow('OSS score:', item.ossScore.toFixed(2))}
+                ${statRow('PRs:', String(item.prs))}
+                ${statRow('OSS contributors:', String(item.contributors))}
+                ${statRow('Issue score:', item.discoveryScore.toFixed(2))}
+                ${statRow('Issues:', String(item.discoveryIssues))}
+                ${statRow('Issue contributors:', String(item.discoveryContributors))}
                 ${statRow('Weight:', item.weight.toFixed(2))}
-                ${statRow('Pull Requests:', String(item.prs))}
-                ${statRow('Contributors:', String(item.contributors))}
               </div>
             </div>
           `;
         },
       },
-      grid: {
-        left: '3%',
-        right: '3%',
-        bottom: '18%',
-        top: '18%',
-        containLabel: true,
-      },
+      grid: echartsGridBarPaged(),
       dataZoom: [
         {
           type: 'inside',
@@ -459,6 +539,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         data: xAxisData.map((item) => item.name),
         axisLabel: {
           color: textColor,
+          fontFamily: chartFont,
           fontSize: 11,
           interval: 0,
           rotate: 45,
@@ -483,15 +564,31 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         name: metric.yAxis,
         nameTextStyle: {
           color: textColor,
+          fontFamily: chartFont,
           fontSize: 12,
           padding: [0, 0, 0, 0],
         },
         axisLabel: {
           color: textColor,
+          fontFamily: chartFont,
           fontSize: 11,
           formatter: (value: number) => {
             if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
             if (sortColumn === 'weight') return value.toFixed(2);
+            if (
+              sortColumn === 'totalPRs' ||
+              sortColumn === 'contributors' ||
+              sortColumn === 'discoveryIssues' ||
+              sortColumn === 'discoveryContributors'
+            )
+              return String(Math.round(value));
+            if (
+              sortColumn === 'totalScore' ||
+              sortColumn === 'discoveryScore' ||
+              sortColumn === 'rank' ||
+              sortColumn === 'repository'
+            )
+              return value.toFixed(2);
             return value.toFixed(0);
           },
         },
@@ -633,7 +730,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const renderSortHeader = (
     column: SortColumn,
     label: string,
-    align: 'left' | 'right' = 'left',
+    align: 'left' | 'right' | 'center' = 'left',
   ) => (
     <Box
       onClick={() => handleSort(column)}
@@ -645,9 +742,14 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         userSelect: 'none',
         width: '100%',
         height: '100%',
-        px: 2,
+        px: align === 'center' ? 0.5 : 2,
         py: 1,
-        justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
+        justifyContent:
+          align === 'right'
+            ? 'flex-end'
+            : align === 'center'
+              ? 'center'
+              : 'flex-start',
       }}
     >
       {label}
@@ -679,61 +781,64 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     {
       key: 'repository',
       header: renderSortHeader('repository', 'Repository'),
-      width: '35%',
+      width: '30%',
       headerSx: sortableHeaderSx,
       cellSx: { pl: 1.5 },
-      renderCell: (repo) => (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            cursor: 'pointer',
-            '&:hover': {
-              '& .MuiTypography-root': {
-                color: 'primary.main',
-                textDecoration: 'underline',
-              },
-            },
-          }}
-        >
-          <Avatar
-            src={`https://avatars.githubusercontent.com/${(repo.repository || '').split('/')[0]}`}
-            alt={(repo.repository || '').split('/')[0]}
+      renderCell: (repo) => {
+        const owner = (repo.repository || '').split('/')[0] || '';
+        return (
+          <Box
             sx={{
-              width: 20,
-              height: 20,
-              border: '1px solid',
-              borderColor: 'border.medium',
-              backgroundColor: getRepositoryOwnerAvatarBackground(
-                (repo.repository || '').split('/')[0],
-              ),
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              cursor: 'pointer',
+              '&:hover': {
+                '& .MuiTypography-root': {
+                  color: 'primary.main',
+                  textDecoration: 'underline',
+                },
+              },
             }}
-          />
-          <Tooltip title={repo.repository || ''} placement="top">
-            <Typography
-              component="span"
+          >
+            <Avatar
+              src={getRepositoryOwnerAvatarSrc(owner) || undefined}
+              alt={owner}
               sx={{
-                color: 'text.primary',
-                fontWeight: 500,
-                transition: 'color 0.2s',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                maxWidth: '100%',
-                display: 'inline-block',
+                width: 20,
+                height: 20,
+                border: '1px solid',
+                borderColor: 'border.medium',
+                backgroundColor: getRepositoryOwnerAvatarBackground(owner),
               }}
             >
-              {truncateText(repo.repository || '', 40)}
-            </Typography>
-          </Tooltip>
-        </Box>
-      ),
+              {(owner[0] || '?').toUpperCase()}
+            </Avatar>
+            <Tooltip title={repo.repository || ''} placement="top">
+              <Typography
+                component="span"
+                sx={{
+                  color: 'text.primary',
+                  fontWeight: 500,
+                  transition: 'color 0.2s',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '100%',
+                  display: 'inline-block',
+                }}
+              >
+                {truncateText(repo.repository || '', 40)}
+              </Typography>
+            </Tooltip>
+          </Box>
+        );
+      },
     },
     {
       key: 'weight',
       header: renderSortHeader('weight', 'Weight', 'right'),
-      width: '12%',
+      width: '10%',
       align: 'right',
       headerSx: sortableHeaderSx,
       renderCell: (repo) => (
@@ -750,61 +855,151 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'totalScore',
-      header: renderSortHeader('totalScore', 'Total Score', 'right'),
-      width: '18%',
+      header: renderSortHeader('totalScore', 'OSS score', 'right'),
+      width: '11%',
       align: 'right',
       headerSx: sortableHeaderSx,
-      renderCell: (repo) => (
-        <Typography
-          sx={{
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            color:
-              (repo.totalScore || 0) > 0 ? 'text.primary' : 'text.secondary',
-          }}
-        >
-          {(repo.totalScore || 0) > 0
-            ? Number(repo.totalScore || 0).toFixed(2)
-            : '-'}
-        </Typography>
-      ),
+      renderCell: (repo) => {
+        const active = repoHasOssActivity(repo);
+        const v = repo.totalScore ?? 0;
+        return (
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              color: active && v > 0 ? 'text.primary' : 'text.secondary',
+            }}
+          >
+            {active ? Number(v).toFixed(2) : '-'}
+          </Typography>
+        );
+      },
     },
     {
       key: 'totalPRs',
       header: renderSortHeader('totalPRs', 'PRs', 'right'),
-      width: '15%',
+      width: '7%',
       align: 'right',
       headerSx: sortableHeaderSx,
-      renderCell: (repo) => (
-        <Typography
-          sx={{
-            fontSize: '0.75rem',
-            color: (repo.totalPRs || 0) > 0 ? 'text.primary' : 'text.secondary',
-          }}
-        >
-          {(repo.totalPRs || 0) > 0 ? repo.totalPRs : '-'}
-        </Typography>
-      ),
+      renderCell: (repo) => {
+        const active = repoHasOssActivity(repo);
+        const n = repo.totalPRs ?? 0;
+        return (
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: active && n > 0 ? 'text.primary' : 'text.secondary',
+            }}
+          >
+            {active ? String(n) : '-'}
+          </Typography>
+        );
+      },
+    },
+    {
+      key: 'discoveryScore',
+      header: renderSortHeader('discoveryScore', 'Issue score', 'right'),
+      width: '10%',
+      align: 'right',
+      headerSx: sortableHeaderSx,
+      renderCell: (repo) => {
+        const active = repoHasDiscoveryActivity(repo);
+        const v = repo.discoveryScore ?? 0;
+        return (
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              color: active && v > 0 ? 'text.primary' : 'text.secondary',
+            }}
+          >
+            {active ? Number(v).toFixed(2) : '-'}
+          </Typography>
+        );
+      },
+    },
+    {
+      key: 'discoveryIssues',
+      header: renderSortHeader('discoveryIssues', 'Issues', 'right'),
+      width: '7%',
+      align: 'right',
+      headerSx: sortableHeaderSx,
+      renderCell: (repo) => {
+        const active = repoHasDiscoveryActivity(repo);
+        const n = repo.discoveryIssues ?? 0;
+        return (
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: active && n > 0 ? 'text.primary' : 'text.secondary',
+            }}
+          >
+            {active ? String(n) : '-'}
+          </Typography>
+        );
+      },
     },
     {
       key: 'contributors',
       header: renderSortHeader('contributors', 'Contributors', 'right'),
-      width: '15%',
+      width: '9%',
       align: 'right',
       headerSx: sortableHeaderSx,
-      renderCell: (repo) => (
-        <Typography
-          sx={{
-            fontSize: '0.75rem',
-            color:
-              (repo.uniqueMiners?.size || 0) > 0
-                ? 'text.primary'
-                : 'text.secondary',
-          }}
-        >
-          {(repo.uniqueMiners?.size || 0) > 0 ? repo.uniqueMiners?.size : '-'}
-        </Typography>
+      renderCell: (repo) => {
+        const active = repoHasOssActivity(repo);
+        const n = repo.uniqueMiners?.size ?? 0;
+        return (
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: active && n > 0 ? 'text.primary' : 'text.secondary',
+            }}
+          >
+            {active ? String(n) : '-'}
+          </Typography>
+        );
+      },
+    },
+    {
+      key: 'discoveryContributors',
+      header: renderSortHeader(
+        'discoveryContributors',
+        'Issue contrib.',
+        'right',
       ),
+      width: '9%',
+      align: 'right',
+      headerSx: sortableHeaderSx,
+      renderCell: (repo) => {
+        const active = repoHasDiscoveryActivity(repo);
+        const n = repo.discoveryContributors?.size ?? 0;
+        return (
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: active && n > 0 ? 'text.primary' : 'text.secondary',
+            }}
+          >
+            {active ? String(n) : '-'}
+          </Typography>
+        );
+      },
+    },
+    {
+      key: 'watch',
+      header: renderSortHeader('watch', '★', 'center'),
+      width: '52px',
+      align: 'center',
+      headerSx: sortableHeaderSx,
+      cellSx: { p: 0 },
+      renderCell: (repo) =>
+        repo.repository ? (
+          <WatchlistButton
+            category="repos"
+            itemKey={repo.repository}
+            size="small"
+          />
+        ) : null,
     },
   ];
 
@@ -853,14 +1048,22 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         {/* Row 1: All Controls */}
         <Box
           sx={{
-            p: 2,
+            p: { xs: 1.5, md: 2 },
             display: 'flex',
-            alignItems: 'center',
-            gap: 2,
-            flexWrap: 'wrap',
+            flexDirection: { xs: 'column', md: 'row' },
+            alignItems: { xs: 'stretch', md: 'center' },
+            gap: { xs: 1.25, md: 2 },
           }}
         >
-          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 0.5,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              width: { xs: '100%', md: 'auto' },
+            }}
+          >
             <FilterButton
               label="All"
               count={rankedRepositories.length}
@@ -896,137 +1099,148 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             />
           </Box>
 
-          <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
-            <IconButton
-              onClick={() => setShowChart(!showChart)}
-              size="small"
-              sx={{
-                color: showChart ? 'text.primary' : 'text.tertiary',
-                border: '1px solid',
-                borderColor: 'border.light',
-                borderRadius: 2,
-                padding: '6px',
-                '&:hover': {
-                  backgroundColor: 'surface.light',
-                  borderColor: 'border.medium',
-                },
-              }}
-            >
-              {showChart ? (
-                <TableChartIcon fontSize="small" />
-              ) : (
-                <BarChartIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Tooltip>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: { xs: 'space-between', md: 'flex-end' },
+              gap: 1,
+              flexWrap: 'wrap',
+              width: { xs: '100%', md: 'auto' },
+            }}
+          >
+            <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+              <IconButton
+                onClick={() => setShowChart(!showChart)}
+                size="small"
+                sx={{
+                  color: showChart ? 'text.primary' : 'text.tertiary',
+                  border: '1px solid',
+                  borderColor: 'border.light',
+                  borderRadius: 2,
+                  padding: '6px',
+                  '&:hover': {
+                    backgroundColor: 'surface.light',
+                    borderColor: 'border.medium',
+                  },
+                }}
+              >
+                {showChart ? (
+                  <TableChartIcon fontSize="small" />
+                ) : (
+                  <BarChartIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
 
-          {showChart && (
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={useLogScale}
-                  onChange={(e) => setUseLogScale(e.target.checked)}
-                  size="small"
-                  sx={{
-                    '& .MuiSwitch-switchBase.Mui-checked': {
-                      color: 'primary.main',
-                    },
-                    '& .MuiSwitch-track': {
-                      backgroundColor: 'border.medium',
-                    },
-                  }}
-                />
-              }
-              label={
+            {showChart && (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={useLogScale}
+                    onChange={(e) => setUseLogScale(e.target.checked)}
+                    size="small"
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': {
+                        color: 'primary.main',
+                      },
+                      '& .MuiSwitch-track': {
+                        backgroundColor: 'border.medium',
+                      },
+                    }}
+                  />
+                }
+                label={
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontSize: '0.8rem',
+                      color: 'text.secondary',
+                    }}
+                  >
+                    Log Scale
+                  </Typography>
+                }
+              />
+            )}
+
+            <FormControl size="small">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Typography
                   variant="body2"
                   sx={{
-                    fontSize: '0.8rem',
                     color: 'text.secondary',
+                    fontSize: '0.8rem',
                   }}
                 >
-                  Log Scale
+                  Rows:
                 </Typography>
-              }
-            />
-          )}
+                <Select
+                  value={rowsPerPage}
+                  onChange={(e) => {
+                    const newRows = e.target.value as number;
+                    setRowsPerPage(newRows);
+                    setPage(0);
+                    syncToUrl({ rows: String(newRows), page: '0' });
+                  }}
+                  sx={{
+                    color: 'text.primary',
+                    backgroundColor: 'background.default',
+                    fontSize: '0.8rem',
+                    height: '36px',
+                    borderRadius: 2,
+                    minWidth: '80px',
+                    '& fieldset': { borderColor: 'border.light' },
+                    '&:hover fieldset': {
+                      borderColor: 'border.medium',
+                    },
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                    '& .MuiSelect-select': { py: 0.75 },
+                  }}
+                >
+                  {(viewMode === 'cards'
+                    ? REPOSITORIES_CARD_ROWS
+                    : REPOSITORIES_LIST_ROWS
+                  ).map((n) => (
+                    <MenuItem key={n} value={n}>
+                      {n}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Box>
+            </FormControl>
 
-          <FormControl size="small">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography
-                variant="body2"
+            {isMobileSearchVisible ? (
+              searchInput
+            ) : isMobile ? (
+              <IconButton
+                size="small"
+                onClick={() => setIsMobileSearchOpen(true)}
                 sx={{
-                  color: 'text.secondary',
-                  fontSize: '0.8rem',
-                }}
-              >
-                Rows:
-              </Typography>
-              <Select
-                value={rowsPerPage}
-                onChange={(e) => {
-                  const newRows = e.target.value as number;
-                  setRowsPerPage(newRows);
-                  setPage(0);
-                  syncToUrl({ rows: String(newRows), page: '0' });
-                }}
-                sx={{
-                  color: 'text.primary',
-                  backgroundColor: 'background.default',
-                  fontSize: '0.8rem',
-                  height: '36px',
+                  color: 'text.tertiary',
+                  border: '1px solid',
+                  borderColor: 'border.light',
                   borderRadius: 2,
-                  minWidth: '80px',
-                  '& fieldset': { borderColor: 'border.light' },
-                  '&:hover fieldset': {
+                  width: 36,
+                  height: 36,
+                  '&:hover': {
+                    backgroundColor: 'surface.light',
                     borderColor: 'border.medium',
                   },
-                  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                  '& .MuiSelect-select': { py: 0.75 },
                 }}
               >
-                {(viewMode === 'cards'
-                  ? REPOSITORIES_CARD_ROWS
-                  : REPOSITORIES_LIST_ROWS
-                ).map((n) => (
-                  <MenuItem key={n} value={n}>
-                    {n}
-                  </MenuItem>
-                ))}
-              </Select>
+                <SearchIcon sx={{ fontSize: '1rem' }} />
+              </IconButton>
+            ) : (
+              searchInput
+            )}
+
+            <Box sx={{ ml: { xs: 0, md: 'auto' } }}>
+              <ViewModeToggle
+                viewMode={viewMode}
+                onChange={handleViewModeChange}
+              />
             </Box>
-          </FormControl>
-
-          {isMobileSearchVisible ? (
-            searchInput
-          ) : isMobile ? (
-            <IconButton
-              size="small"
-              onClick={() => setIsMobileSearchOpen(true)}
-              sx={{
-                color: 'text.tertiary',
-                border: '1px solid',
-                borderColor: 'border.light',
-                borderRadius: 2,
-                width: 36,
-                height: 36,
-                '&:hover': {
-                  backgroundColor: 'surface.light',
-                  borderColor: 'border.medium',
-                },
-              }}
-            >
-              <SearchIcon sx={{ fontSize: '1rem' }} />
-            </IconButton>
-          ) : (
-            searchInput
-          )}
-
-          <Box sx={{ ml: 'auto' }}>
-            <ViewModeToggle
-              viewMode={viewMode}
-              onChange={handleViewModeChange}
-            />
           </Box>
         </Box>
 
@@ -1065,7 +1279,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 '& .MuiSelect-select': { py: 0.75 },
               }}
             >
-              {CARD_SORT_OPTIONS.map((opt) => (
+              {cardSortSelectOptions.map((opt) => (
                 <MenuItem key={opt.value} value={opt.value}>
                   {opt.label}
                 </MenuItem>
@@ -1136,7 +1350,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 <Grid item xs={12} sm={6} md={4} lg={4} key={i}>
                   <Skeleton
                     variant="rounded"
-                    height={168}
+                    height={220}
                     sx={{
                       bgcolor: (t) => alpha(t.palette.text.primary, 0.06),
                     }}
@@ -1220,7 +1434,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               borderBottom: '1px solid',
               borderColor: 'surface.light',
             })}
-            minWidth="1000px"
+            minWidth="1280px"
             stickyHeader
             emptyState={
               !filteredRepositories.length &&
