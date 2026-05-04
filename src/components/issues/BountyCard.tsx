@@ -11,11 +11,13 @@ import {
   alpha,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import { IssueBounty } from '../../api/models/Issues';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import { WatchlistButton } from '../common';
 import BountyProgress from './BountyProgress';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
+import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import {
   formatTokenAmount,
   formatDate,
@@ -94,12 +96,11 @@ export const BountyCard: React.FC<BountyCardProps> = ({
       {/* Repository header */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
         <Avatar
-          src={`https://avatars.githubusercontent.com/${owner}`}
+          src={getRepositoryOwnerAvatarSrc(owner)}
           alt={owner}
           sx={(theme) => ({
-            width: 28,
-            height: 28,
-            borderRadius: 1,
+            width: 36,
+            height: 36,
             flexShrink: 0,
             border: '1px solid',
             borderColor: theme.palette.border.medium,
@@ -139,12 +140,17 @@ export const BountyCard: React.FC<BountyCardProps> = ({
           category="bounties"
           itemKey={String(issue.id)}
           size="small"
+          sx={{
+            backgroundColor: 'rgba(255,255,255,0.08)',
+            borderRadius: '50%',
+            '&:hover': { backgroundColor: 'rgba(255,255,255,0.15)' },
+          }}
         />
       </Box>
 
       {/* Issue title + GitHub link */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flex: 1 }}>
-        {issue.title && (
+        <Tooltip title={issue.title} placement="bottom" arrow>
           <Typography
             sx={{
               fontSize: '0.85rem',
@@ -156,11 +162,12 @@ export const BountyCard: React.FC<BountyCardProps> = ({
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
               lineHeight: 1.4,
+              minHeight: 'calc(2 * 1.4em)',
             }}
           >
             {issue.title}
           </Typography>
-        )}
+        </Tooltip>
         <Link
           href={issue.githubUrl}
           target="_blank"
@@ -169,19 +176,29 @@ export const BountyCard: React.FC<BountyCardProps> = ({
           sx={(theme) => ({
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 0.5,
+            gap: 0.6,
             width: 'fit-content',
-            fontSize: '0.72rem',
-            color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+            fontSize: '0.78rem',
+            fontWeight: 500,
+            color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
             textDecoration: 'none',
+            px: 1,
+            py: 0.5,
+            borderRadius: 1.5,
+            border: `1px solid ${alpha(theme.palette.common.white, 0.12)}`,
+            backgroundColor: alpha(theme.palette.common.white, 0.05),
+            transition: 'all 0.15s',
             '&:hover': {
-              color: STATUS_COLORS.info,
-              textDecoration: 'underline',
+              color: theme.palette.common.white,
+              borderColor: alpha(theme.palette.common.white, 0.28),
+              backgroundColor: alpha(theme.palette.common.white, 0.1),
+              textDecoration: 'none',
             },
           })}
         >
-          #{issue.issueNumber}
-          <OpenInNewIcon sx={{ fontSize: 11, opacity: 0.5 }} />
+          <GitHubIcon sx={{ fontSize: 13 }} />#{issue.issueNumber} Open on
+          GitHub
+          <OpenInNewIcon sx={{ fontSize: 11, opacity: 0.6 }} />
         </Link>
       </Box>
 

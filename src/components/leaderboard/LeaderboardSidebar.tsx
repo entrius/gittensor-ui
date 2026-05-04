@@ -17,6 +17,8 @@ interface LeaderboardSidebarProps {
   getMinerHref: (miner: MinerStats) => string;
   linkState?: Record<string, unknown>;
   variant?: 'oss' | 'discoveries';
+  /** Content to insert after the Miners Activity card (e.g. options panel). */
+  insertAfterFirstCard?: React.ReactNode;
 }
 
 export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
@@ -24,6 +26,7 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
   getMinerHref,
   linkState,
   variant = 'oss',
+  insertAfterFirstCard,
 }) => {
   // State for toggling lists
   const [leaderboardType, setLeaderboardType] = useState<'earners' | 'active'>(
@@ -64,7 +67,10 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
       }}
     >
       {/* Activity Cards: PR Activity, Issue Activity, Code Impact */}
-      <ActivitySidebarCards miners={miners} />
+      <ActivitySidebarCards
+        miners={miners}
+        insertAfterFirstCard={insertAfterFirstCard}
+      />
 
       {/* Leaderboard Lists (Tabs) */}
       <SectionCard
