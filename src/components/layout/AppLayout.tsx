@@ -21,6 +21,7 @@ import { getRouteForPathname } from '../../routes';
 
 const SIDEBAR_OPEN_STORAGE_KEY = 'gittensor.sidebar.open';
 const SIDEBAR_WIDTH = 240;
+const MOBILE_APP_BAR_HEIGHT = 56;
 
 const PanelLeftIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
   <svg
@@ -53,7 +54,7 @@ const AppLayout: React.FC = () => {
   const mainRef = useRef<HTMLElement>(null);
   const location = useLocation();
   useOnNavigate(() => mainRef.current?.scrollTo(0, 0));
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(
     readStoredSidebarOpen,
@@ -85,9 +86,9 @@ const AppLayout: React.FC = () => {
     <Box
       sx={{
         display: 'flex',
-        width: '100vw',
-        minHeight: '100vh',
-        height: '100vh',
+        width: '100%',
+        minHeight: '100dvh',
+        height: '100dvh',
         overflow: 'hidden',
         justifyContent: 'center', // Center for ultra-wide screens
       }}
@@ -103,7 +104,7 @@ const AppLayout: React.FC = () => {
           }}
           elevation={0}
         >
-          <Toolbar>
+          <Toolbar sx={{ minHeight: `${MOBILE_APP_BAR_HEIGHT}px !important` }}>
             <IconButton
               color="inherit"
               aria-label="open drawer"
@@ -117,7 +118,7 @@ const AppLayout: React.FC = () => {
               src="/gt-logo.svg"
               alt="Gittensor"
               style={{
-                height: '40px',
+                height: '32px',
                 width: 'auto',
                 filter: `brightness(0) invert(1) drop-shadow(0 0 6px ${alpha(theme.palette.common.white, 0.8)})`,
               }}
@@ -139,7 +140,7 @@ const AppLayout: React.FC = () => {
             display: { xs: 'block', md: 'none' },
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
-              width: 280,
+              width: { xs: '100%', sm: 320 },
               backgroundColor: 'background.default',
               backgroundImage: `linear-gradient(${alpha(theme.palette.common.white, 0.05)}, ${alpha(theme.palette.common.white, 0.05)})`,
               borderRight: `1px solid ${theme.palette.border.light}`,
@@ -283,15 +284,15 @@ const AppLayout: React.FC = () => {
           flexGrow: 1,
           maxWidth: '1920px', // Max content width for ultra-wide screens
           width: '100%',
-          height: { xs: 'calc(100vh - 64px)', md: '100vh' },
-          mt: { xs: '64px', md: 0 },
+          height: { xs: `calc(100dvh - ${MOBILE_APP_BAR_HEIGHT}px)`, sm: '100dvh' },
+          mt: { xs: `${MOBILE_APP_BAR_HEIGHT}px`, sm: 0 },
           overflowY: 'auto',
           overflowX: 'hidden',
           display: 'flex',
           flexDirection: 'column',
           px: { xs: 1, sm: 2, md: 3 },
           ...scrollbarSx,
-          alignItems: 'center',
+          alignItems: { xs: 'stretch', md: 'center' },
         }}
       >
         <Suspense fallback={<LoadingPage />}>
@@ -301,7 +302,7 @@ const AppLayout: React.FC = () => {
                 width: '100%',
                 pt: { xs: 1, md: 1.5 },
                 pb: { xs: 1, md: 1.5 },
-                px: { xs: 2, md: 3 },
+                px: { xs: 1, sm: 2, md: 3 },
                 position: 'sticky',
                 top: 0,
                 zIndex: 500,
