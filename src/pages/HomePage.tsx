@@ -39,6 +39,7 @@ type LandingMinerRow = {
   monthlyUsd: number;
   totalScore: number;
   totalMergedPrs: number;
+  totalSolvedIssues: number;
   credibility: number;
 };
 
@@ -66,35 +67,32 @@ const howItWorksItems = [
   {
     icon: <AutoStoriesOutlinedIcon />,
     title: 'Connect identity',
-    body: 'Register a Bittensor wallet hotkey and broadcast a GitHub PAT so validators can verify the account behind a miner.',
+    body: 'Register a wallet hotkey and broadcast your GitHub PAT for validator verification.',
   },
   {
     icon: <CodeOutlinedIcon />,
-    title: 'Submit recognized work',
-    body: 'Open pull requests to recognized repositories. Merged PRs can earn; open and closed PRs still inform quality checks.',
+    title: 'Find and complete work',
+    body: 'Discover issues and submit merged PRs to recognized repositories to earn rewards.',
   },
   {
     icon: <PaidOutlinedIcon />,
     title: 'Score and publish',
-    body: 'Validators score code signal, repository weight, language factors, and credibility, then the UI publishes reward estimates.',
+    body: 'Validators score your impact, issue discoveries, and credibility to publish TAO estimates.',
   },
 ] as const;
 
 const plainEnglishItems = [
   {
     label: 'What it is',
-    value:
-      'A Bittensor subnet that funds meaningful open source contributions.',
+    value: 'An autonomous software development workforce on Bittensor.',
   },
   {
     label: 'What earns',
-    value:
-      'Real merged PRs to recognized repositories; quality and credibility matter more than volume.',
+    value: 'Finding issues and shipping code to recognized repositories.',
   },
   {
     label: 'What this UI shows',
-    value:
-      'Live PR activity, miner rankings, dashboard analytics, and public reward estimates.',
+    value: 'Live PRs, issue discoveries, top miners, and reward estimates.',
   },
 ] as const;
 
@@ -167,6 +165,9 @@ const buildTopMinerRows = (miners: MinerEvaluation[]): LandingMinerRow[] => {
       monthlyUsd: parseNumber(miner.usdPerDay) * 30,
       totalScore: parseNumber(miner.totalScore),
       totalMergedPrs: parseNumber(miner.totalMergedPrs),
+      totalSolvedIssues: parseNumber(
+        miner.totalValidSolvedIssues ?? miner.totalSolvedIssues ?? 0,
+      ),
       credibility: parseNumber(miner.credibility),
     }));
 };
@@ -470,7 +471,7 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
             ...fadeUp(140),
           }}
         >
-          Gittensor rewards verified open source{' '}
+          Gittensor rewards autonomous software{' '}
           <Box
             component="span"
             sx={(theme) => ({
@@ -492,7 +493,7 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
               },
             })}
           >
-            PRs.
+            development.
           </Box>
         </Typography>
         <Typography
@@ -505,9 +506,9 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
             ...fadeUp(240),
           })}
         >
-          An open source reward workforce on Bittensor: developers register as
-          miners, link GitHub to a wallet hotkey, submit pull requests to
-          recognized repositories, and validators publish TAO reward estimates.
+          An autonomous software development workforce on Bittensor. We reward
+          miners for finding work (issue discovery) and completing work
+          (shipping pull requests).
         </Typography>
       </Box>
 
@@ -751,8 +752,8 @@ const LiveProofPanel: React.FC<{
                 return {
                   display: 'grid',
                   gridTemplateColumns: {
-                    xs: '72px minmax(0, 1fr)',
-                    sm: '84px minmax(0, 1fr) auto',
+                    xs: '72px 28px minmax(0, 1fr)',
+                    sm: '84px 32px minmax(0, 1fr) auto',
                   },
                   gap: { xs: 1, sm: 1.4 },
                   alignItems: 'center',
@@ -790,6 +791,16 @@ const LiveProofPanel: React.FC<{
               >
                 {row.status}
               </Typography>
+              <Avatar
+                src={getGithubAvatarSrc(row.repository.split('/')[0])}
+                alt={row.repository}
+                sx={{
+                  width: { xs: 28, sm: 32 },
+                  height: { xs: 28, sm: 32 },
+                  border: '1px solid',
+                  borderColor: 'border.subtle',
+                }}
+              />
               <Box sx={{ minWidth: 0 }}>
                 <Typography
                   sx={{
@@ -803,7 +814,7 @@ const LiveProofPanel: React.FC<{
                     WebkitBoxOrient: 'vertical',
                   }}
                 >
-                  {row.repository.split('/').pop()}/{row.title}
+                  {row.title}
                 </Typography>
                 <Typography
                   sx={(theme) => ({
@@ -812,6 +823,12 @@ const LiveProofPanel: React.FC<{
                     fontSize: '0.66rem',
                   })}
                 >
+                  <Box
+                    component="span"
+                    sx={{ fontWeight: 700, color: 'common.black' }}
+                  >
+                    {row.repository}
+                  </Box>{' '}
                   by {row.author}
                   <Box
                     component="span"
@@ -1066,7 +1083,8 @@ const TopMinersPanel: React.FC<{
                     }}
                   >
                     {shortIdentity(miner.githubId)} -{' '}
-                    {miner.totalMergedPrs || 0} merged
+                    {miner.totalMergedPrs || 0} PRs,{' '}
+                    {miner.totalSolvedIssues || 0} issues
                   </Typography>
                 </Box>
                 <Stack
