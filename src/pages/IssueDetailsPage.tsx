@@ -106,12 +106,18 @@ const IssueDetailsPage: React.FC = () => {
               sx={(theme) => ({
                 borderBottom: 1,
                 borderColor: theme.palette.border.light,
+                overflowX: 'auto',       // allow horizontal scroll on narrow viewports
+                WebkitOverflowScrolling: 'touch',
+                '&::-webkit-scrollbar': { display: 'none' },
+                scrollbarWidth: 'none',
               })}
             >
               <Tabs
                 value={tabValue}
                 onChange={handleTabChange}
                 aria-label="issue details tabs"
+                variant="scrollable"     // MUI built-in scrollable tabs
+                scrollButtons="auto"
                 sx={(theme) => ({
                   '& .MuiTab-root': {
                     color: STATUS_COLORS.open,

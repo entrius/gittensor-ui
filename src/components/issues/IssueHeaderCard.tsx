@@ -38,7 +38,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
         backgroundColor: 'background.default',
         border: `1px solid ${theme.palette.border.light}`,
         borderRadius: 3,
-        p: 3,
+        p: { xs: 2, sm: 3 },    // responsive padding
       }}
       elevation={0}
     >
@@ -90,9 +90,10 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             sx={{
               fontFamily:
                 '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
-              fontSize: '1.5rem',
+              fontSize: { xs: '1.15rem', sm: '1.5rem' },  // smaller on mobile
               fontWeight: 600,
               color: 'text.primary',
+              wordBreak: 'break-word',
             }}
           >
             {issue.title}
@@ -102,10 +103,10 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
         {/* Bounty and metadata row */}
         <Box
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 3,
-            flexWrap: 'wrap',
+            display: 'grid',
+            gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'auto' },
+            gap: { xs: 2, sm: 3 },
+            alignItems: 'start',
           }}
         >
           <Box>

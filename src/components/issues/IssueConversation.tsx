@@ -92,15 +92,15 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
           key={item.id}
           sx={{
             display: 'flex',
-            gap: 2,
+            gap: { xs: 1.5, sm: 2 },    // tighter on mobile
             position: 'relative',
             zIndex: 1,
             '&::before': {
               content: index !== allItems.length - 1 ? '""' : 'none',
               position: 'absolute',
-              top: '40px',
+              top: { xs: '36px', sm: '40px' },
               bottom: '-24px',
-              left: '20px',
+              left: { xs: '16px', sm: '20px' },
               width: '2px',
               backgroundColor: colors.timeline.line,
               zIndex: 0,
@@ -118,10 +118,10 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                 src={item.user.avatarUrl}
                 alt={item.user.login ?? undefined}
                 sx={{
-                  width: 40,
-                  height: 40,
+                  width: { xs: 32, sm: 40 },    // smaller on mobile
+                  height: { xs: 32, sm: 40 },
                   border: `1px solid ${theme.palette.border.light}`,
-                  backgroundColor: theme.palette.background.paper, // Avoid transparency issues over the line
+                  backgroundColor: theme.palette.background.paper,
                 }}
               />
             </Link>
@@ -155,8 +155,8 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
             {/* Header */}
             <Box
               sx={{
-                px: 2,
-                py: 1.5, // Slightly more vertical padding
+                px: { xs: 1.5, sm: 2 },
+                py: { xs: 1, sm: 1.5 },
                 backgroundColor: colors.canvas.subtle,
                 borderBottom: `1px solid ${colors.border.default}`,
                 borderTopLeftRadius: '6px',
@@ -165,9 +165,9 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 color: colors.fg.muted,
-                fontSize: '14px',
+                fontSize: { xs: '12px', sm: '14px' },
                 position: 'relative',
-                zIndex: 1, // Ensure above the arrow pseudo-element's main body
+                zIndex: 1,
               }}
             >
               <Box

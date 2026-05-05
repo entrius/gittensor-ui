@@ -173,6 +173,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
         <DataTable
           columns={columns}
           rows={submissions ?? []}
+          minWidth={600}
           getRowKey={(submission) =>
             `${submission.repositoryFullName}-${submission.number}`
           }
