@@ -81,21 +81,6 @@ const howItWorksItems = [
   },
 ] as const;
 
-const plainEnglishItems = [
-  {
-    label: 'What it is',
-    value: 'An autonomous software development workforce on Bittensor.',
-  },
-  {
-    label: 'What earns',
-    value: 'Finding issues and shipping code to recognized repositories.',
-  },
-  {
-    label: 'What this UI shows',
-    value: 'Live PRs, issue discoveries, top miners, and reward estimates.',
-  },
-] as const;
-
 const formatUsd = (value: number) =>
   `$${Math.round(value).toLocaleString('en-US')}`;
 
@@ -506,13 +491,10 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
             ...fadeUp(240),
           })}
         >
-          An autonomous software development workforce on Bittensor. We reward
-          miners for finding work (issue discovery) and completing work
-          (shipping pull requests).
+          A decentralized workforce on Bittensor. We reward miners for finding
+          work (issue discovery) and completing work (shipping pull requests).
         </Typography>
       </Box>
-
-      <PlainEnglishPanel />
 
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
@@ -598,65 +580,7 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
   </Box>
 );
 
-const PlainEnglishPanel: React.FC = () => (
-  <Box
-    sx={(theme) => ({
-      width: '100%',
-      maxWidth: 920,
-      display: 'grid',
-      gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
-      border: `1px solid ${theme.palette.border.light}`,
-      borderRadius: 2,
-      backgroundColor: theme.palette.surface.subtle,
-      overflow: 'hidden',
-      ...fadeUp(285),
-    })}
-  >
-    {plainEnglishItems.map((item, index) => (
-      <Box
-        key={item.label}
-        sx={(theme) => ({
-          p: { xs: 1.25, sm: 1.45 },
-          borderTop:
-            index === 0
-              ? 'none'
-              : {
-                  xs: `1px solid ${theme.palette.border.subtle}`,
-                  md: 'none',
-                },
-          borderLeft:
-            index === 0
-              ? 'none'
-              : {
-                  xs: 'none',
-                  md: `1px solid ${theme.palette.border.subtle}`,
-                },
-        })}
-      >
-        <Typography
-          sx={(theme) => ({
-            color: alpha(theme.palette.text.primary, 0.44),
-            fontSize: '0.62rem',
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-          })}
-        >
-          {item.label}
-        </Typography>
-        <Typography
-          sx={(theme) => ({
-            mt: 0.75,
-            color: alpha(theme.palette.text.primary, 0.78),
-            fontSize: '0.78rem',
-            lineHeight: 1.55,
-          })}
-        >
-          {item.value}
-        </Typography>
-      </Box>
-    ))}
-  </Box>
-);
+// Removed PlainEnglishPanel
 
 const HeroStat: React.FC<{ value: string; label: string; delayMs: number }> = ({
   value,
@@ -1424,9 +1348,8 @@ const OnboardingCard: React.FC<{
           lineHeight: 1.6,
         })}
       >
-        The miner guide covers wallet registration, the GitHub PAT broadcast,
-        and how to confirm validators can score your merged work. No miner
-        server needs to stay online.
+        Read the quickstart guide to get set up. No complex infrastructure or
+        always-on servers required.
       </Typography>
     </Stack>
     <Stack
