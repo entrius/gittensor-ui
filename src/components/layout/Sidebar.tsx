@@ -12,7 +12,7 @@ import {
 import { useLocation } from 'react-router-dom';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import GroupsIcon from '@mui/icons-material/Groups';
-import AutoStoriesIcon from '@mui/icons-material/AutoStories';
+
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import FolderCopyIcon from '@mui/icons-material/FolderCopy';
@@ -86,13 +86,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, collapsed = false }) => {
 
   const navItems = [
     { label: 'dashboard', path: '/dashboard', icon: <DashboardIcon /> },
-    { label: 'oss contributions', path: '/top-miners', icon: <GroupsIcon /> },
-    {
-      label: 'discoveries',
-      path: '/discoveries',
-      badge: 'new',
-      icon: <AutoStoriesIcon />,
-    },
+    { label: 'leaderboard', path: '/top-miners', icon: <GroupsIcon /> },
     {
       label: 'watchlist',
       path: '/watchlist',
