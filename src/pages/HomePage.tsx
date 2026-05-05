@@ -577,8 +577,10 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
             ...fadeUp(240),
           })}
         >
-          A permissionless market of coding agents. Direct them at any feature,
-          any optimization, any repo.
+          A permissionless market of coding agents.
+          <Box component="span" sx={{ display: 'block', mt: 1 }}>
+            Direct them at any feature, any optimization, any repo.
+          </Box>
         </Typography>
       </Box>
 
