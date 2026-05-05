@@ -574,6 +574,29 @@ export const buildRepoDiscoveryRollupFromMiners = (
   return out;
 };
 
+/**
+ * Matches repository leaderboard OSS column gating (`repoHasOssActivity`).
+ */
+export const repoLeaderboardHasOssActivity = (repo: {
+  totalPRs?: number;
+  totalScore?: number;
+}): boolean => (repo.totalPRs ?? 0) > 0 || (repo.totalScore ?? 0) > 0;
+
+/**
+ * Matches repository leaderboard issue-discovery gating (`repoHasDiscoveryActivity`).
+ * Do not treat `discoveryIssues > 0` alone as “has discovery”: miner pro-rating can
+ * round fractional issues to 0 while discovery score or contributors are still
+ * non-zero, which `TopRepositoriesTable` surfaces as activity.
+ */
+export const repoLeaderboardHasDiscoveryActivity = (repo: {
+  discoveryIssues?: number;
+  discoveryScore?: number;
+  discoveryContributors?: Set<string>;
+}): boolean =>
+  (repo.discoveryIssues ?? 0) !== 0 ||
+  (repo.discoveryScore ?? 0) !== 0 ||
+  (repo.discoveryContributors?.size ?? 0) > 0;
+
 export type IssueBountyRepoRollup = {
   bountyIssuesTotal: number;
   bountyIssuesActive: number;

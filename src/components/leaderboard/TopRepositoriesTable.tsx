@@ -80,6 +80,10 @@ import {
   echartsStrongAxisLabelColor,
   echartsTransparentBackground,
 } from '../../utils/echarts/gittensorChartTheme';
+import {
+  repoLeaderboardHasDiscoveryActivity,
+  repoLeaderboardHasOssActivity,
+} from '../../utils/ExplorerUtils';
 
 type SortColumn =
   | 'rank'
@@ -209,16 +213,6 @@ const VALID_SORT_COLUMNS: SortColumn[] = [
   'discoveryContributors',
   'watch',
 ];
-
-/** List view: show numeric zeros when the row has OSS activity (avoids PRs > 0 with OSS score "-"). */
-const repoHasOssActivity = (repo: RepoStats) =>
-  (repo.totalPRs ?? 0) > 0 || (repo.totalScore ?? 0) > 0;
-
-/** List view: show discovery numbers when any discovery dimension is non-zero. */
-const repoHasDiscoveryActivity = (repo: RepoStats) =>
-  (repo.discoveryIssues ?? 0) !== 0 ||
-  (repo.discoveryScore ?? 0) !== 0 ||
-  (repo.discoveryContributors?.size ?? 0) > 0;
 
 const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   repositories,
@@ -864,7 +858,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       align: 'right',
       headerSx: sortableHeaderSx,
       renderCell: (repo) => {
-        const active = repoHasOssActivity(repo);
+        const active = repoLeaderboardHasOssActivity(repo);
         const v = repo.totalScore ?? 0;
         return (
           <Typography
@@ -886,7 +880,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       align: 'right',
       headerSx: sortableHeaderSx,
       renderCell: (repo) => {
-        const active = repoHasOssActivity(repo);
+        const active = repoLeaderboardHasOssActivity(repo);
         const n = repo.totalPRs ?? 0;
         return (
           <Typography
@@ -907,7 +901,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       align: 'right',
       headerSx: sortableHeaderSx,
       renderCell: (repo) => {
-        const active = repoHasDiscoveryActivity(repo);
+        const active = repoLeaderboardHasDiscoveryActivity(repo);
         const v = repo.discoveryScore ?? 0;
         return (
           <Typography
@@ -929,7 +923,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       align: 'right',
       headerSx: sortableHeaderSx,
       renderCell: (repo) => {
-        const active = repoHasDiscoveryActivity(repo);
+        const active = repoLeaderboardHasDiscoveryActivity(repo);
         const n = repo.discoveryIssues ?? 0;
         return (
           <Typography
@@ -950,7 +944,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       align: 'right',
       headerSx: sortableHeaderSx,
       renderCell: (repo) => {
-        const active = repoHasOssActivity(repo);
+        const active = repoLeaderboardHasOssActivity(repo);
         const n = repo.uniqueMiners?.size ?? 0;
         return (
           <Typography
@@ -975,7 +969,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       align: 'right',
       headerSx: sortableHeaderSx,
       renderCell: (repo) => {
-        const active = repoHasDiscoveryActivity(repo);
+        const active = repoLeaderboardHasDiscoveryActivity(repo);
         const n = repo.discoveryContributors?.size ?? 0;
         return (
           <Typography

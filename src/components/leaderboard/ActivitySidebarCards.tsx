@@ -10,13 +10,25 @@ import { useEligibilityFilteredMiners } from './useEligibilityFilteredMiners';
 interface ActivitySidebarCardsProps {
   miners: MinerStats[];
   defaultFilter?: 'eligible' | 'all';
-  /** Content to insert between the Miners Activity card and the rest. */
+  /** When false, omits the "Miners Activity" card (e.g. Repositories sidebar). Portal slot still renders first when set. */
+  showMinersActivity?: boolean;
+  /** When false, omits Total $/day on PR/Issue cards and Avg Credibility on Code Impact. */
+  showUsdPerDayAndCredibility?: boolean;
+  /** When false, omits the entire "Code Impact" card. */
+  showCodeImpact?: boolean;
+  /** When false, omits Merge Rate (PR) and Solve Rate (Issue) rows. */
+  showMergeAndSolveRates?: boolean;
+  /** Content to insert between the Miners Activity card (or sidebar top when Miners omitted) and the rest. */
   insertAfterFirstCard?: React.ReactNode;
 }
 
 export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
   miners: allMiners,
   defaultFilter = 'eligible',
+  showMinersActivity = true,
+  showUsdPerDayAndCredibility = true,
+  showCodeImpact = true,
+  showMergeAndSolveRates = true,
   insertAfterFirstCard,
 }) => {
   const miners = useEligibilityFilteredMiners(allMiners, defaultFilter);
@@ -76,6 +88,14 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
   }, [miners]);
 
   const codeStats = useMemo(() => {
+    if (!showCodeImpact) {
+      return {
+        linesAdded: 0,
+        linesDeleted: 0,
+        reposTouched: 0,
+        avgCredibility: 0,
+      };
+    }
     const linesAdded = miners.reduce((acc, m) => acc + (m.linesAdded || 0), 0);
     const linesDeleted = miners.reduce(
       (acc, m) => acc + (m.linesDeleted || 0),
@@ -97,7 +117,7 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
           )
         : 0;
     return { linesAdded, linesDeleted, reposTouched, avgCredibility };
-  }, [miners]);
+  }, [miners, showCodeImpact]);
 
   const solveRateColor =
     issueStats.solveRate >= 80
@@ -113,73 +133,77 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
         ? CREDIBILITY_COLORS.moderate
         : STATUS_COLORS.closed;
 
+  const showMetricsFooterDivider =
+    showMergeAndSolveRates || showUsdPerDayAndCredibility;
+
   return (
     <>
-      {/* CARD 1: Miners Activity */}
-      <SectionCard title="Miners Activity" sx={{ flexShrink: 0 }}>
-        <Box sx={{ px: 2, pt: 1, pb: 2 }}>
-          <Box
-            sx={(theme) => ({
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr 1fr',
-              gap: 1,
-              alignItems: 'center',
-              pb: 1.5,
-              borderBottom: `1px solid ${theme.palette.border.light}`,
-              mb: 1.5,
-            })}
-          >
-            <Typography
-              sx={{
-                fontFamily: FONTS.mono,
-                fontSize: '0.7rem',
-                color: STATUS_COLORS.open,
-                textTransform: 'uppercase',
-              }}
+      {showMinersActivity ? (
+        <SectionCard title="Miners Activity" sx={{ flexShrink: 0 }}>
+          <Box sx={{ px: 2, pt: 1, pb: 2 }}>
+            <Box
+              sx={(theme) => ({
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 1fr',
+                gap: 1,
+                alignItems: 'center',
+                pb: 1.5,
+                borderBottom: `1px solid ${theme.palette.border.light}`,
+                mb: 1.5,
+              })}
             >
-              &nbsp;
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: FONTS.mono,
-                fontSize: '0.7rem',
-                color: STATUS_COLORS.open,
-                textTransform: 'uppercase',
-                textAlign: 'center',
-              }}
-            >
-              PR
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: FONTS.mono,
-                fontSize: '0.7rem',
-                color: STATUS_COLORS.open,
-                textTransform: 'uppercase',
-                textAlign: 'center',
-              }}
-            >
-              Issue
-            </Typography>
-          </Box>
+              <Typography
+                sx={{
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.7rem',
+                  color: STATUS_COLORS.open,
+                  textTransform: 'uppercase',
+                }}
+              >
+                &nbsp;
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.7rem',
+                  color: STATUS_COLORS.open,
+                  textTransform: 'uppercase',
+                  textAlign: 'center',
+                }}
+              >
+                PR
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.7rem',
+                  color: STATUS_COLORS.open,
+                  textTransform: 'uppercase',
+                  textAlign: 'center',
+                }}
+              >
+                Issue
+              </Typography>
+            </Box>
 
-          <MinerActivityRow
-            label="All"
-            pr={minerActivityStats.all}
-            issue={minerActivityStats.all}
-          />
-          <MinerActivityRow
-            label="Eligible"
-            pr={minerActivityStats.eligiblePr}
-            issue={minerActivityStats.eligibleIssue}
-          />
-          <MinerActivityRow
-            label="Ineligible"
-            pr={minerActivityStats.ineligiblePr}
-            issue={minerActivityStats.ineligibleIssue}
-          />
-        </Box>
-      </SectionCard>
+            <MinerActivityRow
+              label="All"
+              pr={minerActivityStats.all}
+              issue={minerActivityStats.all}
+            />
+            <MinerActivityRow
+              label="Eligible"
+              pr={minerActivityStats.eligiblePr}
+              issue={minerActivityStats.eligibleIssue}
+            />
+            <MinerActivityRow
+              label="Ineligible"
+              pr={minerActivityStats.ineligiblePr}
+              issue={minerActivityStats.ineligibleIssue}
+            />
+          </Box>
+        </SectionCard>
+      ) : null}
 
       {/* Slot for injected content (e.g. options panel) */}
       {insertAfterFirstCard}
@@ -192,9 +216,13 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
               display: 'grid',
               gridTemplateColumns: '1fr 1fr 1fr',
               gap: 1,
-              mb: 2,
-              pb: 2,
-              borderBottom: `1px solid ${theme.palette.border.light}`,
+              ...(showMetricsFooterDivider
+                ? {
+                    mb: 2,
+                    pb: 2,
+                    borderBottom: `1px solid ${theme.palette.border.light}`,
+                  }
+                : {}),
             })}
           >
             <PRColumn
@@ -214,44 +242,48 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
             />
           </Box>
 
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <Typography
+          {showMergeAndSolveRates ? (
+            <Box
               sx={{
-                fontFamily: FONTS.mono,
-                fontSize: '0.85rem',
-                color: STATUS_COLORS.open,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
               }}
             >
-              Merge Rate
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <RateBar rate={prStats.mergeRate} color={mergeRateColor} />
               <Typography
                 sx={{
                   fontFamily: FONTS.mono,
-                  fontWeight: 600,
-                  fontSize: '1.1rem',
-                  color: mergeRateColor,
-                  minWidth: 40,
-                  textAlign: 'right',
+                  fontSize: '0.85rem',
+                  color: STATUS_COLORS.open,
                 }}
               >
-                {prStats.mergeRate}%
+                Merge Rate
               </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <RateBar rate={prStats.mergeRate} color={mergeRateColor} />
+                <Typography
+                  sx={{
+                    fontFamily: FONTS.mono,
+                    fontWeight: 600,
+                    fontSize: '1.1rem',
+                    color: mergeRateColor,
+                    minWidth: 40,
+                    textAlign: 'right',
+                  }}
+                >
+                  {prStats.mergeRate}%
+                </Typography>
+              </Box>
             </Box>
-          </Box>
+          ) : null}
 
-          <StatRow
-            label="Total $/day"
-            value={`$${Math.round(ossUsdPerDay).toLocaleString()}`}
-            valueColor={STATUS_COLORS.merged}
-          />
+          {showUsdPerDayAndCredibility ? (
+            <StatRow
+              label="Total $/day"
+              value={`$${Math.round(ossUsdPerDay).toLocaleString()}`}
+              valueColor={STATUS_COLORS.merged}
+            />
+          ) : null}
         </Box>
       </SectionCard>
 
@@ -263,9 +295,13 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
               display: 'grid',
               gridTemplateColumns: '1fr 1fr 1fr',
               gap: 1,
-              mb: 2,
-              pb: 2,
-              borderBottom: `1px solid ${theme.palette.border.light}`,
+              ...(showMetricsFooterDivider
+                ? {
+                    mb: 2,
+                    pb: 2,
+                    borderBottom: `1px solid ${theme.palette.border.light}`,
+                  }
+                : {}),
             })}
           >
             <PRColumn
@@ -285,110 +321,117 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
             />
           </Box>
 
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <Typography
+          {showMergeAndSolveRates ? (
+            <Box
               sx={{
-                fontFamily: FONTS.mono,
-                fontSize: '0.85rem',
-                color: STATUS_COLORS.open,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
               }}
             >
-              Solve Rate
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <RateBar rate={issueStats.solveRate} color={solveRateColor} />
               <Typography
                 sx={{
                   fontFamily: FONTS.mono,
-                  fontWeight: 600,
-                  fontSize: '1.1rem',
-                  color: solveRateColor,
-                  minWidth: 40,
-                  textAlign: 'right',
+                  fontSize: '0.85rem',
+                  color: STATUS_COLORS.open,
                 }}
               >
-                {issueStats.solveRate}%
+                Solve Rate
               </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <RateBar rate={issueStats.solveRate} color={solveRateColor} />
+                <Typography
+                  sx={{
+                    fontFamily: FONTS.mono,
+                    fontWeight: 600,
+                    fontSize: '1.1rem',
+                    color: solveRateColor,
+                    minWidth: 40,
+                    textAlign: 'right',
+                  }}
+                >
+                  {issueStats.solveRate}%
+                </Typography>
+              </Box>
             </Box>
-          </Box>
+          ) : null}
 
-          <StatRow
-            label="Total $/day"
-            value={`$${Math.round(issueUsdPerDay).toLocaleString()}`}
-            valueColor={STATUS_COLORS.merged}
-          />
+          {showUsdPerDayAndCredibility ? (
+            <StatRow
+              label="Total $/day"
+              value={`$${Math.round(issueUsdPerDay).toLocaleString()}`}
+              valueColor={STATUS_COLORS.merged}
+            />
+          ) : null}
         </Box>
       </SectionCard>
 
-      {/* CARD 4: Code Impact */}
-      <SectionCard title="Code Impact" sx={{ flexShrink: 0 }}>
-        <Box
-          sx={{
-            px: 2,
-            pt: 1,
-            pb: 2,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-          }}
-        >
-          <StatRow
-            label="Lines Added"
-            value={`+${codeStats.linesAdded.toLocaleString()}`}
-            valueColor={DIFF_COLORS.additions}
-          />
-          <StatRow
-            label="Lines Deleted"
-            value={`-${codeStats.linesDeleted.toLocaleString()}`}
-            valueColor={DIFF_COLORS.deletions}
-          />
-          <StatRow
-            label="Repos Touched"
-            value={codeStats.reposTouched.toLocaleString()}
-          />
+      {showCodeImpact ? (
+        <SectionCard title="Code Impact" sx={{ flexShrink: 0 }}>
           <Box
             sx={{
+              px: 2,
+              pt: 1,
+              pb: 2,
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
+              flexDirection: 'column',
+              gap: 2,
             }}
           >
-            <Typography
-              sx={{
-                fontFamily: FONTS.mono,
-                fontSize: '0.85rem',
-                color: STATUS_COLORS.open,
-              }}
-            >
-              Avg Credibility
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <RateBar
-                rate={codeStats.avgCredibility}
-                color={credibilityColor(codeStats.avgCredibility / 100)}
-              />
-              <Typography
+            <StatRow
+              label="Lines Added"
+              value={`+${codeStats.linesAdded.toLocaleString()}`}
+              valueColor={DIFF_COLORS.additions}
+            />
+            <StatRow
+              label="Lines Deleted"
+              value={`-${codeStats.linesDeleted.toLocaleString()}`}
+              valueColor={DIFF_COLORS.deletions}
+            />
+            <StatRow
+              label="Repos Touched"
+              value={codeStats.reposTouched.toLocaleString()}
+            />
+            {showUsdPerDayAndCredibility ? (
+              <Box
                 sx={{
-                  fontFamily: FONTS.mono,
-                  fontWeight: 600,
-                  fontSize: '1.1rem',
-                  color: credibilityColor(codeStats.avgCredibility / 100),
-                  minWidth: 40,
-                  textAlign: 'right',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                 }}
               >
-                {codeStats.avgCredibility}%
-              </Typography>
-            </Box>
+                <Typography
+                  sx={{
+                    fontFamily: FONTS.mono,
+                    fontSize: '0.85rem',
+                    color: STATUS_COLORS.open,
+                  }}
+                >
+                  Avg Credibility
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <RateBar
+                    rate={codeStats.avgCredibility}
+                    color={credibilityColor(codeStats.avgCredibility / 100)}
+                  />
+                  <Typography
+                    sx={{
+                      fontFamily: FONTS.mono,
+                      fontWeight: 600,
+                      fontSize: '1.1rem',
+                      color: credibilityColor(codeStats.avgCredibility / 100),
+                      minWidth: 40,
+                      textAlign: 'right',
+                    }}
+                  >
+                    {codeStats.avgCredibility}%
+                  </Typography>
+                </Box>
+              </Box>
+            ) : null}
           </Box>
-        </Box>
-      </SectionCard>
+        </SectionCard>
+      ) : null}
     </>
   );
 };

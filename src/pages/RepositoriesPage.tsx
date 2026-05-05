@@ -13,15 +13,8 @@ import { alpha, type Theme } from '@mui/material/styles';
 
 import { LinkBox } from '../components/common/linkBehavior';
 import { Page } from '../components/layout';
-import {
-  TopRepositoriesTable,
-  SEO,
-  ActivitySidebarCards,
-  StatRow,
-  SectionCard,
-} from '../components';
+import { TopRepositoriesTable, SEO, StatRow, SectionCard } from '../components';
 import { useTwitterStickySidebar } from '../hooks/useTwitterStickySidebar';
-import { mapAllMinersToStats } from '../utils/minerMapper';
 import theme, { STATUS_COLORS, scrollbarSx } from '../theme';
 import { useAllPrs, useAllMiners, useReposAndWeights } from '../api';
 import { type CommitLog } from '../api/models/Dashboard';
@@ -241,11 +234,6 @@ const RepositoriesPage: React.FC = () => {
       })
       .sort((a, b) => b.totalScore - a.totalScore);
   }, [allPRs, allMiners, reposWithWeights]);
-
-  const minerStatsForSidebar = useMemo(
-    () => (Array.isArray(allMiners) ? mapAllMinersToStats(allMiners) : []),
-    [allMiners],
-  );
 
   const repoSidebarOverview = useMemo(() => {
     const total = repoStats.length;
@@ -738,11 +726,7 @@ const RepositoriesPage: React.FC = () => {
               </Box>
             </SectionCard>
 
-            <ActivitySidebarCards
-              miners={minerStatsForSidebar}
-              defaultFilter="all"
-              insertAfterFirstCard={optionsPortalTarget}
-            />
+            {optionsPortalTarget}
           </Stack>
         </Box>
       </Box>
