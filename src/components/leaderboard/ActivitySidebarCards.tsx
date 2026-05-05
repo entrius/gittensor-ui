@@ -16,6 +16,9 @@ import { useEligibilityFilteredMiners } from './useEligibilityFilteredMiners';
 interface ActivitySidebarCardsProps {
   miners: MinerStats[];
   variant?: 'oss' | 'discoveries' | 'overview';
+  defaultFilter?: 'eligible' | 'all';
+  /** Content to insert between the Miners Activity card and the rest. */
+  insertAfterFirstCard?: React.ReactNode;
 }
 
 interface MinerActivityStats {
@@ -200,11 +203,13 @@ const buildIssueActivityCard = (
 export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
   miners: allMiners,
   variant = 'overview',
+  defaultFilter = 'eligible',
+  insertAfterFirstCard,
 }) => {
-  const miners = useEligibilityFilteredMiners(allMiners);
+  const miners = useEligibilityFilteredMiners(allMiners, defaultFilter);
   const minerActivityStats = useMemo(
-    () => getMinerActivityStats(miners),
-    [miners],
+    () => getMinerActivityStats(allMiners),
+    [allMiners],
   );
 
   const ossUsdPerDay = useMemo(
@@ -242,6 +247,7 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
           ineligible={focusedStats.ineligible}
           trackLabel={focusedStats.trackLabel}
         />
+        {insertAfterFirstCard}
         <ActivityDonutCard {...activityStats} />
       </>
     );
@@ -250,6 +256,7 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
   return (
     <>
       <OverviewMinersActivityCard stats={minerActivityStats} />
+      {insertAfterFirstCard}
       <ActivityDonutCard {...buildPrActivityCard(prStats, ossUsdPerDay)} />
       <ActivityDonutCard
         {...buildIssueActivityCard(issueStats, issueUsdPerDay)}

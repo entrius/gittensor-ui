@@ -5,11 +5,11 @@ export const ISSUES_VIEW_STORAGE_KEY = 'issues:viewMode';
 
 export const readStoredIssuesViewMode = (): IssuesViewMode => {
   try {
-    return window.localStorage.getItem(ISSUES_VIEW_STORAGE_KEY) === 'cards'
-      ? 'cards'
-      : 'list';
+    return window.localStorage.getItem(ISSUES_VIEW_STORAGE_KEY) === 'list'
+      ? 'list'
+      : 'cards';
   } catch {
-    return 'list';
+    return 'cards';
   }
 };
 

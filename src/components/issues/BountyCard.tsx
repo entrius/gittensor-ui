@@ -17,6 +17,7 @@ import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import { WatchlistButton } from '../common';
 import BountyProgress from './BountyProgress';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
+import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import {
   formatTokenAmount,
   formatDate,
@@ -95,7 +96,7 @@ export const BountyCard: React.FC<BountyCardProps> = ({
       {/* Repository header */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
         <Avatar
-          src={`https://avatars.githubusercontent.com/${owner}`}
+          src={getRepositoryOwnerAvatarSrc(owner)}
           alt={owner}
           sx={(theme) => ({
             width: 36,
