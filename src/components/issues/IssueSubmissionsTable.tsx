@@ -4,6 +4,7 @@ import {
   Card,
   Chip,
   CircularProgress,
+  Tooltip,
   Typography,
   alpha,
   useTheme,
@@ -56,7 +57,21 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
       },
-      renderCell: (submission) => submission.title,
+      renderCell: (submission) => (
+        <Tooltip title={submission.title} placement="top" arrow>
+          <Box
+            component="span"
+            sx={{
+              display: 'block',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {submission.title}
+          </Box>
+        </Tooltip>
+      ),
     },
     {
       key: 'author',
@@ -129,6 +144,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
           sx={{
             fontSize: '0.8rem',
             color: alpha(theme.palette.common.white, 0.6),
+            whiteSpace: 'nowrap',
           }}
         >
           {formatDate(submission.prCreatedAt)}
@@ -151,7 +167,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
       }}
       elevation={0}
     >
-      <Box sx={{ p: 3, pb: 2 }}>
+      <Box sx={{ p: { xs: 2, md: 3 }, pb: 2 }}>
         <Typography
           sx={{
             fontSize: '0.8rem',
@@ -173,6 +189,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
         <DataTable
           columns={columns}
           rows={submissions ?? []}
+          minWidth={640}
           getRowKey={(submission) =>
             `${submission.repositoryFullName}-${submission.number}`
           }

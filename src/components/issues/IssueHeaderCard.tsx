@@ -38,7 +38,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
         backgroundColor: 'background.default',
         border: `1px solid ${theme.palette.border.light}`,
         borderRadius: 3,
-        p: 3,
+        p: { xs: 2, md: 3 },
       }}
       elevation={0}
     >
@@ -48,7 +48,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
           sx={{
             display: 'flex',
             alignItems: 'center',
-            gap: 2,
+            gap: { xs: 1, sm: 2 },
             flexWrap: 'wrap',
           }}
         >
@@ -60,16 +60,17 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
               display: 'flex',
               alignItems: 'center',
               gap: 0.5,
-              fontSize: '1rem',
+              fontSize: { xs: '0.85rem', sm: '1rem' },
               color: STATUS_COLORS.info,
               textDecoration: 'none',
+              wordBreak: 'break-all',
               '&:hover': {
                 textDecoration: 'underline',
               },
             }}
           >
             {issue.repositoryFullName} #{issue.issueNumber}
-            <OpenInNewIcon sx={{ fontSize: 16, opacity: 0.5 }} />
+            <OpenInNewIcon sx={{ fontSize: 16, opacity: 0.5, flexShrink: 0 }} />
           </Link>
           <Chip
             label={statusBadge.text}
@@ -90,25 +91,38 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             sx={{
               fontFamily:
                 '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
-              fontSize: '1.5rem',
+              fontSize: { xs: '1.15rem', sm: '1.5rem' },
               fontWeight: 600,
               color: 'text.primary',
+              wordBreak: 'break-word',
+              lineHeight: 1.3,
             }}
           >
             {issue.title}
           </Typography>
         )}
 
-        {/* Bounty and metadata row */}
+        {/* Bounty and metadata row.
+            On mobile: 2-column grid with Bounty + Author on row 1, and
+            Created spanning the full width on row 2 — keeps the date
+            from being squeezed into a tiny third column.
+            On desktop: flex row with subtle vertical dividers between
+            cells so the row reads as a clean stat strip. */}
         <Box
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 3,
+            display: { xs: 'grid', sm: 'flex' },
+            gridTemplateColumns: { xs: '1fr 1fr', sm: 'unset' },
+            alignItems: 'flex-start',
+            columnGap: { xs: 1.5, sm: 0 },
+            rowGap: { xs: 1.5, sm: 3 },
             flexWrap: 'wrap',
+            py: { xs: 1, sm: 0 },
+            borderTop: { xs: '1px solid', sm: 'none' },
+            borderBottom: { xs: '1px solid', sm: 'none' },
+            borderColor: { xs: 'border.light', sm: 'transparent' },
           }}
         >
-          <Box>
+          <Box sx={{ minWidth: 0, pr: { xs: 0, sm: 3 } }}>
             <Typography
               sx={{
                 fontSize: '0.7rem',
@@ -125,12 +139,13 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                 sx={{
                   display: 'flex',
                   alignItems: 'baseline',
+                  flexWrap: 'wrap',
                   gap: 0.5,
                 }}
               >
                 <Typography
                   sx={{
-                    fontSize: '1.25rem',
+                    fontSize: { xs: '0.95rem', sm: '1.25rem' },
                     fontWeight: 600,
                     color: STATUS_COLORS.warning,
                   }}
@@ -139,7 +154,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                 </Typography>
                 <Typography
                   sx={{
-                    fontSize: '0.9rem',
+                    fontSize: { xs: '0.75rem', sm: '0.9rem' },
                     color: alpha(
                       theme.palette.common.white,
                       TEXT_OPACITY.tertiary,
@@ -152,7 +167,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             ) : issue.status === 'completed' ? (
               <Typography
                 sx={{
-                  fontSize: '1.25rem',
+                  fontSize: { xs: '0.95rem', sm: '1.25rem' },
                   fontWeight: 600,
                   color: STATUS_COLORS.merged,
                 }}
@@ -162,7 +177,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             ) : (
               <Typography
                 sx={{
-                  fontSize: '1.25rem',
+                  fontSize: { xs: '0.95rem', sm: '1.25rem' },
                   fontWeight: 600,
                   color:
                     issue.status === 'active'
@@ -176,7 +191,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             {usdEstimate && (
               <Typography
                 sx={{
-                  fontSize: '0.8rem',
+                  fontSize: { xs: '0.7rem', sm: '0.8rem' },
                   color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
                   mt: 0.25,
                 }}
@@ -187,7 +202,15 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
           </Box>
 
           {issue.authorLogin && (
-            <Box>
+            <Box
+              sx={{
+                minWidth: 0,
+                pl: { xs: 0, sm: 3 },
+                pr: { xs: 0, sm: 3 },
+                borderLeft: { xs: 'none', sm: '1px solid' },
+                borderColor: { sm: 'border.light' },
+              }}
+            >
               <Typography
                 sx={{
                   fontSize: '0.7rem',
@@ -206,6 +229,9 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                 sx={{
                   fontSize: '0.9rem',
                   color: 'text.primary',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {issue.authorLogin}
@@ -213,7 +239,15 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             </Box>
           )}
 
-          <Box>
+          <Box
+            sx={{
+              minWidth: 0,
+              gridColumn: { xs: '1 / -1', sm: 'auto' },
+              pl: { xs: 0, sm: 3 },
+              borderLeft: { xs: 'none', sm: '1px solid' },
+              borderColor: { sm: 'border.light' },
+            }}
+          >
             <Typography
               sx={{
                 fontSize: '0.7rem',
@@ -227,8 +261,9 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             </Typography>
             <Typography
               sx={{
-                fontSize: '0.9rem',
+                fontSize: { xs: '0.85rem', sm: '0.9rem' },
                 color: 'text.primary',
+                whiteSpace: 'nowrap',
               }}
             >
               {formatDate(issue.createdAt)}
