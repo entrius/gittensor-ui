@@ -79,6 +79,8 @@ export const CHART_COLORS = {
   ],
 } as const;
 
+export const MONO_FONT = '"JetBrains Mono", monospace';
+
 export const scrollbarSx = {
   '&::-webkit-scrollbar': {
     width: '8px',
