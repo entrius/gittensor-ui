@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Avatar, Box, Button, Stack, Typography } from '@mui/material';
 import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -234,6 +234,14 @@ const getAvatarSrc = (miner: LandingMinerRow) => {
 const HomePage: React.FC = () => {
   const theme = useTheme();
   const monthlyRewards = useMonthlyRewards();
+  const [activePanel, setActivePanel] = useState<'feed' | 'miners'>('feed');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActivePanel((current) => (current === 'feed' ? 'miners' : 'feed'));
+    }, 8000); // Rotate every 8 seconds
+    return () => clearInterval(interval);
+  }, []);
   const { datasets, kpis, isLoading } = useDashboardData('35d');
   const onboardLink = useLinkBehavior<HTMLAnchorElement>('/onboard');
   const dashboardLink = useLinkBehavior<HTMLAnchorElement>('/dashboard');
@@ -339,27 +347,101 @@ const HomePage: React.FC = () => {
             dashboardLink={dashboardLink}
           />
 
-          <Stack
-            spacing={2}
+          <Box
             sx={{
               minWidth: 0,
-              justifyContent: 'center',
+              display: 'grid',
+              gridTemplateColumns: '1fr',
+              gridTemplateRows: '1fr',
+              alignItems: 'center',
               alignSelf: 'center',
+              position: 'relative',
+              perspective: '1000px',
             }}
           >
-            <LiveProofPanel
-              rows={activityRows}
-              hasLiveData={activityRows.length > 0}
-              isLoading={datasets.prs.isLoading}
-              isError={datasets.prs.isError}
-            />
-            <TopMinersPanel
-              rows={minerRows}
-              hasLiveData={minerRows.length > 0}
-              isLoading={datasets.miners.isLoading}
-              isError={datasets.miners.isError}
-            />
-          </Stack>
+            <Box
+              sx={{
+                gridArea: '1 / 1',
+                opacity: activePanel === 'feed' ? 1 : 0,
+                pointerEvents: activePanel === 'feed' ? 'auto' : 'none',
+                transform:
+                  activePanel === 'feed'
+                    ? 'translateZ(0)'
+                    : 'translateZ(-20px)',
+                transition: 'opacity 0.6s ease, transform 0.6s ease',
+                zIndex: activePanel === 'feed' ? 1 : 0,
+                width: '100%',
+              }}
+            >
+              <LiveProofPanel
+                rows={activityRows}
+                hasLiveData={activityRows.length > 0}
+                isLoading={datasets.prs.isLoading}
+                isError={datasets.prs.isError}
+              />
+            </Box>
+            <Box
+              sx={{
+                gridArea: '1 / 1',
+                opacity: activePanel === 'miners' ? 1 : 0,
+                pointerEvents: activePanel === 'miners' ? 'auto' : 'none',
+                transform:
+                  activePanel === 'miners'
+                    ? 'translateZ(0)'
+                    : 'translateZ(-20px)',
+                transition: 'opacity 0.6s ease, transform 0.6s ease',
+                zIndex: activePanel === 'miners' ? 1 : 0,
+                width: '100%',
+              }}
+            >
+              <TopMinersPanel
+                rows={minerRows}
+                hasLiveData={minerRows.length > 0}
+                isLoading={datasets.miners.isLoading}
+                isError={datasets.miners.isError}
+              />
+            </Box>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                position: 'absolute',
+                bottom: -24,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 2,
+              }}
+            >
+              <Box
+                onClick={() => setActivePanel('feed')}
+                sx={(theme) => ({
+                  width: 32,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor:
+                    activePanel === 'feed'
+                      ? theme.palette.status.merged
+                      : alpha(theme.palette.text.primary, 0.1),
+                  cursor: 'pointer',
+                  transition: 'background-color 0.3s ease',
+                })}
+              />
+              <Box
+                onClick={() => setActivePanel('miners')}
+                sx={(theme) => ({
+                  width: 32,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor:
+                    activePanel === 'miners'
+                      ? theme.palette.status.merged
+                      : alpha(theme.palette.text.primary, 0.1),
+                  cursor: 'pointer',
+                  transition: 'background-color 0.3s ease',
+                })}
+              />
+            </Stack>
+          </Box>
         </Box>
 
         <Box
@@ -405,9 +487,27 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
       py: { xs: 4, md: 5, xl: 4 },
       borderTop: `1px solid ${theme.palette.border.light}`,
       borderBottom: `1px solid ${theme.palette.border.light}`,
+      position: 'relative',
     })}
   >
-    <Stack spacing={{ xs: 3, md: 3.5 }} sx={{ maxWidth: 980 }}>
+    <Box
+      sx={(theme) => ({
+        position: 'absolute',
+        top: '50%',
+        left: '20%',
+        width: '60%',
+        height: '60%',
+        background: `radial-gradient(ellipse at center, ${alpha(theme.palette.status.merged, 0.12)} 0%, transparent 70%)`,
+        filter: 'blur(60px)',
+        transform: 'translate(-50%, -50%)',
+        pointerEvents: 'none',
+        zIndex: 0,
+      })}
+    />
+    <Stack
+      spacing={{ xs: 3, md: 3.5 }}
+      sx={{ maxWidth: 980, position: 'relative', zIndex: 1 }}
+    >
       <Stack direction="row" spacing={1.5} alignItems="center" sx={fadeUp(60)}>
         <Typography
           sx={(theme) => ({
@@ -617,213 +717,228 @@ const LiveProofPanel: React.FC<{
   return (
     <Box
       sx={(theme) => ({
-        backgroundColor: theme.palette.common.white,
-        color: theme.palette.common.black,
-        border: `1px solid ${alpha(theme.palette.common.black, 0.14)}`,
+        backgroundColor: theme.palette.surface.subtle,
+        color: theme.palette.text.primary,
+        border: `1px solid ${theme.palette.border.medium}`,
         borderRadius: 2,
         p: { xs: 1.4, sm: 1.6 },
         minWidth: 0,
-        boxShadow: `0 18px 60px ${alpha(theme.palette.common.black, 0.18)}`,
+        boxShadow: `0 18px 60px ${alpha(theme.palette.common.black, 0.4)}`,
+        position: 'relative',
+        overflow: 'hidden',
         ...slideIn(170),
       })}
     >
-      <SectionKicker
-        label={
-          hasLiveData
-            ? 'Latest contribution feed'
-            : isLoading
-              ? 'Syncing contribution feed'
-              : 'Contribution feed unavailable'
-        }
-        variant="light"
-        right={hasLiveData ? 'streaming' : isLoading ? 'syncing' : undefined}
-      />
-      <Typography
+      <Box
         sx={(theme) => ({
-          color: alpha(theme.palette.common.black, 0.58),
-          fontSize: '0.68rem',
-          lineHeight: 1.5,
-          mb: 1.2,
+          position: 'absolute',
+          top: -100,
+          right: -100,
+          width: 250,
+          height: 250,
+          background: `radial-gradient(circle, ${alpha(theme.palette.status.merged, 0.12)} 0%, transparent 70%)`,
+          filter: 'blur(40px)',
+          pointerEvents: 'none',
         })}
-      >
-        Pull requests currently tracked by Gittensor. Open a row to inspect the
-        repository, contributor, status, and evaluation details.
-      </Typography>
-      {feedRows.length > 0 ? (
-        <Stack spacing={0.9}>
-          {feedRows.map((row, index) => (
-            <LinkBox
-              key={row.id}
-              href={row.href}
-              linkState={{ backLabel: 'Back to Home' }}
-              sx={(theme) => {
-                const toneColor = getActivityToneColor(theme, row.tone);
+      />
+      <Box sx={{ position: 'relative', zIndex: 1 }}>
+        <SectionKicker
+          label={
+            hasLiveData
+              ? 'Latest contribution feed'
+              : isLoading
+                ? 'Syncing contribution feed'
+                : 'Contribution feed unavailable'
+          }
+          right={hasLiveData ? 'streaming' : isLoading ? 'syncing' : undefined}
+        />
+        <Typography
+          sx={(theme) => ({
+            color: theme.palette.text.secondary,
+            fontSize: '0.68rem',
+            lineHeight: 1.5,
+            mb: 1.2,
+          })}
+        >
+          Pull requests currently tracked by Gittensor. Open a row to inspect
+          the repository, contributor, status, and evaluation details.
+        </Typography>
+        {feedRows.length > 0 ? (
+          <Stack spacing={0.9}>
+            {feedRows.map((row, index) => (
+              <LinkBox
+                key={row.id}
+                href={row.href}
+                linkState={{ backLabel: 'Back to Home' }}
+                sx={(theme) => {
+                  const toneColor = getActivityToneColor(theme, row.tone);
 
-                return {
-                  display: 'grid',
-                  gridTemplateColumns: {
-                    xs: '72px 28px minmax(0, 1fr)',
-                    sm: '84px 32px minmax(0, 1fr) auto',
-                  },
-                  gap: { xs: 1, sm: 1.4 },
-                  alignItems: 'center',
-                  minHeight: 68,
-                  px: { xs: 1, sm: 1.25 },
-                  py: 1,
-                  position: 'relative',
-                  overflow: 'hidden',
-                  borderRadius: 1.25,
-                  border: `1px solid ${alpha(theme.palette.common.black, 0.14)}`,
-                  borderLeft: `2px solid ${alpha(toneColor, 0.58)}`,
-                  backgroundColor: alpha(theme.palette.common.black, 0.025),
-                  transition:
-                    'background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease',
-                  ...slideIn(240 + index * 55),
-                  '&:hover': {
-                    backgroundColor: alpha(theme.palette.common.black, 0.045),
-                    borderColor: alpha(toneColor, 0.65),
-                    transform: 'translateX(3px)',
-                  },
-                  '&:focus-visible': {
-                    outline: `2px solid ${alpha(toneColor, 0.7)}`,
-                    outlineOffset: 2,
-                  },
-                };
-              }}
-            >
-              <Typography
-                sx={(theme) => ({
-                  color: getActivityToneColor(theme, row.tone),
-                  fontSize: '0.67rem',
-                  letterSpacing: '0.13em',
-                  textTransform: 'uppercase',
-                })}
-              >
-                {row.status}
-              </Typography>
-              <Avatar
-                src={getGithubAvatarSrc(row.repository.split('/')[0])}
-                alt={row.repository}
-                sx={{
-                  width: { xs: 28, sm: 32 },
-                  height: { xs: 28, sm: 32 },
-                  border: '1px solid',
-                  borderColor: 'border.subtle',
-                }}
-              />
-              <Box sx={{ minWidth: 0 }}>
-                <Typography
-                  sx={{
-                    fontWeight: 900,
-                    fontSize: '0.86rem',
-                    lineHeight: 1.25,
+                  return {
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '72px 28px minmax(0, 1fr)',
+                      sm: '84px 32px minmax(0, 1fr) auto',
+                    },
+                    gap: { xs: 1, sm: 1.4 },
+                    alignItems: 'center',
+                    minHeight: 68,
+                    px: { xs: 1, sm: 1.25 },
+                    py: 1,
+                    position: 'relative',
                     overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                  }}
-                >
-                  {row.title}
-                </Typography>
+                    borderRadius: 1.25,
+                    border: `1px solid ${theme.palette.border.subtle}`,
+                    borderLeft: `2px solid ${alpha(toneColor, 0.8)}`,
+                    backgroundColor: alpha(theme.palette.text.primary, 0.02),
+                    transition:
+                      'background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease',
+                    ...slideIn(240 + index * 55),
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.text.primary, 0.04),
+                      borderColor: alpha(toneColor, 0.65),
+                      transform: 'translateX(3px)',
+                      boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.2)}`,
+                    },
+                    '&:focus-visible': {
+                      outline: `2px solid ${alpha(toneColor, 0.7)}`,
+                      outlineOffset: 2,
+                    },
+                  };
+                }}
+              >
                 <Typography
                   sx={(theme) => ({
-                    mt: 0.25,
-                    color: alpha(theme.palette.common.black, 0.56),
-                    fontSize: '0.66rem',
+                    color: getActivityToneColor(theme, row.tone),
+                    fontSize: '0.67rem',
+                    letterSpacing: '0.13em',
+                    textTransform: 'uppercase',
                   })}
                 >
-                  <Box
-                    component="span"
-                    sx={{ fontWeight: 700, color: 'common.black' }}
+                  {row.status}
+                </Typography>
+                <Avatar
+                  src={getGithubAvatarSrc(row.repository.split('/')[0])}
+                  alt={row.repository}
+                  sx={{
+                    width: { xs: 28, sm: 32 },
+                    height: { xs: 28, sm: 32 },
+                    border: '1px solid',
+                    borderColor: 'border.medium',
+                  }}
+                />
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography
+                    sx={{
+                      fontWeight: 900,
+                      fontSize: '0.86rem',
+                      lineHeight: 1.25,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                    }}
                   >
-                    {row.repository}
-                  </Box>{' '}
-                  by {row.author}
+                    {row.title}
+                  </Typography>
+                  <Typography
+                    sx={(theme) => ({
+                      mt: 0.25,
+                      color: theme.palette.text.secondary,
+                      fontSize: '0.66rem',
+                    })}
+                  >
+                    <Box
+                      component="span"
+                      sx={{ fontWeight: 700, color: 'text.primary' }}
+                    >
+                      {row.repository}
+                    </Box>{' '}
+                    by {row.author}
+                    <Box
+                      component="span"
+                      sx={(theme) => ({
+                        display: { xs: 'inline', sm: 'none' },
+                        color: alpha(theme.palette.text.primary, 0.4),
+                      })}
+                    >
+                      {' '}
+                      · {row.dateLabel} {row.timeLabel}
+                    </Box>
+                  </Typography>
+                </Box>
+                <Typography
+                  sx={(theme) => ({
+                    display: { xs: 'none', sm: 'block' },
+                    color: getActivityToneColor(theme, row.tone),
+                    fontFamily: 'var(--font-heading)',
+                    fontWeight: 900,
+                    fontSize: '0.82rem',
+                    lineHeight: 1.15,
+                    textAlign: 'right',
+                    whiteSpace: 'nowrap',
+                  })}
+                >
+                  {row.dateLabel}
                   <Box
                     component="span"
                     sx={(theme) => ({
-                      display: { xs: 'inline', sm: 'none' },
-                      color: alpha(theme.palette.common.black, 0.5),
+                      display: 'block',
+                      mt: 0.25,
+                      color: theme.palette.text.secondary,
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.62rem',
+                      fontWeight: 700,
                     })}
                   >
-                    {' '}
-                    · {row.dateLabel} {row.timeLabel}
+                    {row.timeLabel}
                   </Box>
                 </Typography>
-              </Box>
-              <Typography
-                sx={(theme) => ({
-                  display: { xs: 'none', sm: 'block' },
-                  color: getActivityToneColor(theme, row.tone),
-                  fontFamily: 'var(--font-heading)',
-                  fontWeight: 900,
-                  fontSize: '0.82rem',
-                  lineHeight: 1.15,
-                  textAlign: 'right',
-                  whiteSpace: 'nowrap',
-                })}
-              >
-                {row.dateLabel}
-                <Box
-                  component="span"
-                  sx={(theme) => ({
-                    display: 'block',
-                    mt: 0.25,
-                    color: alpha(theme.palette.common.black, 0.56),
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.62rem',
-                    fontWeight: 700,
-                  })}
-                >
-                  {row.timeLabel}
-                </Box>
-              </Typography>
-            </LinkBox>
-          ))}
-        </Stack>
-      ) : (
-        <PanelEmptyState
-          variant="light"
-          title={
-            isLoading
-              ? 'Fetching live PRs'
-              : isError
-                ? 'Live PR feed is unavailable'
-                : 'No tracked PRs returned'
-          }
-          body={
-            isLoading
-              ? 'The feed will populate from the API as soon as the latest pull requests arrive.'
-              : 'The landing page is intentionally not showing sample PRs here.'
-          }
-        />
-      )}
-      <LinkBox
-        href="/dashboard"
-        linkState={{ backLabel: 'Back to Home' }}
-        sx={(theme) => ({
-          display: 'block',
-          mt: 1.4,
-          pt: 1.3,
-          borderTop: '1px dashed',
-          borderColor: alpha(theme.palette.common.black, 0.16),
-          color: alpha(theme.palette.common.black, 0.58),
-          fontSize: '0.68rem',
-          textAlign: 'center',
-          transition: 'color 0.16s ease',
-          '&:hover': {
-            color: theme.palette.status.merged,
-          },
-          '&:focus-visible': {
-            outline: '2px solid',
-            outlineColor: theme.palette.status.merged,
-            outlineOffset: 3,
-          },
-        })}
-      >
-        {'see live dashboard ->'}
-      </LinkBox>
+              </LinkBox>
+            ))}
+          </Stack>
+        ) : (
+          <PanelEmptyState
+            title={
+              isLoading
+                ? 'Fetching live PRs'
+                : isError
+                  ? 'Live PR feed is unavailable'
+                  : 'No tracked PRs returned'
+            }
+            body={
+              isLoading
+                ? 'The feed will populate from the API as soon as the latest pull requests arrive.'
+                : 'The landing page is intentionally not showing sample PRs here.'
+            }
+          />
+        )}
+        <LinkBox
+          href="/dashboard"
+          linkState={{ backLabel: 'Back to Home' }}
+          sx={(theme) => ({
+            display: 'block',
+            mt: 1.4,
+            pt: 1.3,
+            borderTop: '1px dashed',
+            borderColor: theme.palette.border.medium,
+            color: theme.palette.text.secondary,
+            fontSize: '0.68rem',
+            textAlign: 'center',
+            transition: 'color 0.16s ease',
+            '&:hover': {
+              color: theme.palette.status.merged,
+            },
+            '&:focus-visible': {
+              outline: '2px solid',
+              outlineColor: theme.palette.status.merged,
+              outlineOffset: 3,
+            },
+          })}
+        >
+          {'see live dashboard ->'}
+        </LinkBox>
+      </Box>
     </Box>
   );
 };
@@ -1298,18 +1413,31 @@ const OnboardingCard: React.FC<{
       gap: 3,
       p: { xs: 2, md: 2.5 },
       borderRadius: 2,
-      backgroundColor: theme.palette.common.white,
-      color: theme.palette.common.black,
-      border: `1px solid ${alpha(theme.palette.common.black, 0.14)}`,
+      backgroundColor: theme.palette.surface.subtle,
+      color: theme.palette.text.primary,
+      border: `1px solid ${theme.palette.border.medium}`,
       borderTop: `3px solid ${theme.palette.status.merged}`,
+      position: 'relative',
+      overflow: 'hidden',
       minHeight: 260,
       ...fadeUp(700),
     })}
   >
-    <Stack spacing={1.25}>
+    <Box
+      sx={(theme) => ({
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 100,
+        background: `linear-gradient(to bottom, ${alpha(theme.palette.status.merged, 0.1)} 0%, transparent 100%)`,
+        pointerEvents: 'none',
+      })}
+    />
+    <Stack spacing={1.25} sx={{ position: 'relative', zIndex: 1 }}>
       <Typography
         sx={(theme) => ({
-          color: alpha(theme.palette.common.black, 0.58),
+          color: theme.palette.text.secondary,
           fontSize: '0.66rem',
           letterSpacing: '0.16em',
           textTransform: 'uppercase',
@@ -1329,7 +1457,7 @@ const OnboardingCard: React.FC<{
       </Typography>
       <Typography
         sx={(theme) => ({
-          color: alpha(theme.palette.common.black, 0.62),
+          color: alpha(theme.palette.text.primary, 0.62),
           fontSize: '0.82rem',
           lineHeight: 1.6,
         })}
@@ -1341,6 +1469,7 @@ const OnboardingCard: React.FC<{
     <Stack
       direction={{ xs: 'column', sm: 'row', lg: 'column', xl: 'row' }}
       spacing={1}
+      sx={{ position: 'relative', zIndex: 1 }}
     >
       <Button
         component="a"
@@ -1350,13 +1479,16 @@ const OnboardingCard: React.FC<{
         sx={(theme) => ({
           minHeight: 44,
           borderRadius: 1.5,
-          backgroundColor: theme.palette.common.black,
-          color: theme.palette.common.white,
+          backgroundColor: theme.palette.status.merged,
+          color: theme.palette.common.black,
           textTransform: 'none',
           fontWeight: 900,
           '&:hover': {
-            backgroundColor: theme.palette.common.black,
+            backgroundColor: alpha(theme.palette.status.merged, 0.9),
+            transform: 'translateY(-1px)',
+            boxShadow: `0 4px 12px ${alpha(theme.palette.status.merged, 0.3)}`,
           },
+          transition: 'all 0.2s ease',
         })}
       >
         Miner guide
@@ -1368,13 +1500,13 @@ const OnboardingCard: React.FC<{
         sx={(theme) => ({
           minHeight: 44,
           borderRadius: 1.5,
-          borderColor: alpha(theme.palette.common.black, 0.42),
-          color: theme.palette.common.black,
+          borderColor: theme.palette.border.medium,
+          color: theme.palette.text.primary,
           textTransform: 'none',
           fontWeight: 800,
           '&:hover': {
-            borderColor: theme.palette.common.black,
-            backgroundColor: alpha(theme.palette.common.black, 0.05),
+            borderColor: theme.palette.text.primary,
+            backgroundColor: alpha(theme.palette.text.primary, 0.05),
           },
         })}
       >
