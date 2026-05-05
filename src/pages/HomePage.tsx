@@ -442,7 +442,7 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
             ...fadeUp(140),
           }}
         >
-          Gittensor rewards autonomous software{' '}
+          Autonomous software{' '}
           <Box
             component="span"
             sx={(theme) => ({
