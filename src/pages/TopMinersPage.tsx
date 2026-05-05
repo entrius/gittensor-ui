@@ -21,7 +21,7 @@ type TimelineTab = 'oss' | 'discoveries';
 const TIMELINE_ORDER: readonly TimelineTab[] = ['oss', 'discoveries'] as const;
 
 const TIMELINE_LABELS: Record<TimelineTab, string> = {
-  oss: 'Leaderboard',
+  oss: 'OSS Contributions',
   discoveries: 'Discoveries',
 };
 
@@ -32,7 +32,7 @@ const parseTimeline = (raw: string | null): TimelineTab =>
 
 /* ─── Miner href helpers ──────────────────────────────────────── */
 
-const OSS_LINK_STATE = { backLabel: 'Back to Leaderboard' } as const;
+const OSS_LINK_STATE = { backLabel: 'Back to OSS Contributions' } as const;
 const DISC_LINK_STATE = { backLabel: 'Back to Discoveries' } as const;
 
 const getOssMinerHref = (miner: MinerStats) =>
