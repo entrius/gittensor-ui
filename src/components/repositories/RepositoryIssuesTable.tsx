@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   Box,
   Card,
@@ -30,10 +30,17 @@ import {
 } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
 import FilterButton from '../FilterButton';
+import {
+  useSessionStoredState,
+  oneOf,
+} from '../../hooks/useSessionStoredState';
 
 interface RepositoryIssuesTableProps {
   repositoryFullName: string;
 }
+
+type RepoIssueFilter = 'all' | 'open' | 'closed';
+const isRepoIssueFilter = oneOf(['all', 'open', 'closed'] as const);
 
 const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   repositoryFullName,
@@ -41,7 +48,11 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   const theme = useTheme();
   const { data: issues, isLoading } = useRepositoryIssues(repositoryFullName);
   const { data: bounties } = useRepoIssues(repositoryFullName);
-  const [filter, setFilter] = useState<'all' | 'open' | 'closed'>('all');
+  const [filter, setFilter] = useSessionStoredState<RepoIssueFilter>(
+    'repository:issues:filter',
+    'all',
+    isRepoIssueFilter,
+  );
 
   const counts = useMemo(() => {
     if (!issues) return { total: 0, open: 0, closed: 0 };

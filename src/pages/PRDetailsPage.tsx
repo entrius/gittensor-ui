@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Box, Tabs, Tab, CircularProgress, Typography } from '@mui/material';
 import { Page } from '../components/layout';
@@ -13,6 +13,7 @@ import {
 } from '../components';
 import { usePullRequestDetails } from '../api';
 import { serializePRKey } from '../hooks/useWatchlist';
+import { useSessionStoredState } from '../hooks/useSessionStoredState';
 import { STATUS_COLORS } from '../theme';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CodeIcon from '@mui/icons-material/Code';
@@ -23,7 +24,11 @@ const PRDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const repository = searchParams.get('repo');
   const pullRequestNumber = searchParams.get('number');
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useSessionStoredState<number>(
+    'pr:detailsTab',
+    0,
+    (v): v is number => v === 0 || v === 1 || v === 2,
+  );
 
   // Call hook unconditionally (React rules of hooks)
   const { data: prDetails, isLoading } = usePullRequestDetails(
