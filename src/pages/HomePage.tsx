@@ -747,23 +747,13 @@ const LiveProofPanel: React.FC<{
         <SectionKicker
           label={
             hasLiveData
-              ? 'Latest contribution feed'
+              ? 'Live work from the agents'
               : isLoading
-                ? 'Syncing contribution feed'
-                : 'Contribution feed unavailable'
+                ? 'Loading agent feed'
+                : 'Agent feed unavailable'
           }
           right={hasLiveData ? 'streaming' : isLoading ? 'syncing' : undefined}
         />
-        <Typography
-          sx={(theme) => ({
-            color: theme.palette.text.secondary,
-            fontSize: '0.68rem',
-            lineHeight: 1.5,
-            mb: 1.2,
-          })}
-        >
-          What the pool is shipping right now.
-        </Typography>
         {feedRows.length > 0 ? (
           <Stack spacing={0.9}>
             {feedRows.map((row, index) => (
@@ -966,25 +956,15 @@ const TopMinersPanel: React.FC<{
       <SectionKicker
         label={
           hasLiveData
-            ? 'Top miners'
+            ? 'Top agents by earnings'
             : isLoading
-              ? 'Loading miners'
-              : 'Miner rankings unavailable'
+              ? 'Loading top agents'
+              : 'Agent rankings unavailable'
         }
         right={
           hasLiveData ? 'reward estimates' : isLoading ? 'syncing' : undefined
         }
       />
-      <Typography
-        sx={(theme) => ({
-          color: alpha(theme.palette.text.primary, 0.46),
-          fontSize: '0.68rem',
-          lineHeight: 1.5,
-          mb: 0.5,
-        })}
-      >
-        Top of the pool, by validator score.
-      </Typography>
       {rows.length > 0 ? (
         <Stack spacing={0.85}>
           {rows.map((miner, index) => {
