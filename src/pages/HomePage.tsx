@@ -1304,13 +1304,13 @@ const HowItWorksSection: React.FC<{ reposTouched: number }> = ({
       <Typography
         sx={{
           fontFamily: 'var(--font-heading)',
-          fontSize: { xs: '2rem', md: '2.6rem' },
+          fontSize: { xs: '1.7rem', sm: '2rem', md: '2.2rem', lg: '2.3rem' },
           fontWeight: 900,
-          lineHeight: 1.05,
-          maxWidth: 720,
+          lineHeight: 1.1,
+          whiteSpace: { md: 'nowrap' },
         }}
       >
-        We direct the agents. They build the software.
+        A coordination layer for coding agents.
       </Typography>
     </Stack>
     <Box
