@@ -32,8 +32,6 @@ import {
   Badge,
   useMediaQuery,
   Portal,
-  MenuItem,
-  Select,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
@@ -46,8 +44,6 @@ import PersonIcon from '@mui/icons-material/Person';
 import FolderIcon from '@mui/icons-material/Folder';
 import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { useTwitterStickySidebar } from '../hooks/useTwitterStickySidebar';
@@ -102,7 +98,10 @@ import theme, {
   scrollbarSx,
 } from '../theme';
 import FilterButton from '../components/FilterButton';
-import { getRepositoryOwnerAvatarBackground } from '../components/leaderboard/types';
+import {
+  FONTS,
+  getRepositoryOwnerAvatarBackground,
+} from '../components/leaderboard/types';
 
 const TAB_ORDER: readonly WatchlistCategory[] = [
   'miners',
@@ -1015,6 +1014,90 @@ type RepoSortKey =
   | 'discoveryIssues'
   | 'discoveryContributors';
 
+/** Card-view sort chips (Leaderboard-style); list view sorts via column headers. */
+const WATCHLIST_REPO_CARD_SORT_OPTIONS: Array<{
+  value: RepoSortKey;
+  label: string;
+}> = [
+  { value: 'weight', label: 'Weight' },
+  { value: 'totalScore', label: 'OSS score' },
+  { value: 'totalPRs', label: 'PRs' },
+  { value: 'contributors', label: 'OSS contributors' },
+  { value: 'discoveryScore', label: 'Issue score' },
+  { value: 'discoveryIssues', label: 'Issues' },
+  { value: 'discoveryContributors', label: 'Issue contributors' },
+];
+
+const WatchlistRepoCardSortPills: React.FC<{
+  sortField: RepoSortKey;
+  sortOrder: 'asc' | 'desc';
+  onSortChange: (key: RepoSortKey) => void;
+}> = ({ sortField, sortOrder, onSortChange }) => (
+  <Box
+    sx={{
+      display: 'flex',
+      gap: 0.5,
+      flexWrap: 'wrap',
+      justifyContent: 'flex-start',
+    }}
+  >
+    {WATCHLIST_REPO_CARD_SORT_OPTIONS.map((opt) => {
+      const isActive = sortField === opt.value;
+      return (
+        <Box
+          key={opt.value}
+          component="button"
+          type="button"
+          onClick={() => onSortChange(opt.value)}
+          sx={(t) => ({
+            px: 1.5,
+            minHeight: 32,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            borderRadius: 2,
+            cursor: 'pointer',
+            font: 'inherit',
+            backgroundColor: isActive
+              ? alpha(t.palette.text.primary, 0.1)
+              : 'transparent',
+            color: isActive ? t.palette.text.primary : STATUS_COLORS.open,
+            border: '1px solid',
+            borderColor: isActive ? t.palette.border.medium : 'transparent',
+            transition: 'all 0.2s',
+            '&:hover': {
+              backgroundColor: t.palette.surface.light,
+              color: t.palette.text.primary,
+            },
+            '&:focus-visible': {
+              outline: `2px solid ${t.palette.status.info}`,
+              outlineOffset: 2,
+            },
+          })}
+        >
+          <Typography
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.75rem',
+              fontWeight: 600,
+            }}
+          >
+            {opt.label}
+          </Typography>
+          {isActive && (
+            <Typography
+              component="span"
+              sx={{ fontSize: '0.7rem', opacity: 0.7 }}
+            >
+              {sortOrder === 'asc' ? '▲' : '▼'}
+            </Typography>
+          )}
+        </Box>
+      );
+    })}
+  </Box>
+);
+
 const repoCellSx = { py: 1.5 } as const;
 
 /** Narrow stacked header for metric columns (avoids cramped TableSortLabel overlap). */
@@ -1894,80 +1977,11 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         }
         sortContent={
           viewMode === 'cards' ? (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                flexWrap: 'wrap',
-              }}
-            >
-              <Select
-                size="small"
-                fullWidth
-                value={sortField}
-                onChange={(e) => {
-                  const next = e.target.value as RepoSortKey;
-                  setSortField(next);
-                  setSortOrder(next === 'name' ? 'asc' : 'desc');
-                  setPage(0);
-                }}
-                sx={{
-                  color: 'text.primary',
-                  backgroundColor: 'background.default',
-                  fontSize: '0.8rem',
-                  height: '34px',
-                  borderRadius: 2,
-                  minWidth: 0,
-                  flex: '1 1 140px',
-                  '& fieldset': { borderColor: 'border.light' },
-                  '&:hover fieldset': { borderColor: 'border.medium' },
-                  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                  '& .MuiSelect-select': { py: 0.65 },
-                }}
-              >
-                <MenuItem value="weight">Weight</MenuItem>
-                <MenuItem value="totalScore">OSS score</MenuItem>
-                <MenuItem value="totalPRs">PRs</MenuItem>
-                <MenuItem value="contributors">OSS contributors</MenuItem>
-                <MenuItem value="discoveryScore">Issue score</MenuItem>
-                <MenuItem value="discoveryIssues">Issues</MenuItem>
-                <MenuItem value="discoveryContributors">
-                  Issue contributors
-                </MenuItem>
-                <MenuItem value="name">Repository</MenuItem>
-              </Select>
-              <Tooltip title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}>
-                <IconButton
-                  onClick={() => {
-                    setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
-                    setPage(0);
-                  }}
-                  size="small"
-                  aria-label={
-                    sortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'
-                  }
-                  sx={{
-                    color: 'text.primary',
-                    border: '1px solid',
-                    borderColor: 'border.light',
-                    borderRadius: 2,
-                    padding: '6px',
-                    flexShrink: 0,
-                    '&:hover': {
-                      backgroundColor: 'surface.light',
-                      borderColor: 'border.medium',
-                    },
-                  }}
-                >
-                  {sortOrder === 'asc' ? (
-                    <ArrowUpwardIcon fontSize="small" />
-                  ) : (
-                    <ArrowDownwardIcon fontSize="small" />
-                  )}
-                </IconButton>
-              </Tooltip>
-            </Box>
+            <WatchlistRepoCardSortPills
+              sortField={sortField}
+              sortOrder={sortOrder}
+              onSortChange={handleSort}
+            />
           ) : undefined
         }
         extraContent={
