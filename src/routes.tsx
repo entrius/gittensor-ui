@@ -31,7 +31,7 @@ const WatchlistPage = React.lazy(() => import('./pages/WatchlistPage'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 
 const routesArray: AppRoute[] = [
-  { name: 'home', path: '/', element: <HomePage />, showGlobalSearch: true },
+  { name: 'home', path: '/', element: <HomePage /> },
   {
     name: 'dashboard',
     path: '/dashboard',
