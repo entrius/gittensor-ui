@@ -730,6 +730,7 @@ const WatchlistOptionsSidebarPanelContent: React.FC<
   Omit<WatchlistOptionsButtonProps, 'hasActiveFilter'>
 > = ({
   filterContent,
+  sortContent,
   extraContent,
   searchValue,
   searchPlaceholder,
@@ -742,6 +743,13 @@ const WatchlistOptionsSidebarPanelContent: React.FC<
       <OptionsLabel>Filter</OptionsLabel>
       {filterContent}
     </Box>
+
+    {sortContent != null ? (
+      <Box>
+        <OptionsLabel>Sort</OptionsLabel>
+        {sortContent}
+      </Box>
+    ) : null}
 
     {/* Search */}
     <Box>
@@ -788,6 +796,8 @@ const WatchlistOptionsSidebarPanelContent: React.FC<
 /* ─── WatchlistOptionsButton: reusable compact popover for all watchlist list toolbars ─── */
 interface WatchlistOptionsButtonProps {
   filterContent: React.ReactNode;
+  /** Shown under Filter when set (e.g. repositories card view). */
+  sortContent?: React.ReactNode;
   extraContent?: React.ReactNode;
   searchValue: string;
   searchPlaceholder: string;
@@ -800,6 +810,7 @@ interface WatchlistOptionsButtonProps {
 
 const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
   filterContent,
+  sortContent,
   extraContent,
   searchValue,
   searchPlaceholder,
@@ -895,6 +906,13 @@ const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
           <OptionsLabel>Filter</OptionsLabel>
           {filterContent}
         </Box>
+
+        {sortContent != null ? (
+          <Box>
+            <OptionsLabel>Sort</OptionsLabel>
+            {sortContent}
+          </Box>
+        ) : null}
 
         {/* Search */}
         <Box>
@@ -1874,6 +1892,84 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             />
           </Box>
         }
+        sortContent={
+          viewMode === 'cards' ? (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                flexWrap: 'wrap',
+              }}
+            >
+              <Select
+                size="small"
+                fullWidth
+                value={sortField}
+                onChange={(e) => {
+                  const next = e.target.value as RepoSortKey;
+                  setSortField(next);
+                  setSortOrder(next === 'name' ? 'asc' : 'desc');
+                  setPage(0);
+                }}
+                sx={{
+                  color: 'text.primary',
+                  backgroundColor: 'background.default',
+                  fontSize: '0.8rem',
+                  height: '34px',
+                  borderRadius: 2,
+                  minWidth: 0,
+                  flex: '1 1 140px',
+                  '& fieldset': { borderColor: 'border.light' },
+                  '&:hover fieldset': { borderColor: 'border.medium' },
+                  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                  '& .MuiSelect-select': { py: 0.65 },
+                }}
+              >
+                <MenuItem value="weight">Weight</MenuItem>
+                <MenuItem value="totalScore">OSS score</MenuItem>
+                <MenuItem value="totalPRs">PRs</MenuItem>
+                <MenuItem value="contributors">OSS contributors</MenuItem>
+                <MenuItem value="discoveryScore">Issue score</MenuItem>
+                <MenuItem value="discoveryIssues">Issues</MenuItem>
+                <MenuItem value="discoveryContributors">
+                  Issue contributors
+                </MenuItem>
+                <MenuItem value="name">Repository</MenuItem>
+              </Select>
+              <Tooltip title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}>
+                <IconButton
+                  onClick={() => {
+                    setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+                    setPage(0);
+                  }}
+                  size="small"
+                  aria-label={
+                    sortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'
+                  }
+                  sx={{
+                    color: 'text.primary',
+                    border: '1px solid',
+                    borderColor: 'border.light',
+                    borderRadius: 2,
+                    padding: '6px',
+                    flexShrink: 0,
+                    '&:hover': {
+                      backgroundColor: 'surface.light',
+                      borderColor: 'border.medium',
+                    },
+                  }}
+                >
+                  {sortOrder === 'asc' ? (
+                    <ArrowUpwardIcon fontSize="small" />
+                  ) : (
+                    <ArrowDownwardIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </Tooltip>
+            </Box>
+          ) : undefined
+        }
         extraContent={
           <>
             <Box>
@@ -1943,91 +2039,6 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         }
         hasActiveFilter={statusFilter !== 'all'}
       />
-
-      {viewMode === 'cards' && (
-        <Box
-          sx={{
-            px: 2,
-            pb: 2,
-            pt: 2,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            gap: 1,
-            borderBottom: '1px solid',
-            borderColor: 'border.light',
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
-          >
-            Sort:
-          </Typography>
-          <Select
-            size="small"
-            value={sortField}
-            onChange={(e) => {
-              const next = e.target.value as RepoSortKey;
-              setSortField(next);
-              setSortOrder(next === 'name' ? 'asc' : 'desc');
-              setPage(0);
-            }}
-            sx={{
-              color: 'text.primary',
-              backgroundColor: 'background.default',
-              fontSize: '0.8rem',
-              height: '36px',
-              borderRadius: 2,
-              minWidth: '140px',
-              '& fieldset': { borderColor: 'border.light' },
-              '&:hover fieldset': { borderColor: 'border.medium' },
-              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-              '& .MuiSelect-select': { py: 0.75 },
-            }}
-          >
-            <MenuItem value="weight">Weight</MenuItem>
-            <MenuItem value="totalScore">OSS score</MenuItem>
-            <MenuItem value="totalPRs">PRs</MenuItem>
-            <MenuItem value="contributors">OSS contributors</MenuItem>
-            <MenuItem value="discoveryScore">Issue score</MenuItem>
-            <MenuItem value="discoveryIssues">Issues</MenuItem>
-            <MenuItem value="discoveryContributors">
-              Issue contributors
-            </MenuItem>
-            <MenuItem value="name">Repository</MenuItem>
-          </Select>
-          <Tooltip title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}>
-            <IconButton
-              onClick={() => {
-                setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
-                setPage(0);
-              }}
-              size="small"
-              aria-label={
-                sortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'
-              }
-              sx={{
-                color: 'text.primary',
-                border: '1px solid',
-                borderColor: 'border.light',
-                borderRadius: 2,
-                padding: '6px',
-                '&:hover': {
-                  backgroundColor: 'surface.light',
-                  borderColor: 'border.medium',
-                },
-              }}
-            >
-              {sortOrder === 'asc' ? (
-                <ArrowUpwardIcon fontSize="small" />
-              ) : (
-                <ArrowDownwardIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Tooltip>
-        </Box>
-      )}
 
       <Collapse in={showChart}>
         <Box
