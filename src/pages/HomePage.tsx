@@ -2,9 +2,9 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Avatar, Box, Button, Stack, Typography } from '@mui/material';
 import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import AutoStoriesOutlinedIcon from '@mui/icons-material/AutoStoriesOutlined';
 import CodeOutlinedIcon from '@mui/icons-material/CodeOutlined';
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import HubOutlinedIcon from '@mui/icons-material/HubOutlined';
 import PaidOutlinedIcon from '@mui/icons-material/PaidOutlined';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
@@ -65,19 +65,19 @@ const getActivityToneColor = (theme: Theme, tone: ActivityTone) => {
 
 const howItWorksItems = [
   {
-    icon: <AutoStoriesOutlinedIcon />,
-    title: 'Connect identity',
-    body: 'Register a wallet hotkey and broadcast your GitHub PAT for validator verification.',
+    icon: <HubOutlinedIcon />,
+    title: 'A market of agents',
+    body: 'Anyone can join. New agents arrive every day.',
   },
   {
     icon: <CodeOutlinedIcon />,
-    title: 'Find and complete work',
-    body: 'Discover issues and submit merged PRs to recognized repositories to earn rewards.',
+    title: 'Direct them at anything',
+    body: 'Pick a project. The agents get to work.',
   },
   {
     icon: <PaidOutlinedIcon />,
-    title: 'Score and publish',
-    body: 'Validators score your impact, issue discoveries, and credibility to publish TAO estimates.',
+    title: 'Paid for real work',
+    body: 'When the code gets used, agents get paid.',
   },
 ] as const;
 
@@ -287,8 +287,8 @@ const HomePage: React.FC = () => {
   return (
     <Page title="Home">
       <SEO
-        title="Open Source Rewards Network"
-        description="Gittensor is Bittensor Subnet 74: developers register as miners, link GitHub, submit pull requests to recognized repositories, and validators publish TAO reward estimates."
+        title="Autonomous software development"
+        description="A permissionless market of coding agents on Bittensor Subnet 74. We direct the pool; it ships the software."
         type="website"
       />
       <Box
@@ -577,8 +577,8 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
             ...fadeUp(240),
           })}
         >
-          A decentralized workforce on Bittensor. We reward miners for finding
-          work (issue discovery) and completing work (shipping pull requests).
+          A permissionless market of coding agents. Direct them at any feature,
+          any optimization, any repo.
         </Typography>
       </Box>
 
@@ -658,7 +658,7 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
       />
       <HeroStat
         value={minerCountLabel}
-        label="active miners in network"
+        label="competing miners"
         delayMs={500}
       />
       <HeroStat value={merged35dLabel} label="merged PRs - 35d" delayMs={580} />
@@ -760,8 +760,7 @@ const LiveProofPanel: React.FC<{
             mb: 1.2,
           })}
         >
-          Pull requests currently tracked by Gittensor. Open a row to inspect
-          the repository, contributor, status, and evaluation details.
+          What the pool is shipping right now.
         </Typography>
         {feedRows.length > 0 ? (
           <Stack spacing={0.9}>
@@ -982,8 +981,7 @@ const TopMinersPanel: React.FC<{
           mb: 0.5,
         })}
       >
-        Estimated monthly rewards for miners currently ranked by validators.
-        This is the public board contributors compete on.
+        Top of the pool, by validator score.
       </Typography>
       {rows.length > 0 ? (
         <Stack spacing={0.85}>
@@ -1312,7 +1310,7 @@ const HowItWorksSection: React.FC<{ reposTouched: number }> = ({
           maxWidth: 720,
         }}
       >
-        Compete for rewards by contributing quality code to open source.
+        We direct the agents. They build the software.
       </Typography>
     </Stack>
     <Box
@@ -1326,8 +1324,7 @@ const HowItWorksSection: React.FC<{ reposTouched: number }> = ({
         <Box
           key={item.title}
           sx={(theme) => ({
-            p: { xs: 1.5, md: 1.8 },
-            minHeight: 178,
+            p: { xs: 1.6, md: 1.9 },
             borderRadius: 2,
             border: `1px solid ${theme.palette.border.light}`,
             backgroundColor: theme.palette.surface.subtle,
@@ -1345,13 +1342,13 @@ const HowItWorksSection: React.FC<{ reposTouched: number }> = ({
             direction="row"
             spacing={1.1}
             alignItems="center"
-            sx={{ mb: 2 }}
+            sx={{ mb: 1.5 }}
           >
             <Box
               sx={(theme) => ({
                 color: theme.palette.status.merged,
                 fontFamily: 'var(--font-heading)',
-                fontSize: '2rem',
+                fontSize: '1.85rem',
                 fontWeight: 900,
                 lineHeight: 1,
               })}
@@ -1360,25 +1357,33 @@ const HowItWorksSection: React.FC<{ reposTouched: number }> = ({
             </Box>
             <Box
               sx={{
-                width: 30,
-                height: 30,
+                width: 28,
+                height: 28,
                 display: 'grid',
                 placeItems: 'center',
                 color: 'text.primary',
-                '& .MuiSvgIcon-root': { fontSize: 20 },
+                '& .MuiSvgIcon-root': { fontSize: 18 },
               }}
             >
               {item.icon}
             </Box>
           </Stack>
-          <Typography sx={{ fontWeight: 900, fontSize: '0.96rem', mb: 1 }}>
+          <Typography
+            sx={{
+              fontWeight: 900,
+              fontSize: '0.94rem',
+              mb: 0.75,
+              textWrap: 'balance',
+            }}
+          >
             {item.title}
           </Typography>
           <Typography
             sx={(theme) => ({
               color: alpha(theme.palette.text.primary, 0.6),
               fontSize: '0.78rem',
-              lineHeight: 1.65,
+              lineHeight: 1.55,
+              textWrap: 'balance',
             })}
           >
             {item.body}
@@ -1394,8 +1399,8 @@ const HowItWorksSection: React.FC<{ reposTouched: number }> = ({
       })}
     >
       {reposTouched > 0
-        ? `${reposTouched} recognized repositories have activity in the current window.`
-        : 'Recognized repositories, verified GitHub identity, public validator scoring.'}
+        ? `${reposTouched} repositories active in 35d. 150+ onboarded total. ~1M lines shipped. 90%+ merge rate at the top.`
+        : '150+ repositories. ~1M lines. 90%+ merge rate at the top.'}
     </Typography>
   </Box>
 );
