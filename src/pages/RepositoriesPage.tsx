@@ -423,275 +423,275 @@ const RepositoriesPage: React.FC = () => {
             minHeight: isLargeScreen ? 'calc(100vh - 88px)' : 'auto',
           }}
         >
-        {/* ── Highlight Sections ─────────────────────────────────────── */}
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr 1fr' },
-            gap: 2,
-            mb: 3,
-            alignItems: 'stretch',
-          }}
-        >
-          {/* Trending This Week */}
-          <Card sx={cardSx}>
-            {isLoading || trendingRepos.length > 0 ? (
-              <>
-                <SectionHeader>Trending This Week</SectionHeader>
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  {trendingRepos.length === 0 && !isLoading ? (
-                    <Typography
-                      sx={(theme) => ({
-                        color: alpha(theme.palette.text.primary, 0.3),
-                        fontSize: '0.8rem',
-                        fontStyle: 'italic',
-                        p: 1,
-                      })}
-                    >
-                      No data available
-                    </Typography>
-                  ) : (
-                    trendingRepos.map((repo) => (
-                      <HighlightRow
-                        key={repo.name}
-                        href={getRepoHref(repo.name)}
-                        linkState={REPO_LINK_STATE}
-                        avatar={getRepositoryOwnerAvatarSrc(
-                          repo.name.split('/')[0],
-                        )}
-                        avatarBg={getAvatarBg(repo.name)}
-                        label={
-                          <Tooltip title={repo.name} arrow placement="top">
-                            <Typography
-                              sx={{
-                                fontFamily: FONTS.mono,
-                                fontSize: '0.82rem',
-                                color: 'text.primary',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {repo.name}
-                            </Typography>
-                          </Tooltip>
-                        }
-                        right={
-                          <Typography
-                            sx={(theme) => ({
-                              fontFamily: FONTS.mono,
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              color: theme.palette.status.success,
-                              flexShrink: 0,
-                              backgroundColor: alpha(
-                                theme.palette.status.success,
-                                0.1,
-                              ),
-                              px: 0.75,
-                              py: 0.25,
-                              borderRadius: '4px',
-                            })}
-                          >
-                            +{repo.pctIncrease.toFixed(0)}%
-                          </Typography>
-                        }
-                      />
-                    ))
-                  )}
-                </Box>
-              </>
-            ) : null}
-          </Card>
-
-          {/* Most Collateral Staked */}
-          <Card sx={cardSx}>
-            {isLoading || topCollateralRepos.length > 0 ? (
-              <>
-                <SectionHeader>Most Collateral Staked</SectionHeader>
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  {topCollateralRepos.length === 0 && !isLoading ? (
-                    <Typography
-                      sx={(theme) => ({
-                        color: alpha(theme.palette.text.primary, 0.3),
-                        fontSize: '0.8rem',
-                        fontStyle: 'italic',
-                        p: 1,
-                      })}
-                    >
-                      No collateral data available
-                    </Typography>
-                  ) : (
-                    topCollateralRepos.map((repo) => (
-                      <HighlightRow
-                        key={repo.name}
-                        href={getRepoHref(repo.name)}
-                        linkState={REPO_LINK_STATE}
-                        avatar={getRepositoryOwnerAvatarSrc(
-                          repo.name.split('/')[0],
-                        )}
-                        avatarBg={getAvatarBg(repo.name)}
-                        label={
-                          <Tooltip title={repo.name} arrow placement="top">
-                            <Typography
-                              sx={{
-                                fontFamily: FONTS.mono,
-                                fontSize: '0.82rem',
-                                color: 'text.primary',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {repo.name}
-                            </Typography>
-                          </Tooltip>
-                        }
-                        right={
-                          <Typography
-                            sx={{
-                              fontFamily: FONTS.mono,
-                              fontSize: '0.72rem',
-                              color: 'text.secondary',
-                              flexShrink: 0,
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {repo.collateral.toFixed(1)} ({repo.openPRs} PR
-                            {repo.openPRs !== 1 ? 's' : ''})
-                          </Typography>
-                        }
-                      />
-                    ))
-                  )}
-                </Box>
-              </>
-            ) : null}
-          </Card>
-
-          {/* Recent PRs */}
-          <Card sx={cardSx}>
-            {isLoading || recentPrs.length > 0 ? (
-              <>
-                <SectionHeader>Recent Pull Requests</SectionHeader>
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  {recentPrs.length === 0 && !isLoading ? (
-                    <Typography
-                      sx={(theme) => ({
-                        color: alpha(theme.palette.text.primary, 0.3),
-                        fontSize: '0.8rem',
-                        fontStyle: 'italic',
-                        p: 1,
-                      })}
-                    >
-                      No data available
-                    </Typography>
-                  ) : (
-                    recentPrs.map((pr) => (
-                      <HighlightRow
-                        key={`${pr.name}-${pr.number}`}
-                        href={getPrHref(pr.name, pr.number)}
-                        linkState={REPO_LINK_STATE}
-                        avatar={getRepositoryOwnerAvatarSrc(
-                          pr.name.split('/')[0],
-                        )}
-                        avatarBg={getAvatarBg(pr.name)}
-                        label={
-                          <Box
-                            sx={{
-                              minWidth: 0,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <Tooltip title={pr.name} arrow placement="top">
+          {/* ── Highlight Sections ─────────────────────────────────────── */}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr 1fr' },
+              gap: 2,
+              mb: 3,
+              alignItems: 'stretch',
+            }}
+          >
+            {/* Trending This Week */}
+            <Card sx={cardSx}>
+              {isLoading || trendingRepos.length > 0 ? (
+                <>
+                  <SectionHeader>Trending This Week</SectionHeader>
+                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    {trendingRepos.length === 0 && !isLoading ? (
+                      <Typography
+                        sx={(theme) => ({
+                          color: alpha(theme.palette.text.primary, 0.3),
+                          fontSize: '0.8rem',
+                          fontStyle: 'italic',
+                          p: 1,
+                        })}
+                      >
+                        No data available
+                      </Typography>
+                    ) : (
+                      trendingRepos.map((repo) => (
+                        <HighlightRow
+                          key={repo.name}
+                          href={getRepoHref(repo.name)}
+                          linkState={REPO_LINK_STATE}
+                          avatar={getRepositoryOwnerAvatarSrc(
+                            repo.name.split('/')[0],
+                          )}
+                          avatarBg={getAvatarBg(repo.name)}
+                          label={
+                            <Tooltip title={repo.name} arrow placement="top">
                               <Typography
                                 sx={{
                                   fontFamily: FONTS.mono,
-                                  fontSize: '0.68rem',
-                                  color: 'text.tertiary',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  lineHeight: 1.2,
-                                }}
-                              >
-                                {pr.name}
-                              </Typography>
-                            </Tooltip>
-                            <Tooltip title={pr.title} arrow placement="top">
-                              <Typography
-                                sx={{
-                                  fontFamily: FONTS.mono,
-                                  fontSize: '0.78rem',
+                                  fontSize: '0.82rem',
                                   color: 'text.primary',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
                                   whiteSpace: 'nowrap',
-                                  lineHeight: 1.3,
                                 }}
                               >
-                                {pr.title}
+                                {repo.name}
                               </Typography>
                             </Tooltip>
-                          </Box>
-                        }
-                        right={
-                          <Typography
-                            sx={(theme) => ({
-                              fontFamily: FONTS.mono,
-                              fontSize: '0.68rem',
-                              color: alpha(theme.palette.text.primary, 0.35),
-                              flexShrink: 0,
-                              whiteSpace: 'nowrap',
-                              ml: 1,
-                            })}
-                          >
-                            {formatRelativeTime(pr.createdAt)}
-                          </Typography>
-                        }
-                      />
-                    ))
-                  )}
-                </Box>
-              </>
-            ) : null}
-            {!isLoading && recentPrs.length === 0 ? (
-              <>
-                <SectionHeader>Recent Pull Requests</SectionHeader>
-                <Box
-                  sx={{
-                    flex: 1,
-                    minHeight: ROW_HEIGHT * 5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Typography
-                    sx={(theme) => ({
-                      color: alpha(theme.palette.text.primary, 0.3),
-                      fontSize: '0.8rem',
-                      p: 1,
-                      textAlign: 'center',
-                    })}
-                  >
-                    No merged PRs today
-                  </Typography>
-                </Box>
-              </>
-            ) : null}
-          </Card>
-        </Box>
+                          }
+                          right={
+                            <Typography
+                              sx={(theme) => ({
+                                fontFamily: FONTS.mono,
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                color: theme.palette.status.success,
+                                flexShrink: 0,
+                                backgroundColor: alpha(
+                                  theme.palette.status.success,
+                                  0.1,
+                                ),
+                                px: 0.75,
+                                py: 0.25,
+                                borderRadius: '4px',
+                              })}
+                            >
+                              +{repo.pctIncrease.toFixed(0)}%
+                            </Typography>
+                          }
+                        />
+                      ))
+                    )}
+                  </Box>
+                </>
+              ) : null}
+            </Card>
 
-        {/* ── Main Table ────────────────────────────────────────────── */}
-        <TopRepositoriesTable
-          repositories={repoStats}
-          isLoading={isLoading}
-          getRepositoryHref={getRepoHref}
-          linkState={REPO_LINK_STATE}
-        />
+            {/* Most Collateral Staked */}
+            <Card sx={cardSx}>
+              {isLoading || topCollateralRepos.length > 0 ? (
+                <>
+                  <SectionHeader>Most Collateral Staked</SectionHeader>
+                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    {topCollateralRepos.length === 0 && !isLoading ? (
+                      <Typography
+                        sx={(theme) => ({
+                          color: alpha(theme.palette.text.primary, 0.3),
+                          fontSize: '0.8rem',
+                          fontStyle: 'italic',
+                          p: 1,
+                        })}
+                      >
+                        No collateral data available
+                      </Typography>
+                    ) : (
+                      topCollateralRepos.map((repo) => (
+                        <HighlightRow
+                          key={repo.name}
+                          href={getRepoHref(repo.name)}
+                          linkState={REPO_LINK_STATE}
+                          avatar={getRepositoryOwnerAvatarSrc(
+                            repo.name.split('/')[0],
+                          )}
+                          avatarBg={getAvatarBg(repo.name)}
+                          label={
+                            <Tooltip title={repo.name} arrow placement="top">
+                              <Typography
+                                sx={{
+                                  fontFamily: FONTS.mono,
+                                  fontSize: '0.82rem',
+                                  color: 'text.primary',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {repo.name}
+                              </Typography>
+                            </Tooltip>
+                          }
+                          right={
+                            <Typography
+                              sx={{
+                                fontFamily: FONTS.mono,
+                                fontSize: '0.72rem',
+                                color: 'text.secondary',
+                                flexShrink: 0,
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {repo.collateral.toFixed(1)} ({repo.openPRs} PR
+                              {repo.openPRs !== 1 ? 's' : ''})
+                            </Typography>
+                          }
+                        />
+                      ))
+                    )}
+                  </Box>
+                </>
+              ) : null}
+            </Card>
+
+            {/* Recent PRs */}
+            <Card sx={cardSx}>
+              {isLoading || recentPrs.length > 0 ? (
+                <>
+                  <SectionHeader>Recent Pull Requests</SectionHeader>
+                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    {recentPrs.length === 0 && !isLoading ? (
+                      <Typography
+                        sx={(theme) => ({
+                          color: alpha(theme.palette.text.primary, 0.3),
+                          fontSize: '0.8rem',
+                          fontStyle: 'italic',
+                          p: 1,
+                        })}
+                      >
+                        No data available
+                      </Typography>
+                    ) : (
+                      recentPrs.map((pr) => (
+                        <HighlightRow
+                          key={`${pr.name}-${pr.number}`}
+                          href={getPrHref(pr.name, pr.number)}
+                          linkState={REPO_LINK_STATE}
+                          avatar={getRepositoryOwnerAvatarSrc(
+                            pr.name.split('/')[0],
+                          )}
+                          avatarBg={getAvatarBg(pr.name)}
+                          label={
+                            <Box
+                              sx={{
+                                minWidth: 0,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <Tooltip title={pr.name} arrow placement="top">
+                                <Typography
+                                  sx={{
+                                    fontFamily: FONTS.mono,
+                                    fontSize: '0.68rem',
+                                    color: 'text.tertiary',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    lineHeight: 1.2,
+                                  }}
+                                >
+                                  {pr.name}
+                                </Typography>
+                              </Tooltip>
+                              <Tooltip title={pr.title} arrow placement="top">
+                                <Typography
+                                  sx={{
+                                    fontFamily: FONTS.mono,
+                                    fontSize: '0.78rem',
+                                    color: 'text.primary',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    lineHeight: 1.3,
+                                  }}
+                                >
+                                  {pr.title}
+                                </Typography>
+                              </Tooltip>
+                            </Box>
+                          }
+                          right={
+                            <Typography
+                              sx={(theme) => ({
+                                fontFamily: FONTS.mono,
+                                fontSize: '0.68rem',
+                                color: alpha(theme.palette.text.primary, 0.35),
+                                flexShrink: 0,
+                                whiteSpace: 'nowrap',
+                                ml: 1,
+                              })}
+                            >
+                              {formatRelativeTime(pr.createdAt)}
+                            </Typography>
+                          }
+                        />
+                      ))
+                    )}
+                  </Box>
+                </>
+              ) : null}
+              {!isLoading && recentPrs.length === 0 ? (
+                <>
+                  <SectionHeader>Recent Pull Requests</SectionHeader>
+                  <Box
+                    sx={{
+                      flex: 1,
+                      minHeight: ROW_HEIGHT * 5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Typography
+                      sx={(theme) => ({
+                        color: alpha(theme.palette.text.primary, 0.3),
+                        fontSize: '0.8rem',
+                        p: 1,
+                        textAlign: 'center',
+                      })}
+                    >
+                      No merged PRs today
+                    </Typography>
+                  </Box>
+                </>
+              ) : null}
+            </Card>
+          </Box>
+
+          {/* ── Main Table ────────────────────────────────────────────── */}
+          <TopRepositoriesTable
+            repositories={repoStats}
+            isLoading={isLoading}
+            getRepositoryHref={getRepoHref}
+            linkState={REPO_LINK_STATE}
+          />
         </Box>
 
         <Box

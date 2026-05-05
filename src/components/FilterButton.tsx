@@ -46,7 +46,11 @@ const FilterButton: React.FC<FilterButtonProps> = ({
         : fullWidth
           ? '1px solid'
           : '1px solid transparent',
-      borderColor: isActive ? undefined : fullWidth ? 'border.light' : undefined,
+      borderColor: isActive
+        ? undefined
+        : fullWidth
+          ? 'border.light'
+          : undefined,
       justifyContent: fullWidth ? 'space-between' : undefined,
       '&:hover': {
         backgroundColor: 'border.light',

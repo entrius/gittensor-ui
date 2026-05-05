@@ -1061,9 +1061,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             />
             <FilterButton
               label="Active"
-              count={
-                rankedRepositories.filter((r) => !r.inactiveAt).length
-              }
+              count={rankedRepositories.filter((r) => !r.inactiveAt).length}
               color={STATUS_COLORS.success}
               isActive={statusFilter === 'active'}
               fullWidth
@@ -1075,9 +1073,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             />
             <FilterButton
               label="Inactive"
-              count={
-                rankedRepositories.filter((r) => !!r.inactiveAt).length
-              }
+              count={rankedRepositories.filter((r) => !!r.inactiveAt).length}
               color={STATUS_COLORS.closed}
               isActive={statusFilter === 'inactive'}
               fullWidth
@@ -1239,9 +1235,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             </Box>
           </>
         }
-        hasActiveFilter={
-          statusFilter !== 'all' || trimmedSearch.length > 0
-        }
+        hasActiveFilter={statusFilter !== 'all' || trimmedSearch.length > 0}
       />
 
       <Collapse in={showChart}>
