@@ -239,12 +239,12 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
           }}
         >
           <MetricCell
-            label="OSS Score"
+            label="OSS score"
             value={formatMetric(repo.totalScore, 2)}
           />
           <MetricCell label="PRs" value={formatMetric(repo.totalPRs)} />
           <MetricCell
-            label="Contributors"
+            label="OSS contributors"
             value={formatMetric(repo.uniqueMiners?.size ?? 0)}
           />
         </Box>
@@ -267,7 +267,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
             value={formatMetric(repo.discoveryIssues)}
           />
           <MetricCell
-            label="Contributors"
+            label="Issue contributors"
             value={formatMetric(repo.discoveryContributors?.size ?? 0)}
           />
         </Box>
