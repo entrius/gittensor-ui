@@ -409,20 +409,6 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
   >
     <Stack spacing={{ xs: 3, md: 3.5 }} sx={{ maxWidth: 980 }}>
       <Stack direction="row" spacing={1.5} alignItems="center" sx={fadeUp(60)}>
-        <Box
-          component="img"
-          src="/gt-logo.svg"
-          alt="Gittensor"
-          sx={(theme) => ({
-            width: 36,
-            height: 36,
-            objectFit: 'contain',
-            filter: `brightness(0) invert(1) drop-shadow(0 0 8px ${alpha(
-              theme.palette.common.white,
-              0.55,
-            )})`,
-          })}
-        />
         <Typography
           sx={(theme) => ({
             color: alpha(theme.palette.text.primary, 0.52),
