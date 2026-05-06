@@ -6,17 +6,13 @@ import {
   Card,
   Chip,
   Collapse,
-  FormControl,
   Grid,
   IconButton,
-  InputAdornment,
   Link,
   MenuItem,
   Select,
   Skeleton,
-  Stack,
   TablePagination,
-  TextField,
   Tooltip,
   Typography,
   alpha,
@@ -24,7 +20,6 @@ import {
 } from '@mui/material';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import SearchIcon from '@mui/icons-material/Search';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
@@ -41,6 +36,10 @@ import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
+import {
+  TabsOptionsPortal,
+  TabsOptionsLabel,
+} from '../common/TabsOptionsPortal';
 import BountyProgress from './BountyProgress';
 import FilterButton from '../FilterButton';
 import { BountyCard } from './BountyCard';
@@ -794,114 +793,73 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
   const toolbar = (
     <>
-      <Box
-        sx={{
-          px: 2,
-          py: 1.5,
-          borderBottom: `1px solid ${theme.palette.border.light}`,
-          display: 'flex',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 2,
-        }}
-      >
-        {/* Left: filter buttons + chart toggle */}
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems="center"
-          flexWrap="wrap"
-          useFlexGap
-        >
-          <FilterButton
-            label="All"
-            isActive={filterType === 'all'}
-            onClick={() => handleFilterChange('all')}
-            count={counts.all}
-            color={theme.palette.status.neutral}
-          />
-          <FilterButton
-            label="Available"
-            isActive={filterType === 'available'}
-            onClick={() => handleFilterChange('available')}
-            count={counts.available}
-            color={theme.palette.status.merged}
-          />
-          <FilterButton
-            label="Pending"
-            isActive={filterType === 'pending'}
-            onClick={() => handleFilterChange('pending')}
-            count={counts.pending}
-            color={theme.palette.status.warning}
-          />
-          <FilterButton
-            label="History"
-            isActive={filterType === 'history'}
-            onClick={() => handleFilterChange('history')}
-            count={counts.history}
-            color={theme.palette.status.neutral}
-          />
-
-          <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
-            <IconButton
-              onClick={() => setShowChart(!showChart)}
-              size="small"
-              sx={{
-                color: showChart
-                  ? theme.palette.text.primary
-                  : alpha(theme.palette.common.white, TEXT_OPACITY.muted),
-                border: `1px solid ${theme.palette.border.light}`,
-                borderRadius: 2,
-                padding: '6px',
-                '&:hover': {
-                  backgroundColor: theme.palette.surface.subtle,
-                  borderColor: theme.palette.border.medium,
-                },
-              }}
-            >
-              {showChart ? (
-                <TableChartIcon fontSize="small" />
-              ) : (
-                <BarChartIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Tooltip>
-        </Stack>
-
-        {/* Rows selector */}
-        <FormControl size="small">
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              variant="body2"
-              sx={{
-                color: alpha(
-                  theme.palette.common.white,
-                  TEXT_OPACITY.secondary,
-                ),
-                fontSize: '0.8rem',
-              }}
-            >
-              Rows:
-            </Typography>
+      <TabsOptionsPortal
+        filterContent={
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+              gap: 1,
+              width: '100%',
+            }}
+          >
+            <FilterButton
+              label="All"
+              isActive={filterType === 'all'}
+              onClick={() => handleFilterChange('all')}
+              count={counts.all}
+              color={theme.palette.status.neutral}
+              fullWidth
+            />
+            <FilterButton
+              label="Available"
+              isActive={filterType === 'available'}
+              onClick={() => handleFilterChange('available')}
+              count={counts.available}
+              color={theme.palette.status.merged}
+              fullWidth
+            />
+            <FilterButton
+              label="Pending"
+              isActive={filterType === 'pending'}
+              onClick={() => handleFilterChange('pending')}
+              count={counts.pending}
+              color={theme.palette.status.warning}
+              fullWidth
+            />
+            <FilterButton
+              label="History"
+              isActive={filterType === 'history'}
+              onClick={() => handleFilterChange('history')}
+              count={counts.history}
+              color={theme.palette.status.neutral}
+              fullWidth
+            />
+          </Box>
+        }
+        extraContent={
+          <Box>
+            <TabsOptionsLabel>Rows</TabsOptionsLabel>
             <Select
+              size="small"
+              fullWidth
               value={rowsPerPage}
               onChange={(e) => {
-                setRowsPerPage(e.target.value as number);
+                setRowsPerPage(Number(e.target.value));
                 setPage(0);
               }}
               sx={{
                 color: theme.palette.text.primary,
-                backgroundColor: alpha(theme.palette.common.black, 0.4),
+                backgroundColor: theme.palette.background.default,
                 fontSize: '0.8rem',
-                height: '36px',
+                height: '34px',
                 borderRadius: 2,
-                minWidth: '80px',
                 '& fieldset': { borderColor: theme.palette.border.light },
                 '&:hover fieldset': {
                   borderColor: theme.palette.border.medium,
                 },
                 '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                '& .MuiSelect-select': { py: 0.75 },
+                '& .MuiSelect-select': { py: 0.65 },
               }}
             >
               {validRows.map((n) => (
@@ -911,49 +869,71 @@ const IssuesList: React.FC<IssuesListProps> = ({
               ))}
             </Select>
           </Box>
-        </FormControl>
-
-        {/* Search */}
-        <TextField
-          placeholder="Search..."
-          size="small"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon
+        }
+        searchValue={searchQuery}
+        searchPlaceholder="Search issues..."
+        onSearchChange={setSearchQuery}
+        viewMode={viewMode}
+        onViewModeChange={handleViewModeChange}
+        viewSlotIncludesHeading
+        viewModeToggle={
+          <>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'baseline',
+                width: '100%',
+                mb: 1.25,
+              }}
+            >
+              <TabsOptionsLabel gutterBottom={false}>View</TabsOptionsLabel>
+              <TabsOptionsLabel gutterBottom={false}>Chart</TabsOptionsLabel>
+            </Box>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 1,
+                width: '100%',
+              }}
+            >
+              <ViewModeToggle
+                viewMode={viewMode}
+                onChange={handleViewModeChange}
+              />
+              <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+                <IconButton
+                  onClick={() => setShowChart(!showChart)}
+                  size="small"
+                  aria-label={showChart ? 'Hide chart' : 'Show chart'}
                   sx={{
-                    color: alpha(
-                      theme.palette.common.white,
-                      TEXT_OPACITY.muted,
-                    ),
-                    fontSize: '1rem',
+                    flexShrink: 0,
+                    color: showChart
+                      ? theme.palette.text.primary
+                      : alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+                    border: `1px solid ${theme.palette.border.light}`,
+                    borderRadius: 2,
+                    padding: '6px',
+                    '&:hover': {
+                      backgroundColor: theme.palette.surface.subtle,
+                      borderColor: theme.palette.border.medium,
+                    },
                   }}
-                />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            width: '200px',
-            '& .MuiOutlinedInput-root': {
-              color: theme.palette.text.primary,
-              backgroundColor: alpha(theme.palette.common.black, 0.4),
-              fontSize: '0.8rem',
-              height: '36px',
-              borderRadius: 2,
-              '& fieldset': { borderColor: theme.palette.border.light },
-              '&:hover fieldset': { borderColor: theme.palette.border.medium },
-              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-            },
-          }}
-        />
-
-        {/* View toggle — pushed to far right */}
-        <Box sx={{ ml: 'auto' }}>
-          <ViewModeToggle viewMode={viewMode} onChange={handleViewModeChange} />
-        </Box>
-      </Box>
+                >
+                  {showChart ? (
+                    <TableChartIcon fontSize="small" />
+                  ) : (
+                    <BarChartIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </Tooltip>
+            </Box>
+          </>
+        }
+        hasActiveFilter={filterType !== 'all'}
+      />
 
       <Collapse in={showChart}>
         <Box
