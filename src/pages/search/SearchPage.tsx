@@ -109,6 +109,7 @@ const SearchPage: React.FC = () => {
 
   const tabState = datasets[tabValue];
   const activeResultCount = resultCountByTab[tabValue];
+  const activeTabLabel = TAB_LABELS[tabValue];
 
   // Reset the active page when the search query changes.
   React.useEffect(() => {
@@ -209,7 +210,7 @@ const SearchPage: React.FC = () => {
             <Typography variant="body2" color="text.secondary">
               {isAnySectionLoading && totalResults === 0
                 ? `Loading search results for "${query}"...`
-                : `${totalResults} result${totalResults === 1 ? '' : 's'} for "${query}"`}
+                : `${activeResultCount} result${activeResultCount === 1 ? '' : 's'} in ${activeTabLabel} for "${query}"`}
             </Typography>
 
             <Box
