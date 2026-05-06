@@ -85,12 +85,18 @@ const IssueDetailsPage: React.FC = () => {
             width: '100%',
             maxWidth: 1200,
             mx: 'auto',
-            px: { xs: 2, md: 3 },
+            px: { xs: 1.5, sm: 2, md: 3 },
           }}
         >
-          <Stack spacing={3}>
+          <Stack spacing={{ xs: 2, md: 3 }}>
             <BackButton to="/bounties" label="Back to Bounties" mb={0} />
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: { xs: 0.5, sm: 1 },
+              }}
+            >
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <IssueHeaderCard issue={issue} />
               </Box>
@@ -112,6 +118,9 @@ const IssueDetailsPage: React.FC = () => {
                 value={tabValue}
                 onChange={handleTabChange}
                 aria-label="issue details tabs"
+                variant="scrollable"
+                scrollButtons={false}
+                allowScrollButtonsMobile={false}
                 sx={(theme) => ({
                   '& .MuiTab-root': {
                     color: STATUS_COLORS.open,
@@ -120,7 +129,9 @@ const IssueDetailsPage: React.FC = () => {
                     textTransform: 'none',
                     fontWeight: 500,
                     minHeight: '48px',
-                    fontSize: '14px',
+                    fontSize: { xs: '13px', sm: '14px' },
+                    minWidth: { xs: 'auto', sm: 90 },
+                    px: { xs: 1.25, sm: 2 },
                     '&.Mui-selected': {
                       color: theme.palette.text.primary,
                       fontWeight: 600,

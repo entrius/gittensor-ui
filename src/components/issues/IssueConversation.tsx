@@ -92,15 +92,15 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
           key={item.id}
           sx={{
             display: 'flex',
-            gap: 2,
+            gap: { xs: 1.25, sm: 2 },
             position: 'relative',
             zIndex: 1,
             '&::before': {
               content: index !== allItems.length - 1 ? '""' : 'none',
               position: 'absolute',
-              top: '40px',
+              top: { xs: '32px', sm: '40px' },
               bottom: '-24px',
-              left: '20px',
+              left: { xs: '15px', sm: '20px' },
               width: '2px',
               backgroundColor: colors.timeline.line,
               zIndex: 0,
@@ -118,8 +118,8 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                 src={item.user.avatarUrl}
                 alt={item.user.login ?? undefined}
                 sx={{
-                  width: 40,
-                  height: 40,
+                  width: { xs: 32, sm: 40 },
+                  height: { xs: 32, sm: 40 },
                   border: `1px solid ${theme.palette.border.light}`,
                   backgroundColor: theme.palette.background.paper, // Avoid transparency issues over the line
                 }}
@@ -137,8 +137,11 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
               border: `1px solid ${colors.border.default}`,
               borderRadius: '6px',
               position: 'relative',
+              // Hide arrow on the smallest screens — the avatar is right next
+              // to the bubble there, the pointer adds visual noise without
+              // helping orientation.
               '&::after': {
-                content: '""',
+                content: { xs: 'none', sm: '""' },
                 position: 'absolute',
                 top: '11px',
                 right: '100%',
@@ -155,8 +158,8 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
             {/* Header */}
             <Box
               sx={{
-                px: 2,
-                py: 1.5, // Slightly more vertical padding
+                px: { xs: 1.5, sm: 2 },
+                py: { xs: 1, sm: 1.5 }, // Slightly more vertical padding
                 backgroundColor: colors.canvas.subtle,
                 borderBottom: `1px solid ${colors.border.default}`,
                 borderTopLeftRadius: '6px',
@@ -164,8 +167,10 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                gap: 1,
+                flexWrap: 'wrap',
                 color: colors.fg.muted,
-                fontSize: '14px',
+                fontSize: { xs: '12px', sm: '14px' },
                 position: 'relative',
                 zIndex: 1, // Ensure above the arrow pseudo-element's main body
               }}
@@ -174,8 +179,9 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 1,
+                  gap: { xs: 0.75, sm: 1 },
                   flexWrap: 'wrap',
+                  minWidth: 0,
                 }}
               >
                 <Link
