@@ -32,6 +32,10 @@ import {
   selectMinerIssueScanRepos,
   useMinerRepositoriesOpenIssues,
 } from '../../hooks/useMinerRepositoriesOpenIssues';
+import {
+  isTrackedRepo,
+  useTrackedRepoSet,
+} from '../../hooks/useTrackedRepoSet';
 import { type RepositoryIssue } from '../../api/models/Miner';
 
 type IssueFilter = 'all' | 'open' | 'solved' | 'closed';
@@ -131,6 +135,7 @@ const fetchLinkedPrNumberForIssue = async (
 
 const fetchGithubIssuesByAuthor = async (
   login: string,
+  trackedRepos: Set<string>,
 ): Promise<RepositoryIssue[]> => {
   const { data } = await axios.get<GithubSearchIssuesResponse>(
     'https://api.github.com/search/issues',
@@ -158,7 +163,9 @@ const fetchGithubIssuesByAuthor = async (
         url: item.html_url,
       } satisfies RepositoryIssue;
     })
-    .filter((issue) => !!issue.repositoryFullName);
+    // Drop issues from repositories outside the gittensor tracked set before
+    // running the per-issue timeline enrichment, which is the expensive part.
+    .filter((issue) => isTrackedRepo(trackedRepos, issue.repositoryFullName));
 
   const enriched = await Promise.all(
     mapped.map(async (issue) => {
@@ -241,6 +248,9 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
   const scanRepos = useMemo(() => selectMinerIssueScanRepos(prs), [prs]);
   const login = githubProfile?.login ?? '';
 
+  const { trackedRepos, isLoading: isLoadingTrackedRepos } =
+    useTrackedRepoSet();
+
   const {
     data: githubAuthoredIssues = [],
     isLoading: isLoadingAuthoredIssues,
@@ -248,8 +258,10 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
     isError: isAuthorFallbackError,
   } = useQuery({
     queryKey: ['githubAuthorIssues', login],
-    queryFn: () => fetchGithubIssuesByAuthor(login),
-    enabled: !!login,
+    queryFn: () => fetchGithubIssuesByAuthor(login, trackedRepos),
+    // Wait for the tracked-repo allowlist before searching, so the search
+    // result is filtered before the per-issue enrichment fan-out runs.
+    enabled: !!login && !isLoadingTrackedRepos && trackedRepos.size > 0,
     staleTime: 60_000,
     retry: 1,
   });
@@ -943,6 +955,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
 
   const isDataLoading =
     isLoading ||
+    isLoadingTrackedRepos ||
     isLoadingAuthoredIssues ||
     isFetchingAuthoredIssues ||
     isLoadingAuthoredRepoIssues;
