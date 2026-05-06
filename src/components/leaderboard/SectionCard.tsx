@@ -21,15 +21,15 @@ export const SectionCard: React.FC<{
 
   return (
     <Card
-      sx={{
+      sx={(theme) => ({
         borderRadius: 3,
         border: '1px solid',
-        borderColor: 'border.light',
-        backgroundColor: 'background.default',
+        borderColor: theme.palette.border.light,
+        backgroundColor: theme.palette.background.paper,
         display: 'flex',
         flexDirection: 'column',
-        ...sx,
-      }}
+        ...(sx as Record<string, unknown>),
+      })}
       elevation={0}
     >
       {/* Header with Grid Layout for better scaling */}

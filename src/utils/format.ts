@@ -86,3 +86,24 @@ export const credibilityColor = (cred: number): string => {
   if (cred >= 0.3) return CREDIBILITY_COLORS.low;
   return CREDIBILITY_COLORS.poor;
 };
+
+type CredPalette = {
+  credibility: {
+    excellent: string;
+    good: string;
+    moderate: string;
+    low: string;
+    poor: string;
+  };
+};
+
+export const credibilityColorFromPalette = (
+  cred: number,
+  palette: CredPalette,
+): string => {
+  if (cred >= 0.9) return palette.credibility.excellent;
+  if (cred >= 0.7) return palette.credibility.good;
+  if (cred >= 0.5) return palette.credibility.moderate;
+  if (cred >= 0.3) return palette.credibility.low;
+  return palette.credibility.poor;
+};

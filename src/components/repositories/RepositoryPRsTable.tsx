@@ -9,6 +9,7 @@ import {
   Typography,
   alpha,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { useAllPrs, type CommitLog } from '../../api';
 import {
@@ -16,7 +17,7 @@ import {
   type DataTableColumn,
 } from '../../components/common/DataTable';
 import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
-import theme, { TEXT_OPACITY, scrollbarSx } from '../../theme';
+import { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
 import FilterButton from '../FilterButton';
 
@@ -41,6 +42,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   state = 'all',
 }) => {
   const navigate = useNavigate();
+  const theme = useTheme();
   const [filter, setFilter] = useState<PrStatusFilter>(state);
   const [sortField, setSortField] = useState<PrSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
@@ -392,7 +394,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           <Box sx={{ p: 4, textAlign: 'center' }}>
             <Typography
               sx={{
-                color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+                color: alpha(theme.palette.text.primary, TEXT_OPACITY.tertiary),
                 fontSize: '0.9rem',
               }}
             >

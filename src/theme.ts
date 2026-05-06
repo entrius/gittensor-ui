@@ -5,6 +5,8 @@ import {
   type SxProps,
 } from '@mui/material/styles';
 
+export type ThemeMode = 'dark' | 'light';
+
 // Shared Color Constants (exported for use outside MUI components)
 export const UI_COLORS = {
   white: '#ffffff',
@@ -14,6 +16,26 @@ export const UI_COLORS = {
   textTertiary: 'rgba(201, 209, 217, 0.64)',
   surfaceElevated: '#161b22',
   surfaceTooltip: 'rgba(30, 30, 30, 0.95)',
+  // Light-mode counterparts. Tuned for GitHub-style light surfaces so the
+  // existing brand colors (status greens/reds, info blue) read well on white.
+  lightBg: '#ffffff', // GitHub canvas.default (page + cards)
+  lightPaper: '#f6f8fa', // GitHub canvas.subtle (sidebar, secondary surfaces)
+  lightTextPrimary: '#24292f', // GitHub fg.default
+  lightTextSecondary: '#636c76', // GitHub fg.muted
+  lightTextTertiary: '#6e7781', // GitHub fg.subtle
+  lightSurfaceElevated: '#f6f8fa', // GitHub canvas.subtle
+  // Dark tooltip on light backgrounds (GitHub-style: #24292f with opacity).
+  // Dark text via text.primary (= #0d1117) reads fine on this dark surface, so
+  // we set a contrasting light text in tooltipSlotProps via a separate token.
+  lightSurfaceTooltip: 'rgba(36, 41, 47, 0.95)',
+  // GitHub semantic fg colors used for success/danger text on light backgrounds.
+  lightSuccess: '#1a7f37', // GitHub success.fg
+  lightDanger: '#cf222e', // GitHub danger.fg
+  // Scrollbar thumb colors for light mode (GitHub border.default / border.muted).
+  lightScrollThumb: '#d0d7de',
+  lightScrollThumbHover: '#afb8c1',
+  // Brand colors for third-party ecosystem logos.
+  bitcoinOrange: '#F7931A',
 } as const;
 
 export const RANK_COLORS = {
@@ -64,6 +86,13 @@ export const LABEL_COLORS = {
   question: '#f59e0b', // Amber - matches STATUS_COLORS.warning
 } as const;
 
+// Source badge colors for the watchlist PR feed (starred / miner / repo).
+export const WATCHLIST_COLORS = {
+  starred: '#facc15', // Yellow - starred PRs
+  miner: '#60a5fa', // Sky blue - miner-sourced PRs
+  repo: '#a78bfa', // Purple - repo-sourced PRs
+} as const;
+
 // Chart colors - different from status colors for better visual distinction in pie/donut charts
 export const CHART_COLORS = {
   merged: '#3fb950', // Green - successful merges
@@ -75,10 +104,48 @@ export const CHART_COLORS = {
     STATUS_COLORS.merged, // Green
     STATUS_COLORS.info, // Blue
     STATUS_COLORS.warning, // Amber
-    '#a78bfa', // Purple
+    WATCHLIST_COLORS.repo, // Purple
   ],
 } as const;
 
+// Insight card colors (warning / achievement / tip notification styles).
+// Used by MinerInsightsCard — keyed by InsightType.
+export const INSIGHT_COLORS = {
+  warning: {
+    darkColor: '#f0883e',
+    darkAccent: '#d29922',
+    darkBg: alpha('#f0883e', 0.1),
+    darkBorder: alpha('#d29922', 0.35),
+    lightColor: '#7d4e00',
+    lightAccent: '#bf8700',
+    lightBg: '#fff8c5',
+    lightBorder: '#d4a72c',
+  },
+  achievement: {
+    darkColor: '#56d364',
+    darkAccent: '#56d364',
+    darkBg: alpha('#56d364', 0.1),
+    darkBorder: alpha('#56d364', 0.3),
+    lightColor: UI_COLORS.lightSuccess,
+    lightAccent: '#4ac26b',
+    lightBg: '#dafbe1',
+    lightBorder: '#4ac26b',
+  },
+  tip: {
+    darkColor: STATUS_COLORS.info,
+    darkAccent: STATUS_COLORS.info,
+    darkBg: alpha(STATUS_COLORS.info, 0.1),
+    darkBorder: alpha(STATUS_COLORS.info, 0.3),
+    lightColor: '#0550ae',
+    lightAccent: '#0969da',
+    lightBg: '#ddf4ff',
+    lightBorder: '#54aeff',
+  },
+} as const;
+
+// Scrollbar thumb colors are driven by CSS variables that ThemeModeProvider
+// updates whenever the active mode changes — keeps every existing consumer
+// (`...scrollbarSx`) working without rewriting them as theme callbacks.
 export const scrollbarSx = {
   '&::-webkit-scrollbar': {
     width: '8px',
@@ -88,10 +155,10 @@ export const scrollbarSx = {
     backgroundColor: 'transparent',
   },
   '&::-webkit-scrollbar-thumb': {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'var(--gt-scroll-thumb, rgba(255, 255, 255, 0.1))',
     borderRadius: '4px',
     '&:hover': {
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      backgroundColor: 'var(--gt-scroll-thumb-hover, rgba(255, 255, 255, 0.2))',
     },
   },
 } as const;
@@ -103,6 +170,15 @@ export const CONTRIBUTION_HEATMAP_SCALE = [
   '#006d32',
   '#26a641',
   '#39d353',
+] as const;
+
+/** Light-mode contribution calendar levels — matches GitHub's light theme. */
+export const CONTRIBUTION_HEATMAP_SCALE_LIGHT = [
+  '#ebedf0',
+  '#9be9a8',
+  '#40c463',
+  '#30a14e',
+  '#216e39',
 ] as const;
 
 /** Known org avatars on GitHub that need a non-transparent backdrop */
@@ -215,8 +291,7 @@ export const markdownDocumentPaperSx = (theme: Theme): SxProps<Theme> => ({
 });
 
 export const headerCellStyle = {
-  backgroundColor: 'surface.tooltip',
-  backdropFilter: 'blur(8px)',
+  backgroundColor: 'surface.elevated',
   color: 'text.secondary',
   fontFamily: '"JetBrains Mono", monospace',
   fontWeight: 500,
@@ -241,7 +316,8 @@ export const tooltipSlotProps = {
   tooltip: {
     sx: {
       backgroundColor: 'surface.tooltip',
-      color: 'text.primary',
+      // Both modes use a dark tooltip surface, so text must always be white.
+      color: 'common.white',
       fontSize: '0.72rem',
       padding: '8px 12px',
       borderRadius: '6px',
@@ -336,6 +412,19 @@ declare module '@mui/material/styles' {
       light: string;
       elevated: string;
       tooltip: string;
+      /** Tab / toggle-pill wrapper background. */
+      control: string;
+      /** Primary-tinted subtle bg — used for active nav items. */
+      accent: string;
+    };
+    /** GitHub Primer "subtle" tint backgrounds for status badges. */
+    highlight: {
+      merged: string;
+      success: string;
+      error: string;
+      warning: string;
+      info: string;
+      neutral: string;
     };
   }
 
@@ -384,6 +473,16 @@ declare module '@mui/material/styles' {
       light: string;
       elevated: string;
       tooltip: string;
+      control: string;
+      accent: string;
+    };
+    highlight?: {
+      merged: string;
+      success: string;
+      error: string;
+      warning: string;
+      info: string;
+      neutral: string;
     };
   }
 }
@@ -423,276 +522,340 @@ declare module '@mui/material/Chip' {
   }
 }
 
-const theme = createTheme({
-  palette: {
-    mode: 'dark',
-    primary: {
-      main: UI_COLORS.primary,
-    },
-    secondary: {
-      main: '#fff30d',
-    },
-    background: {
-      default: UI_COLORS.black,
-      paper: '#0a0f1f',
-    },
-    text: {
-      primary: UI_COLORS.white,
-      secondary: UI_COLORS.textSecondary,
-      tertiary: UI_COLORS.textTertiary,
-    },
-    divider: UI_COLORS.white,
-    // Rank podium colors (1st/2nd/3rd)
-    rank: {
-      first: RANK_COLORS.first,
-      second: RANK_COLORS.second,
-      third: RANK_COLORS.third,
-    },
-    // Custom status colors
-    status: {
-      merged: STATUS_COLORS.merged,
-      open: STATUS_COLORS.open,
-      closed: STATUS_COLORS.closed,
-      neutral: STATUS_COLORS.neutral,
-      success: STATUS_COLORS.success,
-      warning: STATUS_COLORS.warning,
-      warningOrange: STATUS_COLORS.warningOrange,
-      error: STATUS_COLORS.error,
-      info: STATUS_COLORS.info,
-      award: STATUS_COLORS.award,
-    },
-    // Credibility scale colors
-    credibility: {
-      excellent: CREDIBILITY_COLORS.excellent,
-      good: CREDIBILITY_COLORS.good,
-      moderate: CREDIBILITY_COLORS.moderate,
-      low: CREDIBILITY_COLORS.low,
-      poor: CREDIBILITY_COLORS.poor,
-    },
-    // Open PR risk colors
-    risk: {
-      exceeded: RISK_COLORS.exceeded,
-      critical: RISK_COLORS.critical,
-      approaching: RISK_COLORS.approaching,
-    },
-    // Diff colors for additions/deletions
-    diff: {
-      additions: DIFF_COLORS.additions,
-      deletions: DIFF_COLORS.deletions,
-    },
-    // Border colors
-    border: {
-      subtle: alpha(UI_COLORS.white, 0.08),
-      light: alpha(UI_COLORS.white, 0.1),
-      medium: alpha(UI_COLORS.white, 0.2),
-    },
-    // Surface colors
-    surface: {
-      transparent: 'transparent',
-      subtle: alpha(UI_COLORS.white, 0.02),
-      light: alpha(UI_COLORS.white, 0.05),
-      elevated: UI_COLORS.surfaceElevated,
-      tooltip: UI_COLORS.surfaceTooltip,
-    },
-  },
-  typography: {
-    // JetBrains Mono is the app-wide default — every component inherits it
-    // without needing an explicit fontFamily prop.
-    fontFamily: '"JetBrains Mono", monospace',
-    dataValue: {
-      fontWeight: 500,
-      letterSpacing: '0.02em',
-    },
-    dataLabel: {
-      fontSize: '0.75rem',
-      fontWeight: 400,
-      letterSpacing: '0.05em',
-      textTransform: 'uppercase',
-    },
-    // Base monospace weight
-    mono: {
-      fontWeight: 500,
-    },
-    // Small uppercase label style
-    monoSmall: {
-      fontSize: '0.7rem',
-      fontWeight: 600,
-      letterSpacing: '0.5px',
-      textTransform: 'uppercase',
-    },
-    // Section titles
-    sectionTitle: {
-      fontSize: '1rem',
-      fontWeight: 600,
-      color: '#fff',
-    },
-    // Table headers
-    tableHeader: {
-      fontSize: '0.7rem',
-      fontWeight: 600,
-      letterSpacing: '0.5px',
-      textTransform: 'uppercase',
-      color: 'rgba(255, 255, 255, 0.3)',
-    },
-    // Large stat values
-    statValue: {
-      fontSize: '1.1rem',
-      fontWeight: 600,
-      color: '#fff',
-    },
-    // Stat labels
-    statLabel: {
-      fontSize: '0.7rem',
-      fontWeight: 500,
-      textTransform: 'uppercase',
-      color: 'rgba(255, 255, 255, 0.4)',
-    },
-    // Tooltip heading — multiplier name + value
-    tooltipLabel: {
-      fontSize: '0.72rem',
-      fontWeight: 600,
-    },
-    // Tooltip supporting description
-    tooltipDesc: {
-      fontSize: '0.72rem',
-      fontWeight: 400,
-      opacity: 0.7,
-      marginTop: '2px',
-    },
-  },
-  components: {
-    MuiCssBaseline: {
-      styleOverrides: {
-        body: {
-          fontFamily: '"JetBrains Mono", monospace',
-        },
+export const createAppTheme = (mode: ThemeMode) => {
+  const isDark = mode === 'dark';
+  const baseColor = isDark ? UI_COLORS.white : UI_COLORS.black;
+  const inverseColor = isDark ? UI_COLORS.black : UI_COLORS.white;
+  // Two-tone surface: canvas (page) sits behind floating paper (cards) so
+  // light mode gets proper visual hierarchy (GitHub-style: #f6f8fa canvas,
+  // #ffffff cards). Dark mode keeps the original near-black canvas with a
+  // very slightly lifted paper so cards retain their elevation.
+  const backgroundDefault = isDark ? UI_COLORS.black : UI_COLORS.lightBg;
+  const backgroundPaper = isDark ? '#0a0f1f' : UI_COLORS.lightBg;
+  const textPrimary = isDark ? UI_COLORS.white : UI_COLORS.lightTextPrimary;
+  const textSecondary = isDark
+    ? UI_COLORS.textSecondary
+    : UI_COLORS.lightTextSecondary;
+  const textTertiary = isDark
+    ? UI_COLORS.textTertiary
+    : UI_COLORS.lightTextTertiary;
+  const surfaceElevated = isDark
+    ? UI_COLORS.surfaceElevated
+    : UI_COLORS.lightSurfaceElevated;
+  const surfaceTooltip = isDark
+    ? UI_COLORS.surfaceTooltip
+    : UI_COLORS.lightSurfaceTooltip;
+
+  return createTheme({
+    palette: {
+      mode,
+      primary: {
+        main: isDark ? UI_COLORS.primary : '#0969da',
+      },
+      secondary: {
+        main: isDark ? '#fff30d' : '#1f883d',
+      },
+      background: {
+        default: backgroundDefault,
+        paper: backgroundPaper,
+      },
+      text: {
+        primary: textPrimary,
+        secondary: textSecondary,
+        tertiary: textTertiary,
+      },
+      divider: isDark ? alpha(UI_COLORS.white, 0.12) : '#d0d7de',
+      rank: {
+        first: RANK_COLORS.first,
+        second: RANK_COLORS.second,
+        third: RANK_COLORS.third,
+      },
+      status: {
+        merged: isDark ? STATUS_COLORS.merged : '#8250df', // GitHub done.fg (purple)
+        open: isDark ? alpha(baseColor, 0.6) : '#636c76', // GitHub fg.muted
+        closed: isDark ? STATUS_COLORS.closed : '#cf222e', // GitHub danger.fg
+        neutral: isDark ? STATUS_COLORS.neutral : '#6e7781', // GitHub fg.subtle
+        success: isDark ? STATUS_COLORS.success : '#1f883d', // GitHub success.emphasis
+        warning: isDark ? STATUS_COLORS.warning : '#9a6700', // GitHub attention.fg
+        warningOrange: isDark ? STATUS_COLORS.warningOrange : '#bc4c00', // GitHub severe.fg
+        error: isDark ? STATUS_COLORS.error : '#cf222e', // GitHub danger.fg
+        info: isDark ? STATUS_COLORS.info : '#0969da', // GitHub accent.fg
+        award: isDark ? STATUS_COLORS.award : '#9a6700', // GitHub attention.fg
+      },
+      credibility: {
+        excellent: isDark ? CREDIBILITY_COLORS.excellent : '#1f883d', // GitHub success.emphasis
+        good: isDark ? CREDIBILITY_COLORS.good : '#0969da', // GitHub accent.fg
+        moderate: isDark ? CREDIBILITY_COLORS.moderate : '#9a6700', // GitHub attention.fg
+        low: isDark ? CREDIBILITY_COLORS.low : '#bc4c00', // GitHub severe.fg
+        poor: isDark ? CREDIBILITY_COLORS.poor : '#cf222e', // GitHub danger.fg
+      },
+      risk: {
+        exceeded: RISK_COLORS.exceeded,
+        critical: RISK_COLORS.critical,
+        approaching: RISK_COLORS.approaching,
+      },
+      diff: {
+        additions: isDark ? DIFF_COLORS.additions : '#1a7f37', // GitHub success.fg
+        deletions: isDark ? DIFF_COLORS.deletions : '#cf222e', // GitHub danger.fg
+      },
+      border: {
+        subtle: isDark ? alpha(baseColor, 0.08) : '#eaeef2', // GitHub border.subtle
+        light: isDark ? alpha(baseColor, 0.1) : '#d0d7de', // GitHub border.default
+        medium: isDark ? alpha(baseColor, 0.2) : '#d8dee4', // GitHub border.muted
+      },
+      // Surface colors. Built from baseColor so they invert in light mode.
+      // `transparent` is the only token that changes semantics: in dark mode it
+      // lets the canvas show through (glass effect). In light mode there is no
+      // glass — every surface must be solid, so we fall back to backgroundPaper.
+      surface: {
+        transparent: isDark ? 'transparent' : backgroundPaper,
+        subtle: isDark ? alpha(baseColor, 0.02) : '#f6f8fa', // GitHub canvas.subtle
+        light: isDark ? alpha(baseColor, 0.05) : '#eaeef2', // GitHub border.subtle
+        elevated: surfaceElevated, // #f6f8fa light
+        tooltip: surfaceTooltip,
+        control: isDark ? alpha(baseColor, 0.06) : UI_COLORS.lightPaper, // tab / toggle wrapper bg (#f6f8fa)
+        accent: isDark ? alpha(baseColor, 0.1) : alpha('#0969da', 0.12), // primary active bg
+      },
+      // GitHub Primer "subtle" tint backgrounds for status badges.
+      // Dark mode uses alpha() approximations; light mode uses exact Primer values.
+      highlight: {
+        merged: isDark ? alpha(STATUS_COLORS.merged, 0.12) : '#fbefff', // done.subtle
+        success: isDark ? alpha(STATUS_COLORS.success, 0.12) : '#dafbe1', // success.subtle
+        error: isDark ? alpha(STATUS_COLORS.error, 0.12) : '#ffebe9', // danger.subtle
+        warning: isDark ? alpha(STATUS_COLORS.warning, 0.12) : '#fff8c5', // attention.subtle
+        info: isDark ? alpha(STATUS_COLORS.info, 0.12) : '#ddf4ff', // accent.subtle
+        neutral: isDark ? alpha(baseColor, 0.06) : 'rgba(175,184,193,0.2)', // GitHub neutral.subtle (inline code bg)
       },
     },
-    MuiButtonBase: {
-      defaultProps: {
-        disableRipple: true,
+    typography: {
+      // JetBrains Mono is the app-wide default — every component inherits it
+      // without needing an explicit fontFamily prop.
+      fontFamily: '"JetBrains Mono", monospace',
+      dataValue: {
+        fontWeight: 500,
+        letterSpacing: '0.02em',
+      },
+      dataLabel: {
+        fontSize: '0.75rem',
+        fontWeight: 400,
+        letterSpacing: '0.05em',
+        textTransform: 'uppercase',
+      },
+      // Base monospace weight
+      mono: {
+        fontWeight: 500,
+      },
+      // Small uppercase label style
+      monoSmall: {
+        fontSize: '0.7rem',
+        fontWeight: 600,
+        letterSpacing: '0.5px',
+        textTransform: 'uppercase',
+      },
+      // Section titles
+      sectionTitle: {
+        fontSize: '1rem',
+        fontWeight: 600,
+        color: textPrimary,
+      },
+      // Table headers
+      tableHeader: {
+        fontSize: '0.7rem',
+        fontWeight: 600,
+        letterSpacing: '0.5px',
+        textTransform: 'uppercase',
+        color: isDark ? alpha(baseColor, 0.3) : '#6e7781', // GitHub fg.subtle
+      },
+      // Large stat values
+      statValue: {
+        fontSize: '1.1rem',
+        fontWeight: 600,
+        color: textPrimary,
+      },
+      // Stat labels
+      statLabel: {
+        fontSize: '0.7rem',
+        fontWeight: 500,
+        textTransform: 'uppercase',
+        color: isDark ? alpha(baseColor, 0.4) : '#6e7781', // GitHub fg.subtle
+      },
+      // Tooltip heading — multiplier name + value
+      tooltipLabel: {
+        fontSize: '0.72rem',
+        fontWeight: 600,
+      },
+      // Tooltip supporting description
+      tooltipDesc: {
+        fontSize: '0.72rem',
+        fontWeight: 400,
+        opacity: 0.7,
+        marginTop: '2px',
       },
     },
-    MuiTooltip: {
-      defaultProps: {
-        enterTouchDelay: 0,
-        leaveTouchDelay: 15000,
-      },
-    },
-    MuiAppBar: {
-      styleOverrides: {
-        root: {
-          backgroundColor: 'rgb(190, 52, 85)',
-        },
-      },
-    },
-    MuiButton: {
-      variants: [
-        {
-          props: { variant: 'back' },
-          style: {
-            color: 'rgba(255, 255, 255, 0.7)',
+    components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
             fontFamily: '"JetBrains Mono", monospace',
-            fontSize: '0.8rem',
-            fontWeight: 500,
-            letterSpacing: '0.5px',
-            textTransform: 'none',
-            backgroundColor: '#000000',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '8px',
-            padding: '8px 16px',
-            transition: 'all 0.2s',
-            '&:hover': {
-              color: '#ffffff',
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              borderColor: 'rgba(255, 255, 255, 0.2)',
-            },
-          },
-        },
-      ],
-    },
-    MuiCard: {
-      defaultProps: {
-        elevation: 0,
-      },
-      styleOverrides: {
-        root: {
-          borderRadius: 12,
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          backgroundColor: 'transparent',
-        },
-      },
-    },
-    MuiChip: {
-      defaultProps: {
-        size: 'small',
-      },
-      styleOverrides: {
-        root: {
-          fontFamily: '"JetBrains Mono", monospace',
-          fontSize: '0.75rem',
-          fontWeight: 600,
-          borderRadius: '6px',
-          height: '24px',
-          '& .MuiChip-label': {
-            px: 1.5,
-          },
-          '& .MuiChip-icon': {
-            fontSize: 14,
-          },
-        },
-        sizeSmall: {
-          height: '22px',
-          fontSize: '0.7rem',
-          '& .MuiChip-label': {
-            px: 1,
-          },
-          '& .MuiChip-icon': {
-            fontSize: 14,
           },
         },
       },
-      variants: [
-        // Status variant - for merged/open/closed states
-        {
-          props: { variant: 'status' },
-          style: {
-            backgroundColor: 'transparent',
-            border: '1px solid',
-            borderRadius: '6px',
+      MuiButtonBase: {
+        defaultProps: {
+          disableRipple: true,
+        },
+      },
+      MuiTooltip: {
+        defaultProps: {
+          enterTouchDelay: 0,
+          leaveTouchDelay: 15000,
+        },
+      },
+      MuiAppBar: {
+        styleOverrides: {
+          root: {
+            backgroundColor: 'rgb(190, 52, 85)',
           },
         },
-        // Info variant - for neutral information chips
-        {
-          props: { variant: 'info' },
-          style: ({ theme: t }) => ({
-            backgroundColor: t.palette.surface.light,
-            border: `1px solid ${t.palette.border.light}`,
-            color: t.palette.text.primary,
-            borderRadius: '6px',
-            '& .MuiChip-icon': {
-              color: t.palette.text.secondary,
-            },
-          }),
-        },
-        // Filter variant - for deletable filter chips
-        {
-          props: { variant: 'filter' },
-          style: ({ theme: t }) => ({
-            backgroundColor: t.palette.border.light,
-            color: t.palette.text.primary,
-            borderRadius: '6px',
-            '& .MuiChip-deleteIcon': {
-              color: t.palette.text.secondary,
+      },
+      MuiButton: {
+        variants: [
+          {
+            props: { variant: 'back' },
+            style: {
+              color: alpha(textPrimary, 0.7),
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.8rem',
+              fontWeight: 500,
+              letterSpacing: '0.5px',
+              textTransform: 'none',
+              backgroundColor: backgroundDefault,
+              border: `1px solid ${alpha(baseColor, 0.1)}`,
+              borderRadius: '8px',
+              padding: '8px 16px',
+              transition: 'all 0.2s',
               '&:hover': {
-                color: t.palette.text.primary,
+                color: textPrimary,
+                // Dark: lighten the button face. Light: add a soft gray tint
+                // instead of alpha(white, 0.8) which is invisible on white.
+                backgroundColor: isDark
+                  ? alpha(inverseColor, 0.8)
+                  : alpha(baseColor, 0.06),
+                borderColor: alpha(baseColor, isDark ? 0.2 : 0.28),
               },
             },
-          }),
+          },
+        ],
+      },
+      MuiCard: {
+        defaultProps: {
+          elevation: 0,
         },
-      ],
+        styleOverrides: {
+          root: {
+            borderRadius: 12,
+            border: `1px solid ${isDark ? alpha(baseColor, 0.1) : '#d0d7de'}`,
+            // Dark: transparent on the near-black canvas; border provides edge.
+            // Light: white card on the #f0f4f8 canvas, with a soft shadow so the
+            // card reads as a raised element without relying on colour alone.
+            backgroundColor: isDark ? 'transparent' : backgroundPaper,
+            boxShadow: isDark
+              ? 'none'
+              : '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
+          },
+        },
+      },
+      MuiLinearProgress: {
+        styleOverrides: {
+          root: {
+            borderRadius: 4,
+            // Light-mode track is slightly stronger so the unfilled portion reads.
+            backgroundColor: alpha(baseColor, isDark ? 0.1 : 0.14),
+          },
+        },
+      },
+      MuiTableRow: {
+        styleOverrides: {
+          root: {
+            '&:hover': {
+              backgroundColor: alpha(baseColor, isDark ? 0.03 : 0.04),
+            },
+          },
+        },
+      },
+      MuiChip: {
+        defaultProps: {
+          size: 'small',
+        },
+        styleOverrides: {
+          root: {
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            borderRadius: '6px',
+            height: '24px',
+            '& .MuiChip-label': {
+              px: 1.5,
+            },
+            '& .MuiChip-icon': {
+              fontSize: 14,
+            },
+          },
+          sizeSmall: {
+            height: '22px',
+            fontSize: '0.7rem',
+            '& .MuiChip-label': {
+              px: 1,
+            },
+            '& .MuiChip-icon': {
+              fontSize: 14,
+            },
+          },
+        },
+        variants: [
+          // Status variant - for merged/open/closed states
+          {
+            props: { variant: 'status' },
+            style: {
+              backgroundColor: 'transparent',
+              border: '1px solid',
+              borderRadius: '6px',
+            },
+          },
+          // Info variant - for neutral information chips
+          {
+            props: { variant: 'info' },
+            style: ({ theme: t }) => ({
+              backgroundColor: t.palette.surface.light,
+              border: `1px solid ${t.palette.border.light}`,
+              color: t.palette.text.primary,
+              borderRadius: '6px',
+              '& .MuiChip-icon': {
+                color: t.palette.text.secondary,
+              },
+            }),
+          },
+          // Filter variant - for deletable filter chips
+          {
+            props: { variant: 'filter' },
+            style: ({ theme: t }) => ({
+              backgroundColor: t.palette.border.light,
+              color: t.palette.text.primary,
+              borderRadius: '6px',
+              '& .MuiChip-deleteIcon': {
+                color: t.palette.text.secondary,
+                '&:hover': {
+                  color: t.palette.text.primary,
+                },
+              },
+            }),
+          },
+        ],
+      },
     },
-  },
-});
+  });
+};
+
+const theme = createAppTheme('dark');
 
 export default theme;

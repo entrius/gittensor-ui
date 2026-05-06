@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Box, Card, Chip, Typography, alpha } from '@mui/material';
+import { useTheme, type Theme } from '@mui/material/styles';
 import {
   CheckCircle as AchievementIcon,
   ErrorOutline as WarningIcon,
@@ -11,12 +12,12 @@ import {
   type MinerEvaluation,
   type RepositoryPrScoring,
 } from '../../api';
-import { STATUS_COLORS } from '../../theme';
 import {
   calculateDynamicOpenPrThreshold,
   calculateOpenIssueThreshold,
   parseNumber,
 } from '../../utils/ExplorerUtils';
+import { INSIGHT_COLORS } from '../../theme';
 
 interface MinerInsightsCardProps {
   githubId: string;
@@ -246,29 +247,39 @@ const getIssueSolvedInsight = (
 // Shared rendering helpers
 // ---------------------------------------------------------------------------
 
-const getInsightStyle = (type: InsightType) => {
+const getInsightStyle = (type: InsightType, theme: Theme) => {
+  const isDark = theme.palette.mode === 'dark';
   switch (type) {
-    case 'warning':
+    case 'warning': {
+      const c = INSIGHT_COLORS.warning;
       return {
-        color: STATUS_COLORS.warningOrange,
-        border: alpha(STATUS_COLORS.warningOrange, 0.3),
-        background: alpha(STATUS_COLORS.warningOrange, 0.09),
+        color: isDark ? c.darkColor : c.lightColor,
+        accentColor: isDark ? c.darkAccent : c.lightAccent,
+        background: isDark ? c.darkBg : c.lightBg,
+        border: isDark ? c.darkBorder : c.lightBorder,
         icon: <WarningIcon sx={{ fontSize: '1rem' }} />,
       };
-    case 'achievement':
+    }
+    case 'achievement': {
+      const c = INSIGHT_COLORS.achievement;
       return {
-        color: STATUS_COLORS.success,
-        border: alpha(STATUS_COLORS.success, 0.35),
-        background: alpha(STATUS_COLORS.success, 0.1),
+        color: isDark ? c.darkColor : c.lightColor,
+        accentColor: isDark ? c.darkAccent : c.lightAccent,
+        background: isDark ? c.darkBg : c.lightBg,
+        border: isDark ? c.darkBorder : c.lightBorder,
         icon: <AchievementIcon sx={{ fontSize: '1rem' }} />,
       };
-    default:
+    }
+    default: {
+      const c = INSIGHT_COLORS.tip;
       return {
-        color: STATUS_COLORS.info,
-        border: alpha(STATUS_COLORS.info, 0.35),
-        background: alpha(STATUS_COLORS.info, 0.1),
+        color: isDark ? c.darkColor : c.lightColor,
+        accentColor: isDark ? c.darkAccent : c.lightAccent,
+        background: isDark ? c.darkBg : c.lightBg,
+        border: isDark ? c.darkBorder : c.lightBorder,
         icon: <TipIcon sx={{ fontSize: '1rem' }} />,
       };
+    }
   }
 };
 
@@ -313,6 +324,7 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
   githubId,
   viewMode = 'prs',
 }) => {
+  const muiTheme = useTheme();
   const { data: minerStats } = useMinerStats(githubId);
   const { data: generalConfig } = useGeneralConfig();
 
@@ -336,30 +348,30 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
 
   return (
     <Card
-      sx={{
+      sx={(t) => ({
         borderRadius: 3,
-        border: '1px solid',
-        borderColor: 'border.light',
-        backgroundColor: 'transparent',
         p: 3,
-      }}
+        border: `1px solid ${t.palette.border.light}`,
+      })}
       elevation={0}
     >
-      <Box sx={{ mb: 2 }}>
+      <Box sx={{ mb: 2.5 }}>
         <Typography
           sx={{
             color: 'text.primary',
-            fontSize: '1.1rem',
-            fontWeight: 600,
-            mb: 0.8,
+            fontSize: '1.05rem',
+            fontWeight: 700,
+            mb: 0.5,
+            letterSpacing: '-0.01em',
           }}
         >
           {isIssueMode ? 'Issue Discovery Insights' : 'Insights & Next Actions'}
         </Typography>
         <Typography
           sx={{
-            color: (t) => alpha(t.palette.text.primary, 0.55),
-            fontSize: '0.85rem',
+            color: (t) => alpha(t.palette.text.primary, 0.5),
+            fontSize: '0.82rem',
+            lineHeight: 1.4,
           }}
         >
           {isIssueMode
@@ -368,83 +380,81 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
         </Typography>
       </Box>
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         {insights.map((insight) => {
-          const style = getInsightStyle(insight.type);
+          const style = getInsightStyle(insight.type, muiTheme);
           return (
             <Box
               key={insight.id}
               sx={{
-                borderRadius: 1.7,
-                px: 1.5,
-                py: 1.2,
+                borderRadius: 1.5,
+                pl: 2,
+                pr: 1.5,
+                py: 1.25,
                 border: `1px solid ${style.border}`,
+                borderLeft: `3px solid ${style.accentColor}`,
                 backgroundColor: style.background,
                 display: 'flex',
                 alignItems: 'flex-start',
-                gap: 1.1,
+                gap: 1.25,
                 minWidth: 0,
-                maxWidth: '100%',
-                boxSizing: 'border-box',
                 overflow: 'hidden',
               }}
             >
-              <Box sx={{ color: style.color, mt: 0.15, flexShrink: 0 }}>
+              <Box sx={{ color: style.accentColor, mt: 0.2, flexShrink: 0 }}>
                 {style.icon}
               </Box>
-              <Box sx={{ flex: 1, minWidth: 0, maxWidth: '100%' }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Box
                   sx={{
                     display: 'flex',
                     flexWrap: 'wrap',
-                    alignItems: 'flex-start',
+                    alignItems: 'center',
                     justifyContent: 'space-between',
                     columnGap: 1,
-                    rowGap: 0.75,
+                    rowGap: 0.5,
+                    mb: 0.4,
                   }}
                 >
                   <Typography
                     sx={{
                       color: style.color,
                       fontSize: '0.83rem',
-                      fontWeight: 600,
+                      fontWeight: 700,
                       flex: '1 1 0',
                       minWidth: 0,
-                      pr: { xs: 0, sm: 0.5 },
+                      lineHeight: 1.35,
                     }}
                   >
                     {insight.title}
                   </Typography>
                   <Chip
                     size="small"
-                    label={insight.type}
+                    label={insight.type.toUpperCase()}
                     sx={{
-                      textTransform: 'uppercase',
-                      fontSize: '0.62rem',
+                      fontSize: '0.6rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.04em',
                       color: style.color,
-                      backgroundColor: alpha(style.color, 0.12),
-                      border: `1px solid ${alpha(style.color, 0.35)}`,
-                      height: 22,
+                      backgroundColor: style.border,
+                      border: 'none',
+                      height: 20,
                       flexShrink: 0,
                       alignSelf: 'flex-start',
-                      maxWidth: '100%',
-                      '& .MuiChip-label': {
-                        px: 0.75,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      },
+                      '& .MuiChip-label': { px: 0.8 },
                     }}
                   />
                 </Box>
                 <Typography
                   sx={{
-                    color: (t) => alpha(t.palette.text.primary, 0.68),
-                    fontSize: '0.8rem',
-                    mt: 0.4,
-                    lineHeight: 1.45,
+                    color: (t) => alpha(t.palette.text.primary, 0.65),
+                    fontSize: '0.79rem',
+                    lineHeight: 1.5,
                     wordBreak: 'break-word',
                   }}
-                />
+                >
+                  {insight.description}
+                </Typography>
               </Box>
             </Box>
           );

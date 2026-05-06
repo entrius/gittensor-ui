@@ -14,7 +14,7 @@ import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import { STATUS_COLORS, scrollbarSx } from '../../theme';
+import { scrollbarSx } from '../../theme';
 
 export interface FileNode {
   path: string;
@@ -52,14 +52,12 @@ const FileItem: React.FC<{
   const getIcon = () => {
     if (node.type === 'tree') {
       return open ? (
-        <FolderOpenIcon sx={{ fontSize: 18, color: STATUS_COLORS.open }} />
+        <FolderOpenIcon sx={{ fontSize: 18, color: 'status.open' }} />
       ) : (
-        <FolderIcon sx={{ fontSize: 18, color: STATUS_COLORS.open }} />
+        <FolderIcon sx={{ fontSize: 18, color: 'status.open' }} />
       );
     }
-    return (
-      <InsertDriveFileIcon sx={{ fontSize: 18, color: STATUS_COLORS.open }} />
-    );
+    return <InsertDriveFileIcon sx={{ fontSize: 18, color: 'status.open' }} />;
   };
 
   return (
@@ -79,7 +77,7 @@ const FileItem: React.FC<{
           '&:hover': {
             backgroundColor: isSelected
               ? alpha(accent, 0.15)
-              : alpha(theme.palette.common.white, 0.04),
+              : alpha(theme.palette.text.primary, 0.04),
           },
           transition: 'all 0.1s ease-in-out',
         }}
@@ -125,9 +123,7 @@ const FileItem: React.FC<{
               fontFamily:
                 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
               fontSize: '13px',
-              color: isSelected
-                ? theme.palette.text.primary
-                : STATUS_COLORS.open,
+              color: isSelected ? theme.palette.text.primary : 'status.open',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',

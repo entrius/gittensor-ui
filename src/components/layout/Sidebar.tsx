@@ -3,12 +3,15 @@ import {
   Badge,
   Box,
   Button,
+  IconButton,
   Stack,
   Typography,
   ButtonBase,
-  Divider,
   Tooltip,
 } from '@mui/material';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import { useTheme, alpha } from '@mui/material/styles';
 import { useLocation } from 'react-router-dom';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import GroupsIcon from '@mui/icons-material/Groups';
@@ -19,9 +22,14 @@ import FolderCopyIcon from '@mui/icons-material/FolderCopy';
 import SchoolIcon from '@mui/icons-material/School';
 import { useLinkBehavior } from '../common/linkBehavior';
 import { useWatchlistTotalCount } from '../../hooks/useWatchlist';
+import { useThemeMode } from '../../hooks/useThemeMode';
 
-const LOGO_IMG_FILTER =
-  'brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))';
+// In dark mode the SVG logo is inverted to white with a glow; in light mode
+// the original dark artwork is preferred for contrast against a white surface.
+const buildLogoFilter = (mode: 'dark' | 'light') =>
+  mode === 'dark'
+    ? 'brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))'
+    : 'brightness(0)';
 
 const COLLAPSED_LOGO_TOOLTIP_POPPER = {
   popperOptions: {
@@ -49,33 +57,22 @@ const FOOTER_LINKS: ReadonlyArray<{ label: string; href: string }> = [
   { label: 'X', href: 'https://x.com/gittensor_io' },
 ];
 
-const footerLinkSx = {
-  color: 'text.primary',
-  fontSize: '0.65rem',
-  textDecoration: 'none',
-  '&:hover': { textDecoration: 'underline' },
-} as const;
-
-const footerDividerSx = {
-  borderColor: 'border.medium',
-  mx: 0.5,
-  height: '12px',
-  alignSelf: 'center',
-} as const;
-
 interface SidebarProps {
   onNavigate?: () => void;
   collapsed?: boolean;
 }
 
-const GittensorLogoImg: React.FC<{ heightPx: number }> = ({ heightPx }) => (
+const GittensorLogoImg: React.FC<{
+  heightPx: number;
+  mode: 'dark' | 'light';
+}> = ({ heightPx, mode }) => (
   <img
     src="/gt-logo.svg"
     alt="Gittensor"
     style={{
       height: `${heightPx}px`,
       width: 'auto',
-      filter: LOGO_IMG_FILTER,
+      filter: buildLogoFilter(mode),
     }}
   />
 );
@@ -83,6 +80,11 @@ const GittensorLogoImg: React.FC<{ heightPx: number }> = ({ heightPx }) => (
 const Sidebar: React.FC<SidebarProps> = ({ onNavigate, collapsed = false }) => {
   const location = useLocation();
   const watchlistCount = useWatchlistTotalCount();
+  const { mode, toggleMode } = useThemeMode();
+  const isDark = mode === 'dark';
+  const themeToggleLabel = isDark
+    ? 'Switch to light mode'
+    : 'Switch to dark mode';
 
   const navItems = [
     { label: 'dashboard', path: '/dashboard', icon: <DashboardIcon /> },
@@ -100,7 +102,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, collapsed = false }) => {
 
   const logoLink = (
     <SidebarLogoLink onNavigate={onNavigate} collapsed={collapsed}>
-      <GittensorLogoImg heightPx={collapsed ? 30 : 60} />
+      <GittensorLogoImg heightPx={collapsed ? 30 : 60} mode={mode} />
     </SidebarLogoLink>
   );
 
@@ -155,49 +157,111 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, collapsed = false }) => {
 
       <Box sx={{ flexGrow: 1 }} />
 
-      <Box sx={{ mt: 2, display: collapsed ? 'none' : 'block' }}>
-        <Divider sx={{ borderColor: 'border.medium', mb: 2 }} />
-        <Stack direction="column" spacing={1} alignItems="center">
-          <Stack
-            direction="row"
-            spacing={0.5}
-            alignItems="center"
-            flexWrap="wrap"
-            justifyContent="center"
+      {collapsed ? (
+        <Tooltip title={themeToggleLabel} placement="right" arrow>
+          <IconButton
+            size="small"
+            onClick={toggleMode}
+            aria-label={themeToggleLabel}
+            sx={{ color: 'text.secondary', mx: 'auto', display: 'flex' }}
           >
-            {FOOTER_LINKS.map((link, index) => (
-              <React.Fragment key={link.href}>
-                {index > 0 && (
-                  <Divider
-                    orientation="vertical"
-                    flexItem
-                    sx={footerDividerSx}
-                  />
-                )}
-                <Typography
-                  variant="caption"
-                  component="a"
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  sx={footerLinkSx}
-                >
-                  {link.label}
-                </Typography>
-              </React.Fragment>
-            ))}
-          </Stack>
-          <Typography
-            variant="caption"
+            {isDark ? (
+              <LightModeIcon sx={{ fontSize: '1.1rem' }} />
+            ) : (
+              <DarkModeIcon sx={{ fontSize: '1.1rem' }} />
+            )}
+          </IconButton>
+        </Tooltip>
+      ) : (
+        <Box
+          sx={(theme) => ({
+            mt: 2,
+            pt: 2.25,
+            borderTop: `1px solid ${theme.palette.border.light}`,
+          })}
+        >
+          {/* Links — horizontal natural flow with animated underline on hover */}
+          <Box
             sx={{
-              fontSize: '0.6rem',
-              color: 'text.secondary',
+              display: 'flex',
+              flexWrap: 'wrap',
+              columnGap: 2,
+              rowGap: 0.75,
+              mb: 2,
             }}
           >
-            © Gittensor 2026
-          </Typography>
-        </Stack>
-      </Box>
+            {FOOTER_LINKS.map((link) => (
+              <Typography
+                key={link.href}
+                component="a"
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={(theme) => ({
+                  position: 'relative',
+                  color: theme.palette.text.secondary,
+                  fontSize: '0.7rem',
+                  fontWeight: 500,
+                  letterSpacing: '0.01em',
+                  textDecoration: 'none',
+                  transition: 'color 0.2s ease',
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    left: 0,
+                    bottom: -2,
+                    width: 0,
+                    height: '1px',
+                    backgroundColor: theme.palette.text.primary,
+                    transition: 'width 0.2s ease',
+                  },
+                  '&:hover': {
+                    color: theme.palette.text.primary,
+                  },
+                  '&:hover::after': {
+                    width: '100%',
+                  },
+                })}
+              >
+                {link.label}
+              </Typography>
+            ))}
+          </Box>
+
+          {/* Bottom row — copyright left, toggle right */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: '0.6rem',
+                color: 'text.disabled',
+                letterSpacing: '0.02em',
+              }}
+            >
+              © 2026 Gittensor
+            </Typography>
+            <Tooltip title={themeToggleLabel} arrow>
+              <IconButton
+                size="small"
+                onClick={toggleMode}
+                aria-label={themeToggleLabel}
+                sx={{ color: 'text.secondary' }}
+              >
+                {isDark ? (
+                  <LightModeIcon fontSize="small" />
+                ) : (
+                  <DarkModeIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 };
@@ -248,6 +312,11 @@ const SidebarNavLink: React.FC<{
   const linkProps = useLinkBehavior<HTMLAnchorElement>(path, {
     onClick: () => onNavigate?.(),
   });
+  const theme = useTheme();
+  const baseColor =
+    theme.palette.mode === 'dark'
+      ? theme.palette.common.white
+      : theme.palette.common.black;
 
   const iconNode =
     collapsed && badge ? (
@@ -338,15 +407,24 @@ const SidebarNavLink: React.FC<{
         minWidth: 0,
         py: collapsed ? 1.25 : 1.5,
         px: collapsed ? 1 : 2,
-        color: '#ffffff',
+        color:
+          theme.palette.mode === 'dark'
+            ? 'text.primary'
+            : isActive
+              ? theme.palette.text.primary
+              : theme.palette.text.secondary,
         textDecoration: 'none',
         fontSize: NAV_LABEL_FONT,
         textTransform: 'none',
-        backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+        backgroundColor: isActive
+          ? theme.palette.mode === 'dark'
+            ? alpha(baseColor, 0.1)
+            : theme.palette.surface.accent
+          : 'transparent',
         borderLeft: collapsed
           ? 'none'
           : isActive
-            ? '2px solid #ffffff'
+            ? `2px solid ${theme.palette.mode === 'dark' ? baseColor : theme.palette.text.primary}`
             : '2px solid transparent',
         borderRadius: collapsed ? 1.5 : 0,
         textAlign: collapsed ? 'center' : 'left',
@@ -357,8 +435,14 @@ const SidebarNavLink: React.FC<{
           flexShrink: 0,
         },
         '&:hover': {
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          color: 'primary.main',
+          backgroundColor:
+            theme.palette.mode === 'dark'
+              ? alpha(baseColor, 0.05)
+              : theme.palette.surface.light,
+          color:
+            theme.palette.mode === 'dark'
+              ? 'primary.main'
+              : theme.palette.text.primary,
         },
       }}
     >

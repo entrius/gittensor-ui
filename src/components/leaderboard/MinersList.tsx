@@ -1,6 +1,8 @@
 import React from 'react';
 import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
 import { useMinerGithubData, useMinerPRs } from '../../api';
+import { scrollbarSx } from '../../theme';
+import { useChartColors } from '../../hooks/useChartColors';
 import { CHART_COLORS } from '../../theme';
 import { getGithubAvatarSrc, type SortOrder } from '../../utils/ExplorerUtils';
 import { DataTable, type DataTableColumn, WatchlistButton } from '../common';
@@ -12,12 +14,6 @@ import {
 } from './types';
 
 type ActivityMode = 'prs' | 'issues';
-
-const SEGMENT_COLORS = [
-  CHART_COLORS.merged,
-  CHART_COLORS.open,
-  CHART_COLORS.closed,
-];
 
 const cellTypographySx = {
   fontSize: '0.75rem',
@@ -197,7 +193,7 @@ export const MinersList: React.FC<MinersListProps> = ({
         getRowHref={getHref}
         linkState={linkState}
         getRowSx={(miner) => ({
-          opacity: (miner.isEligible ?? false) ? 1 : 0.5,
+          opacity: (miner.isEligible ?? false) ? 1 : 0.65,
           transition: 'opacity 0.2s, background-color 0.2s',
         })}
         minWidth="1020px"
@@ -272,6 +268,9 @@ const MinerActivitySegments: React.FC<MinerActivitySegmentsProps> = ({
   miner,
   mode,
 }) => {
+  const { merged, open: openColor, closed } = useChartColors();
+  const segmentColors = [merged, openColor, closed];
+
   const segments =
     mode === 'issues'
       ? [
@@ -307,7 +306,7 @@ const MinerActivitySegments: React.FC<MinerActivitySegmentsProps> = ({
                 width: 7,
                 height: 7,
                 borderRadius: '50%',
-                backgroundColor: SEGMENT_COLORS[i],
+                backgroundColor: segmentColors[i],
                 flexShrink: 0,
               }}
             />

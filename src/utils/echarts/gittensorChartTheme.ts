@@ -10,34 +10,36 @@ export function echartsTransparentBackground() {
   return { backgroundColor: 'transparent' as const };
 }
 
-/** Tooltip chrome shared by axis-trigger charts (bars, lines). Merge with trigger, axisPointer, formatter. */
-export function echartsAxisTooltipChrome(theme: Theme) {
+function echartsTooltipChromeBase(theme: Theme, darkBorderAlpha: number) {
+  const isDark = theme.palette.mode === 'dark';
   return {
-    backgroundColor: theme.palette.surface.tooltip,
-    borderColor: alpha(theme.palette.text.primary, 0.14),
+    backgroundColor: isDark ? theme.palette.surface.tooltip : '#ffffff',
+    borderColor: isDark
+      ? alpha(theme.palette.text.primary, darkBorderAlpha)
+      : '#d0d7de',
     borderWidth: 1,
+    extraCssText: isDark
+      ? ''
+      : 'box-shadow:0 4px 12px rgba(0,0,0,0.08),0 1px 3px rgba(0,0,0,0.06);',
     textStyle: {
       color: theme.palette.text.primary,
       fontFamily: echartsFontFamily(theme),
     },
   };
+}
+
+/** Tooltip chrome shared by axis-trigger charts (bars, lines). Merge with trigger, axisPointer, formatter. */
+export function echartsAxisTooltipChrome(theme: Theme) {
+  return echartsTooltipChromeBase(theme, 0.14);
 }
 
 /** Tooltip chrome for pie / item charts. Merge with trigger, formatter. */
 export function echartsItemTooltipChrome(theme: Theme) {
-  return {
-    backgroundColor: theme.palette.surface.tooltip,
-    borderColor: alpha(theme.palette.text.primary, 0.15),
-    borderWidth: 1,
-    textStyle: {
-      color: theme.palette.text.primary,
-      fontFamily: echartsFontFamily(theme),
-    },
-  };
+  return echartsTooltipChromeBase(theme, 0.15);
 }
 
 export function echartsStrongAxisLabelColor(theme: Theme) {
-  return alpha(theme.palette.common.white, 0.85);
+  return alpha(theme.palette.text.primary, 0.85);
 }
 
 export function echartsMutedCartesianAxisColors(theme: Theme) {
@@ -95,7 +97,7 @@ export function echartsBarChartTitle(
       fontWeight: 600,
     },
     subtextStyle: {
-      color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+      color: alpha(theme.palette.text.primary, TEXT_OPACITY.tertiary),
       fontFamily: echartsFontFamily(theme),
       fontSize: 12,
     },
@@ -105,18 +107,18 @@ export function echartsBarChartTitle(
 export function echartsRadarChrome(theme: Theme) {
   return {
     axisName: {
-      color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
+      color: alpha(theme.palette.text.primary, TEXT_OPACITY.secondary),
       fontSize: 9,
       lineHeight: 12,
     },
     splitLine: {
       lineStyle: {
-        color: Array(5).fill(alpha(theme.palette.common.white, 0.05)),
+        color: Array(5).fill(alpha(theme.palette.text.primary, 0.05)),
       },
     },
     splitArea: { show: false },
     axisLine: {
-      lineStyle: { color: alpha(theme.palette.common.white, 0.1) },
+      lineStyle: { color: alpha(theme.palette.text.primary, 0.1) },
     },
   };
 }

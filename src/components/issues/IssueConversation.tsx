@@ -14,7 +14,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { type IssueDetails } from '../../api/models/Issues';
-import { STATUS_COLORS, scrollbarSx } from '../../theme';
+import { scrollbarSx } from '../../theme';
 
 import 'github-markdown-css/github-markdown-dark.css';
 
@@ -65,10 +65,10 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
     },
     fg: {
       default: theme.palette.text.primary,
-      muted: STATUS_COLORS.open,
+      muted: theme.palette.status.open,
     },
     accent: {
-      fg: STATUS_COLORS.info,
+      fg: theme.palette.status.info,
     },
     timeline: {
       line: theme.palette.border.medium,
@@ -230,8 +230,8 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                     variant="status"
                     label="Description"
                     sx={{
-                      color: STATUS_COLORS.info,
-                      borderColor: alpha(STATUS_COLORS.info, 0.4),
+                      color: theme.palette.status.info,
+                      borderColor: alpha(theme.palette.status.info, 0.4),
                     }}
                   />
                 )}
@@ -290,7 +290,7 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
                   padding: '0.2em 0.4em',
                   margin: 0,
                   fontSize: '85%',
-                  backgroundColor: alpha(STATUS_COLORS.neutral, 0.4),
+                  backgroundColor: theme.palette.highlight.neutral,
                   borderRadius: '6px',
                 },
                 '& pre': {

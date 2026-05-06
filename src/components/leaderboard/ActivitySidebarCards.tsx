@@ -1,11 +1,10 @@
 import React, { useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import { SectionCard } from './SectionCard';
-import { STATUS_COLORS, DIFF_COLORS, CREDIBILITY_COLORS } from '../../theme';
-import { credibilityColor } from '../../utils/format';
 import { type MinerStats, FONTS } from './types';
 import { useEligibilityFilteredMiners } from './useEligibilityFilteredMiners';
+import { credibilityColorFromPalette } from '../../utils/format';
 
 interface ActivitySidebarCardsProps {
   miners: MinerStats[];
@@ -99,19 +98,21 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
     return { linesAdded, linesDeleted, reposTouched, avgCredibility };
   }, [miners]);
 
+  const theme = useTheme();
+
   const solveRateColor =
     issueStats.solveRate >= 80
-      ? CREDIBILITY_COLORS.excellent
+      ? theme.palette.credibility.excellent
       : issueStats.solveRate >= 50
-        ? CREDIBILITY_COLORS.moderate
-        : STATUS_COLORS.closed;
+        ? theme.palette.credibility.moderate
+        : theme.palette.status.closed;
 
   const mergeRateColor =
     prStats.mergeRate >= 80
-      ? CREDIBILITY_COLORS.excellent
+      ? theme.palette.credibility.excellent
       : prStats.mergeRate >= 50
-        ? CREDIBILITY_COLORS.moderate
-        : STATUS_COLORS.closed;
+        ? theme.palette.credibility.moderate
+        : theme.palette.status.closed;
 
   return (
     <>
@@ -133,7 +134,7 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
               sx={{
                 fontFamily: FONTS.mono,
                 fontSize: '0.7rem',
-                color: STATUS_COLORS.open,
+                color: 'status.open',
                 textTransform: 'uppercase',
               }}
             >
@@ -143,7 +144,7 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
               sx={{
                 fontFamily: FONTS.mono,
                 fontSize: '0.7rem',
-                color: STATUS_COLORS.open,
+                color: 'status.open',
                 textTransform: 'uppercase',
                 textAlign: 'center',
               }}
@@ -154,7 +155,7 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
               sx={{
                 fontFamily: FONTS.mono,
                 fontSize: '0.7rem',
-                color: STATUS_COLORS.open,
+                color: 'status.open',
                 textTransform: 'uppercase',
                 textAlign: 'center',
               }}
@@ -200,17 +201,17 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
             <PRColumn
               label="Merged"
               value={prStats.merged}
-              color={STATUS_COLORS.merged}
+              color={theme.palette.status.merged}
             />
             <PRColumn
               label="Open"
               value={prStats.open}
-              color={STATUS_COLORS.open}
+              color={theme.palette.status.open}
             />
             <PRColumn
               label="Closed"
               value={prStats.closed}
-              color={STATUS_COLORS.closed}
+              color={theme.palette.status.closed}
             />
           </Box>
 
@@ -225,7 +226,7 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
               sx={{
                 fontFamily: FONTS.mono,
                 fontSize: '0.85rem',
-                color: STATUS_COLORS.open,
+                color: 'status.open',
               }}
             >
               Merge Rate
@@ -250,7 +251,7 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
           <StatRow
             label="Total $/day"
             value={`$${Math.round(ossUsdPerDay).toLocaleString()}`}
-            valueColor={STATUS_COLORS.merged}
+            valueColor={theme.palette.status.merged}
           />
         </Box>
       </SectionCard>
@@ -271,17 +272,17 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
             <PRColumn
               label="Solved"
               value={issueStats.solved}
-              color={STATUS_COLORS.merged}
+              color={theme.palette.status.merged}
             />
             <PRColumn
               label="Open"
               value={issueStats.open}
-              color={STATUS_COLORS.open}
+              color={theme.palette.status.open}
             />
             <PRColumn
               label="Closed"
               value={issueStats.closed}
-              color={STATUS_COLORS.closed}
+              color={theme.palette.status.closed}
             />
           </Box>
 
@@ -296,7 +297,7 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
               sx={{
                 fontFamily: FONTS.mono,
                 fontSize: '0.85rem',
-                color: STATUS_COLORS.open,
+                color: 'status.open',
               }}
             >
               Solve Rate
@@ -321,7 +322,7 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
           <StatRow
             label="Total $/day"
             value={`$${Math.round(issueUsdPerDay).toLocaleString()}`}
-            valueColor={STATUS_COLORS.merged}
+            valueColor={theme.palette.status.merged}
           />
         </Box>
       </SectionCard>
@@ -341,12 +342,12 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
           <StatRow
             label="Lines Added"
             value={`+${codeStats.linesAdded.toLocaleString()}`}
-            valueColor={DIFF_COLORS.additions}
+            valueColor={theme.palette.diff.additions}
           />
           <StatRow
             label="Lines Deleted"
             value={`-${codeStats.linesDeleted.toLocaleString()}`}
-            valueColor={DIFF_COLORS.deletions}
+            valueColor={theme.palette.diff.deletions}
           />
           <StatRow
             label="Repos Touched"
@@ -363,7 +364,7 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
               sx={{
                 fontFamily: FONTS.mono,
                 fontSize: '0.85rem',
-                color: STATUS_COLORS.open,
+                color: 'status.open',
               }}
             >
               Avg Credibility
@@ -371,14 +372,20 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <RateBar
                 rate={codeStats.avgCredibility}
-                color={credibilityColor(codeStats.avgCredibility / 100)}
+                color={credibilityColorFromPalette(
+                  codeStats.avgCredibility / 100,
+                  theme.palette,
+                )}
               />
               <Typography
                 sx={{
                   fontFamily: FONTS.mono,
                   fontWeight: 600,
                   fontSize: '1.1rem',
-                  color: credibilityColor(codeStats.avgCredibility / 100),
+                  color: credibilityColorFromPalette(
+                    codeStats.avgCredibility / 100,
+                    theme.palette,
+                  ),
                   minWidth: 40,
                   textAlign: 'right',
                 }}
@@ -417,7 +424,7 @@ export const StatRow: React.FC<StatRowProps> = ({
       sx={{
         fontFamily: FONTS.mono,
         fontSize: '0.85rem',
-        color: STATUS_COLORS.open,
+        color: 'status.open',
       }}
     >
       {label}
@@ -461,7 +468,7 @@ const MinerActivityRow: React.FC<MinerActivityRowProps> = ({
       sx={{
         fontFamily: FONTS.mono,
         fontSize: '0.85rem',
-        color: STATUS_COLORS.open,
+        color: 'status.open',
       }}
     >
       {label}
@@ -510,7 +517,7 @@ const PRColumn: React.FC<PRColumnProps> = ({ label, value, color }) => (
       sx={{
         fontFamily: FONTS.mono,
         fontSize: '0.7rem',
-        color: STATUS_COLORS.open,
+        color: 'status.open',
         textTransform: 'uppercase',
       }}
     >

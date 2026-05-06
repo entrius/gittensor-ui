@@ -19,7 +19,6 @@ import LaunchIcon from '@mui/icons-material/Launch'; // Added import
 import PeopleIcon from '@mui/icons-material/People'; // For Community
 import BugReportIcon from '@mui/icons-material/BugReport';
 import axios from 'axios';
-import { STATUS_COLORS } from '../../theme';
 
 interface RepositoryCheckTabProps {
   repositoryFullName: string;
@@ -196,7 +195,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
         >
           Repository Health Check & Feasibility
         </Typography>
-        <Typography variant="body2" sx={{ color: STATUS_COLORS.open }}>
+        <Typography variant="body2" sx={{ color: 'status.open' }}>
           An in-depth analysis of the repository's openness to contributions,
           code health, and community standards.
         </Typography>
@@ -242,10 +241,10 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                   sx={{
                     color:
                       score > 80
-                        ? STATUS_COLORS.success
+                        ? theme.palette.status.success
                         : score > 50
-                          ? STATUS_COLORS.warning
-                          : STATUS_COLORS.error,
+                          ? theme.palette.status.warning
+                          : theme.palette.status.error,
                   }}
                 />
                 <Box
@@ -281,7 +280,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
               <Typography
                 variant="body2"
                 sx={{
-                  color: STATUS_COLORS.open,
+                  color: 'status.open',
                   textAlign: 'center',
                   fontSize: '12px',
                 }}
@@ -318,7 +317,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography
                     variant="body2"
-                    sx={{ color: STATUS_COLORS.open, fontSize: '13px' }}
+                    sx={{ color: 'status.open', fontSize: '13px' }}
                   >
                     Last Push
                   </Typography>
@@ -335,7 +334,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography
                     variant="body2"
-                    sx={{ color: STATUS_COLORS.open, fontSize: '13px' }}
+                    sx={{ color: 'status.open', fontSize: '13px' }}
                   >
                     Created
                   </Typography>
@@ -352,7 +351,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography
                     variant="body2"
-                    sx={{ color: STATUS_COLORS.open, fontSize: '13px' }}
+                    sx={{ color: 'status.open', fontSize: '13px' }}
                   >
                     Status
                   </Typography>
@@ -374,7 +373,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
               <Typography
                 variant="body2"
                 sx={{
-                  color: STATUS_COLORS.open,
+                  color: 'status.open',
                   fontSize: '13px',
                   lineHeight: 1.6,
                 }}
@@ -429,8 +428,8 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     sx={{
                       p: 2,
                       borderRadius: 1,
-                      bgcolor: alpha(theme.palette.common.white, 0.03),
-                      border: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
+                      bgcolor: alpha(theme.palette.text.primary, 0.03),
+                      border: `1px solid ${alpha(theme.palette.text.primary, 0.05)}`,
                       height: '100%',
                       display: 'flex',
                       flexDirection: 'column',
@@ -451,7 +450,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     </Typography>
                     <Typography
                       variant="caption"
-                      sx={{ color: STATUS_COLORS.open, fontSize: '12px' }}
+                      sx={{ color: 'status.open', fontSize: '12px' }}
                     >
                       Open Issues
                     </Typography>
@@ -464,8 +463,8 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     sx={{
                       p: 2,
                       borderRadius: 1,
-                      bgcolor: alpha(theme.palette.common.white, 0.03),
-                      border: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
+                      bgcolor: alpha(theme.palette.text.primary, 0.03),
+                      border: `1px solid ${alpha(theme.palette.text.primary, 0.05)}`,
                       height: '100%',
                       display: 'flex',
                       flexDirection: 'column',
@@ -484,7 +483,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     </Typography>
                     <Typography
                       variant="caption"
-                      sx={{ color: STATUS_COLORS.open, fontSize: '12px' }}
+                      sx={{ color: 'status.open', fontSize: '12px' }}
                     >
                       Forks
                     </Typography>
@@ -501,8 +500,8 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     sx={{
                       p: 2,
                       borderRadius: 1,
-                      bgcolor: alpha(theme.palette.common.white, 0.03),
-                      border: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
+                      bgcolor: alpha(theme.palette.text.primary, 0.03),
+                      border: `1px solid ${alpha(theme.palette.text.primary, 0.05)}`,
                       height: '100%',
                       minWidth: 0,
                       display: 'flex',
@@ -514,7 +513,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                       boxSizing: 'border-box',
                       transition: 'all 0.2s',
                       '&:hover': {
-                        bgcolor: alpha(theme.palette.common.white, 0.08),
+                        bgcolor: alpha(theme.palette.text.primary, 0.08),
                         border: `1px solid ${theme.palette.border.light}`,
                         transform: 'translateY(-2px)',
                       },
@@ -545,7 +544,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                         </Typography>
                         <Typography
                           sx={{
-                            color: STATUS_COLORS.open,
+                            color: 'status.open',
                             fontSize: '12px',
                             fontWeight: 600,
                             lineHeight: 1.25,
@@ -558,7 +557,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                       <LaunchIcon
                         sx={{
                           fontSize: 16,
-                          color: STATUS_COLORS.open,
+                          color: 'status.open',
                           mt: 0.25,
                           flexShrink: 0,
                         }}
@@ -583,8 +582,8 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     sx={{
                       p: 2,
                       borderRadius: 1,
-                      bgcolor: alpha(theme.palette.common.white, 0.03),
-                      border: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
+                      bgcolor: alpha(theme.palette.text.primary, 0.03),
+                      border: `1px solid ${alpha(theme.palette.text.primary, 0.05)}`,
                       height: '100%',
                       minWidth: 0,
                       display: 'flex',
@@ -596,7 +595,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                       boxSizing: 'border-box',
                       transition: 'all 0.2s',
                       '&:hover': {
-                        bgcolor: alpha(theme.palette.common.white, 0.08),
+                        bgcolor: alpha(theme.palette.text.primary, 0.08),
                         border: `1px solid ${theme.palette.border.light}`,
                         transform: 'translateY(-2px)',
                       },
@@ -625,7 +624,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                         </Typography>
                         <Typography
                           sx={{
-                            color: STATUS_COLORS.open,
+                            color: 'status.open',
                             fontSize: '12px',
                             fontWeight: 600,
                             lineHeight: 1.25,
@@ -638,7 +637,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                       <LaunchIcon
                         sx={{
                           fontSize: 16,
-                          color: STATUS_COLORS.open,
+                          color: 'status.open',
                           mt: 0.25,
                           flexShrink: 0,
                         }}
@@ -670,7 +669,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 sx={{
                   p: 2,
                   borderBottom: `1px solid ${theme.palette.border.light}`,
-                  backgroundColor: alpha(theme.palette.common.white, 0.03),
+                  backgroundColor: alpha(theme.palette.text.primary, 0.03),
                 }}
               >
                 <Typography
@@ -697,14 +696,14 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                           p: 2,
                           borderRadius: 1,
                           bgcolor: 'surface.subtle',
-                          border: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
+                          border: `1px solid ${alpha(theme.palette.text.primary, 0.05)}`,
                           display: 'flex',
                           alignItems: 'flex-start',
                           gap: 2,
                           height: '100%',
                           transition: 'background-color 0.2s',
                           '&:hover': {
-                            bgcolor: alpha(theme.palette.common.white, 0.04),
+                            bgcolor: alpha(theme.palette.text.primary, 0.04),
                           },
                         }}
                       >
@@ -712,13 +711,16 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                           {check.passed ? (
                             <CheckCircleIcon
                               sx={{
-                                color: STATUS_COLORS.success,
+                                color: theme.palette.status.success,
                                 fontSize: 22,
                               }}
                             />
                           ) : (
                             <CancelIcon
-                              sx={{ color: STATUS_COLORS.error, fontSize: 22 }}
+                              sx={{
+                                color: theme.palette.status.error,
+                                fontSize: 22,
+                              }}
                             />
                           )}
                         </Box>
@@ -735,7 +737,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                           </Typography>
                           <Typography
                             sx={{
-                              color: STATUS_COLORS.open,
+                              color: 'status.open',
                               fontSize: '12px',
                               lineHeight: 1.5,
                             }}

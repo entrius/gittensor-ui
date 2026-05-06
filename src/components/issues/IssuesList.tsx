@@ -37,6 +37,7 @@ import {
   formatDate,
   formatAlphaToUsd,
 } from '../../utils/format';
+import { getIssueStatusMetaForTheme } from '../../utils/issueStatus';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
@@ -126,14 +127,27 @@ const ViewModeToggle: React.FC<ViewModeToggleProps> = ({
                 borderRadius: 0,
                 padding: '6px 10px',
                 color: isActive
-                  ? theme.palette.text.primary
-                  : theme.palette.text.tertiary,
+                  ? theme.palette.mode === 'dark'
+                    ? theme.palette.text.primary
+                    : theme.palette.common.white
+                  : theme.palette.text.secondary,
                 backgroundColor: isActive
-                  ? theme.palette.surface.light
+                  ? theme.palette.mode === 'dark'
+                    ? theme.palette.surface.light
+                    : theme.palette.status.success
                   : 'transparent',
+                transition: 'background-color 0.18s ease, color 0.18s ease',
                 '&:hover': {
-                  backgroundColor: theme.palette.surface.light,
-                  color: theme.palette.text.primary,
+                  backgroundColor: isActive
+                    ? theme.palette.mode === 'dark'
+                      ? theme.palette.surface.light
+                      : theme.palette.status.success
+                    : alpha(theme.palette.text.primary, 0.06),
+                  color: isActive
+                    ? theme.palette.mode === 'dark'
+                      ? theme.palette.text.primary
+                      : theme.palette.common.white
+                    : theme.palette.text.primary,
                 },
               })}
             >
@@ -320,7 +334,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
           value = parseAmount(issue.targetBounty);
           break;
         case 'status':
-          value = getIssueStatusMeta(issue.status).text;
+          value = getIssueStatusMetaForTheme(issue.status, theme).text;
           break;
         case 'funding': {
           const target = parseAmount(issue.targetBounty);
@@ -349,7 +363,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
     });
 
     return decorated.map((item) => item.issue);
-  }, [filteredIssues, sortDirection, sortKey]);
+  }, [filteredIssues, sortDirection, sortKey, theme]);
 
   const paginatedIssues = useMemo(() => {
     const start = page * rowsPerPage;
@@ -368,7 +382,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
     const sorted = [...repoTotals.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, 20);
-    const textColor = alpha(theme.palette.common.white, 0.85);
+    const textColor = alpha(theme.palette.text.primary, 0.85);
     const gridColor = theme.palette.border.subtle;
 
     return {
@@ -385,7 +399,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
           fontWeight: 600,
         },
         subtextStyle: {
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+          color: alpha(theme.palette.text.primary, TEXT_OPACITY.tertiary),
           fontFamily: 'JetBrains Mono',
           fontSize: 12,
         },
@@ -394,7 +408,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
         backgroundColor: alpha(theme.palette.background.default, 0.95),
-        borderColor: alpha(theme.palette.common.white, 0.15),
+        borderColor: alpha(theme.palette.text.primary, 0.15),
         borderWidth: 1,
         textStyle: {
           color: theme.palette.text.primary,
@@ -463,7 +477,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         <Typography
           sx={{
             fontSize: '0.8rem',
-            color: alpha(theme.palette.common.white, 0.6),
+            color: alpha(theme.palette.text.primary, 0.6),
           }}
         >
           #{issue.id}
@@ -498,7 +512,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
               component="span"
               sx={{
                 fontSize: '0.85rem',
-                color: STATUS_COLORS.info,
+                color: theme.palette.status.info,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -541,10 +555,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
               alignItems: 'center',
               gap: 0.5,
               fontSize: '0.75rem',
-              color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+              color: alpha(theme.palette.text.primary, TEXT_OPACITY.tertiary),
               textDecoration: 'none',
               '&:hover': {
-                color: STATUS_COLORS.info,
+                color: theme.palette.status.info,
                 textDecoration: 'underline',
               },
             }}
@@ -575,8 +589,8 @@ const IssuesList: React.FC<IssuesListProps> = ({
         const color =
           colorFn?.(issue) ??
           (filterType === 'pending'
-            ? STATUS_COLORS.award
-            : STATUS_COLORS.merged);
+            ? theme.palette.status.award
+            : theme.palette.status.merged);
         return (
           <>
             <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color }}>
@@ -586,7 +600,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
               <Typography
                 sx={{
                   fontSize: '0.7rem',
-                  color: alpha(theme.palette.common.white, 0.35),
+                  color: alpha(theme.palette.text.primary, 0.35),
                 }}
               >
                 {usdDisplay}
@@ -606,7 +620,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
       align: 'center',
       sortKey: 'status',
       renderCell: (issue) => {
-        const statusBadge = getIssueStatusMeta(issue.status);
+        const statusBadge = getIssueStatusMetaForTheme(issue.status, theme);
         return (
           <Chip
             label={statusBadge.text}
@@ -649,7 +663,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
             <Typography
               sx={{
                 fontSize: '0.8rem',
-                color: STATUS_COLORS.info,
+                color: theme.palette.status.info,
                 cursor: 'pointer',
               }}
             >
@@ -660,7 +674,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
           <Typography
             sx={{
               fontSize: '0.8rem',
-              color: alpha(theme.palette.common.white, TEXT_OPACITY.faint),
+              color: alpha(theme.palette.text.primary, TEXT_OPACITY.faint),
             }}
           >
             -
@@ -689,7 +703,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
               component="span"
               sx={{
                 fontSize: '0.8rem',
-                color: alpha(theme.palette.common.white, 0.6),
+                color: alpha(theme.palette.text.primary, 0.6),
                 whiteSpace: 'nowrap',
               }}
             >
@@ -717,8 +731,8 @@ const IssuesList: React.FC<IssuesListProps> = ({
         issueColumn,
         bountyColumn('Payout', '120px', (issue) =>
           issue.status === 'completed'
-            ? STATUS_COLORS.merged
-            : alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+            ? theme.palette.status.merged
+            : alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
         ),
         solverColumn,
         statusColumn('110px'),
@@ -849,7 +863,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
               sx={{
                 color: showChart
                   ? theme.palette.text.primary
-                  : alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+                  : alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
                 border: `1px solid ${theme.palette.border.light}`,
                 borderRadius: 2,
                 padding: '6px',
@@ -875,7 +889,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
               variant="body2"
               sx={{
                 color: alpha(
-                  theme.palette.common.white,
+                  theme.palette.text.primary,
                   TEXT_OPACITY.secondary,
                 ),
                 fontSize: '0.8rem',
@@ -891,7 +905,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
               }}
               sx={{
                 color: theme.palette.text.primary,
-                backgroundColor: alpha(theme.palette.common.black, 0.4),
+                backgroundColor: theme.palette.surface.subtle,
                 fontSize: '0.8rem',
                 height: '36px',
                 borderRadius: 2,
@@ -925,7 +939,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                 <SearchIcon
                   sx={{
                     color: alpha(
-                      theme.palette.common.white,
+                      theme.palette.text.primary,
                       TEXT_OPACITY.muted,
                     ),
                     fontSize: '1rem',
@@ -938,7 +952,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
             width: '200px',
             '& .MuiOutlinedInput-root': {
               color: theme.palette.text.primary,
-              backgroundColor: alpha(theme.palette.common.black, 0.4),
+              backgroundColor: theme.palette.surface.subtle,
               fontSize: '0.8rem',
               height: '36px',
               borderRadius: 2,
@@ -961,7 +975,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
             height: 500,
             p: 2,
             borderBottom: `1px solid ${theme.palette.border.light}`,
-            backgroundColor: alpha(theme.palette.common.black, 0.2),
+            backgroundColor: theme.palette.surface.subtle,
           }}
         >
           {showChart && filteredIssues.length > 0 && (
@@ -979,7 +993,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
     <Box sx={{ p: 4, textAlign: 'center' }}>
       <Typography
         sx={{
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+          color: alpha(theme.palette.text.primary, TEXT_OPACITY.tertiary),
         }}
       >
         {searchQuery ? 'No issues match your search' : 'No issues found'}

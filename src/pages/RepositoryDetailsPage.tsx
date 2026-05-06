@@ -23,7 +23,7 @@ import MergeTypeIcon from '@mui/icons-material/MergeType';
 import ArticleIcon from '@mui/icons-material/Article';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
-import { RANK_COLORS, STATUS_COLORS } from '../theme';
+import { RANK_COLORS } from '../theme';
 import { Page } from '../components/layout';
 import { useReposAndWeights, useRepoBountySummary } from '../api';
 import {
@@ -124,9 +124,9 @@ const RepositoryDetailsPage: React.FC = () => {
             severity="warning"
             sx={(theme) => ({
               mt: 2,
-              backgroundColor: alpha(STATUS_COLORS.warningOrange, 0.08),
+              backgroundColor: theme.palette.highlight.warning,
               border: '1px solid',
-              borderColor: alpha(STATUS_COLORS.warningOrange, 0.3),
+              borderColor: alpha(theme.palette.status.warningOrange, 0.3),
               color: alpha(theme.palette.text.primary, 0.8),
               '& .MuiAlert-icon': { color: theme.palette.status.warningOrange },
             })}
@@ -217,9 +217,9 @@ const RepositoryDetailsPage: React.FC = () => {
                   <Chip
                     label="Tracked"
                     sx={(theme) => ({
-                      backgroundColor: alpha(STATUS_COLORS.success, 0.15),
+                      backgroundColor: theme.palette.highlight.success,
                       color: theme.palette.status.success,
-                      border: `1px solid ${alpha(STATUS_COLORS.success, 0.35)}`,
+                      border: `1px solid ${alpha(theme.palette.status.success, 0.35)}`,
                       fontSize: '0.75rem',
                       height: '24px',
                       fontWeight: 600,
@@ -233,9 +233,9 @@ const RepositoryDetailsPage: React.FC = () => {
                         <Chip
                           label={`Inactive since ${formatDate(currentRepo.inactiveAt)}`}
                           sx={(theme) => ({
-                            backgroundColor: alpha(STATUS_COLORS.error, 0.1),
+                            backgroundColor: theme.palette.highlight.error,
                             color: theme.palette.status.error,
-                            border: `1px solid ${alpha(STATUS_COLORS.error, 0.3)}`,
+                            border: `1px solid ${alpha(theme.palette.status.error, 0.3)}`,
                             fontSize: '0.75rem',
                             height: '24px',
                             fontWeight: 600,
@@ -279,7 +279,7 @@ const RepositoryDetailsPage: React.FC = () => {
               aria-label="repository tabs"
               sx={(theme) => ({
                 '& .MuiTab-root': {
-                  color: STATUS_COLORS.open,
+                  color: 'status.open',
                   fontFamily:
                     '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
                   textTransform: 'none',

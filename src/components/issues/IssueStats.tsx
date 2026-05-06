@@ -4,7 +4,6 @@ import { IssuesStats } from '../../api/models/Issues';
 import KpiCard from '../KpiCard';
 import { formatTokenAmount, formatAlphaToUsd } from '../../utils/format';
 import { usePrices } from '../../hooks/usePrices';
-import { STATUS_COLORS } from '../../theme';
 
 interface IssueStatsProps {
   stats?: IssuesStats;
@@ -44,7 +43,7 @@ const IssueStats: React.FC<IssueStatsProps> = ({
         : 'Paid to solvers',
       sx: {
         '& .MuiTypography-h4': {
-          color: STATUS_COLORS.merged,
+          color: 'status.merged',
         },
       },
     },

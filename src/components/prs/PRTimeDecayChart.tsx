@@ -3,7 +3,7 @@ import { Box, Typography, alpha, useTheme } from '@mui/material';
 import { type Theme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
 import { useGeneralConfig } from '../../api';
-import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { TEXT_OPACITY } from '../../theme';
 import {
   echartsAxisTooltipChrome,
   echartsFontFamily,
@@ -38,25 +38,32 @@ interface NowMarker {
   multiplier: number;
 }
 
-const GRADIENT_STOPS = [
-  { offset: 0, color: STATUS_COLORS.success },
-  { offset: 0.3, color: STATUS_COLORS.warning },
-  { offset: 0.65, color: STATUS_COLORS.warningOrange },
-  { offset: 1, color: STATUS_COLORS.error },
-];
+type GradientColors = [string, string, string, string];
+const GRADIENT_OFFSETS = [0, 0.3, 0.65, 1] as const;
 
-const GRADIENT_CSS = `linear-gradient(90deg, ${STATUS_COLORS.success} 0%, ${STATUS_COLORS.warning} 30%, ${STATUS_COLORS.warningOrange} 65%, ${STATUS_COLORS.error} 100%)`;
+function getGradientColors(palette: Theme['palette']): GradientColors {
+  return [
+    palette.status.success,
+    palette.status.warning,
+    palette.status.warningOrange,
+    palette.status.error,
+  ];
+}
 
-function buildGradient(opacities?: number[]) {
+function getGradientCss(colors: GradientColors): string {
+  return `linear-gradient(90deg, ${colors[0]} 0%, ${colors[1]} 30%, ${colors[2]} 65%, ${colors[3]} 100%)`;
+}
+
+function buildGradient(colors: GradientColors, opacities?: number[]) {
   return {
     type: 'linear' as const,
     x: 0,
     y: 0,
     x2: 1,
     y2: 0,
-    colorStops: GRADIENT_STOPS.map((stop, index) => ({
-      offset: stop.offset,
-      color: opacities ? alpha(stop.color, opacities[index]) : stop.color,
+    colorStops: GRADIENT_OFFSETS.map((offset, i) => ({
+      offset,
+      color: opacities ? alpha(colors[i], opacities[i]) : colors[i],
     })),
   };
 }
@@ -82,13 +89,13 @@ function injectNowPoint(
   return filtered;
 }
 
-function buildMarkPointData(marker: NowMarker | null) {
+function buildMarkPointData(marker: NowMarker | null, nowColor: string) {
   if (marker == null) return [];
   return [
     {
       name: 'Now',
       coord: [marker.day, marker.multiplier],
-      itemStyle: { color: STATUS_COLORS.success },
+      itemStyle: { color: nowColor },
     },
   ];
 }
@@ -185,7 +192,7 @@ function buildMarkLine(
     symbol: 'none',
     silent: true,
     lineStyle: {
-      color: alpha(theme.palette.common.white, 0.18),
+      color: alpha(theme.palette.text.primary, 0.18),
       type: 'dashed',
     },
     label: { color: axis.labelColor, fontSize: 9, formatter: '{b}' },
@@ -193,7 +200,11 @@ function buildMarkLine(
   };
 }
 
-function buildMarkPoint(theme: Theme, marker: NowMarker | null) {
+function buildMarkPoint(
+  theme: Theme,
+  marker: NowMarker | null,
+  nowColor: string,
+) {
   return {
     symbol: 'circle',
     symbolSize: 12,
@@ -206,7 +217,7 @@ function buildMarkPoint(theme: Theme, marker: NowMarker | null) {
       position: 'top',
       distance: 10,
     },
-    data: buildMarkPointData(marker),
+    data: buildMarkPointData(marker, nowColor),
   };
 }
 
@@ -216,16 +227,19 @@ function buildSeries(
   params: DecayParams,
   seriesData: [number, number][],
   marker: NowMarker | null,
+  gradientColors: GradientColors,
 ) {
   return {
     type: 'line',
     data: seriesData,
     showSymbol: false,
     smooth: false,
-    lineStyle: { width: 2.5, color: buildGradient() },
-    areaStyle: { color: buildGradient([0.22, 0.16, 0.12, 0.08]) },
+    lineStyle: { width: 2.5, color: buildGradient(gradientColors) },
+    areaStyle: {
+      color: buildGradient(gradientColors, [0.22, 0.16, 0.12, 0.08]),
+    },
     markLine: buildMarkLine(theme, axis, params.midpoint),
-    markPoint: buildMarkPoint(theme, marker),
+    markPoint: buildMarkPoint(theme, marker, gradientColors[0]),
   };
 }
 
@@ -233,10 +247,11 @@ function buildChartOption(
   theme: Theme,
   params: DecayParams,
   projection: DecayProjection,
+  gradientColors: GradientColors,
 ) {
   const axis = echartsMutedCartesianAxisColors(theme);
   const fontFamily = echartsFontFamily(theme);
-  const mutedHex = alpha(theme.palette.common.white, TEXT_OPACITY.tertiary);
+  const mutedHex = alpha(theme.palette.text.primary, TEXT_OPACITY.tertiary);
   const marker = resolveNowMarker(projection);
   const seriesData = injectNowPoint(buildDecayCurve(params), marker);
   return {
@@ -245,7 +260,9 @@ function buildChartOption(
     tooltip: buildTooltip(theme, projection.preDecayScore, mutedHex),
     xAxis: buildXAxis(axis, fontFamily),
     yAxis: buildYAxis(axis),
-    series: [buildSeries(theme, axis, params, seriesData, marker)],
+    series: [
+      buildSeries(theme, axis, params, seriesData, marker, gradientColors),
+    ],
   };
 }
 
@@ -256,6 +273,8 @@ function PRTimeDecayChart({
   earnedScore,
 }: PRTimeDecayChartProps) {
   const theme = useTheme();
+  const gradientColors = getGradientColors(theme.palette);
+  const gradientCss = getGradientCss(gradientColors);
   const { data: generalConfig } = useGeneralConfig();
   const params = useMemo(
     () => resolveDecayParams(generalConfig),
@@ -270,12 +289,13 @@ function PRTimeDecayChart({
     [earnedScore, mergedAt, params, prState, timeDecayMultiplier],
   );
   const option = useMemo(
-    () => buildChartOption(theme, params, projection),
+    () => buildChartOption(theme, params, projection, gradientColors),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [theme, params, projection],
   );
   const showNow = projection.isMerged && projection.inWindow;
-  const muted = alpha(theme.palette.common.white, TEXT_OPACITY.muted);
-  const tertiary = alpha(theme.palette.common.white, TEXT_OPACITY.tertiary);
+  const muted = alpha(theme.palette.text.primary, TEXT_OPACITY.muted);
+  const tertiary = alpha(theme.palette.text.primary, TEXT_OPACITY.tertiary);
 
   return (
     <Box
@@ -284,7 +304,7 @@ function PRTimeDecayChart({
         borderRadius: 3,
         p: { xs: 2, sm: 2.5 },
         mb: 3,
-        backgroundColor: alpha(theme.palette.common.white, 0.015),
+        backgroundColor: alpha(theme.palette.text.primary, 0.015),
       }}
     >
       <Box
@@ -300,7 +320,7 @@ function PRTimeDecayChart({
         <Box>
           <Typography
             sx={{
-              color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
+              color: alpha(theme.palette.text.primary, TEXT_OPACITY.secondary),
               fontSize: '0.8rem',
               textTransform: 'uppercase',
               letterSpacing: '1px',
@@ -336,7 +356,7 @@ function PRTimeDecayChart({
               <Typography
                 sx={{
                   color: alpha(
-                    theme.palette.common.white,
+                    theme.palette.text.primary,
                     TEXT_OPACITY.secondary,
                   ),
                   fontSize: '1rem',
@@ -387,7 +407,7 @@ function PRTimeDecayChart({
               width: 80,
               height: 6,
               borderRadius: 3,
-              background: GRADIENT_CSS,
+              background: gradientCss,
             }}
           />
           <Typography sx={{ color: tertiary, fontSize: '0.7rem' }}>
@@ -400,7 +420,7 @@ function PRTimeDecayChart({
               width: 8,
               height: 8,
               borderRadius: '50%',
-              backgroundColor: STATUS_COLORS.success,
+              backgroundColor: gradientColors[0],
             }}
           />
           <Typography sx={{ color: tertiary, fontSize: '0.7rem' }}>

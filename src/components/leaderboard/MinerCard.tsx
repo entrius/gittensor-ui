@@ -3,7 +3,10 @@ import { Box, Card, Typography, Avatar } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
-import { CHART_COLORS, STATUS_COLORS } from '../../theme';
+import {
+  getPositiveColor,
+  getChartSegmentColors,
+} from '../../utils/themeUtils';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import { WatchlistButton } from '../common';
@@ -17,13 +20,8 @@ interface MinerCardProps {
   showDualEligibilityBadges?: boolean;
 }
 
-const INACTIVE_OPACITY = 0.24;
+const INACTIVE_OPACITY = 0.55;
 
-const CHART_SEGMENT_COLORS = [
-  CHART_COLORS.merged,
-  CHART_COLORS.open,
-  CHART_COLORS.closed,
-];
 const CHART_INACTIVE_RATIOS = [2 / 3, 1, 1 / 2];
 
 interface Segment {
@@ -57,6 +55,9 @@ export const MinerCard: React.FC<MinerCardProps> = ({
   showDualEligibilityBadges = false,
 }) => {
   const linkProps = useLinkBehavior(href, { state: linkState });
+  const muiTheme = useTheme();
+  // Green for positive metrics/charts; purple (status.merged) is only for PR status badges
+  const posColor = getPositiveColor(muiTheme);
   const isNumericId = (value?: string) => !value || /^\d+$/.test(value);
   const shouldFetch = !!miner.githubId && isNumericId(miner.author);
   const { data: githubData } = useMinerGithubData(miner.githubId, shouldFetch);
@@ -95,14 +96,12 @@ export const MinerCard: React.FC<MinerCardProps> = ({
       sx={(theme) => ({
         ...linkResetSx,
         p: 1,
-        backgroundColor: isEligible
-          ? theme.palette.background.default
-          : theme.palette.surface.subtle,
-        backdropFilter: 'blur(12px)',
+        backgroundColor: theme.palette.background.paper,
+        backdropFilter: theme.palette.mode === 'dark' ? 'blur(12px)' : 'none',
         border: '1px solid',
         borderColor: isEligible
-          ? alpha(theme.palette.status.merged, 0.3)
-          : theme.palette.border.subtle,
+          ? alpha(posColor, 0.3)
+          : theme.palette.border.light,
         borderRadius: 2,
         cursor: 'pointer',
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -112,19 +111,27 @@ export const MinerCard: React.FC<MinerCardProps> = ({
         gap: 1,
         position: 'relative',
         boxShadow: isEligible
-          ? `0 2px 8px ${alpha(theme.palette.background.default, 0.1)}`
-          : 'none',
+          ? theme.palette.mode === 'dark'
+            ? `0 2px 8px ${alpha(posColor, 0.08)}`
+            : '0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(26,127,55,0.06)'
+          : theme.palette.mode === 'dark'
+            ? 'none'
+            : '0 1px 3px rgba(0,0,0,0.04)',
         '&:hover': {
           backgroundColor: isEligible
             ? theme.palette.surface.elevated
-            : theme.palette.surface.light,
+            : theme.palette.surface.subtle,
           borderColor: isEligible
-            ? alpha(theme.palette.status.merged, 0.5)
-            : theme.palette.border.subtle,
-          transform: isEligible ? 'translateY(-2px)' : 'none',
+            ? alpha(posColor, 0.5)
+            : theme.palette.border.medium,
+          transform: isEligible ? 'translateY(-2px)' : 'translateY(-1px)',
           boxShadow: isEligible
-            ? `0 8px 24px -6px ${alpha(theme.palette.background.default, 0.6)}`
-            : 'none',
+            ? theme.palette.mode === 'dark'
+              ? `0 8px 24px -6px ${alpha(posColor, 0.2)}`
+              : '0 4px 16px -4px rgba(26,127,55,0.15)'
+            : theme.palette.mode === 'dark'
+              ? `0 4px 12px ${alpha(theme.palette.common.black, 0.3)}`
+              : '0 2px 8px rgba(0,0,0,0.07)',
         },
       })}
       elevation={0}
@@ -151,10 +158,10 @@ export const MinerCard: React.FC<MinerCardProps> = ({
               height: 36,
               border: '2px solid',
               borderColor: isEligible
-                ? alpha(theme.palette.status.merged, 0.3)
-                : theme.palette.border.subtle,
-              filter: isEligible ? 'none' : 'grayscale(100%)',
-              opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                ? alpha(posColor, 0.3)
+                : theme.palette.border.light,
+              filter: isEligible ? 'none' : 'grayscale(80%)',
+              opacity: isEligible ? 1 : 0.7,
               flexShrink: 0,
             })}
           />
@@ -183,8 +190,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                   fontWeight: 700,
                   color: isEligible
                     ? theme.palette.text.primary
-                    : theme.palette.text.tertiary,
-                  opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                    : theme.palette.text.secondary,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -197,10 +203,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                   fontFamily: FONTS.mono,
                   fontSize: '0.72rem',
                   fontWeight: 700,
-                  color: isEligible
-                    ? theme.palette.status.merged
-                    : theme.palette.text.tertiary,
-                  opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                  color: isEligible ? posColor : theme.palette.text.tertiary,
                   lineHeight: 1,
                   flexShrink: 0,
                 })}
@@ -228,7 +231,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                       textTransform: 'uppercase',
                       border: `1px solid ${
                         ossEligible
-                          ? alpha(theme.palette.status.merged, 0.45)
+                          ? alpha(posColor, 0.45)
                           : theme.palette.border.subtle
                       }`,
                       borderRadius: 1,
@@ -236,10 +239,10 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                       py: 0.25,
                       letterSpacing: '0.06em',
                       color: ossEligible
-                        ? theme.palette.status.merged
+                        ? posColor
                         : theme.palette.text.secondary,
                       backgroundColor: ossEligible
-                        ? alpha(theme.palette.status.merged, 0.08)
+                        ? alpha(posColor, 0.08)
                         : theme.palette.surface.subtle,
                     })}
                   >
@@ -253,7 +256,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                       textTransform: 'uppercase',
                       border: `1px solid ${
                         discoveriesEligible
-                          ? alpha(theme.palette.status.merged, 0.45)
+                          ? alpha(posColor, 0.45)
                           : theme.palette.border.subtle
                       }`,
                       borderRadius: 1,
@@ -261,10 +264,10 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                       py: 0.25,
                       letterSpacing: '0.06em',
                       color: discoveriesEligible
-                        ? theme.palette.status.merged
+                        ? posColor
                         : theme.palette.text.secondary,
                       backgroundColor: discoveriesEligible
-                        ? alpha(theme.palette.status.merged, 0.08)
+                        ? alpha(posColor, 0.08)
                         : theme.palette.surface.subtle,
                     })}
                   >
@@ -277,14 +280,14 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                     fontFamily: FONTS.mono,
                     fontSize: '0.65rem',
                     fontWeight: 700,
-                    color: theme.palette.text.secondary,
+                    color: theme.palette.status.error,
                     textTransform: 'uppercase',
-                    border: `1px solid ${theme.palette.border.subtle}`,
+                    border: `1px solid ${alpha(theme.palette.status.error, 0.3)}`,
                     borderRadius: 1,
                     px: 0.75,
                     py: 0.25,
                     letterSpacing: '0.06em',
-                    backgroundColor: theme.palette.surface.subtle,
+                    backgroundColor: alpha(theme.palette.status.error, 0.06),
                   })}
                 >
                   Ineligible
@@ -320,10 +323,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                 fontFamily: FONTS.mono,
                 fontSize: '1.6rem',
                 fontWeight: 800,
-                color: isEligible
-                  ? theme.palette.status.merged
-                  : theme.palette.text.tertiary,
-                opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                color: isEligible ? posColor : theme.palette.text.secondary,
                 lineHeight: 1,
               })}
             >
@@ -336,20 +336,17 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                 color: isEligible
                   ? theme.palette.status.open
                   : theme.palette.text.tertiary,
-                opacity: isEligible ? 1 : INACTIVE_OPACITY,
               })}
             >
               /day
             </Typography>
           </Box>
           <Typography
-            sx={(theme) => ({
+            sx={() => ({
               fontFamily: FONTS.mono,
               fontSize: '0.7rem',
-              color: isEligible
-                ? theme.palette.status.merged
-                : theme.palette.text.tertiary,
-              opacity: isEligible ? 0.7 : INACTIVE_OPACITY,
+              color: isEligible ? posColor : muiTheme.palette.text.tertiary,
+              opacity: 0.7,
               mt: 0.2,
             })}
           >
@@ -410,14 +407,19 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
 }) => {
   const muiTheme = useTheme();
   const inactiveColor = alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY);
+  const positiveColor = getPositiveColor(muiTheme);
 
   const statColors = isEligible
     ? [
-        STATUS_COLORS.merged,
+        positiveColor,
         alpha(muiTheme.palette.text.primary, 0.84),
         muiTheme.palette.status.closed,
       ]
-    : [inactiveColor, inactiveColor, inactiveColor];
+    : [
+        alpha(positiveColor, 0.55),
+        muiTheme.palette.text.tertiary,
+        alpha(muiTheme.palette.status.closed, 0.55),
+      ];
 
   const issueSegments = getIssueSegments(miner);
   const issueDiscoveryScore = Number(miner.issueDiscoveryScore ?? 0);
@@ -431,7 +433,6 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
         backgroundColor: isEligible
           ? alpha(theme.palette.background.default, 0.2)
           : theme.palette.surface.subtle,
-        opacity: isEligible ? 1 : 0.62,
         borderRadius: 1.5,
         p: 1,
       })}
@@ -456,11 +457,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
         <Box
           sx={(theme) => ({
             textAlign: 'right',
-            borderLeft: `1px solid ${
-              isEligible
-                ? theme.palette.border.light
-                : theme.palette.border.subtle
-            }`,
+            borderLeft: `1px solid ${theme.palette.border.light}`,
             pl: 1.5,
           })}
         >
@@ -471,7 +468,9 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
             sx={{
               fontFamily: FONTS.mono,
               fontSize: '0.9rem',
-              color: isEligible ? muiTheme.palette.text.primary : inactiveColor,
+              color: isEligible
+                ? muiTheme.palette.text.primary
+                : muiTheme.palette.text.secondary,
               fontWeight: 700,
             }}
           >
@@ -507,11 +506,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
             <Box
               sx={(theme) => ({
                 textAlign: 'right',
-                borderLeft: `1px solid ${
-                  isEligible
-                    ? theme.palette.border.light
-                    : theme.palette.border.subtle
-                }`,
+                borderLeft: `1px solid ${theme.palette.border.light}`,
                 pl: 1.5,
               })}
             >
@@ -574,7 +569,7 @@ const StatLabel: React.FC<{
       fontSize: '0.6rem',
       color: isEligible
         ? theme.palette.status.open
-        : alpha(theme.palette.text.tertiary, INACTIVE_OPACITY),
+        : theme.palette.text.tertiary,
       textTransform: 'uppercase',
       mb: 0.2,
     })}
@@ -599,6 +594,8 @@ const CredDonut: React.FC<CredDonutProps> = ({
   size = 48,
 }) => {
   const muiTheme = useTheme();
+  const positiveColor = getPositiveColor(muiTheme);
+  const chartSegmentColors = getChartSegmentColors(muiTheme);
 
   return (
     <Box
@@ -631,7 +628,7 @@ const CredDonut: React.FC<CredDonutProps> = ({
                   value: segment.value,
                   itemStyle: {
                     color: isEligible
-                      ? CHART_SEGMENT_COLORS[i]
+                      ? chartSegmentColors[i]
                       : alpha(
                           muiTheme.palette.text.secondary,
                           INACTIVE_OPACITY * CHART_INACTIVE_RATIOS[i],
@@ -657,16 +654,16 @@ const CredDonut: React.FC<CredDonutProps> = ({
           }}
         >
           <Typography
-            sx={(theme) => ({
+            sx={{
               fontFamily: FONTS.mono,
               fontSize: size <= 48 ? '0.65rem' : '0.75rem',
               color: isEligible
                 ? percent >= 80
-                  ? STATUS_COLORS.merged
-                  : STATUS_COLORS.open
-                : theme.palette.text.tertiary,
+                  ? positiveColor
+                  : muiTheme.palette.status.open
+                : muiTheme.palette.text.tertiary,
               fontWeight: 700,
-            })}
+            }}
           >
             {percent.toFixed(0)}%
           </Typography>

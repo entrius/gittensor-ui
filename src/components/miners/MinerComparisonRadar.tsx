@@ -99,7 +99,7 @@ const MinerComparisonRadar: React.FC<MinerComparisonRadarProps> = ({
 
     const textPrimary = theme.palette.text.primary;
     const textSecondary = alpha(textPrimary, 0.66);
-    const axisColor = alpha(theme.palette.common.white, TEXT_OPACITY.secondary);
+    const axisColor = alpha(theme.palette.text.primary, TEXT_OPACITY.secondary);
     const barTrack = alpha(textPrimary, 0.08);
 
     return {
@@ -158,12 +158,12 @@ const MinerComparisonRadar: React.FC<MinerComparisonRadarProps> = ({
         axisName: { color: axisColor, fontSize: 10, lineHeight: 12 },
         splitLine: {
           lineStyle: {
-            color: Array(5).fill(alpha(theme.palette.common.white, 0.05)),
+            color: Array(5).fill(alpha(theme.palette.text.primary, 0.05)),
           },
         },
         splitArea: { show: false },
         axisLine: {
-          lineStyle: { color: alpha(theme.palette.common.white, 0.1) },
+          lineStyle: { color: alpha(theme.palette.text.primary, 0.1) },
         },
       },
       series: [{ type: 'radar', data, emphasis: { lineStyle: { width: 3 } } }],

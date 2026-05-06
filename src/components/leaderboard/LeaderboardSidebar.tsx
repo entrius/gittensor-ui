@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Box, Stack, Typography, Avatar } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { SectionCard } from './SectionCard';
-import { STATUS_COLORS, scrollbarSx } from '../../theme';
+import { scrollbarSx } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { LinkBox } from '../common/linkBehavior';
 import { type MinerStats, FONTS } from './types';
@@ -114,7 +114,8 @@ const LeaderboardTabs: React.FC<LeaderboardTabsProps> = ({
     sx={(theme) => ({
       display: 'flex',
       gap: 0.5,
-      backgroundColor: theme.palette.surface.light,
+      backgroundColor: theme.palette.surface.control,
+      border: `1px solid ${theme.palette.mode === 'dark' ? 'transparent' : theme.palette.border.light}`,
       p: 0.5,
       borderRadius: 2,
     })}
@@ -138,16 +139,20 @@ const LeaderboardTabs: React.FC<LeaderboardTabsProps> = ({
           cursor: 'pointer',
           backgroundColor:
             activeTab === option.value
-              ? alpha(theme.palette.text.primary, 0.15)
+              ? theme.palette.mode === 'dark'
+                ? alpha(theme.palette.text.primary, 0.15)
+                : theme.palette.status.success
               : 'transparent',
           color:
             activeTab === option.value
-              ? theme.palette.text.primary
-              : STATUS_COLORS.open,
+              ? theme.palette.mode === 'dark'
+                ? theme.palette.text.primary
+                : theme.palette.common.white
+              : theme.palette.status.open,
           transition: 'all 0.2s',
           '&:hover': {
-            backgroundColor: alpha(theme.palette.text.primary, 0.1),
-            color: theme.palette.text.primary,
+            backgroundColor: theme.palette.surface.subtle,
+            color: theme.palette.text.secondary,
           },
         })}
       >
@@ -186,7 +191,7 @@ const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({
       sx={{
         fontFamily: FONTS.mono,
         fontSize: '0.7rem',
-        color: STATUS_COLORS.open,
+        color: 'status.open',
         width: 24,
         textTransform: 'uppercase',
       }}
@@ -197,7 +202,7 @@ const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({
       sx={{
         fontFamily: FONTS.mono,
         fontSize: '0.7rem',
-        color: STATUS_COLORS.open,
+        color: 'status.open',
         flex: 1,
         textTransform: 'uppercase',
       }}
@@ -208,7 +213,7 @@ const LeaderboardHeader: React.FC<LeaderboardHeaderProps> = ({
       sx={{
         fontFamily: FONTS.mono,
         fontSize: '0.7rem',
-        color: STATUS_COLORS.open,
+        color: 'status.open',
         textTransform: 'uppercase',
       }}
     >
@@ -258,7 +263,7 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
         sx={{
           fontFamily: FONTS.mono,
           fontSize: '0.85rem',
-          color: STATUS_COLORS.open,
+          color: 'status.open',
           width: 24,
         }}
       >
@@ -296,7 +301,7 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
           fontSize: '0.95rem',
           color:
             type === 'earners'
-              ? STATUS_COLORS.merged
+              ? theme.palette.status.merged
               : theme.palette.text.primary,
           fontWeight: 600,
         })}

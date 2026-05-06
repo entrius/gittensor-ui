@@ -46,13 +46,26 @@ const getRankTextColor = (rank: number, fallbackColor: string): string => {
 
 const RankBadge: React.FC<RankBadgeProps> = ({ rank, displayNumber }) => {
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const rankColor = getRankPodiumColor(rank);
   const defaultBorderColor = alpha(theme.palette.text.primary, 0.15);
   const defaultTextColor = alpha(theme.palette.text.primary, 0.6);
+
+  const bgColor = !isDark && rankColor ? rankColor : 'background.default';
+  const textColor =
+    !isDark && rankColor
+      ? theme.palette.common.white
+      : getRankTextColor(rank, defaultTextColor);
+  const borderColor =
+    !isDark && rankColor
+      ? rankColor
+      : getRankBorderColor(rank, defaultBorderColor);
+  const boxShadow = isDark ? getRankBoxShadow(rank) : 'none';
 
   return (
     <Box
       sx={{
-        backgroundColor: 'background.default',
+        backgroundColor: bgColor,
         borderRadius: '2px',
         width: '28px',
         height: '28px',
@@ -61,14 +74,14 @@ const RankBadge: React.FC<RankBadgeProps> = ({ rank, displayNumber }) => {
         justifyContent: 'center',
         flexShrink: 0,
         border: '1px solid',
-        borderColor: getRankBorderColor(rank, defaultBorderColor),
-        boxShadow: getRankBoxShadow(rank),
+        borderColor,
+        boxShadow,
       }}
     >
       <Typography
         component="span"
         sx={{
-          color: getRankTextColor(rank, defaultTextColor),
+          color: textColor,
           fontSize: '0.7rem',
           fontWeight: 600,
           lineHeight: 1,

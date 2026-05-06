@@ -1,5 +1,13 @@
 import React from 'react';
-import { Box, Typography, Avatar, Button, Tooltip, alpha } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Avatar,
+  Button,
+  Tooltip,
+  alpha,
+  useTheme,
+} from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
@@ -10,7 +18,6 @@ import {
   getRepositoryOwnerAvatarSrc,
 } from '../../utils';
 import { type PullRequestDetails } from '../../api/models/Dashboard';
-import { STATUS_COLORS } from '../../theme';
 import { getRepositoryOwnerAvatarBackground } from '../leaderboard/types';
 interface PRHeaderProps {
   repository: string;
@@ -23,6 +30,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
   pullRequestNumber,
   prDetails,
 }) => {
+  const theme = useTheme();
   const [owner] = repository.split('/');
   const repoLinkProps = useLinkBehavior<HTMLAnchorElement>(
     `/miners/repository?name=${encodeURIComponent(repository)}`,
@@ -53,10 +61,10 @@ const PRHeader: React.FC<PRHeaderProps> = ({
   const ownerAvatarBackground = getRepositoryOwnerAvatarBackground(owner);
   const statusColor =
     prDetails.prState === 'CLOSED'
-      ? STATUS_COLORS.closed
+      ? theme.palette.status.closed
       : prDetails.prState === 'MERGED'
-        ? STATUS_COLORS.merged
-        : STATUS_COLORS.open;
+        ? theme.palette.status.merged
+        : theme.palette.status.open;
 
   return (
     <Box
@@ -147,9 +155,9 @@ const PRHeader: React.FC<PRHeaderProps> = ({
             startIcon={<OpenInNewIcon />}
             aria-label="Open on GitHub"
             sx={{
-              color: STATUS_COLORS.info,
-              borderColor: alpha(STATUS_COLORS.info, 0.5),
-              backgroundColor: alpha(STATUS_COLORS.info, 0.1),
+              color: theme.palette.status.info,
+              borderColor: alpha(theme.palette.status.info, 0.5),
+              backgroundColor: alpha(theme.palette.status.info, 0.1),
               textTransform: 'none',
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: { xs: '0.75rem', sm: '0.8rem' },
@@ -163,9 +171,9 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                 ml: { xs: 0, sm: 0 },
               },
               '&:hover': {
-                borderColor: STATUS_COLORS.info,
-                color: STATUS_COLORS.info,
-                backgroundColor: alpha(STATUS_COLORS.info, 0.2),
+                borderColor: theme.palette.status.info,
+                color: theme.palette.status.info,
+                backgroundColor: alpha(theme.palette.status.info, 0.2),
               },
             }}
           >
@@ -252,11 +260,11 @@ const PRHeader: React.FC<PRHeaderProps> = ({
                   ...chipSx,
                   borderColor:
                     collateralScore > 0
-                      ? alpha(STATUS_COLORS.error, 0.3)
+                      ? alpha(theme.palette.status.error, 0.3)
                       : 'border.light',
                   backgroundColor:
                     collateralScore > 0
-                      ? alpha(STATUS_COLORS.error, 0.08)
+                      ? alpha(theme.palette.status.error, 0.08)
                       : 'surface.subtle',
                 }}
               >
@@ -365,14 +373,14 @@ const PRHeader: React.FC<PRHeaderProps> = ({
             <Box
               sx={{
                 ...chipSx,
-                borderColor: alpha(STATUS_COLORS.merged, 0.25),
-                backgroundColor: alpha(STATUS_COLORS.merged, 0.08),
+                borderColor: alpha(theme.palette.status.merged, 0.25),
+                backgroundColor: alpha(theme.palette.status.merged, 0.08),
               }}
             >
               <EventAvailableIcon
                 sx={{
                   fontSize: '0.95rem',
-                  color: STATUS_COLORS.merged,
+                  color: theme.palette.status.merged,
                 }}
               />
               <Typography

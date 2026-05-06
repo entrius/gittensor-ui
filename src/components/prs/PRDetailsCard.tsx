@@ -7,15 +7,16 @@ import {
   Avatar,
   alpha,
   Tooltip,
+  useTheme,
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ReactECharts from 'echarts-for-react';
 import { usePullRequestDetails } from '../../api';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
-import theme, {
+import {
   CHART_COLORS,
-  STATUS_COLORS,
   TEXT_OPACITY,
+  UI_COLORS,
   tooltipSlotProps,
 } from '../../theme';
 import { getRepositoryOwnerAvatarSrc, parseNumber } from '../../utils';
@@ -33,6 +34,13 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   pullRequestNumber,
   hideHeader = false,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const chartMerged = isDark
+    ? CHART_COLORS.merged
+    : theme.palette.status.success;
+  const chartOpen = isDark ? CHART_COLORS.open : theme.palette.border.light;
+
   // Fetch detailed PR data directly
   const { data: prDetails, isLoading: isDetailsLoading } =
     usePullRequestDetails(repository, pullRequestNumber);
@@ -45,7 +53,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     return (
       <Card
         sx={{
-          backgroundColor: alpha(theme.palette.common.white, 0.02),
+          backgroundColor: alpha(theme.palette.text.primary, 0.02),
           borderRadius: '8px',
           border: '1px solid',
           borderColor: 'border.subtle',
@@ -63,7 +71,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     return (
       <Card
         sx={{
-          backgroundColor: alpha(theme.palette.common.white, 0.02),
+          backgroundColor: alpha(theme.palette.text.primary, 0.02),
           borderRadius: '8px',
           border: '1px solid',
           borderColor: 'border.subtle',
@@ -72,7 +80,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
       >
         <Typography
           sx={{
-            color: alpha(STATUS_COLORS.error, 0.9),
+            color: alpha(theme.palette.status.error, 0.9),
             fontSize: '0.9rem',
           }}
         >
@@ -146,7 +154,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             fontWeight: 'bold',
           },
           subtextStyle: {
-            color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+            color: alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
             fontSize: 11,
             fontWeight: 500,
           },
@@ -155,8 +163,8 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
           trigger: 'item',
           confine: true,
           formatter: '{b}: {c} ({d}%)',
-          backgroundColor: alpha(theme.palette.common.black, 0.9),
-          borderColor: alpha(theme.palette.common.white, 0.15),
+          backgroundColor: theme.palette.surface.tooltip,
+          borderColor: alpha(theme.palette.text.primary, 0.15),
           borderWidth: 1,
           textStyle: { color: theme.palette.text.primary },
           extraCssText:
@@ -180,12 +188,12 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               {
                 value: structuralScoreNum,
                 name: 'Structural',
-                itemStyle: { color: CHART_COLORS.merged },
+                itemStyle: { color: chartMerged },
               },
               {
                 value: leafScoreNum,
                 name: 'Leaf',
-                itemStyle: { color: CHART_COLORS.open },
+                itemStyle: { color: chartOpen },
               },
             ],
           },
@@ -224,12 +232,12 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               sx={{
                 width: 64,
                 height: 64,
-                border: `2px solid ${alpha(theme.palette.common.white, 0.2)}`,
+                border: `2px solid ${alpha(theme.palette.text.primary, 0.2)}`,
                 backgroundColor:
                   owner === 'opentensor'
-                    ? theme.palette.common.white
+                    ? theme.palette.text.primary
                     : owner === 'bitcoin'
-                      ? '#F7931A'
+                      ? UI_COLORS.bitcoinOrange
                       : 'transparent',
               }}
             />
@@ -298,7 +306,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                 sx={{
                   ...linkResetSx,
                   color: alpha(
-                    theme.palette.common.white,
+                    theme.palette.text.primary,
                     TEXT_OPACITY.tertiary,
                   ),
                   fontSize: '0.85rem',
@@ -323,12 +331,12 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
           borderRadius: 3,
           p: { xs: 2, sm: 2.5 },
           mb: 3,
-          backgroundColor: alpha(theme.palette.common.white, 0.015),
+          backgroundColor: alpha(theme.palette.text.primary, 0.015),
         }}
       >
         <Typography
           sx={{
-            color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
+            color: alpha(theme.palette.text.primary, TEXT_OPACITY.secondary),
             fontSize: '0.8rem',
             textTransform: 'uppercase',
             letterSpacing: '1px',
@@ -351,9 +359,9 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             const accent = isNaN(numeric)
               ? theme.palette.text.tertiary
               : numeric > 1
-                ? STATUS_COLORS.success
+                ? theme.palette.status.success
                 : numeric < 1
-                  ? STATUS_COLORS.warningOrange
+                  ? theme.palette.status.warningOrange
                   : theme.palette.text.tertiary;
             const chip = (
               <Box
@@ -372,7 +380,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                 <Typography
                   sx={{
                     color: alpha(
-                      theme.palette.common.white,
+                      theme.palette.text.primary,
                       TEXT_OPACITY.secondary,
                     ),
                     fontSize: '0.75rem',
@@ -412,7 +420,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                     <Typography
                       sx={{
                         fontSize: '0.7rem',
-                        color: alpha(theme.palette.common.white, 0.9),
+                        color: alpha(theme.palette.text.primary, 0.9),
                       }}
                     >
                       Based on your PR success rate, scaled to reward
@@ -474,7 +482,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                     ? `1px solid ${theme.palette.border.subtle}`
                     : undefined,
                 '&:hover': {
-                  backgroundColor: alpha(theme.palette.common.white, 0.02),
+                  backgroundColor: alpha(theme.palette.text.primary, 0.02),
                 },
               }}
             >
@@ -488,7 +496,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                 <Typography
                   sx={{
                     color: alpha(
-                      theme.palette.common.white,
+                      theme.palette.text.primary,
                       TEXT_OPACITY.tertiary,
                     ),
                     fontSize: '0.7rem',
@@ -542,7 +550,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                       component="span"
                       sx={{
                         color: alpha(
-                          theme.palette.common.white,
+                          theme.palette.text.primary,
                           TEXT_OPACITY.muted,
                         ),
                         fontSize: '1rem',
@@ -578,7 +586,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                   <Typography
                     sx={{
                       color: alpha(
-                        theme.palette.common.white,
+                        theme.palette.text.primary,
                         TEXT_OPACITY.tertiary,
                       ),
                       fontSize: '0.8rem',
@@ -606,7 +614,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             <Typography
               sx={{
                 color: alpha(
-                  theme.palette.common.white,
+                  theme.palette.text.primary,
                   TEXT_OPACITY.secondary,
                 ),
                 fontSize: '0.7rem',
@@ -637,8 +645,8 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
               }}
             >
               {[
-                { label: 'Structural', color: CHART_COLORS.merged },
-                { label: 'Leaf', color: CHART_COLORS.open },
+                { label: 'Structural', color: chartMerged },
+                { label: 'Leaf', color: chartOpen },
               ].map(({ label, color }) => (
                 <Box
                   key={label}
@@ -655,7 +663,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                   <Typography
                     sx={{
                       color: alpha(
-                        theme.palette.common.white,
+                        theme.palette.text.primary,
                         TEXT_OPACITY.tertiary,
                       ),
                       fontSize: '0.7rem',

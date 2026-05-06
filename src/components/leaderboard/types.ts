@@ -1,8 +1,4 @@
-import {
-  RANK_COLORS,
-  REPO_OWNER_AVATAR_BACKGROUNDS,
-  STATUS_COLORS,
-} from '../../theme';
+import { RANK_COLORS, REPO_OWNER_AVATAR_BACKGROUNDS } from '../../theme';
 
 export interface MinerStats {
   id: string;
@@ -79,7 +75,8 @@ export const getRankColors = (rank: number) => {
   if (rank === 1) return { color: RANK_COLORS.first, icon: '🥇' };
   if (rank === 2) return { color: RANK_COLORS.second, icon: '🥈' };
   if (rank === 3) return { color: RANK_COLORS.third, icon: '🥉' };
-  return { color: STATUS_COLORS.open, icon: null };
+  // Resolved by MUI sx via the active palette so it follows light/dark mode.
+  return { color: 'status.open' as const, icon: null };
 };
 
 export const getRepositoryOwnerAvatarBackground = (owner: string) => {
@@ -89,9 +86,8 @@ export const getRepositoryOwnerAvatarBackground = (owner: string) => {
 };
 
 export const headerCellStyle = {
-  backgroundColor: 'surface.tooltip',
-  backdropFilter: 'blur(8px)',
-  color: 'text.primary',
+  backgroundColor: 'surface.elevated',
+  color: 'text.secondary',
   fontFamily: FONTS.mono,
   fontWeight: 500,
   fontSize: '0.75rem',
