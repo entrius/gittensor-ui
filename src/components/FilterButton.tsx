@@ -8,6 +8,8 @@ interface FilterButtonProps {
   count?: number;
   color: string;
   activeTextColor?: string;
+  /** Full-width row (e.g. sidebar Filters); inactive rows get a light outline for even hit-targets. */
+  fullWidth?: boolean;
 }
 
 const FilterButton: React.FC<FilterButtonProps> = ({
@@ -17,19 +19,39 @@ const FilterButton: React.FC<FilterButtonProps> = ({
   count,
   color,
   activeTextColor = 'text.primary',
+  fullWidth = false,
 }) => (
   <Button
     size="small"
+    fullWidth={fullWidth}
     onClick={onClick}
     sx={{
-      color: isActive ? activeTextColor : 'text.tertiary',
-      backgroundColor: isActive ? 'border.subtle' : 'transparent',
+      color: isActive
+        ? activeTextColor
+        : fullWidth
+          ? 'text.secondary'
+          : 'text.tertiary',
+      backgroundColor: isActive
+        ? 'border.subtle'
+        : fullWidth
+          ? 'surface.subtle'
+          : 'transparent',
       borderRadius: '6px',
-      px: 2,
+      px: fullWidth ? 1.5 : 2,
       minWidth: 'auto',
       textTransform: 'none',
       fontSize: '0.8rem',
-      border: isActive ? `1px solid ${color}` : '1px solid transparent',
+      border: '1px solid',
+      borderColor: isActive
+        ? color
+        : fullWidth
+          ? 'border.light'
+          : 'transparent',
+      ...(fullWidth && {
+        justifyContent: 'space-between',
+        py: 1,
+        fontWeight: isActive ? 600 : 500,
+      }),
       '&:hover': {
         backgroundColor: 'border.light',
       },

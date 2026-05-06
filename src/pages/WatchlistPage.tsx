@@ -16,6 +16,7 @@ import {
   Grid,
   IconButton,
   InputAdornment,
+  Portal,
   Popover,
   Switch,
   TextField,
@@ -31,9 +32,10 @@ import {
   Tabs,
   Badge,
   useMediaQuery,
-  Portal,
 } from '@mui/material';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import SearchIcon from '@mui/icons-material/Search';
+import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import BarChartIcon from '@mui/icons-material/BarChart';
@@ -42,8 +44,6 @@ import ReactECharts from 'echarts-for-react';
 import StarIcon from '@mui/icons-material/Star';
 import PersonIcon from '@mui/icons-material/Person';
 import FolderIcon from '@mui/icons-material/Folder';
-import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { useTwitterStickySidebar } from '../hooks/useTwitterStickySidebar';
@@ -58,6 +58,10 @@ import {
   type DataTableColumn,
 } from '../components/common/DataTable';
 import { LinkBox } from '../components/common/linkBehavior';
+import {
+  TabsOptionsPortal,
+  TabsOptionsLabel as OptionsLabel,
+} from '../components/common/TabsOptionsPortal';
 import {
   useAllMiners,
   useReposAndWeights,
@@ -519,22 +523,88 @@ const WatchlistPage: React.FC = () => {
   );
 };
 
-/* ─── OptionsLabel: section header inside popovers ─── */
-const OptionsLabel: React.FC<{ children: React.ReactNode }> = ({
-  children,
+const rowSx = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 2,
+  px: 1.5,
+  py: 1.25,
+  borderRadius: 1,
+  transition: 'background 0.15s',
+  '&:hover': { backgroundColor: 'surface.light' },
+};
+
+const primaryTextSx = {
+  fontSize: '0.85rem',
+  color: 'text.primary',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+};
+
+const secondaryTextSx = {
+  fontSize: '0.7rem',
+  color: 'text.secondary',
+  mt: 0.25,
+};
+
+interface WatchedItemRowProps {
+  href: string;
+  primary: React.ReactNode;
+  secondary?: React.ReactNode;
+  actions: React.ReactNode;
+}
+
+// LinkBox wraps only the navigable text area (not the whole row) so the
+// star button — a real <button> — is a sibling of the <a>, not a descendant.
+// Keeps middle-click / Cmd-click / "Open in new tab" working natively while
+// avoiding invalid interactive-inside-anchor HTML.
+const WatchedItemRow: React.FC<WatchedItemRowProps> = ({
+  href,
+  primary,
+  secondary,
+  actions,
+}) => (
+  <Box sx={rowSx}>
+    <LinkBox
+      href={href}
+      linkState={{ backLabel: 'Back to Watchlist' }}
+      sx={{ display: 'block', minWidth: 0, flex: 1 }}
+    >
+      <Typography sx={primaryTextSx}>{primary}</Typography>
+      {secondary !== undefined && (
+        <Typography sx={secondaryTextSx}>{secondary}</Typography>
+      )}
+    </LinkBox>
+    <Stack direction="row" spacing={2} alignItems="center">
+      {actions}
+    </Stack>
+  </Box>
+);
+
+interface StatusPillProps {
+  label: string;
+  color: string;
+  background: string;
+}
+
+const StatusPill: React.FC<StatusPillProps> = ({
+  label,
+  color,
+  background,
 }) => (
   <Typography
     sx={{
-      fontFamily: '"JetBrains Mono", monospace',
-      fontSize: '0.65rem',
-      fontWeight: 600,
-      color: 'text.secondary',
-      textTransform: 'uppercase',
-      letterSpacing: '0.08em',
-      mb: 1,
+      fontSize: '0.72rem',
+      color,
+      backgroundColor: background,
+      px: 1,
+      py: 0.25,
+      borderRadius: 0.75,
     }}
   >
-    {children}
+    {label}
   </Typography>
 );
 
@@ -1613,7 +1683,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         overflow: 'hidden',
       }}
     >
-      <WatchlistPortal
+      <TabsOptionsPortal
         filterContent={
           <Box
             sx={{
@@ -2241,7 +2311,6 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                       linkState={{ backLabel: 'Back to Watchlist' }}
                       taoPrice={taoPrice}
                       alphaPrice={alphaPrice}
-                      compact
                     />
                   </Box>
                 </Grid>
@@ -2903,7 +2972,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       }}
     >
       {/* Compact Options trigger */}
-      <WatchlistPortal
+      <TabsOptionsPortal
         filterContent={
           <Box
             sx={{
@@ -3683,7 +3752,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
       }}
     >
       {/* Compact Options trigger */}
-      <WatchlistPortal
+      <TabsOptionsPortal
         filterContent={
           <Box
             sx={{
