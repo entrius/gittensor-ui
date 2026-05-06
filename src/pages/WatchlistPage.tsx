@@ -78,6 +78,7 @@ import {
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
 import { useWatchedPRs, type WatchedPRSource } from '../hooks/useWatchedPRs';
+import { useSessionStoredState, oneOf } from '../hooks/useSessionStoredState';
 import {
   isMergedPr,
   isClosedUnmergedPr,
@@ -1418,7 +1419,12 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: repos } = useReposAndWeights();
   const { data: allPrs } = useAllPrs();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<RepoStatusFilter>('all');
+  const [statusFilter, setStatusFilter] =
+    useSessionStoredState<RepoStatusFilter>(
+      'watchlist:repos:statusFilter',
+      'all',
+      oneOf(['all', 'active', 'inactive'] as const),
+    );
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [showChart, setShowChart] = useState(false);
   const [useLogScale, setUseLogScale] = useState(false);
@@ -2468,7 +2474,11 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const prColumns = useMemo(() => buildPrColumns(sourcesByKey), [sourcesByKey]);
   const { isWatched } = useWatchlist('prs');
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useSessionStoredState<PrStatusFilter>(
+    'watchlist:prs:statusFilter',
+    'all',
+    oneOf(['all', 'open', 'merged', 'closed'] as const),
+  );
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [page, setPage] = useState(0);
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -3259,7 +3269,12 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   }, [issueQueries]);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<IssueStatusFilter>('all');
+  const [statusFilter, setStatusFilter] =
+    useSessionStoredState<IssueStatusFilter>(
+      'watchlist:issues:statusFilter',
+      'all',
+      oneOf(ISSUE_STATUS_FILTERS),
+    );
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [page, setPage] = useState(0);
   const observerTarget = useRef<HTMLDivElement>(null);
