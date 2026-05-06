@@ -387,6 +387,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         getRowKey={(pr) => `${pr.repository}-${pr.pullRequestNumber}`}
         stickyHeader
         size="medium"
+        minWidth={820}
         header={headerToolbar}
         emptyState={
           <Box sx={{ p: 4, textAlign: 'center' }}>
