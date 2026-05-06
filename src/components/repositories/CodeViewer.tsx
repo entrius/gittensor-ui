@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { scrollbarSx } from '../../theme';
 import {
   Box,
@@ -8,10 +8,10 @@ import {
   alpha,
   useTheme,
 } from '@mui/material';
-import axios from 'axios';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import ReactMarkdown from 'react-markdown';
+import { githubErrorMessage, useGithubQuery } from '../../api';
 
 interface CodeViewerProps {
   repositoryFullName: string;
@@ -19,59 +19,38 @@ interface CodeViewerProps {
   defaultBranch?: string;
 }
 
+const IMAGE_EXTENSIONS = new Set([
+  'png',
+  'jpg',
+  'jpeg',
+  'gif',
+  'svg',
+  'webp',
+  'ico',
+]);
+
 const CodeViewer: React.FC<CodeViewerProps> = ({
   repositoryFullName,
   filePath,
   defaultBranch = 'main',
 }) => {
   const theme = useTheme();
-  const [content, setContent] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
 
   const extension = filePath?.split('.').pop()?.toLowerCase();
-  const isImage =
-    extension &&
-    ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico'].includes(extension);
+  const isImage = !!extension && IMAGE_EXTENSIONS.has(extension);
   const rawUrl = filePath
     ? `https://cdn.jsdelivr.net/gh/${repositoryFullName}@${defaultBranch}/${filePath}`
     : '';
 
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const fetchContent = async () => {
-      if (!filePath || isImage) {
-        // Don't fetch text content for images or if no file selected
-        setContent(null);
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-      try {
-        // Use raw.githubusercontent.com
-        const response = await axios.get(rawUrl, {
-          transformResponse: [(data) => data],
-          signal: controller.signal,
-        }); // Force text
-        if (controller.signal.aborted) return;
-        setContent(response.data);
-      } catch (err) {
-        if (axios.isCancel(err) || controller.signal.aborted) return;
-        console.error('Failed to fetch file content', err);
-        setError(
-          'Could not load file content. It might be binary or too large.',
-        );
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
-      }
-    };
-
-    fetchContent();
-    return () => controller.abort();
-  }, [repositoryFullName, filePath, defaultBranch, isImage, rawUrl]);
+  // Images render directly in an <img>; only fetch text content here.
+  const {
+    data: content,
+    error,
+    isLoading,
+  } = useGithubQuery<string>(!filePath || isImage ? null : rawUrl, {
+    responseType: 'text',
+    enabled: !!filePath && !isImage,
+  });
 
   if (!filePath) {
     return (
@@ -90,7 +69,7 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
     );
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
         <CircularProgress />
@@ -101,7 +80,10 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
   if (error) {
     return (
       <Alert severity="error" sx={{ m: 2 }}>
-        {error}
+        {githubErrorMessage(
+          error,
+          'Could not load file content. It might be binary or too large.',
+        )}
       </Alert>
     );
   }
@@ -136,7 +118,6 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
     );
   }
 
-  // Special rendering for markdown
   if (extension === 'md') {
     return (
       <Box

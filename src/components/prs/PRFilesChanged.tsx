@@ -31,7 +31,6 @@ import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import ViewAgendaIcon from '@mui/icons-material/ViewAgenda'; // Unified
 import ViewColumnIcon from '@mui/icons-material/ViewColumn'; // Split
-import axios from 'axios';
 
 import parseDiff, {
   type Change,
@@ -46,6 +45,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
 import { STATUS_COLORS, DIFF_COLORS, scrollbarSx } from '../../theme';
 import { useClipboardCopy } from '../../hooks/useClipboardCopy';
+import { githubErrorMessage, useGithubQuery } from '../../api';
 
 interface PRFile {
   sha: string;
@@ -1291,59 +1291,36 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
   pullRequestNumber,
   headSha,
 }) => {
-  // ... existing state ...
-  const [files, setFiles] = useState<PRFile[]>([]);
-  const [fullTreeData, setFullTreeData] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'unified' | 'split'>('split');
   const [lineWrap, setLineWrap] = useState(false);
 
-  // ... existing useEffect ... (keep it)
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const filesResponse = await axios.get(
-          `https://api.github.com/repos/${repository}/pulls/${pullRequestNumber}/files?per_page=100`,
-        );
-        const changedFiles = filesResponse.data;
-        setFiles(changedFiles);
+  const enabled = !!repository && !!pullRequestNumber;
+  const filesQuery = useGithubQuery<PRFile[]>(
+    `https://api.github.com/repos/${repository}/pulls/${pullRequestNumber}/files`,
+    { params: { per_page: 100 }, enabled },
+  );
+  const treeSha = headSha || 'main';
+  const treeQuery = useGithubQuery<{
+    tree?: { path: string; type: 'blob' | 'tree' }[];
+  }>(`https://api.github.com/repos/${repository}/git/trees/${treeSha}`, {
+    params: { recursive: 1 },
+    enabled,
+  });
 
-        const treeSha = headSha || 'main';
-        try {
-          const treeResponse = await axios.get(
-            `https://api.github.com/repos/${repository}/git/trees/${treeSha}?recursive=1`,
-          );
-          if (treeResponse.data.tree) {
-            setFullTreeData(treeResponse.data.tree);
-          }
-        } catch (treeErr) {
-          console.error(
-            'Failed to fetch full tree, falling back to sparse tree',
-            treeErr,
-          );
-          setFullTreeData(
-            changedFiles.map((f: PRFile) => ({
-              path: f.filename,
-              type: 'blob' as const,
-            })),
-          );
-        }
-      } catch (err: unknown) {
-        console.error('Failed to fetch PR data', err);
-        setError('Failed to load data.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const files = useMemo(() => filesQuery.data ?? [], [filesQuery.data]);
+  const loading = filesQuery.isLoading || (enabled && treeQuery.isLoading);
+  const error = filesQuery.error;
 
-    if (repository && pullRequestNumber) {
-      fetchData();
-    }
-  }, [repository, pullRequestNumber, headSha]);
+  // Tree is best-effort: when GitHub rejects (e.g. SHA missing), fall back to a
+  // sparse tree built from the changed-files list so the sidebar still renders.
+  const fullTreeData = useMemo(() => {
+    if (treeQuery.data?.tree) return treeQuery.data.tree;
+    return files.map((f) => ({
+      path: f.filename,
+      type: 'blob' as const,
+    }));
+  }, [treeQuery.data, files]);
 
   const fileTree = useMemo(
     () => buildFullTree(fullTreeData, files),
@@ -1387,7 +1364,9 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
           textAlign: 'center',
         }}
       >
-        <Typography>{error}</Typography>
+        <Typography>
+          {githubErrorMessage(error, 'Failed to load data.')}
+        </Typography>
       </Box>
     );
   }

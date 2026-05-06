@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Box,
   Paper,
@@ -13,67 +13,56 @@ import rehypeRaw from 'rehype-raw';
 import axios from 'axios';
 import { resolveRelativeUrl } from './MarkdownRenderers';
 import { markdownDocumentPaperSx } from '../../theme';
+import {
+  RateLimitError,
+  githubErrorMessage,
+  githubFetch,
+  useGithubQuery,
+} from '../../api';
 
 interface ContributingViewerProps {
   repositoryFullName: string; // e.g., "opentensor/bittensor"
 }
 
+interface ContributingResult {
+  content: string;
+  branch: string;
+}
+
+const CONTRIBUTING_BRANCHES = ['main', 'master'] as const;
+const CONTRIBUTING_PATHS = [
+  'CONTRIBUTING.md',
+  '.github/CONTRIBUTING.md',
+  'docs/CONTRIBUTING.md',
+] as const;
+
 const ContributingViewer: React.FC<ContributingViewerProps> = ({
   repositoryFullName,
 }) => {
   const theme = useTheme();
-  const [content, setContent] = useState<string | null>(null);
-  const [defaultBranch, setDefaultBranch] = useState<string>('main');
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const fetchContributing = async () => {
-      setLoading(true);
-      setError(null);
-
-      const branches = ['main', 'master'];
-      const paths = [
-        'CONTRIBUTING.md',
-        '.github/CONTRIBUTING.md',
-        'docs/CONTRIBUTING.md',
-      ];
-
-      for (const branch of branches) {
-        for (const path of paths) {
-          if (controller.signal.aborted) return;
+  const { data, error, isLoading } = useGithubQuery<ContributingResult>(null, {
+    queryKey: ['contributing', repositoryFullName],
+    enabled: !!repositoryFullName,
+    queryFn: async ({ signal }) => {
+      for (const branch of CONTRIBUTING_BRANCHES) {
+        for (const path of CONTRIBUTING_PATHS) {
           try {
-            const response = await axios.get(
+            const content = await githubFetch<string>(
               `https://cdn.jsdelivr.net/gh/${repositoryFullName}@${branch}/${path}`,
-              { signal: controller.signal },
+              { signal, responseType: 'text' },
             );
-            if (controller.signal.aborted) return;
-            if (response.status === 200 && response.data) {
-              setContent(response.data);
-              setDefaultBranch(branch);
-              setLoading(false);
-              return;
-            }
+            if (content) return { content, branch };
           } catch (err) {
-            if (axios.isCancel(err) || controller.signal.aborted) return;
-            // Continue to next combination
+            if (axios.isCancel(err) || err instanceof RateLimitError) throw err;
           }
         }
       }
+      throw new Error('No contributing guidelines found for this repository.');
+    },
+  });
 
-      if (controller.signal.aborted) return;
-      // If we get here, nothing was found
-      setError('No contributing guidelines found for this repository.');
-      setLoading(false);
-    };
-
-    if (repositoryFullName) fetchContributing();
-    return () => controller.abort();
-  }, [repositoryFullName]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
         <CircularProgress />
@@ -81,7 +70,7 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
     );
   }
 
-  if (error) {
+  if (error || !data) {
     return (
       <Alert
         severity="info"
@@ -91,7 +80,10 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
           border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
         }}
       >
-        {error}
+        {githubErrorMessage(
+          error,
+          'No contributing guidelines found for this repository.',
+        )}
       </Alert>
     );
   }
@@ -108,7 +100,7 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
             ...rest
           }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
             <a
-              href={resolveRelativeUrl(href, repositoryFullName, defaultBranch)}
+              href={resolveRelativeUrl(href, repositoryFullName, data.branch)}
               target="_blank"
               rel="noopener noreferrer"
               {...rest}
@@ -125,7 +117,7 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
               src={resolveRelativeUrl(
                 src,
                 repositoryFullName,
-                defaultBranch,
+                data.branch,
                 'cdn',
               )}
               alt={alt}
@@ -140,7 +132,7 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
           ),
         }}
       >
-        {content || ''}
+        {data.content}
       </ReactMarkdown>
     </Paper>
   );

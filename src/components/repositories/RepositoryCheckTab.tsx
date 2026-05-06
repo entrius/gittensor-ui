@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { formatDate } from '../../utils/format';
 import {
   Box,
@@ -13,13 +13,12 @@ import {
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-// For Health Score
-import SpeedIcon from '@mui/icons-material/Speed'; // For Activity
-import LaunchIcon from '@mui/icons-material/Launch'; // Added import
-import PeopleIcon from '@mui/icons-material/People'; // For Community
+import SpeedIcon from '@mui/icons-material/Speed';
+import LaunchIcon from '@mui/icons-material/Launch';
+import PeopleIcon from '@mui/icons-material/People';
 import BugReportIcon from '@mui/icons-material/BugReport';
-import axios from 'axios';
 import { STATUS_COLORS } from '../../theme';
+import { githubErrorMessage, useGithubQuery } from '../../api';
 
 interface RepositoryCheckTabProps {
   repositoryFullName: string;
@@ -31,99 +30,113 @@ interface HealthCheck {
   description: string;
 }
 
+interface RepoData {
+  default_branch?: string;
+  pushed_at: string;
+  created_at: string;
+  archived: boolean;
+  forks_count: number;
+  open_issues_count?: number;
+  license?: unknown;
+}
+
+interface CommunityProfile {
+  files?: {
+    contributing?: unknown;
+    code_of_conduct?: unknown;
+  };
+}
+
+interface TreeNode {
+  path: string;
+}
+
+interface TreeResponse {
+  tree?: TreeNode[];
+}
+
+interface SearchIssuesResponse {
+  total_count: number;
+}
+
+const repoApi = (repositoryFullName: string) =>
+  `https://api.github.com/repos/${repositoryFullName}`;
+
+const SEARCH_ISSUES_URL = 'https://api.github.com/search/issues';
+
+const issueSearchParams = (
+  repositoryFullName: string,
+  extra: string,
+): Record<string, string | number> => ({
+  q: `repo:${repositoryFullName} is:issue is:open${extra ? ` ${extra}` : ''}`,
+  per_page: 1,
+});
+
 const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
   repositoryFullName,
 }) => {
   const theme = useTheme();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [repoData, setRepoData] = useState<any>(null);
-  const [communityProfile, setCommunityProfile] = useState<any>(null);
-  const [fileTree, setFileTree] = useState<string[]>([]);
-  const [openIssuesCount, setOpenIssuesCount] = useState<number | null>(null);
-  const [goodFirstIssueCount, setGoodFirstIssueCount] = useState<number | null>(
-    null,
+  const enabled = !!repositoryFullName;
+
+  const repoQuery = useGithubQuery<RepoData>(repoApi(repositoryFullName), {
+    enabled,
+  });
+
+  const communityQuery = useGithubQuery<CommunityProfile>(
+    `${repoApi(repositoryFullName)}/community/profile`,
+    { enabled },
   );
-  const [helpWantedCount, setHelpWantedCount] = useState<number | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Fetch basic repo data
-        const repoRes = await axios.get(
-          `https://api.github.com/repos/${repositoryFullName}`,
-        );
-        setRepoData(repoRes.data);
+  const branch = repoQuery.data?.default_branch || 'main';
+  const treeQuery = useGithubQuery<TreeResponse>(
+    `${repoApi(repositoryFullName)}/git/trees/${branch}`,
+    {
+      params: { recursive: 1 },
+      enabled: enabled && !!repoQuery.data,
+    },
+  );
 
-        // Fetch community profile (health percentage etc)
-        // Note: Community profile endpoint might be in preview but commonly available
-        try {
-          const communityRes = await axios.get(
-            `https://api.github.com/repos/${repositoryFullName}/community/profile`,
-          );
-          setCommunityProfile(communityRes.data);
-        } catch (e) {
-          console.warn('Community profile not available', e);
-        }
+  const openIssuesQuery = useGithubQuery<SearchIssuesResponse>(
+    SEARCH_ISSUES_URL,
+    {
+      queryKey: ['searchIssues', repositoryFullName, 'open'],
+      params: issueSearchParams(repositoryFullName, ''),
+      enabled,
+    },
+  );
+  const goodFirstIssuesQuery = useGithubQuery<SearchIssuesResponse>(
+    SEARCH_ISSUES_URL,
+    {
+      queryKey: ['searchIssues', repositoryFullName, 'good-first'],
+      params: issueSearchParams(repositoryFullName, 'label:"good first issue"'),
+      enabled,
+    },
+  );
+  const helpWantedQuery = useGithubQuery<SearchIssuesResponse>(
+    SEARCH_ISSUES_URL,
+    {
+      queryKey: ['searchIssues', repositoryFullName, 'help-wanted'],
+      params: issueSearchParams(repositoryFullName, 'label:"help wanted"'),
+      enabled,
+    },
+  );
 
-        // Fetch file tree for file existence checks (shallow, just top level + .github)
-        // We can use the tree API or contents API. Tree is better.
-        const branch = repoRes.data.default_branch || 'main';
-        const treeRes = await axios.get(
-          `https://api.github.com/repos/${repositoryFullName}/git/trees/${branch}?recursive=1`,
-        );
-        if (treeRes.data.tree) {
-          setFileTree(
-            treeRes.data.tree.map((node: { path: string }) => node.path),
-          );
-        }
-
-        // Fetch issue counts
-        try {
-          const [openIssuesRes, gfiRes, hwRes] = await Promise.all([
-            axios.get(
-              `https://api.github.com/search/issues?q=repo:${repositoryFullName}+is:issue+is:open&per_page=1`,
-            ),
-            axios.get(
-              `https://api.github.com/search/issues?q=repo:${repositoryFullName}+is:issue+is:open+label:"good+first+issue"&per_page=1`,
-            ),
-            axios.get(
-              `https://api.github.com/search/issues?q=repo:${repositoryFullName}+is:issue+is:open+label:"help+wanted"&per_page=1`,
-            ),
-          ]);
-          setOpenIssuesCount(openIssuesRes.data.total_count);
-          setGoodFirstIssueCount(gfiRes.data.total_count);
-          setHelpWantedCount(hwRes.data.total_count);
-        } catch (e) {
-          console.warn('Failed to fetch issue counts', e);
-          if (repoRes.data?.open_issues_count !== undefined) {
-            setOpenIssuesCount(repoRes.data.open_issues_count);
-          }
-        }
-      } catch (err: unknown) {
-        console.error('Failed to fetch repo check data', err);
-        setError('Failed to load repository health data.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (repositoryFullName) {
-      fetchData();
-    }
-  }, [repositoryFullName]);
+  const fileTree = useMemo(
+    () => treeQuery.data?.tree?.map((node) => node.path) ?? [],
+    [treeQuery.data],
+  );
 
   const checks: HealthCheck[] = useMemo(() => {
-    if (!repoData || !fileTree) return [];
+    if (!repoQuery.data) return [];
 
     const hasFile = (pattern: RegExp) =>
       fileTree.some((path) => pattern.test(path));
+    const community = communityQuery.data;
 
     return [
       {
         name: 'License',
-        passed: !!repoData.license,
+        passed: !!repoQuery.data.license,
         description: 'Repository has a license file.',
       },
       {
@@ -135,16 +148,16 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
         name: 'Contributing Guidelines',
         passed:
           hasFile(/^(docs\/)?CONTRIBUTING\.(md|txt|rst)$/i) ||
-          (communityProfile?.files?.contributing !== null &&
-            communityProfile?.files?.contributing !== undefined),
+          (community?.files?.contributing !== null &&
+            community?.files?.contributing !== undefined),
         description: 'Guidelines for new contributors.',
       },
       {
         name: 'Code of Conduct',
         passed:
           hasFile(/^(docs\/)?CODE_OF_CONDUCT\.(md|txt|rst)$/i) ||
-          (communityProfile?.files?.code_of_conduct !== null &&
-            communityProfile?.files?.code_of_conduct !== undefined),
+          (community?.files?.code_of_conduct !== null &&
+            community?.files?.code_of_conduct !== undefined),
         description: 'Standards for community behavior.',
       },
       {
@@ -165,13 +178,18 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
         description: 'Security policy for vulnerability reporting.',
       },
     ];
-  }, [repoData, communityProfile, fileTree]);
+  }, [repoQuery.data, communityQuery.data, fileTree]);
 
   const score = useMemo(() => {
     if (checks.length === 0) return 0;
     const passed = checks.filter((c) => c.passed).length;
     return Math.round((passed / checks.length) * 100);
   }, [checks]);
+
+  // Loading is gated on the two critical calls (repo + tree); community profile
+  // and issue counts are best-effort and render fallbacks when missing.
+  const loading =
+    repoQuery.isLoading || (!!repoQuery.data && treeQuery.isLoading);
 
   if (loading) {
     return (
@@ -181,11 +199,22 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
     );
   }
 
-  if (error) {
+  if (repoQuery.error || !repoQuery.data) {
     return (
-      <Box sx={{ p: 4, color: 'error.main', textAlign: 'center' }}>{error}</Box>
+      <Box sx={{ p: 4, color: 'error.main', textAlign: 'center' }}>
+        {githubErrorMessage(
+          repoQuery.error,
+          'Failed to load repository health data.',
+        )}
+      </Box>
     );
   }
+
+  const repoData = repoQuery.data;
+  const openIssuesCount =
+    openIssuesQuery.data?.total_count ?? repoData.open_issues_count ?? null;
+  const goodFirstIssueCount = goodFirstIssuesQuery.data?.total_count ?? null;
+  const helpWantedCount = helpWantedQuery.data?.total_count ?? null;
 
   return (
     <Box>
@@ -224,7 +253,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                minHeight: '280px', // Fixed height for consistency
+                minHeight: '280px',
               }}
             >
               <Box
@@ -297,7 +326,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 backgroundColor: 'background.default',
                 border: `1px solid ${theme.palette.border.light}`,
                 borderRadius: 2,
-                flex: 1, // Fill remaining space
+                flex: 1,
               }}
             >
               <Typography
@@ -423,7 +452,6 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
               </Box>
 
               <Grid container spacing={2}>
-                {/* Stat: Open Issues — 2×2 from md until lg so link cards have room; 4 across on lg+ */}
                 <Grid item xs={6} md={6} lg={3}>
                   <Box
                     sx={{
@@ -445,9 +473,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                         mb: 0.5,
                       }}
                     >
-                      {openIssuesCount !== null
-                        ? openIssuesCount
-                        : repoData.open_issues_count || '-'}
+                      {openIssuesCount ?? '-'}
                     </Typography>
                     <Typography
                       variant="caption"
@@ -458,7 +484,6 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                   </Box>
                 </Grid>
 
-                {/* Stat: Forks */}
                 <Grid item xs={6} md={6} lg={3}>
                   <Box
                     sx={{
@@ -491,7 +516,6 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                   </Box>
                 </Grid>
 
-                {/* Action: Good First Issues */}
                 <Grid item xs={6} md={6} lg={3}>
                   <Box
                     component="a"
@@ -539,9 +563,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                             mb: 0.5,
                           }}
                         >
-                          {goodFirstIssueCount !== null
-                            ? goodFirstIssueCount
-                            : '-'}
+                          {goodFirstIssueCount ?? '-'}
                         </Typography>
                         <Typography
                           sx={{
@@ -573,7 +595,6 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                   </Box>
                 </Grid>
 
-                {/* Action: Help Wanted */}
                 <Grid item xs={6} md={6} lg={3}>
                   <Box
                     component="a"
@@ -621,7 +642,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                             mb: 0.5,
                           }}
                         >
-                          {helpWantedCount !== null ? helpWantedCount : '-'}
+                          {helpWantedCount ?? '-'}
                         </Typography>
                         <Typography
                           sx={{

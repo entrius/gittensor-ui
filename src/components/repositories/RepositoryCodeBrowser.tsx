@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Paper,
@@ -14,13 +14,13 @@ import {
   Avatar,
   useTheme,
 } from '@mui/material';
-import axios from 'axios';
 import { STATUS_COLORS } from '../../theme';
 import { formatDistanceToNow } from 'date-fns';
 import FolderIcon from '@mui/icons-material/Folder';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import CodeViewer from './CodeViewer';
 import { buildFileTree, type FileNode } from './FileExplorer';
+import { githubErrorMessage, githubFetch, useGithubQuery } from '../../api';
 
 interface RepositoryCodeBrowserProps {
   repositoryFullName: string;
@@ -42,6 +42,25 @@ type GhCommitUser = {
   avatar_url?: string;
 };
 
+interface GhCommitListItem {
+  sha: string;
+  commit: {
+    message: string;
+    committer?: { name?: string; email?: string; date?: string };
+    author?: { name?: string; date?: string };
+  };
+  author?: GhCommitUser | null;
+  committer?: GhCommitUser | null;
+}
+
+interface GhRepoData {
+  default_branch?: string;
+}
+
+interface GhTreeResponse {
+  tree?: { path: string; type: 'blob' | 'tree' }[];
+}
+
 /**
  * Commits done via the GitHub UI use @web-flow as committer; the human is on `author`.
  * Showing `web-flow` does not match github.com, which attributes the real user.
@@ -53,27 +72,26 @@ function isMechanicalCommitter(login: string | undefined): boolean {
   return MECHANICAL_COMMITTER_LOGINS.has(login.toLowerCase());
 }
 
-async function fetchCommitPayload(
+async function resolveCommitPayload(
   repositoryFullName: string,
-  listCommit: {
-    sha: string;
-    commit: unknown;
-    author?: GhCommitUser | null;
-    committer?: GhCommitUser | null;
-  },
-) {
-  let c = listCommit;
-  if (!c.committer?.id && !c.committer?.login && c.sha) {
-    try {
-      const { data } = await axios.get(
-        `https://api.github.com/repos/${repositoryFullName}/commits/${c.sha}`,
-      );
-      c = data;
-    } catch {
-      // keep list payload
-    }
+  listCommit: GhCommitListItem,
+  signal: AbortSignal,
+): Promise<GhCommitListItem> {
+  if (
+    listCommit.committer?.id ||
+    listCommit.committer?.login ||
+    !listCommit.sha
+  ) {
+    return listCommit;
   }
-  return c;
+  try {
+    return await githubFetch<GhCommitListItem>(
+      `https://api.github.com/repos/${repositoryFullName}/commits/${listCommit.sha}`,
+      { signal },
+    );
+  } catch {
+    return listCommit;
+  }
 }
 
 function resolveGithubCommitAttribution(
@@ -122,111 +140,72 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
   repositoryFullName,
 }) => {
   const theme = useTheme();
-  const [tree, setTree] = useState<FileNode[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [defaultBranch, setDefaultBranch] = useState<string>('main');
   const [currentPath, setCurrentPath] = useState<string | null>(null);
 
-  // Cache commit info to avoid spamming
-  const [pathCommits, setPathCommits] = useState<Record<string, CommitInfo>>(
-    {},
+  const repoQuery = useGithubQuery<GhRepoData>(
+    `https://api.github.com/repos/${repositoryFullName}`,
+    { enabled: !!repositoryFullName },
   );
-  const [loadingCommit, setLoadingCommit] = useState(false);
+  const defaultBranch = repoQuery.data?.default_branch || 'main';
 
-  useEffect(() => {
-    const fetchRepoData = async () => {
-      setLoading(true);
-      try {
-        const repoResponse = await axios.get(
-          `https://api.github.com/repos/${repositoryFullName}`,
-        );
-        const branch = repoResponse.data.default_branch || 'main';
-        setDefaultBranch(branch);
+  const treeQuery = useGithubQuery<GhTreeResponse>(
+    `https://api.github.com/repos/${repositoryFullName}/git/trees/${defaultBranch}`,
+    {
+      params: { recursive: 1 },
+      enabled: !!repoQuery.data,
+    },
+  );
 
-        const treeResponse = await axios.get(
-          `https://api.github.com/repos/${repositoryFullName}/git/trees/${branch}?recursive=1`,
-        );
+  const tree = useMemo<FileNode[]>(
+    () => (treeQuery.data?.tree ? buildFileTree(treeQuery.data.tree) : []),
+    [treeQuery.data],
+  );
 
-        if (treeResponse.data.tree) {
-          const nodes = buildFileTree(treeResponse.data.tree);
-          setTree(nodes);
-        }
-      } catch (err: unknown) {
-        console.error('Failed to load repository data', err);
-        if (axios.isAxiosError(err) && err.response?.status === 403) {
-          setError('GitHub API rate limit exceeded. Please try again later.');
-        } else {
-          setError('Failed to load repository structure.');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (repositoryFullName) {
-      fetchRepoData();
-    }
-  }, [repositoryFullName]);
-
-  // Fetch commit info for current path
-  useEffect(() => {
-    const fetchCommit = async () => {
-      const pathKey = currentPath || 'root';
-      if (pathCommits[pathKey]) return; // Already cached
-
-      setLoadingCommit(true);
-      try {
-        const params = new URLSearchParams();
-        params.append('sha', defaultBranch);
-        params.append('per_page', '1');
-        if (currentPath) {
-          params.append('path', currentPath);
-        }
-
-        const response = await axios.get(
-          `https://api.github.com/repos/${repositoryFullName}/commits?${params.toString()}`,
-        );
-
-        if (response.data && response.data.length > 0) {
-          const listCommit = response.data[0];
-          const c = await fetchCommitPayload(repositoryFullName, listCommit);
-          const commit = c.commit as {
-            message: string;
-            committer?: { name?: string; email?: string; date?: string };
-            author?: { date?: string };
-          };
-          const ghCommitter = c.committer as GhCommitUser | null | undefined;
-          const ghAuthor = c.author as GhCommitUser | null | undefined;
-          const { login: committerLogin, avatarUrl } =
-            resolveGithubCommitAttribution(ghCommitter, ghAuthor, commit);
-          const date =
-            isMechanicalCommitter(ghCommitter?.login) && ghAuthor?.login
-              ? commit.author?.date || commit.committer?.date || ''
-              : commit.committer?.date || commit.author?.date || '';
-          setPathCommits((prev) => ({
-            ...prev,
-            [pathKey]: {
-              message: commit.message,
-              committerLogin,
-              avatarUrl,
-              date,
-              sha: c.sha.substring(0, 7),
-            },
-          }));
-        }
-      } catch (err) {
-        console.error('Failed to fetch commit', err);
-      } finally {
-        setLoadingCommit(false);
-      }
-    };
-
-    if (!loading && defaultBranch) {
-      // Only fetch if we are not viewing a file (files handle their own commit info usually, but we can do it here too)
-      fetchCommit();
-    }
-  }, [currentPath, repositoryFullName, defaultBranch, loading, pathCommits]);
+  const commitQuery = useGithubQuery<CommitInfo | null>(null, {
+    queryKey: ['pathCommit', repositoryFullName, defaultBranch, currentPath],
+    enabled: !!repoQuery.data,
+    queryFn: async ({ signal }) => {
+      const list = await githubFetch<GhCommitListItem[]>(
+        `https://api.github.com/repos/${repositoryFullName}/commits`,
+        {
+          signal,
+          params: {
+            sha: defaultBranch,
+            per_page: 1,
+            ...(currentPath ? { path: currentPath } : {}),
+          },
+        },
+      );
+      if (!list || list.length === 0) return null;
+      const resolved = await resolveCommitPayload(
+        repositoryFullName,
+        list[0],
+        signal,
+      );
+      const ghCommitter = resolved.committer;
+      const ghAuthor = resolved.author;
+      const { login, avatarUrl } = resolveGithubCommitAttribution(
+        ghCommitter,
+        ghAuthor,
+        resolved.commit,
+      );
+      const date =
+        isMechanicalCommitter(ghCommitter?.login) && ghAuthor?.login
+          ? resolved.commit.author?.date ||
+            resolved.commit.committer?.date ||
+            ''
+          : resolved.commit.committer?.date ||
+            resolved.commit.author?.date ||
+            '';
+      return {
+        message: resolved.commit.message,
+        committerLogin: login,
+        avatarUrl,
+        date,
+        sha: resolved.sha.substring(0, 7),
+      };
+    },
+  });
 
   const currentNode = useMemo(() => {
     if (!currentPath)
@@ -242,7 +221,6 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
       if (foundNode.type === 'tree' && foundNode.children) {
         currentNodes = foundNode.children;
       } else if (i < parts.length - 1) {
-        // path segment matches a file but there are more segments? Should not happen in valid tree
         return null;
       }
     }
@@ -253,6 +231,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
     setCurrentPath(path);
   };
 
+  const loading =
+    repoQuery.isLoading || (!!repoQuery.data && treeQuery.isLoading);
+
   if (loading) {
     return (
       <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
@@ -261,20 +242,22 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
     );
   }
 
-  if (error) {
+  const fatalError = repoQuery.error ?? treeQuery.error;
+  if (fatalError) {
     return (
-      <Box sx={{ p: 4, color: 'error.main', textAlign: 'center' }}>{error}</Box>
+      <Box sx={{ p: 4, color: 'error.main', textAlign: 'center' }}>
+        {githubErrorMessage(fatalError, 'Failed to load repository structure.')}
+      </Box>
     );
   }
 
   const breadcrumbs = currentPath ? currentPath.split('/') : [];
-  const currentCommit = pathCommits[currentPath || 'root'];
+  const currentCommit = commitQuery.data;
 
   const isFile = currentNode && currentNode.type === 'blob';
   const directoryChildren =
     !isFile && currentNode ? currentNode.children || [] : [];
 
-  // Sort children: Folders first, then files
   const sortedChildren = [...directoryChildren].sort((a, b) => {
     if (a.type === b.type) return a.name.localeCompare(b.name);
     return a.type === 'tree' ? -1 : 1;
@@ -355,7 +338,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
             justifyContent: 'space-between',
           }}
         >
-          {loadingCommit ? (
+          {commitQuery.isLoading ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CircularProgress size={16} />
               <Typography sx={{ fontSize: '13px', color: STATUS_COLORS.open }}>
@@ -426,7 +409,10 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
             </>
           ) : (
             <Typography sx={{ fontSize: '13px', color: STATUS_COLORS.open }}>
-              Latest commit info unavailable
+              {githubErrorMessage(
+                commitQuery.error,
+                'Latest commit info unavailable',
+              )}
             </Typography>
           )}
         </Paper>
@@ -444,13 +430,12 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
           elevation={0}
           sx={{
             border: `1px solid ${theme.palette.border.light}`,
-            borderRadius: isFile ? '6px' : '0 0 6px 6px', // Connect to header
+            borderRadius: isFile ? '6px' : '0 0 6px 6px',
             backgroundColor: theme.palette.background.paper,
           }}
         >
           <Table size="small">
             <TableBody>
-              {/* Parent Directory Link (.. ) */}
               {currentPath && (
                 <TableRow
                   hover
@@ -532,9 +517,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                       fontSize: '13px',
                       textAlign: 'right',
                     }}
-                  >
-                    {/* Commit message col (optional placeholder) */}
-                  </TableCell>
+                  ></TableCell>
                 </TableRow>
               ))}
             </TableBody>
