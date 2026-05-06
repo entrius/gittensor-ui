@@ -2,10 +2,6 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Avatar, Box, Button, Stack, Typography } from '@mui/material';
 import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import CodeOutlinedIcon from '@mui/icons-material/CodeOutlined';
-import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
-import HubOutlinedIcon from '@mui/icons-material/HubOutlined';
-import PaidOutlinedIcon from '@mui/icons-material/PaidOutlined';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { LinkBox, useLinkBehavior } from '../components/common/linkBehavior';
@@ -65,17 +61,14 @@ const getActivityToneColor = (theme: Theme, tone: ActivityTone) => {
 
 const howItWorksItems = [
   {
-    icon: <HubOutlinedIcon />,
     title: 'A market of agents',
     body: 'Anyone can join. New agents arrive every day.',
   },
   {
-    icon: <CodeOutlinedIcon />,
     title: 'Direct them at anything',
     body: 'Pick a project. The agents get to work.',
   },
   {
-    icon: <PaidOutlinedIcon />,
     title: 'Paid for real work',
     body: 'When the code gets used, agents get paid.',
   },
@@ -253,7 +246,6 @@ const HomePage: React.FC = () => {
   const { datasets, isLoading } = useDashboardData('35d');
   const stats = useStats();
   const onboardLink = useLinkBehavior<HTMLAnchorElement>('/onboard');
-  const dashboardLink = useLinkBehavior<HTMLAnchorElement>('/dashboard');
   const docsLink = useLinkBehavior<HTMLAnchorElement>(
     'https://docs.gittensor.io',
   );
@@ -275,25 +267,10 @@ const HomePage: React.FC = () => {
   const totalLinesEver = parseNumber(stats.data?.totalLinesChanged ?? 0);
   const totalCommitsEver = parseNumber(stats.data?.totalCommits ?? 0);
   const totalMergedPrsEver = useMemo(
-    () =>
-      datasets.miners.data.reduce(
-        (sum, miner) => sum + parseNumber(miner.totalMergedPrs),
-        0,
-      ),
-    [datasets.miners.data],
+    () => datasets.prs.data.filter((pr) => pr.mergedAt).length,
+    [datasets.prs.data],
   );
-  const totalIssuesSolvedEver = useMemo(
-    () =>
-      datasets.miners.data.reduce(
-        (sum, miner) =>
-          sum +
-          parseNumber(
-            miner.totalValidSolvedIssues ?? miner.totalSolvedIssues ?? 0,
-          ),
-        0,
-      ),
-    [datasets.miners.data],
-  );
+  const totalIssuesSolvedEver = parseNumber(stats.data?.totalIssues ?? 0);
   const medianMergeRate = useMemo(() => {
     const rates = datasets.miners.data
       .filter((miner) => miner.isEligible)
@@ -390,8 +367,6 @@ const HomePage: React.FC = () => {
             rewardPoolLabel={rewardPoolLabel}
             minerCountLabel={minerCountLabel}
             merged35dLabel={merged35dLabel}
-            onboardLink={onboardLink}
-            dashboardLink={dashboardLink}
           />
 
           <Box
@@ -519,19 +494,15 @@ interface HeroCopyProps {
   rewardPoolLabel: string;
   minerCountLabel: string;
   merged35dLabel: string;
-  onboardLink: ReturnType<typeof useLinkBehavior<HTMLAnchorElement>>;
-  dashboardLink: ReturnType<typeof useLinkBehavior<HTMLAnchorElement>>;
 }
 
 const HeroCopy: React.FC<HeroCopyProps> = ({
   rewardPoolLabel,
   minerCountLabel,
   merged35dLabel,
-  onboardLink,
-  dashboardLink,
 }) => (
   <Box
-    sx={(theme) => ({
+    sx={{
       minHeight: { xs: 'auto', xl: '100%' },
       display: 'flex',
       flexDirection: 'column',
@@ -539,10 +510,8 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
       gap: { xs: 3, md: 3.5 },
       px: { xs: 1, sm: 2, md: 4, lg: 4, xl: 2 },
       py: { xs: 4, md: 5, xl: 4 },
-      borderTop: `1px solid ${theme.palette.border.light}`,
-      borderBottom: `1px solid ${theme.palette.border.light}`,
       position: 'relative',
-    })}
+    }}
   >
     <Box
       sx={(theme) => ({
@@ -637,61 +606,6 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
           </Box>
         </Typography>
       </Box>
-
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={1.25}
-        sx={fadeUp(320)}
-      >
-        <Button
-          component="a"
-          {...onboardLink}
-          variant="contained"
-          endIcon={<ArrowForwardIcon />}
-          sx={{
-            alignSelf: { xs: 'stretch', sm: 'flex-start' },
-            minHeight: 46,
-            px: 2.4,
-            borderRadius: 1.5,
-            backgroundColor: (theme) => theme.palette.text.primary,
-            color: (theme) => theme.palette.background.default,
-            textTransform: 'none',
-            fontWeight: 800,
-            transition: 'transform 0.16s ease, background-color 0.16s ease',
-            '&:hover': {
-              backgroundColor: (theme) => theme.palette.text.primary,
-              transform: 'translateY(-1px)',
-            },
-          }}
-        >
-          Start contributing
-        </Button>
-        <Button
-          component="a"
-          {...dashboardLink}
-          variant="outlined"
-          endIcon={<DashboardOutlinedIcon />}
-          sx={(theme) => ({
-            alignSelf: { xs: 'stretch', sm: 'flex-start' },
-            minHeight: 46,
-            px: 2.4,
-            borderRadius: 1.5,
-            borderColor: alpha(theme.palette.text.primary, 0.3),
-            color: theme.palette.text.primary,
-            textTransform: 'none',
-            fontWeight: 700,
-            transition:
-              'transform 0.16s ease, border-color 0.16s ease, background-color 0.16s ease',
-            '&:hover': {
-              borderColor: theme.palette.text.primary,
-              backgroundColor: alpha(theme.palette.text.primary, 0.06),
-              transform: 'translateY(-1px)',
-            },
-          })}
-        >
-          Dashboard
-        </Button>
-      </Stack>
     </Stack>
 
     <Box
@@ -730,12 +644,11 @@ const HeroStat: React.FC<{ value: string; label: string; delayMs: number }> = ({
   delayMs,
 }) => (
   <Box
-    sx={(theme) => ({
+    sx={{
       py: 1.4,
-      borderTop: `1px solid ${theme.palette.border.light}`,
       minWidth: 0,
       ...fadeUp(delayMs),
-    })}
+    }}
   >
     <Typography
       sx={(theme) => ({
@@ -1331,12 +1244,10 @@ const HowItWorksSection: React.FC<{
   medianMergeRate,
 }) => (
   <Box
-    sx={(theme) => ({
+    sx={{
       py: { xs: 2.5, md: 3 },
-      borderTop: `1px dashed ${theme.palette.border.medium}`,
-      borderBottom: `1px dashed ${theme.palette.border.medium}`,
       ...fadeUp(620),
-    })}
+    }}
   >
     <Stack spacing={0.75} sx={{ mb: { xs: 2, md: 3 } }}>
       <Typography
@@ -1388,44 +1299,36 @@ const HowItWorksSection: React.FC<{
         >
           <Stack
             direction="row"
-            spacing={1.1}
-            alignItems="center"
-            sx={{ mb: 1.5 }}
+            spacing={1.25}
+            alignItems="baseline"
+            sx={{ mb: 1 }}
           >
-            <Box
+            <Typography
               sx={(theme) => ({
                 color: theme.palette.status.merged,
                 fontFamily: 'var(--font-heading)',
-                fontSize: '1.85rem',
+                fontSize: '1.35rem',
                 fontWeight: 900,
                 lineHeight: 1,
+                flexShrink: 0,
               })}
             >
               {index + 1}
-            </Box>
-            <Box
+            </Typography>
+            <Typography
               sx={{
-                width: 28,
-                height: 28,
-                display: 'grid',
-                placeItems: 'center',
-                color: 'text.primary',
-                '& .MuiSvgIcon-root': { fontSize: 18 },
+                fontWeight: 900,
+                fontSize: { xs: '1rem', md: '0.95rem', lg: '1.02rem' },
+                lineHeight: 1.25,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                minWidth: 0,
               }}
             >
-              {item.icon}
-            </Box>
+              {item.title}
+            </Typography>
           </Stack>
-          <Typography
-            sx={{
-              fontWeight: 900,
-              fontSize: '0.94rem',
-              mb: 0.75,
-              textWrap: 'balance',
-            }}
-          >
-            {item.title}
-          </Typography>
           <Typography
             sx={(theme) => ({
               color: alpha(theme.palette.text.primary, 0.6),
