@@ -58,7 +58,13 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
   return (
     <Stack
       spacing={2}
-      sx={{ height: '100%', overflow: 'auto', pr: 1, ...scrollbarSx }}
+      sx={{
+        width: '100%',
+        height: '100%',
+        overflow: 'auto',
+        pr: { xs: 0, xl: 1 },
+        ...scrollbarSx,
+      }}
     >
       <ActivitySidebarCards
         miners={miners}
