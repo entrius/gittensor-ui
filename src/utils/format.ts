@@ -86,3 +86,6 @@ export const credibilityColor = (cred: number): string => {
   if (cred >= 0.3) return CREDIBILITY_COLORS.low;
   return CREDIBILITY_COLORS.poor;
 };
+
+export const getLowerText = (value: string | null | undefined): string =>
+  (value ?? '').toLowerCase();
