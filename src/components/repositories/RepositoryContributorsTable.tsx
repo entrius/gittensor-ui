@@ -42,6 +42,17 @@ interface ContributorRow {
 
 const numericCellSx = { fontVariantNumeric: 'tabular-nums' as const };
 
+const compactCellSx = {
+  px: { xs: 0.75, lg: 1 },
+  '&:first-of-type': { pl: { xs: 1, lg: 1.5 } },
+  '&:last-of-type': { pr: { xs: 1, lg: 1.5 } },
+};
+
+const compactNumericCellSx = {
+  ...numericCellSx,
+  ...compactCellSx,
+};
+
 const RepositoryContributorsTable: React.FC<
   RepositoryContributorsTableProps
 > = ({ repositoryFullName }) => {
@@ -193,8 +204,10 @@ const RepositoryContributorsTable: React.FC<
     () => ({
       key: 'rank',
       header: '#',
-      width: '32px',
+      width: '28px',
+      headerSx: compactCellSx,
       cellSx: (c) => ({
+        ...compactCellSx,
         color: c.rank <= 3 ? 'text.primary' : STATUS_COLORS.open,
         fontWeight: c.rank <= 3 ? 600 : 400,
       }),
@@ -207,84 +220,87 @@ const RepositoryContributorsTable: React.FC<
     () => ({
       key: 'miner',
       header: 'Miner',
-      cellSx: { minWidth: 0 },
-      renderCell: (c) => (
-        <LinkBox
-          href={`/miners/details?githubId=${encodeURIComponent(c.githubId)}&mode=${programTab === 'issues' ? 'issues' : 'prs'}`}
-          linkState={{
-            backLabel: `Back to ${repositoryFullName}`,
-          }}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-            overflow: 'hidden',
-            cursor: 'pointer',
-            '&:hover .contributor-name': {
-              color: STATUS_COLORS.info,
-              textDecoration: 'underline',
-            },
-          }}
-        >
-          <Avatar
-            src={`https://avatars.githubusercontent.com/${c.author}`}
-            sx={{
-              width: 20,
-              height: 20,
-              border: `1px solid ${theme.palette.border.light}`,
-              flexShrink: 0,
-            }}
-          />
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              minWidth: 0,
-            }}
-          >
-            <Typography
-              className="contributor-name"
+      headerSx: compactCellSx,
+      cellSx: { ...compactCellSx, minWidth: 0 },
+      renderCell: (c) => {
+        const subRank =
+          programTab === 'oss'
+            ? c.minerRank != null
+              ? `OSS Rank #${c.minerRank}`
+              : null
+            : c.issueMinerRank != null
+              ? `Discovery rank #${c.issueMinerRank}`
+              : null;
+        return (
+          <Tooltip title={c.author} placement="top" enterDelay={300}>
+            <LinkBox
+              href={`/miners/details?githubId=${encodeURIComponent(c.githubId)}&mode=${programTab === 'issues' ? 'issues' : 'prs'}`}
+              linkState={{
+                backLabel: `Back to ${repositoryFullName}`,
+              }}
               sx={{
-                fontSize: '13px',
-                fontWeight: 500,
-                color: 'text.primary',
-                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                minWidth: 0,
                 overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                transition: 'color 0.1s',
+                cursor: 'pointer',
+                '&:hover .contributor-name': {
+                  color: STATUS_COLORS.info,
+                  textDecoration: 'underline',
+                },
               }}
             >
-              {c.author}
-            </Typography>
-            {programTab === 'oss' && c.minerRank != null && (
-              <Typography
+              <Avatar
+                src={`https://avatars.githubusercontent.com/${c.author}`}
                 sx={{
-                  fontSize: '10px',
-                  color: STATUS_COLORS.open,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
+                  width: 18,
+                  height: 18,
+                  border: `1px solid ${theme.palette.border.light}`,
+                  flexShrink: 0,
+                }}
+              />
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minWidth: 0,
+                  flex: 1,
                 }}
               >
-                OSS Rank #{c.minerRank}
-              </Typography>
-            )}
-            {programTab === 'issues' && c.issueMinerRank != null && (
-              <Typography
-                sx={{
-                  fontSize: '10px',
-                  color: STATUS_COLORS.open,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                Discovery rank #{c.issueMinerRank}
-              </Typography>
-            )}
-          </Box>
-        </LinkBox>
-      ),
+                <Typography
+                  className="contributor-name"
+                  sx={{
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    color: 'text.primary',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    transition: 'color 0.1s',
+                  }}
+                >
+                  {c.author}
+                </Typography>
+                {subRank && (
+                  <Typography
+                    sx={{
+                      fontSize: '10px',
+                      color: STATUS_COLORS.open,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: { xs: 'none', sm: 'block' },
+                    }}
+                  >
+                    {subRank}
+                  </Typography>
+                )}
+              </Box>
+            </LinkBox>
+          </Tooltip>
+        );
+      },
     }),
     [programTab, repositoryFullName, theme.palette.border.light],
   );
@@ -297,19 +313,19 @@ const RepositoryContributorsTable: React.FC<
         {
           key: 'prs',
           header: 'PRs',
-          width: '3rem',
+          width: '2.5rem',
           align: 'right',
-          headerSx: numericCellSx,
-          cellSx: numericCellSx,
+          headerSx: compactNumericCellSx,
+          cellSx: compactNumericCellSx,
           renderCell: (c) => c.prs,
         },
         {
           key: 'score',
           header: 'Score',
-          width: '4.5rem',
+          width: '4rem',
           align: 'right',
-          headerSx: numericCellSx,
-          cellSx: numericCellSx,
+          headerSx: compactNumericCellSx,
+          cellSx: compactNumericCellSx,
           renderCell: (c) => c.score.toFixed(2),
         },
       ];
@@ -324,10 +340,10 @@ const RepositoryContributorsTable: React.FC<
             <span>Issues</span>
           </Tooltip>
         ),
-        width: '3.25rem',
+        width: '2.75rem',
         align: 'right',
-        headerSx: numericCellSx,
-        cellSx: numericCellSx,
+        headerSx: compactNumericCellSx,
+        cellSx: compactNumericCellSx,
         renderCell: (c) => c.discoverySolved,
       },
       {
@@ -335,8 +351,8 @@ const RepositoryContributorsTable: React.FC<
         header: 'Score',
         width: '4rem',
         align: 'right',
-        headerSx: numericCellSx,
-        cellSx: numericCellSx,
+        headerSx: compactNumericCellSx,
+        cellSx: compactNumericCellSx,
         renderCell: (c) => c.issueDiscoveryScore.toFixed(2),
       },
     ];
@@ -376,10 +392,11 @@ const RepositoryContributorsTable: React.FC<
         sx={{
           display: 'flex',
           width: '100%',
-          gap: 0.5,
+          gap: 0.25,
           backgroundColor: 'surface.subtle',
           p: 0.5,
           borderRadius: 2,
+          overflow: 'hidden',
         }}
       >
         {(
@@ -397,7 +414,7 @@ const RepositoryContributorsTable: React.FC<
               aria-pressed={isActive}
               onClick={() => setProgramTab(option.value)}
               sx={{
-                px: 1,
+                px: 0.5,
                 py: 0.65,
                 border: 0,
                 borderRadius: 1.5,
@@ -423,6 +440,9 @@ const RepositoryContributorsTable: React.FC<
                   textAlign: 'center',
                   whiteSpace: 'nowrap',
                   lineHeight: 1.2,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: 'block',
                 }}
               >
                 {option.label}
