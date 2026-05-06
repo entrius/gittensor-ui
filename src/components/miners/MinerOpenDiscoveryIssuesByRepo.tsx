@@ -318,10 +318,16 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
       addToMap(mine, repo, indexedIssueByKey.get(key) ?? issue);
     });
 
+    // Remove authored issues from "other" buckets across every repository in
+    // `reposForGrouping` (PR-active OR authored-issue). Previously the result
+    // was further restricted to only repos where the miner had authored open
+    // issues, which contradicted the card heading ("Other people's open
+    // issues in the same repositories" = same as the miner's engagement set,
+    // not just the strict authored-issues set) and silenced the entire section
+    // for miners who haven't filed any GitHub issues yet — even when they had
+    // dozens of PR-active repos with discovery opportunities.
     const filteredOther = new Map<string, RepositoryIssue[]>();
-    const mineRepos = new Set(mine.keys());
     other.forEach((issues, repo) => {
-      if (!mineRepos.has(repo)) return;
       const filtered = issues.filter(
         (issue) => !mineKeys.has(`${repo}#${issue.number}`),
       );

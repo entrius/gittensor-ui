@@ -22,15 +22,22 @@ const fetchRepositoryIssues = async (
 /**
  * Repositories where the miner has scored PR activity, ordered by most recent
  * PR timestamp (merged or created), capped for parallel fetch limits.
+ *
+ * PRs with a missing or blank ``repository`` field are dropped — leaving them
+ * in produces an empty-string entry that the consumer dispatches as
+ * ``GET /repos//issues``, which 404s on every fetch and pollutes the
+ * react-query cache with a useless key.
  */
 export const selectMinerIssueScanRepos = (prs: CommitLog[] | undefined) => {
   if (!prs?.length) return [];
   const latest = new Map<string, number>();
   prs.forEach((pr) => {
+    const repo = pr.repository?.trim();
+    if (!repo) return;
     const raw = pr.mergedAt || pr.prCreatedAt;
     const t = raw ? new Date(raw).getTime() : 0;
-    const prev = latest.get(pr.repository) ?? 0;
-    if (t >= prev) latest.set(pr.repository, t);
+    const prev = latest.get(repo) ?? 0;
+    if (t >= prev) latest.set(repo, t);
   });
   return [...latest.entries()]
     .sort((a, b) => b[1] - a[1])
