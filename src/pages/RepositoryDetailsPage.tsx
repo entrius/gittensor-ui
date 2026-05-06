@@ -414,7 +414,9 @@ const RepositoryDetailsPage: React.FC = () => {
 
           {/* Sidebar */}
           <Grid item xs={12} lg={3}>
-            <Box sx={{ position: { xs: 'static', lg: 'sticky' }, top: { lg: 24 } }}>
+            <Box
+              sx={{ position: { xs: 'static', lg: 'sticky' }, top: { lg: 24 } }}
+            >
               <Box sx={{ pt: 0 }}>
                 {/* Repository Stats */}
                 <RepositoryStats repositoryFullName={repo} />

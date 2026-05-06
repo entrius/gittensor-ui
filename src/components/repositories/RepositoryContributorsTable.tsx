@@ -436,10 +436,16 @@ const RepositoryContributorsTable: React.FC<
                   lineHeight: 1.2,
                 }}
               >
-                <Box component="span" sx={{ display: { xs: 'inline', lg: 'none' } }}>
+                <Box
+                  component="span"
+                  sx={{ display: { xs: 'inline', lg: 'none' } }}
+                >
                   {option.mobileLabel}
                 </Box>
-                <Box component="span" sx={{ display: { xs: 'none', lg: 'inline' } }}>
+                <Box
+                  component="span"
+                  sx={{ display: { xs: 'none', lg: 'inline' } }}
+                >
                   {option.label}
                 </Box>
               </Typography>
