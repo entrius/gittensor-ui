@@ -41,6 +41,12 @@ interface ContributorRow {
 }
 
 const numericCellSx = { fontVariantNumeric: 'tabular-nums' as const };
+const clippedCellSx = {
+  minWidth: 0,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap' as const,
+};
 
 const RepositoryContributorsTable: React.FC<
   RepositoryContributorsTableProps
@@ -195,6 +201,7 @@ const RepositoryContributorsTable: React.FC<
       header: '#',
       width: '32px',
       cellSx: (c) => ({
+        ...clippedCellSx,
         color: c.rank <= 3 ? 'text.primary' : STATUS_COLORS.open,
         fontWeight: c.rank <= 3 ? 600 : 400,
       }),
@@ -207,7 +214,7 @@ const RepositoryContributorsTable: React.FC<
     () => ({
       key: 'miner',
       header: 'Miner',
-      cellSx: { minWidth: 0 },
+      cellSx: clippedCellSx,
       renderCell: (c) => (
         <LinkBox
           href={`/miners/details?githubId=${encodeURIComponent(c.githubId)}&mode=${programTab === 'issues' ? 'issues' : 'prs'}`}
@@ -299,8 +306,8 @@ const RepositoryContributorsTable: React.FC<
           header: 'PRs',
           width: '3rem',
           align: 'right',
-          headerSx: numericCellSx,
-          cellSx: numericCellSx,
+          headerSx: { ...numericCellSx, ...clippedCellSx },
+          cellSx: { ...numericCellSx, ...clippedCellSx },
           renderCell: (c) => c.prs,
         },
         {
@@ -308,8 +315,8 @@ const RepositoryContributorsTable: React.FC<
           header: 'Score',
           width: '4.5rem',
           align: 'right',
-          headerSx: numericCellSx,
-          cellSx: numericCellSx,
+          headerSx: { ...numericCellSx, ...clippedCellSx },
+          cellSx: { ...numericCellSx, ...clippedCellSx },
           renderCell: (c) => c.score.toFixed(2),
         },
       ];
@@ -326,8 +333,8 @@ const RepositoryContributorsTable: React.FC<
         ),
         width: '3.25rem',
         align: 'right',
-        headerSx: numericCellSx,
-        cellSx: numericCellSx,
+        headerSx: { ...numericCellSx, ...clippedCellSx },
+        cellSx: { ...numericCellSx, ...clippedCellSx },
         renderCell: (c) => c.discoverySolved,
       },
       {
@@ -335,8 +342,8 @@ const RepositoryContributorsTable: React.FC<
         header: 'Score',
         width: '4rem',
         align: 'right',
-        headerSx: numericCellSx,
-        cellSx: numericCellSx,
+        headerSx: { ...numericCellSx, ...clippedCellSx },
+        cellSx: { ...numericCellSx, ...clippedCellSx },
         renderCell: (c) => c.issueDiscoveryScore.toFixed(2),
       },
     ];

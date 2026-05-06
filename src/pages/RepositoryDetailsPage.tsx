@@ -276,8 +276,16 @@ const RepositoryDetailsPage: React.FC = () => {
             <Tabs
               value={tabValue}
               onChange={handleTabChange}
+              variant="scrollable"
+              scrollButtons="auto"
+              allowScrollButtonsMobile
               aria-label="repository tabs"
               sx={(theme) => ({
+                minHeight: 48,
+                '& .MuiTabs-scrollButtons': {
+                  color: theme.palette.text.secondary,
+                  '&.Mui-disabled': { opacity: 0.35 },
+                },
                 '& .MuiTab-root': {
                   color: STATUS_COLORS.open,
                   fontFamily:
@@ -286,6 +294,7 @@ const RepositoryDetailsPage: React.FC = () => {
                   fontWeight: 500,
                   minHeight: '48px',
                   fontSize: '14px',
+                  flexShrink: 0,
                   '&.Mui-selected': {
                     color: theme.palette.text.primary,
                     fontWeight: 600,
