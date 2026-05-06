@@ -1,92 +1,42 @@
-import React from 'react';
-import GitHubIcon from '@mui/icons-material/GitHub';
-import {
-  Avatar,
-  Box,
-  CircularProgress,
-  Stack,
-  Typography,
-} from '@mui/material';
-import { alpha, useTheme, type Theme } from '@mui/material/styles';
+import React, { useCallback, useMemo } from 'react';
+import { Box, CircularProgress, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
-import { getGithubAvatarSrc } from '../../../utils';
-import { type DashboardFeaturedWork } from '../dashboardData';
+import { type FeaturedWorkRepo, type FeaturedWorkPr } from '../dashboardData';
+import FeaturedWorkRepoCard from './FeaturedWorkRepoCard';
+import {
+  emptyMessageSx,
+  loaderContainerSx,
+  sectionContainerSx,
+  sectionTitleSx,
+} from './featuredWorkStyles';
 
 interface DashboardFeaturedWorkProps {
-  items: DashboardFeaturedWork[];
+  items: FeaturedWorkRepo[];
   isLoading?: boolean;
 }
 
-const utcFmt = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: '2-digit',
-  hour12: false,
-  timeZone: 'UTC',
+type NavigateToRepoFn = (repoName: string) => void;
+type NavigateToPrFn = (repoName: string, pr: FeaturedWorkPr) => void;
+
+const FEATURED_WORK_EMPTY_MESSAGE = 'No merged PRs in the last 24 hours.';
+const FEATURED_WORK_TITLE = 'Featured Work';
+const MAX_COLUMNS_SM = 2;
+const MAX_COLUMNS_LG = 3;
+
+const buildPrDetailUrl = (repo: string, prNumber: number): string =>
+  `/miners/pr?repo=${encodeURIComponent(repo)}&number=${encodeURIComponent(String(prNumber))}`;
+
+const buildRepoDetailUrl = (repo: string): string =>
+  `/miners/repository?name=${encodeURIComponent(repo)}`;
+
+const computeGridColumns = (
+  itemCount: number,
+): { xs: string; sm: string; lg: string } => ({
+  xs: '1fr',
+  sm: `repeat(${Math.min(itemCount, MAX_COLUMNS_SM)}, minmax(0, 1fr))`,
+  lg: `repeat(${Math.min(itemCount, MAX_COLUMNS_LG)}, minmax(0, 1fr))`,
 });
-
-const formatUtc = (value: string | null) => {
-  if (!value) return '-';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? '-'
-    : utcFmt.format(date).replace(',', '');
-};
-
-const tonePalette = (theme: Theme) =>
-  ({
-    merged: theme.palette.status.merged,
-    closed: theme.palette.status.closed,
-    open: theme.palette.status.open,
-  }) satisfies Record<DashboardFeaturedWork['statusTone'], string>;
-
-type Align = {
-  alignItems: 'flex-start' | 'center' | 'flex-end';
-  textAlign: 'left' | 'center' | 'right';
-};
-const ALIGN: Align[] = [
-  { alignItems: 'flex-start', textAlign: 'left' },
-  { alignItems: 'center', textAlign: 'center' },
-  { alignItems: 'flex-end', textAlign: 'right' },
-];
-
-const metricAlign = (count: number, i: number): Align =>
-  count === 2 ? (i === 0 ? ALIGN[0] : ALIGN[2]) : (ALIGN[i] ?? ALIGN[2]);
-
-const metricColor = (
-  theme: Theme,
-  tone?: 'positive' | 'negative' | 'neutral',
-) =>
-  tone === 'negative'
-    ? alpha(theme.palette.diff.deletions, 0.82)
-    : tone === 'positive'
-      ? alpha(theme.palette.diff.additions, 0.82)
-      : alpha(theme.palette.text.primary, 0.9);
-
-const CHANGES_SEP = ' / -';
-
-const renderChangesMetric = (theme: Theme, value: string) => {
-  const i = value.indexOf(CHANGES_SEP);
-  if (i === -1) return value;
-  return (
-    <>
-      {value.slice(0, i)}
-      <Box
-        component="span"
-        sx={{ color: alpha(theme.palette.text.primary, 0.9) }}
-      >
-        {' '}
-        /
-      </Box>
-      <Box
-        component="span"
-        sx={{ color: alpha(theme.palette.diff.deletions, 0.86) }}
-      >
-        {' '}
-        -{value.slice(i + CHANGES_SEP.length)}
-      </Box>
-    </>
-  );
-};
 
 const DashboardFeaturedWorkSection: React.FC<DashboardFeaturedWorkProps> = ({
   items,
@@ -94,323 +44,61 @@ const DashboardFeaturedWorkSection: React.FC<DashboardFeaturedWorkProps> = ({
 }) => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const mono = theme.typography.fontFamily;
-  const border = theme.palette.border.light;
-  const divider = {
-    pt: 0.6,
-    borderTop: `1px solid ${alpha(theme.palette.text.primary, 0.2)}`,
-  };
+  const mono: string = theme.typography.fontFamily ?? 'monospace';
 
-  const openDetails = (item: DashboardFeaturedWork) =>
-    item.kind === 'pr'
-      ? navigate(
-          `/miners/pr?repo=${encodeURIComponent(item.repository)}&number=${encodeURIComponent(String(item.prNumber ?? ''))}`,
-        )
-      : navigate(
-          `/bounties/details?id=${encodeURIComponent(String(item.issueId ?? ''))}`,
-        );
+  const navigateToRepo: NavigateToRepoFn = useCallback(
+    (repoName: string): void => {
+      navigate(buildRepoDetailUrl(repoName));
+    },
+    [navigate],
+  );
 
-  const renderCard = (item: DashboardFeaturedWork) => {
-    const toneColor = tonePalette(theme)[item.statusTone];
-    const owner = item.repository.split('/')[0] || '';
-    const metrics = item.metrics.slice(0, 3);
-    const n = metrics.length || 1;
-    const labelTint =
-      item.kind === 'issue'
-        ? alpha(theme.palette.status.award, 0.9)
-        : alpha(theme.palette.status.merged, 0.9);
+  const navigateToPr: NavigateToPrFn = useCallback(
+    (repoName: string, pr: FeaturedWorkPr): void => {
+      navigate(buildPrDetailUrl(repoName, pr.prNumber));
+    },
+    [navigate],
+  );
 
-    return (
-      <Stack
-        key={item.id}
-        role="button"
-        tabIndex={0}
-        onClick={() => openDetails(item)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            openDetails(item);
-          }
-        }}
-        sx={{
-          height: '100%',
-          minHeight: 262,
-          p: 0.9,
-          fontFamily: mono,
-          backgroundColor: alpha(theme.palette.common.white, 0.015),
-          borderRadius: 2,
-          border: `1px solid ${border}`,
-          display: 'grid',
-          gridTemplateRows: 'auto auto 2.56em auto auto',
-          rowGap: 0.55,
-          cursor: 'pointer',
-          transition:
-            'transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease',
-          '&:hover': {
-            transform: 'translateY(-1px)',
-            borderColor: alpha(theme.palette.status.merged, 0.3),
-            backgroundColor: theme.palette.surface.subtle,
-            boxShadow: `0 8px 24px ${alpha(theme.palette.common.black, 0.22)}`,
-          },
-          '&:focus-visible': {
-            outline: `2px solid ${alpha(toneColor, 0.45)}`,
-            outlineOffset: '2px',
-          },
-        }}
-      >
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: '56px minmax(0, 1fr)',
-            columnGap: 1.15,
-            alignItems: 'center',
-            minWidth: 0,
-            py: 0.35,
-          }}
-        >
-          <Avatar
-            src={getGithubAvatarSrc(owner)}
-            alt={owner}
-            sx={{
-              width: 56,
-              height: 56,
-              bgcolor: theme.palette.surface.light,
-              border: `1px solid ${border}`,
-              '& .MuiSvgIcon-root': { fontSize: 29 },
-            }}
-          >
-            <GitHubIcon />
-          </Avatar>
-          <Box sx={{ minWidth: 0 }}>
-            <Typography
-              sx={{
-                color: theme.palette.text.primary,
-                fontFamily: 'inherit',
-                fontSize: '1.1rem',
-                fontWeight: 800,
-                letterSpacing: '0.01em',
-                lineHeight: 1.05,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                minWidth: 0,
-              }}
-            >
-              {item.repository}
-            </Typography>
-            <Typography
-              sx={{
-                mt: 0.28,
-                color: labelTint,
-                fontFamily: mono,
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                letterSpacing: '0.02em',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {item.featuredLabel}
-            </Typography>
-          </Box>
-        </Box>
+  const gridColumns = useMemo(
+    () => computeGridColumns(items.length),
+    [items.length],
+  );
 
-        <Typography
-          sx={{
-            color: alpha(theme.palette.text.primary, 0.78),
-            fontFamily: 'inherit',
-            fontSize: '0.8rem',
-            fontWeight: 500,
-            lineHeight: 1.28,
-            height: '2.52em',
-            display: '-webkit-box',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            wordBreak: 'break-word',
-            mt: 1.05,
-            mb: -0.35,
-          }}
-        >
-          {item.title}
-        </Typography>
-
-        <Stack
-          direction="row"
-          spacing={0.5}
-          alignItems="center"
-          sx={{ mt: -0.15 }}
-        >
-          <Avatar
-            src={getGithubAvatarSrc(item.githubUsername)}
-            alt={item.authorLabel}
-            sx={{
-              width: 18,
-              height: 18,
-              fontSize: '0.6rem',
-              bgcolor: theme.palette.surface.light,
-              border: `1px solid ${border}`,
-            }}
-          >
-            {item.authorLabel.slice(0, 1).toUpperCase()}
-          </Avatar>
-          <Typography
-            sx={{
-              color: alpha(theme.palette.text.primary, 0.64),
-              fontFamily: mono,
-              fontSize: '0.74rem',
-              fontWeight: 600,
-            }}
-          >
-            by {item.authorLabel}
-          </Typography>
-        </Stack>
-
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          sx={divider}
-        >
-          <Box
-            sx={{
-              px: 0.72,
-              py: 0.16,
-              borderRadius: 1.5,
-              border: `1px solid ${alpha(toneColor, 0.55)}`,
-              bgcolor: alpha(toneColor, 0.1),
-            }}
-          >
-            <Typography
-              sx={{
-                color: alpha(toneColor, 0.92),
-                fontFamily: mono,
-                fontSize: '0.74rem',
-                fontWeight: 700,
-                lineHeight: 1.1,
-              }}
-            >
-              {item.statusLabel}
-            </Typography>
-          </Box>
-          <Typography
-            sx={{
-              color: alpha(theme.palette.text.primary, 0.7),
-              fontFamily: mono,
-              fontSize: '0.72rem',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {formatUtc(item.openedAt)}
-          </Typography>
-        </Stack>
-
-        <Box sx={divider}>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))`,
-              gap: 0,
-            }}
-          >
-            {metrics.map((metric, i) => {
-              const { alignItems, textAlign } = metricAlign(n, i);
-              return (
-                <Stack
-                  key={`${item.id}-${metric.label}`}
-                  spacing={0.2}
-                  sx={{ alignItems, px: 0.65 }}
-                >
-                  <Typography
-                    sx={{
-                      color: alpha(theme.palette.text.primary, 0.58),
-                      fontFamily: mono,
-                      fontSize: '0.74rem',
-                      textAlign,
-                    }}
-                  >
-                    {metric.label}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      color: metricColor(theme, metric.tone),
-                      fontFamily: mono,
-                      fontSize: '0.9rem',
-                      fontWeight: 700,
-                      lineHeight: 1.15,
-                      textAlign,
-                    }}
-                  >
-                    {metric.label === 'Changes' &&
-                    metric.value.includes(CHANGES_SEP)
-                      ? renderChangesMetric(theme, metric.value)
-                      : metric.value}
-                  </Typography>
-                </Stack>
-              );
-            })}
-          </Box>
-        </Box>
-      </Stack>
-    );
-  };
+  const hasItems: boolean = items.length > 0;
 
   return (
-    <Box
-      sx={{
-        width: '100%',
-        p: { xs: 1.45, sm: 1.65 },
-        borderRadius: 3,
-        border: `1px solid ${theme.palette.border.light}`,
-        backgroundColor: 'transparent',
-      }}
-    >
-      <Typography
-        sx={{
-          mb: 1.35,
-          color: theme.palette.text.primary,
-          fontFamily: mono,
-          fontSize: { xs: '1.02rem', sm: '1.1rem' },
-          fontWeight: 700,
-        }}
-      >
-        Featured Work
+    <Box sx={sectionContainerSx(theme)}>
+      <Typography sx={sectionTitleSx(theme, mono)}>
+        {FEATURED_WORK_TITLE}
       </Typography>
 
       {isLoading ? (
-        <Box
-          sx={{
-            minHeight: 170,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <CircularProgress size={28} />
+        <Box sx={loaderContainerSx}>
+          <CircularProgress size={24} />
         </Box>
-      ) : items.length === 0 ? (
-        <Typography
-          sx={{ color: 'text.secondary', fontFamily: mono, fontSize: '0.8rem' }}
-        >
-          No featured PRs or issues available yet.
+      ) : !hasItems ? (
+        <Typography sx={emptyMessageSx(mono)}>
+          {FEATURED_WORK_EMPTY_MESSAGE}
         </Typography>
       ) : (
         <Box
           sx={{
-            width: '100%',
             display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, minmax(0, 1fr))',
-              lg: 'repeat(3, minmax(0, 1fr))',
-            },
-            gridAutoRows: '1fr',
-            gap: 1.15,
+            gridTemplateColumns: gridColumns,
+            gap: 2,
           }}
         >
-          {items.slice(0, 6).map(renderCard)}
+          {items.map((repo: FeaturedWorkRepo) => (
+            <FeaturedWorkRepoCard
+              key={repo.repository}
+              repo={repo}
+              mono={mono}
+              theme={theme}
+              onNavigateToRepo={navigateToRepo}
+              onNavigateToPr={navigateToPr}
+            />
+          ))}
         </Box>
       )}
     </Box>

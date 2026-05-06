@@ -18,6 +18,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMinerPRs, type CommitLog } from '../../api';
 import {
   filterPrs,
+  getRepositoryOwnerAvatarSrc,
   getPrStatusCounts,
   paginateItems,
   type PrStatusFilter,
@@ -274,7 +275,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             }}
           >
             <Avatar
-              src={`https://avatars.githubusercontent.com/${owner}`}
+              src={getRepositoryOwnerAvatarSrc(owner)}
               alt={owner}
               sx={{
                 width: 20,

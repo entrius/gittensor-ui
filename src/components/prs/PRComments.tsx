@@ -120,15 +120,15 @@ const PRComments: React.FC<PRCommentsProps> = ({
           key={item.id}
           sx={{
             display: 'flex',
-            gap: 2,
+            gap: { xs: 1.25, sm: 2 },
             position: 'relative',
             zIndex: 1,
             '&::before': {
               content: index !== allItems.length - 1 ? '""' : 'none',
               position: 'absolute',
-              top: '40px',
-              bottom: '-24px',
-              left: '20px',
+              top: { xs: '32px', sm: '40px' },
+              bottom: { xs: '-16px', sm: '-24px' },
+              left: { xs: '15px', sm: '20px' },
               width: '2px',
               backgroundColor: colors.timeline.line,
               zIndex: 0,
@@ -136,7 +136,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
           }}
         >
           {/* Avatar Area */}
-          <Box sx={{ position: 'relative', zIndex: 1 }}>
+          <Box sx={{ position: 'relative', zIndex: 1, flexShrink: 0 }}>
             <Link
               href={item.user.htmlUrl}
               target="_blank"
@@ -146,8 +146,8 @@ const PRComments: React.FC<PRCommentsProps> = ({
                 src={item.user.avatarUrl}
                 alt={item.user.login}
                 sx={{
-                  width: 40,
-                  height: 40,
+                  width: { xs: 32, sm: 40 },
+                  height: { xs: 32, sm: 40 },
                   border: `1px solid ${alpha(UI_COLORS.white, 0.1)}`,
                   backgroundColor: UI_COLORS.black,
                 }}
@@ -166,7 +166,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
               borderRadius: '6px',
               position: 'relative',
               '&::after': {
-                content: '""',
+                content: { xs: 'none', sm: '""' },
                 position: 'absolute',
                 top: '11px',
                 right: '100%',
@@ -183,8 +183,8 @@ const PRComments: React.FC<PRCommentsProps> = ({
             {/* Header */}
             <Box
               sx={{
-                px: 2,
-                py: 1.5, // Slightly more vertical padding
+                px: { xs: 1.5, sm: 2 },
+                py: { xs: 1, sm: 1.5 }, // Slightly more vertical padding on larger screens
                 backgroundColor: colors.canvas.subtle,
                 borderBottom: `1px solid ${colors.border.default}`,
                 borderTopLeftRadius: '6px',
@@ -192,8 +192,10 @@ const PRComments: React.FC<PRCommentsProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                gap: 1,
+                flexWrap: 'wrap',
                 color: colors.fg.muted,
-                fontSize: '14px',
+                fontSize: { xs: '13px', sm: '14px' },
                 position: 'relative',
                 zIndex: 1, // Ensure above the arrow pseudo-element's main body
               }}
@@ -204,6 +206,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
                   alignItems: 'center',
                   gap: 1,
                   flexWrap: 'wrap',
+                  minWidth: 0,
                 }}
               >
                 <Link
@@ -269,9 +272,9 @@ const PRComments: React.FC<PRCommentsProps> = ({
             {/* Markdown Content */}
             <Box
               sx={{
-                p: { xs: 2, md: 3 }, // More padding on larger screens
+                p: { xs: 1.5, sm: 2, md: 3 }, // More padding on larger screens
                 color: colors.fg.default,
-                fontSize: '14px',
+                fontSize: { xs: '13px', sm: '14px' },
                 lineHeight: 1.6,
                 fontFamily:
                   '-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji"', // GitHub's exact font stack
