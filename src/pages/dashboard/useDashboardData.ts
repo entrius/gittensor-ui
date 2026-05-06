@@ -38,7 +38,7 @@ type DashboardDatasets = {
   repos: DatasetState<Repository>;
 };
 
-export const useDashboardData = (range: TrendTimeRange) => {
+const useDashboardData = (range: TrendTimeRange) => {
   const prsQuery = useAllPrs();
   const minersQuery = useAllMiners();
   const issuesQuery = useIssues();

@@ -8,7 +8,7 @@ import {
   type CommitLog,
 } from './models/Dashboard';
 
-export const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
+const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
   queryName: string,
   url: string,
   refetchInterval?: number,
