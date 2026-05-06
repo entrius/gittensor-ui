@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   Box,
   TablePagination,
@@ -48,7 +48,15 @@ const LanguageWeightsTable: React.FC = () => {
   const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const tableWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Scroll the table body back to the top when the rows-per-page selection
+  // changes, so the new page starts at row 0. The scrollable element is the
+  // tbody (see the sx selectors below) — not the wrapper itself.
+  const scrollTableToTop = () => {
+    const body = tableWrapperRef.current?.querySelector('.MuiTableBody-root');
+    body?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -69,6 +77,7 @@ const LanguageWeightsTable: React.FC = () => {
   ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
+    scrollTableToTop();
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -188,16 +197,6 @@ const LanguageWeightsTable: React.FC = () => {
     };
   }, [paginatedLanguages, theme]);
 
-  // Scroll to top when rows per page changes
-  useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }
-  }, [rowsPerPage]);
-
   const sortLabelHeaderSx = {
     '& .MuiTableSortLabel-root:hover': { color: 'secondary.main' },
     '& .MuiTableSortLabel-root.Mui-active': { color: 'secondary.main' },
@@ -264,7 +263,7 @@ const LanguageWeightsTable: React.FC = () => {
   );
 
   return (
-    <Box ref={containerRef}>
+    <Box>
       <Box
         sx={{
           display: 'flex',
@@ -324,6 +323,7 @@ const LanguageWeightsTable: React.FC = () => {
                 onChange={(e) => {
                   setRowsPerPage(e.target.value as number);
                   setPage(0);
+                  scrollTableToTop();
                 }}
                 sx={{
                   color: theme.palette.text.primary,
@@ -407,12 +407,35 @@ const LanguageWeightsTable: React.FC = () => {
       </Collapse>
 
       <Box
-        sx={{
-          maxHeight: '800px',
-          overflowY: 'auto',
-          backgroundColor: 'transparent',
-          ...scrollbarSx,
-        }}
+        ref={tableWrapperRef}
+        sx={(t) => ({
+          // Scroll the tbody (not an outer wrapper) so the thead stays put.
+          // Same pattern as RepositoryPRsTable.
+          '& .MuiTable-root': { display: 'block' },
+          '& .MuiTableHead-root': {
+            display: 'block',
+            // Reserve space matching the body's scrollbar gutter so columns line up.
+            paddingRight: '8px',
+            backgroundColor: t.palette.surface.tooltip,
+          },
+          '& .MuiTableHead-root .MuiTableRow-root': {
+            display: 'table',
+            tableLayout: 'fixed',
+            width: '100%',
+          },
+          '& .MuiTableBody-root': {
+            display: 'block',
+            maxHeight: '800px',
+            overflowY: 'auto',
+            scrollbarGutter: 'stable',
+            ...scrollbarSx,
+          },
+          '& .MuiTableBody-root .MuiTableRow-root': {
+            display: 'table',
+            tableLayout: 'fixed',
+            width: '100%',
+          },
+        })}
       >
         <DataTable<LanguageRow, SortField>
           columns={columns}
