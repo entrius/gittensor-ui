@@ -2,6 +2,10 @@ import React, { useMemo } from 'react';
 import { Box, Typography, alpha, useTheme } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
 import { CHART_COLORS, TEXT_OPACITY } from '../../theme';
+import {
+  echartsItemTooltipChrome,
+  echartsTransparentBackground,
+} from '../../utils/echarts/gittensorChartTheme';
 
 interface CredibilityChartProps {
   merged: number;
@@ -20,7 +24,7 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
 
   const chartOption = useMemo(
     () => ({
-      backgroundColor: 'transparent',
+      ...echartsTransparentBackground(),
       title: {
         text: `${(credibility * 100).toFixed(0)}%`,
         subtext: 'Credibility',
@@ -40,12 +44,7 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
       tooltip: {
         trigger: 'item',
         formatter: '{b}: {c} ({d}%)',
-        backgroundColor: alpha(theme.palette.common.black, 0.9),
-        borderColor: alpha(theme.palette.common.white, 0.15),
-        borderWidth: 1,
-        textStyle: {
-          color: theme.palette.text.primary,
-        },
+        ...echartsItemTooltipChrome(theme),
       },
       series: [
         {

@@ -56,7 +56,12 @@ import type { TooltipComponentFormatterCallbackParams } from 'echarts';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { WatchlistButton } from '../common';
-import { truncateText } from '../../utils';
+import {
+  compareByWatchlist,
+  getRepositoryOwnerAvatarSrc,
+  truncateText,
+} from '../../utils';
+import { useWatchlist } from '../../hooks/useWatchlist';
 import { RankIcon } from './RankIcon';
 import { getRepositoryOwnerAvatarBackground, type RepoStats } from './types';
 import {
@@ -66,6 +71,14 @@ import {
   UI_COLORS,
   scrollbarSx,
 } from '../../theme';
+import {
+  echartsAxisTooltipChrome,
+  echartsBarChartTitle,
+  echartsFontFamily,
+  echartsGridBarPaged,
+  echartsStrongAxisLabelColor,
+  echartsTransparentBackground,
+} from '../../utils/echarts/gittensorChartTheme';
 
 type SortColumn =
   | 'rank'
@@ -76,7 +89,8 @@ type SortColumn =
   | 'contributors'
   | 'discoveryScore'
   | 'discoveryIssues'
-  | 'discoveryContributors';
+  | 'discoveryContributors'
+  | 'watch';
 type SortDirection = 'asc' | 'desc';
 type ViewMode = RepositoriesViewMode;
 
@@ -107,6 +121,7 @@ const VALID_SORT_COLUMNS: SortColumn[] = [
   'discoveryScore',
   'discoveryIssues',
   'discoveryContributors',
+  'watch',
 ];
 
 /** List view: show numeric zeros when the row has OSS activity (avoids PRs > 0 with OSS score "-"). */
@@ -181,6 +196,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     [searchParams, storedViewMode],
   );
   const isInitialMount = useRef(true);
+  const { isWatched } = useWatchlist('repos');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const trimmedSearch = searchQuery.trim();
@@ -293,6 +309,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           comparison =
             a.discoveryContributors.size - b.discoveryContributors.size;
           break;
+        case 'watch':
+          comparison = compareByWatchlist(a, b, (r) => r.repository, isWatched);
+          break;
         default:
           // Default to totalScore descending (original behavior)
           comparison = b.totalScore - a.totalScore;
@@ -303,7 +322,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
 
     // Then add rank based on sorted order
     return sorted.map((repo, index) => ({ ...repo, rank: index + 1 }));
-  }, [repositories, sortColumn, sortDirection]);
+  }, [repositories, sortColumn, sortDirection, isWatched]);
 
   const filteredRepositories = useMemo(() => {
     let filtered = rankedRepositories;
@@ -343,13 +362,13 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     const chartData = pagedRepositories;
     const white = UI_COLORS.white;
     const borderSubtle = alpha(white, 0.08);
-    const borderLight = alpha(white, 0.1);
     const surfaceSubtle = alpha(white, 0.02);
-    const textColor = alpha(white, 0.85);
-    const gridColor = borderSubtle;
-    const tooltipBorderColor = borderLight;
+    const textColor = echartsStrongAxisLabelColor(theme);
+    const gridColor = theme.palette.border.subtle;
+    const tooltipBorderColor = alpha(theme.palette.text.primary, 0.14);
     const tooltipLabelColor = alpha(white, TEXT_OPACITY.secondary);
-    const primaryColor = UI_COLORS.white;
+    const primaryColor = theme.palette.text.primary;
+    const chartFont = echartsFontFamily(theme);
 
     const chartMetric: Record<
       SortColumn,
@@ -404,6 +423,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         yAxis: 'OSS score',
         value: (r) => r.totalScore || 0,
       },
+      watch: {
+        title: 'OSS score by repository',
+        yAxis: 'OSS score',
+        value: (r) => r.totalScore || 0,
+      },
     };
     const metric = chartMetric[sortColumn] ?? chartMetric.totalScore;
     const effectiveLogScale =
@@ -452,22 +476,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     }));
 
     return {
-      backgroundColor: 'transparent',
-      title: {
-        text: metric.title,
-        subtext: 'Values match the current table sort and page',
-        left: 'center',
-        top: 20,
-        textStyle: {
-          color: primaryColor,
-          fontSize: 18,
-          fontWeight: 600,
-        },
-        subtextStyle: {
-          color: alpha(white, TEXT_OPACITY.tertiary),
-          fontSize: 12,
-        },
-      },
+      ...echartsTransparentBackground(),
+      title: echartsBarChartTitle(
+        theme,
+        metric.title,
+        'Values match the current table sort and page',
+      ),
       tooltip: {
         trigger: 'axis',
         axisPointer: {
@@ -476,11 +490,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             color: borderSubtle,
           },
         },
-        backgroundColor: UI_COLORS.surfaceTooltip,
-        borderColor: alpha(white, 0.15),
-        borderWidth: 1,
+        ...echartsAxisTooltipChrome(theme),
         textStyle: {
           color: primaryColor,
+          fontFamily: chartFont,
           fontSize: 12,
         },
         padding: [12, 16],
@@ -494,7 +507,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 <span style="color: ${primaryColor}; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap;">${value}</span>`;
 
           return `
-            <div style="font-family: 'JetBrains Mono', monospace; display: grid; grid-template-columns: minmax(0, max-content); width: max-content; max-width: min(420px, 92vw); box-sizing: border-box;">
+            <div style="font-family: ${chartFont}; display: grid; grid-template-columns: minmax(0, max-content); width: max-content; max-width: min(420px, 92vw); box-sizing: border-box;">
               <div style="font-weight: 600; margin-bottom: 8px; font-size: 13px; line-height: 1.35;">
                 #${item.rank} ${item.repository}
               </div>
@@ -511,13 +524,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           `;
         },
       },
-      grid: {
-        left: '3%',
-        right: '3%',
-        bottom: '18%',
-        top: '18%',
-        containLabel: true,
-      },
+      grid: echartsGridBarPaged(),
       dataZoom: [
         {
           type: 'inside',
@@ -532,6 +539,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         data: xAxisData.map((item) => item.name),
         axisLabel: {
           color: textColor,
+          fontFamily: chartFont,
           fontSize: 11,
           interval: 0,
           rotate: 45,
@@ -556,11 +564,13 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         name: metric.yAxis,
         nameTextStyle: {
           color: textColor,
+          fontFamily: chartFont,
           fontSize: 12,
           padding: [0, 0, 0, 0],
         },
         axisLabel: {
           color: textColor,
+          fontFamily: chartFont,
           fontSize: 11,
           formatter: (value: number) => {
             if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
@@ -740,53 +750,56 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       sortKey: 'repository',
       headerSx: compactSortableHeaderSx,
       cellSx: { pl: 1.5 },
-      renderCell: (repo) => (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            cursor: 'pointer',
-            '&:hover': {
-              '& .MuiTypography-root': {
-                color: 'primary.main',
-                textDecoration: 'underline',
-              },
-            },
-          }}
-        >
-          <Avatar
-            src={`https://avatars.githubusercontent.com/${(repo.repository || '').split('/')[0]}`}
-            alt={(repo.repository || '').split('/')[0]}
+      renderCell: (repo) => {
+        const owner = (repo.repository || '').split('/')[0] || '';
+        return (
+          <Box
             sx={{
-              width: 20,
-              height: 20,
-              border: '1px solid',
-              borderColor: 'border.medium',
-              backgroundColor: getRepositoryOwnerAvatarBackground(
-                (repo.repository || '').split('/')[0],
-              ),
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              cursor: 'pointer',
+              '&:hover': {
+                '& .MuiTypography-root': {
+                  color: 'primary.main',
+                  textDecoration: 'underline',
+                },
+              },
             }}
-          />
-          <Tooltip title={repo.repository || ''} placement="top">
-            <Typography
-              component="span"
+          >
+            <Avatar
+              src={getRepositoryOwnerAvatarSrc(owner) || undefined}
+              alt={owner}
               sx={{
-                color: 'text.primary',
-                fontWeight: 500,
-                transition: 'color 0.2s',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                maxWidth: '100%',
-                display: 'inline-block',
+                width: 20,
+                height: 20,
+                border: '1px solid',
+                borderColor: 'border.medium',
+                backgroundColor: getRepositoryOwnerAvatarBackground(owner),
               }}
             >
-              {truncateText(repo.repository || '', 40)}
-            </Typography>
-          </Tooltip>
-        </Box>
-      ),
+              {(owner[0] || '?').toUpperCase()}
+            </Avatar>
+            <Tooltip title={repo.repository || ''} placement="top">
+              <Typography
+                component="span"
+                sx={{
+                  color: 'text.primary',
+                  fontWeight: 500,
+                  transition: 'color 0.2s',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '100%',
+                  display: 'inline-block',
+                }}
+              >
+                {truncateText(repo.repository || '', 40)}
+              </Typography>
+            </Tooltip>
+          </Box>
+        );
+      },
     },
     {
       key: 'weight',
@@ -1003,14 +1016,22 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         {/* Row 1: All Controls */}
         <Box
           sx={{
-            p: 2,
+            p: { xs: 1.5, md: 2 },
             display: 'flex',
-            alignItems: 'center',
-            gap: 2,
-            flexWrap: 'wrap',
+            flexDirection: { xs: 'column', md: 'row' },
+            alignItems: { xs: 'stretch', md: 'center' },
+            gap: { xs: 1.25, md: 2 },
           }}
         >
-          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 0.5,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              width: { xs: '100%', md: 'auto' },
+            }}
+          >
             <FilterButton
               label="All"
               count={rankedRepositories.length}
@@ -1046,137 +1067,148 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             />
           </Box>
 
-          <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
-            <IconButton
-              onClick={() => setShowChart(!showChart)}
-              size="small"
-              sx={{
-                color: showChart ? 'text.primary' : 'text.tertiary',
-                border: '1px solid',
-                borderColor: 'border.light',
-                borderRadius: 2,
-                padding: '6px',
-                '&:hover': {
-                  backgroundColor: 'surface.light',
-                  borderColor: 'border.medium',
-                },
-              }}
-            >
-              {showChart ? (
-                <TableChartIcon fontSize="small" />
-              ) : (
-                <BarChartIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Tooltip>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: { xs: 'space-between', md: 'flex-end' },
+              gap: 1,
+              flexWrap: 'wrap',
+              width: { xs: '100%', md: 'auto' },
+            }}
+          >
+            <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+              <IconButton
+                onClick={() => setShowChart(!showChart)}
+                size="small"
+                sx={{
+                  color: showChart ? 'text.primary' : 'text.tertiary',
+                  border: '1px solid',
+                  borderColor: 'border.light',
+                  borderRadius: 2,
+                  padding: '6px',
+                  '&:hover': {
+                    backgroundColor: 'surface.light',
+                    borderColor: 'border.medium',
+                  },
+                }}
+              >
+                {showChart ? (
+                  <TableChartIcon fontSize="small" />
+                ) : (
+                  <BarChartIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
 
-          {showChart && (
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={useLogScale}
-                  onChange={(e) => setUseLogScale(e.target.checked)}
-                  size="small"
-                  sx={{
-                    '& .MuiSwitch-switchBase.Mui-checked': {
-                      color: 'primary.main',
-                    },
-                    '& .MuiSwitch-track': {
-                      backgroundColor: 'border.medium',
-                    },
-                  }}
-                />
-              }
-              label={
+            {showChart && (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={useLogScale}
+                    onChange={(e) => setUseLogScale(e.target.checked)}
+                    size="small"
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': {
+                        color: 'primary.main',
+                      },
+                      '& .MuiSwitch-track': {
+                        backgroundColor: 'border.medium',
+                      },
+                    }}
+                  />
+                }
+                label={
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontSize: '0.8rem',
+                      color: 'text.secondary',
+                    }}
+                  >
+                    Log Scale
+                  </Typography>
+                }
+              />
+            )}
+
+            <FormControl size="small">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Typography
                   variant="body2"
                   sx={{
-                    fontSize: '0.8rem',
                     color: 'text.secondary',
+                    fontSize: '0.8rem',
                   }}
                 >
-                  Log Scale
+                  Rows:
                 </Typography>
-              }
-            />
-          )}
+                <Select
+                  value={rowsPerPage}
+                  onChange={(e) => {
+                    const newRows = e.target.value as number;
+                    setRowsPerPage(newRows);
+                    setPage(0);
+                    syncToUrl({ rows: String(newRows), page: '0' });
+                  }}
+                  sx={{
+                    color: 'text.primary',
+                    backgroundColor: 'background.default',
+                    fontSize: '0.8rem',
+                    height: '36px',
+                    borderRadius: 2,
+                    minWidth: '80px',
+                    '& fieldset': { borderColor: 'border.light' },
+                    '&:hover fieldset': {
+                      borderColor: 'border.medium',
+                    },
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                    '& .MuiSelect-select': { py: 0.75 },
+                  }}
+                >
+                  {(viewMode === 'cards'
+                    ? REPOSITORIES_CARD_ROWS
+                    : REPOSITORIES_LIST_ROWS
+                  ).map((n) => (
+                    <MenuItem key={n} value={n}>
+                      {n}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Box>
+            </FormControl>
 
-          <FormControl size="small">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography
-                variant="body2"
+            {isMobileSearchVisible ? (
+              searchInput
+            ) : isMobile ? (
+              <IconButton
+                size="small"
+                onClick={() => setIsMobileSearchOpen(true)}
                 sx={{
-                  color: 'text.secondary',
-                  fontSize: '0.8rem',
-                }}
-              >
-                Rows:
-              </Typography>
-              <Select
-                value={rowsPerPage}
-                onChange={(e) => {
-                  const newRows = e.target.value as number;
-                  setRowsPerPage(newRows);
-                  setPage(0);
-                  syncToUrl({ rows: String(newRows), page: '0' });
-                }}
-                sx={{
-                  color: 'text.primary',
-                  backgroundColor: 'background.default',
-                  fontSize: '0.8rem',
-                  height: '36px',
+                  color: 'text.tertiary',
+                  border: '1px solid',
+                  borderColor: 'border.light',
                   borderRadius: 2,
-                  minWidth: '80px',
-                  '& fieldset': { borderColor: 'border.light' },
-                  '&:hover fieldset': {
+                  width: 36,
+                  height: 36,
+                  '&:hover': {
+                    backgroundColor: 'surface.light',
                     borderColor: 'border.medium',
                   },
-                  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                  '& .MuiSelect-select': { py: 0.75 },
                 }}
               >
-                {(viewMode === 'cards'
-                  ? REPOSITORIES_CARD_ROWS
-                  : REPOSITORIES_LIST_ROWS
-                ).map((n) => (
-                  <MenuItem key={n} value={n}>
-                    {n}
-                  </MenuItem>
-                ))}
-              </Select>
+                <SearchIcon sx={{ fontSize: '1rem' }} />
+              </IconButton>
+            ) : (
+              searchInput
+            )}
+
+            <Box sx={{ ml: { xs: 0, md: 'auto' } }}>
+              <ViewModeToggle
+                viewMode={viewMode}
+                onChange={handleViewModeChange}
+              />
             </Box>
-          </FormControl>
-
-          {isMobileSearchVisible ? (
-            searchInput
-          ) : isMobile ? (
-            <IconButton
-              size="small"
-              onClick={() => setIsMobileSearchOpen(true)}
-              sx={{
-                color: 'text.tertiary',
-                border: '1px solid',
-                borderColor: 'border.light',
-                borderRadius: 2,
-                width: 36,
-                height: 36,
-                '&:hover': {
-                  backgroundColor: 'surface.light',
-                  borderColor: 'border.medium',
-                },
-              }}
-            >
-              <SearchIcon sx={{ fontSize: '1rem' }} />
-            </IconButton>
-          ) : (
-            searchInput
-          )}
-
-          <Box sx={{ ml: 'auto' }}>
-            <ViewModeToggle
-              viewMode={viewMode}
-              onChange={handleViewModeChange}
-            />
           </Box>
         </Box>
 

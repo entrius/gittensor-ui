@@ -23,6 +23,7 @@ const DashboardFeaturePage: React.FC = () => {
     trendLabels,
     trendSeries,
     featuredWork,
+    isFeaturedWorkLoading,
     featuredContributors,
     featuredDiscoveryContributors,
     isLoading,
@@ -91,12 +92,12 @@ const DashboardFeaturePage: React.FC = () => {
               contributors={featuredDiscoveryContributors}
               isLoading={isLoading}
               mode="issues"
-              viewAllHref="/discoveries"
+              viewAllHref="/top-miners?timeline=discoveries"
             />
 
             <DashboardFeaturedWorkSection
               items={featuredWork}
-              isLoading={isLoading}
+              isLoading={isFeaturedWorkLoading}
             />
           </Box>
 
