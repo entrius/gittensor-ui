@@ -9,7 +9,7 @@ import PaidOutlinedIcon from '@mui/icons-material/PaidOutlined';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { LinkBox, useLinkBehavior } from '../components/common/linkBehavior';
-import { type CommitLog, type MinerEvaluation } from '../api';
+import { type CommitLog, type MinerEvaluation, useStats } from '../api';
 import { useMonthlyRewards } from '../hooks/useMonthlyRewards';
 import { getGithubAvatarSrc, getPrStatusLabel, parseNumber } from '../utils';
 import useDashboardData from './dashboard/useDashboardData';
@@ -86,6 +86,14 @@ const formatUsd = (value: number) =>
 
 const formatCompact = (value: number) =>
   value >= 1000 ? `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k` : value;
+
+const compactNumberFormatter = new Intl.NumberFormat('en-US', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
+
+const formatCompactNumber = (value: number) =>
+  compactNumberFormatter.format(value);
 
 const shortIdentity = (value: string) => {
   if (value.length <= 10) return value;
@@ -242,7 +250,8 @@ const HomePage: React.FC = () => {
     }, 8000); // Rotate every 8 seconds
     return () => clearInterval(interval);
   }, []);
-  const { datasets, kpis, isLoading } = useDashboardData('35d');
+  const { datasets, isLoading } = useDashboardData('35d');
+  const stats = useStats();
   const onboardLink = useLinkBehavior<HTMLAnchorElement>('/onboard');
   const dashboardLink = useLinkBehavior<HTMLAnchorElement>('/dashboard');
   const docsLink = useLinkBehavior<HTMLAnchorElement>(
@@ -262,8 +271,46 @@ const HomePage: React.FC = () => {
     () => countMergedPrsInWindow(datasets.prs.data, 35),
     [datasets.prs.data],
   );
-  const reposTouched =
-    kpis.find((kpi) => kpi.title === 'Total Repositories')?.value ?? 0;
+  const totalReposEver = parseNumber(stats.data?.uniqueRepositories ?? 0);
+  const totalLinesEver = parseNumber(stats.data?.totalLinesChanged ?? 0);
+  const totalCommitsEver = parseNumber(stats.data?.totalCommits ?? 0);
+  const totalMergedPrsEver = useMemo(
+    () =>
+      datasets.miners.data.reduce(
+        (sum, miner) => sum + parseNumber(miner.totalMergedPrs),
+        0,
+      ),
+    [datasets.miners.data],
+  );
+  const totalIssuesSolvedEver = useMemo(
+    () =>
+      datasets.miners.data.reduce(
+        (sum, miner) =>
+          sum +
+          parseNumber(
+            miner.totalValidSolvedIssues ?? miner.totalSolvedIssues ?? 0,
+          ),
+        0,
+      ),
+    [datasets.miners.data],
+  );
+  const medianMergeRate = useMemo(() => {
+    const rates = datasets.miners.data
+      .filter((miner) => miner.isEligible)
+      .map((miner) => {
+        const merged = parseNumber(miner.totalMergedPrs);
+        const closed = parseNumber(miner.totalClosedPrs);
+        const finalized = merged + closed;
+        return finalized > 0 ? merged / finalized : null;
+      })
+      .filter((rate): rate is number => rate !== null)
+      .sort((a, b) => a - b);
+    if (rates.length === 0) return 0;
+    const mid = Math.floor(rates.length / 2);
+    const median =
+      rates.length % 2 === 0 ? (rates[mid - 1] + rates[mid]) / 2 : rates[mid];
+    return Math.round(median * 100);
+  }, [datasets.miners.data]);
   const minerCount = datasets.miners.data.length;
   const rewardPoolLabel =
     monthlyRewards && monthlyRewards > 0
@@ -453,7 +500,14 @@ const HomePage: React.FC = () => {
             pb: { xs: 4, md: 5 },
           }}
         >
-          <HowItWorksSection reposTouched={reposTouched} />
+          <HowItWorksSection
+            totalRepos={totalReposEver}
+            totalLines={totalLinesEver}
+            totalMergedPrs={totalMergedPrsEver}
+            totalCommits={totalCommitsEver}
+            totalIssuesSolved={totalIssuesSolvedEver}
+            medianMergeRate={medianMergeRate}
+          />
           <OnboardingCard onboardLink={onboardLink} docsLink={docsLink} />
         </Box>
       </Box>
@@ -1261,8 +1315,20 @@ const SectionKicker: React.FC<{
   </Stack>
 );
 
-const HowItWorksSection: React.FC<{ reposTouched: number }> = ({
-  reposTouched,
+const HowItWorksSection: React.FC<{
+  totalRepos: number;
+  totalLines: number;
+  totalMergedPrs: number;
+  totalCommits: number;
+  totalIssuesSolved: number;
+  medianMergeRate: number;
+}> = ({
+  totalRepos,
+  totalLines,
+  totalMergedPrs,
+  totalCommits,
+  totalIssuesSolved,
+  medianMergeRate,
 }) => (
   <Box
     sx={(theme) => ({
@@ -1380,9 +1446,25 @@ const HowItWorksSection: React.FC<{ reposTouched: number }> = ({
         fontSize: '0.68rem',
       })}
     >
-      {reposTouched > 0
-        ? `${reposTouched} repositories active in 35d. 150+ onboarded total. ~1M lines shipped. 90%+ merge rate at the top.`
-        : '150+ repositories. ~1M lines. 90%+ merge rate at the top.'}
+      {(() => {
+        const parts = [
+          totalRepos > 0 ? `${formatCompactNumber(totalRepos)} repos` : null,
+          totalLines > 0 ? `${formatCompactNumber(totalLines)} lines` : null,
+          totalMergedPrs > 0
+            ? `${formatCompactNumber(totalMergedPrs)} PRs`
+            : null,
+          totalCommits > 0
+            ? `${formatCompactNumber(totalCommits)} commits`
+            : null,
+          totalIssuesSolved > 0
+            ? `${formatCompactNumber(totalIssuesSolved)} issues solved`
+            : null,
+          medianMergeRate > 0 ? `${medianMergeRate}% median merge rate` : null,
+        ].filter(Boolean);
+        return parts.length > 0
+          ? parts.join(' · ')
+          : 'Recognized repositories, verified GitHub identity, public validator scoring.';
+      })()}
     </Typography>
   </Box>
 );
