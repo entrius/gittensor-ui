@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatDate } from '../../utils/format';
+import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import {
   Box,
   Typography,
@@ -70,7 +71,7 @@ const PRComments: React.FC<PRCommentsProps> = ({
       id: 'pr-description',
       user: {
         login: prDetails.authorLogin,
-        avatarUrl: `https://avatars.githubusercontent.com/${prDetails.authorLogin}`,
+        avatarUrl: getRepositoryOwnerAvatarSrc(prDetails.authorLogin),
         htmlUrl: `https://github.com/${prDetails.authorLogin}`,
       },
       body: prDetails.description || '<em>No description provided.</em>',

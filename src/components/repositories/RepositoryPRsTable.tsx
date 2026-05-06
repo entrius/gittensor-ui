@@ -18,6 +18,7 @@ import {
 import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
 import theme, { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
+import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import FilterButton from '../FilterButton';
 
 type PrSortField =
@@ -235,7 +236,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       renderCell: (pr) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Avatar
-            src={`https://avatars.githubusercontent.com/${pr.author}`}
+            src={getRepositoryOwnerAvatarSrc(pr.author)}
             alt={pr.author}
             sx={{ width: 20, height: 20, flexShrink: 0 }}
           />

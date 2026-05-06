@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatDate } from '../../utils/format';
+import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import {
   Box,
   Typography,
@@ -43,7 +44,7 @@ const IssueConversation: React.FC<IssueConversationProps> = ({ issue }) => {
       id: 'issue-description',
       user: {
         login: issue.authorLogin,
-        avatarUrl: `https://avatars.githubusercontent.com/${issue.authorLogin}`,
+        avatarUrl: getRepositoryOwnerAvatarSrc(issue.authorLogin),
         htmlUrl: `https://github.com/${issue.authorLogin}`,
       },
       body: issue.body || '<em>No description provided.</em>',
