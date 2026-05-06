@@ -545,7 +545,6 @@ const SortButtons: React.FC<SortButtonsProps> = ({
   <Box
     sx={{
       display: 'flex',
-      gap: 0.5,
       flexWrap: 'wrap',
       justifyContent: 'flex-start',
     }}
@@ -586,14 +585,19 @@ const SortButtons: React.FC<SortButtonsProps> = ({
           >
             {option.label}
           </Typography>
-          {isActive && (
-            <Typography
-              component="span"
-              sx={{ fontSize: '0.7rem', opacity: 0.7 }}
-            >
-              {sortDirection === 'asc' ? '▲' : '▼'}
-            </Typography>
-          )}
+          {/* Always render the arrow slot — toggling its presence shifts
+              sibling tabs sideways when the active tab changes. */}
+          <Typography
+            component="span"
+            aria-hidden={!isActive}
+            sx={{
+              fontSize: '0.7rem',
+              opacity: 0.7,
+              visibility: isActive ? 'visible' : 'hidden',
+            }}
+          >
+            {sortDirection === 'asc' ? '▲' : '▼'}
+          </Typography>
         </Box>
       );
     })}
