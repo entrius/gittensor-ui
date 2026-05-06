@@ -11,7 +11,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import axios from 'axios';
-import { resolveRelativeUrl } from './MarkdownRenderers';
+import { resolveRelativeUrl, getImageSizeHint } from './MarkdownRenderers';
 import { markdownDocumentPaperSx } from '../../theme';
 
 interface ContributingViewerProps {
@@ -120,24 +120,36 @@ const ContributingViewer: React.FC<ContributingViewerProps> = ({
             src,
             alt,
             ...rest
-          }: React.ImgHTMLAttributes<HTMLImageElement>) => (
-            <img
-              src={resolveRelativeUrl(
-                src,
-                repositoryFullName,
-                defaultBranch,
-                'cdn',
-              )}
-              alt={alt}
-              style={{
-                maxWidth: '100%',
-                height: 'auto',
-                borderRadius: '6px',
-                margin: '16px 0',
-              }}
-              {...rest}
-            />
-          ),
+          }: React.ImgHTMLAttributes<HTMLImageElement>) => {
+            const sizeHint = getImageSizeHint(src);
+            return (
+              <img
+                src={resolveRelativeUrl(
+                  src,
+                  repositoryFullName,
+                  defaultBranch,
+                  'cdn',
+                )}
+                alt={alt}
+                {...(sizeHint ? { width: sizeHint, height: sizeHint } : {})}
+                style={
+                  sizeHint
+                    ? {
+                        width: sizeHint,
+                        height: sizeHint,
+                        borderRadius: '6px',
+                      }
+                    : {
+                        maxWidth: '100%',
+                        height: 'auto',
+                        borderRadius: '6px',
+                        margin: '16px 0',
+                      }
+                }
+                {...rest}
+              />
+            );
+          },
         }}
       >
         {content || ''}
