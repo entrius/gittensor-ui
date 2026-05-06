@@ -88,6 +88,12 @@ export type DataTableProps<T, SortKey extends string = never> = {
    */
   stickyHeader?: boolean;
   /**
+   * Merged onto `TableContainer` after base styles. Use with `stickyHeader`
+   * to set `maxHeight` + `overflow` on the **same** element that wraps the
+   * table (MUI sticky headers stick relative to this scrollport).
+   */
+  tableContainerSx?: SxProps<Theme>;
+  /**
    * MUI table cell padding density. Defaults to 'small' (compact cells —
    * matches the historical look of the leaderboard and search tables).
    * Pass 'medium' for the roomier MUI default (~16px vertical padding).
@@ -132,6 +138,7 @@ export const DataTable = <T, SortKey extends string = never>({
   footer,
   sort,
   stickyHeader = false,
+  tableContainerSx,
   size = 'small',
 }: DataTableProps<T, SortKey>) => {
   const showTable = !isLoading && !isError && rows.length > 0;
@@ -159,7 +166,14 @@ export const DataTable = <T, SortKey extends string = never>({
         : null}
       {showTable ? (
         <>
-          <TableContainer sx={containerSx}>
+          <TableContainer
+            sx={
+              [
+                containerSx,
+                ...(tableContainerSx ? [tableContainerSx] : []),
+              ] as SxProps<Theme>
+            }
+          >
             <Table
               stickyHeader={stickyHeader}
               size={size}
