@@ -12,11 +12,14 @@ import {
   Chip,
   Collapse,
   CircularProgress,
+  FormControl,
   FormControlLabel,
   Grid,
   IconButton,
   InputAdornment,
+  MenuItem,
   Popover,
+  Select,
   Switch,
   TextField,
   Tooltip,
@@ -91,6 +94,7 @@ import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import theme, {
   CHART_COLORS,
   LABEL_COLORS,
+  MONO_FONT,
   STATUS_COLORS,
   TEXT_OPACITY,
   UI_COLORS,
@@ -1414,6 +1418,15 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
 
 const ROWS_PER_PAGE = 50;
 
+// Per-view-mode batch sizes for ReposList's infinite scroll. Card view tiles
+// in 12 / 24 / 48 multiples (3 cols × 4/8/16 rows). List view stays on the
+// flat 10 / 25 / 50 progression.
+const REPO_ROWS_OPTIONS_LIST = [10, 25, 50] as const;
+const REPO_ROWS_OPTIONS_CARDS = [12, 24, 48] as const;
+
+const defaultRepoRowsForView = (mode: 'list' | 'cards') =>
+  mode === 'cards' ? REPO_ROWS_OPTIONS_CARDS[0] : REPO_ROWS_OPTIONS_LIST[0];
+
 const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: repos } = useReposAndWeights();
   const { data: allPrs } = useAllPrs();
@@ -1423,15 +1436,26 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const [showChart, setShowChart] = useState(false);
   const [useLogScale, setUseLogScale] = useState(false);
   const [page, setPage] = useState(0);
+  const [rowsPerBatch, setRowsPerBatch] = useState<number>(() =>
+    defaultRepoRowsForView(viewMode),
+  );
   const observerTarget = useRef<HTMLDivElement>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const [sortField, setSortField] = useState<RepoSortKey>('weight');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+  // Keep batch size in sync with view mode: switching modes resets to the
+  // first valid value for that mode (12 for cards, 10 for list).
+  const handleViewModeChange = (next: 'list' | 'cards') => {
+    setViewMode(next);
+    setRowsPerBatch(defaultRepoRowsForView(next));
+    setPage(0);
+  };
+
   useEffect(() => {
     setPage(0);
-  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
+  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode, rowsPerBatch]);
 
   const handleSort = (field: RepoSortKey) => {
     if (sortField === field) {
@@ -1530,8 +1554,8 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   }, [filtered, sortField, sortOrder]);
 
   const paged = useMemo(
-    () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
-    [sorted, page],
+    () => sorted.slice(0, (page + 1) * rowsPerBatch),
+    [sorted, page, rowsPerBatch],
   );
 
   useEffect(() => {
@@ -1785,15 +1809,48 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                 )}
               </Box>
             </Box>
+            <Box>
+              <OptionsLabel>Rows per batch</OptionsLabel>
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <Select
+                  value={rowsPerBatch}
+                  onChange={(e) => setRowsPerBatch(Number(e.target.value))}
+                  sx={{
+                    color: 'text.primary',
+                    backgroundColor: 'background.default',
+                    fontFamily: MONO_FONT,
+                    fontSize: '0.8rem',
+                    height: 36,
+                    borderRadius: 2,
+                    '& fieldset': { borderColor: 'border.light' },
+                    '&:hover fieldset': { borderColor: 'border.medium' },
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                    '& .MuiSelect-select': { py: 0.75 },
+                  }}
+                >
+                  {(viewMode === 'cards'
+                    ? REPO_ROWS_OPTIONS_CARDS
+                    : REPO_ROWS_OPTIONS_LIST
+                  ).map((n) => (
+                    <MenuItem key={n} value={n}>
+                      {n}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
           </>
         }
         searchValue={searchQuery}
         searchPlaceholder="Search repositories..."
         onSearchChange={setSearchQuery}
         viewMode={viewMode}
-        onViewModeChange={setViewMode}
+        onViewModeChange={handleViewModeChange}
         viewModeToggle={
-          <ReposViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+          <ReposViewModeToggle
+            viewMode={viewMode}
+            onChange={handleViewModeChange}
+          />
         }
         hasActiveFilter={statusFilter !== 'all'}
       />
@@ -1874,7 +1931,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           )}
         </Box>
       )}
-      {filtered.length > (page + 1) * ROWS_PER_PAGE && (
+      {filtered.length > (page + 1) * rowsPerBatch && (
         <Box
           ref={observerTarget}
           sx={{
@@ -1892,7 +1949,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                 sx={{
                   color: 'text.secondary',
                   fontSize: '0.85rem',
-                  fontFamily: '"JetBrains Mono", monospace',
+                  fontFamily: MONO_FONT,
                   ml: 1.5,
                 }}
               >
@@ -2722,7 +2779,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                 sx={{
                   color: 'text.secondary',
                   fontSize: '0.85rem',
-                  fontFamily: '"JetBrains Mono", monospace',
+                  fontFamily: MONO_FONT,
                   ml: 1.5,
                 }}
               >
@@ -3452,7 +3509,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
                 sx={{
                   color: 'text.secondary',
                   fontSize: '0.85rem',
-                  fontFamily: '"JetBrains Mono", monospace',
+                  fontFamily: MONO_FONT,
                   ml: 1.5,
                 }}
               >
