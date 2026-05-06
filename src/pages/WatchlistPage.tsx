@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+} from 'react';
 import {
   Avatar,
   Box,
@@ -6,15 +12,12 @@ import {
   Chip,
   Collapse,
   CircularProgress,
-  FormControl,
   FormControlLabel,
   Grid,
   IconButton,
   InputAdornment,
-  MenuItem,
-  Select,
+  Popover,
   Switch,
-  TablePagination,
   TextField,
   Tooltip,
   Typography,
@@ -28,27 +31,28 @@ import {
   Tabs,
   Badge,
   useMediaQuery,
+  Portal,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ReactECharts from 'echarts-for-react';
 import StarIcon from '@mui/icons-material/Star';
 import PersonIcon from '@mui/icons-material/Person';
 import FolderIcon from '@mui/icons-material/Folder';
+import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
+import { useTwitterStickySidebar } from '../hooks/useTwitterStickySidebar';
 import {
   TopMinersTable,
   ActivitySidebarCards,
   SEO,
   WatchlistButton,
 } from '../components';
-import { IssuesList } from '../components/issues';
 import {
   DataTable,
   type DataTableColumn,
@@ -92,6 +96,12 @@ import theme, {
 } from '../theme';
 import FilterButton from '../components/FilterButton';
 import { getRepositoryOwnerAvatarBackground } from '../components/leaderboard/types';
+import {
+  IssuesList,
+  IssuesViewModeToggle,
+  type IssuesViewMode,
+  ISSUES_VIEW_QUERY_PARAM,
+} from '../components/issues';
 
 const WATCHLIST_LINK_STATE = { backLabel: 'Back to Watchlist' } as const;
 const getBountyHref = (id: number) => `/bounties/details?id=${id}`;
@@ -157,15 +167,44 @@ const tabFromParam = (param: string | null): WatchlistCategory =>
     ? (param as WatchlistCategory)
     : 'miners';
 
-const WatchlistPage: React.FC = () => {
+/**
+ * Embeddable watchlist content — renders the description, sub-tabs,
+ * tab content, and clear-confirmation dialog WITHOUT a Page wrapper
+ * or sidebar. Used by the unified MinersPage timeline.
+ */
+const VIEW_STORAGE_KEY_WATCHLIST = 'watchlist:viewMode';
+
+const useWatchlistViewMode = () => {
+  const [mode, setMode] = useState<'list' | 'cards'>(() => {
+    try {
+      const stored = window.localStorage.getItem(VIEW_STORAGE_KEY_WATCHLIST);
+      return stored === 'cards' || stored === 'list' ? stored : 'cards';
+    } catch {
+      return 'cards';
+    }
+  });
+
+  const setStoredMode = useCallback((newMode: 'list' | 'cards') => {
+    setMode(newMode);
+    try {
+      window.localStorage.setItem(VIEW_STORAGE_KEY_WATCHLIST, newMode);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  return [mode, setStoredMode] as const;
+};
+
+export const WatchlistContent: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = tabFromParam(searchParams.get('tab'));
 
-  // Single subscription for tab badges; per-tab content uses useWatchlist
-  // scoped to its own category via the *List subcomponents below.
   const counts = useWatchlistCounts();
   const { ids, count, clear } = useWatchlist(activeTab);
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const { ids: minerIds } = useWatchlist('miners');
 
   const tabHasContent =
     activeTab === 'prs'
@@ -176,25 +215,6 @@ const WatchlistPage: React.FC = () => {
   const isEmpty = !tabHasContent;
   const noun = TAB_NOUN[activeTab];
   const discovery = TAB_DISCOVERY[activeTab];
-
-  const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
-  const showSidebarRight = !isEmpty && isLargeScreen;
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
-  const sidebarWidth =
-    isMobile || isTablet ? '100%' : isLargeScreen ? '340px' : '300px';
-
-  const { ids: minerIds } = useWatchlist('miners');
-  const { data: allMinersData } = useAllMiners();
-  const minerStats = useMemo(() => {
-    const watchedSet = new Set(minerIds);
-    return mapAllMinersToStats(allMinersData ?? [])
-      .filter((m) => watchedSet.has(m.githubId))
-      .map((m) => ({
-        ...m,
-        isEligible: Boolean(m.ossIsEligible || m.discoveriesIsEligible),
-      }));
-  }, [allMinersData, minerIds]);
 
   const handleClear = () => {
     clear();
@@ -218,190 +238,122 @@ const WatchlistPage: React.FC = () => {
   };
 
   return (
-    <Page title="Watchlist">
-      <SEO
-        title="Watchlist"
-        description="Your pinned miners, repositories, bounties, and pull requests on Gittensor."
-      />
+    <>
       <Box
         sx={{
-          width: '100%',
-          height: showSidebarRight ? 'calc(100vh - 64px)' : 'auto',
-          display: 'flex',
-          flexDirection: showSidebarRight ? 'row' : 'column',
-          gap: { xs: 2, sm: 2, md: 2.5, lg: 3 },
-          py: { xs: 2, sm: 2, md: 2.5, lg: 3 },
-          px: { xs: 2, sm: 2, md: 2.5, lg: 3 },
-          overflow: 'hidden',
+          borderBottom: '1px solid',
+          borderColor: 'border.light',
+          position: 'sticky',
+          top: 64,
+          zIndex: 50,
+          backgroundColor: (t) => alpha(t.palette.background.default, 0.85),
+          backdropFilter: 'blur(12px)',
         }}
       >
-        {/* Main Content Area */}
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          variant="fullWidth"
+          sx={(t) => ({
+            minHeight: 52,
+            '& .MuiTab-root': {
+              minHeight: 52,
+              fontSize: '0.95rem',
+              fontWeight: 700,
+              textTransform: 'none',
+              letterSpacing: '0.01em',
+              color: alpha(t.palette.text.primary, 0.45),
+              transition: 'color 0.2s, background-color 0.2s',
+              '&:hover': {
+                backgroundColor: alpha(t.palette.text.primary, 0.04),
+                color: alpha(t.palette.text.primary, 0.7),
+              },
+              '&.Mui-selected': {
+                color: t.palette.text.primary,
+              },
+            },
+            '& .MuiTabs-indicator': {
+              backgroundColor: t.palette.primary.main,
+              height: 3,
+              borderRadius: '3px 3px 0 0',
+            },
+          })}
+        >
+          {TAB_ORDER.map((cat) => (
+            <Tab
+              key={cat}
+              value={cat}
+              label={
+                <Badge
+                  badgeContent={counts[cat]}
+                  color="primary"
+                  sx={{
+                    '& .MuiBadge-badge': {
+                      fontSize: '0.65rem',
+                      minWidth: 18,
+                      height: 18,
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      pr: counts[cat] > 0 ? 1.5 : 0,
+                    }}
+                  >
+                    {TAB_LABELS[cat]}
+                  </Box>
+                </Badge>
+              }
+            />
+          ))}
+        </Tabs>
+      </Box>
+
+      {isEmpty ? (
         <Box
           sx={{
-            flex: 1,
+            py: 8,
+            textAlign: 'center',
             display: 'flex',
             flexDirection: 'column',
-            gap: { xs: 2, sm: 1.5 },
-            minHeight: 0,
-            overflow: showSidebarRight ? 'auto' : 'visible',
-            minWidth: 0,
-            pr: showSidebarRight ? 1 : 0,
-            ...scrollbarSx,
+            gap: 2,
+            alignItems: 'center',
+            color: 'text.secondary',
           }}
         >
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            spacing={2}
-          >
-            <Typography
-              sx={{
-                fontSize: '0.8rem',
-                color: (t) => alpha(t.palette.text.primary, 0.5),
-                lineHeight: 1.6,
-              }}
-            >
-              Your watchlist — {count}{' '}
-              {count === 1 ? `${noun.single} pinned` : `${noun.plural} pinned`}.
-              {activeTab === 'prs' &&
-                ' Also shows PRs from watched miners and repositories.'}{' '}
-              Stored locally in this browser.
-            </Typography>
-            {count > 0 && (
-              <Button
-                size="small"
-                onClick={() => setConfirmOpen(true)}
-                sx={{
-                  fontSize: '0.75rem',
-                  textTransform: 'none',
-                  color: 'text.secondary',
-                }}
-              >
-                Clear {noun.plural}
-              </Button>
-            )}
-          </Stack>
-
-          <Box sx={{ borderBottom: '1px solid', borderColor: 'border.light' }}>
-            <Tabs
-              value={activeTab}
-              onChange={handleTabChange}
-              variant="scrollable"
-              scrollButtons="auto"
-              sx={(t) => ({
-                minHeight: 48,
-                '& .MuiTab-root': {
-                  minHeight: 48,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  color: t.palette.text.secondary,
-                  '&.Mui-selected': {
-                    color: t.palette.text.primary,
-                  },
-                },
-                '& .MuiTabs-indicator': {
-                  backgroundColor: t.palette.text.primary,
-                  height: 2,
-                },
-              })}
-            >
-              {TAB_ORDER.map((cat) => (
-                <Tab
-                  key={cat}
-                  value={cat}
-                  label={
-                    <Badge
-                      badgeContent={counts[cat]}
-                      color="primary"
-                      sx={{
-                        '& .MuiBadge-badge': {
-                          fontSize: '0.65rem',
-                          minWidth: 18,
-                          height: 18,
-                        },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          pr: counts[cat] > 0 ? 1.5 : 0,
-                        }}
-                      >
-                        {TAB_LABELS[cat]}
-                      </Box>
-                    </Badge>
-                  }
-                />
-              ))}
-            </Tabs>
-          </Box>
-
-          {isEmpty ? (
-            <Box
-              sx={{
-                py: 8,
-                textAlign: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
-                alignItems: 'center',
-                color: 'text.secondary',
-              }}
-            >
-              <Typography sx={{ fontSize: '0.95rem' }}>
-                No watched {noun.plural} yet.
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: '0.8rem',
-                  color: (t) => alpha(t.palette.text.primary, 0.5),
-                  lineHeight: 1.6,
-                }}
-              >
-                {discovery.hint} Pinned items appear here across reloads and
-                tabs.
-              </Typography>
-              <Button
-                component={RouterLink}
-                to={discovery.path}
-                variant="outlined"
-                size="small"
-                sx={{ textTransform: 'none', mt: 1 }}
-              >
-                Go to {discovery.label}
-              </Button>
-            </Box>
-          ) : activeTab === 'miners' ? (
-            <MinersList itemKeys={ids} />
-          ) : activeTab === 'repos' ? (
-            <ReposList itemKeys={ids} />
-          ) : activeTab === 'bounties' ? (
-            <BountiesList itemKeys={ids} />
-          ) : activeTab === 'issues' ? (
-            <WatchlistIssuesList minerIds={minerIds} />
-          ) : (
-            <PRsList itemKeys={ids} />
-          )}
-        </Box>
-
-        {/* Right Sidebar — new activities */}
-        {!isEmpty && (
-          <Box
+          <Typography sx={{ fontSize: '0.95rem' }}>
+            No watched {noun.plural} yet.
+          </Typography>
+          <Typography
             sx={{
-              width: showSidebarRight ? sidebarWidth : '100%',
-              height: showSidebarRight ? '100%' : 'auto',
-              maxHeight: showSidebarRight ? '100%' : 'none',
-              flexShrink: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2,
+              fontSize: '0.8rem',
+              color: (t) => alpha(t.palette.text.primary, 0.5),
+              lineHeight: 1.6,
             }}
           >
-            <ActivitySidebarCards miners={minerStats} />
-          </Box>
-        )}
-      </Box>
+            {discovery.hint} Pinned items appear here across reloads and tabs.
+          </Typography>
+          <Button
+            component={RouterLink}
+            to={discovery.path}
+            variant="outlined"
+            size="small"
+            sx={{ textTransform: 'none', mt: 1 }}
+          >
+            Go to {discovery.label}
+          </Button>
+        </Box>
+      ) : activeTab === 'miners' ? (
+        <MinersList itemKeys={ids} />
+      ) : activeTab === 'repos' ? (
+        <ReposList itemKeys={ids} />
+      ) : activeTab === 'bounties' ? (
+        <BountiesList itemKeys={ids} />
+      ) : activeTab === 'issues' ? (
+        <WatchlistIssuesList minerIds={minerIds} />
+      ) : (
+        <PRsList itemKeys={ids} />
+      )}
 
       <Dialog
         open={confirmOpen}
@@ -463,7 +415,447 @@ const WatchlistPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+    </>
+  );
+};
+
+const WatchlistPage: React.FC = () => {
+  const { ids: minerIds } = useWatchlist('miners');
+  const { data: allMinersData } = useAllMiners();
+
+  const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const sidebarWidth =
+    isMobile || isTablet ? '100%' : isLargeScreen ? '340px' : '300px';
+
+  const stickySidebarRef = useTwitterStickySidebar();
+
+  const minerStats = useMemo(() => {
+    const watchedSet = new Set(minerIds);
+    return mapAllMinersToStats(allMinersData ?? [])
+      .filter((m) => watchedSet.has(m.githubId))
+      .map((m) => ({
+        ...m,
+        isEligible: Boolean(m.ossIsEligible || m.discoveriesIsEligible),
+      }));
+  }, [allMinersData, minerIds]);
+
+  return (
+    <Page title="Watchlist">
+      <SEO
+        title="Watchlist"
+        description="Your pinned miners, repositories, bounties, and pull requests on Gittensor."
+      />
+      <Box
+        sx={{
+          width: '100%',
+          display: 'flex',
+          flexDirection: isLargeScreen ? 'row' : 'column',
+          alignItems: isLargeScreen ? 'flex-start' : 'stretch',
+          gap: { xs: 2, sm: 2, md: 2.5, lg: 3 },
+          py: { xs: 2, sm: 2, md: 2.5, lg: 3 },
+          px: { xs: 2, sm: 2, md: 2.5, lg: 3 },
+        }}
+      >
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: { xs: 2, sm: 1.5 },
+            minWidth: 0,
+            pr: isLargeScreen ? 1 : 0,
+            // Prevent the sidebar from driving page scroll when main content
+            // is short — the main column always fills at least the viewport.
+            minHeight: isLargeScreen ? 'calc(100vh - 88px)' : 'auto',
+          }}
+        >
+          <WatchlistContent />
+        </Box>
+
+        <Box
+          ref={isLargeScreen ? stickySidebarRef : undefined}
+          sx={{
+            width: isLargeScreen ? sidebarWidth : '100%',
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            position: isLargeScreen ? 'sticky' : 'static',
+            top: isLargeScreen ? 88 : 'auto',
+            // Cap sidebar height to viewport so it doesn't push the page
+            // taller than the main content. The twitter-style sticky hook
+            // handles the scroll-tracking within this constraint.
+            ...(isLargeScreen && {
+              maxHeight: 'calc(100vh - 88px)',
+              overflowY: 'auto',
+              // Hide the scrollbar visually (no visible scrollbar on right)
+              scrollbarWidth: 'none',
+              '&::-webkit-scrollbar': { display: 'none' },
+            }),
+          }}
+        >
+          <ActivitySidebarCards
+            miners={minerStats}
+            defaultFilter="all"
+            insertAfterFirstCard={
+              <Box
+                id="tabs-options-portal"
+                sx={{
+                  display: 'none',
+                  '@media (min-width: 1536px)': {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    p: 2,
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'border.light',
+                    backgroundColor: 'background.default',
+                  },
+                }}
+              />
+            }
+          />
+        </Box>
+      </Box>
     </Page>
+  );
+};
+
+/* ─── OptionsLabel: section header inside popovers ─── */
+const OptionsLabel: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => (
+  <Typography
+    sx={{
+      fontFamily: '"JetBrains Mono", monospace',
+      fontSize: '0.65rem',
+      fontWeight: 600,
+      color: 'text.secondary',
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em',
+      mb: 1,
+    }}
+  >
+    {children}
+  </Typography>
+);
+
+/* ─── WatchlistPortal: sidebar panel on xl, popover button otherwise ─── */
+const WatchlistPortal: React.FC<WatchlistOptionsButtonProps> = (props) => {
+  const [target, setTarget] = useState<HTMLElement | null>(null);
+  const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
+
+  useEffect(() => {
+    setTarget(document.getElementById('tabs-options-portal'));
+  }, []);
+
+  if (target && isLargeScreen) {
+    return (
+      <Portal container={target}>
+        <WatchlistOptionsSidebarPanel {...props} />
+      </Portal>
+    );
+  }
+
+  return (
+    <Box
+      sx={{
+        p: 1.5,
+        display: 'flex',
+        justifyContent: 'flex-end',
+        borderBottom: '1px solid',
+        borderColor: 'border.light',
+      }}
+    >
+      <WatchlistOptionsButton {...props} />
+    </Box>
+  );
+};
+
+/* ─── WatchlistOptionsSidebarPanel: expanded controls for the sidebar ─── */
+const WatchlistOptionsSidebarPanel: React.FC<
+  Omit<WatchlistOptionsButtonProps, 'hasActiveFilter'> & {
+    hasActiveFilter: boolean;
+  }
+> = (props) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Box>
+      <Box
+        component="button"
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        sx={(t) => ({
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          border: 0,
+          background: 'none',
+          cursor: 'pointer',
+          p: 0,
+          color: t.palette.text.primary,
+        })}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+          <TuneOutlinedIcon
+            sx={{ fontSize: '1rem', color: 'text.secondary' }}
+          />
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+            }}
+          >
+            Filters
+          </Typography>
+          {props.hasActiveFilter && (
+            <Box
+              component="span"
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                backgroundColor: 'status.info',
+              }}
+            />
+          )}
+        </Box>
+        <KeyboardArrowDownIcon
+          sx={{
+            fontSize: '1.1rem',
+            color: 'text.secondary',
+            transform: open ? 'rotate(-180deg)' : 'none',
+            transition: 'transform 0.2s ease',
+          }}
+        />
+      </Box>
+      <Collapse in={open}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+          <WatchlistOptionsSidebarPanelContent {...props} />
+        </Box>
+      </Collapse>
+    </Box>
+  );
+};
+
+const WatchlistOptionsSidebarPanelContent: React.FC<
+  Omit<WatchlistOptionsButtonProps, 'hasActiveFilter'>
+> = ({
+  filterContent,
+  extraContent,
+  searchValue,
+  searchPlaceholder,
+  onSearchChange,
+  viewModeToggle,
+}) => (
+  <>
+    {/* Filter */}
+    <Box>
+      <OptionsLabel>Filter</OptionsLabel>
+      {filterContent}
+    </Box>
+
+    {/* Search */}
+    <Box>
+      <OptionsLabel>Search</OptionsLabel>
+      <TextField
+        placeholder={searchPlaceholder}
+        size="small"
+        value={searchValue}
+        onChange={(e) => onSearchChange(e.target.value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
+            </InputAdornment>
+          ),
+        }}
+        sx={{
+          width: '100%',
+          '& .MuiOutlinedInput-root': {
+            color: 'text.primary',
+            backgroundColor: 'background.default',
+            fontSize: '0.8rem',
+            height: '34px',
+            borderRadius: 2,
+            '& fieldset': { borderColor: 'border.light' },
+            '&:hover fieldset': { borderColor: 'border.medium' },
+            '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+          },
+        }}
+      />
+    </Box>
+
+    {/* View mode */}
+    <Box>
+      <OptionsLabel>View</OptionsLabel>
+      {viewModeToggle}
+    </Box>
+
+    {/* Extra content (e.g. chart controls) */}
+    {extraContent}
+  </>
+);
+
+/* ─── WatchlistOptionsButton: reusable compact popover for all watchlist list toolbars ─── */
+interface WatchlistOptionsButtonProps {
+  filterContent: React.ReactNode;
+  extraContent?: React.ReactNode;
+  searchValue: string;
+  searchPlaceholder: string;
+  onSearchChange: (v: string) => void;
+  viewMode: string;
+  onViewModeChange: (v: any) => void;
+  viewModeToggle: React.ReactNode;
+  hasActiveFilter: boolean;
+}
+
+const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
+  filterContent,
+  extraContent,
+  searchValue,
+  searchPlaceholder,
+  onSearchChange,
+  viewModeToggle,
+  hasActiveFilter,
+}) => {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const open = Boolean(anchorEl);
+
+  return (
+    <>
+      <Tooltip title="Options" arrow>
+        <Box
+          component="button"
+          type="button"
+          onClick={(e) =>
+            setAnchorEl((prev) => (prev ? null : e.currentTarget))
+          }
+          sx={(t) => ({
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.75,
+            px: 1.25,
+            py: 0.5,
+            minHeight: 32,
+            borderRadius: 2,
+            border: `1px solid ${t.palette.border.light}`,
+            backgroundColor: open
+              ? alpha(t.palette.text.primary, 0.06)
+              : 'transparent',
+            cursor: 'pointer',
+            transition: 'all 0.15s',
+            '&:hover': {
+              backgroundColor: alpha(t.palette.text.primary, 0.04),
+              borderColor: t.palette.border.medium,
+            },
+          })}
+        >
+          <TuneOutlinedIcon
+            sx={{ fontSize: '1rem', color: 'text.secondary' }}
+          />
+          <Typography
+            component="span"
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              color: 'text.secondary',
+            }}
+          >
+            Options
+          </Typography>
+          {hasActiveFilter && (
+            <Box
+              component="span"
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                backgroundColor: 'status.info',
+              }}
+            />
+          )}
+        </Box>
+      </Tooltip>
+
+      <Popover
+        open={open}
+        anchorEl={anchorEl}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{
+          paper: {
+            sx: (t) => ({
+              mt: 1,
+              p: 2.5,
+              minWidth: 280,
+              borderRadius: 3,
+              border: `1px solid ${t.palette.border.light}`,
+              backgroundColor: t.palette.background.default,
+              backgroundImage: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2.5,
+            }),
+          },
+        }}
+      >
+        {/* Filter */}
+        <Box>
+          <OptionsLabel>Filter</OptionsLabel>
+          {filterContent}
+        </Box>
+
+        {/* Search */}
+        <Box>
+          <OptionsLabel>Search</OptionsLabel>
+          <TextField
+            placeholder={searchPlaceholder}
+            size="small"
+            value={searchValue}
+            onChange={(e) => onSearchChange(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon
+                    sx={{ color: 'text.tertiary', fontSize: '1rem' }}
+                  />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              width: '100%',
+              '& .MuiOutlinedInput-root': {
+                color: 'text.primary',
+                backgroundColor: 'background.default',
+                fontSize: '0.8rem',
+                height: '36px',
+                borderRadius: 2,
+                '& fieldset': { borderColor: 'border.light' },
+                '&:hover fieldset': { borderColor: 'border.medium' },
+                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+              },
+            }}
+          />
+        </Box>
+
+        {/* View mode */}
+        <Box>
+          <OptionsLabel>View</OptionsLabel>
+          {viewModeToggle}
+        </Box>
+
+        {/* Extra content (e.g. chart controls) */}
+        {extraContent}
+      </Popover>
+    </>
   );
 };
 
@@ -942,20 +1334,26 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
   );
 };
 
-const REPO_ROWS_OPTIONS = [10, 25, 50] as const;
+const ROWS_PER_PAGE = 50;
 
 const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: repos } = useReposAndWeights();
   const { data: allPrs } = useAllPrs();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<RepoStatusFilter>('all');
-  const [viewMode, setViewMode] = useState<ReposViewMode>('list');
+  const [viewMode, setViewMode] = useWatchlistViewMode();
   const [showChart, setShowChart] = useState(false);
   const [useLogScale, setUseLogScale] = useState(false);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(0);
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   const [sortField, setSortField] = useState<RepoSortKey>('weight');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  useEffect(() => {
+    setPage(0);
+  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
 
   const handleSort = (field: RepoSortKey) => {
     if (sortField === field) {
@@ -1023,7 +1421,6 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     const q = searchQuery.trim().toLowerCase();
     if (q) result = result.filter((r) => r.fullName.toLowerCase().includes(q));
 
-    setPage(0);
     return result;
   }, [items, statusFilter, searchQuery]);
 
@@ -1055,9 +1452,28 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   }, [filtered, sortField, sortOrder]);
 
   const paged = useMemo(
-    () => sorted.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [sorted, page, rowsPerPage],
+    () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
+    [sorted, page],
   );
+
+  useEffect(() => {
+    const target = observerTarget.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsLoadingMore(true);
+          setTimeout(() => {
+            setPage((p) => p + 1);
+            setIsLoadingMore(false);
+          }, 400);
+        }
+      },
+      { root: null, rootMargin: '0px 0px 400px 0px', threshold: 0 },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [page, filtered.length]);
 
   const maxWeight = useMemo(
     () =>
@@ -1201,235 +1617,108 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         overflow: 'hidden',
       }}
     >
-      {/* Toolbar */}
-      <Box
-        sx={{
-          p: 2,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2,
-          borderBottom: '1px solid',
-          borderColor: 'border.light',
-        }}
-      >
-        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-          <FilterButton
-            label="All"
-            count={counts.all}
-            color={STATUS_COLORS.neutral}
-            isActive={statusFilter === 'all'}
-            onClick={() => setStatusFilter('all')}
-          />
-          <FilterButton
-            label="Active"
-            count={counts.active}
-            color={STATUS_COLORS.success}
-            isActive={statusFilter === 'active'}
-            onClick={() => setStatusFilter('active')}
-          />
-          <FilterButton
-            label="Inactive"
-            count={counts.inactive}
-            color={STATUS_COLORS.closed}
-            isActive={statusFilter === 'inactive'}
-            onClick={() => setStatusFilter('inactive')}
-          />
-        </Box>
-        <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
-          <IconButton
-            onClick={() => setShowChart((v) => !v)}
-            size="small"
+      <WatchlistPortal
+        filterContent={
+          <Box
             sx={{
-              color: showChart ? 'text.primary' : 'text.tertiary',
-              border: '1px solid',
-              borderColor: 'border.light',
-              borderRadius: 2,
-              padding: '6px',
-              '&:hover': {
-                backgroundColor: 'surface.light',
-                borderColor: 'border.medium',
-              },
+              display: 'flex',
+              gap: 0.5,
+              alignItems: 'center',
+              flexWrap: 'wrap',
             }}
           >
-            {showChart ? (
-              <TableChartIcon fontSize="small" />
-            ) : (
-              <BarChartIcon fontSize="small" />
-            )}
-          </IconButton>
-        </Tooltip>
-        {showChart && (
-          <FormControlLabel
-            control={
-              <Switch
-                checked={useLogScale}
-                onChange={(e) => setUseLogScale(e.target.checked)}
-                size="small"
-                sx={{
-                  '& .MuiSwitch-switchBase.Mui-checked': {
-                    color: 'primary.main',
-                  },
-                  '& .MuiSwitch-track': { backgroundColor: 'border.medium' },
-                }}
-              />
-            }
-            label={
-              <Typography
-                variant="body2"
-                sx={{ fontSize: '0.8rem', color: 'text.secondary' }}
-              >
-                Log Scale
-              </Typography>
-            }
-          />
-        )}
-        <FormControl size="small">
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              variant="body2"
-              sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
-            >
-              Rows:
-            </Typography>
-            <Select
-              value={rowsPerPage}
-              onChange={(e) => {
-                setRowsPerPage(e.target.value as number);
-                setPage(0);
-              }}
-              sx={{
-                color: 'text.primary',
-                backgroundColor: 'background.default',
-                fontSize: '0.8rem',
-                height: '36px',
-                borderRadius: 2,
-                minWidth: '80px',
-                '& fieldset': { borderColor: 'border.light' },
-                '&:hover fieldset': { borderColor: 'border.medium' },
-                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                '& .MuiSelect-select': { py: 0.75 },
-              }}
-            >
-              {REPO_ROWS_OPTIONS.map((n) => (
-                <MenuItem key={n} value={n}>
-                  {n}
-                </MenuItem>
-              ))}
-            </Select>
+            <FilterButton
+              label="All"
+              count={counts.all}
+              color={STATUS_COLORS.neutral}
+              isActive={statusFilter === 'all'}
+              onClick={() => setStatusFilter('all')}
+            />
+            <FilterButton
+              label="Active"
+              count={counts.active}
+              color={STATUS_COLORS.success}
+              isActive={statusFilter === 'active'}
+              onClick={() => setStatusFilter('active')}
+            />
+            <FilterButton
+              label="Inactive"
+              count={counts.inactive}
+              color={STATUS_COLORS.closed}
+              isActive={statusFilter === 'inactive'}
+              onClick={() => setStatusFilter('inactive')}
+            />
           </Box>
-        </FormControl>
-        <TextField
-          placeholder="Search repositories..."
-          size="small"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            width: '220px',
-            '& .MuiOutlinedInput-root': {
-              color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
-              backgroundColor: 'background.default',
-              fontSize: '0.8rem',
-              height: '36px',
-              borderRadius: 2,
-              '& fieldset': { borderColor: 'border.light' },
-              '&:hover fieldset': { borderColor: 'border.medium' },
-              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-            },
-          }}
-        />
-        <Box sx={{ ml: 'auto' }}>
+        }
+        extraContent={
+          <>
+            <Box>
+              <OptionsLabel>Chart</OptionsLabel>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+                  <IconButton
+                    onClick={() => setShowChart((v) => !v)}
+                    size="small"
+                    sx={{
+                      color: showChart ? 'text.primary' : 'text.tertiary',
+                      border: '1px solid',
+                      borderColor: 'border.light',
+                      borderRadius: 2,
+                      padding: '6px',
+                      '&:hover': {
+                        backgroundColor: 'surface.light',
+                        borderColor: 'border.medium',
+                      },
+                    }}
+                  >
+                    {showChart ? (
+                      <TableChartIcon fontSize="small" />
+                    ) : (
+                      <BarChartIcon fontSize="small" />
+                    )}
+                  </IconButton>
+                </Tooltip>
+                {showChart && (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={useLogScale}
+                        onChange={(e) => setUseLogScale(e.target.checked)}
+                        size="small"
+                        sx={{
+                          '& .MuiSwitch-switchBase.Mui-checked': {
+                            color: 'primary.main',
+                          },
+                          '& .MuiSwitch-track': {
+                            backgroundColor: 'border.medium',
+                          },
+                        }}
+                      />
+                    }
+                    label={
+                      <Typography
+                        variant="body2"
+                        sx={{ fontSize: '0.8rem', color: 'text.secondary' }}
+                      >
+                        Log Scale
+                      </Typography>
+                    }
+                  />
+                )}
+              </Box>
+            </Box>
+          </>
+        }
+        searchValue={searchQuery}
+        searchPlaceholder="Search repositories..."
+        onSearchChange={setSearchQuery}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        viewModeToggle={
           <ReposViewModeToggle viewMode={viewMode} onChange={setViewMode} />
-        </Box>
-      </Box>
-
-      {viewMode === 'cards' && (
-        <Box
-          sx={{
-            px: 2,
-            pb: 2,
-            pt: 2,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            gap: 1,
-            borderBottom: '1px solid',
-            borderColor: 'border.light',
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
-          >
-            Sort:
-          </Typography>
-          <Select
-            size="small"
-            value={sortField}
-            onChange={(e) => {
-              const next = e.target.value as RepoSortKey;
-              setSortField(next);
-              setSortOrder(next === 'name' ? 'asc' : 'desc');
-              setPage(0);
-            }}
-            sx={{
-              color: 'text.primary',
-              backgroundColor: 'background.default',
-              fontSize: '0.8rem',
-              height: '36px',
-              borderRadius: 2,
-              minWidth: '140px',
-              '& fieldset': { borderColor: 'border.light' },
-              '&:hover fieldset': { borderColor: 'border.medium' },
-              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-              '& .MuiSelect-select': { py: 0.75 },
-            }}
-          >
-            <MenuItem value="weight">Weight</MenuItem>
-            <MenuItem value="totalScore">Total Score</MenuItem>
-            <MenuItem value="totalPRs">PRs</MenuItem>
-            <MenuItem value="contributors">Contributors</MenuItem>
-            <MenuItem value="name">Repository</MenuItem>
-            <MenuItem value="status">Status</MenuItem>
-          </Select>
-          <Tooltip title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}>
-            <IconButton
-              onClick={() => {
-                setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
-                setPage(0);
-              }}
-              size="small"
-              aria-label={
-                sortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'
-              }
-              sx={{
-                color: 'text.primary',
-                border: '1px solid',
-                borderColor: 'border.light',
-                borderRadius: 2,
-                padding: '6px',
-                '&:hover': {
-                  backgroundColor: 'surface.light',
-                  borderColor: 'border.medium',
-                },
-              }}
-            >
-              {sortOrder === 'asc' ? (
-                <ArrowUpwardIcon fontSize="small" />
-              ) : (
-                <ArrowDownwardIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Tooltip>
-        </Box>
-      )}
+        }
+        hasActiveFilter={statusFilter !== 'all'}
+      />
 
       <Collapse in={showChart}>
         <Box
@@ -1507,44 +1796,166 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           )}
         </Box>
       )}
-      <TablePagination
-        rowsPerPageOptions={[]}
-        component="div"
-        count={filtered.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={(_e, newPage) => setPage(newPage)}
-        onRowsPerPageChange={() => {}}
-        showFirstButton
-        showLastButton
-        sx={{
-          borderTop: '1px solid',
-          borderColor: 'border.light',
-          color: 'text.secondary',
-        }}
-      />
+      {filtered.length > (page + 1) * ROWS_PER_PAGE && (
+        <Box
+          ref={observerTarget}
+          sx={{
+            height: 60,
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          {isLoadingMore && (
+            <>
+              <CircularProgress size={20} sx={{ color: 'text.secondary' }} />
+              <Typography
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: '0.85rem',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  ml: 1.5,
+                }}
+              >
+                Loading more...
+              </Typography>
+            </>
+          )}
+        </Box>
+      )}
     </Card>
   );
 };
 
+type BountyFilter = 'all' | 'available' | 'pending' | 'history';
+
 const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: allIssues, isLoading } = useIssues();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const items = useMemo(() => {
     if (!allIssues) return [];
-    // Stored keys and issue ids are compared as strings to avoid any
-    // numeric coercion drift if issue ids ever become composite.
     const set = new Set(itemKeys);
     return allIssues.filter((issue) => set.has(String(issue.id)));
   }, [allIssues, itemKeys]);
 
+  const filterType = useMemo<BountyFilter>(() => {
+    const f = searchParams.get('filter');
+    return f === 'available' || f === 'pending' || f === 'history' ? f : 'all';
+  }, [searchParams]);
+
+  const setFilter = useCallback(
+    (f: BountyFilter) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (f !== 'all') next.set('filter', f);
+          else next.delete('filter');
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const viewMode = useMemo<IssuesViewMode>(
+    () =>
+      searchParams.get(ISSUES_VIEW_QUERY_PARAM) === 'cards' ? 'cards' : 'list',
+    [searchParams],
+  );
+
+  const setViewMode = useCallback(
+    (v: IssuesViewMode) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (v === 'cards') next.set(ISSUES_VIEW_QUERY_PARAM, 'cards');
+          else next.delete(ISSUES_VIEW_QUERY_PARAM);
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const counts = useMemo(
+    () => ({
+      all: items.length,
+      available: items.filter((i) => i.status === 'active').length,
+      pending: items.filter((i) => i.status === 'registered').length,
+      history: items.filter(
+        (i) => i.status === 'completed' || i.status === 'cancelled',
+      ).length,
+    }),
+    [items],
+  );
+
   return (
-    <IssuesList
-      issues={items}
-      isLoading={isLoading}
-      getIssueHref={getBountyHref}
-      linkState={WATCHLIST_LINK_STATE}
-    />
+    <>
+      <WatchlistPortal
+        filterContent={
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 0.5,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
+            <FilterButton
+              label="All"
+              count={counts.all}
+              color={STATUS_COLORS.neutral}
+              isActive={filterType === 'all'}
+              onClick={() => setFilter('all')}
+            />
+            <FilterButton
+              label="Available"
+              count={counts.available}
+              color={STATUS_COLORS.merged}
+              isActive={filterType === 'available'}
+              onClick={() => setFilter('available')}
+            />
+            <FilterButton
+              label="Pending"
+              count={counts.pending}
+              color={STATUS_COLORS.open}
+              isActive={filterType === 'pending'}
+              onClick={() => setFilter('pending')}
+            />
+            <FilterButton
+              label="History"
+              count={counts.history}
+              color={STATUS_COLORS.closed}
+              isActive={filterType === 'history'}
+              onClick={() => setFilter('history')}
+            />
+          </Box>
+        }
+        searchValue={searchQuery}
+        searchPlaceholder="Search bounties..."
+        onSearchChange={setSearchQuery}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        viewModeToggle={
+          <IssuesViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+        }
+        hasActiveFilter={filterType !== 'all'}
+      />
+      <IssuesList
+        issues={items}
+        isLoading={isLoading}
+        getIssueHref={getBountyHref}
+        linkState={WATCHLIST_LINK_STATE}
+        hideToolbar
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+      />
+    </>
   );
 };
 
@@ -1560,7 +1971,18 @@ const prStatusMeta = (pr: CommitLog) => {
   return { label, color };
 };
 
-type PrSortKey = 'pr' | 'title' | 'repo' | 'author' | 'score' | 'watch';
+type PrSortKey =
+  | 'pr'
+  | 'title'
+  | 'repo'
+  | 'author'
+  | 'date'
+  | 'score'
+  | 'watch';
+
+/** Return the most relevant date for a PR: mergedAt > closedAt > prCreatedAt. */
+const prLastActionDate = (pr: CommitLog): string =>
+  pr.mergedAt || pr.closedAt || pr.prCreatedAt || '';
 
 const prCellSx = { py: 1.5 } as const;
 
@@ -1726,6 +2148,34 @@ const buildPrColumns = (
           label={label}
           sx={{ color, borderColor: color }}
         />
+      );
+    },
+  },
+  {
+    key: 'date',
+    header: 'Date',
+    width: '100px',
+    align: 'right',
+    sortKey: 'date',
+    cellSx: prCellSx,
+    renderCell: (pr) => {
+      const raw = prLastActionDate(pr);
+      if (!raw) return null;
+      const d = new Date(raw);
+      return (
+        <Typography
+          sx={{
+            fontSize: '0.72rem',
+            color: 'text.secondary',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {d.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })}
+        </Typography>
       );
     },
   },
@@ -2019,20 +2469,23 @@ const PRCard: React.FC<{
   );
 };
 
-const PR_ROWS_OPTIONS_LIST = [10, 25, 50] as const;
-const PR_ROWS_OPTIONS_CARDS = [12, 24, 48] as const;
-
 const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { items, sourcesByKey, isLoading } = useWatchedPRs(itemKeys);
   const prColumns = useMemo(() => buildPrColumns(sourcesByKey), [sourcesByKey]);
   const { isWatched } = useWatchlist('prs');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
-  const [viewMode, setViewMode] = useState<PRsViewMode>('list');
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [viewMode, setViewMode] = useWatchlistViewMode();
   const [page, setPage] = useState(0);
-  const [sortField, setSortField] = useState<PrSortKey>('score');
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const [sortField, setSortField] = useState<PrSortKey>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  useEffect(() => {
+    setPage(0);
+  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode, isWatched]);
 
   const handleSort = (field: PrSortKey) => {
     if (sortField === field) {
@@ -2051,13 +2504,11 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const counts = useMemo(() => getPrStatusCounts(items), [items]);
 
   const filtered = useMemo(() => {
-    const result = filterPrs(items, {
+    return filterPrs(items, {
       statusFilter,
       searchQuery,
       includeNumber: true,
     });
-    setPage(0);
-    return result;
   }, [items, statusFilter, searchQuery]);
 
   const sorted = useMemo(() => {
@@ -2074,6 +2525,11 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           return cmpStr(a.repository, b.repository);
         case 'author':
           return cmpStr(a.author, b.author);
+        case 'date': {
+          const da = new Date(prLastActionDate(a)).getTime() || 0;
+          const db = new Date(prLastActionDate(b)).getTime() || 0;
+          return cmpNum(da, db);
+        }
         case 'score':
           return cmpNum(parseFloat(a.score || '0'), parseFloat(b.score || '0'));
         case 'watch': {
@@ -2088,9 +2544,28 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   }, [filtered, sortField, sortOrder, isWatched]);
 
   const paged = useMemo(
-    () => sorted.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [sorted, page, rowsPerPage],
+    () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
+    [sorted, page],
   );
+
+  useEffect(() => {
+    const target = observerTarget.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsLoadingMore(true);
+          setTimeout(() => {
+            setPage((p) => p + 1);
+            setIsLoadingMore(false);
+          }, 400);
+        }
+      },
+      { root: null, rootMargin: '0px 0px 400px 0px', threshold: 0 },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [page, filtered.length]);
 
   return (
     <Card
@@ -2100,137 +2575,70 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         border: '1px solid',
         borderColor: 'border.light',
         backgroundColor: 'transparent',
-        overflow: 'hidden',
-        maxHeight: '85vh',
         display: 'flex',
         flexDirection: 'column',
-        '& .MuiTableContainer-root': {
-          flex: 1,
-          overflowY: 'auto',
-          ...scrollbarSx,
-        },
       }}
     >
-      {/* Toolbar */}
-      <Box
-        sx={{
-          p: 2,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2,
-          borderBottom: '1px solid',
-          borderColor: 'border.light',
-        }}
-      >
-        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-          <FilterButton
-            label="All"
-            count={counts.all}
-            color={STATUS_COLORS.neutral}
-            isActive={statusFilter === 'all'}
-            onClick={() => setStatusFilter('all')}
-          />
-          <FilterButton
-            label="Open"
-            count={counts.open}
-            color={STATUS_COLORS.open}
-            isActive={statusFilter === 'open'}
-            onClick={() => setStatusFilter('open')}
-          />
-          <FilterButton
-            label="Merged"
-            count={counts.merged}
-            color={STATUS_COLORS.merged}
-            isActive={statusFilter === 'merged'}
-            onClick={() => setStatusFilter('merged')}
-          />
-          <FilterButton
-            label="Closed"
-            count={counts.closed}
-            color={STATUS_COLORS.closed}
-            isActive={statusFilter === 'closed'}
-            onClick={() => setStatusFilter('closed')}
-          />
-        </Box>
-        <FormControl size="small">
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              variant="body2"
-              sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
-            >
-              Rows:
-            </Typography>
-            <Select
-              value={rowsPerPage}
-              onChange={(e) => {
-                setRowsPerPage(e.target.value as number);
-                setPage(0);
-              }}
-              sx={{
-                color: 'text.primary',
-                backgroundColor: 'background.default',
-                fontSize: '0.8rem',
-                height: '36px',
-                borderRadius: 2,
-                minWidth: '80px',
-                '& fieldset': { borderColor: 'border.light' },
-                '&:hover fieldset': { borderColor: 'border.medium' },
-                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                '& .MuiSelect-select': { py: 0.75 },
-              }}
-            >
-              {(viewMode === 'cards'
-                ? PR_ROWS_OPTIONS_CARDS
-                : PR_ROWS_OPTIONS_LIST
-              ).map((n) => (
-                <MenuItem key={n} value={n}>
-                  {n}
-                </MenuItem>
-              ))}
-            </Select>
+      {/* Compact Options trigger */}
+      <WatchlistPortal
+        filterContent={
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 0.5,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
+            <FilterButton
+              label="All"
+              count={counts.all}
+              color={STATUS_COLORS.neutral}
+              isActive={statusFilter === 'all'}
+              onClick={() => setStatusFilter('all')}
+            />
+            <FilterButton
+              label="Open"
+              count={counts.open}
+              color={STATUS_COLORS.open}
+              isActive={statusFilter === 'open'}
+              onClick={() => setStatusFilter('open')}
+            />
+            <FilterButton
+              label="Merged"
+              count={counts.merged}
+              color={STATUS_COLORS.merged}
+              isActive={statusFilter === 'merged'}
+              onClick={() => setStatusFilter('merged')}
+            />
+            <FilterButton
+              label="Closed"
+              count={counts.closed}
+              color={STATUS_COLORS.closed}
+              isActive={statusFilter === 'closed'}
+              onClick={() => setStatusFilter('closed')}
+            />
           </Box>
-        </FormControl>
-        <TextField
-          placeholder="Search PRs..."
-          size="small"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            width: '220px',
-            '& .MuiOutlinedInput-root': {
-              color: 'text.primary',
-              backgroundColor: 'background.default',
-              fontSize: '0.8rem',
-              height: '36px',
-              borderRadius: 2,
-              '& fieldset': { borderColor: 'border.light' },
-              '&:hover fieldset': { borderColor: 'border.medium' },
-              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-            },
-          }}
-        />
-        <Box sx={{ ml: 'auto' }}>
+        }
+        searchValue={searchQuery}
+        searchPlaceholder="Search PRs..."
+        onSearchChange={setSearchQuery}
+        viewMode={viewMode}
+        onViewModeChange={(next) => {
+          setViewMode(next);
+          setPage(0);
+        }}
+        viewModeToggle={
           <PRsViewModeToggle
             viewMode={viewMode}
             onChange={(next) => {
               setViewMode(next);
-              setRowsPerPage(
-                next === 'cards'
-                  ? PR_ROWS_OPTIONS_CARDS[0]
-                  : PR_ROWS_OPTIONS_LIST[0],
-              );
               setPage(0);
             }}
           />
-        </Box>
-      </Box>
+        }
+        hasActiveFilter={statusFilter !== 'all'}
+      />
 
       {/* Content */}
       {viewMode === 'list' ? (
@@ -2302,22 +2710,34 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           )}
         </Box>
       )}
-      <TablePagination
-        rowsPerPageOptions={[]}
-        component="div"
-        count={filtered.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={(_e, newPage) => setPage(newPage)}
-        onRowsPerPageChange={() => {}}
-        showFirstButton
-        showLastButton
-        sx={{
-          borderTop: '1px solid',
-          borderColor: 'border.light',
-          color: 'text.secondary',
-        }}
-      />
+      {filtered.length > (page + 1) * ROWS_PER_PAGE && (
+        <Box
+          ref={observerTarget}
+          sx={{
+            height: 60,
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          {isLoadingMore && (
+            <>
+              <CircularProgress size={20} sx={{ color: 'text.secondary' }} />
+              <Typography
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: '0.85rem',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  ml: 1.5,
+                }}
+              >
+                Loading more...
+              </Typography>
+            </>
+          )}
+        </Box>
+      )}
     </Card>
   );
 };
@@ -2337,7 +2757,6 @@ const ISSUE_STATUS_FILTERS: readonly IssueStatusFilter[] = [
   'resolved',
   'closed',
 ];
-const ISSUE_ROWS_OPTIONS = [10, 25, 50] as const;
 const issueCellSx = { py: 1.5 } as const;
 
 const issueState = (issue: MinerIssue): Exclude<IssueStatusFilter, 'all'> => {
@@ -2849,11 +3268,17 @@ const WatchlistIssuesList: React.FC<{ minerIds: string[] }> = ({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<IssueStatusFilter>('all');
-  const [viewMode, setViewMode] = useState<PRsViewMode>('list');
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [viewMode, setViewMode] = useWatchlistViewMode();
   const [page, setPage] = useState(0);
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   const [sortField, setSortField] = useState<IssueSortKey>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  useEffect(() => {
+    setPage(0);
+  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
 
   const handleSort = (field: IssueSortKey) => {
     if (sortField === field) {
@@ -2871,10 +3296,6 @@ const WatchlistIssuesList: React.FC<{ minerIds: string[] }> = ({
     () => filterIssues(items, { statusFilter, searchQuery }),
     [items, statusFilter, searchQuery],
   );
-
-  useEffect(() => {
-    setPage(0);
-  }, [statusFilter, searchQuery]);
 
   const sorted = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -2899,9 +3320,28 @@ const WatchlistIssuesList: React.FC<{ minerIds: string[] }> = ({
   }, [filtered, sortField, sortOrder]);
 
   const paged = useMemo(
-    () => sorted.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [sorted, page, rowsPerPage],
+    () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
+    [sorted, page],
   );
+
+  useEffect(() => {
+    const target = observerTarget.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsLoadingMore(true);
+          setTimeout(() => {
+            setPage((p) => p + 1);
+            setIsLoadingMore(false);
+          }, 400);
+        }
+      },
+      { root: null, rootMargin: '0px 0px 400px 0px', threshold: 0 },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [page, filtered.length]);
 
   return (
     <Card
@@ -2911,104 +3351,43 @@ const WatchlistIssuesList: React.FC<{ minerIds: string[] }> = ({
         border: '1px solid',
         borderColor: 'border.light',
         backgroundColor: 'transparent',
-        overflow: 'hidden',
-        maxHeight: '85vh',
         display: 'flex',
         flexDirection: 'column',
-        '& .MuiTableContainer-root': {
-          flex: 1,
-          overflowY: 'auto',
-          ...scrollbarSx,
-        },
       }}
     >
-      <Box
-        sx={{
-          p: 2,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2,
-          borderBottom: '1px solid',
-          borderColor: 'border.light',
-        }}
-      >
-        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-          {ISSUE_STATUS_FILTERS.map((s) => (
-            <FilterButton
-              key={s}
-              label={s[0].toUpperCase() + s.slice(1)}
-              count={counts[s]}
-              color={issueStatusColor(s)}
-              isActive={statusFilter === s}
-              onClick={() => setStatusFilter(s)}
-            />
-          ))}
-        </Box>
-        <FormControl size="small">
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              variant="body2"
-              sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
-            >
-              Rows:
-            </Typography>
-            <Select
-              value={rowsPerPage}
-              onChange={(e) => {
-                setRowsPerPage(e.target.value as number);
-                setPage(0);
-              }}
-              sx={{
-                color: 'text.primary',
-                backgroundColor: 'background.default',
-                fontSize: '0.8rem',
-                height: '36px',
-                borderRadius: 2,
-                minWidth: '80px',
-                '& fieldset': { borderColor: 'border.light' },
-                '&:hover fieldset': { borderColor: 'border.medium' },
-                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                '& .MuiSelect-select': { py: 0.75 },
-              }}
-            >
-              {ISSUE_ROWS_OPTIONS.map((n) => (
-                <MenuItem key={n} value={n}>
-                  {n}
-                </MenuItem>
-              ))}
-            </Select>
+      {/* Compact Options trigger */}
+      <WatchlistPortal
+        filterContent={
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 0.5,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
+            {ISSUE_STATUS_FILTERS.map((s) => (
+              <FilterButton
+                key={s}
+                label={s[0].toUpperCase() + s.slice(1)}
+                count={counts[s]}
+                color={issueStatusColor(s)}
+                isActive={statusFilter === s}
+                onClick={() => setStatusFilter(s)}
+              />
+            ))}
           </Box>
-        </FormControl>
-        <TextField
-          placeholder="Search issues..."
-          size="small"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            width: '220px',
-            '& .MuiOutlinedInput-root': {
-              color: 'text.primary',
-              backgroundColor: 'background.default',
-              fontSize: '0.8rem',
-              height: '36px',
-              borderRadius: 2,
-              '& fieldset': { borderColor: 'border.light' },
-              '&:hover fieldset': { borderColor: 'border.medium' },
-              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-            },
-          }}
-        />
-        <Box sx={{ ml: 'auto' }}>
+        }
+        searchValue={searchQuery}
+        searchPlaceholder="Search issues..."
+        onSearchChange={setSearchQuery}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        viewModeToggle={
           <PRsViewModeToggle viewMode={viewMode} onChange={setViewMode} />
-        </Box>
-      </Box>
+        }
+        hasActiveFilter={statusFilter !== 'all'}
+      />
 
       {viewMode === 'list' ? (
         <DataTable<MinerIssue, IssueSortKey>
@@ -3063,22 +3442,34 @@ const WatchlistIssuesList: React.FC<{ minerIds: string[] }> = ({
           )}
         </Box>
       )}
-      <TablePagination
-        rowsPerPageOptions={[]}
-        component="div"
-        count={filtered.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={(_e, newPage) => setPage(newPage)}
-        onRowsPerPageChange={() => {}}
-        showFirstButton
-        showLastButton
-        sx={{
-          borderTop: '1px solid',
-          borderColor: 'border.light',
-          color: 'text.secondary',
-        }}
-      />
+      {filtered.length > (page + 1) * ROWS_PER_PAGE && (
+        <Box
+          ref={observerTarget}
+          sx={{
+            height: 60,
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          {isLoadingMore && (
+            <>
+              <CircularProgress size={20} sx={{ color: 'text.secondary' }} />
+              <Typography
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: '0.85rem',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  ml: 1.5,
+                }}
+              >
+                Loading more...
+              </Typography>
+            </>
+          )}
+        </Box>
+      )}
     </Card>
   );
 };

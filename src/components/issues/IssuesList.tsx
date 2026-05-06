@@ -75,6 +75,13 @@ interface IssuesListProps {
   isLoading?: boolean;
   getIssueHref?: (id: number) => string;
   linkState?: Record<string, unknown>;
+  /** Hide the built-in toolbar (search, filter chips, view toggle). The
+   * caller is expected to render its own controls and drive state via the
+   * controlled props below. */
+  hideToolbar?: boolean;
+  /** Controlled search. When provided, the parent owns the search value. */
+  searchQuery?: string;
+  onSearchQueryChange?: (value: string) => void;
 }
 
 const truncateAddress = (address: string | null): string => {
@@ -152,6 +159,9 @@ const IssuesList: React.FC<IssuesListProps> = ({
   isLoading = false,
   getIssueHref,
   linkState,
+  hideToolbar = false,
+  searchQuery: controlledSearchQuery,
+  onSearchQueryChange,
 }) => {
   const theme = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -180,7 +190,9 @@ const IssuesList: React.FC<IssuesListProps> = ({
     viewMode === 'cards' ? ISSUES_DEFAULT_CARD_ROWS : ISSUES_DEFAULT_LIST_ROWS,
   );
   const [page, setPage] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [internalSearchQuery, setInternalSearchQuery] = useState('');
+  const searchQuery = controlledSearchQuery ?? internalSearchQuery;
+  const setSearchQuery = onSearchQueryChange ?? setInternalSearchQuery;
   const [showChart, setShowChart] = useState(false);
 
   const { taoPrice, alphaPrice } = usePrices();
@@ -823,7 +835,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
   return (
     <Card sx={cardSx} elevation={0}>
-      {toolbar}
+      {!hideToolbar && toolbar}
 
       {viewMode === 'cards' ? (
         <>
@@ -877,4 +889,5 @@ const IssuesList: React.FC<IssuesListProps> = ({
   );
 };
 
+export { ViewModeToggle };
 export default IssuesList;
