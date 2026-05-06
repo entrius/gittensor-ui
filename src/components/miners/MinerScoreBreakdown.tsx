@@ -697,7 +697,21 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
             Click any PR to see multiplier details
           </Typography>
         </Box>
-        <Stack direction="row" spacing={1} flexWrap="wrap">
+        <Stack
+          direction="row"
+          spacing={{ xs: 0.75, sm: 1 }}
+          flexWrap="wrap"
+          sx={{
+            width: { xs: '100%', sm: 'auto' },
+            '& > .MuiButton-root': {
+              flex: { xs: 1, sm: 'none' },
+              minWidth: 0,
+              px: { xs: 1.5, sm: 2 },
+              py: { xs: 0.5, sm: 0 },
+              fontSize: { xs: '0.75rem', sm: '0.8rem' },
+            },
+          }}
+        >
           <FilterButton
             label="All"
             isActive={statusFilter === 'all'}
