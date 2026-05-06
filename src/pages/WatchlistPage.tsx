@@ -1502,6 +1502,19 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     return result;
   }, [items, statusFilter, searchQuery]);
 
+  useEffect(() => {
+    setPage(0);
+  }, [searchQuery, statusFilter]);
+
+  useEffect(() => {
+    if (filtered.length === 0) {
+      if (page !== 0) setPage(0);
+      return;
+    }
+    const maxPage = Math.max(0, Math.ceil(filtered.length / rowsPerPage) - 1);
+    if (page > maxPage) setPage(maxPage);
+  }, [filtered.length, page, rowsPerPage]);
+
   const sorted = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
     const cmpStr = (a = '', b = '') => a.localeCompare(b) * dir;
@@ -2504,6 +2517,19 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       includeNumber: true,
     });
   }, [items, statusFilter, searchQuery]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [searchQuery, statusFilter]);
+
+  useEffect(() => {
+    if (filtered.length === 0) {
+      if (page !== 0) setPage(0);
+      return;
+    }
+    const maxPage = Math.max(0, Math.ceil(filtered.length / rowsPerPage) - 1);
+    if (page > maxPage) setPage(maxPage);
+  }, [filtered.length, page, rowsPerPage]);
 
   const sorted = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
