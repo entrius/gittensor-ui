@@ -43,6 +43,7 @@ import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import BountyProgress from './BountyProgress';
 import FilterButton from '../FilterButton';
+import { WatchlistButton } from '../common';
 import { BountyCard } from './BountyCard';
 import {
   type IssuesViewMode,
@@ -700,6 +701,16 @@ const IssuesList: React.FC<IssuesListProps> = ({
       },
     };
 
+    const watchlistColumn: DataTableColumn<IssueBounty, SortKey> = {
+      key: 'watchlist',
+      header: '★',
+      width: '56px',
+      align: 'center',
+      renderCell: (issue) => (
+        <WatchlistButton category="bounties" itemKey={String(issue.id)} />
+      ),
+    };
+
     if (filterType === 'pending') {
       return [
         idColumn,
@@ -708,6 +719,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         bountyColumn('Target Bounty', '140px'),
         fundingColumn,
         statusColumn('110px'),
+        watchlistColumn,
       ];
     }
     if (filterType === 'history') {
@@ -723,6 +735,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         solverColumn,
         statusColumn('110px'),
         dateColumn,
+        watchlistColumn,
       ];
     }
     return [
@@ -731,6 +744,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
       issueColumn,
       bountyColumn('Bounty', '120px'),
       statusColumn('110px'),
+      watchlistColumn,
     ];
   }, [filterType, theme, taoPrice, alphaPrice]);
 
