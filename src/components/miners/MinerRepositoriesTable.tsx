@@ -4,13 +4,14 @@ import {
   Box,
   Card,
   CircularProgress,
+  IconButton,
   InputAdornment,
   TextField,
   Typography,
   alpha,
 } from '@mui/material';
-import { Search as SearchIcon } from '@mui/icons-material';
-import { useMinerPRs, useReposAndWeights, useIssues } from '../../api';
+import { Search as SearchIcon, Close as CloseIcon } from '@mui/icons-material';
+import { useIssues, useMinerPRs, useReposAndWeights } from '../../api';
 import { LinkBox } from '../common/linkBehavior';
 import {
   DataTable,
@@ -25,7 +26,6 @@ import {
   type IssueRepoSortField,
   type SortOrder,
   type RepoStats,
-  type IssueRepoStats,
   buildRepoWeightsMap,
   aggregatePRsByRepository,
   aggregateIssueDiscoveryByRepository,
@@ -36,7 +36,6 @@ import {
   getDisplayCount,
   isOutsideScoringWindow,
 } from '../../utils/ExplorerUtils';
-import { formatTokenAmount } from '../../utils/format';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 
 type ViewMode = 'prs' | 'issues';
@@ -58,9 +57,8 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
   const [prSortField, setPrSortField] = useState<RepoSortField>('score');
   const [prSortOrder, setPrSortOrder] = useState<SortOrder>('desc');
-  const [issueSortField, setIssueSortField] =
-    useState<IssueRepoSortField>('issueTokenScore');
-  const [issueSortOrder, setIssueSortOrder] = useState<SortOrder>('desc');
+  const [issueSortField] = useState<IssueRepoSortField>('issueTokenScore');
+  const [issueSortOrder] = useState<SortOrder>('desc');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
 
@@ -114,11 +112,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     return sortedRepoStats.slice(start, start + PAGE_SIZE);
   }, [sortedRepoStats, page]);
 
-  const pagedIssueRows = useMemo(() => {
-    const start = page * PAGE_SIZE;
-    return sortedIssueRepoStats.slice(start, start + PAGE_SIZE);
-  }, [sortedIssueRepoStats, page]);
-
   const totalPages = Math.ceil(activeSortedCount / PAGE_SIZE);
 
   const handlePrSort = (field: RepoSortField) => {
@@ -127,16 +120,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     } else {
       setPrSortField(field);
       setPrSortOrder('desc');
-    }
-    setPage(0);
-  };
-
-  const handleIssueSort = (field: IssueRepoSortField) => {
-    if (issueSortField === field) {
-      setIssueSortOrder(issueSortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setIssueSortField(field);
-      setIssueSortOrder('desc');
     }
     setPage(0);
   };
@@ -266,80 +249,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     },
   ];
 
-  const issueColumns: DataTableColumn<IssueRepoStats, IssueRepoSortField>[] = [
-    {
-      key: 'rank',
-      header: 'Rank',
-      width: '8%',
-      sortKey: 'rank',
-      renderCell: (repo) => {
-        const indexInPage = pagedIssueRows.indexOf(repo);
-        const rank = page * PAGE_SIZE + indexInPage;
-        return <RankBadge rank={rank} displayNumber={rank + 1} />;
-      },
-    },
-    {
-      key: 'repository',
-      header: 'Repository',
-      width: '28%',
-      sortKey: 'repository',
-      renderCell: (repo) => renderRepositoryCell(repo.repository),
-    },
-    {
-      key: 'solved',
-      header: 'Solved',
-      width: '9%',
-      align: 'right',
-      sortKey: 'solved',
-      renderCell: (repo) => repo.solved,
-    },
-    {
-      key: 'validSolved',
-      header: 'Valid',
-      width: '9%',
-      align: 'right',
-      sortKey: 'validSolved',
-      renderCell: (repo) => repo.validSolved,
-    },
-    {
-      key: 'issueTokenScore',
-      header: 'Token score',
-      width: '12%',
-      align: 'right',
-      sortKey: 'issueTokenScore',
-      renderCell: (repo) => repo.issueTokenScore.toFixed(2),
-    },
-    {
-      key: 'bountyEarned',
-      header: 'Bounty (α)',
-      width: '12%',
-      align: 'right',
-      sortKey: 'bountyEarned',
-      renderCell: (repo) => `${formatTokenAmount(repo.bountyEarned)} α`,
-    },
-    {
-      key: 'avgPerSolve',
-      header: 'Avg token / solve',
-      width: '10%',
-      align: 'right',
-      cellSx: {
-        color: (theme) => alpha(theme.palette.text.primary, 0.5),
-      },
-      renderCell: (repo) =>
-        repo.solved > 0
-          ? (repo.issueTokenScore / repo.solved).toFixed(2)
-          : '\u2014',
-    },
-    {
-      key: 'weight',
-      header: 'Weight',
-      width: '12%',
-      align: 'right',
-      sortKey: 'weight',
-      renderCell: (repo) => repo.weight.toFixed(4),
-    },
-  ];
-
   if (isLoading) {
     return (
       <Card
@@ -357,9 +266,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       </Card>
     );
   }
-
-  const emptyPrs = !prs || prs.length === 0;
-  const noIssueDiscoveryRepos = isIssueMode && issueRepoStats.length === 0;
 
   const headerToolbar = (
     <Box
@@ -420,6 +326,21 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
               />
             </InputAdornment>
           ),
+          endAdornment: searchQuery ? (
+            <InputAdornment position="end">
+              <IconButton
+                size="small"
+                onClick={() => {
+                  setSearchQuery('');
+                  setPage(0);
+                }}
+                edge="end"
+                aria-label="clear search"
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </InputAdornment>
+          ) : undefined,
         }}
         sx={searchFieldSx}
       />
@@ -440,49 +361,12 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       }}
       elevation={0}
     >
-      {!isIssueMode && emptyPrs ? (
-        <>
-          {headerToolbar}
-          <EmptyStateMessage message="No repository contributions found" />
-        </>
-      ) : isIssueMode && noIssueDiscoveryRepos ? (
-        <>
-          {headerToolbar}
-          <EmptyStateMessage message="No repositories with solved bounty issues for this miner" />
-        </>
-      ) : isIssueMode ? (
-        <DataTable<IssueRepoStats, IssueRepoSortField>
-          columns={issueColumns}
-          rows={pagedIssueRows}
-          getRowKey={(repo) => repo.repository}
-          minWidth="700px"
-          stickyHeader
-          size="medium"
-          header={headerToolbar}
-          emptyState={
-            <EmptyStateMessage message="No repositories found for the selected filters" />
-          }
-          sort={{
-            field: issueSortField,
-            order: issueSortOrder,
-            onChange: handleIssueSort,
-          }}
-          getRowSx={(repo) => ({
-            opacity: isOutsideScoringWindow(repo.latestActivityDate) ? 0.4 : 1,
-            transition: 'opacity 0.2s',
-          })}
-          pagination={
-            <TablePagination
-              page={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-            />
-          }
-        />
+      {!prs || prs.length === 0 ? (
+        <EmptyStateMessage message="No repository contributions found" />
       ) : (
         <DataTable<RepoStats, RepoSortField>
           columns={prColumns}
-          rows={pagedRepoRows}
+          rows={sortedRepoStats}
           getRowKey={(repo) => repo.repository}
           minWidth="700px"
           stickyHeader

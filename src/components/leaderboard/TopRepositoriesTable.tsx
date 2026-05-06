@@ -30,6 +30,7 @@ import {
   useTheme,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import CloseIcon from '@mui/icons-material/Close';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
@@ -710,6 +711,18 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       autoFocus={isMobileSearchOpen}
       InputProps={{
         startAdornment: searchAdornment,
+        endAdornment: searchQuery ? (
+          <InputAdornment position="end">
+            <IconButton
+              size="small"
+              onClick={() => setSearchQuery('')}
+              edge="end"
+              aria-label="clear search"
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </InputAdornment>
+        ) : undefined,
       }}
       sx={{
         width: '200px',

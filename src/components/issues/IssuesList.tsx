@@ -24,6 +24,7 @@ import {
 } from '@mui/material';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ViewListIcon from '@mui/icons-material/ViewList';
@@ -868,7 +869,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
           </Tooltip>
         </Stack>
 
-        {/* Rows selector */}
         <FormControl size="small">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography
@@ -913,7 +913,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
           </Box>
         </FormControl>
 
-        {/* Search */}
         <TextField
           placeholder="Search..."
           size="small"
@@ -933,6 +932,21 @@ const IssuesList: React.FC<IssuesListProps> = ({
                 />
               </InputAdornment>
             ),
+            endAdornment: searchQuery ? (
+              <InputAdornment position="end">
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setPage(0);
+                  }}
+                  edge="end"
+                  aria-label="clear search"
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ) : undefined,
           }}
           sx={{
             width: '200px',
