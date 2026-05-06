@@ -183,7 +183,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     urlDir === 'asc' || urlDir === 'desc' ? urlDir : 'desc',
   );
   const [useLogScale, setUseLogScale] = useState(true);
-  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [storedViewMode, setStoredViewMode] = useState<ViewMode>(
     readStoredRepositoriesViewMode,
   );
@@ -198,10 +197,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const isInitialMount = useRef(true);
   const { isWatched } = useWatchlist('repos');
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isCompactChart = useMediaQuery(theme.breakpoints.down('sm'));
   const trimmedSearch = searchQuery.trim();
-  const isMobileSearchVisible =
-    isMobile && (isMobileSearchOpen || !!trimmedSearch);
   const isDirectRepoInput = /^[^/\s]+\/[^/\s]+$/.test(trimmedSearch);
 
   const cardSortSelectOptions = useMemo(() => {
@@ -475,15 +472,31 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       },
     }));
 
+    const baseTitle = echartsBarChartTitle(
+      theme,
+      metric.title,
+      'Values match the current table sort and page',
+    );
+
     return {
       ...echartsTransparentBackground(),
-      title: echartsBarChartTitle(
-        theme,
-        metric.title,
-        'Values match the current table sort and page',
-      ),
+      title: isCompactChart
+        ? {
+            ...baseTitle,
+            top: 8,
+            textStyle: {
+              ...baseTitle.textStyle,
+              fontSize: 13,
+            },
+            subtextStyle: {
+              ...baseTitle.subtextStyle,
+              fontSize: 10,
+            },
+          }
+        : baseTitle,
       tooltip: {
         trigger: 'axis',
+        confine: true,
         axisPointer: {
           type: 'shadow',
           shadowStyle: {
@@ -561,7 +574,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         type: effectiveLogScale ? 'log' : 'value',
         min: effectiveLogScale ? 1 : 0,
         logBase: 10,
-        name: metric.yAxis,
+        name: isCompactChart ? '' : metric.yAxis,
         nameTextStyle: {
           color: textColor,
           fontFamily: chartFont,
@@ -664,9 +677,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         state: linkState,
       });
     }
-    if (e.key === 'Escape' && !trimmedSearch) {
-      setIsMobileSearchOpen(false);
-    }
   };
 
   const searchAdornment = (
@@ -702,26 +712,80 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       value={searchQuery}
       onChange={(e) => setSearchQuery(e.target.value)}
       onKeyDown={handleSearchKeyDown}
-      onBlur={() => {
-        if (isMobile && !trimmedSearch) {
-          setIsMobileSearchOpen(false);
-        }
-      }}
-      autoFocus={isMobileSearchOpen}
       InputProps={{
         startAdornment: searchAdornment,
       }}
       sx={{
-        width: '200px',
-        ...(isMobileSearchVisible
-          ? {
-              flexBasis: { xs: '100%', sm: 'auto' },
-              order: { xs: 10, sm: 'initial' },
-            }
-          : {}),
+        width: { xs: '100%', sm: '200px' },
+        flexBasis: { xs: '100%', sm: 'auto' },
+        order: { xs: -1, sm: 'initial' },
         ...searchFieldBaseSx,
       }}
     />
+  );
+
+  const chartControls = (
+    <>
+      {showChart && (
+        <FormControlLabel
+          labelPlacement="start"
+          control={
+            <Switch
+              checked={useLogScale}
+              onChange={(e) => setUseLogScale(e.target.checked)}
+              size="small"
+              sx={{
+                '& .MuiSwitch-switchBase.Mui-checked': {
+                  color: 'primary.main',
+                },
+                '& .MuiSwitch-track': {
+                  backgroundColor: 'border.medium',
+                },
+              }}
+            />
+          }
+          label={
+            <Typography
+              variant="body2"
+              sx={{
+                fontSize: '0.8rem',
+                color: 'text.secondary',
+              }}
+            >
+              Log Scale
+            </Typography>
+          }
+          sx={{ ml: 0 }}
+        />
+      )}
+      <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+        <IconButton
+          onClick={() => setShowChart(!showChart)}
+          size="small"
+          sx={{
+            color: showChart ? 'text.primary' : 'text.tertiary',
+            border: '1px solid',
+            borderColor: 'border.light',
+            borderRadius: 2,
+            padding: '6px',
+            width: 36,
+            height: 36,
+            flexShrink: 0,
+            ml: { xs: 'auto', md: 0 },
+            '&:hover': {
+              backgroundColor: 'surface.light',
+              borderColor: 'border.medium',
+            },
+          }}
+        >
+          {showChart ? (
+            <TableChartIcon fontSize="small" />
+          ) : (
+            <BarChartIcon fontSize="small" />
+          )}
+        </IconButton>
+      </Tooltip>
+    </>
   );
 
   // Custom sort header to preserve the original unicode arrow look and
@@ -1012,12 +1076,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     syncToUrl({ search: searchQuery, page: '0' });
   }, [searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!isMobile) {
-      setIsMobileSearchOpen(false);
-    }
-  }, [isMobile]);
-
   if (isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -1048,20 +1106,25 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         {/* Row 1: All Controls */}
         <Box
           sx={{
-            p: { xs: 1.5, md: 2 },
+            p: { xs: 1, sm: 1.5, md: 2 },
             display: 'flex',
             flexDirection: { xs: 'column', md: 'row' },
             alignItems: { xs: 'stretch', md: 'center' },
-            gap: { xs: 1.25, md: 2 },
+            gap: { xs: 1, md: 2 },
           }}
         >
           <Box
             sx={{
               display: 'flex',
-              gap: 0.5,
+              gap: { xs: 0.25, sm: 0.5 },
               alignItems: 'center',
-              flexWrap: 'wrap',
+              flexWrap: { xs: 'nowrap', sm: 'wrap' },
               width: { xs: '100%', md: 'auto' },
+              '& > button': {
+                flex: { xs: 1, sm: 'initial' },
+                minWidth: 0,
+                px: { xs: 1, sm: 2 },
+              },
             }}
           >
             <FilterButton
@@ -1103,77 +1166,40 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             sx={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: { xs: 'space-between', md: 'flex-end' },
-              gap: 1,
+              justifyContent: { xs: 'flex-start', md: 'flex-end' },
+              gap: { xs: 0.75, sm: 1 },
               flexWrap: 'wrap',
               width: { xs: '100%', md: 'auto' },
             }}
           >
-            <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
-              <IconButton
-                onClick={() => setShowChart(!showChart)}
-                size="small"
-                sx={{
-                  color: showChart ? 'text.primary' : 'text.tertiary',
-                  border: '1px solid',
-                  borderColor: 'border.light',
-                  borderRadius: 2,
-                  padding: '6px',
-                  '&:hover': {
-                    backgroundColor: 'surface.light',
-                    borderColor: 'border.medium',
-                  },
-                }}
-              >
-                {showChart ? (
-                  <TableChartIcon fontSize="small" />
-                ) : (
-                  <BarChartIcon fontSize="small" />
-                )}
-              </IconButton>
-            </Tooltip>
-
-            {showChart && (
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={useLogScale}
-                    onChange={(e) => setUseLogScale(e.target.checked)}
-                    size="small"
-                    sx={{
-                      '& .MuiSwitch-switchBase.Mui-checked': {
-                        color: 'primary.main',
-                      },
-                      '& .MuiSwitch-track': {
-                        backgroundColor: 'border.medium',
-                      },
-                    }}
-                  />
-                }
-                label={
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontSize: '0.8rem',
-                      color: 'text.secondary',
-                    }}
-                  >
-                    Log Scale
-                  </Typography>
-                }
-              />
-            )}
+            <Box
+              sx={{
+                display: { xs: 'none', md: 'flex' },
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
+              {chartControls}
+            </Box>
 
             <FormControl size="small">
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: { xs: 0.75, sm: 1 },
+                }}
+              >
                 <Typography
                   variant="body2"
                   sx={{
                     color: 'text.secondary',
                     fontSize: '0.8rem',
+                    minWidth: { xs: 36, md: 'auto' },
+                    flexShrink: 0,
                   }}
                 >
-                  Rows:
+                  Row:
                 </Typography>
                 <Select
                   value={rowsPerPage}
@@ -1189,7 +1215,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     fontSize: '0.8rem',
                     height: '36px',
                     borderRadius: 2,
-                    minWidth: '80px',
+                    minWidth: '140px',
                     '& fieldset': { borderColor: 'border.light' },
                     '&:hover fieldset': {
                       borderColor: 'border.medium',
@@ -1210,32 +1236,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               </Box>
             </FormControl>
 
-            {isMobileSearchVisible ? (
-              searchInput
-            ) : isMobile ? (
-              <IconButton
-                size="small"
-                onClick={() => setIsMobileSearchOpen(true)}
-                sx={{
-                  color: 'text.tertiary',
-                  border: '1px solid',
-                  borderColor: 'border.light',
-                  borderRadius: 2,
-                  width: 36,
-                  height: 36,
-                  '&:hover': {
-                    backgroundColor: 'surface.light',
-                    borderColor: 'border.medium',
-                  },
-                }}
-              >
-                <SearchIcon sx={{ fontSize: '1rem' }} />
-              </IconButton>
-            ) : (
-              searchInput
-            )}
+            {searchInput}
 
-            <Box sx={{ ml: { xs: 0, md: 'auto' } }}>
+            <Box sx={{ ml: 'auto' }}>
               <ViewModeToggle
                 viewMode={viewMode}
                 onChange={handleViewModeChange}
@@ -1248,17 +1251,22 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         {viewMode === 'cards' && (
           <Box
             sx={{
-              px: 2,
-              pb: 2,
+              px: { xs: 1, sm: 1.5, md: 2 },
+              pb: { xs: 1, sm: 1.5, md: 2 },
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'flex-end',
-              gap: 1,
+              justifyContent: { xs: 'flex-start', md: 'flex-end' },
+              gap: { xs: 0.75, sm: 1 },
             }}
           >
             <Typography
               variant="body2"
-              sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
+              sx={{
+                color: 'text.secondary',
+                fontSize: '0.8rem',
+                minWidth: { xs: 36, md: 'auto' },
+                flexShrink: 0,
+              }}
             >
               Sort:
             </Typography>
@@ -1300,6 +1308,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                   borderColor: 'border.light',
                   borderRadius: 2,
                   padding: '6px',
+                  ml: { xs: 'auto', md: 0 },
                   '&:hover': {
                     backgroundColor: 'surface.light',
                     borderColor: 'border.medium',
@@ -1315,15 +1324,28 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             </Tooltip>
           </Box>
         )}
+
+        {/* Mobile-only chart controls row (below sort row) */}
+        <Box
+          sx={{
+            display: { xs: 'flex', md: 'none' },
+            alignItems: 'center',
+            gap: 1,
+            px: { xs: 1, sm: 1.5 },
+            pb: { xs: 1, sm: 1.5 },
+          }}
+        >
+          {chartControls}
+        </Box>
       </Box>
 
       <Collapse in={showChart}>
         <Box
           sx={{
-            p: 2,
+            p: { xs: 0.5, sm: 1.5, md: 2 },
             borderBottom: '1px solid',
             borderColor: 'border.light',
-            height: '500px',
+            height: { xs: 360, sm: 440, md: 500 },
             backgroundColor: 'surface.subtle',
           }}
         >
@@ -1339,13 +1361,13 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       {viewMode === 'cards' && (
         <Box
           sx={{
-            p: 2,
+            p: { xs: 1, sm: 1.5, md: 2 },
             overflowY: 'auto',
             ...scrollbarSx,
           }}
         >
           {isLoading ? (
-            <Grid container spacing={2}>
+            <Grid container spacing={{ xs: 1.25, sm: 2 }}>
               {Array.from({ length: rowsPerPage }).map((_, i) => (
                 <Grid item xs={12} sm={6} md={4} lg={4} key={i}>
                   <Skeleton
@@ -1359,7 +1381,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               ))}
             </Grid>
           ) : pagedRepositories.length > 0 ? (
-            <Grid container spacing={2}>
+            <Grid container spacing={{ xs: 1.25, sm: 2 }}>
               {pagedRepositories.map((repo) => (
                 <Grid item xs={12} sm={6} md={4} lg={4} key={repo.repository}>
                   <RepositoryCard
@@ -1488,7 +1510,24 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           borderTop: '1px solid',
           borderColor: 'border.light',
           color: 'text.secondary',
-          '.MuiTablePagination-displayedRows': {},
+          overflow: 'hidden',
+          '& .MuiToolbar-root': {
+            px: { xs: 0.5, sm: 2 },
+            minHeight: { xs: 44, sm: 52 },
+            flexWrap: 'wrap',
+            justifyContent: { xs: 'center', sm: 'flex-end' },
+            rowGap: 0.5,
+          },
+          '& .MuiTablePagination-displayedRows': {
+            fontSize: { xs: '0.72rem', sm: '0.8rem' },
+            margin: 0,
+          },
+          '& .MuiTablePagination-actions': {
+            ml: { xs: 0.5, sm: 2.5 },
+            '& .MuiIconButton-root': {
+              padding: { xs: '4px', sm: '8px' },
+            },
+          },
         }}
       />
     </Card>

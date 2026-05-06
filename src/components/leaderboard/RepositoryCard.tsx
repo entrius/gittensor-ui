@@ -40,7 +40,7 @@ const MetricCell: React.FC<MetricCellProps> = ({ label, value }) => (
     <Typography
       sx={(theme) => ({
         fontFamily: FONTS.mono,
-        fontSize: '0.65rem',
+        fontSize: { xs: '0.62rem', sm: '0.65rem' },
         color: theme.palette.text.tertiary,
         textTransform: 'uppercase',
         letterSpacing: '0.04em',
@@ -52,7 +52,7 @@ const MetricCell: React.FC<MetricCellProps> = ({ label, value }) => (
     <Typography
       sx={{
         fontFamily: FONTS.mono,
-        fontSize: '0.9rem',
+        fontSize: { xs: '0.85rem', sm: '0.9rem' },
         fontWeight: 600,
         color: value === '-' ? 'text.secondary' : 'text.primary',
         lineHeight: 1.2,
@@ -86,7 +86,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
       aria-label={`Open ${repo.repository}`}
       sx={(theme) => ({
         ...linkResetSx,
-        p: 2,
+        p: { xs: 1.5, sm: 2 },
         height: '100%',
         borderRadius: 2,
         border: '1px solid',
@@ -94,7 +94,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
         backgroundColor: theme.palette.surface.transparent,
         display: 'flex',
         flexDirection: 'column',
-        gap: 1.5,
+        gap: { xs: 1.25, sm: 1.5 },
         cursor: 'pointer',
         transition: 'all 0.2s',
         opacity: isInactive ? INACTIVE_OPACITY : 1,
@@ -110,14 +110,21 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
       })}
       elevation={0}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: { xs: 0.75, sm: 1.25 },
+          minWidth: 0,
+        }}
+      >
         <RankIcon rank={repo.rank || 0} />
         <Avatar
           src={getRepositoryOwnerAvatarSrc(owner) || undefined}
           alt={owner}
           sx={(theme) => ({
-            width: 28,
-            height: 28,
+            width: { xs: 24, sm: 28 },
+            height: { xs: 24, sm: 28 },
             flexShrink: 0,
             border: '1px solid',
             borderColor: theme.palette.border.medium,
@@ -130,7 +137,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
           <Typography
             sx={{
               fontFamily: FONTS.mono,
-              fontSize: '0.85rem',
+              fontSize: { xs: '0.8rem', sm: '0.85rem' },
               fontWeight: 500,
               color: 'text.primary',
               overflow: 'hidden',
@@ -147,14 +154,15 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
           component="span"
           sx={(theme) => ({
             fontFamily: FONTS.mono,
-            fontSize: '0.65rem',
+            fontSize: { xs: '0.6rem', sm: '0.65rem' },
             fontWeight: 600,
             textTransform: 'uppercase',
             letterSpacing: '0.04em',
-            px: 0.75,
+            px: { xs: 0.5, sm: 0.75 },
             py: 0.25,
             borderRadius: '4px',
             flexShrink: 0,
+            whiteSpace: 'nowrap',
             color: isInactive
               ? theme.palette.status.closed
               : theme.palette.status.success,
