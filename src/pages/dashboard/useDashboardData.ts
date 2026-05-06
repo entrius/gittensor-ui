@@ -8,18 +8,25 @@
  * Keep pure domain/data builders out of this file.
  */
 import { useMemo } from 'react';
-import { useAllMiners, useAllPrs, useIssues } from '../../api';
+import {
+  useAllMiners,
+  useAllPrs,
+  useIssues,
+  useReposAndWeights,
+} from '../../api';
 import {
   type CommitLog,
   type DatasetState,
   type IssueBounty,
   type MinerEvaluation,
+  type Repository,
 } from '../../api/models';
 import {
   buildDashboardKpis,
   buildDashboardOverview,
   buildDashboardTrendData,
   buildFeaturedContributors,
+  buildFeaturedWork,
   buildFeaturedDiscoveryContributors,
   type TrendTimeRange,
 } from './dashboardData';
@@ -28,12 +35,14 @@ type DashboardDatasets = {
   prs: DatasetState<CommitLog>;
   miners: DatasetState<MinerEvaluation>;
   issues: DatasetState<IssueBounty>;
+  repos: DatasetState<Repository>;
 };
 
 export const useDashboardData = (range: TrendTimeRange) => {
   const prsQuery = useAllPrs();
   const minersQuery = useAllMiners();
   const issuesQuery = useIssues();
+  const reposQuery = useReposAndWeights();
 
   const datasets: DashboardDatasets = {
     prs: {
@@ -50,6 +59,11 @@ export const useDashboardData = (range: TrendTimeRange) => {
       data: issuesQuery.data ?? [],
       isLoading: issuesQuery.isLoading,
       isError: issuesQuery.isError,
+    },
+    repos: {
+      data: reposQuery.data ?? [],
+      isLoading: reposQuery.isLoading,
+      isError: reposQuery.isError,
     },
   };
 
@@ -79,10 +93,18 @@ export const useDashboardData = (range: TrendTimeRange) => {
     [datasets.miners.data, datasets.prs.data],
   );
 
+  const featuredWork = useMemo(
+    () => buildFeaturedWork(datasets.prs.data, datasets.repos.data),
+    [datasets.prs.data, datasets.repos.data],
+  );
+
   const kpis = useMemo(
     () => buildDashboardKpis(datasets.prs.data, datasets.issues.data, range),
     [datasets.issues.data, datasets.prs.data, range],
   );
+
+  const isFeaturedWorkLoading =
+    datasets.prs.isLoading || datasets.repos.isLoading;
 
   return {
     datasets,
@@ -90,6 +112,8 @@ export const useDashboardData = (range: TrendTimeRange) => {
     overview,
     trendLabels: trendData.labels,
     trendSeries: trendData.series,
+    featuredWork,
+    isFeaturedWorkLoading,
     featuredContributors,
     featuredDiscoveryContributors,
     isLoading:

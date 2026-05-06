@@ -36,6 +36,7 @@ const LAYOUTS: Record<
     { width: '18%', barWidth: '55%', align: 'right' },
     { width: '15%', barWidth: '40%', align: 'right' },
     { width: '15%', barWidth: '40%', align: 'right' },
+    { width: '52px', barWidth: '20px' },
   ],
 };
 

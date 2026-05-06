@@ -7,6 +7,7 @@ import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { LinkBox } from '../common/linkBehavior';
 import { type MinerStats, FONTS } from './types';
 import { ActivitySidebarCards } from './ActivitySidebarCards';
+import { useEligibilityFilteredMiners } from './useEligibilityFilteredMiners';
 
 // Re-export MinerStats for backward compatibility
 export type { MinerStats } from './types';
@@ -16,6 +17,8 @@ interface LeaderboardSidebarProps {
   getMinerHref: (miner: MinerStats) => string;
   linkState?: Record<string, unknown>;
   variant?: 'oss' | 'discoveries';
+  /** Content to insert after the Miners Activity card (e.g. options panel). */
+  insertAfterFirstCard?: React.ReactNode;
 }
 
 export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
@@ -23,31 +26,33 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
   getMinerHref,
   linkState,
   variant = 'oss',
+  insertAfterFirstCard,
 }) => {
   // State for toggling lists
   const [leaderboardType, setLeaderboardType] = useState<'earners' | 'active'>(
     'earners',
   );
 
-  // Stats (Use original unfiltered list for stats)
+  const filteredMiners = useEligibilityFilteredMiners(miners);
+
   const topEarners = useMemo(
     () =>
-      [...miners]
+      [...filteredMiners]
         .sort((a, b) => (b.usdPerDay || 0) - (a.usdPerDay || 0))
         .slice(0, 5),
-    [miners],
+    [filteredMiners],
   );
 
   const mostActive = useMemo(
     () =>
-      [...miners]
+      [...filteredMiners]
         .sort((a, b) =>
           variant === 'discoveries'
             ? (b.totalIssues || 0) - (a.totalIssues || 0)
             : (b.totalPRs || 0) - (a.totalPRs || 0),
         )
         .slice(0, 5),
-    [miners, variant],
+    [filteredMiners, variant],
   );
 
   return (
@@ -56,7 +61,10 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
       sx={{ height: '100%', overflow: 'auto', pr: 1, ...scrollbarSx }}
     >
       {/* Activity Cards: PR Activity, Issue Activity, Code Impact */}
-      <ActivitySidebarCards miners={miners} />
+      <ActivitySidebarCards
+        miners={miners}
+        insertAfterFirstCard={insertAfterFirstCard}
+      />
 
       {/* Leaderboard Lists (Tabs) */}
       <SectionCard

@@ -2,6 +2,10 @@ import React, { useMemo } from 'react';
 import { Box, Typography, alpha, useTheme } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import {
+  echartsRadarChrome,
+  echartsTransparentBackground,
+} from '../../utils/echarts/gittensorChartTheme';
 
 interface PerformanceRadarProps {
   credibility: number;
@@ -24,8 +28,9 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
 
   const chartOption = useMemo(
     () => ({
-      backgroundColor: 'transparent',
+      ...echartsTransparentBackground(),
       radar: {
+        ...echartsRadarChrome(theme),
         indicator: [
           { name: 'Credibility', max: 100 },
           { name: 'Complexity', max: 100 },
@@ -38,20 +43,6 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
         radius: '50%',
         shape: 'circle',
         splitNumber: 5,
-        axisName: {
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
-          fontSize: 9,
-          lineHeight: 12,
-        },
-        splitLine: {
-          lineStyle: {
-            color: Array(5).fill(alpha(theme.palette.common.white, 0.05)),
-          },
-        },
-        splitArea: { show: false },
-        axisLine: {
-          lineStyle: { color: alpha(theme.palette.common.white, 0.1) },
-        },
       },
       series: [
         {
