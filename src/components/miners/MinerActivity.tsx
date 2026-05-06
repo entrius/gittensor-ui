@@ -15,16 +15,21 @@ import {
   useMinerPRs,
   useReposAndWeights,
   useAllMiners,
+  useIssues,
 } from '../../api';
 import ContributionHeatmap from '../ContributionHeatmap';
 import DayPRsPanel from '../DayPRsPanel';
 import { CHART_COLORS, STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import {
+  aggregateIssueDiscoveryByRepository,
+  buildRepoWeightsMap,
+  parseNumber,
+} from '../../utils/ExplorerUtils';
+import {
   echartsItemTooltipChrome,
   echartsRadarChrome,
   echartsTransparentBackground,
 } from '../../utils/echarts/gittensorChartTheme';
-import { parseNumber } from '../../utils/ExplorerUtils';
 import TrustBadge from './TrustBadge';
 import CredibilityChart from './CredibilityChart';
 import PerformanceRadar from './PerformanceRadar';
@@ -196,7 +201,15 @@ const IssuePerformanceRadar: React.FC<{
   validRatio: number;
   volume: number;
   tokenScore: number;
-}> = ({ credibility, solvedRatio, validRatio, volume, tokenScore }) => {
+  avgRepoWeight: number;
+}> = ({
+  credibility,
+  solvedRatio,
+  validRatio,
+  volume,
+  tokenScore,
+  avgRepoWeight,
+}) => {
   const theme = useTheme();
 
   const chartOption = useMemo(
@@ -210,6 +223,8 @@ const IssuePerformanceRadar: React.FC<{
           { name: 'Valid\nRate', max: 100 },
           { name: 'Volume', max: 100 },
           { name: 'Token\nScore', max: 100 },
+          // Keep max 100 like other spokes — ECharts radar mixes poorly with max: 1.
+          { name: 'Avg Repo\nWeight', max: 100 },
         ],
         center: ['50%', '50%'],
         radius: '50%',
@@ -228,7 +243,14 @@ const IssuePerformanceRadar: React.FC<{
           },
           data: [
             {
-              value: [credibility, solvedRatio, validRatio, volume, tokenScore],
+              value: [
+                credibility,
+                solvedRatio,
+                validRatio,
+                volume,
+                tokenScore,
+                avgRepoWeight,
+              ],
               name: 'Issue Stats',
               symbol: 'circle',
               symbolSize: 4,
@@ -238,7 +260,15 @@ const IssuePerformanceRadar: React.FC<{
         },
       ],
     }),
-    [credibility, solvedRatio, validRatio, volume, tokenScore, theme],
+    [
+      credibility,
+      solvedRatio,
+      validRatio,
+      volume,
+      tokenScore,
+      avgRepoWeight,
+      theme,
+    ],
   );
 
   return (
@@ -278,6 +308,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
   const { data: minerStats } = useMinerStats(githubId);
   const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
   const { data: repos } = useReposAndWeights();
+  const { data: issues } = useIssues();
   const { data: allMinerStats } = useAllMiners();
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
@@ -389,18 +420,18 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
     );
 
     let avgWeightVal = 0;
-    if (prs && prs.length > 0 && repos && Array.isArray(repos)) {
-      const repoWeights = new Map<string, number>();
-      repos.forEach((repo) => {
-        if (repo?.fullName) {
-          repoWeights.set(repo.fullName, parseFloat(repo.weight || '0'));
-        }
-      });
-      const totalWeight = prs.reduce(
-        (sum, pr) => sum + (repoWeights.get(pr.repository) || 0),
-        0,
-      );
-      avgWeightVal = Math.min(totalWeight / prs.length, 100);
+    if (prs && repos && Array.isArray(repos) && repos.length > 0) {
+      const repoWeights = buildRepoWeightsMap(repos);
+      const mergedForWeight = prs.filter((pr) => pr.mergedAt);
+      if (mergedForWeight.length > 0) {
+        const totalWeight = mergedForWeight.reduce(
+          (sum, pr) =>
+            sum + (repoWeights.get((pr.repository || '').toLowerCase()) || 0),
+          0,
+        );
+        const avgRaw = totalWeight / mergedForWeight.length;
+        avgWeightVal = Math.min(Math.max(avgRaw, 0) * 100, 100);
+      }
     }
 
     return {
@@ -423,6 +454,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
         validRatio: 0,
         volume: 0,
         tokenScore: 0,
+        avgRepoWeight: 0,
       };
     }
 
@@ -440,6 +472,26 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
       1,
     );
 
+    // Avg repo weight = mean subnet weight on Issue Discovery Repositories tab
+    // (completed bounty solves — same basis as MinerRepositoriesTable issue mode).
+    let avgRepoWeight = 0;
+    const repoWeights =
+      repos && Array.isArray(repos) && repos.length > 0
+        ? buildRepoWeightsMap(repos)
+        : null;
+    if (repoWeights && prs?.length && issues?.length) {
+      const issueRepos = aggregateIssueDiscoveryByRepository(
+        prs,
+        issues,
+        repoWeights,
+      );
+      if (issueRepos.length > 0) {
+        const avgRaw =
+          issueRepos.reduce((sum, r) => sum + r.weight, 0) / issueRepos.length;
+        avgRepoWeight = Math.min(Math.max(avgRaw, 0) * 100, 100);
+      }
+    }
+
     return {
       credibility: issueCred * 100,
       solvedRatio:
@@ -450,8 +502,9 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
       validRatio: solved > 0 ? (validSolved / solved) * 100 : 0,
       volume: (solved / maxSolved) * 100,
       tokenScore: (issueTokenScore / maxTokenScore) * 100,
+      avgRepoWeight,
     };
-  }, [minerStats, allMinerStats, isIssueMode]);
+  }, [minerStats, allMinerStats, isIssueMode, repos, prs, issues]);
 
   if (!minerStats) return null;
 
