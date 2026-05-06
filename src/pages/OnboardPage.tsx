@@ -8,6 +8,7 @@ import { FAQContent } from '../components/onboard/FAQContent';
 
 import { GettingStarted } from '../components/onboard/GettingStarted';
 import { Scoring } from '../components/onboard/Scoring';
+import { CodeOfConductContent } from '../components/onboard/CodeOfConductContent';
 import { LanguageWeightsTable } from '../components/repositories';
 
 const OnboardPage: React.FC = () => {
@@ -21,6 +22,7 @@ const OnboardPage: React.FC = () => {
     scoring: 2,
     languages: 3,
     faq: 4,
+    'code-of-conduct': 5,
   };
 
   const indexToTabName: Record<number, string> = {
@@ -29,6 +31,7 @@ const OnboardPage: React.FC = () => {
     2: 'scoring',
     3: 'languages',
     4: 'faq',
+    5: 'code-of-conduct',
   };
 
   const activeTab =
@@ -96,6 +99,7 @@ const OnboardPage: React.FC = () => {
             <Tab label="Scoring" />
             <Tab label="Languages" />
             <Tab label="FAQ" />
+            <Tab label="Code of Conduct" />
           </Tabs>
         </Box>
 
@@ -128,6 +132,7 @@ const OnboardPage: React.FC = () => {
             </Card>
           )}
           {activeTab === 4 && <FAQContent />}
+          {activeTab === 5 && <CodeOfConductContent />}
         </Box>
       </Box>
     </Page>
