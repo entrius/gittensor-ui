@@ -608,17 +608,25 @@ const IssuesList: React.FC<IssuesListProps> = ({
       renderCell: (issue) => {
         const statusBadge = getIssueStatusMeta(issue.status);
         return (
-          <Chip
-            label={statusBadge.text}
-            size="small"
-            sx={{
-              fontSize: '0.7rem',
-              fontWeight: 600,
-              backgroundColor: statusBadge.bgColor,
-              color: statusBadge.color,
-              border: `1px solid ${statusBadge.color}40`,
-            }}
-          />
+          <Tooltip title={statusBadge.text} arrow placement="top">
+            <Chip
+              label={statusBadge.text}
+              size="small"
+              sx={{
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                backgroundColor: statusBadge.bgColor,
+                color: statusBadge.color,
+                border: `1px solid ${statusBadge.color}40`,
+                maxWidth: '100%',
+                '& .MuiChip-label': {
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                },
+              }}
+            />
+          </Tooltip>
         );
       },
     });
