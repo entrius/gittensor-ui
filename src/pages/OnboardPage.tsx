@@ -65,6 +65,7 @@ const OnboardPage: React.FC = () => {
             zIndex: 2,
             maxWidth: 1200,
             width: '100%',
+            px: { xs: 2, sm: 3, md: 0 },
             mx: 'auto',
             mb: 4,
             backgroundColor: theme.palette.background.default,
@@ -79,11 +80,21 @@ const OnboardPage: React.FC = () => {
             scrollButtons="auto"
             allowScrollButtonsMobile
             sx={(theme) => ({
-              px: 2,
+              px: 0,
+              '& .MuiTabs-scrollButtons.Mui-disabled': {
+                display: 'none',
+              },
+              '& .MuiTabs-flexContainer': {
+                gap: { xs: 3, sm: 4 },
+              },
               '& .MuiTab-root': {
                 textTransform: 'none',
                 fontWeight: 500,
-                fontSize: '1rem',
+                minWidth: 'auto',
+                minHeight: 48,
+                paddingLeft: 0,
+                paddingRight: 0,
+                fontSize: { xs: '0.95rem', sm: '1rem' },
                 color: theme.palette.text.secondary,
                 '&.Mui-selected': {
                   color: theme.palette.primary.main,
