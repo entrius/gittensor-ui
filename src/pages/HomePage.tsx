@@ -1,21 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Avatar, Box, Button, Stack, Typography } from '@mui/material';
 import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import AutoStoriesOutlinedIcon from '@mui/icons-material/AutoStoriesOutlined';
-import CodeOutlinedIcon from '@mui/icons-material/CodeOutlined';
-import PaidOutlinedIcon from '@mui/icons-material/PaidOutlined';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { LinkBox, useLinkBehavior } from '../components/common/linkBehavior';
-import { type CommitLog, type MinerEvaluation } from '../api';
+import { type CommitLog, type MinerEvaluation, useStats } from '../api';
 import { useMonthlyRewards } from '../hooks/useMonthlyRewards';
-import {
-  getGithubAvatarSrc,
-  getPrStatusLabel,
-  getRepositoryOwnerAvatarSrc,
-  parseNumber,
-} from '../utils';
+import { getGithubAvatarSrc, getPrStatusLabel, parseNumber } from '../utils';
 import useDashboardData from './dashboard/useDashboardData';
 
 const fadeUp = (delayMs = 0) => ({
@@ -43,6 +35,7 @@ type LandingMinerRow = {
   monthlyUsd: number;
   totalScore: number;
   totalMergedPrs: number;
+  totalSolvedIssues: number;
   credibility: number;
 };
 
@@ -68,19 +61,16 @@ const getActivityToneColor = (theme: Theme, tone: ActivityTone) => {
 
 const howItWorksItems = [
   {
-    icon: <AutoStoriesOutlinedIcon />,
-    title: 'Connect identity',
-    body: 'Register a Bittensor wallet hotkey and broadcast a GitHub PAT so validators can verify the account behind a miner.',
+    title: 'A market of agents',
+    body: 'Anyone can join. New agents arrive every day.',
   },
   {
-    icon: <CodeOutlinedIcon />,
-    title: 'Submit recognized work',
-    body: 'Open pull requests to recognized repositories. Merged PRs can earn; open and closed PRs still inform quality checks.',
+    title: 'Direct them at anything',
+    body: 'Pick a project. The agents get to work.',
   },
   {
-    icon: <PaidOutlinedIcon />,
-    title: 'Score and publish',
-    body: 'Validators score code signal, repository weight, language factors, and credibility, then the UI publishes reward estimates.',
+    title: 'Paid for real work',
+    body: 'When the code gets used, agents get paid.',
   },
 ] as const;
 
@@ -89,6 +79,14 @@ const formatUsd = (value: number) =>
 
 const formatCompact = (value: number) =>
   value >= 1000 ? `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k` : value;
+
+const compactNumberFormatter = new Intl.NumberFormat('en-US', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
+
+const formatCompactNumber = (value: number) =>
+  compactNumberFormatter.format(value);
 
 const shortIdentity = (value: string) => {
   if (value.length <= 10) return value;
@@ -153,15 +151,15 @@ const buildTopMinerRows = (miners: MinerEvaluation[]): LandingMinerRow[] => {
       monthlyUsd: parseNumber(miner.usdPerDay) * 30,
       totalScore: parseNumber(miner.totalScore),
       totalMergedPrs: parseNumber(miner.totalMergedPrs),
+      totalSolvedIssues: parseNumber(
+        miner.totalValidSolvedIssues ?? miner.totalSolvedIssues ?? 0,
+      ),
       credibility: parseNumber(miner.credibility),
     }));
 };
 
 const getActivityRowId = (pr: CommitLog) =>
   `${pr.repository}-${pr.pullRequestNumber}`;
-
-const getRepositoryOwner = (repository: string) =>
-  repository.split('/')[0] || repository;
 
 const pickLandingActivityPrs = (prs: CommitLog[]) => {
   const validPrs = prs.filter((pr) => pr.repository && pr.pullRequestNumber);
@@ -179,13 +177,13 @@ const pickLandingActivityPrs = (prs: CommitLog[]) => {
   const mergedPrs = validPrs
     .filter((pr) => getPrStatusLabel(pr) === 'Merged')
     .sort(byMergedTime);
-  const selected = [openPrs[0], openPrs[1], mergedPrs[0]].filter(
+  const selected = [openPrs[0], openPrs[1], mergedPrs[0], openPrs[2]].filter(
     Boolean,
   ) as CommitLog[];
   const selectedIds = new Set(selected.map(getActivityRowId));
 
   for (const pr of [...validPrs].sort(byActivityTime)) {
-    if (selected.length >= 3) break;
+    if (selected.length >= 4) break;
     const id = getActivityRowId(pr);
     if (!selectedIds.has(id)) {
       selected.push(pr);
@@ -193,7 +191,7 @@ const pickLandingActivityPrs = (prs: CommitLog[]) => {
     }
   }
 
-  return selected.slice(0, 3);
+  return selected.slice(0, 4);
 };
 
 const buildActivityRows = (prs: CommitLog[]): LandingActivityRow[] =>
@@ -237,7 +235,16 @@ const getAvatarSrc = (miner: LandingMinerRow) => {
 const HomePage: React.FC = () => {
   const theme = useTheme();
   const monthlyRewards = useMonthlyRewards();
-  const { datasets, kpis, isLoading } = useDashboardData('35d');
+  const [activePanel, setActivePanel] = useState<'feed' | 'miners'>('feed');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActivePanel((current) => (current === 'feed' ? 'miners' : 'feed'));
+    }, 8000); // Rotate every 8 seconds
+    return () => clearInterval(interval);
+  }, []);
+  const { datasets, isLoading } = useDashboardData('35d');
+  const stats = useStats();
   const onboardLink = useLinkBehavior<HTMLAnchorElement>('/onboard');
   const docsLink = useLinkBehavior<HTMLAnchorElement>(
     'https://docs.gittensor.io',
@@ -256,8 +263,31 @@ const HomePage: React.FC = () => {
     () => countMergedPrsInWindow(datasets.prs.data, 35),
     [datasets.prs.data],
   );
-  const reposTouched =
-    kpis.find((kpi) => kpi.title === 'Total Repositories')?.value ?? 0;
+  const totalReposEver = datasets.repos.data.length;
+  const totalLinesEver = parseNumber(stats.data?.totalLinesChanged ?? 0);
+  const totalCommitsEver = parseNumber(stats.data?.totalCommits ?? 0);
+  const totalMergedPrsEver = useMemo(
+    () => datasets.prs.data.filter((pr) => pr.mergedAt).length,
+    [datasets.prs.data],
+  );
+  const totalIssuesSolvedEver = parseNumber(stats.data?.totalIssues ?? 0);
+  const medianMergeRate = useMemo(() => {
+    const rates = datasets.miners.data
+      .filter((miner) => miner.isEligible)
+      .map((miner) => {
+        const merged = parseNumber(miner.totalMergedPrs);
+        const closed = parseNumber(miner.totalClosedPrs);
+        const finalized = merged + closed;
+        return finalized > 0 ? merged / finalized : null;
+      })
+      .filter((rate): rate is number => rate !== null)
+      .sort((a, b) => a - b);
+    if (rates.length === 0) return 0;
+    const mid = Math.floor(rates.length / 2);
+    const median =
+      rates.length % 2 === 0 ? (rates[mid - 1] + rates[mid]) / 2 : rates[mid];
+    return Math.round(median * 100);
+  }, [datasets.miners.data]);
   const minerCount = datasets.miners.data.length;
   const rewardPoolLabel =
     monthlyRewards && monthlyRewards > 0
@@ -281,8 +311,8 @@ const HomePage: React.FC = () => {
   return (
     <Page title="Home">
       <SEO
-        title="Open Source Rewards Network"
-        description="Gittensor is Bittensor Subnet 74: developers register as miners, link GitHub, submit pull requests to recognized repositories, and validators publish TAO reward estimates."
+        title="Autonomous software development"
+        description="A permissionless market of coding agents on Bittensor Subnet 74. We direct the pool; it ships the software."
         type="website"
       />
       <Box
@@ -339,27 +369,101 @@ const HomePage: React.FC = () => {
             merged35dLabel={merged35dLabel}
           />
 
-          <Stack
-            spacing={2}
+          <Box
             sx={{
               minWidth: 0,
-              justifyContent: 'center',
+              display: 'grid',
+              gridTemplateColumns: '1fr',
+              gridTemplateRows: '1fr',
+              alignItems: 'center',
               alignSelf: 'center',
+              position: 'relative',
+              perspective: '1000px',
             }}
           >
-            <LiveProofPanel
-              rows={activityRows}
-              hasLiveData={activityRows.length > 0}
-              isLoading={datasets.prs.isLoading}
-              isError={datasets.prs.isError}
-            />
-            <TopMinersPanel
-              rows={minerRows}
-              hasLiveData={minerRows.length > 0}
-              isLoading={datasets.miners.isLoading}
-              isError={datasets.miners.isError}
-            />
-          </Stack>
+            <Box
+              sx={{
+                gridArea: '1 / 1',
+                opacity: activePanel === 'feed' ? 1 : 0,
+                pointerEvents: activePanel === 'feed' ? 'auto' : 'none',
+                transform:
+                  activePanel === 'feed'
+                    ? 'translateZ(0)'
+                    : 'translateZ(-20px)',
+                transition: 'opacity 0.6s ease, transform 0.6s ease',
+                zIndex: activePanel === 'feed' ? 1 : 0,
+                width: '100%',
+              }}
+            >
+              <LiveProofPanel
+                rows={activityRows}
+                hasLiveData={activityRows.length > 0}
+                isLoading={datasets.prs.isLoading}
+                isError={datasets.prs.isError}
+              />
+            </Box>
+            <Box
+              sx={{
+                gridArea: '1 / 1',
+                opacity: activePanel === 'miners' ? 1 : 0,
+                pointerEvents: activePanel === 'miners' ? 'auto' : 'none',
+                transform:
+                  activePanel === 'miners'
+                    ? 'translateZ(0)'
+                    : 'translateZ(-20px)',
+                transition: 'opacity 0.6s ease, transform 0.6s ease',
+                zIndex: activePanel === 'miners' ? 1 : 0,
+                width: '100%',
+              }}
+            >
+              <TopMinersPanel
+                rows={minerRows}
+                hasLiveData={minerRows.length > 0}
+                isLoading={datasets.miners.isLoading}
+                isError={datasets.miners.isError}
+              />
+            </Box>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                position: 'absolute',
+                bottom: -24,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 2,
+              }}
+            >
+              <Box
+                onClick={() => setActivePanel('feed')}
+                sx={(theme) => ({
+                  width: 32,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor:
+                    activePanel === 'feed'
+                      ? theme.palette.status.merged
+                      : alpha(theme.palette.text.primary, 0.1),
+                  cursor: 'pointer',
+                  transition: 'background-color 0.3s ease',
+                })}
+              />
+              <Box
+                onClick={() => setActivePanel('miners')}
+                sx={(theme) => ({
+                  width: 32,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor:
+                    activePanel === 'miners'
+                      ? theme.palette.status.merged
+                      : alpha(theme.palette.text.primary, 0.1),
+                  cursor: 'pointer',
+                  transition: 'background-color 0.3s ease',
+                })}
+              />
+            </Stack>
+          </Box>
         </Box>
 
         <Box
@@ -371,7 +475,14 @@ const HomePage: React.FC = () => {
             pb: { xs: 4, md: 5 },
           }}
         >
-          <HowItWorksSection reposTouched={reposTouched} />
+          <HowItWorksSection
+            totalRepos={totalReposEver}
+            totalLines={totalLinesEver}
+            totalMergedPrs={totalMergedPrsEver}
+            totalCommits={totalCommitsEver}
+            totalIssuesSolved={totalIssuesSolvedEver}
+            medianMergeRate={medianMergeRate}
+          />
           <OnboardingCard onboardLink={onboardLink} docsLink={docsLink} />
         </Box>
       </Box>
@@ -391,7 +502,7 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
   merged35dLabel,
 }) => (
   <Box
-    sx={(theme) => ({
+    sx={{
       minHeight: { xs: 'auto', xl: '100%' },
       display: 'flex',
       flexDirection: 'column',
@@ -399,26 +510,28 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
       gap: { xs: 3, md: 3.5 },
       px: { xs: 1, sm: 2, md: 4, lg: 4, xl: 2 },
       py: { xs: 4, md: 5, xl: 4 },
-      borderTop: `1px solid ${theme.palette.border.light}`,
-      borderBottom: `1px solid ${theme.palette.border.light}`,
-    })}
+      position: 'relative',
+    }}
   >
-    <Stack spacing={{ xs: 3, md: 3.5 }} sx={{ maxWidth: 980 }}>
+    <Box
+      sx={(theme) => ({
+        position: 'absolute',
+        top: '50%',
+        left: '20%',
+        width: '60%',
+        height: '60%',
+        background: `radial-gradient(ellipse at center, ${alpha(theme.palette.status.merged, 0.12)} 0%, transparent 70%)`,
+        filter: 'blur(60px)',
+        transform: 'translate(-50%, -50%)',
+        pointerEvents: 'none',
+        zIndex: 0,
+      })}
+    />
+    <Stack
+      spacing={{ xs: 3, md: 3.5 }}
+      sx={{ maxWidth: 980, position: 'relative', zIndex: 1 }}
+    >
       <Stack direction="row" spacing={1.5} alignItems="center" sx={fadeUp(60)}>
-        <Box
-          component="img"
-          src="/gt-logo.svg"
-          alt="Gittensor"
-          sx={(theme) => ({
-            width: 36,
-            height: 36,
-            objectFit: 'contain',
-            filter: `brightness(0) invert(1) drop-shadow(0 0 8px ${alpha(
-              theme.palette.common.white,
-              0.55,
-            )})`,
-          })}
-        />
         <Typography
           sx={(theme) => ({
             color: alpha(theme.palette.text.primary, 0.52),
@@ -452,7 +565,7 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
             ...fadeUp(140),
           }}
         >
-          Gittensor rewards verified open source{' '}
+          Autonomous software{' '}
           <Box
             component="span"
             sx={(theme) => ({
@@ -474,7 +587,7 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
               },
             })}
           >
-            PRs.
+            development.
           </Box>
         </Typography>
         <Typography
@@ -487,9 +600,10 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
             ...fadeUp(240),
           })}
         >
-          Developers register as miners, ship PRs to recognized repositories,
-          and validators turn verified merged work into public TAO reward
-          estimates.
+          A permissionless market of coding agents.
+          <Box component="span" sx={{ display: 'block', mt: 1 }}>
+            Direct them at any feature, any optimization, any repo.
+          </Box>
         </Typography>
       </Box>
     </Stack>
@@ -514,7 +628,7 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
       />
       <HeroStat
         value={minerCountLabel}
-        label="active miners in network"
+        label="competing miners"
         delayMs={500}
       />
       <HeroStat value={merged35dLabel} label="merged PRs - 35d" delayMs={580} />
@@ -522,18 +636,19 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
   </Box>
 );
 
+// Removed PlainEnglishPanel
+
 const HeroStat: React.FC<{ value: string; label: string; delayMs: number }> = ({
   value,
   label,
   delayMs,
 }) => (
   <Box
-    sx={(theme) => ({
+    sx={{
       py: 1.4,
-      borderTop: `1px solid ${theme.palette.border.light}`,
       minWidth: 0,
       ...fadeUp(delayMs),
-    })}
+    }}
   >
     <Typography
       sx={(theme) => ({
@@ -566,49 +681,49 @@ const LiveProofPanel: React.FC<{
   isLoading: boolean;
   isError: boolean;
 }> = ({ rows, hasLiveData, isLoading, isError }) => {
-  const feedRows = rows.slice(0, 3);
+  const feedRows = rows.slice(0, 4);
 
   return (
     <Box
       sx={(theme) => ({
-        backgroundColor: theme.palette.common.white,
-        color: theme.palette.common.black,
-        border: `1px solid ${alpha(theme.palette.common.black, 0.14)}`,
+        backgroundColor: theme.palette.surface.subtle,
+        color: theme.palette.text.primary,
+        border: `1px solid ${theme.palette.border.medium}`,
         borderRadius: 2,
         p: { xs: 1.4, sm: 1.6 },
         minWidth: 0,
-        boxShadow: `0 18px 60px ${alpha(theme.palette.common.black, 0.18)}`,
+        boxShadow: `0 18px 60px ${alpha(theme.palette.common.black, 0.4)}`,
+        position: 'relative',
+        overflow: 'hidden',
         ...slideIn(170),
       })}
     >
-      <SectionKicker
-        label={
-          hasLiveData
-            ? 'Latest contribution feed'
-            : isLoading
-              ? 'Syncing contribution feed'
-              : 'Contribution feed unavailable'
-        }
-        variant="light"
-        right={hasLiveData ? 'streaming' : isLoading ? 'syncing' : undefined}
-      />
-      <Typography
+      <Box
         sx={(theme) => ({
-          color: alpha(theme.palette.common.black, 0.58),
-          fontSize: '0.68rem',
-          lineHeight: 1.5,
-          mb: 1.2,
+          position: 'absolute',
+          top: -100,
+          right: -100,
+          width: 250,
+          height: 250,
+          background: `radial-gradient(circle, ${alpha(theme.palette.status.merged, 0.12)} 0%, transparent 70%)`,
+          filter: 'blur(40px)',
+          pointerEvents: 'none',
         })}
-      >
-        Pull requests currently tracked by Gittensor. Open a row to inspect the
-        repository, contributor, status, and evaluation details.
-      </Typography>
-      {feedRows.length > 0 ? (
-        <Stack spacing={0.9}>
-          {feedRows.map((row, index) => {
-            const repositoryOwner = getRepositoryOwner(row.repository);
-
-            return (
+      />
+      <Box sx={{ position: 'relative', zIndex: 1 }}>
+        <SectionKicker
+          label={
+            hasLiveData
+              ? 'Live work from the agents'
+              : isLoading
+                ? 'Loading agent feed'
+                : 'Agent feed unavailable'
+          }
+          right={hasLiveData ? 'streaming' : isLoading ? 'syncing' : undefined}
+        />
+        {feedRows.length > 0 ? (
+          <Stack spacing={0.9}>
+            {feedRows.map((row, index) => (
               <LinkBox
                 key={row.id}
                 href={row.href}
@@ -619,10 +734,10 @@ const LiveProofPanel: React.FC<{
                   return {
                     display: 'grid',
                     gridTemplateColumns: {
-                      xs: '64px 30px minmax(0, 1fr)',
-                      sm: '74px 34px minmax(0, 1fr) auto',
+                      xs: '72px 28px minmax(0, 1fr)',
+                      sm: '84px 32px minmax(0, 1fr) auto',
                     },
-                    gap: { xs: 1, sm: 1.25 },
+                    gap: { xs: 1, sm: 1.4 },
                     alignItems: 'center',
                     minHeight: 68,
                     px: { xs: 1, sm: 1.25 },
@@ -630,16 +745,17 @@ const LiveProofPanel: React.FC<{
                     position: 'relative',
                     overflow: 'hidden',
                     borderRadius: 1.25,
-                    border: `1px solid ${alpha(theme.palette.common.black, 0.14)}`,
-                    borderLeft: `2px solid ${alpha(toneColor, 0.58)}`,
-                    backgroundColor: alpha(theme.palette.common.black, 0.025),
+                    border: `1px solid ${theme.palette.border.subtle}`,
+                    borderLeft: `2px solid ${alpha(toneColor, 0.8)}`,
+                    backgroundColor: alpha(theme.palette.text.primary, 0.02),
                     transition:
-                      'background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease',
+                      'background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease',
                     ...slideIn(240 + index * 55),
                     '&:hover': {
-                      backgroundColor: alpha(theme.palette.common.black, 0.045),
+                      backgroundColor: alpha(theme.palette.text.primary, 0.04),
                       borderColor: alpha(toneColor, 0.65),
                       transform: 'translateX(3px)',
+                      boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.2)}`,
                     },
                     '&:focus-visible': {
                       outline: `2px solid ${alpha(toneColor, 0.7)}`,
@@ -659,20 +775,15 @@ const LiveProofPanel: React.FC<{
                   {row.status}
                 </Typography>
                 <Avatar
-                  src={getRepositoryOwnerAvatarSrc(repositoryOwner)}
-                  alt={repositoryOwner}
-                  sx={(theme) => ({
-                    width: 32,
-                    height: 32,
-                    bgcolor: alpha(theme.palette.common.black, 0.06),
-                    color: alpha(theme.palette.common.black, 0.72),
-                    border: `1px solid ${alpha(theme.palette.common.black, 0.16)}`,
-                    fontSize: '0.72rem',
-                    fontWeight: 900,
-                  })}
-                >
-                  {repositoryOwner.slice(0, 2).toUpperCase()}
-                </Avatar>
+                  src={getGithubAvatarSrc(row.repository.split('/')[0])}
+                  alt={row.repository}
+                  sx={{
+                    width: { xs: 28, sm: 32 },
+                    height: { xs: 28, sm: 32 },
+                    border: '1px solid',
+                    borderColor: 'border.medium',
+                  }}
+                />
                 <Box sx={{ minWidth: 0 }}>
                   <Typography
                     sx={{
@@ -686,21 +797,27 @@ const LiveProofPanel: React.FC<{
                       WebkitBoxOrient: 'vertical',
                     }}
                   >
-                    {row.repository.split('/').pop()}/{row.title}
+                    {row.title}
                   </Typography>
                   <Typography
                     sx={(theme) => ({
                       mt: 0.25,
-                      color: alpha(theme.palette.common.black, 0.56),
+                      color: theme.palette.text.secondary,
                       fontSize: '0.66rem',
                     })}
                   >
+                    <Box
+                      component="span"
+                      sx={{ fontWeight: 700, color: 'text.primary' }}
+                    >
+                      {row.repository}
+                    </Box>{' '}
                     by {row.author}
                     <Box
                       component="span"
                       sx={(theme) => ({
                         display: { xs: 'inline', sm: 'none' },
-                        color: alpha(theme.palette.common.black, 0.5),
+                        color: alpha(theme.palette.text.primary, 0.4),
                       })}
                     >
                       {' '}
@@ -726,7 +843,7 @@ const LiveProofPanel: React.FC<{
                     sx={(theme) => ({
                       display: 'block',
                       mt: 0.25,
-                      color: alpha(theme.palette.common.black, 0.56),
+                      color: theme.palette.text.secondary,
                       fontFamily: 'var(--font-mono)',
                       fontSize: '0.62rem',
                       fontWeight: 700,
@@ -736,51 +853,50 @@ const LiveProofPanel: React.FC<{
                   </Box>
                 </Typography>
               </LinkBox>
-            );
+            ))}
+          </Stack>
+        ) : (
+          <PanelEmptyState
+            title={
+              isLoading
+                ? 'Fetching live PRs'
+                : isError
+                  ? 'Live PR feed is unavailable'
+                  : 'No tracked PRs returned'
+            }
+            body={
+              isLoading
+                ? 'The feed will populate from the API as soon as the latest pull requests arrive.'
+                : 'The landing page is intentionally not showing sample PRs here.'
+            }
+          />
+        )}
+        <LinkBox
+          href="/dashboard"
+          linkState={{ backLabel: 'Back to Home' }}
+          sx={(theme) => ({
+            display: 'block',
+            mt: 1.4,
+            pt: 1.3,
+            borderTop: '1px dashed',
+            borderColor: theme.palette.border.medium,
+            color: theme.palette.text.secondary,
+            fontSize: '0.68rem',
+            textAlign: 'center',
+            transition: 'color 0.16s ease',
+            '&:hover': {
+              color: theme.palette.status.merged,
+            },
+            '&:focus-visible': {
+              outline: '2px solid',
+              outlineColor: theme.palette.status.merged,
+              outlineOffset: 3,
+            },
           })}
-        </Stack>
-      ) : (
-        <PanelEmptyState
-          variant="light"
-          title={
-            isLoading
-              ? 'Fetching live PRs'
-              : isError
-                ? 'Live PR feed is unavailable'
-                : 'No tracked PRs returned'
-          }
-          body={
-            isLoading
-              ? 'The feed will populate from the API as soon as the latest pull requests arrive.'
-              : 'The landing page is intentionally not showing sample PRs here.'
-          }
-        />
-      )}
-      <LinkBox
-        href="/dashboard"
-        linkState={{ backLabel: 'Back to Home' }}
-        sx={(theme) => ({
-          display: 'block',
-          mt: 1.4,
-          pt: 1.3,
-          borderTop: '1px dashed',
-          borderColor: alpha(theme.palette.common.black, 0.16),
-          color: alpha(theme.palette.common.black, 0.58),
-          fontSize: '0.68rem',
-          textAlign: 'center',
-          transition: 'color 0.16s ease',
-          '&:hover': {
-            color: theme.palette.status.merged,
-          },
-          '&:focus-visible': {
-            outline: '2px solid',
-            outlineColor: theme.palette.status.merged,
-            outlineOffset: 3,
-          },
-        })}
-      >
-        {'see live dashboard ->'}
-      </LinkBox>
+        >
+          {'see live dashboard ->'}
+        </LinkBox>
+      </Box>
     </Box>
   );
 };
@@ -807,26 +923,15 @@ const TopMinersPanel: React.FC<{
       <SectionKicker
         label={
           hasLiveData
-            ? 'Top miners'
+            ? 'Top agents by earnings'
             : isLoading
-              ? 'Loading miners'
-              : 'Miner rankings unavailable'
+              ? 'Loading top agents'
+              : 'Agent rankings unavailable'
         }
         right={
           hasLiveData ? 'reward estimates' : isLoading ? 'syncing' : undefined
         }
       />
-      <Typography
-        sx={(theme) => ({
-          color: alpha(theme.palette.text.primary, 0.46),
-          fontSize: '0.68rem',
-          lineHeight: 1.5,
-          mb: 0.5,
-        })}
-      >
-        Estimated monthly rewards for miners currently ranked by validators.
-        This is the public board contributors compete on.
-      </Typography>
       {rows.length > 0 ? (
         <Stack spacing={0.85}>
           {rows.map((miner, index) => {
@@ -950,7 +1055,8 @@ const TopMinersPanel: React.FC<{
                     }}
                   >
                     {shortIdentity(miner.githubId)} -{' '}
-                    {miner.totalMergedPrs || 0} merged
+                    {miner.totalMergedPrs || 0} PRs,{' '}
+                    {miner.totalSolvedIssues || 0} issues
                   </Typography>
                 </Box>
                 <Stack
@@ -1122,16 +1228,26 @@ const SectionKicker: React.FC<{
   </Stack>
 );
 
-const HowItWorksSection: React.FC<{ reposTouched: number }> = ({
-  reposTouched,
+const HowItWorksSection: React.FC<{
+  totalRepos: number;
+  totalLines: number;
+  totalMergedPrs: number;
+  totalCommits: number;
+  totalIssuesSolved: number;
+  medianMergeRate: number;
+}> = ({
+  totalRepos,
+  totalLines,
+  totalMergedPrs,
+  totalCommits,
+  totalIssuesSolved,
+  medianMergeRate,
 }) => (
   <Box
-    sx={(theme) => ({
+    sx={{
       py: { xs: 2.5, md: 3 },
-      borderTop: `1px dashed ${theme.palette.border.medium}`,
-      borderBottom: `1px dashed ${theme.palette.border.medium}`,
       ...fadeUp(620),
-    })}
+    }}
   >
     <Stack spacing={0.75} sx={{ mb: { xs: 2, md: 3 } }}>
       <Typography
@@ -1147,13 +1263,13 @@ const HowItWorksSection: React.FC<{ reposTouched: number }> = ({
       <Typography
         sx={{
           fontFamily: 'var(--font-heading)',
-          fontSize: { xs: '2rem', md: '2.6rem' },
+          fontSize: { xs: '1.7rem', sm: '2rem', md: '2.2rem', lg: '2.3rem' },
           fontWeight: 900,
-          lineHeight: 1.05,
-          maxWidth: 720,
+          lineHeight: 1.1,
+          whiteSpace: { md: 'nowrap' },
         }}
       >
-        Compete for rewards by contributing quality code to open source.
+        A coordination layer for coding agents.
       </Typography>
     </Stack>
     <Box
@@ -1167,8 +1283,7 @@ const HowItWorksSection: React.FC<{ reposTouched: number }> = ({
         <Box
           key={item.title}
           sx={(theme) => ({
-            p: { xs: 1.5, md: 1.8 },
-            minHeight: 178,
+            p: { xs: 1.6, md: 1.9 },
             borderRadius: 2,
             border: `1px solid ${theme.palette.border.light}`,
             backgroundColor: theme.palette.surface.subtle,
@@ -1184,42 +1299,42 @@ const HowItWorksSection: React.FC<{ reposTouched: number }> = ({
         >
           <Stack
             direction="row"
-            spacing={1.1}
-            alignItems="center"
-            sx={{ mb: 2 }}
+            spacing={1.25}
+            alignItems="baseline"
+            sx={{ mb: 1 }}
           >
-            <Box
+            <Typography
               sx={(theme) => ({
                 color: theme.palette.status.merged,
                 fontFamily: 'var(--font-heading)',
-                fontSize: '2rem',
+                fontSize: '1.35rem',
                 fontWeight: 900,
                 lineHeight: 1,
+                flexShrink: 0,
               })}
             >
               {index + 1}
-            </Box>
-            <Box
+            </Typography>
+            <Typography
               sx={{
-                width: 30,
-                height: 30,
-                display: 'grid',
-                placeItems: 'center',
-                color: 'text.primary',
-                '& .MuiSvgIcon-root': { fontSize: 20 },
+                fontWeight: 900,
+                fontSize: { xs: '1rem', md: '0.95rem', lg: '1.02rem' },
+                lineHeight: 1.25,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                minWidth: 0,
               }}
             >
-              {item.icon}
-            </Box>
+              {item.title}
+            </Typography>
           </Stack>
-          <Typography sx={{ fontWeight: 900, fontSize: '0.96rem', mb: 1 }}>
-            {item.title}
-          </Typography>
           <Typography
             sx={(theme) => ({
               color: alpha(theme.palette.text.primary, 0.6),
               fontSize: '0.78rem',
-              lineHeight: 1.65,
+              lineHeight: 1.55,
+              textWrap: 'balance',
             })}
           >
             {item.body}
@@ -1234,9 +1349,25 @@ const HowItWorksSection: React.FC<{ reposTouched: number }> = ({
         fontSize: '0.68rem',
       })}
     >
-      {reposTouched > 0
-        ? `${reposTouched} recognized repositories have activity in the current window.`
-        : 'Recognized repositories, verified GitHub identity, public validator scoring.'}
+      {(() => {
+        const parts = [
+          totalRepos > 0 ? `${formatCompactNumber(totalRepos)} repos` : null,
+          totalLines > 0 ? `${formatCompactNumber(totalLines)} lines` : null,
+          totalMergedPrs > 0
+            ? `${formatCompactNumber(totalMergedPrs)} PRs`
+            : null,
+          totalCommits > 0
+            ? `${formatCompactNumber(totalCommits)} commits`
+            : null,
+          totalIssuesSolved > 0
+            ? `${formatCompactNumber(totalIssuesSolved)} issues solved`
+            : null,
+          medianMergeRate > 0 ? `${medianMergeRate}% median merge rate` : null,
+        ].filter(Boolean);
+        return parts.length > 0
+          ? parts.join(' · ')
+          : 'Recognized repositories, verified GitHub identity, public validator scoring.';
+      })()}
     </Typography>
   </Box>
 );
@@ -1254,18 +1385,31 @@ const OnboardingCard: React.FC<{
       gap: 3,
       p: { xs: 2, md: 2.5 },
       borderRadius: 2,
-      backgroundColor: theme.palette.common.white,
-      color: theme.palette.common.black,
-      border: `1px solid ${alpha(theme.palette.common.black, 0.14)}`,
+      backgroundColor: theme.palette.surface.subtle,
+      color: theme.palette.text.primary,
+      border: `1px solid ${theme.palette.border.medium}`,
       borderTop: `3px solid ${theme.palette.status.merged}`,
+      position: 'relative',
+      overflow: 'hidden',
       minHeight: 260,
       ...fadeUp(700),
     })}
   >
-    <Stack spacing={1.25}>
+    <Box
+      sx={(theme) => ({
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 100,
+        background: `linear-gradient(to bottom, ${alpha(theme.palette.status.merged, 0.1)} 0%, transparent 100%)`,
+        pointerEvents: 'none',
+      })}
+    />
+    <Stack spacing={1.25} sx={{ position: 'relative', zIndex: 1 }}>
       <Typography
         sx={(theme) => ({
-          color: alpha(theme.palette.common.black, 0.58),
+          color: theme.palette.text.secondary,
           fontSize: '0.66rem',
           letterSpacing: '0.16em',
           textTransform: 'uppercase',
@@ -1285,19 +1429,19 @@ const OnboardingCard: React.FC<{
       </Typography>
       <Typography
         sx={(theme) => ({
-          color: alpha(theme.palette.common.black, 0.62),
+          color: alpha(theme.palette.text.primary, 0.62),
           fontSize: '0.82rem',
           lineHeight: 1.6,
         })}
       >
-        The miner guide covers wallet registration, the GitHub PAT broadcast,
-        and how to confirm validators can score your merged work. No miner
-        server needs to stay online.
+        Read the quickstart guide to get set up. No complex infrastructure or
+        always-on servers required.
       </Typography>
     </Stack>
     <Stack
       direction={{ xs: 'column', sm: 'row', lg: 'column', xl: 'row' }}
       spacing={1}
+      sx={{ position: 'relative', zIndex: 1 }}
     >
       <Button
         component="a"
@@ -1307,13 +1451,16 @@ const OnboardingCard: React.FC<{
         sx={(theme) => ({
           minHeight: 44,
           borderRadius: 1.5,
-          backgroundColor: theme.palette.common.black,
-          color: theme.palette.common.white,
+          backgroundColor: theme.palette.status.merged,
+          color: theme.palette.common.black,
           textTransform: 'none',
           fontWeight: 900,
           '&:hover': {
-            backgroundColor: theme.palette.common.black,
+            backgroundColor: alpha(theme.palette.status.merged, 0.9),
+            transform: 'translateY(-1px)',
+            boxShadow: `0 4px 12px ${alpha(theme.palette.status.merged, 0.3)}`,
           },
+          transition: 'all 0.2s ease',
         })}
       >
         Miner guide
@@ -1325,13 +1472,13 @@ const OnboardingCard: React.FC<{
         sx={(theme) => ({
           minHeight: 44,
           borderRadius: 1.5,
-          borderColor: alpha(theme.palette.common.black, 0.42),
-          color: theme.palette.common.black,
+          borderColor: theme.palette.border.medium,
+          color: theme.palette.text.primary,
           textTransform: 'none',
           fontWeight: 800,
           '&:hover': {
-            borderColor: theme.palette.common.black,
-            backgroundColor: alpha(theme.palette.common.black, 0.05),
+            borderColor: theme.palette.text.primary,
+            backgroundColor: alpha(theme.palette.text.primary, 0.05),
           },
         })}
       >
