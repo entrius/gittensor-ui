@@ -22,6 +22,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
+import { WatchlistButton } from '../../components/common';
 import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
 import { formatTokenAmount } from '../../utils/format';
 import {
@@ -34,6 +35,9 @@ import FilterButton from '../FilterButton';
 interface RepositoryIssuesTableProps {
   repositoryFullName: string;
 }
+
+const issueWatchlistKey = (issue: RepositoryIssue): string =>
+  `${issue.repositoryFullName}#${issue.number}`;
 
 const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   repositoryFullName,
@@ -205,6 +209,18 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       align: 'right',
       renderCell: (issue) =>
         issue.closedAt ? new Date(issue.closedAt).toLocaleDateString() : '-',
+    },
+    {
+      key: 'watch',
+      header: '★',
+      align: 'center',
+      renderCell: (issue) => (
+        <WatchlistButton
+          category="issues"
+          itemKey={issueWatchlistKey(issue)}
+          size="small"
+        />
+      ),
     },
   ];
 
