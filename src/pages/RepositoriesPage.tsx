@@ -1,6 +1,13 @@
 import React, { useMemo } from 'react';
 
-import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
+import {
+  Avatar,
+  Box,
+  Card,
+  Tooltip,
+  Typography,
+  useMediaQuery,
+} from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
 
 import { LinkBox } from '../components/common/linkBehavior';
@@ -11,6 +18,7 @@ import { type CommitLog } from '../api/models/Dashboard';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import { buildRepoDiscoveryRollupFromMiners } from '../utils/ExplorerUtils';
 import { isMergedPr } from '../utils/prStatus';
+import theme, { scrollbarSx } from '../theme';
 
 const FONTS = { mono: '"JetBrains Mono", monospace' } as const;
 
@@ -123,6 +131,16 @@ const getPrHref = (name: string, number: number) =>
   `/miners/pr?repo=${encodeURIComponent(name)}&number=${number}`;
 
 const RepositoriesPage: React.FC = () => {
+  // Dashboard-like responsive logic (aligns with OSS contributions page layout)
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
+  const showSidebarRight = useMediaQuery(theme.breakpoints.up('xl'));
+
+  // Dynamic sidebar width based on screen size (matching TopMinersPage)
+  const sidebarWidth =
+    isMobile || isTablet ? '100%' : isLargeScreen ? '360px' : '340px';
+
   const formatRelativeTime = (date: Date) => {
     const now = new Date();
     if (date > now) return 'just now';
@@ -341,20 +359,50 @@ const RepositoriesPage: React.FC = () => {
       <Box
         sx={{
           width: '100%',
-          maxWidth: 1200,
-          mx: 'auto',
-          py: { xs: 2, sm: 3 },
-          px: { xs: 2, sm: 3 },
+          height: showSidebarRight ? 'calc(100vh - 64px)' : 'auto',
+          display: 'flex',
+          flexDirection: showSidebarRight ? 'row' : 'column',
+          gap: { xs: 2, sm: 2, md: 2.5, lg: 3 },
+          py: { xs: 2, sm: 2, md: 2.5, lg: 3 },
+          px: { xs: 2, sm: 2, md: 2.5, lg: 3 },
+          overflow: 'hidden',
         }}
       >
-        {/* ── Highlight Sections ─────────────────────────────────────── */}
+        {/* Main Content Area */}
         <Box
           sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr 1fr' },
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: { xs: 2, sm: 1.5 },
+            minHeight: 0,
+            overflow: showSidebarRight ? 'auto' : 'visible',
+            minWidth: 0,
+            pr: showSidebarRight ? 1 : 0,
+            ...scrollbarSx,
+          }}
+        >
+          <Box sx={{ width: '100%' }}>
+            <TopRepositoriesTable
+              repositories={repoStats}
+              isLoading={isLoading}
+              getRepositoryHref={getRepoHref}
+              linkState={REPO_LINK_STATE}
+            />
+          </Box>
+        </Box>
+
+        {/* Right Sidebar highlight cards */}
+        <Box
+          sx={{
+            width: showSidebarRight ? sidebarWidth : '100%',
+            height: showSidebarRight ? '100%' : 'auto',
+            maxHeight: showSidebarRight ? '100%' : 'none',
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
             gap: 2,
-            mb: 3,
-            alignItems: 'stretch',
+            position: showSidebarRight ? 'static' : 'static',
           }}
         >
           {/* Trending This Week */}
@@ -608,25 +656,6 @@ const RepositoriesPage: React.FC = () => {
             ) : null}
           </Card>
         </Box>
-
-        {/* ── Main Table ────────────────────────────────────────────── */}
-        <Card
-          sx={(theme) => ({
-            borderRadius: 3,
-            border: '1px solid',
-            borderColor: theme.palette.border.light,
-            backgroundColor: theme.palette.surface.transparent,
-            overflow: 'hidden',
-          })}
-          elevation={0}
-        >
-          <TopRepositoriesTable
-            repositories={repoStats}
-            isLoading={isLoading}
-            getRepositoryHref={getRepoHref}
-            linkState={REPO_LINK_STATE}
-          />
-        </Card>
       </Box>
     </Page>
   );

@@ -38,6 +38,7 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import FilterButton from '../FilterButton';
 import { RepositoryCard } from './RepositoryCard';
+import { SectionCard } from './SectionCard';
 import {
   REPOSITORIES_CARD_ROWS,
   REPOSITORIES_DEFAULT_CARD_ROWS,
@@ -712,7 +713,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         startAdornment: searchAdornment,
       }}
       sx={{
-        width: '200px',
+        width: '100%',
         ...(isMobileSearchVisible
           ? {
               flexBasis: { xs: '100%', sm: 'auto' },
@@ -1027,471 +1028,503 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   }
 
   return (
-    <Card
-      sx={{
-        borderRadius: 3,
-        border: '1px solid',
-        borderColor: 'border.light',
-        backgroundColor: 'transparent',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-      elevation={0}
-    >
-      <Box
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      {/* Header Card — matches OSS contributions layout (title + search, then filters) */}
+      <SectionCard
         sx={{
-          borderBottom: '1px solid',
-          borderColor: 'border.light',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          backgroundColor: (theme) =>
+            alpha(theme.palette.background.default, 0.65),
+          backdropFilter: 'blur(12px)',
+          borderBottom: (theme) => `1px solid ${theme.palette.border.light}`,
+          boxShadow: 'none',
         }}
       >
-        {/* Row 1: All Controls */}
-        <Box
-          sx={{
-            p: { xs: 1.5, md: 2 },
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            alignItems: { xs: 'stretch', md: 'center' },
-            gap: { xs: 1.25, md: 2 },
-          }}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 0.5,
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              width: { xs: '100%', md: 'auto' },
-            }}
-          >
-            <FilterButton
-              label="All"
-              count={rankedRepositories.length}
-              color={STATUS_COLORS.neutral}
-              isActive={statusFilter === 'all'}
-              onClick={() => {
-                setStatusFilter('all');
-                setPage(0);
-                syncToUrl({ status: 'all', page: '0' });
-              }}
-            />
-            <FilterButton
-              label="Active"
-              count={rankedRepositories.filter((r) => !r.inactiveAt).length}
-              color={STATUS_COLORS.success}
-              isActive={statusFilter === 'active'}
-              onClick={() => {
-                setStatusFilter('active');
-                setPage(0);
-                syncToUrl({ status: 'active', page: '0' });
-              }}
-            />
-            <FilterButton
-              label="Inactive"
-              count={rankedRepositories.filter((r) => !!r.inactiveAt).length}
-              color={STATUS_COLORS.closed}
-              isActive={statusFilter === 'inactive'}
-              onClick={() => {
-                setStatusFilter('inactive');
-                setPage(0);
-                syncToUrl({ status: 'inactive', page: '0' });
-              }}
-            />
-          </Box>
-
+        <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {/* Row 1: Title + Search */}
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: { xs: 'space-between', md: 'flex-end' },
-              gap: 1,
-              flexWrap: 'wrap',
-              width: { xs: '100%', md: 'auto' },
-            }}
-          >
-            <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
-              <IconButton
-                onClick={() => setShowChart(!showChart)}
-                size="small"
-                sx={{
-                  color: showChart ? 'text.primary' : 'text.tertiary',
-                  border: '1px solid',
-                  borderColor: 'border.light',
-                  borderRadius: 2,
-                  padding: '6px',
-                  '&:hover': {
-                    backgroundColor: 'surface.light',
-                    borderColor: 'border.medium',
-                  },
-                }}
-              >
-                {showChart ? (
-                  <TableChartIcon fontSize="small" />
-                ) : (
-                  <BarChartIcon fontSize="small" />
-                )}
-              </IconButton>
-            </Tooltip>
-
-            {showChart && (
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={useLogScale}
-                    onChange={(e) => setUseLogScale(e.target.checked)}
-                    size="small"
-                    sx={{
-                      '& .MuiSwitch-switchBase.Mui-checked': {
-                        color: 'primary.main',
-                      },
-                      '& .MuiSwitch-track': {
-                        backgroundColor: 'border.medium',
-                      },
-                    }}
-                  />
-                }
-                label={
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontSize: '0.8rem',
-                      color: 'text.secondary',
-                    }}
-                  >
-                    Log Scale
-                  </Typography>
-                }
-              />
-            )}
-
-            <FormControl size="small">
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: 'text.secondary',
-                    fontSize: '0.8rem',
-                  }}
-                >
-                  Rows:
-                </Typography>
-                <Select
-                  value={rowsPerPage}
-                  onChange={(e) => {
-                    const newRows = e.target.value as number;
-                    setRowsPerPage(newRows);
-                    setPage(0);
-                    syncToUrl({ rows: String(newRows), page: '0' });
-                  }}
-                  sx={{
-                    color: 'text.primary',
-                    backgroundColor: 'background.default',
-                    fontSize: '0.8rem',
-                    height: '36px',
-                    borderRadius: 2,
-                    minWidth: '80px',
-                    '& fieldset': { borderColor: 'border.light' },
-                    '&:hover fieldset': {
-                      borderColor: 'border.medium',
-                    },
-                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                    '& .MuiSelect-select': { py: 0.75 },
-                  }}
-                >
-                  {(viewMode === 'cards'
-                    ? REPOSITORIES_CARD_ROWS
-                    : REPOSITORIES_LIST_ROWS
-                  ).map((n) => (
-                    <MenuItem key={n} value={n}>
-                      {n}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </Box>
-            </FormControl>
-
-            {isMobileSearchVisible ? (
-              searchInput
-            ) : isMobile ? (
-              <IconButton
-                size="small"
-                onClick={() => setIsMobileSearchOpen(true)}
-                sx={{
-                  color: 'text.tertiary',
-                  border: '1px solid',
-                  borderColor: 'border.light',
-                  borderRadius: 2,
-                  width: 36,
-                  height: 36,
-                  '&:hover': {
-                    backgroundColor: 'surface.light',
-                    borderColor: 'border.medium',
-                  },
-                }}
-              >
-                <SearchIcon sx={{ fontSize: '1rem' }} />
-              </IconButton>
-            ) : (
-              searchInput
-            )}
-
-            <Box sx={{ ml: { xs: 0, md: 'auto' } }}>
-              <ViewModeToggle
-                viewMode={viewMode}
-                onChange={handleViewModeChange}
-              />
-            </Box>
-          </Box>
-        </Box>
-
-        {/* Row 2: Sort controls (card view only) */}
-        {viewMode === 'cards' && (
-          <Box
-            sx={{
-              px: 2,
-              pb: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              gap: 1,
+              gap: 2,
+              flexWrap: { xs: 'wrap', sm: 'nowrap' },
             }}
           >
             <Typography
-              variant="body2"
-              sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
+              variant="h6"
+              sx={{ fontSize: '1.25rem', fontWeight: 600, flexShrink: 0 }}
             >
-              Sort:
+              Repositories ({filteredRepositories.length})
             </Typography>
-            <Select
-              size="small"
-              value={sortColumn}
-              onChange={(e) => handleSort(e.target.value as SortColumn)}
+            <Box
+              sx={{ flex: 1, minWidth: 0, width: { xs: '100%', sm: 'auto' } }}
+            >
+              {isMobileSearchVisible ? (
+                searchInput
+              ) : isMobile ? (
+                <IconButton
+                  size="small"
+                  onClick={() => setIsMobileSearchOpen(true)}
+                  sx={{
+                    color: 'text.tertiary',
+                    border: '1px solid',
+                    borderColor: 'border.light',
+                    borderRadius: 2,
+                    width: 36,
+                    height: 36,
+                    '&:hover': {
+                      backgroundColor: 'surface.light',
+                      borderColor: 'border.medium',
+                    },
+                  }}
+                >
+                  <SearchIcon sx={{ fontSize: '1rem' }} />
+                </IconButton>
+              ) : (
+                searchInput
+              )}
+            </Box>
+          </Box>
+
+          {/* Row 2: Filters + Controls */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 1,
+              flexWrap: 'wrap',
+            }}
+          >
+            <Box
               sx={{
-                color: 'text.primary',
-                backgroundColor: 'background.default',
-                fontSize: '0.8rem',
-                height: '36px',
-                borderRadius: 2,
-                minWidth: '140px',
-                '& fieldset': { borderColor: 'border.light' },
-                '&:hover fieldset': { borderColor: 'border.medium' },
-                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                '& .MuiSelect-select': { py: 0.75 },
+                display: 'flex',
+                gap: 0.5,
+                alignItems: 'center',
+                flexWrap: 'wrap',
               }}
             >
-              {cardSortSelectOptions.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </MenuItem>
-              ))}
-            </Select>
-            <Tooltip
-              title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
-            >
-              <IconButton
-                onClick={() => handleSort(sortColumn)}
-                size="small"
-                aria-label={
-                  sortDirection === 'asc' ? 'Sort descending' : 'Sort ascending'
-                }
-                sx={{
-                  color: 'text.primary',
-                  border: '1px solid',
-                  borderColor: 'border.light',
-                  borderRadius: 2,
-                  padding: '6px',
-                  '&:hover': {
-                    backgroundColor: 'surface.light',
-                    borderColor: 'border.medium',
-                  },
+              <FilterButton
+                label="All"
+                count={rankedRepositories.length}
+                color={STATUS_COLORS.neutral}
+                isActive={statusFilter === 'all'}
+                onClick={() => {
+                  setStatusFilter('all');
+                  setPage(0);
+                  syncToUrl({ status: 'all', page: '0' });
                 }}
-              >
-                {sortDirection === 'asc' ? (
-                  <ArrowUpwardIcon fontSize="small" />
-                ) : (
-                  <ArrowDownwardIcon fontSize="small" />
-                )}
-              </IconButton>
-            </Tooltip>
-          </Box>
-        )}
-      </Box>
+              />
+              <FilterButton
+                label="Active"
+                count={rankedRepositories.filter((r) => !r.inactiveAt).length}
+                color={STATUS_COLORS.success}
+                isActive={statusFilter === 'active'}
+                onClick={() => {
+                  setStatusFilter('active');
+                  setPage(0);
+                  syncToUrl({ status: 'active', page: '0' });
+                }}
+              />
+              <FilterButton
+                label="Inactive"
+                count={rankedRepositories.filter((r) => !!r.inactiveAt).length}
+                color={STATUS_COLORS.closed}
+                isActive={statusFilter === 'inactive'}
+                onClick={() => {
+                  setStatusFilter('inactive');
+                  setPage(0);
+                  syncToUrl({ status: 'inactive', page: '0' });
+                }}
+              />
+            </Box>
 
-      <Collapse in={showChart}>
-        <Box
-          sx={{
-            p: 2,
-            borderBottom: '1px solid',
-            borderColor: 'border.light',
-            height: '500px',
-            backgroundColor: 'surface.subtle',
-          }}
-        >
-          {showChart && filteredRepositories.length > 0 && (
-            <ReactECharts
-              option={getChartOption()}
-              style={{ height: '100%', width: '100%' }}
-            />
-          )}
-        </Box>
-      </Collapse>
-
-      {viewMode === 'cards' && (
-        <Box
-          sx={{
-            p: 2,
-            overflowY: 'auto',
-            ...scrollbarSx,
-          }}
-        >
-          {isLoading ? (
-            <Grid container spacing={2}>
-              {Array.from({ length: rowsPerPage }).map((_, i) => (
-                <Grid item xs={12} sm={6} md={4} lg={4} key={i}>
-                  <Skeleton
-                    variant="rounded"
-                    height={220}
-                    sx={{
-                      bgcolor: (t) => alpha(t.palette.text.primary, 0.06),
-                    }}
-                  />
-                </Grid>
-              ))}
-            </Grid>
-          ) : pagedRepositories.length > 0 ? (
-            <Grid container spacing={2}>
-              {pagedRepositories.map((repo) => (
-                <Grid item xs={12} sm={6} md={4} lg={4} key={repo.repository}>
-                  <RepositoryCard
-                    repo={repo}
-                    maxWeight={maxWeight}
-                    href={getRepositoryHref(repo.repository || '')}
-                    linkState={linkState}
-                  />
-                </Grid>
-              ))}
-            </Grid>
-          ) : trimmedSearch && isDirectRepoInput ? (
             <Box
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 2,
-                p: 2,
+                justifyContent: 'flex-end',
+                gap: 1,
+                flexWrap: 'wrap',
               }}
             >
-              <Typography sx={{ color: 'text.secondary' }}>
-                Repository not in tracked list. Open details for{' '}
-                <Typography
-                  component="span"
-                  sx={{ fontFamily: '"JetBrains Mono", monospace' }}
-                >
-                  {trimmedSearch}
-                </Typography>
-                ?
-              </Typography>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() =>
-                  navigate(getRepositoryHref(trimmedSearch), {
-                    state: linkState,
-                  })
-                }
-                sx={{ textTransform: 'none' }}
-              >
-                Open repository
-              </Button>
-            </Box>
-          ) : (
-            <Typography
-              sx={{
-                color: 'text.secondary',
-                textAlign: 'center',
-                py: 4,
-              }}
-            >
-              No repositories match the current filters.
-            </Typography>
-          )}
-        </Box>
-      )}
-
-      {viewMode === 'list' && (
-        <Box sx={{ overflowY: 'auto', ...scrollbarSx }}>
-          <DataTable<RepoStats, SortColumn>
-            columns={listColumns}
-            rows={pagedRepositories}
-            isLoading={isLoading}
-            getRowKey={(repo) => repo.repository || ''}
-            getRowHref={(repo) => getRepositoryHref(repo.repository || '')}
-            linkState={linkState}
-            getRowSx={(repo) => ({
-              opacity: repo.inactiveAt ? 0.5 : 1,
-              '&:hover': { backgroundColor: 'border.subtle' },
-              transition: 'all 0.2s',
-              borderBottom: '1px solid',
-              borderColor: 'surface.light',
-            })}
-            minWidth="1280px"
-            stickyHeader
-            emptyState={
-              !filteredRepositories.length &&
-              trimmedSearch &&
-              isDirectRepoInput ? (
-                <Box
+              <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+                <IconButton
+                  onClick={() => setShowChart(!showChart)}
+                  size="small"
                   sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 2,
-                    px: 2,
-                    py: 2,
-                    borderBottom: '1px solid',
-                    borderColor: 'surface.light',
+                    color: showChart ? 'text.primary' : 'text.tertiary',
+                    border: '1px solid',
+                    borderColor: 'border.light',
+                    borderRadius: 2,
+                    padding: '6px',
+                    '&:hover': {
+                      backgroundColor: 'surface.light',
+                      borderColor: 'border.medium',
+                    },
                   }}
                 >
-                  <Typography sx={{ color: 'text.secondary' }}>
-                    Repository not in tracked list. Open details for{' '}
-                    <Typography component="span">{trimmedSearch}</Typography>?
-                  </Typography>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() =>
-                      navigate(getRepositoryHref(trimmedSearch), {
-                        state: linkState,
-                      })
-                    }
-                    sx={{ textTransform: 'none' }}
+                  {showChart ? (
+                    <TableChartIcon fontSize="small" />
+                  ) : (
+                    <BarChartIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </Tooltip>
+
+              {showChart && (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={useLogScale}
+                      onChange={(e) => setUseLogScale(e.target.checked)}
+                      size="small"
+                      sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': {
+                          color: 'primary.main',
+                        },
+                        '& .MuiSwitch-track': {
+                          backgroundColor: 'border.medium',
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: '0.8rem',
+                        color: 'text.secondary',
+                      }}
+                    >
+                      Log Scale
+                    </Typography>
+                  }
+                />
+              )}
+
+              <FormControl size="small">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: 'text.secondary',
+                      fontSize: '0.8rem',
+                    }}
                   >
-                    Open repository
-                  </Button>
+                    Rows:
+                  </Typography>
+                  <Select
+                    value={rowsPerPage}
+                    onChange={(e) => {
+                      const newRows = e.target.value as number;
+                      setRowsPerPage(newRows);
+                      setPage(0);
+                      syncToUrl({ rows: String(newRows), page: '0' });
+                    }}
+                    sx={{
+                      color: 'text.primary',
+                      backgroundColor: 'background.default',
+                      fontSize: '0.8rem',
+                      height: '36px',
+                      borderRadius: 2,
+                      minWidth: '80px',
+                      '& fieldset': { borderColor: 'border.light' },
+                      '&:hover fieldset': {
+                        borderColor: 'border.medium',
+                      },
+                      '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                      '& .MuiSelect-select': { py: 0.75 },
+                    }}
+                  >
+                    {(viewMode === 'cards'
+                      ? REPOSITORIES_CARD_ROWS
+                      : REPOSITORIES_LIST_ROWS
+                    ).map((n) => (
+                      <MenuItem key={n} value={n}>
+                        {n}
+                      </MenuItem>
+                    ))}
+                  </Select>
                 </Box>
-              ) : undefined
-            }
-          />
+              </FormControl>
+
+              <Box sx={{ ml: { xs: 0, md: 'auto' } }}>
+                <ViewModeToggle
+                  viewMode={viewMode}
+                  onChange={handleViewModeChange}
+                />
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Row 3: Sort controls (card view only) */}
+          {viewMode === 'cards' && (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                gap: 1,
+                flexWrap: 'wrap',
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
+              >
+                Sort:
+              </Typography>
+              <Select
+                size="small"
+                value={sortColumn}
+                onChange={(e) => handleSort(e.target.value as SortColumn)}
+                sx={{
+                  color: 'text.primary',
+                  backgroundColor: 'background.default',
+                  fontSize: '0.8rem',
+                  height: '36px',
+                  borderRadius: 2,
+                  minWidth: '140px',
+                  '& fieldset': { borderColor: 'border.light' },
+                  '&:hover fieldset': { borderColor: 'border.medium' },
+                  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                  '& .MuiSelect-select': { py: 0.75 },
+                }}
+              >
+                {cardSortSelectOptions.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </Select>
+              <Tooltip
+                title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
+              >
+                <IconButton
+                  onClick={() => handleSort(sortColumn)}
+                  size="small"
+                  aria-label={
+                    sortDirection === 'asc'
+                      ? 'Sort descending'
+                      : 'Sort ascending'
+                  }
+                  sx={{
+                    color: 'text.primary',
+                    border: '1px solid',
+                    borderColor: 'border.light',
+                    borderRadius: 2,
+                    padding: '6px',
+                    '&:hover': {
+                      backgroundColor: 'surface.light',
+                      borderColor: 'border.medium',
+                    },
+                  }}
+                >
+                  {sortDirection === 'asc' ? (
+                    <ArrowUpwardIcon fontSize="small" />
+                  ) : (
+                    <ArrowDownwardIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </Tooltip>
+            </Box>
+          )}
         </Box>
-      )}
-      <TablePagination
-        rowsPerPageOptions={[]}
-        component="div"
-        count={filteredRepositories.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-        showFirstButton
-        showLastButton
+      </SectionCard>
+
+      {/* Table Card */}
+      <Card
         sx={{
-          borderTop: '1px solid',
+          borderRadius: 3,
+          border: '1px solid',
           borderColor: 'border.light',
-          color: 'text.secondary',
-          '.MuiTablePagination-displayedRows': {},
+          backgroundColor: 'transparent',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
         }}
-      />
-    </Card>
+        elevation={0}
+      >
+        <Collapse in={showChart}>
+          <Box
+            sx={{
+              p: 2,
+              borderBottom: '1px solid',
+              borderColor: 'border.light',
+              height: '500px',
+              backgroundColor: 'surface.subtle',
+            }}
+          >
+            {showChart && filteredRepositories.length > 0 && (
+              <ReactECharts
+                option={getChartOption()}
+                style={{ height: '100%', width: '100%' }}
+              />
+            )}
+          </Box>
+        </Collapse>
+
+        {viewMode === 'cards' && (
+          <Box
+            sx={{
+              p: 2,
+              overflowY: 'auto',
+              ...scrollbarSx,
+            }}
+          >
+            {isLoading ? (
+              <Grid container spacing={2}>
+                {Array.from({ length: rowsPerPage }).map((_, i) => (
+                  <Grid item xs={12} sm={6} md={4} lg={4} key={i}>
+                    <Skeleton
+                      variant="rounded"
+                      height={220}
+                      sx={{
+                        bgcolor: (t) => alpha(t.palette.text.primary, 0.06),
+                      }}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+            ) : pagedRepositories.length > 0 ? (
+              <Grid container spacing={2}>
+                {pagedRepositories.map((repo) => (
+                  <Grid item xs={12} sm={6} md={4} lg={4} key={repo.repository}>
+                    <RepositoryCard
+                      repo={repo}
+                      maxWeight={maxWeight}
+                      href={getRepositoryHref(repo.repository || '')}
+                      linkState={linkState}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+            ) : trimmedSearch && isDirectRepoInput ? (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 2,
+                  p: 2,
+                }}
+              >
+                <Typography sx={{ color: 'text.secondary' }}>
+                  Repository not in tracked list. Open details for{' '}
+                  <Typography
+                    component="span"
+                    sx={{ fontFamily: '"JetBrains Mono", monospace' }}
+                  >
+                    {trimmedSearch}
+                  </Typography>
+                  ?
+                </Typography>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() =>
+                    navigate(getRepositoryHref(trimmedSearch), {
+                      state: linkState,
+                    })
+                  }
+                  sx={{ textTransform: 'none' }}
+                >
+                  Open repository
+                </Button>
+              </Box>
+            ) : (
+              <Typography
+                sx={{
+                  color: 'text.secondary',
+                  textAlign: 'center',
+                  py: 4,
+                }}
+              >
+                No repositories match the current filters.
+              </Typography>
+            )}
+          </Box>
+        )}
+
+        {viewMode === 'list' && (
+          <Box sx={{ overflowY: 'auto', ...scrollbarSx }}>
+            <DataTable<RepoStats, SortColumn>
+              columns={listColumns}
+              rows={pagedRepositories}
+              isLoading={isLoading}
+              getRowKey={(repo) => repo.repository || ''}
+              getRowHref={(repo) => getRepositoryHref(repo.repository || '')}
+              linkState={linkState}
+              getRowSx={(repo) => ({
+                opacity: repo.inactiveAt ? 0.5 : 1,
+                '&:hover': { backgroundColor: 'border.subtle' },
+                transition: 'all 0.2s',
+                borderBottom: '1px solid',
+                borderColor: 'surface.light',
+              })}
+              minWidth="1280px"
+              stickyHeader
+              emptyState={
+                !filteredRepositories.length &&
+                trimmedSearch &&
+                isDirectRepoInput ? (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 2,
+                      px: 2,
+                      py: 2,
+                      borderBottom: '1px solid',
+                      borderColor: 'surface.light',
+                    }}
+                  >
+                    <Typography sx={{ color: 'text.secondary' }}>
+                      Repository not in tracked list. Open details for{' '}
+                      <Typography component="span">{trimmedSearch}</Typography>?
+                    </Typography>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() =>
+                        navigate(getRepositoryHref(trimmedSearch), {
+                          state: linkState,
+                        })
+                      }
+                      sx={{ textTransform: 'none' }}
+                    >
+                      Open repository
+                    </Button>
+                  </Box>
+                ) : undefined
+              }
+            />
+          </Box>
+        )}
+
+        <TablePagination
+          rowsPerPageOptions={[]}
+          component="div"
+          count={filteredRepositories.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          showFirstButton
+          showLastButton
+          sx={{
+            borderTop: '1px solid',
+            borderColor: 'border.light',
+            color: 'text.secondary',
+            '.MuiTablePagination-displayedRows': {},
+          }}
+        />
+      </Card>
+    </Box>
   );
 };
 
