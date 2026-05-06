@@ -384,8 +384,16 @@ const RepositoryContributorsTable: React.FC<
       >
         {(
           [
-            { label: 'OSS Contributions', value: 'oss' as const },
-            { label: 'Issue Discovery', value: 'issues' as const },
+            {
+              label: 'OSS Contributions',
+              mobileLabel: 'OSS',
+              value: 'oss' as const,
+            },
+            {
+              label: 'Issue Discovery',
+              mobileLabel: 'Discovery',
+              value: 'issues' as const,
+            },
           ] as const
         ).map((option) => {
           const isActive = programTab === option.value;
@@ -397,13 +405,16 @@ const RepositoryContributorsTable: React.FC<
               aria-pressed={isActive}
               onClick={() => setProgramTab(option.value)}
               sx={{
-                px: 1,
-                py: 0.65,
+                px: { xs: 0.6, sm: 1 },
+                py: { xs: 0.6, sm: 0.65 },
                 border: 0,
                 borderRadius: 1.5,
                 cursor: 'pointer',
                 minWidth: 0,
                 flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 fontFamily: 'inherit',
                 backgroundColor: isActive ? 'surface.elevated' : 'transparent',
                 color: isActive
@@ -418,14 +429,19 @@ const RepositoryContributorsTable: React.FC<
             >
               <Typography
                 sx={{
-                  fontSize: '0.72rem',
+                  fontSize: { xs: '0.66rem', sm: '0.68rem', lg: '0.72rem' },
                   fontWeight: 600,
                   textAlign: 'center',
                   whiteSpace: 'nowrap',
                   lineHeight: 1.2,
                 }}
               >
-                {option.label}
+                <Box component="span" sx={{ display: { xs: 'inline', lg: 'none' } }}>
+                  {option.mobileLabel}
+                </Box>
+                <Box component="span" sx={{ display: { xs: 'none', lg: 'inline' } }}>
+                  {option.label}
+                </Box>
               </Typography>
             </Box>
           );
