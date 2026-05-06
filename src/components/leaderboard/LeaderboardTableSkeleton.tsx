@@ -11,7 +11,7 @@ interface LeaderboardTableSkeletonProps {
 
 const LAYOUTS: Record<
   SkeletonVariant,
-  Array<{ width: string; barWidth: string; align?: 'right' }>
+  Array<{ width: string; barWidth: string; align?: 'right' | 'center' }>
 > = {
   miners: [
     { width: '80px', barWidth: '24px' },
@@ -32,11 +32,11 @@ const LAYOUTS: Record<
   repositories: [
     { width: '60px', barWidth: '24px' },
     { width: '35%', barWidth: '70%' },
-    { width: '12%', barWidth: '50%', align: 'right' },
-    { width: '18%', barWidth: '55%', align: 'right' },
-    { width: '15%', barWidth: '40%', align: 'right' },
-    { width: '15%', barWidth: '40%', align: 'right' },
-    { width: '52px', barWidth: '20px' },
+    { width: '12%', barWidth: '50%', align: 'center' },
+    { width: '18%', barWidth: '55%', align: 'center' },
+    { width: '15%', barWidth: '40%', align: 'center' },
+    { width: '15%', barWidth: '40%', align: 'center' },
+    { width: '52px', barWidth: '20px', align: 'center' },
   ],
 };
 
@@ -61,6 +61,7 @@ const LeaderboardTableSkeleton: React.FC<LeaderboardTableSkeletonProps> = ({
                 sx={{
                   bgcolor: 'rgba(255,255,255,0.06)',
                   ml: col.align === 'right' ? 'auto' : 0,
+                  mx: col.align === 'center' ? 'auto' : undefined,
                 }}
               />
             </TableCell>

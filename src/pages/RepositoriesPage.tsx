@@ -1,6 +1,13 @@
 import React, { useMemo } from 'react';
 
-import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
+import {
+  Avatar,
+  Box,
+  Card,
+  CircularProgress,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
 
 import { LinkBox } from '../components/common/linkBehavior';
@@ -363,7 +370,20 @@ const RepositoriesPage: React.FC = () => {
               <>
                 <SectionHeader>Trending This Week</SectionHeader>
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  {trendingRepos.length === 0 && !isLoading ? (
+                  {isLoading ? (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        py: 4,
+                      }}
+                    >
+                      <CircularProgress
+                        size={24}
+                        sx={{ color: 'primary.main' }}
+                      />
+                    </Box>
+                  ) : trendingRepos.length === 0 ? (
                     <Typography
                       sx={(theme) => ({
                         color: alpha(theme.palette.text.primary, 0.3),
@@ -434,7 +454,20 @@ const RepositoriesPage: React.FC = () => {
               <>
                 <SectionHeader>Most Collateral Staked</SectionHeader>
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  {topCollateralRepos.length === 0 && !isLoading ? (
+                  {isLoading ? (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        py: 4,
+                      }}
+                    >
+                      <CircularProgress
+                        size={24}
+                        sx={{ color: 'primary.main' }}
+                      />
+                    </Box>
+                  ) : topCollateralRepos.length === 0 ? (
                     <Typography
                       sx={(theme) => ({
                         color: alpha(theme.palette.text.primary, 0.3),
@@ -499,7 +532,20 @@ const RepositoriesPage: React.FC = () => {
               <>
                 <SectionHeader>Recent Pull Requests</SectionHeader>
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  {recentPrs.length === 0 && !isLoading ? (
+                  {isLoading ? (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        py: 4,
+                      }}
+                    >
+                      <CircularProgress
+                        size={24}
+                        sx={{ color: 'primary.main' }}
+                      />
+                    </Box>
+                  ) : recentPrs.length === 0 ? (
                     <Typography
                       sx={(theme) => ({
                         color: alpha(theme.palette.text.primary, 0.3),

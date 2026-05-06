@@ -1,5 +1,5 @@
 import React from 'react';
-import { Skeleton, Box } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 import { IssuesStats } from '../../api/models/Issues';
 import KpiCard from '../KpiCard';
 import { formatTokenAmount, formatAlphaToUsd } from '../../utils/format';
@@ -64,19 +64,21 @@ const IssueStats: React.FC<IssueStatsProps> = ({
     return (
       <Box sx={gridSx}>
         {[1, 2, 3, 4].map((i) => (
-          <Box key={i}>
-            <Box
-              sx={{
-                p: 2,
-                backgroundColor: 'transparent',
-                border: '1px solid',
-                borderColor: 'border.light',
-                borderRadius: 3,
-              }}
-            >
-              <Skeleton variant="text" width="60%" height={20} sx={{ mb: 1 }} />
-              <Skeleton variant="text" width="40%" height={36} />
-            </Box>
+          <Box
+            key={i}
+            sx={{
+              p: 2,
+              backgroundColor: 'transparent',
+              border: '1px solid',
+              borderColor: 'border.light',
+              borderRadius: 3,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: 96,
+            }}
+          >
+            <CircularProgress size={24} sx={{ color: 'primary.main' }} />
           </Box>
         ))}
       </Box>
