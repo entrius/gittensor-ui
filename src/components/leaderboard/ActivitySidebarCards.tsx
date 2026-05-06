@@ -445,51 +445,60 @@ const MinerActivityRow: React.FC<MinerActivityRowProps> = ({
   label,
   pr,
   issue,
-}) => (
-  <Box
-    sx={(theme) => ({
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr 1fr',
-      gap: 1,
-      alignItems: 'center',
-      py: 1.1,
-      borderBottom: `1px solid ${alpha(theme.palette.text.primary, 0.06)}`,
-      '&:last-of-type': { borderBottom: 'none' },
-    })}
-  >
-    <Typography
-      sx={{
-        fontFamily: FONTS.mono,
-        fontSize: '0.85rem',
-        color: STATUS_COLORS.open,
-      }}
-    >
-      {label}
-    </Typography>
-    <Typography
+}) => {
+  const valueColor =
+    label === 'Eligible'
+      ? STATUS_COLORS.merged
+      : label === 'Ineligible'
+        ? STATUS_COLORS.closed
+        : STATUS_COLORS.open;
+
+  return (
+    <Box
       sx={(theme) => ({
-        fontFamily: FONTS.mono,
-        fontWeight: 600,
-        fontSize: '1.1rem',
-        color: theme.palette.text.primary,
-        textAlign: 'center',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr 1fr',
+        gap: 1,
+        alignItems: 'center',
+        py: 1.1,
+        borderBottom: `1px solid ${alpha(theme.palette.text.primary, 0.06)}`,
+        '&:last-of-type': { borderBottom: 'none' },
       })}
     >
-      {pr.toLocaleString()}
-    </Typography>
-    <Typography
-      sx={(theme) => ({
-        fontFamily: FONTS.mono,
-        fontWeight: 600,
-        fontSize: '1.1rem',
-        color: theme.palette.text.primary,
-        textAlign: 'center',
-      })}
-    >
-      {issue.toLocaleString()}
-    </Typography>
-  </Box>
-);
+      <Typography
+        sx={{
+          fontFamily: FONTS.mono,
+          fontSize: '0.85rem',
+          color: STATUS_COLORS.open,
+        }}
+      >
+        {label}
+      </Typography>
+      <Typography
+        sx={{
+          fontFamily: FONTS.mono,
+          fontWeight: 600,
+          fontSize: '1.1rem',
+          color: valueColor,
+          textAlign: 'center',
+        }}
+      >
+        {pr.toLocaleString()}
+      </Typography>
+      <Typography
+        sx={{
+          fontFamily: FONTS.mono,
+          fontWeight: 600,
+          fontSize: '1.1rem',
+          color: valueColor,
+          textAlign: 'center',
+        }}
+      >
+        {issue.toLocaleString()}
+      </Typography>
+    </Box>
+  );
+};
 
 interface PRColumnProps {
   label: string;
