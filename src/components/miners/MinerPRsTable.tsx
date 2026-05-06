@@ -26,6 +26,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
 import { tooltipSlotProps } from '../../theme';
@@ -528,6 +529,15 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 }}
               />
             </InputAdornment>
+          ),
+          endAdornment: (
+            <ClearSearchAdornment
+              visible={Boolean(searchQuery)}
+              onClear={() => {
+                setSearchQuery('');
+                setPage(0);
+              }}
+            />
           ),
         }}
         sx={{

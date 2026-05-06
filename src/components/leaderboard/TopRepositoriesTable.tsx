@@ -55,7 +55,7 @@ import ReactECharts from 'echarts-for-react';
 import type { TooltipComponentFormatterCallbackParams } from 'echarts';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
-import { WatchlistButton } from '../common';
+import { ClearSearchAdornment, WatchlistButton } from '../common';
 import {
   compareByWatchlist,
   getRepositoryOwnerAvatarSrc,
@@ -710,6 +710,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       autoFocus={isMobileSearchOpen}
       InputProps={{
         startAdornment: searchAdornment,
+        endAdornment: (
+          <ClearSearchAdornment
+            visible={Boolean(trimmedSearch)}
+            onClear={() => setSearchQuery('')}
+          />
+        ),
       }}
       sx={{
         width: '200px',

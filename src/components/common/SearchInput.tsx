@@ -2,6 +2,7 @@ import React from 'react';
 import SearchIcon from '@mui/icons-material/Search';
 import { TextField, InputAdornment } from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import { ClearSearchAdornment } from './ClearSearchAdornment';
 
 interface SearchInputProps {
   value: string;
@@ -31,6 +32,12 @@ export const SearchInput: React.FC<SearchInputProps> = ({
             })}
           />
         </InputAdornment>
+      ),
+      endAdornment: (
+        <ClearSearchAdornment
+          visible={Boolean(value)}
+          onClear={() => onChange('')}
+        />
       ),
     }}
     sx={[

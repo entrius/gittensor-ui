@@ -26,6 +26,7 @@ import {
 import { useMinerGithubData, useMinerPRs } from '../../api';
 import { getRepositoryOwnerAvatarSrc, paginateItems } from '../../utils';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
 import {
@@ -826,6 +827,12 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
                   }}
                 />
               </InputAdornment>
+            ),
+            endAdornment: (
+              <ClearSearchAdornment
+                visible={Boolean(search)}
+                onClear={() => onSearchChange('')}
+              />
             ),
           }}
           sx={{
