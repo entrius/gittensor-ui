@@ -7,7 +7,8 @@ import { type TrendTimeRange } from './dashboardData';
 import useDashboardData from './useDashboardData';
 import ActiveNetwork from './views/ActiveNetwork';
 import DashboardFeaturedWorkSection from './views/DashboardFeaturedWork';
-import DashboardTopContributors from './views/DashboardTopContributors';
+import FeaturedContributorsSpotlight from './views/FeaturedContributorsSpotlight';
+import FeaturedDiscoverersSpotlight from './views/FeaturedDiscoverersSpotlight';
 import LiveSidebar from './views/LiveSidebar';
 
 const DashboardFeaturePage: React.FC = () => {
@@ -81,18 +82,16 @@ const DashboardFeaturePage: React.FC = () => {
               onRangeChange={setRange}
             />
 
-            <DashboardTopContributors
+            <FeaturedContributorsSpotlight
               contributors={featuredContributors}
               isLoading={isLoading}
               viewAllHref="/top-miners"
             />
 
-            <DashboardTopContributors
-              title="Featured Discoverers"
-              contributors={featuredDiscoveryContributors}
+            <FeaturedDiscoverersSpotlight
+              discoverers={featuredDiscoveryContributors}
               isLoading={isLoading}
-              mode="issues"
-              viewAllHref="/top-miners?timeline=discoveries"
+              viewAllHref="/discoveries"
             />
 
             <DashboardFeaturedWorkSection
