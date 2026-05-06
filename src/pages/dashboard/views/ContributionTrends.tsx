@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
+import StackedBarChartIcon from '@mui/icons-material/StackedBarChart';
+import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import {
   Box,
   Card,
@@ -9,6 +11,7 @@ import {
   Stack,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { alpha, type Theme, useTheme } from '@mui/material/styles';
@@ -25,6 +28,7 @@ import {
   echartsMutedCartesianAxisColors,
   echartsTransparentBackground,
 } from '../../../utils/echarts/gittensorChartTheme';
+import { CHART_COLORS } from '../../../theme';
 
 interface ContributionTrendsProps {
   range: TrendTimeRange;
@@ -35,8 +39,11 @@ interface ContributionTrendsProps {
 }
 
 type TrendChartMode = 'line' | 'bar';
+type TrendBarLayout = 'stacked' | 'grouped';
 
 const TREND_CHART_ANIMATION_MS = 450;
+const TREND_SERIES_BLUR_OPACITY = 0.15;
+const TREND_SERIES_BLUR_AREA_OPACITY = 0.04;
 const TREND_CHART_AXIS_POINTER_WIDTH = 1;
 const TREND_CHART_AXIS_POINTER_OPACITY = 0.18;
 const TREND_CHART_AXIS_SHADOW_OPACITY = 0.04;
@@ -47,8 +54,10 @@ const TREND_CHART_Y_AXIS_SPLIT_COUNT = 4;
 const TREND_CHART_LINE_SMOOTHNESS = 0.2;
 
 const TREND_BAR_MAX_WIDTH = 18;
+const TREND_BAR_STACKED_MAX_WIDTH = 22;
 const TREND_BAR_GAP = '24%';
 const TREND_BAR_CATEGORY_GAP = '36%';
+const TREND_BAR_STACKED_CATEGORY_GAP = '32%';
 const TREND_BAR_RADIUS = [5, 5, 0, 0] as const;
 const TREND_BAR_BACKGROUND_OPACITY = 0.035;
 const TREND_BAR_SHADOW_OPACITY = 0.2;
@@ -60,6 +69,15 @@ const TREND_BAR_GRADIENT_STOPS = [
   { offset: 0, opacity: 0.95 },
   { offset: 0.55, opacity: 0.68 },
   { offset: 1, opacity: 0.22 },
+] as const;
+const TREND_BAR_STACKED_GRADIENT_STOPS = [
+  { offset: 0, opacity: 0.95 },
+  { offset: 1, opacity: 0.78 },
+] as const;
+
+const TREND_LINE_AREA_GRADIENT_STOPS = [
+  { offset: 0, opacity: 0.32 },
+  { offset: 1, opacity: 0 },
 ] as const;
 
 const CHART_MODE_TOGGLE_PADDING = 0.25;
@@ -84,6 +102,7 @@ const TREND_SERIES_PRESENTATION: Record<
     colorOpacity: number;
     lineWidth: number;
     lineOpacity: number;
+    areaOpacity: number;
   }
 > = {
   mergedPrs: {
@@ -91,31 +110,50 @@ const TREND_SERIES_PRESENTATION: Record<
     colorOpacity: 0.95,
     lineWidth: 3,
     lineOpacity: 1,
+    areaOpacity: 0.45,
   },
   issuesResolved: {
     label: 'Issues Resolved',
-    colorOpacity: 0.85,
+    colorOpacity: 0.9,
     lineWidth: 2.5,
-    lineOpacity: 0.9,
+    lineOpacity: 0.95,
+    areaOpacity: 0.4,
   },
   prsOpened: {
     label: 'PRs Opened',
-    colorOpacity: 0.35,
-    lineWidth: 1.75,
-    lineOpacity: 0.6,
+    colorOpacity: 0.85,
+    lineWidth: 2,
+    lineOpacity: 0.9,
+    areaOpacity: 0.32,
   },
   issuesOpened: {
     label: 'Issues Opened',
-    colorOpacity: 0.3,
-    lineWidth: 1.5,
-    lineOpacity: 0.5,
+    colorOpacity: 0.8,
+    lineWidth: 1.75,
+    lineOpacity: 0.85,
+    areaOpacity: 0.28,
   },
 };
 
-const getTrendSeriesBaseColor = (theme: Theme, seriesKey: TrendSeriesKey) =>
-  seriesKey === 'mergedPrs' || seriesKey === 'prsOpened'
-    ? theme.palette.diff.additions
-    : theme.palette.status.award;
+const TREND_SERIES_ORDER: TrendSeriesKey[] = [
+  'mergedPrs',
+  'issuesResolved',
+  'prsOpened',
+  'issuesOpened',
+];
+
+const getTrendSeriesBaseColor = (theme: Theme, seriesKey: TrendSeriesKey) => {
+  switch (seriesKey) {
+    case 'mergedPrs':
+      return theme.palette.diff.additions;
+    case 'issuesResolved':
+      return theme.palette.status.award;
+    case 'prsOpened':
+      return theme.palette.status.info;
+    case 'issuesOpened':
+      return CHART_COLORS.series[3];
+  }
+};
 
 const getTrendSeriesColor = (theme: Theme, seriesKey: TrendSeriesKey) =>
   alpha(
@@ -123,7 +161,31 @@ const getTrendSeriesColor = (theme: Theme, seriesKey: TrendSeriesKey) =>
     TREND_SERIES_PRESENTATION[seriesKey].colorOpacity,
   );
 
-const getTrendSeriesBarFill = (theme: Theme, seriesKey: TrendSeriesKey) => {
+const getTrendSeriesBarFill = (
+  theme: Theme,
+  seriesKey: TrendSeriesKey,
+  barLayout: TrendBarLayout,
+) => {
+  const baseColor = getTrendSeriesBaseColor(theme, seriesKey);
+  const stops =
+    barLayout === 'stacked'
+      ? TREND_BAR_STACKED_GRADIENT_STOPS
+      : TREND_BAR_GRADIENT_STOPS;
+
+  return {
+    type: 'linear',
+    x: 0,
+    y: 0,
+    x2: 0,
+    y2: 1,
+    colorStops: stops.map((stop) => ({
+      offset: stop.offset,
+      color: alpha(baseColor, stop.opacity),
+    })),
+  };
+};
+
+const getTrendSeriesAreaFill = (theme: Theme, seriesKey: TrendSeriesKey) => {
   const baseColor = getTrendSeriesBaseColor(theme, seriesKey);
 
   return {
@@ -132,11 +194,19 @@ const getTrendSeriesBarFill = (theme: Theme, seriesKey: TrendSeriesKey) => {
     y: 0,
     x2: 0,
     y2: 1,
-    colorStops: TREND_BAR_GRADIENT_STOPS.map((stop) => ({
+    colorStops: TREND_LINE_AREA_GRADIENT_STOPS.map((stop) => ({
       offset: stop.offset,
       color: alpha(baseColor, stop.opacity),
     })),
   };
+};
+
+const formatTrendSeriesTotal = (total: number) => {
+  if (total >= 1000) {
+    const compact = total / 1000;
+    return `${compact >= 10 ? Math.round(compact) : compact.toFixed(1)}k`;
+  }
+  return total.toLocaleString();
 };
 
 const getTrendBarShadowBlur = (seriesKey: TrendSeriesKey) =>
@@ -146,6 +216,9 @@ const getTrendBarShadowBlur = (seriesKey: TrendSeriesKey) =>
 
 const getChartModeSliderOffset = (chartMode: TrendChartMode) =>
   chartMode === 'bar' ? 'translateX(100%)' : 'translateX(0)';
+
+const getBarLayoutSliderOffset = (barLayout: TrendBarLayout) =>
+  barLayout === 'grouped' ? 'translateX(100%)' : 'translateX(0)';
 
 const getChartModeToggleSx = (theme: Theme, chartMode: TrendChartMode) => ({
   position: 'relative',
@@ -211,14 +284,24 @@ const getChartModeToggleSx = (theme: Theme, chartMode: TrendChartMode) => ({
   },
 });
 
+const getBarLayoutToggleSx = (theme: Theme, barLayout: TrendBarLayout) => ({
+  ...getChartModeToggleSx(theme, 'line'),
+  '&::before': {
+    ...getChartModeToggleSx(theme, 'line')['&::before'],
+    transform: getBarLayoutSliderOffset(barLayout),
+  },
+});
+
 const buildContributionTrendChartOption = ({
   chartMode,
+  barLayout,
   labels,
   range,
   theme,
   visibleSeries,
 }: {
   chartMode: TrendChartMode;
+  barLayout: TrendBarLayout;
   labels: string[];
   range: TrendTimeRange;
   theme: Theme;
@@ -227,7 +310,13 @@ const buildContributionTrendChartOption = ({
   const labelInterval = range === '35d' ? 6 : range === '7d' ? 0 : 'auto';
   const tooltipPrimaryColor = theme.palette.text.primary;
   const tooltipSecondaryColor = alpha(theme.palette.text.primary, 0.66);
+  const tooltipDividerColor = alpha(theme.palette.text.primary, 0.1);
   const chartFontFamily = echartsFontFamily(theme);
+  const showStackedTotal =
+    chartMode === 'bar' && barLayout === 'stacked' && visibleSeries.length > 1;
+  const tooltipDotColors = visibleSeries.map((entry) =>
+    getTrendSeriesColor(theme, entry.key),
+  );
   const {
     labelColor: chartLabelColor,
     axisLineColor: chartAxisLineColor,
@@ -240,6 +329,8 @@ const buildContributionTrendChartOption = ({
     color: visibleSeries.map((entry) => getTrendSeriesColor(theme, entry.key)),
     tooltip: {
       trigger: 'axis',
+      confine: true,
+      appendTo: () => document.body,
       axisPointer: {
         type: chartMode === 'bar' ? 'shadow' : 'line',
         lineStyle: {
@@ -267,23 +358,42 @@ const buildContributionTrendChartOption = ({
         params: Array<{
           axisValueLabel: string;
           seriesName: string;
+          seriesIndex: number;
           value: number;
         }>,
       ) => {
         const rows = params
-          .map(
-            (entry) =>
-              `<div style="display:flex;justify-content:space-between;gap:24px;">
-                <span style="color:${tooltipSecondaryColor};">${entry.seriesName}</span>
-                <span style="color:${tooltipPrimaryColor};font-weight:700;">${entry.value}</span>
-              </div>`,
-          )
+          .map((entry) => {
+            const value = entry.value ?? 0;
+            const dotColor =
+              tooltipDotColors[entry.seriesIndex] ?? tooltipPrimaryColor;
+            const colorDot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:${dotColor};margin-right:8px;flex-shrink:0;"></span>`;
+            return `
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;">
+                <span style="display:inline-flex;align-items:center;color:${tooltipSecondaryColor};">${colorDot}${entry.seriesName}</span>
+                <span style="color:${tooltipPrimaryColor};font-weight:700;">${value}</span>
+              </div>`;
+          })
           .join('');
 
+        const total = params.reduce(
+          (sum, entry) => sum + (entry.value ?? 0),
+          0,
+        );
+        const totalRow =
+          showStackedTotal || params.length > 1
+            ? `
+              <div style="margin-top:4px;padding-top:6px;border-top:1px solid ${tooltipDividerColor};display:flex;align-items:center;justify-content:space-between;gap:24px;">
+                <span style="color:${tooltipPrimaryColor};font-weight:700;letter-spacing:0.04em;text-transform:uppercase;font-size:10px;">Total</span>
+                <span style="color:${tooltipPrimaryColor};font-weight:700;">${total}</span>
+              </div>`
+            : '';
+
         return `
-          <div style="display:grid;gap:6px;font-family:${chartFontFamily};">
+          <div style="display:grid;gap:6px;font-family:${chartFontFamily};min-width:160px;">
             <div style="color:${tooltipPrimaryColor};font-weight:700;">${params[0]?.axisValueLabel || ''}</div>
             ${rows}
+            ${totalRow}
           </div>
         `;
       },
@@ -327,19 +437,28 @@ const buildContributionTrendChartOption = ({
       axisLine: { show: false },
       axisTick: { show: false },
     },
-    series: visibleSeries.map((entry) => {
+    series: visibleSeries.map((entry, index) => {
       const presentation = TREND_SERIES_PRESENTATION[entry.key];
       const color = getTrendSeriesColor(theme, entry.key);
 
       if (chartMode === 'bar') {
+        const stacked = barLayout === 'stacked';
+        const isTopOfStack = stacked && index === visibleSeries.length - 1;
+        const stackedRadius = isTopOfStack ? TREND_BAR_RADIUS : 0;
+
         return {
           name: presentation.label,
           type: 'bar',
           data: entry.values,
-          barMaxWidth: TREND_BAR_MAX_WIDTH,
-          barGap: TREND_BAR_GAP,
-          barCategoryGap: TREND_BAR_CATEGORY_GAP,
-          showBackground: true,
+          stack: stacked ? 'total' : undefined,
+          barMaxWidth: stacked
+            ? TREND_BAR_STACKED_MAX_WIDTH
+            : TREND_BAR_MAX_WIDTH,
+          barGap: stacked ? 0 : TREND_BAR_GAP,
+          barCategoryGap: stacked
+            ? TREND_BAR_STACKED_CATEGORY_GAP
+            : TREND_BAR_CATEGORY_GAP,
+          showBackground: !stacked,
           backgroundStyle: {
             color: alpha(
               theme.palette.text.primary,
@@ -348,10 +467,10 @@ const buildContributionTrendChartOption = ({
             borderRadius: TREND_BAR_RADIUS,
           },
           itemStyle: {
-            color: getTrendSeriesBarFill(theme, entry.key),
-            borderRadius: TREND_BAR_RADIUS,
+            color: getTrendSeriesBarFill(theme, entry.key, barLayout),
+            borderRadius: stacked ? stackedRadius : TREND_BAR_RADIUS,
             opacity: presentation.lineOpacity,
-            shadowBlur: getTrendBarShadowBlur(entry.key),
+            shadowBlur: stacked ? 0 : getTrendBarShadowBlur(entry.key),
             shadowColor: alpha(
               getTrendSeriesBaseColor(theme, entry.key),
               TREND_BAR_SHADOW_OPACITY,
@@ -361,11 +480,16 @@ const buildContributionTrendChartOption = ({
             focus: 'series',
             itemStyle: {
               opacity: 1,
-              shadowBlur: TREND_BAR_HOVER_SHADOW_BLUR,
+              shadowBlur: stacked ? 0 : TREND_BAR_HOVER_SHADOW_BLUR,
               shadowColor: alpha(
                 getTrendSeriesBaseColor(theme, entry.key),
                 TREND_BAR_HOVER_SHADOW_OPACITY,
               ),
+            },
+          },
+          blur: {
+            itemStyle: {
+              opacity: TREND_SERIES_BLUR_OPACITY,
             },
           },
         };
@@ -377,14 +501,30 @@ const buildContributionTrendChartOption = ({
         smooth: TREND_CHART_LINE_SMOOTHNESS,
         showSymbol: false,
         symbol: 'circle',
+        symbolSize: 6,
         data: entry.values,
         lineStyle: {
           width: presentation.lineWidth,
           color,
           opacity: presentation.lineOpacity,
         },
+        areaStyle: {
+          color: getTrendSeriesAreaFill(theme, entry.key),
+          opacity: presentation.areaOpacity,
+        },
         emphasis: {
           focus: 'series',
+          lineStyle: {
+            width: presentation.lineWidth + 0.5,
+          },
+        },
+        blur: {
+          lineStyle: {
+            opacity: TREND_SERIES_BLUR_OPACITY,
+          },
+          areaStyle: {
+            opacity: TREND_SERIES_BLUR_AREA_OPACITY,
+          },
         },
       };
     }),
@@ -401,29 +541,69 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
   const theme = useTheme();
   const [hiddenSeries, setHiddenSeries] = useState<TrendSeriesKey[]>([]);
   const [chartMode, setChartMode] = useState<TrendChartMode>('line');
+  const [barLayout, setBarLayout] = useState<TrendBarLayout>('stacked');
+
+  const orderedSeries = useMemo(() => {
+    const byKey = new Map(series.map((entry) => [entry.key, entry] as const));
+    return TREND_SERIES_ORDER.flatMap((key) => {
+      const entry = byKey.get(key);
+      return entry ? [entry] : [];
+    });
+  }, [series]);
 
   const visibleSeries = useMemo(
-    () => series.filter((entry) => !hiddenSeries.includes(entry.key)),
-    [series, hiddenSeries],
+    () => orderedSeries.filter((entry) => !hiddenSeries.includes(entry.key)),
+    [orderedSeries, hiddenSeries],
+  );
+
+  const seriesTotals = useMemo(() => {
+    const totals: Partial<Record<TrendSeriesKey, number>> = {};
+    for (const entry of orderedSeries) {
+      totals[entry.key] = entry.values.reduce(
+        (sum, value) => sum + (value ?? 0),
+        0,
+      );
+    }
+    return totals;
+  }, [orderedSeries]);
+
+  const hasAnyActivity = useMemo(
+    () =>
+      orderedSeries.some((entry) =>
+        entry.values.some((value) => (value ?? 0) > 0),
+      ),
+    [orderedSeries],
   );
 
   const chartOption = useMemo(() => {
     return buildContributionTrendChartOption({
       chartMode,
+      barLayout,
       labels,
       range,
       theme,
       visibleSeries,
     });
-  }, [chartMode, labels, range, theme, visibleSeries]);
+  }, [chartMode, barLayout, labels, range, theme, visibleSeries]);
 
-  const handleToggleSeries = (seriesKey: TrendSeriesKey) => {
+  const handleToggleSeries = (seriesKey: TrendSeriesKey, soloMode = false) => {
+    const otherKeys = orderedSeries
+      .map((entry) => entry.key)
+      .filter((key) => key !== seriesKey);
+
     setHiddenSeries((current) => {
+      if (soloMode) {
+        const isAlreadySolo =
+          !current.includes(seriesKey) &&
+          otherKeys.every((key) => current.includes(key));
+        return isAlreadySolo ? [] : otherKeys;
+      }
+
       if (current.includes(seriesKey)) {
         return current.filter((key) => key !== seriesKey);
       }
 
-      if (current.length >= series.length - 1) {
+      if (current.length >= orderedSeries.length - 1) {
         return current;
       }
 
@@ -483,6 +663,37 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
               <BarChartIcon fontSize="inherit" />
             </ToggleButton>
           </ToggleButtonGroup>
+
+          {chartMode === 'bar' && (
+            <ToggleButtonGroup
+              exclusive
+              value={barLayout}
+              onChange={(
+                _event: React.MouseEvent<HTMLElement>,
+                nextLayout: TrendBarLayout | null,
+              ) => {
+                if (nextLayout) setBarLayout(nextLayout);
+              }}
+              size="small"
+              aria-label="Bar chart layout"
+              sx={getBarLayoutToggleSx(theme, barLayout)}
+            >
+              <ToggleButton
+                value="stacked"
+                aria-label="Stacked bars"
+                title="Stacked bars — total network activity"
+              >
+                <StackedBarChartIcon fontSize="inherit" />
+              </ToggleButton>
+              <ToggleButton
+                value="grouped"
+                aria-label="Grouped bars"
+                title="Grouped bars — compare side-by-side"
+              >
+                <ViewColumnIcon fontSize="inherit" />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          )}
 
           <ToggleButtonGroup
             exclusive
@@ -550,72 +761,97 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
             flexWrap="wrap"
             sx={{ mb: 1.1 }}
           >
-            {series.map((entry) => {
+            {orderedSeries.map((entry) => {
               const isHidden = hiddenSeries.includes(entry.key);
               const presentation = TREND_SERIES_PRESENTATION[entry.key];
               const seriesColor = getTrendSeriesColor(theme, entry.key);
+              const total = seriesTotals[entry.key] ?? 0;
 
               return (
-                <Stack
+                <Tooltip
                   key={entry.key}
-                  direction="row"
-                  spacing={0.6}
-                  alignItems="center"
-                  onClick={() => handleToggleSeries(entry.key)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      handleToggleSeries(entry.key);
-                    }
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  sx={{
-                    px: 0.95,
-                    py: 0.48,
-                    borderRadius: 999,
-                    border: isHidden
-                      ? `1px solid ${theme.palette.border.subtle}`
-                      : `1px solid ${theme.palette.border.light}`,
-                    backgroundColor: isHidden
-                      ? 'transparent'
-                      : theme.palette.surface.subtle,
-                    cursor: 'pointer',
-                    opacity: isHidden ? 0.55 : 1,
-                    transition:
-                      'opacity 0.18s ease, border-color 0.18s ease, background-color 0.18s ease',
-                    '&:hover': {
-                      borderColor: alpha(theme.palette.text.primary, 0.14),
-                      backgroundColor: alpha(theme.palette.text.primary, 0.03),
-                    },
-                    '&:focus-visible': {
-                      outline: `2px solid ${alpha(theme.palette.diff.additions, 0.38)}`,
-                      outlineOffset: '2px',
-                    },
-                  }}
+                  title="Click to toggle · Shift-click to solo"
+                  placement="top"
+                  arrow
+                  enterDelay={400}
                 >
-                  <Box
-                    sx={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: '50%',
-                      backgroundColor: seriesColor,
-                      boxShadow: `0 0 0 1px ${seriesColor}`,
-                      opacity: isHidden ? 0.35 : presentation.lineOpacity,
+                  <Stack
+                    direction="row"
+                    spacing={0.7}
+                    alignItems="center"
+                    onClick={(event) =>
+                      handleToggleSeries(entry.key, event.shiftKey)
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        handleToggleSeries(entry.key, event.shiftKey);
+                      }
                     }}
-                  />
-                  <Typography
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={!isHidden}
                     sx={{
-                      color: isHidden
-                        ? alpha(theme.palette.text.primary, 0.46)
-                        : alpha(theme.palette.text.primary, 0.72),
-                      fontSize: '0.72rem',
-                      lineHeight: 1,
+                      px: 0.95,
+                      py: 0.48,
+                      borderRadius: 999,
+                      border: isHidden
+                        ? `1px solid ${theme.palette.border.subtle}`
+                        : `1px solid ${theme.palette.border.light}`,
+                      backgroundColor: isHidden
+                        ? 'transparent'
+                        : theme.palette.surface.subtle,
+                      cursor: 'pointer',
+                      opacity: isHidden ? 0.55 : 1,
+                      transition:
+                        'opacity 0.18s ease, border-color 0.18s ease, background-color 0.18s ease',
+                      '&:hover': {
+                        borderColor: alpha(seriesColor, 0.5),
+                        backgroundColor: alpha(seriesColor, 0.06),
+                      },
+                      '&:focus-visible': {
+                        outline: `2px solid ${alpha(seriesColor, 0.5)}`,
+                        outlineOffset: '2px',
+                      },
                     }}
                   >
-                    {presentation.label}
-                  </Typography>
-                </Stack>
+                    <Box
+                      sx={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        backgroundColor: seriesColor,
+                        boxShadow: `0 0 0 1px ${seriesColor}`,
+                        opacity: isHidden ? 0.35 : presentation.lineOpacity,
+                      }}
+                    />
+                    <Typography
+                      sx={{
+                        color: isHidden
+                          ? alpha(theme.palette.text.primary, 0.46)
+                          : alpha(theme.palette.text.primary, 0.72),
+                        fontSize: '0.72rem',
+                        lineHeight: 1,
+                      }}
+                    >
+                      {presentation.label}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        color: isHidden
+                          ? alpha(theme.palette.text.primary, 0.32)
+                          : alpha(theme.palette.text.primary, 0.92),
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        fontVariantNumeric: 'tabular-nums',
+                        lineHeight: 1,
+                        ml: 0.2,
+                      }}
+                    >
+                      {formatTrendSeriesTotal(total)}
+                    </Typography>
+                  </Stack>
+                </Tooltip>
               );
             })}
           </Stack>
@@ -642,6 +878,38 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
               >
                 <CircularProgress size={28} />
               </Box>
+            ) : !hasAnyActivity ? (
+              <Stack
+                spacing={0.6}
+                alignItems="center"
+                justifyContent="center"
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  textAlign: 'center',
+                  px: 2,
+                }}
+              >
+                <Typography
+                  sx={{
+                    color: alpha(theme.palette.text.primary, 0.78),
+                    fontSize: '0.92rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  No network activity in this range
+                </Typography>
+                <Typography
+                  sx={{
+                    color: alpha(theme.palette.text.primary, 0.5),
+                    fontSize: '0.78rem',
+                    maxWidth: 360,
+                  }}
+                >
+                  Try a wider time range, or check back once new PRs and issues
+                  flow in.
+                </Typography>
+              </Stack>
             ) : (
               <ReactECharts
                 option={chartOption}
