@@ -263,7 +263,7 @@ const HomePage: React.FC = () => {
     () => countMergedPrsInWindow(datasets.prs.data, 35),
     [datasets.prs.data],
   );
-  const totalReposEver = parseNumber(stats.data?.uniqueRepositories ?? 0);
+  const totalReposEver = datasets.repos.data.length;
   const totalLinesEver = parseNumber(stats.data?.totalLinesChanged ?? 0);
   const totalCommitsEver = parseNumber(stats.data?.totalCommits ?? 0);
   const totalMergedPrsEver = useMemo(
