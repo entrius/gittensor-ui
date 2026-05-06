@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { formatDate } from '../utils/format';
+import { formatDate, formatCompactCountBadge } from '../utils/format';
+import { dedupeRepositoryIssues } from '../utils/issueStatus';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import {
   Alert,
@@ -25,7 +26,12 @@ import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import { RANK_COLORS, STATUS_COLORS } from '../theme';
 import { Page } from '../components/layout';
-import { useReposAndWeights, useRepoBountySummary } from '../api';
+import {
+  useReposAndWeights,
+  useRepoBountySummary,
+  useRepositoryIssues,
+  useAllPrs,
+} from '../api';
 import {
   RepositoryContributorsTable,
   RepositoryPRsTable,
@@ -45,6 +51,33 @@ interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
   value: number;
+}
+
+function RepositoryTabCountPill({ children }: { children: React.ReactNode }) {
+  return (
+    <Box
+      component="span"
+      sx={(theme) => ({
+        ml: 0.5,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        px: 1,
+        py: 0.25,
+        minHeight: 20,
+        borderRadius: '999px',
+        fontSize: '0.75rem',
+        fontWeight: 600,
+        lineHeight: 1,
+        fontVariantNumeric: 'tabular-nums',
+        backgroundColor: theme.palette.surface.elevated,
+        border: 'none',
+        color: theme.palette.text.primary,
+      })}
+    >
+      {children}
+    </Box>
+  );
 }
 
 function CustomTabPanel(props: TabPanelProps) {
@@ -86,12 +119,52 @@ const RepositoryDetailsPage: React.FC = () => {
   const tabValue = tabIndexFromSearchParam(searchParams.get('tab'));
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
   const { data: bountySummary } = useRepoBountySummary(repo || '');
+  const { data: allMinerPRs } = useAllPrs();
+  const { data: repoIssuesForBadge } = useRepositoryIssues(repo || '');
   const trackedRepo = repos?.find(
     (r) => r.fullName.toLowerCase() === (repo ?? '').toLowerCase(),
   );
   const isTrackedRepository = Boolean(trackedRepo);
 
   const owner = repo ? repo.split('/')[0] : '';
+
+  const repoLower = repo?.toLowerCase() ?? '';
+
+  const issuesTabBadge = useMemo(() => {
+    if (repoIssuesForBadge === undefined) return null;
+    return formatCompactCountBadge(
+      dedupeRepositoryIssues(repoIssuesForBadge).length,
+    );
+  }, [repoIssuesForBadge]);
+
+  const prTabBadge = useMemo(() => {
+    if (allMinerPRs === undefined || !repoLower) return null;
+    let n = 0;
+    for (const pr of allMinerPRs) {
+      if (pr.repository.toLowerCase() === repoLower) n += 1;
+    }
+    return formatCompactCountBadge(n);
+  }, [allMinerPRs, repoLower]);
+
+  const handleTabChange = useCallback(
+    (_event: React.SyntheticEvent, newValue: number) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (!repo) return next;
+          next.set('name', repo);
+          if (newValue === 0) {
+            next.delete('tab');
+          } else {
+            next.set('tab', REPO_TAB_KEYS[newValue]);
+          }
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [repo, setSearchParams],
+  );
 
   // If no repo is provided, redirect to repository list (registered route)
   if (!repo) {
@@ -143,23 +216,6 @@ const RepositoryDetailsPage: React.FC = () => {
       </Page>
     );
   }
-
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        if (!repo) return next;
-        next.set('name', repo);
-        if (newValue === 0) {
-          next.delete('tab');
-        } else {
-          next.set('tab', REPO_TAB_KEYS[newValue]);
-        }
-        return next;
-      },
-      { replace: true },
-    );
-  };
 
   return (
     <Page title={`Repository - ${repo} `}>
@@ -314,8 +370,20 @@ const RepositoryDetailsPage: React.FC = () => {
                 icon={<BugReportIcon sx={{ fontSize: 16, mb: 0, mr: 1 }} />}
                 iconPosition="start"
                 label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      flexWrap: 'wrap',
+                    }}
+                  >
                     Issues
+                    {issuesTabBadge != null && (
+                      <RepositoryTabCountPill>
+                        {issuesTabBadge}
+                      </RepositoryTabCountPill>
+                    )}
                     {bountySummary &&
                       bountySummary.totalBounties -
                         bountySummary.completedBounties >
@@ -351,7 +419,16 @@ const RepositoryDetailsPage: React.FC = () => {
               <Tab
                 icon={<MergeTypeIcon sx={{ fontSize: 16, mb: 0, mr: 1 }} />}
                 iconPosition="start"
-                label="Pull Requests"
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    Pull Requests
+                    {prTabBadge != null && (
+                      <RepositoryTabCountPill>
+                        {prTabBadge}
+                      </RepositoryTabCountPill>
+                    )}
+                  </Box>
+                }
                 disableRipple
               />
               <Tab

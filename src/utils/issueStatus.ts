@@ -1,5 +1,44 @@
 import { alpha } from '@mui/material/styles';
 import { STATUS_COLORS } from '../theme';
+import type { RepositoryIssue } from '../api/models/Miner';
+
+/** Prefer `state`, then `closedAt` (GitHub-style). */
+export const isRepositoryIssueOpen = (issue: RepositoryIssue): boolean => {
+  const s = issue.state?.toLowerCase();
+  if (s === 'closed') return false;
+  if (s === 'open') return true;
+  return !issue.closedAt;
+};
+
+/**
+ * API can return duplicate `repo:number` rows. React row keys must be unique
+ * or the table body can show the wrong issue for a filter.
+ */
+export const dedupeRepositoryIssues = (
+  list: RepositoryIssue[],
+): RepositoryIssue[] => {
+  const byKey = new Map<string, RepositoryIssue>();
+  for (const issue of list) {
+    const k = `${issue.repositoryFullName}:${issue.number}`;
+    const existing = byKey.get(k);
+    if (existing === undefined) {
+      byKey.set(k, issue);
+    } else {
+      byKey.set(k, pickConsistentIssueDuplicate(existing, issue));
+    }
+  }
+  return Array.from(byKey.values());
+};
+
+function pickConsistentIssueDuplicate(
+  a: RepositoryIssue,
+  b: RepositoryIssue,
+): RepositoryIssue {
+  const aOpen = isRepositoryIssueOpen(a);
+  const bOpen = isRepositoryIssueOpen(b);
+  if (aOpen === bOpen) return a;
+  return aOpen ? b : a;
+}
 
 export interface IssueStatusMeta {
   bgColor: string;
