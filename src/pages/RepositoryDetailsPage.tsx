@@ -376,7 +376,7 @@ const RepositoryDetailsPage: React.FC = () => {
       {/* Main Content */}
       <Container maxWidth="xl" sx={{ pb: 8, pt: 1 }}>
         <Grid container spacing={4}>
-          <Grid item xs={12} md={9}>
+          <Grid item xs={12} lg={9}>
             {/* Readme Tab */}
             <CustomTabPanel value={tabValue} index={0}>
               <ReadmeViewer repositoryFullName={repo} />
@@ -413,8 +413,10 @@ const RepositoryDetailsPage: React.FC = () => {
           </Grid>
 
           {/* Sidebar */}
-          <Grid item xs={12} md={3}>
-            <Box sx={{ position: 'sticky', top: 24 }}>
+          <Grid item xs={12} lg={3}>
+            <Box
+              sx={{ position: { xs: 'static', lg: 'sticky' }, top: { lg: 24 } }}
+            >
               <Box sx={{ pt: 0 }}>
                 {/* Repository Stats */}
                 <RepositoryStats repositoryFullName={repo} />
