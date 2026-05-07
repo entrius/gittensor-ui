@@ -100,6 +100,39 @@ const containerSx: SxProps<Theme> = {
   ...scrollbarSx,
 };
 
+/**
+ * sx for a sortable column's `TableSortLabel`. Two concerns rolled up:
+ *
+ *   1. **Right-aligned columns** — MUI puts the sort arrow to the right
+ *      of the label, which pushes the text away from the right edge so
+ *      the header no longer lines up with right-aligned numeric values
+ *      in the body. Flipping to `row-reverse` keeps the text flush right
+ *      and parks the icon on the inside.
+ *   2. **Keyboard focus visibility** — MUI's default focus outline is
+ *      the user-agent ring, which disappears against the dark
+ *      `surface.tooltip` header background. Scope an explicit
+ *      `:focus-visible` ring to the interactive label only (not the
+ *      whole `TableCell`).
+ */
+export function getSortLabelSx(
+  align: TableCellProps['align'],
+): SystemStyleObject<Theme> {
+  const focusRing = {
+    '&:focus-visible': {
+      outline: '2px solid',
+      outlineColor: 'primary.main',
+      outlineOffset: 2,
+      borderRadius: 1,
+    },
+  } as const;
+  if (align !== 'right') return focusRing;
+  return {
+    ...focusRing,
+    flexDirection: 'row-reverse',
+    '& .MuiTableSortLabel-icon': { ml: 0, mr: 0.5 },
+  };
+}
+
 const tableSx = {
   tableLayout: 'fixed',
   width: '100%',
@@ -198,6 +231,7 @@ export const DataTable = <T, SortKey extends string = never>({
                             active={isActive}
                             direction={isActive ? sort.order : 'desc'}
                             onClick={() => sort.onChange(sortKey)}
+                            sx={getSortLabelSx(column.align)}
                           >
                             {column.header}
                           </TableSortLabel>
