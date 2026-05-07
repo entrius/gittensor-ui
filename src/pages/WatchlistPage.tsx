@@ -70,7 +70,11 @@ import type {
   MinerIssue,
   Repository,
 } from '../api/models/Dashboard';
+import type { IssueBounty } from '../api/models/Issues';
+import { usePrices } from '../hooks/usePrices';
+import { BountyCard } from '../components/issues/BountyCard';
 import { mapAllMinersToStats } from '../utils/minerMapper';
+import { buildRepoDiscoveryRollupFromMiners } from '../utils/ExplorerUtils';
 import {
   useWatchlist,
   useWatchlistCounts,
@@ -85,7 +89,7 @@ import {
 } from '../utils/prStatus';
 import { filterPrs, type PrStatusFilter } from '../utils/prTable';
 import { getIssueStatusMeta } from '../utils/issueStatus';
-import { formatTokenAmount } from '../utils/format';
+import { formatDate, formatTokenAmount } from '../utils/format';
 import { compareByWatchlist } from '../utils/watchlistSort';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import theme, {
@@ -97,7 +101,10 @@ import theme, {
   scrollbarSx,
 } from '../theme';
 import FilterButton from '../components/FilterButton';
-import { getRepositoryOwnerAvatarBackground } from '../components/leaderboard/types';
+import {
+  FONTS,
+  getRepositoryOwnerAvatarBackground,
+} from '../components/leaderboard/types';
 
 const TAB_ORDER: readonly WatchlistCategory[] = [
   'miners',
@@ -516,91 +523,6 @@ const WatchlistPage: React.FC = () => {
   );
 };
 
-const rowSx = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: 2,
-  px: 1.5,
-  py: 1.25,
-  borderRadius: 1,
-  transition: 'background 0.15s',
-  '&:hover': { backgroundColor: 'surface.light' },
-};
-
-const primaryTextSx = {
-  fontSize: '0.85rem',
-  color: 'text.primary',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-};
-
-const secondaryTextSx = {
-  fontSize: '0.7rem',
-  color: 'text.secondary',
-  mt: 0.25,
-};
-
-interface WatchedItemRowProps {
-  href: string;
-  primary: React.ReactNode;
-  secondary?: React.ReactNode;
-  actions: React.ReactNode;
-}
-
-// LinkBox wraps only the navigable text area (not the whole row) so the
-// star button — a real <button> — is a sibling of the <a>, not a descendant.
-// Keeps middle-click / Cmd-click / "Open in new tab" working natively while
-// avoiding invalid interactive-inside-anchor HTML.
-const WatchedItemRow: React.FC<WatchedItemRowProps> = ({
-  href,
-  primary,
-  secondary,
-  actions,
-}) => (
-  <Box sx={rowSx}>
-    <LinkBox
-      href={href}
-      linkState={{ backLabel: 'Back to Watchlist' }}
-      sx={{ display: 'block', minWidth: 0, flex: 1 }}
-    >
-      <Typography sx={primaryTextSx}>{primary}</Typography>
-      {secondary !== undefined && (
-        <Typography sx={secondaryTextSx}>{secondary}</Typography>
-      )}
-    </LinkBox>
-    <Stack direction="row" spacing={2} alignItems="center">
-      {actions}
-    </Stack>
-  </Box>
-);
-
-interface StatusPillProps {
-  label: string;
-  color: string;
-  background: string;
-}
-
-const StatusPill: React.FC<StatusPillProps> = ({
-  label,
-  color,
-  background,
-}) => (
-  <Typography
-    sx={{
-      fontSize: '0.72rem',
-      color,
-      backgroundColor: background,
-      px: 1,
-      py: 0.25,
-      borderRadius: 0.75,
-    }}
-  >
-    {label}
-  </Typography>
-);
-
 /* ─── OptionsLabel: section header inside popovers ─── */
 const OptionsLabel: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -725,6 +647,7 @@ const WatchlistOptionsSidebarPanelContent: React.FC<
   Omit<WatchlistOptionsButtonProps, 'hasActiveFilter'>
 > = ({
   filterContent,
+  sortContent,
   extraContent,
   searchValue,
   searchPlaceholder,
@@ -737,6 +660,13 @@ const WatchlistOptionsSidebarPanelContent: React.FC<
       <OptionsLabel>Filter</OptionsLabel>
       {filterContent}
     </Box>
+
+    {sortContent != null ? (
+      <Box>
+        <OptionsLabel>Sort</OptionsLabel>
+        {sortContent}
+      </Box>
+    ) : null}
 
     {/* Search */}
     <Box>
@@ -783,6 +713,8 @@ const WatchlistOptionsSidebarPanelContent: React.FC<
 /* ─── WatchlistOptionsButton: reusable compact popover for all watchlist list toolbars ─── */
 interface WatchlistOptionsButtonProps {
   filterContent: React.ReactNode;
+  /** Shown under Filter when set (e.g. repositories card view). */
+  sortContent?: React.ReactNode;
   extraContent?: React.ReactNode;
   searchValue: string;
   searchPlaceholder: string;
@@ -795,6 +727,7 @@ interface WatchlistOptionsButtonProps {
 
 const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
   filterContent,
+  sortContent,
   extraContent,
   searchValue,
   searchPlaceholder,
@@ -891,6 +824,13 @@ const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
           {filterContent}
         </Box>
 
+        {sortContent != null ? (
+          <Box>
+            <OptionsLabel>Sort</OptionsLabel>
+            {sortContent}
+          </Box>
+        ) : null}
+
         {/* Search */}
         <Box>
           <OptionsLabel>Search</OptionsLabel>
@@ -973,6 +913,9 @@ type WatchedRepoStats = Repository & {
   totalScore: number;
   totalPRs: number;
   uniqueMiners: Set<string>;
+  discoveryScore: number;
+  discoveryIssues: number;
+  discoveryContributors: Set<string>;
 };
 
 const isRepoActive = (repo: Repository): boolean => !repo.inactiveAt;
@@ -982,12 +925,119 @@ type RepoStatusFilter = 'all' | 'active' | 'inactive';
 type RepoSortKey =
   | 'name'
   | 'weight'
-  | 'status'
   | 'totalScore'
   | 'totalPRs'
-  | 'contributors';
+  | 'contributors'
+  | 'discoveryScore'
+  | 'discoveryIssues'
+  | 'discoveryContributors';
+
+/** Card-view sort chips (Leaderboard-style); list view sorts via column headers. */
+const WATCHLIST_REPO_CARD_SORT_OPTIONS: Array<{
+  value: RepoSortKey;
+  label: string;
+}> = [
+  { value: 'weight', label: 'Weight' },
+  { value: 'totalScore', label: 'OSS score' },
+  { value: 'totalPRs', label: 'PRs' },
+  { value: 'contributors', label: 'OSS contributors' },
+  { value: 'discoveryScore', label: 'Issue score' },
+  { value: 'discoveryIssues', label: 'Issues' },
+  { value: 'discoveryContributors', label: 'Issue contributors' },
+];
+
+const WatchlistRepoCardSortPills: React.FC<{
+  sortField: RepoSortKey;
+  sortOrder: 'asc' | 'desc';
+  onSortChange: (key: RepoSortKey) => void;
+}> = ({ sortField, sortOrder, onSortChange }) => (
+  <Box
+    sx={{
+      display: 'flex',
+      gap: 0.5,
+      flexWrap: 'wrap',
+      justifyContent: 'flex-start',
+    }}
+  >
+    {WATCHLIST_REPO_CARD_SORT_OPTIONS.map((opt) => {
+      const isActive = sortField === opt.value;
+      return (
+        <Box
+          key={opt.value}
+          component="button"
+          type="button"
+          onClick={() => onSortChange(opt.value)}
+          sx={(t) => ({
+            px: 1.5,
+            minHeight: 32,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            borderRadius: 2,
+            cursor: 'pointer',
+            font: 'inherit',
+            backgroundColor: isActive
+              ? alpha(t.palette.text.primary, 0.1)
+              : 'transparent',
+            color: isActive ? t.palette.text.primary : STATUS_COLORS.open,
+            border: '1px solid',
+            borderColor: isActive ? t.palette.border.medium : 'transparent',
+            transition: 'all 0.2s',
+            '&:hover': {
+              backgroundColor: t.palette.surface.light,
+              color: t.palette.text.primary,
+            },
+            '&:focus-visible': {
+              outline: `2px solid ${t.palette.status.info}`,
+              outlineOffset: 2,
+            },
+          })}
+        >
+          <Typography
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.75rem',
+              fontWeight: 600,
+            }}
+          >
+            {opt.label}
+          </Typography>
+          {isActive && (
+            <Typography
+              component="span"
+              sx={{ fontSize: '0.7rem', opacity: 0.7 }}
+            >
+              {sortOrder === 'asc' ? '▲' : '▼'}
+            </Typography>
+          )}
+        </Box>
+      );
+    })}
+  </Box>
+);
 
 const repoCellSx = { py: 1.5 } as const;
+
+/** Narrow stacked header for metric columns (avoids cramped TableSortLabel overlap). */
+const repoHeaderStack = (
+  lines: [string, string],
+): NonNullable<DataTableColumn<WatchedRepoStats, RepoSortKey>['header']> => (
+  <Box
+    sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-end',
+      gap: 0.125,
+      lineHeight: 1.15,
+      width: '100%',
+      boxSizing: 'border-box',
+      pr: 0.25,
+    }}
+  >
+    <Box component="span">{lines[0]}</Box>
+    <Box component="span">{lines[1]}</Box>
+  </Box>
+);
 
 const repoStatusMeta = (repo: Repository) => {
   const active = isRepoActive(repo);
@@ -1004,7 +1054,7 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   {
     key: 'name',
     header: 'Repository',
-    width: '32%',
+    width: '20%',
     sortKey: 'name',
     cellSx: repoCellSx,
     renderCell: (repo) => (
@@ -1037,7 +1087,7 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   {
     key: 'weight',
     header: 'Weight',
-    width: '100px',
+    width: '78px',
     align: 'right',
     sortKey: 'weight',
     cellSx: repoCellSx,
@@ -1049,10 +1099,17 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   },
   {
     key: 'totalScore',
-    header: 'Total Score',
-    width: '110px',
+    header: repoHeaderStack(['OSS', 'score']),
+    width: '86px',
     align: 'right',
     sortKey: 'totalScore',
+    headerSx: {
+      verticalAlign: 'bottom',
+      whiteSpace: 'normal',
+      py: 1,
+      minWidth: 86,
+      overflow: 'visible',
+    },
     cellSx: repoCellSx,
     renderCell: (repo) => (
       <Typography
@@ -1069,7 +1126,7 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   {
     key: 'totalPRs',
     header: 'PRs',
-    width: '70px',
+    width: '52px',
     align: 'right',
     sortKey: 'totalPRs',
     cellSx: repoCellSx,
@@ -1087,10 +1144,18 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   },
   {
     key: 'contributors',
-    header: 'Contributors',
-    width: '110px',
+    header: repoHeaderStack(['OSS', 'contributors']),
+    width: '80px',
     align: 'right',
     sortKey: 'contributors',
+    headerSx: {
+      verticalAlign: 'bottom',
+      whiteSpace: 'normal',
+      py: 1,
+      minWidth: 80,
+      overflow: 'visible',
+      textOverflow: 'clip',
+    },
     cellSx: repoCellSx,
     renderCell: (repo) => (
       <Typography
@@ -1105,27 +1170,83 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
     ),
   },
   {
-    key: 'status',
-    header: 'Status',
-    width: '110px',
-    align: 'center',
-    sortKey: 'status',
-    cellSx: repoCellSx,
-    renderCell: (repo) => {
-      const { label, color } = repoStatusMeta(repo);
-      return (
-        <Chip
-          variant="status"
-          label={label}
-          sx={{ color, borderColor: color }}
-        />
-      );
+    key: 'discoveryScore',
+    header: repoHeaderStack(['Issue', 'score']),
+    width: '76px',
+    align: 'right',
+    sortKey: 'discoveryScore',
+    headerSx: {
+      verticalAlign: 'bottom',
+      whiteSpace: 'normal',
+      py: 1,
+      minWidth: 76,
+      overflow: 'visible',
     },
+    cellSx: repoCellSx,
+    renderCell: (repo) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color: repo.discoveryScore > 0 ? 'text.primary' : 'text.secondary',
+        }}
+      >
+        {formatRepoMetric(repo.discoveryScore, 2)}
+      </Typography>
+    ),
+  },
+  {
+    key: 'discoveryIssues',
+    header: 'Issues',
+    width: '62px',
+    align: 'right',
+    sortKey: 'discoveryIssues',
+    cellSx: repoCellSx,
+    renderCell: (repo) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color: repo.discoveryIssues > 0 ? 'text.primary' : 'text.secondary',
+        }}
+      >
+        {formatRepoMetric(repo.discoveryIssues)}
+      </Typography>
+    ),
+  },
+  {
+    key: 'discoveryContributors',
+    header: repoHeaderStack(['Issue', 'contributors']),
+    width: '92px',
+    align: 'right',
+    sortKey: 'discoveryContributors',
+    headerSx: {
+      verticalAlign: 'bottom',
+      whiteSpace: 'normal',
+      py: 1,
+      minWidth: 92,
+      overflow: 'visible',
+    },
+    cellSx: repoCellSx,
+    renderCell: (repo) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color:
+            repo.discoveryContributors.size > 0
+              ? 'text.primary'
+              : 'text.secondary',
+        }}
+      >
+        {formatRepoMetric(repo.discoveryContributors.size)}
+      </Typography>
+    ),
   },
   {
     key: 'watch',
     header: '\u2605',
-    width: '52px',
+    width: '42px',
     align: 'center',
     cellSx: { p: 0 },
     renderCell: (repo) => (
@@ -1389,24 +1510,49 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
         </Box>
       </Box>
 
-      {/* Metrics grid */}
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: '1.4fr 0.6fr 1fr',
-          gap: 1.5,
-          pt: 0.5,
-        }}
-      >
-        <RepoMetricCell
-          label="Total Score"
-          value={formatRepoMetric(repo.totalScore, 2)}
-        />
-        <RepoMetricCell label="PRs" value={formatRepoMetric(repo.totalPRs)} />
-        <RepoMetricCell
-          label="Contributors"
-          value={formatRepoMetric(repo.uniqueMiners.size)}
-        />
+      {/* OSS + Issue discovery metrics — two rows separated by a subtle divider */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', pt: 0.5 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: 1.5,
+          }}
+        >
+          <RepoMetricCell
+            label="OSS Score"
+            value={formatRepoMetric(repo.totalScore, 2)}
+          />
+          <RepoMetricCell label="PRs" value={formatRepoMetric(repo.totalPRs)} />
+          <RepoMetricCell
+            label="Contributors"
+            value={formatRepoMetric(repo.uniqueMiners.size)}
+          />
+        </Box>
+        <Box
+          sx={(theme) => ({
+            borderTop: '1px solid',
+            borderColor: theme.palette.border.subtle,
+            mt: 1.25,
+            pt: 1.25,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: 1.5,
+          })}
+        >
+          <RepoMetricCell
+            label="Issue score"
+            value={formatRepoMetric(repo.discoveryScore, 2)}
+          />
+          <RepoMetricCell
+            label="Issues"
+            value={formatRepoMetric(repo.discoveryIssues)}
+          />
+          <RepoMetricCell
+            label="Contributors"
+            value={formatRepoMetric(repo.discoveryContributors.size)}
+          />
+        </Box>
       </Box>
     </Card>
   );
@@ -1417,6 +1563,7 @@ const ROWS_PER_PAGE = 50;
 const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: repos } = useReposAndWeights();
   const { data: allPrs } = useAllPrs();
+  const { data: allMiners } = useAllMiners();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<RepoStatusFilter>('all');
   const [viewMode, setViewMode] = useWatchlistViewMode();
@@ -1451,10 +1598,14 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       string,
       { totalScore: number; totalPRs: number; uniqueMiners: Set<string> }
     >();
+    const discoveryByRepo = buildRepoDiscoveryRollupFromMiners(
+      allPrs,
+      allMiners,
+    );
     if (allPrs) {
       allPrs.forEach((pr: CommitLog) => {
         if (!pr?.repository) return;
-        if (!pr.mergedAt) return;
+        if (!isMergedPr(pr)) return;
         const key = pr.repository.toLowerCase();
         const cur = prStatsMap.get(key) || {
           totalScore: 0,
@@ -1471,28 +1622,35 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     return repos
       .filter((r) => set.has(r.fullName.toLowerCase()))
       .map((r) => {
-        const s = prStatsMap.get(r.fullName.toLowerCase());
+        const key = r.fullName.toLowerCase();
+        const s = prStatsMap.get(key);
+        const d = discoveryByRepo.get(key);
         return {
           ...r,
           totalScore: s?.totalScore || 0,
           totalPRs: s?.totalPRs || 0,
           uniqueMiners: s?.uniqueMiners || new Set<string>(),
+          discoveryScore: d?.discoveryScore ?? 0,
+          discoveryIssues: d?.discoveryIssues ?? 0,
+          discoveryContributors: d?.discoveryContributors ?? new Set<string>(),
         };
       });
-  }, [repos, allPrs, itemKeys]);
+  }, [repos, allPrs, allMiners, itemKeys]);
 
-  const counts = useMemo(
-    () => ({
-      all: items.length,
-      active: items.filter(isRepoActive).length,
-      inactive: items.filter((r) => !isRepoActive(r)).length,
-    }),
-    [items],
-  );
+  const counts = useMemo(() => {
+    let active = 0;
+    let inactive = 0;
+    for (const r of items) {
+      if (isRepoActive(r)) active++;
+      else inactive++;
+    }
+    return { all: items.length, active, inactive };
+  }, [items]);
 
   const filtered = useMemo(() => {
     let result = items;
-    if (statusFilter === 'active') result = result.filter(isRepoActive);
+    if (statusFilter === 'active')
+      result = result.filter((r) => isRepoActive(r));
     else if (statusFilter === 'inactive')
       result = result.filter((r) => !isRepoActive(r));
 
@@ -1515,14 +1673,21 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             parseFloat(String(a.weight)),
             parseFloat(String(b.weight)),
           );
-        case 'status':
-          return cmpNum(isRepoActive(a) ? 1 : 0, isRepoActive(b) ? 1 : 0);
         case 'totalScore':
           return cmpNum(a.totalScore, b.totalScore);
         case 'totalPRs':
           return cmpNum(a.totalPRs, b.totalPRs);
         case 'contributors':
           return cmpNum(a.uniqueMiners.size, b.uniqueMiners.size);
+        case 'discoveryScore':
+          return cmpNum(a.discoveryScore, b.discoveryScore);
+        case 'discoveryIssues':
+          return cmpNum(a.discoveryIssues, b.discoveryIssues);
+        case 'discoveryContributors':
+          return cmpNum(
+            a.discoveryContributors.size,
+            b.discoveryContributors.size,
+          );
         default:
           return 0;
       }
@@ -1728,6 +1893,15 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             />
           </Box>
         }
+        sortContent={
+          viewMode === 'cards' ? (
+            <WatchlistRepoCardSortPills
+              sortField={sortField}
+              sortOrder={sortOrder}
+              onSortChange={handleSort}
+            />
+          ) : undefined
+        }
         extraContent={
           <>
             <Box>
@@ -1826,7 +2000,14 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           getRowKey={(repo) => repo.fullName}
           getRowHref={getRepoHref}
           linkState={{ backLabel: 'Back to Watchlist' }}
-          minWidth="900px"
+          getRowSx={(repo) =>
+            isRepoActive(repo)
+              ? {}
+              : {
+                  opacity: 0.5,
+                }
+          }
+          minWidth="1180px"
           stickyHeader
           emptyLabel="No watched repositories found."
           sort={{
@@ -1906,9 +2087,222 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   );
 };
 
+// ---------------------------------------------------------------------------
+// BountiesList — mirrors PRsList shell (toolbar + DataTable + card grid +
+// load-more sentinel) for watched bounties. Reuses the shared `BountyCard`
+// for card view so the watchlist matches the standalone /bounties page.
+// ---------------------------------------------------------------------------
+
+type BountyStatusFilter = 'all' | 'available' | 'pending' | 'history';
+type BountySortKey = 'issue' | 'repo' | 'bounty' | 'status' | 'date';
+
+const BOUNTY_STATUS_FILTERS: readonly BountyStatusFilter[] = [
+  'all',
+  'available',
+  'pending',
+  'history',
+];
+
+const bountyKey = (issue: IssueBounty) => String(issue.id);
+
+const getBountyHref = (issue: IssueBounty) =>
+  `/bounties/details?id=${issue.id}`;
+
+const bountyDate = (issue: IssueBounty): string =>
+  issue.completedAt ||
+  issue.closedAt ||
+  issue.updatedAt ||
+  issue.createdAt ||
+  '';
+
+// Group raw API status into the filter buckets used on the standalone
+// /bounties page so this tab reads consistently across the app.
+const bountyStatusGroup = (
+  issue: IssueBounty,
+): Exclude<BountyStatusFilter, 'all'> => {
+  if (issue.status === 'active') return 'available';
+  if (issue.status === 'registered') return 'pending';
+  return 'history';
+};
+
+const bountyStatusColor = (s: BountyStatusFilter): string => {
+  switch (s) {
+    case 'all':
+      return STATUS_COLORS.neutral;
+    case 'available':
+      return STATUS_COLORS.success;
+    case 'pending':
+      return STATUS_COLORS.warning;
+    case 'history':
+      return STATUS_COLORS.merged;
+  }
+};
+
+const filterBounties = (
+  items: IssueBounty[],
+  opts: { statusFilter: BountyStatusFilter; searchQuery: string },
+): IssueBounty[] => {
+  const q = opts.searchQuery.trim().toLowerCase();
+  return items.filter((i) => {
+    if (
+      opts.statusFilter !== 'all' &&
+      bountyStatusGroup(i) !== opts.statusFilter
+    )
+      return false;
+    if (!q) return true;
+    return (
+      i.repositoryFullName.toLowerCase().includes(q) ||
+      (i.title || '').toLowerCase().includes(q) ||
+      String(i.issueNumber).includes(q)
+    );
+  });
+};
+
+const getBountyCounts = (items: IssueBounty[]) => {
+  const c: Record<BountyStatusFilter, number> = {
+    all: items.length,
+    available: 0,
+    pending: 0,
+    history: 0,
+  };
+  items.forEach((i) => (c[bountyStatusGroup(i)] += 1));
+  return c;
+};
+
+const bountyCellSx = { py: 1.5 } as const;
+
+const buildBountyColumns = (): DataTableColumn<
+  IssueBounty,
+  BountySortKey
+>[] => [
+  {
+    key: 'issue',
+    header: 'Issue',
+    width: '90px',
+    sortKey: 'issue',
+    cellSx: bountyCellSx,
+    renderCell: (i) => (
+      <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+        #{i.issueNumber}
+      </Typography>
+    ),
+  },
+  {
+    key: 'title',
+    header: 'Title',
+    width: '32%',
+    cellSx: bountyCellSx,
+    renderCell: (i) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 500,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {i.title || '—'}
+      </Typography>
+    ),
+  },
+  {
+    key: 'repo',
+    header: 'Repository',
+    width: '24%',
+    sortKey: 'repo',
+    cellSx: bountyCellSx,
+    renderCell: (i) => (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+        <Avatar
+          src={getRepositoryOwnerAvatarSrc(i.repositoryFullName.split('/')[0])}
+          sx={{ width: 20, height: 20, flexShrink: 0 }}
+        />
+        <Typography
+          sx={{
+            fontSize: '0.75rem',
+            color: 'text.secondary',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {i.repositoryFullName}
+        </Typography>
+      </Box>
+    ),
+  },
+  {
+    key: 'bounty',
+    header: 'Bounty',
+    width: '130px',
+    align: 'right',
+    sortKey: 'bounty',
+    cellSx: bountyCellSx,
+    renderCell: (i) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color: 'status.success',
+        }}
+      >
+        {formatTokenAmount(i.targetBounty || i.bountyAmount)} ل
+      </Typography>
+    ),
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    width: '110px',
+    align: 'center',
+    sortKey: 'status',
+    cellSx: bountyCellSx,
+    renderCell: (i) => {
+      const meta = getIssueStatusMeta(i.status);
+      return (
+        <Chip
+          variant="status"
+          label={meta.text}
+          sx={{ color: meta.color, borderColor: meta.color }}
+        />
+      );
+    },
+  },
+  {
+    key: 'date',
+    header: 'Updated',
+    width: '120px',
+    sortKey: 'date',
+    cellSx: bountyCellSx,
+    renderCell: (i) => (
+      <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+        {formatDate(bountyDate(i))}
+      </Typography>
+    ),
+  },
+  {
+    key: 'watch',
+    header: '★',
+    width: '52px',
+    align: 'center',
+    cellSx: { p: 0 },
+    renderCell: (i) => (
+      <WatchlistButton
+        category="bounties"
+        itemKey={bountyKey(i)}
+        size="small"
+      />
+    ),
+  },
+];
+
 const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
-  const { data: allIssues } = useIssues();
-  const items = useMemo(() => {
+  const { data: allIssues, isLoading } = useIssues();
+  const { taoPrice, alphaPrice } = usePrices();
+  const bountyColumns = useMemo(() => buildBountyColumns(), []);
+
+  const items = useMemo<IssueBounty[]>(() => {
     if (!allIssues) return [];
     // Stored keys and issue ids are compared as strings to avoid any
     // numeric coercion drift if issue ids ever become composite.
@@ -1916,40 +2310,238 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     return allIssues.filter((issue) => set.has(String(issue.id)));
   }, [allIssues, itemKeys]);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<BountyStatusFilter>('all');
+  const [viewMode, setViewMode] = useWatchlistViewMode();
+  const [page, setPage] = useState(0);
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const [sortField, setSortField] = useState<BountySortKey>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  useEffect(() => {
+    setPage(0);
+  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
+
+  const handleSort = (field: BountySortKey) => {
+    if (sortField === field) {
+      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder(field === 'repo' ? 'asc' : 'desc');
+    }
+    setPage(0);
+  };
+
+  const counts = useMemo(() => getBountyCounts(items), [items]);
+
+  const filtered = useMemo(
+    () => filterBounties(items, { statusFilter, searchQuery }),
+    [items, statusFilter, searchQuery],
+  );
+
+  const sorted = useMemo(() => {
+    const dir = sortOrder === 'asc' ? 1 : -1;
+    const cmpStr = (a = '', b = '') => a.localeCompare(b) * dir;
+    const cmpNum = (a = 0, b = 0) => (a - b) * dir;
+    return [...filtered].sort((a, b) => {
+      switch (sortField) {
+        case 'issue':
+          return cmpNum(a.issueNumber, b.issueNumber);
+        case 'repo':
+          return cmpStr(a.repositoryFullName, b.repositoryFullName);
+        case 'bounty':
+          return cmpNum(
+            parseFloat(a.targetBounty || a.bountyAmount || '0'),
+            parseFloat(b.targetBounty || b.bountyAmount || '0'),
+          );
+        case 'status':
+          return cmpStr(a.status, b.status);
+        case 'date':
+          return cmpStr(bountyDate(a), bountyDate(b));
+        default:
+          return 0;
+      }
+    });
+  }, [filtered, sortField, sortOrder]);
+
+  const paged = useMemo(
+    () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
+    [sorted, page],
+  );
+
+  useEffect(() => {
+    const target = observerTarget.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsLoadingMore(true);
+          setTimeout(() => {
+            setPage((p) => p + 1);
+            setIsLoadingMore(false);
+          }, 400);
+        }
+      },
+      { root: null, rootMargin: '0px 0px 400px 0px', threshold: 0 },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [page, filtered.length]);
+
   return (
-    <Stack spacing={0.5} sx={{ width: '100%' }}>
-      {items.map((issue) => {
-        const meta = getIssueStatusMeta(issue.status);
-        return (
-          <WatchedItemRow
-            key={issue.id}
-            href={`/bounties/details?id=${issue.id}`}
-            primary={
-              issue.title || `${issue.repositoryFullName} #${issue.issueNumber}`
-            }
-            secondary={`${issue.repositoryFullName} #${issue.issueNumber}`}
-            actions={
-              <>
-                <StatusPill
-                  label={meta.text}
-                  color={meta.color}
-                  background={meta.bgColor}
-                />
-                <Typography
-                  sx={{ fontSize: '0.75rem', color: 'status.success' }}
-                >
-                  {formatTokenAmount(issue.bountyAmount)} ل
-                </Typography>
-                <WatchlistButton
-                  category="bounties"
-                  itemKey={String(issue.id)}
-                />
-              </>
-            }
+    <Card
+      elevation={0}
+      sx={{
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'border.light',
+        backgroundColor: 'transparent',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <WatchlistPortal
+        filterContent={
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 0.5,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
+            {BOUNTY_STATUS_FILTERS.map((s) => (
+              <FilterButton
+                key={s}
+                label={s[0].toUpperCase() + s.slice(1)}
+                count={counts[s]}
+                color={bountyStatusColor(s)}
+                isActive={statusFilter === s}
+                onClick={() => setStatusFilter(s)}
+              />
+            ))}
+          </Box>
+        }
+        searchValue={searchQuery}
+        searchPlaceholder="Search bounties..."
+        onSearchChange={setSearchQuery}
+        viewMode={viewMode}
+        onViewModeChange={(next) => {
+          setViewMode(next);
+          setPage(0);
+        }}
+        viewModeToggle={
+          <PRsViewModeToggle
+            viewMode={viewMode}
+            onChange={(next) => {
+              setViewMode(next);
+              setPage(0);
+            }}
           />
-        );
-      })}
-    </Stack>
+        }
+        hasActiveFilter={statusFilter !== 'all'}
+      />
+
+      {viewMode === 'list' ? (
+        <DataTable<IssueBounty, BountySortKey>
+          columns={bountyColumns}
+          rows={paged}
+          getRowKey={bountyKey}
+          getRowHref={getBountyHref}
+          linkState={{ backLabel: 'Back to Watchlist' }}
+          minWidth="900px"
+          stickyHeader
+          isLoading={isLoading && items.length === 0}
+          emptyLabel="No watched bounties found."
+          sort={{
+            field: sortField,
+            order: sortOrder,
+            onChange: handleSort,
+          }}
+        />
+      ) : (
+        <Box
+          sx={{
+            p: 2,
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            ...scrollbarSx,
+          }}
+        >
+          {isLoading && paged.length === 0 ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : paged.length === 0 ? (
+            <Typography
+              sx={{
+                color: 'text.secondary',
+                textAlign: 'center',
+                py: 4,
+                fontSize: '0.85rem',
+              }}
+            >
+              No watched bounties found.
+            </Typography>
+          ) : (
+            <Grid container spacing={2} alignItems="stretch">
+              {paged.map((issue) => (
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  key={bountyKey(issue)}
+                  sx={{ display: 'flex' }}
+                >
+                  <Box sx={{ width: '100%' }}>
+                    <BountyCard
+                      issue={issue}
+                      href={getBountyHref(issue)}
+                      linkState={{ backLabel: 'Back to Watchlist' }}
+                      taoPrice={taoPrice}
+                      alphaPrice={alphaPrice}
+                      compact
+                    />
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+      )}
+      {filtered.length > (page + 1) * ROWS_PER_PAGE && (
+        <Box
+          ref={observerTarget}
+          sx={{
+            height: 60,
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          {isLoadingMore && (
+            <>
+              <CircularProgress size={20} sx={{ color: 'text.secondary' }} />
+              <Typography
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: '0.85rem',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  ml: 1.5,
+                }}
+              >
+                Loading more...
+              </Typography>
+            </>
+          )}
+        </Box>
+      )}
+    </Card>
   );
 };
 
@@ -3032,7 +3624,10 @@ const buildIssueColumns = (
 const getIssueHref = (issue: MinerIssue): string =>
   `https://github.com/${issue.repo_full_name}/issues/${issue.issue_number}`;
 
-const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
+const IssueCard: React.FC<{
+  issue: MinerIssue;
+  sources?: WatchedPRSource[];
+}> = ({ issue, sources = [] }) => {
   const { label, color } = issueStatusMeta(issue);
   const prNumber = issue.solving_pr?.pr_number ?? issue.solved_by_pr ?? null;
   return (
@@ -3074,7 +3669,9 @@ const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
           sx={{ minWidth: 0 }}
         >
           <Avatar
-            src={`https://avatars.githubusercontent.com/${issue.repo_full_name.split('/')[0]}`}
+            src={getRepositoryOwnerAvatarSrc(
+              issue.repo_full_name.split('/')[0],
+            )}
             sx={{
               width: 20,
               height: 20,
@@ -3111,6 +3708,7 @@ const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
               backgroundColor: alpha(color, 0.08),
             }}
           />
+          <WatchedSourceBadges sources={sources} />
           <WatchlistButton
             category="issues"
             itemKey={issueKey(issue)}
@@ -3398,7 +3996,15 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
           }}
         />
       ) : (
-        <Box sx={{ p: 2, overflowY: 'auto', ...scrollbarSx }}>
+        <Box
+          sx={{
+            p: 2,
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            ...scrollbarSx,
+          }}
+        >
           {isLoading && paged.length === 0 ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
               <CircularProgress size={24} />
@@ -3426,7 +4032,10 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
                   sx={{ display: 'flex' }}
                 >
                   <Box sx={{ width: '100%' }}>
-                    <IssueCard issue={i} />
+                    <IssueCard
+                      issue={i}
+                      sources={sourcesByKey.get(issueKey(i))}
+                    />
                   </Box>
                 </Grid>
               ))}
