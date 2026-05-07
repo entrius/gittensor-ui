@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+} from 'react';
 import {
   Avatar,
   Box,
@@ -6,15 +12,12 @@ import {
   Chip,
   Collapse,
   CircularProgress,
-  FormControl,
   FormControlLabel,
   Grid,
   IconButton,
   InputAdornment,
-  MenuItem,
-  Select,
+  Popover,
   Switch,
-  TablePagination,
   TextField,
   Tooltip,
   Typography,
@@ -28,20 +31,22 @@ import {
   Tabs,
   Badge,
   useMediaQuery,
+  Portal,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ReactECharts from 'echarts-for-react';
 import StarIcon from '@mui/icons-material/Star';
 import PersonIcon from '@mui/icons-material/Person';
 import FolderIcon from '@mui/icons-material/Folder';
+import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
+import { useTwitterStickySidebar } from '../hooks/useTwitterStickySidebar';
 import {
   TopMinersTable,
   ActivitySidebarCards,
@@ -65,7 +70,11 @@ import type {
   MinerIssue,
   Repository,
 } from '../api/models/Dashboard';
+import type { IssueBounty } from '../api/models/Issues';
+import { usePrices } from '../hooks/usePrices';
+import { BountyCard } from '../components/issues/BountyCard';
 import { mapAllMinersToStats } from '../utils/minerMapper';
+import { buildRepoDiscoveryRollupFromMiners } from '../utils/ExplorerUtils';
 import {
   useWatchlist,
   useWatchlistCounts,
@@ -80,7 +89,7 @@ import {
 } from '../utils/prStatus';
 import { filterPrs, type PrStatusFilter } from '../utils/prTable';
 import { getIssueStatusMeta } from '../utils/issueStatus';
-import { formatTokenAmount } from '../utils/format';
+import { formatDate, formatTokenAmount } from '../utils/format';
 import { compareByWatchlist } from '../utils/watchlistSort';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import theme, {
@@ -92,7 +101,10 @@ import theme, {
   scrollbarSx,
 } from '../theme';
 import FilterButton from '../components/FilterButton';
-import { getRepositoryOwnerAvatarBackground } from '../components/leaderboard/types';
+import {
+  FONTS,
+  getRepositoryOwnerAvatarBackground,
+} from '../components/leaderboard/types';
 
 const TAB_ORDER: readonly WatchlistCategory[] = [
   'miners',
@@ -155,15 +167,44 @@ const tabFromParam = (param: string | null): WatchlistCategory =>
     ? (param as WatchlistCategory)
     : 'miners';
 
-const WatchlistPage: React.FC = () => {
+/**
+ * Embeddable watchlist content — renders the description, sub-tabs,
+ * tab content, and clear-confirmation dialog WITHOUT a Page wrapper
+ * or sidebar. Used by the unified MinersPage timeline.
+ */
+const VIEW_STORAGE_KEY_WATCHLIST = 'watchlist:viewMode';
+
+const useWatchlistViewMode = () => {
+  const [mode, setMode] = useState<'list' | 'cards'>(() => {
+    try {
+      const stored = window.localStorage.getItem(VIEW_STORAGE_KEY_WATCHLIST);
+      return stored === 'cards' || stored === 'list' ? stored : 'cards';
+    } catch {
+      return 'cards';
+    }
+  });
+
+  const setStoredMode = useCallback((newMode: 'list' | 'cards') => {
+    setMode(newMode);
+    try {
+      window.localStorage.setItem(VIEW_STORAGE_KEY_WATCHLIST, newMode);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  return [mode, setStoredMode] as const;
+};
+
+export const WatchlistContent: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = tabFromParam(searchParams.get('tab'));
 
-  // Single subscription for tab badges; per-tab content uses useWatchlist
-  // scoped to its own category via the *List subcomponents below.
   const counts = useWatchlistCounts();
   const { ids, count, clear } = useWatchlist(activeTab);
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const { ids: minerIds } = useWatchlist('miners');
 
   const tabHasContent =
     activeTab === 'prs'
@@ -174,25 +215,6 @@ const WatchlistPage: React.FC = () => {
   const isEmpty = !tabHasContent;
   const noun = TAB_NOUN[activeTab];
   const discovery = TAB_DISCOVERY[activeTab];
-
-  const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
-  const showSidebarRight = !isEmpty && isLargeScreen;
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
-  const sidebarWidth =
-    isMobile || isTablet ? '100%' : isLargeScreen ? '340px' : '300px';
-
-  const { ids: minerIds } = useWatchlist('miners');
-  const { data: allMinersData } = useAllMiners();
-  const minerStats = useMemo(() => {
-    const watchedSet = new Set(minerIds);
-    return mapAllMinersToStats(allMinersData ?? [])
-      .filter((m) => watchedSet.has(m.githubId))
-      .map((m) => ({
-        ...m,
-        isEligible: Boolean(m.ossIsEligible || m.discoveriesIsEligible),
-      }));
-  }, [allMinersData, minerIds]);
 
   const handleClear = () => {
     clear();
@@ -216,190 +238,122 @@ const WatchlistPage: React.FC = () => {
   };
 
   return (
-    <Page title="Watchlist">
-      <SEO
-        title="Watchlist"
-        description="Your pinned miners, repositories, bounties, and pull requests on Gittensor."
-      />
+    <>
       <Box
         sx={{
-          width: '100%',
-          height: showSidebarRight ? 'calc(100vh - 64px)' : 'auto',
-          display: 'flex',
-          flexDirection: showSidebarRight ? 'row' : 'column',
-          gap: { xs: 2, sm: 2, md: 2.5, lg: 3 },
-          py: { xs: 2, sm: 2, md: 2.5, lg: 3 },
-          px: { xs: 2, sm: 2, md: 2.5, lg: 3 },
-          overflow: 'hidden',
+          borderBottom: '1px solid',
+          borderColor: 'border.light',
+          position: 'sticky',
+          top: 64,
+          zIndex: 50,
+          backgroundColor: (t) => alpha(t.palette.background.default, 0.85),
+          backdropFilter: 'blur(12px)',
         }}
       >
-        {/* Main Content Area */}
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          variant="fullWidth"
+          sx={(t) => ({
+            minHeight: 52,
+            '& .MuiTab-root': {
+              minHeight: 52,
+              fontSize: '0.95rem',
+              fontWeight: 700,
+              textTransform: 'none',
+              letterSpacing: '0.01em',
+              color: alpha(t.palette.text.primary, 0.45),
+              transition: 'color 0.2s, background-color 0.2s',
+              '&:hover': {
+                backgroundColor: alpha(t.palette.text.primary, 0.04),
+                color: alpha(t.palette.text.primary, 0.7),
+              },
+              '&.Mui-selected': {
+                color: t.palette.text.primary,
+              },
+            },
+            '& .MuiTabs-indicator': {
+              backgroundColor: t.palette.primary.main,
+              height: 3,
+              borderRadius: '3px 3px 0 0',
+            },
+          })}
+        >
+          {TAB_ORDER.map((cat) => (
+            <Tab
+              key={cat}
+              value={cat}
+              label={
+                <Badge
+                  badgeContent={counts[cat]}
+                  color="primary"
+                  sx={{
+                    '& .MuiBadge-badge': {
+                      fontSize: '0.65rem',
+                      minWidth: 18,
+                      height: 18,
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      pr: counts[cat] > 0 ? 1.5 : 0,
+                    }}
+                  >
+                    {TAB_LABELS[cat]}
+                  </Box>
+                </Badge>
+              }
+            />
+          ))}
+        </Tabs>
+      </Box>
+
+      {isEmpty ? (
         <Box
           sx={{
-            flex: 1,
+            py: 8,
+            textAlign: 'center',
             display: 'flex',
             flexDirection: 'column',
-            gap: { xs: 2, sm: 1.5 },
-            minHeight: 0,
-            overflow: showSidebarRight ? 'auto' : 'visible',
-            minWidth: 0,
-            pr: showSidebarRight ? 1 : 0,
-            ...scrollbarSx,
+            gap: 2,
+            alignItems: 'center',
+            color: 'text.secondary',
           }}
         >
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            spacing={2}
-          >
-            <Typography
-              sx={{
-                fontSize: '0.8rem',
-                color: (t) => alpha(t.palette.text.primary, 0.5),
-                lineHeight: 1.6,
-              }}
-            >
-              Your watchlist — {count}{' '}
-              {count === 1 ? `${noun.single} pinned` : `${noun.plural} pinned`}.
-              {activeTab === 'prs' &&
-                ' Also shows PRs from watched miners and repositories.'}{' '}
-              Stored locally in this browser.
-            </Typography>
-            {count > 0 && (
-              <Button
-                size="small"
-                onClick={() => setConfirmOpen(true)}
-                sx={{
-                  fontSize: '0.75rem',
-                  textTransform: 'none',
-                  color: 'text.secondary',
-                }}
-              >
-                Clear {noun.plural}
-              </Button>
-            )}
-          </Stack>
-
-          <Box sx={{ borderBottom: '1px solid', borderColor: 'border.light' }}>
-            <Tabs
-              value={activeTab}
-              onChange={handleTabChange}
-              variant="scrollable"
-              scrollButtons="auto"
-              sx={(t) => ({
-                minHeight: 48,
-                '& .MuiTab-root': {
-                  minHeight: 48,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  color: t.palette.text.secondary,
-                  '&.Mui-selected': {
-                    color: t.palette.text.primary,
-                  },
-                },
-                '& .MuiTabs-indicator': {
-                  backgroundColor: t.palette.text.primary,
-                  height: 2,
-                },
-              })}
-            >
-              {TAB_ORDER.map((cat) => (
-                <Tab
-                  key={cat}
-                  value={cat}
-                  label={
-                    <Badge
-                      badgeContent={counts[cat]}
-                      color="primary"
-                      sx={{
-                        '& .MuiBadge-badge': {
-                          fontSize: '0.65rem',
-                          minWidth: 18,
-                          height: 18,
-                        },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          pr: counts[cat] > 0 ? 1.5 : 0,
-                        }}
-                      >
-                        {TAB_LABELS[cat]}
-                      </Box>
-                    </Badge>
-                  }
-                />
-              ))}
-            </Tabs>
-          </Box>
-
-          {isEmpty ? (
-            <Box
-              sx={{
-                py: 8,
-                textAlign: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
-                alignItems: 'center',
-                color: 'text.secondary',
-              }}
-            >
-              <Typography sx={{ fontSize: '0.95rem' }}>
-                No watched {noun.plural} yet.
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: '0.8rem',
-                  color: (t) => alpha(t.palette.text.primary, 0.5),
-                  lineHeight: 1.6,
-                }}
-              >
-                {discovery.hint} Pinned items appear here across reloads and
-                tabs.
-              </Typography>
-              <Button
-                component={RouterLink}
-                to={discovery.path}
-                variant="outlined"
-                size="small"
-                sx={{ textTransform: 'none', mt: 1 }}
-              >
-                Go to {discovery.label}
-              </Button>
-            </Box>
-          ) : activeTab === 'miners' ? (
-            <MinersList itemKeys={ids} />
-          ) : activeTab === 'repos' ? (
-            <ReposList itemKeys={ids} />
-          ) : activeTab === 'bounties' ? (
-            <BountiesList itemKeys={ids} />
-          ) : activeTab === 'issues' ? (
-            <IssuesList minerIds={minerIds} />
-          ) : (
-            <PRsList itemKeys={ids} />
-          )}
-        </Box>
-
-        {/* Right Sidebar — new activities */}
-        {!isEmpty && (
-          <Box
+          <Typography sx={{ fontSize: '0.95rem' }}>
+            No watched {noun.plural} yet.
+          </Typography>
+          <Typography
             sx={{
-              width: showSidebarRight ? sidebarWidth : '100%',
-              height: showSidebarRight ? '100%' : 'auto',
-              maxHeight: showSidebarRight ? '100%' : 'none',
-              flexShrink: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2,
+              fontSize: '0.8rem',
+              color: (t) => alpha(t.palette.text.primary, 0.5),
+              lineHeight: 1.6,
             }}
           >
-            <ActivitySidebarCards miners={minerStats} />
-          </Box>
-        )}
-      </Box>
+            {discovery.hint} Pinned items appear here across reloads and tabs.
+          </Typography>
+          <Button
+            component={RouterLink}
+            to={discovery.path}
+            variant="outlined"
+            size="small"
+            sx={{ textTransform: 'none', mt: 1 }}
+          >
+            Go to {discovery.label}
+          </Button>
+        </Box>
+      ) : activeTab === 'miners' ? (
+        <MinersList itemKeys={ids} />
+      ) : activeTab === 'repos' ? (
+        <ReposList itemKeys={ids} />
+      ) : activeTab === 'bounties' ? (
+        <BountiesList itemKeys={ids} />
+      ) : activeTab === 'issues' ? (
+        <IssuesList minerIds={minerIds} />
+      ) : (
+        <PRsList itemKeys={ids} />
+      )}
 
       <Dialog
         open={confirmOpen}
@@ -461,94 +415,467 @@ const WatchlistPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+    </>
+  );
+};
+
+const WatchlistPage: React.FC = () => {
+  const { ids: minerIds } = useWatchlist('miners');
+  const { data: allMinersData } = useAllMiners();
+
+  const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const sidebarWidth =
+    isMobile || isTablet ? '100%' : isLargeScreen ? '340px' : '300px';
+
+  const stickySidebarRef = useTwitterStickySidebar();
+
+  const minerStats = useMemo(() => {
+    const watchedSet = new Set(minerIds);
+    return mapAllMinersToStats(allMinersData ?? [])
+      .filter((m) => watchedSet.has(m.githubId))
+      .map((m) => ({
+        ...m,
+        isEligible: Boolean(m.ossIsEligible || m.discoveriesIsEligible),
+      }));
+  }, [allMinersData, minerIds]);
+
+  return (
+    <Page title="Watchlist">
+      <SEO
+        title="Watchlist"
+        description="Your pinned miners, repositories, bounties, and pull requests on Gittensor."
+      />
+      <Box
+        sx={{
+          width: '100%',
+          display: 'flex',
+          flexDirection: isLargeScreen ? 'row' : 'column',
+          alignItems: isLargeScreen ? 'flex-start' : 'stretch',
+          gap: { xs: 2, sm: 2, md: 2.5, lg: 3 },
+          py: { xs: 2, sm: 2, md: 2.5, lg: 3 },
+          px: { xs: 2, sm: 2, md: 2.5, lg: 3 },
+        }}
+      >
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: { xs: 2, sm: 1.5 },
+            minWidth: 0,
+            pr: isLargeScreen ? 1 : 0,
+            // Prevent the sidebar from driving page scroll when main content
+            // is short — the main column always fills at least the viewport.
+            minHeight: isLargeScreen ? 'calc(100vh - 88px)' : 'auto',
+          }}
+        >
+          <WatchlistContent />
+        </Box>
+
+        <Box
+          ref={isLargeScreen ? stickySidebarRef : undefined}
+          sx={{
+            width: isLargeScreen ? sidebarWidth : '100%',
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            position: isLargeScreen ? 'sticky' : 'static',
+            top: isLargeScreen ? 88 : 'auto',
+            // Cap sidebar height to viewport so it doesn't push the page
+            // taller than the main content. The twitter-style sticky hook
+            // handles the scroll-tracking within this constraint.
+            ...(isLargeScreen && {
+              maxHeight: 'calc(100vh - 88px)',
+              overflowY: 'auto',
+              // Hide the scrollbar visually (no visible scrollbar on right)
+              scrollbarWidth: 'none',
+              '&::-webkit-scrollbar': { display: 'none' },
+            }),
+          }}
+        >
+          <ActivitySidebarCards
+            miners={minerStats}
+            defaultFilter="all"
+            insertAfterFirstCard={
+              <Box
+                id="tabs-options-portal"
+                sx={{
+                  display: 'none',
+                  '@media (min-width: 1536px)': {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    p: 2,
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'border.light',
+                    backgroundColor: 'background.default',
+                  },
+                }}
+              />
+            }
+          />
+        </Box>
+      </Box>
     </Page>
   );
 };
 
-const rowSx = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: 2,
-  px: 1.5,
-  py: 1.25,
-  borderRadius: 1,
-  transition: 'background 0.15s',
-  '&:hover': { backgroundColor: 'surface.light' },
-};
-
-const primaryTextSx = {
-  fontSize: '0.85rem',
-  color: 'text.primary',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-};
-
-const secondaryTextSx = {
-  fontSize: '0.7rem',
-  color: 'text.secondary',
-  mt: 0.25,
-};
-
-interface WatchedItemRowProps {
-  href: string;
-  primary: React.ReactNode;
-  secondary?: React.ReactNode;
-  actions: React.ReactNode;
-}
-
-// LinkBox wraps only the navigable text area (not the whole row) so the
-// star button — a real <button> — is a sibling of the <a>, not a descendant.
-// Keeps middle-click / Cmd-click / "Open in new tab" working natively while
-// avoiding invalid interactive-inside-anchor HTML.
-const WatchedItemRow: React.FC<WatchedItemRowProps> = ({
-  href,
-  primary,
-  secondary,
-  actions,
-}) => (
-  <Box sx={rowSx}>
-    <LinkBox
-      href={href}
-      linkState={{ backLabel: 'Back to Watchlist' }}
-      sx={{ display: 'block', minWidth: 0, flex: 1 }}
-    >
-      <Typography sx={primaryTextSx}>{primary}</Typography>
-      {secondary !== undefined && (
-        <Typography sx={secondaryTextSx}>{secondary}</Typography>
-      )}
-    </LinkBox>
-    <Stack direction="row" spacing={2} alignItems="center">
-      {actions}
-    </Stack>
-  </Box>
-);
-
-interface StatusPillProps {
-  label: string;
-  color: string;
-  background: string;
-}
-
-const StatusPill: React.FC<StatusPillProps> = ({
-  label,
-  color,
-  background,
+/* ─── OptionsLabel: section header inside popovers ─── */
+const OptionsLabel: React.FC<{ children: React.ReactNode }> = ({
+  children,
 }) => (
   <Typography
     sx={{
-      fontSize: '0.72rem',
-      color,
-      backgroundColor: background,
-      px: 1,
-      py: 0.25,
-      borderRadius: 0.75,
+      fontFamily: '"JetBrains Mono", monospace',
+      fontSize: '0.65rem',
+      fontWeight: 600,
+      color: 'text.secondary',
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em',
+      mb: 1,
     }}
   >
-    {label}
+    {children}
   </Typography>
 );
+
+/* ─── WatchlistPortal: sidebar panel on xl, popover button otherwise ─── */
+const WatchlistPortal: React.FC<WatchlistOptionsButtonProps> = (props) => {
+  const [target, setTarget] = useState<HTMLElement | null>(null);
+  const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
+
+  useEffect(() => {
+    setTarget(document.getElementById('tabs-options-portal'));
+  }, []);
+
+  if (target && isLargeScreen) {
+    return (
+      <Portal container={target}>
+        <WatchlistOptionsSidebarPanel {...props} />
+      </Portal>
+    );
+  }
+
+  return (
+    <Box
+      sx={{
+        p: 1.5,
+        display: 'flex',
+        justifyContent: 'flex-end',
+        borderBottom: '1px solid',
+        borderColor: 'border.light',
+      }}
+    >
+      <WatchlistOptionsButton {...props} />
+    </Box>
+  );
+};
+
+/* ─── WatchlistOptionsSidebarPanel: expanded controls for the sidebar ─── */
+const WatchlistOptionsSidebarPanel: React.FC<
+  Omit<WatchlistOptionsButtonProps, 'hasActiveFilter'> & {
+    hasActiveFilter: boolean;
+  }
+> = (props) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Box>
+      <Box
+        component="button"
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        sx={(t) => ({
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          border: 0,
+          background: 'none',
+          cursor: 'pointer',
+          p: 0,
+          color: t.palette.text.primary,
+        })}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+          <TuneOutlinedIcon
+            sx={{ fontSize: '1rem', color: 'text.secondary' }}
+          />
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+            }}
+          >
+            Filters
+          </Typography>
+          {props.hasActiveFilter && (
+            <Box
+              component="span"
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                backgroundColor: 'status.info',
+              }}
+            />
+          )}
+        </Box>
+        <KeyboardArrowDownIcon
+          sx={{
+            fontSize: '1.1rem',
+            color: 'text.secondary',
+            transform: open ? 'rotate(-180deg)' : 'none',
+            transition: 'transform 0.2s ease',
+          }}
+        />
+      </Box>
+      <Collapse in={open}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+          <WatchlistOptionsSidebarPanelContent {...props} />
+        </Box>
+      </Collapse>
+    </Box>
+  );
+};
+
+const WatchlistOptionsSidebarPanelContent: React.FC<
+  Omit<WatchlistOptionsButtonProps, 'hasActiveFilter'>
+> = ({
+  filterContent,
+  sortContent,
+  extraContent,
+  searchValue,
+  searchPlaceholder,
+  onSearchChange,
+  viewModeToggle,
+}) => (
+  <>
+    {/* Filter */}
+    <Box>
+      <OptionsLabel>Filter</OptionsLabel>
+      {filterContent}
+    </Box>
+
+    {sortContent != null ? (
+      <Box>
+        <OptionsLabel>Sort</OptionsLabel>
+        {sortContent}
+      </Box>
+    ) : null}
+
+    {/* Search */}
+    <Box>
+      <OptionsLabel>Search</OptionsLabel>
+      <TextField
+        placeholder={searchPlaceholder}
+        size="small"
+        value={searchValue}
+        onChange={(e) => onSearchChange(e.target.value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
+            </InputAdornment>
+          ),
+        }}
+        sx={{
+          width: '100%',
+          '& .MuiOutlinedInput-root': {
+            color: 'text.primary',
+            backgroundColor: 'background.default',
+            fontSize: '0.8rem',
+            height: '34px',
+            borderRadius: 2,
+            '& fieldset': { borderColor: 'border.light' },
+            '&:hover fieldset': { borderColor: 'border.medium' },
+            '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+          },
+        }}
+      />
+    </Box>
+
+    {/* View mode */}
+    <Box>
+      <OptionsLabel>View</OptionsLabel>
+      {viewModeToggle}
+    </Box>
+
+    {/* Extra content (e.g. chart controls) */}
+    {extraContent}
+  </>
+);
+
+/* ─── WatchlistOptionsButton: reusable compact popover for all watchlist list toolbars ─── */
+interface WatchlistOptionsButtonProps {
+  filterContent: React.ReactNode;
+  /** Shown under Filter when set (e.g. repositories card view). */
+  sortContent?: React.ReactNode;
+  extraContent?: React.ReactNode;
+  searchValue: string;
+  searchPlaceholder: string;
+  onSearchChange: (v: string) => void;
+  viewMode: string;
+  onViewModeChange: (v: any) => void;
+  viewModeToggle: React.ReactNode;
+  hasActiveFilter: boolean;
+}
+
+const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
+  filterContent,
+  sortContent,
+  extraContent,
+  searchValue,
+  searchPlaceholder,
+  onSearchChange,
+  viewModeToggle,
+  hasActiveFilter,
+}) => {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const open = Boolean(anchorEl);
+
+  return (
+    <>
+      <Tooltip title="Options" arrow>
+        <Box
+          component="button"
+          type="button"
+          onClick={(e) =>
+            setAnchorEl((prev) => (prev ? null : e.currentTarget))
+          }
+          sx={(t) => ({
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.75,
+            px: 1.25,
+            py: 0.5,
+            minHeight: 32,
+            borderRadius: 2,
+            border: `1px solid ${t.palette.border.light}`,
+            backgroundColor: open
+              ? alpha(t.palette.text.primary, 0.06)
+              : 'transparent',
+            cursor: 'pointer',
+            transition: 'all 0.15s',
+            '&:hover': {
+              backgroundColor: alpha(t.palette.text.primary, 0.04),
+              borderColor: t.palette.border.medium,
+            },
+          })}
+        >
+          <TuneOutlinedIcon
+            sx={{ fontSize: '1rem', color: 'text.secondary' }}
+          />
+          <Typography
+            component="span"
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              color: 'text.secondary',
+            }}
+          >
+            Options
+          </Typography>
+          {hasActiveFilter && (
+            <Box
+              component="span"
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                backgroundColor: 'status.info',
+              }}
+            />
+          )}
+        </Box>
+      </Tooltip>
+
+      <Popover
+        open={open}
+        anchorEl={anchorEl}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{
+          paper: {
+            sx: (t) => ({
+              mt: 1,
+              p: 2.5,
+              minWidth: 280,
+              borderRadius: 3,
+              border: `1px solid ${t.palette.border.light}`,
+              backgroundColor: t.palette.background.default,
+              backgroundImage: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2.5,
+            }),
+          },
+        }}
+      >
+        {/* Filter */}
+        <Box>
+          <OptionsLabel>Filter</OptionsLabel>
+          {filterContent}
+        </Box>
+
+        {sortContent != null ? (
+          <Box>
+            <OptionsLabel>Sort</OptionsLabel>
+            {sortContent}
+          </Box>
+        ) : null}
+
+        {/* Search */}
+        <Box>
+          <OptionsLabel>Search</OptionsLabel>
+          <TextField
+            placeholder={searchPlaceholder}
+            size="small"
+            value={searchValue}
+            onChange={(e) => onSearchChange(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon
+                    sx={{ color: 'text.tertiary', fontSize: '1rem' }}
+                  />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              width: '100%',
+              '& .MuiOutlinedInput-root': {
+                color: 'text.primary',
+                backgroundColor: 'background.default',
+                fontSize: '0.8rem',
+                height: '36px',
+                borderRadius: 2,
+                '& fieldset': { borderColor: 'border.light' },
+                '&:hover fieldset': { borderColor: 'border.medium' },
+                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+              },
+            }}
+          />
+        </Box>
+
+        {/* View mode */}
+        <Box>
+          <OptionsLabel>View</OptionsLabel>
+          {viewModeToggle}
+        </Box>
+
+        {/* Extra content (e.g. chart controls) */}
+        {extraContent}
+      </Popover>
+    </>
+  );
+};
 
 const MinersList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: allMinersStats, isLoading } = useAllMiners();
@@ -586,6 +913,9 @@ type WatchedRepoStats = Repository & {
   totalScore: number;
   totalPRs: number;
   uniqueMiners: Set<string>;
+  discoveryScore: number;
+  discoveryIssues: number;
+  discoveryContributors: Set<string>;
 };
 
 const isRepoActive = (repo: Repository): boolean => !repo.inactiveAt;
@@ -595,12 +925,119 @@ type RepoStatusFilter = 'all' | 'active' | 'inactive';
 type RepoSortKey =
   | 'name'
   | 'weight'
-  | 'status'
   | 'totalScore'
   | 'totalPRs'
-  | 'contributors';
+  | 'contributors'
+  | 'discoveryScore'
+  | 'discoveryIssues'
+  | 'discoveryContributors';
+
+/** Card-view sort chips (Leaderboard-style); list view sorts via column headers. */
+const WATCHLIST_REPO_CARD_SORT_OPTIONS: Array<{
+  value: RepoSortKey;
+  label: string;
+}> = [
+  { value: 'weight', label: 'Weight' },
+  { value: 'totalScore', label: 'OSS score' },
+  { value: 'totalPRs', label: 'PRs' },
+  { value: 'contributors', label: 'OSS contributors' },
+  { value: 'discoveryScore', label: 'Issue score' },
+  { value: 'discoveryIssues', label: 'Issues' },
+  { value: 'discoveryContributors', label: 'Issue contributors' },
+];
+
+const WatchlistRepoCardSortPills: React.FC<{
+  sortField: RepoSortKey;
+  sortOrder: 'asc' | 'desc';
+  onSortChange: (key: RepoSortKey) => void;
+}> = ({ sortField, sortOrder, onSortChange }) => (
+  <Box
+    sx={{
+      display: 'flex',
+      gap: 0.5,
+      flexWrap: 'wrap',
+      justifyContent: 'flex-start',
+    }}
+  >
+    {WATCHLIST_REPO_CARD_SORT_OPTIONS.map((opt) => {
+      const isActive = sortField === opt.value;
+      return (
+        <Box
+          key={opt.value}
+          component="button"
+          type="button"
+          onClick={() => onSortChange(opt.value)}
+          sx={(t) => ({
+            px: 1.5,
+            minHeight: 32,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            borderRadius: 2,
+            cursor: 'pointer',
+            font: 'inherit',
+            backgroundColor: isActive
+              ? alpha(t.palette.text.primary, 0.1)
+              : 'transparent',
+            color: isActive ? t.palette.text.primary : STATUS_COLORS.open,
+            border: '1px solid',
+            borderColor: isActive ? t.palette.border.medium : 'transparent',
+            transition: 'all 0.2s',
+            '&:hover': {
+              backgroundColor: t.palette.surface.light,
+              color: t.palette.text.primary,
+            },
+            '&:focus-visible': {
+              outline: `2px solid ${t.palette.status.info}`,
+              outlineOffset: 2,
+            },
+          })}
+        >
+          <Typography
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.75rem',
+              fontWeight: 600,
+            }}
+          >
+            {opt.label}
+          </Typography>
+          {isActive && (
+            <Typography
+              component="span"
+              sx={{ fontSize: '0.7rem', opacity: 0.7 }}
+            >
+              {sortOrder === 'asc' ? '▲' : '▼'}
+            </Typography>
+          )}
+        </Box>
+      );
+    })}
+  </Box>
+);
 
 const repoCellSx = { py: 1.5 } as const;
+
+/** Narrow stacked header for metric columns (avoids cramped TableSortLabel overlap). */
+const repoHeaderStack = (
+  lines: [string, string],
+): NonNullable<DataTableColumn<WatchedRepoStats, RepoSortKey>['header']> => (
+  <Box
+    sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-end',
+      gap: 0.125,
+      lineHeight: 1.15,
+      width: '100%',
+      boxSizing: 'border-box',
+      pr: 0.25,
+    }}
+  >
+    <Box component="span">{lines[0]}</Box>
+    <Box component="span">{lines[1]}</Box>
+  </Box>
+);
 
 const repoStatusMeta = (repo: Repository) => {
   const active = isRepoActive(repo);
@@ -617,7 +1054,7 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   {
     key: 'name',
     header: 'Repository',
-    width: '32%',
+    width: '20%',
     sortKey: 'name',
     cellSx: repoCellSx,
     renderCell: (repo) => (
@@ -650,7 +1087,7 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   {
     key: 'weight',
     header: 'Weight',
-    width: '100px',
+    width: '78px',
     align: 'right',
     sortKey: 'weight',
     cellSx: repoCellSx,
@@ -662,10 +1099,17 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   },
   {
     key: 'totalScore',
-    header: 'Total Score',
-    width: '110px',
+    header: repoHeaderStack(['OSS', 'score']),
+    width: '86px',
     align: 'right',
     sortKey: 'totalScore',
+    headerSx: {
+      verticalAlign: 'bottom',
+      whiteSpace: 'normal',
+      py: 1,
+      minWidth: 86,
+      overflow: 'visible',
+    },
     cellSx: repoCellSx,
     renderCell: (repo) => (
       <Typography
@@ -682,7 +1126,7 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   {
     key: 'totalPRs',
     header: 'PRs',
-    width: '70px',
+    width: '52px',
     align: 'right',
     sortKey: 'totalPRs',
     cellSx: repoCellSx,
@@ -700,10 +1144,18 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   },
   {
     key: 'contributors',
-    header: 'Contributors',
-    width: '110px',
+    header: repoHeaderStack(['OSS', 'contributors']),
+    width: '80px',
     align: 'right',
     sortKey: 'contributors',
+    headerSx: {
+      verticalAlign: 'bottom',
+      whiteSpace: 'normal',
+      py: 1,
+      minWidth: 80,
+      overflow: 'visible',
+      textOverflow: 'clip',
+    },
     cellSx: repoCellSx,
     renderCell: (repo) => (
       <Typography
@@ -718,27 +1170,83 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
     ),
   },
   {
-    key: 'status',
-    header: 'Status',
-    width: '110px',
-    align: 'center',
-    sortKey: 'status',
-    cellSx: repoCellSx,
-    renderCell: (repo) => {
-      const { label, color } = repoStatusMeta(repo);
-      return (
-        <Chip
-          variant="status"
-          label={label}
-          sx={{ color, borderColor: color }}
-        />
-      );
+    key: 'discoveryScore',
+    header: repoHeaderStack(['Issue', 'score']),
+    width: '76px',
+    align: 'right',
+    sortKey: 'discoveryScore',
+    headerSx: {
+      verticalAlign: 'bottom',
+      whiteSpace: 'normal',
+      py: 1,
+      minWidth: 76,
+      overflow: 'visible',
     },
+    cellSx: repoCellSx,
+    renderCell: (repo) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color: repo.discoveryScore > 0 ? 'text.primary' : 'text.secondary',
+        }}
+      >
+        {formatRepoMetric(repo.discoveryScore, 2)}
+      </Typography>
+    ),
+  },
+  {
+    key: 'discoveryIssues',
+    header: 'Issues',
+    width: '62px',
+    align: 'right',
+    sortKey: 'discoveryIssues',
+    cellSx: repoCellSx,
+    renderCell: (repo) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color: repo.discoveryIssues > 0 ? 'text.primary' : 'text.secondary',
+        }}
+      >
+        {formatRepoMetric(repo.discoveryIssues)}
+      </Typography>
+    ),
+  },
+  {
+    key: 'discoveryContributors',
+    header: repoHeaderStack(['Issue', 'contributors']),
+    width: '92px',
+    align: 'right',
+    sortKey: 'discoveryContributors',
+    headerSx: {
+      verticalAlign: 'bottom',
+      whiteSpace: 'normal',
+      py: 1,
+      minWidth: 92,
+      overflow: 'visible',
+    },
+    cellSx: repoCellSx,
+    renderCell: (repo) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color:
+            repo.discoveryContributors.size > 0
+              ? 'text.primary'
+              : 'text.secondary',
+        }}
+      >
+        {formatRepoMetric(repo.discoveryContributors.size)}
+      </Typography>
+    ),
   },
   {
     key: 'watch',
     header: '\u2605',
-    width: '52px',
+    width: '42px',
     align: 'center',
     cellSx: { p: 0 },
     renderCell: (repo) => (
@@ -1002,43 +1510,75 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
         </Box>
       </Box>
 
-      {/* Metrics grid */}
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: '1.4fr 0.6fr 1fr',
-          gap: 1.5,
-          pt: 0.5,
-        }}
-      >
-        <RepoMetricCell
-          label="Total Score"
-          value={formatRepoMetric(repo.totalScore, 2)}
-        />
-        <RepoMetricCell label="PRs" value={formatRepoMetric(repo.totalPRs)} />
-        <RepoMetricCell
-          label="Contributors"
-          value={formatRepoMetric(repo.uniqueMiners.size)}
-        />
+      {/* OSS + Issue discovery metrics — two rows separated by a subtle divider */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', pt: 0.5 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: 1.5,
+          }}
+        >
+          <RepoMetricCell
+            label="OSS Score"
+            value={formatRepoMetric(repo.totalScore, 2)}
+          />
+          <RepoMetricCell label="PRs" value={formatRepoMetric(repo.totalPRs)} />
+          <RepoMetricCell
+            label="Contributors"
+            value={formatRepoMetric(repo.uniqueMiners.size)}
+          />
+        </Box>
+        <Box
+          sx={(theme) => ({
+            borderTop: '1px solid',
+            borderColor: theme.palette.border.subtle,
+            mt: 1.25,
+            pt: 1.25,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: 1.5,
+          })}
+        >
+          <RepoMetricCell
+            label="Issue score"
+            value={formatRepoMetric(repo.discoveryScore, 2)}
+          />
+          <RepoMetricCell
+            label="Issues"
+            value={formatRepoMetric(repo.discoveryIssues)}
+          />
+          <RepoMetricCell
+            label="Contributors"
+            value={formatRepoMetric(repo.discoveryContributors.size)}
+          />
+        </Box>
       </Box>
     </Card>
   );
 };
 
-const REPO_ROWS_OPTIONS = [10, 25, 50] as const;
+const ROWS_PER_PAGE = 50;
 
 const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: repos } = useReposAndWeights();
   const { data: allPrs } = useAllPrs();
+  const { data: allMiners } = useAllMiners();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<RepoStatusFilter>('all');
-  const [viewMode, setViewMode] = useState<ReposViewMode>('list');
+  const [viewMode, setViewMode] = useWatchlistViewMode();
   const [showChart, setShowChart] = useState(false);
   const [useLogScale, setUseLogScale] = useState(false);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(0);
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   const [sortField, setSortField] = useState<RepoSortKey>('weight');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  useEffect(() => {
+    setPage(0);
+  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
 
   const handleSort = (field: RepoSortKey) => {
     if (sortField === field) {
@@ -1058,10 +1598,14 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       string,
       { totalScore: number; totalPRs: number; uniqueMiners: Set<string> }
     >();
+    const discoveryByRepo = buildRepoDiscoveryRollupFromMiners(
+      allPrs,
+      allMiners,
+    );
     if (allPrs) {
       allPrs.forEach((pr: CommitLog) => {
         if (!pr?.repository) return;
-        if (!pr.mergedAt) return;
+        if (!isMergedPr(pr)) return;
         const key = pr.repository.toLowerCase();
         const cur = prStatsMap.get(key) || {
           totalScore: 0,
@@ -1078,35 +1622,41 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     return repos
       .filter((r) => set.has(r.fullName.toLowerCase()))
       .map((r) => {
-        const s = prStatsMap.get(r.fullName.toLowerCase());
+        const key = r.fullName.toLowerCase();
+        const s = prStatsMap.get(key);
+        const d = discoveryByRepo.get(key);
         return {
           ...r,
           totalScore: s?.totalScore || 0,
           totalPRs: s?.totalPRs || 0,
           uniqueMiners: s?.uniqueMiners || new Set<string>(),
+          discoveryScore: d?.discoveryScore ?? 0,
+          discoveryIssues: d?.discoveryIssues ?? 0,
+          discoveryContributors: d?.discoveryContributors ?? new Set<string>(),
         };
       });
-  }, [repos, allPrs, itemKeys]);
+  }, [repos, allPrs, allMiners, itemKeys]);
 
-  const counts = useMemo(
-    () => ({
-      all: items.length,
-      active: items.filter(isRepoActive).length,
-      inactive: items.filter((r) => !isRepoActive(r)).length,
-    }),
-    [items],
-  );
+  const counts = useMemo(() => {
+    let active = 0;
+    let inactive = 0;
+    for (const r of items) {
+      if (isRepoActive(r)) active++;
+      else inactive++;
+    }
+    return { all: items.length, active, inactive };
+  }, [items]);
 
   const filtered = useMemo(() => {
     let result = items;
-    if (statusFilter === 'active') result = result.filter(isRepoActive);
+    if (statusFilter === 'active')
+      result = result.filter((r) => isRepoActive(r));
     else if (statusFilter === 'inactive')
       result = result.filter((r) => !isRepoActive(r));
 
     const q = searchQuery.trim().toLowerCase();
     if (q) result = result.filter((r) => r.fullName.toLowerCase().includes(q));
 
-    setPage(0);
     return result;
   }, [items, statusFilter, searchQuery]);
 
@@ -1123,14 +1673,21 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             parseFloat(String(a.weight)),
             parseFloat(String(b.weight)),
           );
-        case 'status':
-          return cmpNum(isRepoActive(a) ? 1 : 0, isRepoActive(b) ? 1 : 0);
         case 'totalScore':
           return cmpNum(a.totalScore, b.totalScore);
         case 'totalPRs':
           return cmpNum(a.totalPRs, b.totalPRs);
         case 'contributors':
           return cmpNum(a.uniqueMiners.size, b.uniqueMiners.size);
+        case 'discoveryScore':
+          return cmpNum(a.discoveryScore, b.discoveryScore);
+        case 'discoveryIssues':
+          return cmpNum(a.discoveryIssues, b.discoveryIssues);
+        case 'discoveryContributors':
+          return cmpNum(
+            a.discoveryContributors.size,
+            b.discoveryContributors.size,
+          );
         default:
           return 0;
       }
@@ -1138,9 +1695,28 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   }, [filtered, sortField, sortOrder]);
 
   const paged = useMemo(
-    () => sorted.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [sorted, page, rowsPerPage],
+    () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
+    [sorted, page],
   );
+
+  useEffect(() => {
+    const target = observerTarget.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsLoadingMore(true);
+          setTimeout(() => {
+            setPage((p) => p + 1);
+            setIsLoadingMore(false);
+          }, 400);
+        }
+      },
+      { root: null, rootMargin: '0px 0px 400px 0px', threshold: 0 },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [page, filtered.length]);
 
   const maxWeight = useMemo(
     () =>
@@ -1284,235 +1860,117 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         overflow: 'hidden',
       }}
     >
-      {/* Toolbar */}
-      <Box
-        sx={{
-          p: 2,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2,
-          borderBottom: '1px solid',
-          borderColor: 'border.light',
-        }}
-      >
-        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-          <FilterButton
-            label="All"
-            count={counts.all}
-            color={STATUS_COLORS.neutral}
-            isActive={statusFilter === 'all'}
-            onClick={() => setStatusFilter('all')}
-          />
-          <FilterButton
-            label="Active"
-            count={counts.active}
-            color={STATUS_COLORS.success}
-            isActive={statusFilter === 'active'}
-            onClick={() => setStatusFilter('active')}
-          />
-          <FilterButton
-            label="Inactive"
-            count={counts.inactive}
-            color={STATUS_COLORS.closed}
-            isActive={statusFilter === 'inactive'}
-            onClick={() => setStatusFilter('inactive')}
-          />
-        </Box>
-        <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
-          <IconButton
-            onClick={() => setShowChart((v) => !v)}
-            size="small"
+      <WatchlistPortal
+        filterContent={
+          <Box
             sx={{
-              color: showChart ? 'text.primary' : 'text.tertiary',
-              border: '1px solid',
-              borderColor: 'border.light',
-              borderRadius: 2,
-              padding: '6px',
-              '&:hover': {
-                backgroundColor: 'surface.light',
-                borderColor: 'border.medium',
-              },
+              display: 'flex',
+              gap: 0.5,
+              alignItems: 'center',
+              flexWrap: 'wrap',
             }}
           >
-            {showChart ? (
-              <TableChartIcon fontSize="small" />
-            ) : (
-              <BarChartIcon fontSize="small" />
-            )}
-          </IconButton>
-        </Tooltip>
-        {showChart && (
-          <FormControlLabel
-            control={
-              <Switch
-                checked={useLogScale}
-                onChange={(e) => setUseLogScale(e.target.checked)}
-                size="small"
-                sx={{
-                  '& .MuiSwitch-switchBase.Mui-checked': {
-                    color: 'primary.main',
-                  },
-                  '& .MuiSwitch-track': { backgroundColor: 'border.medium' },
-                }}
-              />
-            }
-            label={
-              <Typography
-                variant="body2"
-                sx={{ fontSize: '0.8rem', color: 'text.secondary' }}
-              >
-                Log Scale
-              </Typography>
-            }
-          />
-        )}
-        <FormControl size="small">
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              variant="body2"
-              sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
-            >
-              Rows:
-            </Typography>
-            <Select
-              value={rowsPerPage}
-              onChange={(e) => {
-                setRowsPerPage(e.target.value as number);
-                setPage(0);
-              }}
-              sx={{
-                color: 'text.primary',
-                backgroundColor: 'background.default',
-                fontSize: '0.8rem',
-                height: '36px',
-                borderRadius: 2,
-                minWidth: '80px',
-                '& fieldset': { borderColor: 'border.light' },
-                '&:hover fieldset': { borderColor: 'border.medium' },
-                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                '& .MuiSelect-select': { py: 0.75 },
-              }}
-            >
-              {REPO_ROWS_OPTIONS.map((n) => (
-                <MenuItem key={n} value={n}>
-                  {n}
-                </MenuItem>
-              ))}
-            </Select>
+            <FilterButton
+              label="All"
+              count={counts.all}
+              color={STATUS_COLORS.neutral}
+              isActive={statusFilter === 'all'}
+              onClick={() => setStatusFilter('all')}
+            />
+            <FilterButton
+              label="Active"
+              count={counts.active}
+              color={STATUS_COLORS.success}
+              isActive={statusFilter === 'active'}
+              onClick={() => setStatusFilter('active')}
+            />
+            <FilterButton
+              label="Inactive"
+              count={counts.inactive}
+              color={STATUS_COLORS.closed}
+              isActive={statusFilter === 'inactive'}
+              onClick={() => setStatusFilter('inactive')}
+            />
           </Box>
-        </FormControl>
-        <TextField
-          placeholder="Search repositories..."
-          size="small"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            width: '220px',
-            '& .MuiOutlinedInput-root': {
-              color: 'text.primary',
-              fontFamily: '"JetBrains Mono", monospace',
-              backgroundColor: 'background.default',
-              fontSize: '0.8rem',
-              height: '36px',
-              borderRadius: 2,
-              '& fieldset': { borderColor: 'border.light' },
-              '&:hover fieldset': { borderColor: 'border.medium' },
-              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-            },
-          }}
-        />
-        <Box sx={{ ml: 'auto' }}>
+        }
+        sortContent={
+          viewMode === 'cards' ? (
+            <WatchlistRepoCardSortPills
+              sortField={sortField}
+              sortOrder={sortOrder}
+              onSortChange={handleSort}
+            />
+          ) : undefined
+        }
+        extraContent={
+          <>
+            <Box>
+              <OptionsLabel>Chart</OptionsLabel>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+                  <IconButton
+                    onClick={() => setShowChart((v) => !v)}
+                    size="small"
+                    sx={{
+                      color: showChart ? 'text.primary' : 'text.tertiary',
+                      border: '1px solid',
+                      borderColor: 'border.light',
+                      borderRadius: 2,
+                      padding: '6px',
+                      '&:hover': {
+                        backgroundColor: 'surface.light',
+                        borderColor: 'border.medium',
+                      },
+                    }}
+                  >
+                    {showChart ? (
+                      <TableChartIcon fontSize="small" />
+                    ) : (
+                      <BarChartIcon fontSize="small" />
+                    )}
+                  </IconButton>
+                </Tooltip>
+                {showChart && (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={useLogScale}
+                        onChange={(e) => setUseLogScale(e.target.checked)}
+                        size="small"
+                        sx={{
+                          '& .MuiSwitch-switchBase.Mui-checked': {
+                            color: 'primary.main',
+                          },
+                          '& .MuiSwitch-track': {
+                            backgroundColor: 'border.medium',
+                          },
+                        }}
+                      />
+                    }
+                    label={
+                      <Typography
+                        variant="body2"
+                        sx={{ fontSize: '0.8rem', color: 'text.secondary' }}
+                      >
+                        Log Scale
+                      </Typography>
+                    }
+                  />
+                )}
+              </Box>
+            </Box>
+          </>
+        }
+        searchValue={searchQuery}
+        searchPlaceholder="Search repositories..."
+        onSearchChange={setSearchQuery}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        viewModeToggle={
           <ReposViewModeToggle viewMode={viewMode} onChange={setViewMode} />
-        </Box>
-      </Box>
-
-      {viewMode === 'cards' && (
-        <Box
-          sx={{
-            px: 2,
-            pb: 2,
-            pt: 2,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            gap: 1,
-            borderBottom: '1px solid',
-            borderColor: 'border.light',
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
-          >
-            Sort:
-          </Typography>
-          <Select
-            size="small"
-            value={sortField}
-            onChange={(e) => {
-              const next = e.target.value as RepoSortKey;
-              setSortField(next);
-              setSortOrder(next === 'name' ? 'asc' : 'desc');
-              setPage(0);
-            }}
-            sx={{
-              color: 'text.primary',
-              backgroundColor: 'background.default',
-              fontSize: '0.8rem',
-              height: '36px',
-              borderRadius: 2,
-              minWidth: '140px',
-              '& fieldset': { borderColor: 'border.light' },
-              '&:hover fieldset': { borderColor: 'border.medium' },
-              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-              '& .MuiSelect-select': { py: 0.75 },
-            }}
-          >
-            <MenuItem value="weight">Weight</MenuItem>
-            <MenuItem value="totalScore">Total Score</MenuItem>
-            <MenuItem value="totalPRs">PRs</MenuItem>
-            <MenuItem value="contributors">Contributors</MenuItem>
-            <MenuItem value="name">Repository</MenuItem>
-            <MenuItem value="status">Status</MenuItem>
-          </Select>
-          <Tooltip title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}>
-            <IconButton
-              onClick={() => {
-                setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
-                setPage(0);
-              }}
-              size="small"
-              aria-label={
-                sortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'
-              }
-              sx={{
-                color: 'text.primary',
-                border: '1px solid',
-                borderColor: 'border.light',
-                borderRadius: 2,
-                padding: '6px',
-                '&:hover': {
-                  backgroundColor: 'surface.light',
-                  borderColor: 'border.medium',
-                },
-              }}
-            >
-              {sortOrder === 'asc' ? (
-                <ArrowUpwardIcon fontSize="small" />
-              ) : (
-                <ArrowDownwardIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Tooltip>
-        </Box>
-      )}
+        }
+        hasActiveFilter={statusFilter !== 'all'}
+      />
 
       <Collapse in={showChart}>
         <Box
@@ -1542,7 +2000,14 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           getRowKey={(repo) => repo.fullName}
           getRowHref={getRepoHref}
           linkState={{ backLabel: 'Back to Watchlist' }}
-          minWidth="900px"
+          getRowSx={(repo) =>
+            isRepoActive(repo)
+              ? {}
+              : {
+                  opacity: 0.5,
+                }
+          }
+          minWidth="1180px"
           stickyHeader
           emptyLabel="No watched repositories found."
           sort={{
@@ -1590,29 +2055,254 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           )}
         </Box>
       )}
-      <TablePagination
-        rowsPerPageOptions={[]}
-        component="div"
-        count={filtered.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={(_e, newPage) => setPage(newPage)}
-        onRowsPerPageChange={() => {}}
-        showFirstButton
-        showLastButton
-        sx={{
-          borderTop: '1px solid',
-          borderColor: 'border.light',
-          color: 'text.secondary',
-        }}
-      />
+      {filtered.length > (page + 1) * ROWS_PER_PAGE && (
+        <Box
+          ref={observerTarget}
+          sx={{
+            height: 60,
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          {isLoadingMore && (
+            <>
+              <CircularProgress size={20} sx={{ color: 'text.secondary' }} />
+              <Typography
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: '0.85rem',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  ml: 1.5,
+                }}
+              >
+                Loading more...
+              </Typography>
+            </>
+          )}
+        </Box>
+      )}
     </Card>
   );
 };
 
+// ---------------------------------------------------------------------------
+// BountiesList — mirrors PRsList shell (toolbar + DataTable + card grid +
+// load-more sentinel) for watched bounties. Reuses the shared `BountyCard`
+// for card view so the watchlist matches the standalone /bounties page.
+// ---------------------------------------------------------------------------
+
+type BountyStatusFilter = 'all' | 'available' | 'pending' | 'history';
+type BountySortKey = 'issue' | 'repo' | 'bounty' | 'status' | 'date';
+
+const BOUNTY_STATUS_FILTERS: readonly BountyStatusFilter[] = [
+  'all',
+  'available',
+  'pending',
+  'history',
+];
+
+const bountyKey = (issue: IssueBounty) => String(issue.id);
+
+const getBountyHref = (issue: IssueBounty) =>
+  `/bounties/details?id=${issue.id}`;
+
+const bountyDate = (issue: IssueBounty): string =>
+  issue.completedAt ||
+  issue.closedAt ||
+  issue.updatedAt ||
+  issue.createdAt ||
+  '';
+
+// Group raw API status into the filter buckets used on the standalone
+// /bounties page so this tab reads consistently across the app.
+const bountyStatusGroup = (
+  issue: IssueBounty,
+): Exclude<BountyStatusFilter, 'all'> => {
+  if (issue.status === 'active') return 'available';
+  if (issue.status === 'registered') return 'pending';
+  return 'history';
+};
+
+const bountyStatusColor = (s: BountyStatusFilter): string => {
+  switch (s) {
+    case 'all':
+      return STATUS_COLORS.neutral;
+    case 'available':
+      return STATUS_COLORS.success;
+    case 'pending':
+      return STATUS_COLORS.warning;
+    case 'history':
+      return STATUS_COLORS.merged;
+  }
+};
+
+const filterBounties = (
+  items: IssueBounty[],
+  opts: { statusFilter: BountyStatusFilter; searchQuery: string },
+): IssueBounty[] => {
+  const q = opts.searchQuery.trim().toLowerCase();
+  return items.filter((i) => {
+    if (
+      opts.statusFilter !== 'all' &&
+      bountyStatusGroup(i) !== opts.statusFilter
+    )
+      return false;
+    if (!q) return true;
+    return (
+      i.repositoryFullName.toLowerCase().includes(q) ||
+      (i.title || '').toLowerCase().includes(q) ||
+      String(i.issueNumber).includes(q)
+    );
+  });
+};
+
+const getBountyCounts = (items: IssueBounty[]) => {
+  const c: Record<BountyStatusFilter, number> = {
+    all: items.length,
+    available: 0,
+    pending: 0,
+    history: 0,
+  };
+  items.forEach((i) => (c[bountyStatusGroup(i)] += 1));
+  return c;
+};
+
+const bountyCellSx = { py: 1.5 } as const;
+
+const buildBountyColumns = (): DataTableColumn<
+  IssueBounty,
+  BountySortKey
+>[] => [
+  {
+    key: 'issue',
+    header: 'Issue',
+    width: '90px',
+    sortKey: 'issue',
+    cellSx: bountyCellSx,
+    renderCell: (i) => (
+      <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+        #{i.issueNumber}
+      </Typography>
+    ),
+  },
+  {
+    key: 'title',
+    header: 'Title',
+    width: '32%',
+    cellSx: bountyCellSx,
+    renderCell: (i) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 500,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {i.title || '—'}
+      </Typography>
+    ),
+  },
+  {
+    key: 'repo',
+    header: 'Repository',
+    width: '24%',
+    sortKey: 'repo',
+    cellSx: bountyCellSx,
+    renderCell: (i) => (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+        <Avatar
+          src={getRepositoryOwnerAvatarSrc(i.repositoryFullName.split('/')[0])}
+          sx={{ width: 20, height: 20, flexShrink: 0 }}
+        />
+        <Typography
+          sx={{
+            fontSize: '0.75rem',
+            color: 'text.secondary',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {i.repositoryFullName}
+        </Typography>
+      </Box>
+    ),
+  },
+  {
+    key: 'bounty',
+    header: 'Bounty',
+    width: '130px',
+    align: 'right',
+    sortKey: 'bounty',
+    cellSx: bountyCellSx,
+    renderCell: (i) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color: 'status.success',
+        }}
+      >
+        {formatTokenAmount(i.targetBounty || i.bountyAmount)} ل
+      </Typography>
+    ),
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    width: '110px',
+    align: 'center',
+    sortKey: 'status',
+    cellSx: bountyCellSx,
+    renderCell: (i) => {
+      const meta = getIssueStatusMeta(i.status);
+      return (
+        <Chip
+          variant="status"
+          label={meta.text}
+          sx={{ color: meta.color, borderColor: meta.color }}
+        />
+      );
+    },
+  },
+  {
+    key: 'date',
+    header: 'Updated',
+    width: '120px',
+    sortKey: 'date',
+    cellSx: bountyCellSx,
+    renderCell: (i) => (
+      <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+        {formatDate(bountyDate(i))}
+      </Typography>
+    ),
+  },
+  {
+    key: 'watch',
+    header: '★',
+    width: '52px',
+    align: 'center',
+    cellSx: { p: 0 },
+    renderCell: (i) => (
+      <WatchlistButton
+        category="bounties"
+        itemKey={bountyKey(i)}
+        size="small"
+      />
+    ),
+  },
+];
+
 const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
-  const { data: allIssues } = useIssues();
-  const items = useMemo(() => {
+  const { data: allIssues, isLoading } = useIssues();
+  const { taoPrice, alphaPrice } = usePrices();
+  const bountyColumns = useMemo(() => buildBountyColumns(), []);
+
+  const items = useMemo<IssueBounty[]>(() => {
     if (!allIssues) return [];
     // Stored keys and issue ids are compared as strings to avoid any
     // numeric coercion drift if issue ids ever become composite.
@@ -1620,40 +2310,238 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     return allIssues.filter((issue) => set.has(String(issue.id)));
   }, [allIssues, itemKeys]);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<BountyStatusFilter>('all');
+  const [viewMode, setViewMode] = useWatchlistViewMode();
+  const [page, setPage] = useState(0);
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const [sortField, setSortField] = useState<BountySortKey>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  useEffect(() => {
+    setPage(0);
+  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
+
+  const handleSort = (field: BountySortKey) => {
+    if (sortField === field) {
+      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder(field === 'repo' ? 'asc' : 'desc');
+    }
+    setPage(0);
+  };
+
+  const counts = useMemo(() => getBountyCounts(items), [items]);
+
+  const filtered = useMemo(
+    () => filterBounties(items, { statusFilter, searchQuery }),
+    [items, statusFilter, searchQuery],
+  );
+
+  const sorted = useMemo(() => {
+    const dir = sortOrder === 'asc' ? 1 : -1;
+    const cmpStr = (a = '', b = '') => a.localeCompare(b) * dir;
+    const cmpNum = (a = 0, b = 0) => (a - b) * dir;
+    return [...filtered].sort((a, b) => {
+      switch (sortField) {
+        case 'issue':
+          return cmpNum(a.issueNumber, b.issueNumber);
+        case 'repo':
+          return cmpStr(a.repositoryFullName, b.repositoryFullName);
+        case 'bounty':
+          return cmpNum(
+            parseFloat(a.targetBounty || a.bountyAmount || '0'),
+            parseFloat(b.targetBounty || b.bountyAmount || '0'),
+          );
+        case 'status':
+          return cmpStr(a.status, b.status);
+        case 'date':
+          return cmpStr(bountyDate(a), bountyDate(b));
+        default:
+          return 0;
+      }
+    });
+  }, [filtered, sortField, sortOrder]);
+
+  const paged = useMemo(
+    () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
+    [sorted, page],
+  );
+
+  useEffect(() => {
+    const target = observerTarget.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsLoadingMore(true);
+          setTimeout(() => {
+            setPage((p) => p + 1);
+            setIsLoadingMore(false);
+          }, 400);
+        }
+      },
+      { root: null, rootMargin: '0px 0px 400px 0px', threshold: 0 },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [page, filtered.length]);
+
   return (
-    <Stack spacing={0.5} sx={{ width: '100%' }}>
-      {items.map((issue) => {
-        const meta = getIssueStatusMeta(issue.status);
-        return (
-          <WatchedItemRow
-            key={issue.id}
-            href={`/bounties/details?id=${issue.id}`}
-            primary={
-              issue.title || `${issue.repositoryFullName} #${issue.issueNumber}`
-            }
-            secondary={`${issue.repositoryFullName} #${issue.issueNumber}`}
-            actions={
-              <>
-                <StatusPill
-                  label={meta.text}
-                  color={meta.color}
-                  background={meta.bgColor}
-                />
-                <Typography
-                  sx={{ fontSize: '0.75rem', color: 'status.success' }}
-                >
-                  {formatTokenAmount(issue.bountyAmount)} ل
-                </Typography>
-                <WatchlistButton
-                  category="bounties"
-                  itemKey={String(issue.id)}
-                />
-              </>
-            }
+    <Card
+      elevation={0}
+      sx={{
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'border.light',
+        backgroundColor: 'transparent',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <WatchlistPortal
+        filterContent={
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 0.5,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
+            {BOUNTY_STATUS_FILTERS.map((s) => (
+              <FilterButton
+                key={s}
+                label={s[0].toUpperCase() + s.slice(1)}
+                count={counts[s]}
+                color={bountyStatusColor(s)}
+                isActive={statusFilter === s}
+                onClick={() => setStatusFilter(s)}
+              />
+            ))}
+          </Box>
+        }
+        searchValue={searchQuery}
+        searchPlaceholder="Search bounties..."
+        onSearchChange={setSearchQuery}
+        viewMode={viewMode}
+        onViewModeChange={(next) => {
+          setViewMode(next);
+          setPage(0);
+        }}
+        viewModeToggle={
+          <PRsViewModeToggle
+            viewMode={viewMode}
+            onChange={(next) => {
+              setViewMode(next);
+              setPage(0);
+            }}
           />
-        );
-      })}
-    </Stack>
+        }
+        hasActiveFilter={statusFilter !== 'all'}
+      />
+
+      {viewMode === 'list' ? (
+        <DataTable<IssueBounty, BountySortKey>
+          columns={bountyColumns}
+          rows={paged}
+          getRowKey={bountyKey}
+          getRowHref={getBountyHref}
+          linkState={{ backLabel: 'Back to Watchlist' }}
+          minWidth="900px"
+          stickyHeader
+          isLoading={isLoading && items.length === 0}
+          emptyLabel="No watched bounties found."
+          sort={{
+            field: sortField,
+            order: sortOrder,
+            onChange: handleSort,
+          }}
+        />
+      ) : (
+        <Box
+          sx={{
+            p: 2,
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            ...scrollbarSx,
+          }}
+        >
+          {isLoading && paged.length === 0 ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : paged.length === 0 ? (
+            <Typography
+              sx={{
+                color: 'text.secondary',
+                textAlign: 'center',
+                py: 4,
+                fontSize: '0.85rem',
+              }}
+            >
+              No watched bounties found.
+            </Typography>
+          ) : (
+            <Grid container spacing={2} alignItems="stretch">
+              {paged.map((issue) => (
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  key={bountyKey(issue)}
+                  sx={{ display: 'flex' }}
+                >
+                  <Box sx={{ width: '100%' }}>
+                    <BountyCard
+                      issue={issue}
+                      href={getBountyHref(issue)}
+                      linkState={{ backLabel: 'Back to Watchlist' }}
+                      taoPrice={taoPrice}
+                      alphaPrice={alphaPrice}
+                      compact
+                    />
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+      )}
+      {filtered.length > (page + 1) * ROWS_PER_PAGE && (
+        <Box
+          ref={observerTarget}
+          sx={{
+            height: 60,
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          {isLoadingMore && (
+            <>
+              <CircularProgress size={20} sx={{ color: 'text.secondary' }} />
+              <Typography
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: '0.85rem',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  ml: 1.5,
+                }}
+              >
+                Loading more...
+              </Typography>
+            </>
+          )}
+        </Box>
+      )}
+    </Card>
   );
 };
 
@@ -1669,7 +2557,18 @@ const prStatusMeta = (pr: CommitLog) => {
   return { label, color };
 };
 
-type PrSortKey = 'pr' | 'title' | 'repo' | 'author' | 'score' | 'watch';
+type PrSortKey =
+  | 'pr'
+  | 'title'
+  | 'repo'
+  | 'author'
+  | 'date'
+  | 'score'
+  | 'watch';
+
+/** Return the most relevant date for a PR: mergedAt > closedAt > prCreatedAt. */
+const prLastActionDate = (pr: CommitLog): string =>
+  pr.mergedAt || pr.closedAt || pr.prCreatedAt || '';
 
 const prCellSx = { py: 1.5 } as const;
 
@@ -1835,6 +2734,34 @@ const buildPrColumns = (
           label={label}
           sx={{ color, borderColor: color }}
         />
+      );
+    },
+  },
+  {
+    key: 'date',
+    header: 'Date',
+    width: '100px',
+    align: 'right',
+    sortKey: 'date',
+    cellSx: prCellSx,
+    renderCell: (pr) => {
+      const raw = prLastActionDate(pr);
+      if (!raw) return null;
+      const d = new Date(raw);
+      return (
+        <Typography
+          sx={{
+            fontSize: '0.72rem',
+            color: 'text.secondary',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {d.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })}
+        </Typography>
       );
     },
   },
@@ -2128,20 +3055,23 @@ const PRCard: React.FC<{
   );
 };
 
-const PR_ROWS_OPTIONS_LIST = [10, 25, 50] as const;
-const PR_ROWS_OPTIONS_CARDS = [12, 24, 48] as const;
-
 const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { items, sourcesByKey, isLoading } = useWatchedPRs(itemKeys);
   const prColumns = useMemo(() => buildPrColumns(sourcesByKey), [sourcesByKey]);
   const { isWatched } = useWatchlist('prs');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
-  const [viewMode, setViewMode] = useState<PRsViewMode>('list');
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [viewMode, setViewMode] = useWatchlistViewMode();
   const [page, setPage] = useState(0);
-  const [sortField, setSortField] = useState<PrSortKey>('score');
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const [sortField, setSortField] = useState<PrSortKey>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  useEffect(() => {
+    setPage(0);
+  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode, isWatched]);
 
   const handleSort = (field: PrSortKey) => {
     if (sortField === field) {
@@ -2160,13 +3090,11 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const counts = useMemo(() => getPrStatusCounts(items), [items]);
 
   const filtered = useMemo(() => {
-    const result = filterPrs(items, {
+    return filterPrs(items, {
       statusFilter,
       searchQuery,
       includeNumber: true,
     });
-    setPage(0);
-    return result;
   }, [items, statusFilter, searchQuery]);
 
   const sorted = useMemo(() => {
@@ -2183,6 +3111,11 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           return cmpStr(a.repository, b.repository);
         case 'author':
           return cmpStr(a.author, b.author);
+        case 'date': {
+          const da = new Date(prLastActionDate(a)).getTime() || 0;
+          const db = new Date(prLastActionDate(b)).getTime() || 0;
+          return cmpNum(da, db);
+        }
         case 'score':
           return cmpNum(parseFloat(a.score || '0'), parseFloat(b.score || '0'));
         case 'watch': {
@@ -2197,9 +3130,28 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   }, [filtered, sortField, sortOrder, isWatched]);
 
   const paged = useMemo(
-    () => sorted.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [sorted, page, rowsPerPage],
+    () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
+    [sorted, page],
   );
+
+  useEffect(() => {
+    const target = observerTarget.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsLoadingMore(true);
+          setTimeout(() => {
+            setPage((p) => p + 1);
+            setIsLoadingMore(false);
+          }, 400);
+        }
+      },
+      { root: null, rootMargin: '0px 0px 400px 0px', threshold: 0 },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [page, filtered.length]);
 
   return (
     <Card
@@ -2209,137 +3161,70 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         border: '1px solid',
         borderColor: 'border.light',
         backgroundColor: 'transparent',
-        overflow: 'hidden',
-        maxHeight: '85vh',
         display: 'flex',
         flexDirection: 'column',
-        '& .MuiTableContainer-root': {
-          flex: 1,
-          overflowY: 'auto',
-          ...scrollbarSx,
-        },
       }}
     >
-      {/* Toolbar */}
-      <Box
-        sx={{
-          p: 2,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2,
-          borderBottom: '1px solid',
-          borderColor: 'border.light',
-        }}
-      >
-        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-          <FilterButton
-            label="All"
-            count={counts.all}
-            color={STATUS_COLORS.neutral}
-            isActive={statusFilter === 'all'}
-            onClick={() => setStatusFilter('all')}
-          />
-          <FilterButton
-            label="Open"
-            count={counts.open}
-            color={STATUS_COLORS.open}
-            isActive={statusFilter === 'open'}
-            onClick={() => setStatusFilter('open')}
-          />
-          <FilterButton
-            label="Merged"
-            count={counts.merged}
-            color={STATUS_COLORS.merged}
-            isActive={statusFilter === 'merged'}
-            onClick={() => setStatusFilter('merged')}
-          />
-          <FilterButton
-            label="Closed"
-            count={counts.closed}
-            color={STATUS_COLORS.closed}
-            isActive={statusFilter === 'closed'}
-            onClick={() => setStatusFilter('closed')}
-          />
-        </Box>
-        <FormControl size="small">
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              variant="body2"
-              sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
-            >
-              Rows:
-            </Typography>
-            <Select
-              value={rowsPerPage}
-              onChange={(e) => {
-                setRowsPerPage(e.target.value as number);
-                setPage(0);
-              }}
-              sx={{
-                color: 'text.primary',
-                backgroundColor: 'background.default',
-                fontSize: '0.8rem',
-                height: '36px',
-                borderRadius: 2,
-                minWidth: '80px',
-                '& fieldset': { borderColor: 'border.light' },
-                '&:hover fieldset': { borderColor: 'border.medium' },
-                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                '& .MuiSelect-select': { py: 0.75 },
-              }}
-            >
-              {(viewMode === 'cards'
-                ? PR_ROWS_OPTIONS_CARDS
-                : PR_ROWS_OPTIONS_LIST
-              ).map((n) => (
-                <MenuItem key={n} value={n}>
-                  {n}
-                </MenuItem>
-              ))}
-            </Select>
+      {/* Compact Options trigger */}
+      <WatchlistPortal
+        filterContent={
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 0.5,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
+            <FilterButton
+              label="All"
+              count={counts.all}
+              color={STATUS_COLORS.neutral}
+              isActive={statusFilter === 'all'}
+              onClick={() => setStatusFilter('all')}
+            />
+            <FilterButton
+              label="Open"
+              count={counts.open}
+              color={STATUS_COLORS.open}
+              isActive={statusFilter === 'open'}
+              onClick={() => setStatusFilter('open')}
+            />
+            <FilterButton
+              label="Merged"
+              count={counts.merged}
+              color={STATUS_COLORS.merged}
+              isActive={statusFilter === 'merged'}
+              onClick={() => setStatusFilter('merged')}
+            />
+            <FilterButton
+              label="Closed"
+              count={counts.closed}
+              color={STATUS_COLORS.closed}
+              isActive={statusFilter === 'closed'}
+              onClick={() => setStatusFilter('closed')}
+            />
           </Box>
-        </FormControl>
-        <TextField
-          placeholder="Search PRs..."
-          size="small"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            width: '220px',
-            '& .MuiOutlinedInput-root': {
-              color: 'text.primary',
-              backgroundColor: 'background.default',
-              fontSize: '0.8rem',
-              height: '36px',
-              borderRadius: 2,
-              '& fieldset': { borderColor: 'border.light' },
-              '&:hover fieldset': { borderColor: 'border.medium' },
-              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-            },
-          }}
-        />
-        <Box sx={{ ml: 'auto' }}>
+        }
+        searchValue={searchQuery}
+        searchPlaceholder="Search PRs..."
+        onSearchChange={setSearchQuery}
+        viewMode={viewMode}
+        onViewModeChange={(next) => {
+          setViewMode(next);
+          setPage(0);
+        }}
+        viewModeToggle={
           <PRsViewModeToggle
             viewMode={viewMode}
             onChange={(next) => {
               setViewMode(next);
-              setRowsPerPage(
-                next === 'cards'
-                  ? PR_ROWS_OPTIONS_CARDS[0]
-                  : PR_ROWS_OPTIONS_LIST[0],
-              );
               setPage(0);
             }}
           />
-        </Box>
-      </Box>
+        }
+        hasActiveFilter={statusFilter !== 'all'}
+      />
 
       {/* Content */}
       {viewMode === 'list' ? (
@@ -2411,22 +3296,34 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           )}
         </Box>
       )}
-      <TablePagination
-        rowsPerPageOptions={[]}
-        component="div"
-        count={filtered.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={(_e, newPage) => setPage(newPage)}
-        onRowsPerPageChange={() => {}}
-        showFirstButton
-        showLastButton
-        sx={{
-          borderTop: '1px solid',
-          borderColor: 'border.light',
-          color: 'text.secondary',
-        }}
-      />
+      {filtered.length > (page + 1) * ROWS_PER_PAGE && (
+        <Box
+          ref={observerTarget}
+          sx={{
+            height: 60,
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          {isLoadingMore && (
+            <>
+              <CircularProgress size={20} sx={{ color: 'text.secondary' }} />
+              <Typography
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: '0.85rem',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  ml: 1.5,
+                }}
+              >
+                Loading more...
+              </Typography>
+            </>
+          )}
+        </Box>
+      )}
     </Card>
   );
 };
@@ -2446,7 +3343,6 @@ const ISSUE_STATUS_FILTERS: readonly IssueStatusFilter[] = [
   'resolved',
   'closed',
 ];
-const ISSUE_ROWS_OPTIONS = [10, 25, 50] as const;
 const issueCellSx = { py: 1.5 } as const;
 
 const issueState = (issue: MinerIssue): Exclude<IssueStatusFilter, 'all'> => {
@@ -2728,7 +3624,10 @@ const buildIssueColumns = (
 const getIssueHref = (issue: MinerIssue): string =>
   `https://github.com/${issue.repo_full_name}/issues/${issue.issue_number}`;
 
-const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
+const IssueCard: React.FC<{
+  issue: MinerIssue;
+  sources?: WatchedPRSource[];
+}> = ({ issue, sources = [] }) => {
   const { label, color } = issueStatusMeta(issue);
   const prNumber = issue.solving_pr?.pr_number ?? issue.solved_by_pr ?? null;
   return (
@@ -2770,7 +3669,9 @@ const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
           sx={{ minWidth: 0 }}
         >
           <Avatar
-            src={`https://avatars.githubusercontent.com/${issue.repo_full_name.split('/')[0]}`}
+            src={getRepositoryOwnerAvatarSrc(
+              issue.repo_full_name.split('/')[0],
+            )}
             sx={{
               width: 20,
               height: 20,
@@ -2807,6 +3708,7 @@ const IssueCard: React.FC<{ issue: MinerIssue }> = ({ issue }) => {
               backgroundColor: alpha(color, 0.08),
             }}
           />
+          <WatchedSourceBadges sources={sources} />
           <WatchlistButton
             category="issues"
             itemKey={issueKey(issue)}
@@ -2956,11 +3858,17 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<IssueStatusFilter>('all');
-  const [viewMode, setViewMode] = useState<PRsViewMode>('list');
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [viewMode, setViewMode] = useWatchlistViewMode();
   const [page, setPage] = useState(0);
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   const [sortField, setSortField] = useState<IssueSortKey>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  useEffect(() => {
+    setPage(0);
+  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
 
   const handleSort = (field: IssueSortKey) => {
     if (sortField === field) {
@@ -2978,10 +3886,6 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
     () => filterIssues(items, { statusFilter, searchQuery }),
     [items, statusFilter, searchQuery],
   );
-
-  useEffect(() => {
-    setPage(0);
-  }, [statusFilter, searchQuery]);
 
   const sorted = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -3006,9 +3910,28 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   }, [filtered, sortField, sortOrder]);
 
   const paged = useMemo(
-    () => sorted.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [sorted, page, rowsPerPage],
+    () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
+    [sorted, page],
   );
+
+  useEffect(() => {
+    const target = observerTarget.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsLoadingMore(true);
+          setTimeout(() => {
+            setPage((p) => p + 1);
+            setIsLoadingMore(false);
+          }, 400);
+        }
+      },
+      { root: null, rootMargin: '0px 0px 400px 0px', threshold: 0 },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [page, filtered.length]);
 
   return (
     <Card
@@ -3018,104 +3941,43 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
         border: '1px solid',
         borderColor: 'border.light',
         backgroundColor: 'transparent',
-        overflow: 'hidden',
-        maxHeight: '85vh',
         display: 'flex',
         flexDirection: 'column',
-        '& .MuiTableContainer-root': {
-          flex: 1,
-          overflowY: 'auto',
-          ...scrollbarSx,
-        },
       }}
     >
-      <Box
-        sx={{
-          p: 2,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2,
-          borderBottom: '1px solid',
-          borderColor: 'border.light',
-        }}
-      >
-        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-          {ISSUE_STATUS_FILTERS.map((s) => (
-            <FilterButton
-              key={s}
-              label={s[0].toUpperCase() + s.slice(1)}
-              count={counts[s]}
-              color={issueStatusColor(s)}
-              isActive={statusFilter === s}
-              onClick={() => setStatusFilter(s)}
-            />
-          ))}
-        </Box>
-        <FormControl size="small">
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              variant="body2"
-              sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
-            >
-              Rows:
-            </Typography>
-            <Select
-              value={rowsPerPage}
-              onChange={(e) => {
-                setRowsPerPage(e.target.value as number);
-                setPage(0);
-              }}
-              sx={{
-                color: 'text.primary',
-                backgroundColor: 'background.default',
-                fontSize: '0.8rem',
-                height: '36px',
-                borderRadius: 2,
-                minWidth: '80px',
-                '& fieldset': { borderColor: 'border.light' },
-                '&:hover fieldset': { borderColor: 'border.medium' },
-                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                '& .MuiSelect-select': { py: 0.75 },
-              }}
-            >
-              {ISSUE_ROWS_OPTIONS.map((n) => (
-                <MenuItem key={n} value={n}>
-                  {n}
-                </MenuItem>
-              ))}
-            </Select>
+      {/* Compact Options trigger */}
+      <WatchlistPortal
+        filterContent={
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 0.5,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
+            {ISSUE_STATUS_FILTERS.map((s) => (
+              <FilterButton
+                key={s}
+                label={s[0].toUpperCase() + s.slice(1)}
+                count={counts[s]}
+                color={issueStatusColor(s)}
+                isActive={statusFilter === s}
+                onClick={() => setStatusFilter(s)}
+              />
+            ))}
           </Box>
-        </FormControl>
-        <TextField
-          placeholder="Search issues..."
-          size="small"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            width: '220px',
-            '& .MuiOutlinedInput-root': {
-              color: 'text.primary',
-              backgroundColor: 'background.default',
-              fontSize: '0.8rem',
-              height: '36px',
-              borderRadius: 2,
-              '& fieldset': { borderColor: 'border.light' },
-              '&:hover fieldset': { borderColor: 'border.medium' },
-              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-            },
-          }}
-        />
-        <Box sx={{ ml: 'auto' }}>
+        }
+        searchValue={searchQuery}
+        searchPlaceholder="Search issues..."
+        onSearchChange={setSearchQuery}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        viewModeToggle={
           <PRsViewModeToggle viewMode={viewMode} onChange={setViewMode} />
-        </Box>
-      </Box>
+        }
+        hasActiveFilter={statusFilter !== 'all'}
+      />
 
       {viewMode === 'list' ? (
         <DataTable<MinerIssue, IssueSortKey>
@@ -3134,7 +3996,15 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
           }}
         />
       ) : (
-        <Box sx={{ p: 2, overflowY: 'auto', ...scrollbarSx }}>
+        <Box
+          sx={{
+            p: 2,
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            ...scrollbarSx,
+          }}
+        >
           {isLoading && paged.length === 0 ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
               <CircularProgress size={24} />
@@ -3162,7 +4032,10 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
                   sx={{ display: 'flex' }}
                 >
                   <Box sx={{ width: '100%' }}>
-                    <IssueCard issue={i} />
+                    <IssueCard
+                      issue={i}
+                      sources={sourcesByKey.get(issueKey(i))}
+                    />
                   </Box>
                 </Grid>
               ))}
@@ -3170,22 +4043,34 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
           )}
         </Box>
       )}
-      <TablePagination
-        rowsPerPageOptions={[]}
-        component="div"
-        count={filtered.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={(_e, newPage) => setPage(newPage)}
-        onRowsPerPageChange={() => {}}
-        showFirstButton
-        showLastButton
-        sx={{
-          borderTop: '1px solid',
-          borderColor: 'border.light',
-          color: 'text.secondary',
-        }}
-      />
+      {filtered.length > (page + 1) * ROWS_PER_PAGE && (
+        <Box
+          ref={observerTarget}
+          sx={{
+            height: 60,
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          {isLoadingMore && (
+            <>
+              <CircularProgress size={20} sx={{ color: 'text.secondary' }} />
+              <Typography
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: '0.85rem',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  ml: 1.5,
+                }}
+              >
+                Loading more...
+              </Typography>
+            </>
+          )}
+        </Box>
+      )}
     </Card>
   );
 };
