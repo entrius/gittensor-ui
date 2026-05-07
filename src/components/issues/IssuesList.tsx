@@ -38,6 +38,7 @@ import {
   formatTokenAmount,
 } from '../../utils/format';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
+import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { WatchlistButton } from '../common/WatchlistButton';
@@ -68,48 +69,10 @@ type SortKey =
   | 'funding'
   | 'solver'
   | 'date';
-type IssueSortBasis = 'repository' | 'issue' | 'bounty' | 'status';
 
 const parseBountyAmount = (value: string | null | undefined): number => {
   const parsed = Number.parseFloat(value ?? '0');
   return Number.isFinite(parsed) ? parsed : 0;
-};
-
-const getIssueSortValue = (
-  issue: IssueBounty,
-  basis: IssueSortBasis,
-): number | string => {
-  switch (basis) {
-    case 'repository':
-      return (issue.repositoryFullName || '').toLowerCase();
-    case 'issue':
-      return `${(issue.title || '').toLowerCase()}::${String(issue.issueNumber).padStart(10, '0')}`;
-    case 'bounty':
-      return parseBountyAmount(issue.targetBounty);
-    case 'status':
-      return getIssueStatusMeta(issue.status).text;
-  }
-};
-
-const sortIssues = <Row, Key extends string>(
-  rows: Row[],
-  getValue: (row: Row, key: Key) => number | string,
-  key: Key,
-  order: 'asc' | 'desc',
-): Row[] => {
-  const directionFactor = order === 'asc' ? 1 : -1;
-  const collator = new Intl.Collator(undefined, {
-    sensitivity: 'base',
-    numeric: true,
-  });
-  const decorated = rows.map((row) => ({ row, value: getValue(row, key) }));
-  decorated.sort((a, b) => {
-    if (typeof a.value === 'number' && typeof b.value === 'number') {
-      return (a.value - b.value) * directionFactor;
-    }
-    return collator.compare(String(a.value), String(b.value)) * directionFactor;
-  });
-  return decorated.map((d) => d.row);
 };
 
 interface IssuesListProps {
@@ -354,17 +317,39 @@ const IssuesList: React.FC<IssuesListProps> = ({
           return (issue.solverHotkey ?? '').toLowerCase();
         case 'date':
           return new Date(issue.completedAt || issue.updatedAt || 0).getTime();
-        default:
-          return getIssueSortValue(issue, key as IssueSortBasis);
+        case 'repository':
+          return (issue.repositoryFullName || '').toLowerCase();
+        case 'issue':
+          return `${(issue.title || '').toLowerCase()}::${String(issue.issueNumber).padStart(10, '0')}`;
+        case 'bounty':
+          return parseBountyAmount(issue.targetBounty);
+        case 'status':
+          return getIssueStatusMeta(issue.status).text;
       }
     },
     [],
   );
 
-  const sortedIssues = useMemo(
-    () => sortIssues(filteredIssues, getSortValue, sortKey, sortDirection),
-    [filteredIssues, getSortValue, sortKey, sortDirection],
-  );
+  const sortedIssues = useMemo(() => {
+    const directionFactor = sortDirection === 'asc' ? 1 : -1;
+    const collator = new Intl.Collator(undefined, {
+      sensitivity: 'base',
+      numeric: true,
+    });
+    const decorated = filteredIssues.map((row) => ({
+      row,
+      value: getSortValue(row, sortKey),
+    }));
+    decorated.sort((a, b) => {
+      if (typeof a.value === 'number' && typeof b.value === 'number') {
+        return (a.value - b.value) * directionFactor;
+      }
+      return (
+        collator.compare(String(a.value), String(b.value)) * directionFactor
+      );
+    });
+    return decorated.map((d) => d.row);
+  }, [filteredIssues, getSortValue, sortKey, sortDirection]);
 
   const paginatedIssues = useMemo(() => {
     const start = page * rowsPerPage;
@@ -570,25 +555,36 @@ const IssuesList: React.FC<IssuesListProps> = ({
       sortKey: 'repository',
       cellSx: { overflow: 'hidden' },
       renderCell: (issue) => (
-        <Box
-          sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}
-        >
-          <Avatar
-            src={`https://avatars.githubusercontent.com/${issue.repositoryFullName.split('/')[0]}`}
-            sx={{ width: 24, height: 24, borderRadius: 1, flexShrink: 0 }}
-          />
-          <Typography
+        <Tooltip title={issue.repositoryFullName} arrow>
+          <Box
             sx={{
-              fontSize: '0.85rem',
-              color: STATUS_COLORS.info,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              minWidth: 0,
+              maxWidth: '100%',
             }}
           >
-            {issue.repositoryFullName}
-          </Typography>
-        </Box>
+            <Avatar
+              src={getRepositoryOwnerAvatarSrc(
+                issue.repositoryFullName.split('/')[0],
+              )}
+              sx={{ width: 24, height: 24, borderRadius: 1, flexShrink: 0 }}
+            />
+            <Typography
+              component="span"
+              sx={{
+                fontSize: '0.85rem',
+                color: STATUS_COLORS.info,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {issue.repositoryFullName}
+            </Typography>
+          </Box>
+        </Tooltip>
       ),
     };
 
