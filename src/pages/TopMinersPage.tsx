@@ -21,7 +21,7 @@ type TimelineTab = 'oss' | 'discoveries';
 const TIMELINE_ORDER: readonly TimelineTab[] = ['oss', 'discoveries'] as const;
 
 const TIMELINE_LABELS: Record<TimelineTab, string> = {
-  oss: 'Leaderboard',
+  oss: 'OSS Contributions',
   discoveries: 'Discoveries',
 };
 
