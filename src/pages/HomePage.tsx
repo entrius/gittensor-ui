@@ -5,10 +5,18 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { LinkBox, useLinkBehavior } from '../components/common/linkBehavior';
-import { type CommitLog, type MinerEvaluation, useStats } from '../api';
+import {
+  type CommitLog,
+  type MinerEvaluation,
+  useAllMiners,
+  useAllPrs,
+  useStats,
+} from '../api';
 import { useMonthlyRewards } from '../hooks/useMonthlyRewards';
 import { getGithubAvatarSrc, getPrStatusLabel, parseNumber } from '../utils';
-import useDashboardData from './dashboard/useDashboardData';
+
+const EMPTY_PRS: CommitLog[] = [];
+const EMPTY_MINERS: MinerEvaluation[] = [];
 
 const fadeUp = (delayMs = 0) => ({
   opacity: 0,
@@ -243,36 +251,32 @@ const HomePage: React.FC = () => {
     }, 8000); // Rotate every 8 seconds
     return () => clearInterval(interval);
   }, []);
-  const { datasets, isLoading } = useDashboardData('35d');
+  const prsQuery = useAllPrs();
+  const minersQuery = useAllMiners();
   const stats = useStats();
   const onboardLink = useLinkBehavior<HTMLAnchorElement>('/onboard');
   const docsLink = useLinkBehavior<HTMLAnchorElement>(
     'https://docs.gittensor.io',
   );
 
-  const minerRows = useMemo(
-    () => buildTopMinerRows(datasets.miners.data),
-    [datasets.miners.data],
-  );
-  const activityRows = useMemo(
-    () => buildActivityRows(datasets.prs.data),
-    [datasets.prs.data],
-  );
+  const prs = prsQuery.data ?? EMPTY_PRS;
+  const miners = minersQuery.data ?? EMPTY_MINERS;
+  const isLoading = prsQuery.isLoading || minersQuery.isLoading;
 
-  const mergedPrs35d = useMemo(
-    () => countMergedPrsInWindow(datasets.prs.data, 35),
-    [datasets.prs.data],
-  );
-  const totalReposEver = datasets.repos.data.length;
+  const minerRows = useMemo(() => buildTopMinerRows(miners), [miners]);
+  const activityRows = useMemo(() => buildActivityRows(prs), [prs]);
+
+  const mergedPrs35d = useMemo(() => countMergedPrsInWindow(prs, 35), [prs]);
+  const totalReposEver = parseNumber(stats.data?.uniqueRepositories ?? 0);
   const totalLinesEver = parseNumber(stats.data?.totalLinesChanged ?? 0);
   const totalCommitsEver = parseNumber(stats.data?.totalCommits ?? 0);
   const totalMergedPrsEver = useMemo(
-    () => datasets.prs.data.filter((pr) => pr.mergedAt).length,
-    [datasets.prs.data],
+    () => prs.filter((pr) => pr.mergedAt).length,
+    [prs],
   );
   const totalIssuesSolvedEver = parseNumber(stats.data?.totalIssues ?? 0);
   const medianMergeRate = useMemo(() => {
-    const rates = datasets.miners.data
+    const rates = miners
       .filter((miner) => miner.isEligible)
       .map((miner) => {
         const merged = parseNumber(miner.totalMergedPrs);
@@ -287,8 +291,8 @@ const HomePage: React.FC = () => {
     const median =
       rates.length % 2 === 0 ? (rates[mid - 1] + rates[mid]) / 2 : rates[mid];
     return Math.round(median * 100);
-  }, [datasets.miners.data]);
-  const minerCount = datasets.miners.data.length;
+  }, [miners]);
+  const minerCount = miners.length;
   const rewardPoolLabel =
     monthlyRewards && monthlyRewards > 0
       ? formatUsd(monthlyRewards)
@@ -398,8 +402,8 @@ const HomePage: React.FC = () => {
               <LiveProofPanel
                 rows={activityRows}
                 hasLiveData={activityRows.length > 0}
-                isLoading={datasets.prs.isLoading}
-                isError={datasets.prs.isError}
+                isLoading={prsQuery.isLoading}
+                isError={prsQuery.isError}
               />
             </Box>
             <Box
@@ -419,8 +423,8 @@ const HomePage: React.FC = () => {
               <TopMinersPanel
                 rows={minerRows}
                 hasLiveData={minerRows.length > 0}
-                isLoading={datasets.miners.isLoading}
-                isError={datasets.miners.isError}
+                isLoading={minersQuery.isLoading}
+                isError={minersQuery.isError}
               />
             </Box>
             <Stack
