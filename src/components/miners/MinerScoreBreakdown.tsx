@@ -1,4 +1,11 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, {
+  memo,
+  useMemo,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
 import {
   Box,
   Card,
@@ -11,12 +18,21 @@ import {
   IconButton,
   Button,
   useTheme,
+  TextField,
+  InputAdornment,
+  MenuItem,
+  FormControl,
+  Select,
+  useMediaQuery,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   GitHub as GitHubIcon,
   OpenInNew as OpenInNewIcon,
+  Search as SearchIcon,
+  West as WestIcon,
+  East as EastIcon,
 } from '@mui/icons-material';
 import { useSearchParams } from 'react-router-dom';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
@@ -123,21 +139,23 @@ interface PrScoreRowProps {
   pr: CommitLog;
 }
 
-const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr }) => {
+const PrScoreRow: React.FC<PrScoreRowProps> = memo(({ pr }) => {
   const [expanded, setExpanded] = useState(false);
   const prLinkProps = useLinkBehavior<HTMLAnchorElement>(
     `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
   );
 
-  // Fetch full PR details (with all multipliers) — cached by React Query
+  const isMerged = !!pr.mergedAt;
+
+  // Fetch multiplier breakdown only after expand — avoids N concurrent /details calls per page.
   const { data: prDetails } = usePullRequestDetails(
     pr.repository,
     pr.pullRequestNumber,
+    expanded && isMerged,
   );
 
   const score = parseFloat(pr.score || '0');
   const baseScore = parseFloat(pr.baseScore || '0');
-  const isMerged = !!pr.mergedAt;
   const isClosed = pr.prState === 'CLOSED' && !pr.mergedAt;
   const isOpen = !pr.mergedAt && pr.prState !== 'CLOSED';
   const collateral = parseFloat(pr.collateralScore || '0');
@@ -431,7 +449,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = ({ pr }) => {
       </Collapse>
     </Box>
   );
-};
+});
 
 // ---------------------------------------------------------------------------
 // Issue-mode breakdown sub-components
@@ -612,16 +630,340 @@ const IssueBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
   );
 };
 
+type ScoreRowsOption = 5 | 10 | 20 | 50 | 'all';
+
+const DEFAULT_SCORE_ROWS: ScoreRowsOption = 10;
+
+const SCORE_BREAKDOWN_ROWS_SELECT_SX = {
+  color: 'text.primary',
+  backgroundColor: 'background.default',
+  fontSize: '0.8rem',
+  height: '36px',
+  borderRadius: 2,
+  minWidth: '80px',
+  '& fieldset': { borderColor: 'border.light' },
+  '&:hover fieldset': {
+    borderColor: 'border.medium',
+  },
+  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+  '& .MuiSelect-select': { py: 0.75 },
+} as const;
+
+const SCORE_BREAKDOWN_SEARCH_FIELD_SX = {
+  '& .MuiOutlinedInput-root': {
+    color: 'text.primary',
+    backgroundColor: 'background.default',
+    fontSize: '0.8rem',
+    height: '36px',
+    borderRadius: 2,
+    '& fieldset': { borderColor: 'border.light' },
+    '&:hover fieldset': {
+      borderColor: 'border.medium',
+    },
+    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+  },
+} as const;
+
+function parseScoreRowsParam(raw: string | null): ScoreRowsOption {
+  if (raw === 'all') return 'all';
+  if (raw == null || raw === '') return DEFAULT_SCORE_ROWS;
+  const n = parseInt(raw, 10);
+  if (Number.isNaN(n)) return DEFAULT_SCORE_ROWS;
+  if (n === 5 || n === 10 || n === 20 || n === 50) return n;
+  return DEFAULT_SCORE_ROWS;
+}
+
+function scoreStatusFromSearchParam(raw: string | null): PrStatusFilter {
+  if (raw === 'open' || raw === 'merged' || raw === 'closed') return raw;
+  return 'all';
+}
+
+function buildPaginationItems(
+  currentPageOneBased: number,
+  totalPages: number,
+  delta = 2,
+): Array<number | 'ellipsis'> {
+  if (totalPages <= 1) return [];
+  if (totalPages <= delta * 2 + 5) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+  const pages = new Set<number>();
+  pages.add(1);
+  pages.add(totalPages);
+  for (
+    let i = Math.max(1, currentPageOneBased - delta);
+    i <= Math.min(totalPages, currentPageOneBased + delta);
+    i++
+  ) {
+    pages.add(i);
+  }
+  const sorted = [...pages].sort((a, b) => a - b);
+  const result: Array<number | 'ellipsis'> = [];
+  let prev: number | undefined;
+  for (const p of sorted) {
+    if (prev !== undefined && p - prev > 1) {
+      result.push('ellipsis');
+    }
+    result.push(p);
+    prev = p;
+  }
+  return result;
+}
+
+interface ScoreBreakdownPaginationProps {
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}
+
+const ScoreBreakdownPagination = memo(function ScoreBreakdownPagination({
+  page,
+  totalPages,
+  onPageChange,
+}: ScoreBreakdownPaginationProps) {
+  const theme = useTheme();
+  const isMobilePager = useMediaQuery(theme.breakpoints.down('sm'));
+  const primary = theme.palette.primary.main;
+  const activeFg =
+    theme.palette.primary.contrastText ?? theme.palette.common.white;
+  const items = useMemo(
+    () => buildPaginationItems(page + 1, totalPages),
+    [page, totalPages],
+  );
+
+  const navSx = (enabled: boolean) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.25,
+    fontSize: '0.8125rem',
+    fontWeight: 500,
+    color: enabled ? primary : alpha(theme.palette.text.primary, 0.22),
+    cursor: enabled ? 'pointer' : 'default',
+    userSelect: 'none' as const,
+    '&:hover': enabled ? { opacity: 0.88 } : {},
+  });
+
+  const outerBarSx = {
+    py: 1.5,
+    px: 1,
+    borderTop: '1px solid',
+    borderColor: 'border.subtle',
+  } as const;
+
+  if (isMobilePager) {
+    const canPrev = page > 0;
+    const canNext = page < totalPages - 1;
+    return (
+      <Box sx={outerBarSx}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+            gap: 1,
+          }}
+        >
+          <Box
+            component="button"
+            type="button"
+            aria-label="Previous page"
+            onClick={() => canPrev && onPageChange(page - 1)}
+            sx={{
+              ...navSx(canPrev),
+              border: 'none',
+              background: 'none',
+              fontFamily: 'inherit',
+              p: 0,
+              flexShrink: 0,
+            }}
+          >
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.35,
+              }}
+            >
+              <WestIcon
+                sx={{ fontSize: '1.05rem', color: 'inherit', flexShrink: 0 }}
+              />
+              Prev
+            </Box>
+          </Box>
+
+          <Typography
+            component="span"
+            sx={{
+              fontSize: '0.8125rem',
+              fontWeight: 700,
+              fontVariantNumeric: 'tabular-nums',
+              color: 'text.primary',
+              userSelect: 'none',
+              flexShrink: 0,
+            }}
+          >
+            {page + 1} / {totalPages}
+          </Typography>
+
+          <Box
+            component="button"
+            type="button"
+            aria-label="Next page"
+            onClick={() => canNext && onPageChange(page + 1)}
+            sx={{
+              ...navSx(canNext),
+              border: 'none',
+              background: 'none',
+              fontFamily: 'inherit',
+              p: 0,
+              flexShrink: 0,
+            }}
+          >
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.35,
+              }}
+            >
+              Next
+              <EastIcon
+                sx={{ fontSize: '1.05rem', color: 'inherit', flexShrink: 0 }}
+              />
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+    );
+  }
+
+  return (
+    <Box
+      sx={{
+        ...outerBarSx,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexWrap: 'wrap',
+        gap: { xs: 0.75, sm: 1 },
+      }}
+    >
+      <Box
+        component="button"
+        type="button"
+        aria-label="Previous page"
+        onClick={() => page > 0 && onPageChange(page - 1)}
+        sx={{
+          ...navSx(page > 0),
+          border: 'none',
+          background: 'none',
+          fontFamily: 'inherit',
+          p: 0,
+        }}
+      >
+        <WestIcon sx={{ fontSize: '1.1rem', color: 'inherit' }} />
+        Prev
+      </Box>
+
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: { xs: 0.35, sm: 0.5 },
+          mx: { xs: 0.5, sm: 1 },
+        }}
+      >
+        {items.map((item, idx) =>
+          item === 'ellipsis' ? (
+            <Typography
+              key={`ellipsis-${idx}`}
+              component="span"
+              sx={{
+                fontSize: '0.8125rem',
+                color: alpha(theme.palette.text.primary, 0.45),
+                px: 0.25,
+                userSelect: 'none',
+              }}
+            >
+              ...
+            </Typography>
+          ) : (
+            <Box
+              key={item}
+              component="button"
+              type="button"
+              aria-label={`Page ${item}`}
+              aria-current={item === page + 1 ? 'page' : undefined}
+              onClick={() => onPageChange(item - 1)}
+              sx={{
+                minWidth: 36,
+                height: 32,
+                px: 1,
+                borderRadius: 1,
+                border: 'none',
+                backgroundColor: item === page + 1 ? primary : 'transparent',
+                color: item === page + 1 ? activeFg : 'text.primary',
+                fontSize: '0.8125rem',
+                fontWeight: item === page + 1 ? 600 : 400,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                lineHeight: 1,
+                '&:hover': {
+                  backgroundColor:
+                    item === page + 1
+                      ? primary
+                      : alpha(theme.palette.text.primary, 0.06),
+                },
+              }}
+            >
+              {item}
+            </Box>
+          ),
+        )}
+      </Box>
+
+      <Box
+        component="button"
+        type="button"
+        aria-label="Next page"
+        onClick={() => page < totalPages - 1 && onPageChange(page + 1)}
+        sx={{
+          ...navSx(page < totalPages - 1),
+          border: 'none',
+          background: 'none',
+          fontFamily: 'inherit',
+          p: 0,
+        }}
+      >
+        Next
+        <EastIcon sx={{ fontSize: '1.1rem', color: 'inherit' }} />
+      </Box>
+    </Box>
+  );
+});
+
 // ---------------------------------------------------------------------------
 // PR-mode breakdown
 // ---------------------------------------------------------------------------
 
 const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
-  const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
-  const PAGE_SIZE = 10;
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+
+  const statusFilter = scoreStatusFromSearchParam(
+    searchParams.get('scoreStatus'),
+  );
+
+  const scoreRowsParam = searchParams.get('scoreRows');
+  const pageSize = useMemo(
+    () => parseScoreRowsParam(scoreRowsParam),
+    [scoreRowsParam],
+  );
 
   const page = parseInt(searchParams.get('scorePage') || '0', 10);
   const setPage = useCallback(
@@ -640,28 +982,168 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
     [page, setSearchParams],
   );
 
-  const handleFilterChange = (next: PrStatusFilter) => {
-    setStatusFilter(next);
-    setPage(0);
-  };
+  const setRowsPerPage = useCallback(
+    (next: ScoreRowsOption) => {
+      setSearchParams(
+        (prev) => {
+          const p = new URLSearchParams(prev);
+          if (next === DEFAULT_SCORE_ROWS) p.delete('scoreRows');
+          else p.set('scoreRows', String(next));
+          p.delete('scorePage');
+          return p;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const handleFilterChange = useCallback(
+    (next: PrStatusFilter) => {
+      setSearchParams(
+        (prev) => {
+          const p = new URLSearchParams(prev);
+          if (next === 'all') p.delete('scoreStatus');
+          else p.set('scoreStatus', next);
+          p.delete('scorePage');
+          return p;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const prevSearchRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (prevSearchRef.current === null) {
+      prevSearchRef.current = searchQuery;
+      return;
+    }
+    if (prevSearchRef.current === searchQuery) return;
+    prevSearchRef.current = searchQuery;
+    setSearchParams(
+      (prev) => {
+        const p = new URLSearchParams(prev);
+        p.delete('scorePage');
+        return p;
+      },
+      { replace: true },
+    );
+  }, [searchQuery, setSearchParams]);
+
+  useEffect(() => {
+    if (!isMobile) setIsMobileSearchOpen(false);
+  }, [isMobile]);
 
   const statusCounts = useMemo(() => getPrStatusCounts(prs ?? []), [prs]);
 
-  const sortedPrs = useMemo(() => {
+  const statusFilterTotal = useMemo(() => {
+    switch (statusFilter) {
+      case 'all':
+        return statusCounts.all;
+      case 'open':
+        return statusCounts.open;
+      case 'merged':
+        return statusCounts.merged;
+      case 'closed':
+        return statusCounts.closed;
+      default:
+        return statusCounts.all;
+    }
+  }, [statusFilter, statusCounts]);
+
+  const filteredPrs = useMemo(() => {
     if (!prs) return [];
-    return [...filterPrs(prs, { statusFilter })].sort(
+    let list = [...filterPrs(prs, { statusFilter })].sort(
       (a, b) => parseFloat(b.score || '0') - parseFloat(a.score || '0'),
     );
-  }, [prs, statusFilter]);
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter((pr) => {
+        const title = (pr.pullRequestTitle || '').toLowerCase();
+        const repo = (pr.repository || '').toLowerCase();
+        const num = String(pr.pullRequestNumber);
+        return (
+          title.includes(q) ||
+          repo.includes(q) ||
+          num.includes(q) ||
+          `#${num}`.includes(q)
+        );
+      });
+    }
+    return list;
+  }, [prs, statusFilter, searchQuery]);
+
+  const paging = useMemo(() => {
+    const isAllRows = pageSize === 'all';
+    const chunk = isAllRows ? filteredPrs.length || 1 : pageSize;
+    const totalPages = isAllRows
+      ? 1
+      : Math.max(1, Math.ceil(filteredPrs.length / pageSize));
+    const safePage = Math.min(page, totalPages - 1);
+    const displayPrs = isAllRows
+      ? filteredPrs
+      : filteredPrs.slice(safePage * chunk, safePage * chunk + chunk);
+    const showPagination = !isAllRows && totalPages > 1;
+    return {
+      totalPages,
+      safePage,
+      displayPrs,
+      showPagination,
+    };
+  }, [filteredPrs, pageSize, page]);
+
+  const { totalPages, safePage, displayPrs, showPagination } = paging;
+
+  const trimmedSearch = searchQuery.trim();
+
+  const isMobileSearchVisible =
+    isMobile && (isMobileSearchOpen || !!trimmedSearch);
+
+  const handleSearchKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      const t = searchQuery.trim();
+      if (e.key === 'Escape' && !t) {
+        setIsMobileSearchOpen(false);
+      }
+    },
+    [searchQuery],
+  );
+
+  const searchInput = (
+    <TextField
+      size="small"
+      placeholder="Search or enter title, repo, or #…"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      onKeyDown={handleSearchKeyDown}
+      onBlur={() => {
+        const t = searchQuery.trim();
+        if (isMobile && !t) setIsMobileSearchOpen(false);
+      }}
+      autoFocus={isMobileSearchOpen}
+      InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            <SearchIcon
+              sx={{
+                color: 'text.tertiary',
+                fontSize: '1rem',
+              }}
+            />
+          </InputAdornment>
+        ),
+      }}
+      sx={{
+        width: '100%',
+        minWidth: 0,
+        ...SCORE_BREAKDOWN_SEARCH_FIELD_SX,
+      }}
+    />
+  );
 
   if (isLoading || !prs || prs.length === 0) return null;
-
-  const totalPages = Math.max(1, Math.ceil(sortedPrs.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages - 1);
-  const displayPrs = sortedPrs.slice(
-    safePage * PAGE_SIZE,
-    (safePage + 1) * PAGE_SIZE,
-  );
 
   return (
     <Card sx={{ p: 0, overflow: 'hidden' }} elevation={0}>
@@ -678,15 +1160,39 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
         }}
       >
         <Box>
-          <Typography
+          <Box
             sx={{
-              fontSize: '1rem',
-              fontWeight: 600,
-              color: 'text.primary',
+              display: 'flex',
+              alignItems: 'baseline',
+              flexWrap: 'wrap',
+              columnGap: 0.75,
+              rowGap: 0.25,
             }}
           >
-            Score Breakdown
-          </Typography>
+            <Typography
+              component="span"
+              sx={{
+                fontSize: '1rem',
+                fontWeight: 600,
+                color: 'text.primary',
+              }}
+            >
+              Score Breakdown
+            </Typography>
+            {trimmedSearch ? (
+              <Typography
+                component="span"
+                sx={{
+                  fontSize: '0.9375rem',
+                  fontWeight: 500,
+                  color: 'text.secondary',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {`( ${filteredPrs.length} / ${statusFilterTotal} )`}
+              </Typography>
+            ) : null}
+          </Box>
           <Typography
             sx={{
               fontSize: '0.72rem',
@@ -697,39 +1203,143 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
             Click any PR to see multiplier details
           </Typography>
         </Box>
-        <Stack direction="row" spacing={1} flexWrap="wrap">
-          <FilterButton
-            label="All"
-            isActive={statusFilter === 'all'}
-            onClick={() => handleFilterChange('all')}
-            count={statusCounts.all}
-            color={theme.palette.status.neutral}
-          />
-          <FilterButton
-            label="Open"
-            isActive={statusFilter === 'open'}
-            onClick={() => handleFilterChange('open')}
-            count={statusCounts.open}
-            color={theme.palette.status.open}
-          />
-          <FilterButton
-            label="Merged"
-            isActive={statusFilter === 'merged'}
-            onClick={() => handleFilterChange('merged')}
-            count={statusCounts.merged}
-            color={theme.palette.status.merged}
-          />
-          <FilterButton
-            label="Closed"
-            isActive={statusFilter === 'closed'}
-            onClick={() => handleFilterChange('closed')}
-            count={statusCounts.closed}
-            color={theme.palette.status.closed}
-          />
-        </Stack>
+        <Box
+          sx={{
+            width: { xs: '100%', sm: 'auto' },
+            minWidth: 0,
+            overflowX: { xs: 'auto', sm: 'visible' },
+            WebkitOverflowScrolling: 'touch',
+            pb: { xs: 0.25, sm: 0 },
+            '&::-webkit-scrollbar': { height: 5 },
+            '&::-webkit-scrollbar-thumb': {
+              borderRadius: 2,
+              backgroundColor: (t) => alpha(t.palette.text.primary, 0.15),
+            },
+          }}
+        >
+          <Stack
+            direction="row"
+            spacing={1}
+            useFlexGap
+            sx={{
+              flexWrap: { xs: 'nowrap', sm: 'wrap' },
+              width: { xs: 'max-content', sm: 'auto' },
+              py: 0.25,
+            }}
+          >
+            <FilterButton
+              label="All"
+              isActive={statusFilter === 'all'}
+              onClick={() => handleFilterChange('all')}
+              count={statusCounts.all}
+              color={theme.palette.status.neutral}
+            />
+            <FilterButton
+              label="Open"
+              isActive={statusFilter === 'open'}
+              onClick={() => handleFilterChange('open')}
+              count={statusCounts.open}
+              color={theme.palette.status.open}
+            />
+            <FilterButton
+              label="Merged"
+              isActive={statusFilter === 'merged'}
+              onClick={() => handleFilterChange('merged')}
+              count={statusCounts.merged}
+              color={theme.palette.status.merged}
+            />
+            <FilterButton
+              label="Closed"
+              isActive={statusFilter === 'closed'}
+              onClick={() => handleFilterChange('closed')}
+              count={statusCounts.closed}
+              color={theme.palette.status.closed}
+            />
+          </Stack>
+        </Box>
       </Box>
 
-      {/* PR list */}
+      <Box
+        sx={{
+          px: 2,
+          py: 2,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          flexWrap: 'wrap',
+          width: '100%',
+          borderBottom: '1px solid',
+          borderColor: 'border.subtle',
+        }}
+      >
+        <FormControl size="small" sx={{ flexShrink: 0 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'text.secondary',
+                fontSize: '0.8rem',
+              }}
+            >
+              Rows:
+            </Typography>
+            <Select
+              aria-label="Rows per page"
+              value={pageSize === 'all' ? 'all' : pageSize}
+              onChange={(e) => {
+                const v = e.target.value;
+                setRowsPerPage(
+                  v === 'all' ? 'all' : (Number(v) as ScoreRowsOption),
+                );
+              }}
+              sx={SCORE_BREAKDOWN_ROWS_SELECT_SX}
+            >
+              <MenuItem value={10}>10</MenuItem>
+              <MenuItem value={5}>5</MenuItem>
+              <MenuItem value={20}>20</MenuItem>
+              <MenuItem value={50}>50</MenuItem>
+              <MenuItem value="all">All</MenuItem>
+            </Select>
+          </Box>
+        </FormControl>
+
+        {!isMobile && (
+          <Box sx={{ flex: 1, minWidth: { xs: 0, sm: '200px' } }}>
+            {searchInput}
+          </Box>
+        )}
+
+        {isMobile && !isMobileSearchVisible && (
+          <>
+            <Box sx={{ flex: 1, minWidth: 0 }} aria-hidden />
+            <IconButton
+              size="small"
+              onClick={() => setIsMobileSearchOpen(true)}
+              aria-label="Search pull requests"
+              sx={{
+                color: 'text.tertiary',
+                border: '1px solid',
+                borderColor: 'border.light',
+                borderRadius: 2,
+                width: 36,
+                height: 36,
+                flexShrink: 0,
+                '&:hover': {
+                  backgroundColor: 'surface.light',
+                  borderColor: 'border.medium',
+                },
+              }}
+            >
+              <SearchIcon sx={{ fontSize: '1rem' }} />
+            </IconButton>
+          </>
+        )}
+
+        {isMobile && isMobileSearchVisible && (
+          <Box sx={{ flex: '1 1 100%', minWidth: 0 }}>{searchInput}</Box>
+        )}
+      </Box>
+
       <Box>
         {displayPrs.length === 0 ? (
           <Typography
@@ -740,73 +1350,26 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
               py: 4,
             }}
           >
-            No {statusFilter === 'all' ? '' : statusFilter} PRs to show.
+            {searchQuery.trim()
+              ? 'No PRs match your search.'
+              : `No ${statusFilter === 'all' ? '' : statusFilter} PRs to show.`}
           </Typography>
         ) : (
-          displayPrs.map((pr, i) => (
+          displayPrs.map((pr) => (
             <PrScoreRow
-              key={`${pr.repository}-${pr.pullRequestNumber}-${i}`}
+              key={`${pr.repository}-${pr.pullRequestNumber}`}
               pr={pr}
             />
           ))
         )}
       </Box>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 2,
-            py: 1.2,
-            borderTop: '1px solid',
-            borderColor: 'border.subtle',
-          }}
-        >
-          <Typography
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            sx={{
-              fontSize: '0.72rem',
-              color:
-                safePage === 0
-                  ? (t) => alpha(t.palette.text.primary, 0.2)
-                  : 'primary.main',
-              cursor: safePage === 0 ? 'default' : 'pointer',
-              userSelect: 'none',
-              '&:hover': safePage > 0 ? { textDecoration: 'underline' } : {},
-            }}
-          >
-            ← Prev
-          </Typography>
-          <Typography
-            sx={{
-              fontSize: '0.72rem',
-              color: (t) => alpha(t.palette.text.primary, 0.5),
-            }}
-          >
-            {safePage + 1} / {totalPages}
-          </Typography>
-          <Typography
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-            sx={{
-              fontSize: '0.72rem',
-              color:
-                safePage >= totalPages - 1
-                  ? (t) => alpha(t.palette.text.primary, 0.2)
-                  : 'primary.main',
-              cursor: safePage >= totalPages - 1 ? 'default' : 'pointer',
-              userSelect: 'none',
-              '&:hover':
-                safePage < totalPages - 1
-                  ? { textDecoration: 'underline' }
-                  : {},
-            }}
-          >
-            Next →
-          </Typography>
-        </Box>
+      {showPagination && (
+        <ScoreBreakdownPagination
+          page={safePage}
+          totalPages={totalPages}
+          onPageChange={(p) => setPage(p)}
+        />
       )}
     </Card>
   );
