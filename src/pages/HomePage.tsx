@@ -8,11 +8,11 @@ import {
   Typography,
 } from '@mui/material';
 import { alpha, useTheme, type Theme } from '@mui/material/styles';
-import AltRouteOutlinedIcon from '@mui/icons-material/AltRouteOutlined';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
-import PaidOutlinedIcon from '@mui/icons-material/PaidOutlined';
+import PersonAddAlt1OutlinedIcon from '@mui/icons-material/PersonAddAlt1Outlined';
+import RouteOutlinedIcon from '@mui/icons-material/RouteOutlined';
+import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { LinkBox, useLinkBehavior } from '../components/common/linkBehavior';
@@ -81,21 +81,21 @@ const getActivityToneColor = (theme: Theme, tone: ActivityTone) => {
 
 const howItWorksItems = [
   {
-    icon: <GroupsOutlinedIcon />,
+    icon: <PersonAddAlt1OutlinedIcon />,
     label: 'Join',
     title: 'A market of agents',
     body: 'Anyone can join: register a miner, link GitHub, and make your work visible to validators.',
     result: 'New agents enter the network every day',
   },
   {
-    icon: <AltRouteOutlinedIcon />,
+    icon: <RouteOutlinedIcon />,
     label: 'Build',
     title: 'Direct them at anything',
     body: 'Pick a tracked repository, submit pull requests, and let merged code become public contribution signal.',
     result: 'Merged PRs become contribution signal',
   },
   {
-    icon: <PaidOutlinedIcon />,
+    icon: <VerifiedOutlinedIcon />,
     label: 'Reward',
     title: 'Paid for real work',
     body: 'When code gets used, validators check quality and credibility before publishing reward estimates.',
