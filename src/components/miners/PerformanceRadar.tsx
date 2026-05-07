@@ -2,11 +2,15 @@ import React, { useMemo } from 'react';
 import { Box, Typography, alpha, useTheme } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import {
+  echartsRadarChrome,
+  echartsTransparentBackground,
+} from '../../utils/echarts/gittensorChartTheme';
 
 interface PerformanceRadarProps {
   credibility: number;
   complexity: number;
-  issuesSolved: number;
+  mergedPrs: number;
   uniqueRepos: number;
   totalPRs: number;
   avgRepoWeight: number;
@@ -15,7 +19,7 @@ interface PerformanceRadarProps {
 const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
   credibility,
   complexity,
-  issuesSolved,
+  mergedPrs,
   uniqueRepos,
   totalPRs,
   avgRepoWeight,
@@ -24,12 +28,13 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
 
   const chartOption = useMemo(
     () => ({
-      backgroundColor: 'transparent',
+      ...echartsTransparentBackground(),
       radar: {
+        ...echartsRadarChrome(theme),
         indicator: [
           { name: 'Credibility', max: 100 },
           { name: 'Complexity', max: 100 },
-          { name: 'Issues\nSolved', max: 100 },
+          { name: 'Merged\nPRs', max: 100 },
           { name: 'Unique\nRepos', max: 100 },
           { name: 'Total\nPRs', max: 100 },
           { name: 'Avg Repo\nWeight', max: 100 },
@@ -38,20 +43,6 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
         radius: '50%',
         shape: 'circle',
         splitNumber: 5,
-        axisName: {
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
-          fontSize: 9,
-          lineHeight: 12,
-        },
-        splitLine: {
-          lineStyle: {
-            color: Array(5).fill(alpha(theme.palette.common.white, 0.05)),
-          },
-        },
-        splitArea: { show: false },
-        axisLine: {
-          lineStyle: { color: alpha(theme.palette.common.white, 0.1) },
-        },
       },
       series: [
         {
@@ -68,7 +59,7 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
               value: [
                 credibility,
                 complexity,
-                issuesSolved,
+                mergedPrs,
                 uniqueRepos,
                 totalPRs,
                 avgRepoWeight,
@@ -85,7 +76,7 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
     [
       credibility,
       complexity,
-      issuesSolved,
+      mergedPrs,
       uniqueRepos,
       totalPRs,
       avgRepoWeight,

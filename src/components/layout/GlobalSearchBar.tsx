@@ -499,7 +499,14 @@ const GlobalSearchBar: React.FC = () => {
   );
 
   return (
-    <Box sx={{ position: 'relative', width: '100%', maxWidth: 900 }}>
+    <Box
+      sx={{
+        position: 'relative',
+        width: '100%',
+        maxWidth: 1200,
+        mx: 'auto',
+      }}
+    >
       <TextField
         fullWidth
         size="small"

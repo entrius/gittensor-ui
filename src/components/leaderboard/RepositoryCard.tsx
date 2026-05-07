@@ -1,7 +1,9 @@
 import React from 'react';
-import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
+import { Avatar, Box, Card, Divider, Tooltip, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
+import { WatchlistButton } from '../common';
+import { getRepositoryOwnerAvatarSrc } from '../../utils';
 import { RankIcon } from './RankIcon';
 import {
   FONTS,
@@ -111,7 +113,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
         <RankIcon rank={repo.rank || 0} />
         <Avatar
-          src={`https://avatars.githubusercontent.com/${owner}`}
+          src={getRepositoryOwnerAvatarSrc(owner) || undefined}
           alt={owner}
           sx={(theme) => ({
             width: 28,
@@ -121,7 +123,9 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
             borderColor: theme.palette.border.medium,
             backgroundColor: getRepositoryOwnerAvatarBackground(owner),
           })}
-        />
+        >
+          {(owner[0] || '?').toUpperCase()}
+        </Avatar>
         <Tooltip title={repo.repository || ''} placement="top" arrow>
           <Typography
             sx={{
@@ -161,6 +165,13 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
         >
           {isInactive ? 'Inactive' : 'Active'}
         </Typography>
+        {repo.repository && (
+          <WatchlistButton
+            category="repos"
+            itemKey={repo.repository}
+            size="small"
+          />
+        )}
       </Box>
 
       <Box>
@@ -218,24 +229,48 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
       </Box>
 
       <Box
-        sx={{
-          display: 'grid',
-          // Total Score needs more room for "TOTAL SCORE" label + values up to
-          // ~999.99; PRS holds a short int so it can afford a narrower column.
-          gridTemplateColumns: '1.4fr 0.6fr 1fr',
-          gap: 1.5,
-          pt: 0.5,
-        }}
+        sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, pt: 0.5 }}
       >
-        <MetricCell
-          label="Total Score"
-          value={formatMetric(repo.totalScore, 2)}
-        />
-        <MetricCell label="PRs" value={formatMetric(repo.totalPRs)} />
-        <MetricCell
-          label="Contributors"
-          value={formatMetric(repo.uniqueMiners?.size ?? 0)}
-        />
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: '1.4fr 0.6fr 1fr',
+            gap: 1.5,
+          }}
+        >
+          <MetricCell
+            label="OSS Score"
+            value={formatMetric(repo.totalScore, 2)}
+          />
+          <MetricCell label="PRs" value={formatMetric(repo.totalPRs)} />
+          <MetricCell
+            label="Contributors"
+            value={formatMetric(repo.uniqueMiners?.size ?? 0)}
+          />
+        </Box>
+
+        <Divider sx={{ borderColor: 'border.light', opacity: 0.85 }} />
+
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: '1.4fr 0.6fr 1fr',
+            gap: 1.5,
+          }}
+        >
+          <MetricCell
+            label="Issue score"
+            value={formatMetric(repo.discoveryScore, 2)}
+          />
+          <MetricCell
+            label="Issues"
+            value={formatMetric(repo.discoveryIssues)}
+          />
+          <MetricCell
+            label="Contributors"
+            value={formatMetric(repo.discoveryContributors?.size ?? 0)}
+          />
+        </Box>
       </Box>
     </Card>
   );

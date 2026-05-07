@@ -17,6 +17,7 @@ export interface IssueBounty {
   updatedAt: string;
   closedAt: string | null;
   completedAt: string | null;
+  authorLogin?: string | null;
   title?: string;
 }
 

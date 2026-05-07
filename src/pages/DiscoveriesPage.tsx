@@ -13,7 +13,7 @@ import { parseNumber } from '../utils/ExplorerUtils';
 
 const MINER_LINK_STATE = { backLabel: 'Back to Discoveries' } as const;
 const getMinerHref = (miner: MinerStats) =>
-  `/miners/details?githubId=${miner.githubId}&mode=issues`;
+  `/miners/details?githubId=${miner.githubId}&mode=issues&tab=open-issues`;
 
 const DiscoveriesPage: React.FC = () => {
   const allMinerStatsQuery = useAllMiners();
@@ -110,6 +110,17 @@ const DiscoveriesPage: React.FC = () => {
           >
             Miners earn discovery rewards by filing quality issues that others
             solve via merged PRs. Rewarded separately from OSS contributions.
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: '0.8rem',
+              color: (t) => alpha(t.palette.text.primary, 0.5),
+              lineHeight: 1.6,
+            }}
+          >
+            Open a miner, switch to Issue Discovery, then use the Open issues
+            tab to see open discovery-indexed issues grouped by repository (plus
+            a GitHub search link for everything you have opened publicly).
           </Typography>
           <Box sx={{ width: '100%' }}>
             <TopMinersTable

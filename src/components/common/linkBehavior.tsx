@@ -26,24 +26,34 @@ export const useLinkBehavior = <E extends Element = HTMLElement>(
   href: string,
   options: {
     state?: LinkState;
+    replace?: boolean;
     onClick?: (e: React.MouseEvent<E>) => void;
+    target?: string;
   } = {},
 ) => {
   const navigate = useNavigate();
-  const { state, onClick } = options;
+  const { state, replace, onClick, target } = options;
+  const isExternal = target === '_blank' || /^https?:\/\//i.test(href);
 
   const handleClick = useCallback(
     (e: React.MouseEvent<E>) => {
       onClick?.(e);
       if (e.defaultPrevented) return;
       if (isModifiedEvent(e)) return;
+      if (isExternal) return; // let the native <a> open in new tab
       e.preventDefault();
-      navigate(href, { state });
+      navigate(href, { state, replace });
     },
-    [href, state, navigate, onClick],
+    [href, state, replace, navigate, onClick, isExternal],
   );
 
-  return { href, onClick: handleClick } as const;
+  return {
+    href,
+    onClick: handleClick,
+    ...(isExternal
+      ? { target: target ?? '_blank', rel: 'noopener noreferrer' }
+      : {}),
+  } as const;
 };
 
 const mergeSx = (base: SxProps<Theme>, extra: SxProps<Theme> | undefined) =>
@@ -56,6 +66,8 @@ const mergeSx = (base: SxProps<Theme>, extra: SxProps<Theme> | undefined) =>
 type LinkProps = {
   href: string;
   linkState?: LinkState;
+  /** When true, navigation replaces the current history entry instead of pushing. */
+  replace?: boolean;
 };
 
 /**
@@ -63,9 +75,10 @@ type LinkProps = {
  * Drop-in replacement for any `<Box onClick={() => navigate(...)}>` row.
  */
 export const LinkBox = forwardRef<HTMLAnchorElement, BoxProps & LinkProps>(
-  ({ href, linkState, sx, ...rest }, ref) => {
+  ({ href, linkState, replace, sx, ...rest }, ref) => {
     const linkProps = useLinkBehavior<HTMLAnchorElement>(href, {
       state: linkState,
+      replace,
     });
     return (
       <Box

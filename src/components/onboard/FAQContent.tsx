@@ -11,7 +11,7 @@ export const FAQContent: React.FC = () => (
       width: '100%',
     }}
   >
-    <Stack gap={{ xs: 2, sm: 3 }} sx={{ maxWidth: 900, width: '100%' }}>
+    <Stack gap={{ xs: 2, sm: 3 }} sx={{ width: '100%', maxWidth: '100%' }}>
       <FAQ
         question="What is an incentive mechanism?"
         answer="A set of rules, guidelines, and restrictions on how to judge, score, and rank a group of contestants. The goal usually to elicit or influence a specific behavior or outcome. In the Bittensor ecosystem, this is the foundation of a subnet."

@@ -19,7 +19,6 @@ import { STATUS_COLORS } from '../../theme';
 import { formatDistanceToNow } from 'date-fns';
 import FolderIcon from '@mui/icons-material/Folder';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
-// import TextSnippetIcon from "@mui/icons-material/TextSnippet"; // Unused
 import CodeViewer from './CodeViewer';
 import { buildFileTree, type FileNode } from './FileExplorer';
 
