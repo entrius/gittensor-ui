@@ -830,15 +830,15 @@ const IssuesList: React.FC<IssuesListProps> = ({
   } as const;
 
   const filterChips = (
-    <Stack
-      direction="row"
-      spacing={1}
-      alignItems="center"
-      flexWrap="wrap"
-      useFlexGap
-      sx={{ rowGap: 0.75 }}
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+        gap: 1,
+      }}
     >
       <FilterButton
+        fullWidth
         label="All"
         isActive={filterType === 'all'}
         onClick={() => handleFilterChange('all')}
@@ -846,6 +846,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         color={theme.palette.status.neutral}
       />
       <FilterButton
+        fullWidth
         label="Available"
         isActive={filterType === 'available'}
         onClick={() => handleFilterChange('available')}
@@ -853,6 +854,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         color={theme.palette.status.merged}
       />
       <FilterButton
+        fullWidth
         label="Pending"
         isActive={filterType === 'pending'}
         onClick={() => handleFilterChange('pending')}
@@ -860,13 +862,14 @@ const IssuesList: React.FC<IssuesListProps> = ({
         color={theme.palette.status.warning}
       />
       <FilterButton
+        fullWidth
         label="History"
         isActive={filterType === 'history'}
         onClick={() => handleFilterChange('history')}
         count={counts.history}
         color={theme.palette.status.neutral}
       />
-    </Stack>
+    </Box>
   );
 
   const chartToggleButton = (
