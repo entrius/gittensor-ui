@@ -186,9 +186,9 @@ const plainSegs = (content: string): WordDiffSeg[] => [
 ];
 
 // Operates on already-parsed files so PRFileDiffViewer can parse once and
-// share the result with the minimap.
+// share the result with the minimap. Caller must ensure `files` has at least
+// one entry — the no-patch case is short-circuited at the parent.
 const buildDiffRows = (files: DiffFile[]): DiffRow[] => {
-  if (!files || files.length === 0) return [];
   const rows: DiffRow[] = [];
 
   files[0].chunks.forEach((chunk) => {
@@ -605,12 +605,10 @@ const NO_WRAP_CONTENT_SX = {
 };
 
 // Split View Component
-const SplitDiffView: React.FC<{ files: DiffFile[]; lineWrap: boolean }> = ({
-  files,
+const SplitDiffView: React.FC<{ rows: DiffRow[]; lineWrap: boolean }> = ({
+  rows,
   lineWrap,
 }) => {
-  const rows = useMemo(() => buildDiffRows(files), [files]);
-
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
   const isSyncingLeftScroll = useRef(false);
@@ -828,12 +826,10 @@ const UNIFIED_NUMBER_SX = {
 };
 
 // Unified View Component
-const UnifiedDiffView: React.FC<{ files: DiffFile[]; lineWrap: boolean }> = ({
-  files,
+const UnifiedDiffView: React.FC<{ rows: DiffRow[]; lineWrap: boolean }> = ({
+  rows,
   lineWrap,
 }) => {
-  const rows = useMemo(() => buildDiffRows(files), [files]);
-
   if (rows.length === 0) return null;
 
   return (
@@ -1118,10 +1114,13 @@ const PRFileDiffViewer: React.FC<{
   viewMode: 'unified' | 'split';
   lineWrap: boolean;
 }> = ({ file, viewMode, lineWrap }) => {
-  const parsedDiff = useMemo(
-    () => (file.patch ? parseDiff(file.patch) : []),
-    [file.patch],
-  );
+  // Parse once and derive view rows in the same memo so flipping the
+  // Split/Unified toggle doesn't re-run buildDiffRows.
+  const { parsedDiff, rows } = useMemo(() => {
+    if (!file.patch) return { parsedDiff: [], rows: [] };
+    const parsed = parseDiff(file.patch);
+    return { parsedDiff: parsed, rows: buildDiffRows(parsed) };
+  }, [file.patch]);
 
   const { copied, copy, liveRegion } = useClipboardCopy({
     copiedMessage: 'File path copied to clipboard',
@@ -1304,9 +1303,9 @@ const PRFileDiffViewer: React.FC<{
             }}
           >
             {viewMode === 'unified' ? (
-              <UnifiedDiffView files={parsedDiff} lineWrap={lineWrap} />
+              <UnifiedDiffView rows={rows} lineWrap={lineWrap} />
             ) : (
-              <SplitDiffView files={parsedDiff} lineWrap={lineWrap} />
+              <SplitDiffView rows={rows} lineWrap={lineWrap} />
             )}
           </Box>
 
