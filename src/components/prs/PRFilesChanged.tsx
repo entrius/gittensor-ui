@@ -94,6 +94,9 @@ const addedLineBackground = alpha(DIFF_COLORS.additions, 0.15);
 const deletedLineBackground = alpha(DIFF_COLORS.deletions, 0.15);
 const unchangedFileColor = alpha(STATUS_COLORS.open, 0.5);
 
+const stripDiffMarker = (s: string): string =>
+  s.startsWith('+') || s.startsWith('-') ? s.slice(1) : s;
+
 const buildFullTree = (
   allFilesParams: { path: string; type: 'blob' | 'tree' }[],
   changedFiles: PRFile[],
@@ -139,8 +142,6 @@ const buildFullTree = (
           path: currentPath,
           children: {},
           type: isLast ? 'blob' : 'tree',
-          // If it's a folder being created, we mark it changes?
-          // Actually change count will update below.
         };
       }
 
@@ -148,10 +149,9 @@ const buildFullTree = (
       node.hasChanges = true;
       node.changeCount = (node.changeCount || 0) + 1;
 
-      // If it's the actual file, attach the PRFile data
       if (isLast) {
         node.file = file;
-        node.type = 'blob'; // Ensure type is blob
+        node.type = 'blob';
       }
       currentLevel = node.children;
     });
@@ -329,12 +329,10 @@ const FileTreeItem: React.FC<{
 };
 
 // Split View Component
-const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
-  patch,
+const SplitDiffView: React.FC<{ files: DiffFile[]; lineWrap: boolean }> = ({
+  files,
   lineWrap,
 }) => {
-  const files = useMemo(() => parseDiff(patch), [patch]);
-
   // Scroll Synchronization Refs
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
@@ -474,12 +472,7 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                       lineHeight: 1.5,
                     }}
                   >
-                    {row.left
-                      ? row.left.content.startsWith('-') ||
-                        row.left.content.startsWith('+')
-                        ? row.left.content.substring(1)
-                        : row.left.content
-                      : ''}
+                    {row.left ? stripDiffMarker(row.left.content) : ''}
                   </TableCell>
                   <TableCell
                     sx={{
@@ -521,12 +514,7 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                       lineHeight: 1.5,
                     }}
                   >
-                    {row.right
-                      ? row.right.content.startsWith('+') ||
-                        row.right.content.startsWith('-')
-                        ? row.right.content.substring(1)
-                        : row.right.content
-                      : ''}
+                    {row.right ? stripDiffMarker(row.right.content) : ''}
                   </TableCell>
                 </TableRow>
               );
@@ -683,12 +671,7 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                     width: 'auto',
                   }}
                 >
-                  {item
-                    ? item.content.startsWith('+') ||
-                      item.content.startsWith('-')
-                      ? item.content.substring(1)
-                      : item.content
-                    : ''}
+                  {item ? stripDiffMarker(item.content) : ''}
                 </TableCell>
               </TableRow>
             );
@@ -715,12 +698,10 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
 };
 
 // Unified View Component
-const UnifiedDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
-  patch,
+const UnifiedDiffView: React.FC<{ files: DiffFile[]; lineWrap: boolean }> = ({
+  files,
   lineWrap,
 }) => {
-  const files = useMemo(() => parseDiff(patch), [patch]);
-
   if (!files || files.length === 0) return null;
 
   const rows: (Change | { type: 'chunk-header'; content: string })[] = [];
@@ -853,10 +834,7 @@ const UnifiedDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                     width: '100%',
                   }}
                 >
-                  {change.content.startsWith('+') ||
-                  change.content.startsWith('-')
-                    ? change.content.substring(1)
-                    : change.content}
+                  {stripDiffMarker(change.content)}
                 </TableCell>
               </TableRow>
             );
@@ -1070,21 +1048,15 @@ const DiffMinimap: React.FC<{
   );
 };
 
-// Updated SplitDiffView to accept parsed files if desired, or parse internally.
-// Let's parse inside PRFileRow to share state?
-// For now, let's keep SplitDiffView self-contained but we need to parse for Minimap in parent?
-// Actually, let's just make a new wrapper component for the file content.
-
 const PRFileDiffViewer: React.FC<{
   file: PRFile;
   viewMode: 'unified' | 'split';
   lineWrap: boolean;
 }> = ({ file, viewMode, lineWrap }) => {
-  // Memoize parseDiff result
-  const parsedDiff = useMemo(() => {
-    if (!file.patch) return [];
-    return parseDiff(file.patch);
-  }, [file.patch]);
+  const parsedDiff = useMemo(
+    () => (file.patch ? parseDiff(file.patch) : []),
+    [file.patch],
+  );
 
   const { copied, copy, liveRegion } = useClipboardCopy({
     copiedMessage: 'File path copied to clipboard',
@@ -1267,9 +1239,9 @@ const PRFileDiffViewer: React.FC<{
             }}
           >
             {viewMode === 'unified' ? (
-              <UnifiedDiffView patch={file.patch} lineWrap={lineWrap} />
+              <UnifiedDiffView files={parsedDiff} lineWrap={lineWrap} />
             ) : (
-              <SplitDiffView patch={file.patch} lineWrap={lineWrap} />
+              <SplitDiffView files={parsedDiff} lineWrap={lineWrap} />
             )}
           </Box>
 
@@ -1299,6 +1271,7 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'unified' | 'split'>('split');
   const [lineWrap, setLineWrap] = useState(false);
+  const [showOnlyChanged, setShowOnlyChanged] = useState(true);
 
   // ... existing useEffect ... (keep it)
   useEffect(() => {
@@ -1325,12 +1298,9 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
             'Failed to fetch full tree, falling back to sparse tree',
             treeErr,
           );
-          setFullTreeData(
-            changedFiles.map((f: PRFile) => ({
-              path: f.filename,
-              type: 'blob' as const,
-            })),
-          );
+          // Empty source → buildFullTree's overlay pass creates nodes for
+          // changed files only (same shape as the "Only Changed" toggle).
+          setFullTreeData([]);
         }
       } catch (err: unknown) {
         console.error('Failed to fetch PR data', err);
@@ -1345,9 +1315,11 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
     }
   }, [repository, pullRequestNumber, headSha]);
 
+  // When "Only Changed" is on, skip the full repo tree — buildFullTree's
+  // overlay pass creates nodes for the changed files itself.
   const fileTree = useMemo(
-    () => buildFullTree(fullTreeData, files),
-    [fullTreeData, files],
+    () => buildFullTree(showOnlyChanged ? [] : fullTreeData, files),
+    [fullTreeData, files, showOnlyChanged],
   );
 
   const handleFileSelect = (file: PRFile) => {
@@ -1452,6 +1424,29 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
                   }}
                 >
                   Wrap Lines
+                </Typography>
+              }
+              sx={{ m: 0 }}
+            />
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={showOnlyChanged}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setShowOnlyChanged(e.target.checked)
+                  }
+                  size="small"
+                />
+              }
+              label={
+                <Typography
+                  sx={{
+                    fontSize: '0.75rem',
+                    color: 'status.open',
+                  }}
+                >
+                  Only Changed
                 </Typography>
               }
               sx={{ m: 0 }}
