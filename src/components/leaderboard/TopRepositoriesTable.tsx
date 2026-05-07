@@ -118,8 +118,6 @@ const VALID_CHART_METRIC_KEYS = new Set<ChartMetricKey>(
   CHART_METRIC_OPTIONS.map((o) => o.value),
 );
 
-const CHART_TOP_N = 10;
-
 interface ChartCandidate {
   weight?: number;
   totalScore?: number;
@@ -419,9 +417,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     return [...filteredRepositories]
       .filter((r) => valueOf(r) > 0)
       .sort((a, b) => valueOf(b) - valueOf(a))
-      .slice(0, CHART_TOP_N)
+      .slice(0, rowsPerPage)
       .map((r, i) => ({ ...r, rank: i + 1 }));
-  }, [filteredRepositories, chartMetricKey]);
+  }, [filteredRepositories, chartMetricKey, rowsPerPage]);
 
   const getChartOption = () => {
     const chartData = chartTopRepositories;
@@ -444,37 +442,37 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       }
     > = {
       weight: {
-        title: `Top ${CHART_TOP_N} Repositories by Weight`,
+        title: `Top ${rowsPerPage} Repositories by Weight`,
         yAxis: 'Weight',
         value: (r) => r.weight || 0,
       },
       totalScore: {
-        title: `Top ${CHART_TOP_N} Repositories by OSS Score`,
+        title: `Top ${rowsPerPage} Repositories by OSS Score`,
         yAxis: 'OSS score',
         value: (r) => r.totalScore || 0,
       },
       totalPRs: {
-        title: `Top ${CHART_TOP_N} Repositories by PR Count`,
+        title: `Top ${rowsPerPage} Repositories by PR Count`,
         yAxis: 'PRs',
         value: (r) => r.totalPRs || 0,
       },
       contributors: {
-        title: `Top ${CHART_TOP_N} Repositories by OSS Contributors`,
+        title: `Top ${rowsPerPage} Repositories by OSS Contributors`,
         yAxis: 'Contributors',
         value: (r) => r.uniqueMiners?.size || 0,
       },
       discoveryScore: {
-        title: `Top ${CHART_TOP_N} Repositories by Issue Score`,
+        title: `Top ${rowsPerPage} Repositories by Issue Score`,
         yAxis: 'Issue score',
         value: (r) => r.discoveryScore || 0,
       },
       discoveryIssues: {
-        title: `Top ${CHART_TOP_N} Repositories by Issue Count`,
+        title: `Top ${rowsPerPage} Repositories by Issue Count`,
         yAxis: 'Issues',
         value: (r) => r.discoveryIssues || 0,
       },
       discoveryContributors: {
-        title: `Top ${CHART_TOP_N} Repositories by Issue Contributors`,
+        title: `Top ${rowsPerPage} Repositories by Issue Contributors`,
         yAxis: 'Contributors',
         value: (r) => r.discoveryContributors?.size || 0,
       },
