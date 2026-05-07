@@ -74,6 +74,7 @@ import type { IssueBounty } from '../api/models/Issues';
 import { usePrices } from '../hooks/usePrices';
 import { BountyCard } from '../components/issues/BountyCard';
 import { mapAllMinersToStats } from '../utils/minerMapper';
+import { buildRepoDiscoveryRollupFromMiners } from '../utils/ExplorerUtils';
 import {
   useWatchlist,
   useWatchlistCounts,
@@ -100,7 +101,10 @@ import theme, {
   scrollbarSx,
 } from '../theme';
 import FilterButton from '../components/FilterButton';
-import { getRepositoryOwnerAvatarBackground } from '../components/leaderboard/types';
+import {
+  FONTS,
+  getRepositoryOwnerAvatarBackground,
+} from '../components/leaderboard/types';
 
 const TAB_ORDER: readonly WatchlistCategory[] = [
   'miners',
@@ -643,6 +647,7 @@ const WatchlistOptionsSidebarPanelContent: React.FC<
   Omit<WatchlistOptionsButtonProps, 'hasActiveFilter'>
 > = ({
   filterContent,
+  sortContent,
   extraContent,
   searchValue,
   searchPlaceholder,
@@ -655,6 +660,13 @@ const WatchlistOptionsSidebarPanelContent: React.FC<
       <OptionsLabel>Filter</OptionsLabel>
       {filterContent}
     </Box>
+
+    {sortContent != null ? (
+      <Box>
+        <OptionsLabel>Sort</OptionsLabel>
+        {sortContent}
+      </Box>
+    ) : null}
 
     {/* Search */}
     <Box>
@@ -701,6 +713,8 @@ const WatchlistOptionsSidebarPanelContent: React.FC<
 /* ─── WatchlistOptionsButton: reusable compact popover for all watchlist list toolbars ─── */
 interface WatchlistOptionsButtonProps {
   filterContent: React.ReactNode;
+  /** Shown under Filter when set (e.g. repositories card view). */
+  sortContent?: React.ReactNode;
   extraContent?: React.ReactNode;
   searchValue: string;
   searchPlaceholder: string;
@@ -713,6 +727,7 @@ interface WatchlistOptionsButtonProps {
 
 const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
   filterContent,
+  sortContent,
   extraContent,
   searchValue,
   searchPlaceholder,
@@ -809,6 +824,13 @@ const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
           {filterContent}
         </Box>
 
+        {sortContent != null ? (
+          <Box>
+            <OptionsLabel>Sort</OptionsLabel>
+            {sortContent}
+          </Box>
+        ) : null}
+
         {/* Search */}
         <Box>
           <OptionsLabel>Search</OptionsLabel>
@@ -891,6 +913,9 @@ type WatchedRepoStats = Repository & {
   totalScore: number;
   totalPRs: number;
   uniqueMiners: Set<string>;
+  discoveryScore: number;
+  discoveryIssues: number;
+  discoveryContributors: Set<string>;
 };
 
 const isRepoActive = (repo: Repository): boolean => !repo.inactiveAt;
@@ -900,12 +925,119 @@ type RepoStatusFilter = 'all' | 'active' | 'inactive';
 type RepoSortKey =
   | 'name'
   | 'weight'
-  | 'status'
   | 'totalScore'
   | 'totalPRs'
-  | 'contributors';
+  | 'contributors'
+  | 'discoveryScore'
+  | 'discoveryIssues'
+  | 'discoveryContributors';
+
+/** Card-view sort chips (Leaderboard-style); list view sorts via column headers. */
+const WATCHLIST_REPO_CARD_SORT_OPTIONS: Array<{
+  value: RepoSortKey;
+  label: string;
+}> = [
+  { value: 'weight', label: 'Weight' },
+  { value: 'totalScore', label: 'OSS score' },
+  { value: 'totalPRs', label: 'PRs' },
+  { value: 'contributors', label: 'OSS contributors' },
+  { value: 'discoveryScore', label: 'Issue score' },
+  { value: 'discoveryIssues', label: 'Issues' },
+  { value: 'discoveryContributors', label: 'Issue contributors' },
+];
+
+const WatchlistRepoCardSortPills: React.FC<{
+  sortField: RepoSortKey;
+  sortOrder: 'asc' | 'desc';
+  onSortChange: (key: RepoSortKey) => void;
+}> = ({ sortField, sortOrder, onSortChange }) => (
+  <Box
+    sx={{
+      display: 'flex',
+      gap: 0.5,
+      flexWrap: 'wrap',
+      justifyContent: 'flex-start',
+    }}
+  >
+    {WATCHLIST_REPO_CARD_SORT_OPTIONS.map((opt) => {
+      const isActive = sortField === opt.value;
+      return (
+        <Box
+          key={opt.value}
+          component="button"
+          type="button"
+          onClick={() => onSortChange(opt.value)}
+          sx={(t) => ({
+            px: 1.5,
+            minHeight: 32,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            borderRadius: 2,
+            cursor: 'pointer',
+            font: 'inherit',
+            backgroundColor: isActive
+              ? alpha(t.palette.text.primary, 0.1)
+              : 'transparent',
+            color: isActive ? t.palette.text.primary : STATUS_COLORS.open,
+            border: '1px solid',
+            borderColor: isActive ? t.palette.border.medium : 'transparent',
+            transition: 'all 0.2s',
+            '&:hover': {
+              backgroundColor: t.palette.surface.light,
+              color: t.palette.text.primary,
+            },
+            '&:focus-visible': {
+              outline: `2px solid ${t.palette.status.info}`,
+              outlineOffset: 2,
+            },
+          })}
+        >
+          <Typography
+            sx={{
+              fontFamily: FONTS.mono,
+              fontSize: '0.75rem',
+              fontWeight: 600,
+            }}
+          >
+            {opt.label}
+          </Typography>
+          {isActive && (
+            <Typography
+              component="span"
+              sx={{ fontSize: '0.7rem', opacity: 0.7 }}
+            >
+              {sortOrder === 'asc' ? '▲' : '▼'}
+            </Typography>
+          )}
+        </Box>
+      );
+    })}
+  </Box>
+);
 
 const repoCellSx = { py: 1.5 } as const;
+
+/** Narrow stacked header for metric columns (avoids cramped TableSortLabel overlap). */
+const repoHeaderStack = (
+  lines: [string, string],
+): NonNullable<DataTableColumn<WatchedRepoStats, RepoSortKey>['header']> => (
+  <Box
+    sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-end',
+      gap: 0.125,
+      lineHeight: 1.15,
+      width: '100%',
+      boxSizing: 'border-box',
+      pr: 0.25,
+    }}
+  >
+    <Box component="span">{lines[0]}</Box>
+    <Box component="span">{lines[1]}</Box>
+  </Box>
+);
 
 const repoStatusMeta = (repo: Repository) => {
   const active = isRepoActive(repo);
@@ -922,7 +1054,7 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   {
     key: 'name',
     header: 'Repository',
-    width: '32%',
+    width: '20%',
     sortKey: 'name',
     cellSx: repoCellSx,
     renderCell: (repo) => (
@@ -955,7 +1087,7 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   {
     key: 'weight',
     header: 'Weight',
-    width: '100px',
+    width: '78px',
     align: 'right',
     sortKey: 'weight',
     cellSx: repoCellSx,
@@ -967,10 +1099,17 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   },
   {
     key: 'totalScore',
-    header: 'Total Score',
-    width: '110px',
+    header: repoHeaderStack(['OSS', 'score']),
+    width: '86px',
     align: 'right',
     sortKey: 'totalScore',
+    headerSx: {
+      verticalAlign: 'bottom',
+      whiteSpace: 'normal',
+      py: 1,
+      minWidth: 86,
+      overflow: 'visible',
+    },
     cellSx: repoCellSx,
     renderCell: (repo) => (
       <Typography
@@ -987,7 +1126,7 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   {
     key: 'totalPRs',
     header: 'PRs',
-    width: '70px',
+    width: '52px',
     align: 'right',
     sortKey: 'totalPRs',
     cellSx: repoCellSx,
@@ -1005,10 +1144,18 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   },
   {
     key: 'contributors',
-    header: 'Contributors',
-    width: '110px',
+    header: repoHeaderStack(['OSS', 'contributors']),
+    width: '80px',
     align: 'right',
     sortKey: 'contributors',
+    headerSx: {
+      verticalAlign: 'bottom',
+      whiteSpace: 'normal',
+      py: 1,
+      minWidth: 80,
+      overflow: 'visible',
+      textOverflow: 'clip',
+    },
     cellSx: repoCellSx,
     renderCell: (repo) => (
       <Typography
@@ -1023,27 +1170,83 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
     ),
   },
   {
-    key: 'status',
-    header: 'Status',
-    width: '110px',
-    align: 'center',
-    sortKey: 'status',
-    cellSx: repoCellSx,
-    renderCell: (repo) => {
-      const { label, color } = repoStatusMeta(repo);
-      return (
-        <Chip
-          variant="status"
-          label={label}
-          sx={{ color, borderColor: color }}
-        />
-      );
+    key: 'discoveryScore',
+    header: repoHeaderStack(['Issue', 'score']),
+    width: '76px',
+    align: 'right',
+    sortKey: 'discoveryScore',
+    headerSx: {
+      verticalAlign: 'bottom',
+      whiteSpace: 'normal',
+      py: 1,
+      minWidth: 76,
+      overflow: 'visible',
     },
+    cellSx: repoCellSx,
+    renderCell: (repo) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color: repo.discoveryScore > 0 ? 'text.primary' : 'text.secondary',
+        }}
+      >
+        {formatRepoMetric(repo.discoveryScore, 2)}
+      </Typography>
+    ),
+  },
+  {
+    key: 'discoveryIssues',
+    header: 'Issues',
+    width: '62px',
+    align: 'right',
+    sortKey: 'discoveryIssues',
+    cellSx: repoCellSx,
+    renderCell: (repo) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color: repo.discoveryIssues > 0 ? 'text.primary' : 'text.secondary',
+        }}
+      >
+        {formatRepoMetric(repo.discoveryIssues)}
+      </Typography>
+    ),
+  },
+  {
+    key: 'discoveryContributors',
+    header: repoHeaderStack(['Issue', 'contributors']),
+    width: '92px',
+    align: 'right',
+    sortKey: 'discoveryContributors',
+    headerSx: {
+      verticalAlign: 'bottom',
+      whiteSpace: 'normal',
+      py: 1,
+      minWidth: 92,
+      overflow: 'visible',
+    },
+    cellSx: repoCellSx,
+    renderCell: (repo) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color:
+            repo.discoveryContributors.size > 0
+              ? 'text.primary'
+              : 'text.secondary',
+        }}
+      >
+        {formatRepoMetric(repo.discoveryContributors.size)}
+      </Typography>
+    ),
   },
   {
     key: 'watch',
     header: '\u2605',
-    width: '52px',
+    width: '42px',
     align: 'center',
     cellSx: { p: 0 },
     renderCell: (repo) => (
@@ -1307,24 +1510,49 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
         </Box>
       </Box>
 
-      {/* Metrics grid */}
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: '1.4fr 0.6fr 1fr',
-          gap: 1.5,
-          pt: 0.5,
-        }}
-      >
-        <RepoMetricCell
-          label="Total Score"
-          value={formatRepoMetric(repo.totalScore, 2)}
-        />
-        <RepoMetricCell label="PRs" value={formatRepoMetric(repo.totalPRs)} />
-        <RepoMetricCell
-          label="Contributors"
-          value={formatRepoMetric(repo.uniqueMiners.size)}
-        />
+      {/* OSS + Issue discovery metrics — two rows separated by a subtle divider */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', pt: 0.5 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: 1.5,
+          }}
+        >
+          <RepoMetricCell
+            label="OSS Score"
+            value={formatRepoMetric(repo.totalScore, 2)}
+          />
+          <RepoMetricCell label="PRs" value={formatRepoMetric(repo.totalPRs)} />
+          <RepoMetricCell
+            label="Contributors"
+            value={formatRepoMetric(repo.uniqueMiners.size)}
+          />
+        </Box>
+        <Box
+          sx={(theme) => ({
+            borderTop: '1px solid',
+            borderColor: theme.palette.border.subtle,
+            mt: 1.25,
+            pt: 1.25,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: 1.5,
+          })}
+        >
+          <RepoMetricCell
+            label="Issue score"
+            value={formatRepoMetric(repo.discoveryScore, 2)}
+          />
+          <RepoMetricCell
+            label="Issues"
+            value={formatRepoMetric(repo.discoveryIssues)}
+          />
+          <RepoMetricCell
+            label="Contributors"
+            value={formatRepoMetric(repo.discoveryContributors.size)}
+          />
+        </Box>
       </Box>
     </Card>
   );
@@ -1335,6 +1563,7 @@ const ROWS_PER_PAGE = 50;
 const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: repos } = useReposAndWeights();
   const { data: allPrs } = useAllPrs();
+  const { data: allMiners } = useAllMiners();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<RepoStatusFilter>('all');
   const [viewMode, setViewMode] = useWatchlistViewMode();
@@ -1369,10 +1598,14 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       string,
       { totalScore: number; totalPRs: number; uniqueMiners: Set<string> }
     >();
+    const discoveryByRepo = buildRepoDiscoveryRollupFromMiners(
+      allPrs,
+      allMiners,
+    );
     if (allPrs) {
       allPrs.forEach((pr: CommitLog) => {
         if (!pr?.repository) return;
-        if (!pr.mergedAt) return;
+        if (!isMergedPr(pr)) return;
         const key = pr.repository.toLowerCase();
         const cur = prStatsMap.get(key) || {
           totalScore: 0,
@@ -1389,28 +1622,35 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     return repos
       .filter((r) => set.has(r.fullName.toLowerCase()))
       .map((r) => {
-        const s = prStatsMap.get(r.fullName.toLowerCase());
+        const key = r.fullName.toLowerCase();
+        const s = prStatsMap.get(key);
+        const d = discoveryByRepo.get(key);
         return {
           ...r,
           totalScore: s?.totalScore || 0,
           totalPRs: s?.totalPRs || 0,
           uniqueMiners: s?.uniqueMiners || new Set<string>(),
+          discoveryScore: d?.discoveryScore ?? 0,
+          discoveryIssues: d?.discoveryIssues ?? 0,
+          discoveryContributors: d?.discoveryContributors ?? new Set<string>(),
         };
       });
-  }, [repos, allPrs, itemKeys]);
+  }, [repos, allPrs, allMiners, itemKeys]);
 
-  const counts = useMemo(
-    () => ({
-      all: items.length,
-      active: items.filter(isRepoActive).length,
-      inactive: items.filter((r) => !isRepoActive(r)).length,
-    }),
-    [items],
-  );
+  const counts = useMemo(() => {
+    let active = 0;
+    let inactive = 0;
+    for (const r of items) {
+      if (isRepoActive(r)) active++;
+      else inactive++;
+    }
+    return { all: items.length, active, inactive };
+  }, [items]);
 
   const filtered = useMemo(() => {
     let result = items;
-    if (statusFilter === 'active') result = result.filter(isRepoActive);
+    if (statusFilter === 'active')
+      result = result.filter((r) => isRepoActive(r));
     else if (statusFilter === 'inactive')
       result = result.filter((r) => !isRepoActive(r));
 
@@ -1433,14 +1673,21 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             parseFloat(String(a.weight)),
             parseFloat(String(b.weight)),
           );
-        case 'status':
-          return cmpNum(isRepoActive(a) ? 1 : 0, isRepoActive(b) ? 1 : 0);
         case 'totalScore':
           return cmpNum(a.totalScore, b.totalScore);
         case 'totalPRs':
           return cmpNum(a.totalPRs, b.totalPRs);
         case 'contributors':
           return cmpNum(a.uniqueMiners.size, b.uniqueMiners.size);
+        case 'discoveryScore':
+          return cmpNum(a.discoveryScore, b.discoveryScore);
+        case 'discoveryIssues':
+          return cmpNum(a.discoveryIssues, b.discoveryIssues);
+        case 'discoveryContributors':
+          return cmpNum(
+            a.discoveryContributors.size,
+            b.discoveryContributors.size,
+          );
         default:
           return 0;
       }
@@ -1646,6 +1893,15 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             />
           </Box>
         }
+        sortContent={
+          viewMode === 'cards' ? (
+            <WatchlistRepoCardSortPills
+              sortField={sortField}
+              sortOrder={sortOrder}
+              onSortChange={handleSort}
+            />
+          ) : undefined
+        }
         extraContent={
           <>
             <Box>
@@ -1744,7 +2000,14 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           getRowKey={(repo) => repo.fullName}
           getRowHref={getRepoHref}
           linkState={{ backLabel: 'Back to Watchlist' }}
-          minWidth="900px"
+          getRowSx={(repo) =>
+            isRepoActive(repo)
+              ? {}
+              : {
+                  opacity: 0.5,
+                }
+          }
+          minWidth="1180px"
           stickyHeader
           emptyLabel="No watched repositories found."
           sort={{
