@@ -187,7 +187,15 @@ const RepositoryDetailsPage: React.FC = () => {
               alignItems="center"
             >
               <Grid item xs={12} md={8}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                    flexWrap: 'wrap',
+                    rowGap: 1,
+                  }}
+                >
                   <Avatar
                     src={getRepositoryOwnerAvatarSrc(owner)}
                     variant="rounded"
