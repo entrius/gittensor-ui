@@ -29,7 +29,7 @@ import { DataTable, type DataTableColumn } from '../common/DataTable';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
 import {
-  selectMinerIssueScanRepos,
+  selectMinerIssueScanRepoSummary,
   useMinerRepositoriesOpenIssues,
 } from '../../hooks/useMinerRepositoriesOpenIssues';
 import { type RepositoryIssue } from '../../api/models/Miner';
@@ -238,7 +238,11 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
   const [otherPage, setOtherPage] = useState(0);
   const [otherExpanded, setOtherExpanded] = useState(false);
 
-  const scanRepos = useMemo(() => selectMinerIssueScanRepos(prs), [prs]);
+  const scanRepoSummary = useMemo(
+    () => selectMinerIssueScanRepoSummary(prs),
+    [prs],
+  );
+  const scanRepos = scanRepoSummary.repos;
   const login = githubProfile?.login ?? '';
 
   const {
@@ -997,10 +1001,10 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         ) : null}
       </Alert>
 
-      {prs.length > repoFetchLimit ? (
+      {scanRepoSummary.totalRepos > repoFetchLimit ? (
         <Typography variant="caption" color="text.secondary">
-          You have PRs in more than {repoFetchLimit} repositories; only the most
-          active {repoFetchLimit} are scanned here to limit load.
+          You have more than {repoFetchLimit} repositories with scored PRs; only
+          the most active {repoFetchLimit} are scanned here to limit load.
         </Typography>
       ) : null}
 

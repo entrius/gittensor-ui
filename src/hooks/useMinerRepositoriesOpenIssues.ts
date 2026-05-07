@@ -23,8 +23,10 @@ const fetchRepositoryIssues = async (
  * Repositories where the miner has scored PR activity, ordered by most recent
  * PR timestamp (merged or created), capped for parallel fetch limits.
  */
-export const selectMinerIssueScanRepos = (prs: CommitLog[] | undefined) => {
-  if (!prs?.length) return [];
+export const selectMinerIssueScanRepoSummary = (
+  prs: CommitLog[] | undefined,
+) => {
+  if (!prs?.length) return { repos: [], totalRepos: 0 };
   const latest = new Map<string, number>();
   prs.forEach((pr) => {
     const raw = pr.mergedAt || pr.prCreatedAt;
@@ -32,11 +34,16 @@ export const selectMinerIssueScanRepos = (prs: CommitLog[] | undefined) => {
     const prev = latest.get(pr.repository) ?? 0;
     if (t >= prev) latest.set(pr.repository, t);
   });
-  return [...latest.entries()]
+  const repos = [...latest.entries()]
     .sort((a, b) => b[1] - a[1])
     .map(([repo]) => repo)
     .slice(0, REPO_FETCH_LIMIT);
+
+  return { repos, totalRepos: latest.size };
 };
+
+export const selectMinerIssueScanRepos = (prs: CommitLog[] | undefined) =>
+  selectMinerIssueScanRepoSummary(prs).repos;
 
 /**
  * Parallel fetch of `/repos/{repo}/issues` for each repository in `repos`.
