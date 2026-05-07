@@ -94,6 +94,55 @@ type SortColumn =
 type SortDirection = 'asc' | 'desc';
 type ViewMode = RepositoriesViewMode;
 
+/** Chart-friendly metrics (excludes purely-display columns like rank/watch). */
+type ChartMetricKey =
+  | 'weight'
+  | 'totalScore'
+  | 'totalPRs'
+  | 'contributors'
+  | 'discoveryScore'
+  | 'discoveryIssues'
+  | 'discoveryContributors';
+
+const CHART_METRIC_OPTIONS: Array<{ value: ChartMetricKey; label: string }> = [
+  { value: 'totalScore', label: 'OSS Score' },
+  { value: 'totalPRs', label: 'PRs' },
+  { value: 'contributors', label: 'OSS Contributors' },
+  { value: 'discoveryIssues', label: 'Issues' },
+  { value: 'discoveryScore', label: 'Issue Score' },
+  { value: 'discoveryContributors', label: 'Issue Contributors' },
+  { value: 'weight', label: 'Weight' },
+];
+
+const VALID_CHART_METRIC_KEYS = new Set<ChartMetricKey>(
+  CHART_METRIC_OPTIONS.map((o) => o.value),
+);
+
+const CHART_TOP_N = 10;
+
+interface ChartCandidate {
+  weight?: number;
+  totalScore?: number;
+  totalPRs?: number;
+  uniqueMiners?: Set<string>;
+  discoveryScore?: number;
+  discoveryIssues?: number;
+  discoveryContributors?: Set<string>;
+}
+
+const CHART_METRIC_VALUE: Record<
+  ChartMetricKey,
+  (r: ChartCandidate) => number
+> = {
+  weight: (r) => r.weight || 0,
+  totalScore: (r) => r.totalScore || 0,
+  totalPRs: (r) => r.totalPRs || 0,
+  contributors: (r) => r.uniqueMiners?.size || 0,
+  discoveryScore: (r) => r.discoveryScore || 0,
+  discoveryIssues: (r) => r.discoveryIssues || 0,
+  discoveryContributors: (r) => r.discoveryContributors?.size || 0,
+};
+
 /** Card sort: classic metrics + Issues; issue score/contrib. sort via list headers / URL. */
 const CARD_SORT_OPTIONS: Array<{ value: SortColumn; label: string }> = [
   { value: 'weight', label: 'Weight' },
@@ -183,6 +232,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     urlDir === 'asc' || urlDir === 'desc' ? urlDir : 'desc',
   );
   const [useLogScale, setUseLogScale] = useState(true);
+  const [chartMetricKey, setChartMetricKey] = useState<ChartMetricKey>(() => {
+    return VALID_CHART_METRIC_KEYS.has(sortColumn as ChartMetricKey)
+      ? (sortColumn as ChartMetricKey)
+      : 'totalScore';
+  });
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [storedViewMode, setStoredViewMode] = useState<ViewMode>(
     readStoredRepositoriesViewMode,
@@ -358,8 +412,19 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     [filteredRepositories, page, rowsPerPage],
   );
 
+  /* Chart shows the top N repos for the chosen metric (independent of the
+     table's sort/pagination), but still respects status + search filters. */
+  const chartTopRepositories = useMemo(() => {
+    const valueOf = CHART_METRIC_VALUE[chartMetricKey];
+    return [...filteredRepositories]
+      .filter((r) => valueOf(r) > 0)
+      .sort((a, b) => valueOf(b) - valueOf(a))
+      .slice(0, CHART_TOP_N)
+      .map((r, i) => ({ ...r, rank: i + 1 }));
+  }, [filteredRepositories, chartMetricKey]);
+
   const getChartOption = () => {
-    const chartData = pagedRepositories;
+    const chartData = chartTopRepositories;
     const white = UI_COLORS.white;
     const borderSubtle = alpha(white, 0.08);
     const surfaceSubtle = alpha(white, 0.02);
@@ -379,37 +444,37 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       }
     > = {
       weight: {
-        title: 'Repository Weights',
+        title: `Top ${CHART_TOP_N} Repositories by Weight`,
         yAxis: 'Weight',
         value: (r) => r.weight || 0,
       },
       totalScore: {
-        title: 'OSS score by repository',
+        title: `Top ${CHART_TOP_N} Repositories by OSS Score`,
         yAxis: 'OSS score',
         value: (r) => r.totalScore || 0,
       },
       totalPRs: {
-        title: 'Pull Requests by Repository',
+        title: `Top ${CHART_TOP_N} Repositories by PR Count`,
         yAxis: 'PRs',
         value: (r) => r.totalPRs || 0,
       },
       contributors: {
-        title: 'OSS contributors by repository',
+        title: `Top ${CHART_TOP_N} Repositories by OSS Contributors`,
         yAxis: 'Contributors',
         value: (r) => r.uniqueMiners?.size || 0,
       },
       discoveryScore: {
-        title: 'Issue score by repository',
+        title: `Top ${CHART_TOP_N} Repositories by Issue Score`,
         yAxis: 'Issue score',
         value: (r) => r.discoveryScore || 0,
       },
       discoveryIssues: {
-        title: 'Issues by repository',
+        title: `Top ${CHART_TOP_N} Repositories by Issue Count`,
         yAxis: 'Issues',
         value: (r) => r.discoveryIssues || 0,
       },
       discoveryContributors: {
-        title: 'Issue contributors by repository',
+        title: `Top ${CHART_TOP_N} Repositories by Issue Contributors`,
         yAxis: 'Contributors',
         value: (r) => r.discoveryContributors?.size || 0,
       },
@@ -429,14 +494,14 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         value: (r) => r.totalScore || 0,
       },
     };
-    const metric = chartMetric[sortColumn] ?? chartMetric.totalScore;
+    const metric = chartMetric[chartMetricKey] ?? chartMetric.totalScore;
     const effectiveLogScale =
       useLogScale &&
-      sortColumn !== 'weight' &&
-      sortColumn !== 'totalPRs' &&
-      sortColumn !== 'contributors' &&
-      sortColumn !== 'discoveryIssues' &&
-      sortColumn !== 'discoveryContributors';
+      chartMetricKey !== 'weight' &&
+      chartMetricKey !== 'totalPRs' &&
+      chartMetricKey !== 'contributors' &&
+      chartMetricKey !== 'discoveryIssues' &&
+      chartMetricKey !== 'discoveryContributors';
 
     const barGradient = {
       type: 'linear',
@@ -480,7 +545,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       title: echartsBarChartTitle(
         theme,
         metric.title,
-        'Values match the current table sort and page',
+        'Top repositories ranked by the selected metric',
       ),
       tooltip: {
         trigger: 'axis',
@@ -1134,6 +1199,46 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             </Tooltip>
 
             {showChart && (
+              <FormControl size="small">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: 'text.secondary',
+                      fontSize: '0.8rem',
+                    }}
+                  >
+                    Chart:
+                  </Typography>
+                  <Select
+                    value={chartMetricKey}
+                    onChange={(e) =>
+                      setChartMetricKey(e.target.value as ChartMetricKey)
+                    }
+                    sx={{
+                      color: 'text.primary',
+                      backgroundColor: 'background.default',
+                      fontSize: '0.8rem',
+                      height: '36px',
+                      borderRadius: 2,
+                      minWidth: '160px',
+                      '& fieldset': { borderColor: 'border.light' },
+                      '&:hover fieldset': { borderColor: 'border.medium' },
+                      '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                      '& .MuiSelect-select': { py: 0.75 },
+                    }}
+                  >
+                    {CHART_METRIC_OPTIONS.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </Box>
+              </FormControl>
+            )}
+
+            {showChart && (
               <FormControlLabel
                 control={
                   <Switch
@@ -1327,7 +1432,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             backgroundColor: 'surface.subtle',
           }}
         >
-          {showChart && filteredRepositories.length > 0 && (
+          {showChart && chartTopRepositories.length > 0 && (
             <ReactECharts
               option={getChartOption()}
               style={{ height: '100%', width: '100%' }}
