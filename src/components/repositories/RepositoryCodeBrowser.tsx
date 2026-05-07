@@ -20,7 +20,7 @@ import { formatDistanceToNow } from 'date-fns';
 import FolderIcon from '@mui/icons-material/Folder';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import CodeViewer from './CodeViewer';
-import { buildFileTree, type FileNode } from './FileExplorer';
+import { buildFileTree, type FileNode } from './fileTree';
 
 interface RepositoryCodeBrowserProps {
   repositoryFullName: string;
