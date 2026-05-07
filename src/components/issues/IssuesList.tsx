@@ -1,13 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
+  Avatar,
   Box,
   Card,
+  Chip,
   Collapse,
   FormControl,
   Grid,
   IconButton,
   InputAdornment,
+  Link,
   MenuItem,
   Select,
   Skeleton,
@@ -20,6 +23,7 @@ import {
   useTheme,
 } from '@mui/material';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SearchIcon from '@mui/icons-material/Search';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ViewListIcon from '@mui/icons-material/ViewList';
@@ -28,22 +32,17 @@ import ReactECharts from 'echarts-for-react';
 import { format } from 'date-fns';
 import { IssueBounty } from '../../api/models/Issues';
 import { usePrices } from '../../hooks/usePrices';
-import { formatDate } from '../../utils/format';
+import {
+  formatAlphaToUsd,
+  formatDate,
+  formatTokenAmount,
+} from '../../utils/format';
+import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
+import { WatchlistButton } from '../common/WatchlistButton';
 import BountyProgress from './BountyProgress';
 import FilterButton from '../FilterButton';
-import {
-  getIssueSortValue,
-  issueBountyColumn,
-  issueRepositoryColumn,
-  issueStatusColumn,
-  issueTitleColumn,
-  issueWatchColumn,
-  parseBountyAmount,
-  sortIssues,
-  type IssueSortBasis,
-} from './issueColumns';
 import { BountyCard } from './BountyCard';
 import {
   type IssuesViewMode,
@@ -69,19 +68,55 @@ type SortKey =
   | 'funding'
   | 'solver'
   | 'date';
+type IssueSortBasis = 'repository' | 'issue' | 'bounty' | 'status';
+
+const parseBountyAmount = (value: string | null | undefined): number => {
+  const parsed = Number.parseFloat(value ?? '0');
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getIssueSortValue = (
+  issue: IssueBounty,
+  basis: IssueSortBasis,
+): number | string => {
+  switch (basis) {
+    case 'repository':
+      return (issue.repositoryFullName || '').toLowerCase();
+    case 'issue':
+      return `${(issue.title || '').toLowerCase()}::${String(issue.issueNumber).padStart(10, '0')}`;
+    case 'bounty':
+      return parseBountyAmount(issue.targetBounty);
+    case 'status':
+      return getIssueStatusMeta(issue.status).text;
+  }
+};
+
+const sortIssues = <Row, Key extends string>(
+  rows: Row[],
+  getValue: (row: Row, key: Key) => number | string,
+  key: Key,
+  order: 'asc' | 'desc',
+): Row[] => {
+  const directionFactor = order === 'asc' ? 1 : -1;
+  const collator = new Intl.Collator(undefined, {
+    sensitivity: 'base',
+    numeric: true,
+  });
+  const decorated = rows.map((row) => ({ row, value: getValue(row, key) }));
+  decorated.sort((a, b) => {
+    if (typeof a.value === 'number' && typeof b.value === 'number') {
+      return (a.value - b.value) * directionFactor;
+    }
+    return collator.compare(String(a.value), String(b.value)) * directionFactor;
+  });
+  return decorated.map((d) => d.row);
+};
 
 interface IssuesListProps {
   issues: IssueBounty[];
   isLoading?: boolean;
   getIssueHref?: (id: number) => string;
   linkState?: Record<string, unknown>;
-  /** Hide the built-in toolbar (search, filter chips, view toggle). The
-   * caller is expected to render its own controls and drive state via the
-   * controlled props below. */
-  hideToolbar?: boolean;
-  /** Controlled search. When provided, the parent owns the search value. */
-  searchQuery?: string;
-  onSearchQueryChange?: (value: string) => void;
 }
 
 const truncateAddress = (address: string | null): string => {
@@ -159,9 +194,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
   isLoading = false,
   getIssueHref,
   linkState,
-  hideToolbar = false,
-  searchQuery: controlledSearchQuery,
-  onSearchQueryChange,
 }) => {
   const theme = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -190,9 +222,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
     viewMode === 'cards' ? ISSUES_DEFAULT_CARD_ROWS : ISSUES_DEFAULT_LIST_ROWS,
   );
   const [page, setPage] = useState(0);
-  const [internalSearchQuery, setInternalSearchQuery] = useState('');
-  const searchQuery = controlledSearchQuery ?? internalSearchQuery;
-  const setSearchQuery = onSearchQueryChange ?? setInternalSearchQuery;
+  const [searchQuery, setSearchQuery] = useState('');
   const [showChart, setShowChart] = useState(false);
 
   const { taoPrice, alphaPrice } = usePrices();
@@ -533,29 +563,173 @@ const IssuesList: React.FC<IssuesListProps> = ({
       },
     };
 
-    const common = [
-      idColumn,
-      issueRepositoryColumn<SortKey>('repository'),
-      issueTitleColumn<SortKey>('issue', theme),
-    ];
+    const repositoryColumn: DataTableColumn<IssueBounty, SortKey> = {
+      key: 'repository',
+      header: 'Repository',
+      width: '200px',
+      sortKey: 'repository',
+      cellSx: { overflow: 'hidden' },
+      renderCell: (issue) => (
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}
+        >
+          <Avatar
+            src={`https://avatars.githubusercontent.com/${issue.repositoryFullName.split('/')[0]}`}
+            sx={{ width: 24, height: 24, borderRadius: 1, flexShrink: 0 }}
+          />
+          <Typography
+            sx={{
+              fontSize: '0.85rem',
+              color: STATUS_COLORS.info,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {issue.repositoryFullName}
+          </Typography>
+        </Box>
+      ),
+    };
+
+    const titleColumn: DataTableColumn<IssueBounty, SortKey> = {
+      key: 'issue',
+      header: 'Issue',
+      sortKey: 'issue',
+      renderCell: (issue) => (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          {issue.title && (
+            <Typography
+              sx={{
+                fontSize: '0.85rem',
+                color: 'text.primary',
+                fontWeight: 500,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {issue.title}
+            </Typography>
+          )}
+          <Link
+            href={issue.githubUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              fontSize: '0.75rem',
+              color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+              textDecoration: 'none',
+              '&:hover': {
+                color: STATUS_COLORS.info,
+                textDecoration: 'underline',
+              },
+            }}
+          >
+            #{issue.issueNumber}
+            <OpenInNewIcon sx={{ fontSize: 12, opacity: 0.5 }} />
+          </Link>
+        </Box>
+      ),
+    };
+
+    const buildBountyColumn = (opts: {
+      label: string;
+      width?: string;
+      color?: string | ((issue: IssueBounty) => string);
+    }): DataTableColumn<IssueBounty, SortKey> => ({
+      key: 'bounty',
+      header: opts.label,
+      width: opts.width,
+      align: 'right',
+      sortKey: 'bounty',
+      renderCell: (issue) => {
+        const usdDisplay = formatAlphaToUsd(
+          issue.targetBounty,
+          taoPrice,
+          alphaPrice,
+        );
+        const color =
+          (typeof opts.color === 'function' ? opts.color(issue) : opts.color) ??
+          STATUS_COLORS.merged;
+        return (
+          <>
+            <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color }}>
+              {formatTokenAmount(issue.targetBounty)} ل
+            </Typography>
+            {usdDisplay && (
+              <Typography
+                sx={{
+                  fontSize: '0.7rem',
+                  color: alpha(theme.palette.common.white, 0.35),
+                }}
+              >
+                {usdDisplay}
+              </Typography>
+            )}
+          </>
+        );
+      },
+    });
+
+    const statusColumn: DataTableColumn<IssueBounty, SortKey> = {
+      key: 'status',
+      header: 'Status',
+      width: '110px',
+      align: 'center',
+      sortKey: 'status',
+      renderCell: (issue) => {
+        const statusBadge = getIssueStatusMeta(issue.status);
+        return (
+          <Chip
+            label={statusBadge.text}
+            size="small"
+            sx={{
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              backgroundColor: statusBadge.bgColor,
+              color: statusBadge.color,
+              border: `1px solid ${statusBadge.color}40`,
+            }}
+          />
+        );
+      },
+    };
+
+    const watchColumn: DataTableColumn<IssueBounty, SortKey> = {
+      key: 'watch',
+      header: '★',
+      width: '52px',
+      align: 'center',
+      cellSx: { p: 0 },
+      renderCell: (issue) => (
+        <WatchlistButton category="bounties" itemKey={String(issue.id)} />
+      ),
+    };
+
+    const common = [idColumn, repositoryColumn, titleColumn];
 
     if (filterType === 'pending') {
       return [
         ...common,
-        issueBountyColumn<SortKey>('bounty', taoPrice, alphaPrice, theme, {
+        buildBountyColumn({
           label: 'Target Bounty',
           width: '140px',
           color: STATUS_COLORS.award,
         }),
         fundingColumn,
-        issueStatusColumn<SortKey>('status', '110px'),
-        issueWatchColumn<SortKey>(),
+        statusColumn,
+        watchColumn,
       ];
     }
     if (filterType === 'history') {
       return [
         ...common,
-        issueBountyColumn<SortKey>('bounty', taoPrice, alphaPrice, theme, {
+        buildBountyColumn({
           label: 'Payout',
           width: '120px',
           color: (issue) =>
@@ -564,19 +738,19 @@ const IssuesList: React.FC<IssuesListProps> = ({
               : alpha(theme.palette.common.white, TEXT_OPACITY.muted),
         }),
         solverColumn,
-        issueStatusColumn<SortKey>('status', '110px'),
+        statusColumn,
         dateColumn,
-        issueWatchColumn<SortKey>(),
+        watchColumn,
       ];
     }
     return [
       ...common,
-      issueBountyColumn<SortKey>('bounty', taoPrice, alphaPrice, theme, {
+      buildBountyColumn({
         label: 'Bounty',
         width: '120px',
       }),
-      issueStatusColumn<SortKey>('status', '110px'),
-      issueWatchColumn<SortKey>(),
+      statusColumn,
+      watchColumn,
     ];
   }, [filterType, theme, taoPrice, alphaPrice]);
 
@@ -835,7 +1009,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
   return (
     <Card sx={cardSx} elevation={0}>
-      {!hideToolbar && toolbar}
+      {toolbar}
 
       {viewMode === 'cards' ? (
         <>
@@ -889,5 +1063,4 @@ const IssuesList: React.FC<IssuesListProps> = ({
   );
 };
 
-export { ViewModeToggle };
 export default IssuesList;
