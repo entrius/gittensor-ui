@@ -69,67 +69,28 @@ const openPrColor = (open: number, threshold: number) => {
 /**
  * Resolve mode-specific earnings from a miner record.
  *
- * Priority order (highest → lowest):
- *  1. Explicit per-program API fields (ossUsdPerDay / issueUsdPerDay).
- *     Partial presence is supported — if only one side is explicit, the other
- *     falls through to score-proportional splitting.
- *  2. Score-proportional split of combined usdPerDay / lifetimeUsd.
- *  3. Zero-score fallback: OSS receives the full combined amount; issues show $0.
+ * Uses a score-proportional split of the combined usdPerDay / lifetimeUsd:
+ *  - OSS-track (prs): fraction = totalScore / (totalScore + issueDiscoveryScore)
+ *  - Issue-track:     fraction = issueDiscoveryScore / (totalScore + issueDiscoveryScore)
+ *  - Zero-score fallback: OSS receives the full combined amount; issues show $0.
  *
- * Returns `isEstimated: true` whenever the value is derived rather than an
- * explicit API figure, so callers can render a visual approximation indicator.
+ * Returns `isEstimated: true` so callers can render a visual approximation indicator.
  */
 const resolveEarnings = (
   miner: MinerEvaluation,
   mode: 'prs' | 'issues',
-): { usdPerDay: number; lifetimeUsd: number; isEstimated: boolean; tooltipNote: string } => {
+): {
+  usdPerDay: number;
+  lifetimeUsd: number;
+  isEstimated: boolean;
+  tooltipNote: string;
+} => {
   const combinedUsd = miner.usdPerDay ?? 0;
   const combinedLife = miner.lifetimeUsd ?? 0;
 
-  const hasExplicitOss =
-    miner.ossUsdPerDay != null && Number.isFinite(Number(miner.ossUsdPerDay));
-  const hasExplicitIssue =
-    miner.issueUsdPerDay != null && Number.isFinite(Number(miner.issueUsdPerDay));
-
-  // Both sides explicit — return directly, no estimation needed.
-  if (hasExplicitOss && hasExplicitIssue) {
-    if (mode === 'prs') {
-      return {
-        usdPerDay: Number(miner.ossUsdPerDay),
-        lifetimeUsd: Number(miner.ossLifetimeUsd ?? 0),
-        isEstimated: false,
-        tooltipNote: '',
-      };
-    }
-    return {
-      usdPerDay: Number(miner.issueUsdPerDay),
-      lifetimeUsd: Number(miner.issueLifetimeUsd ?? 0),
-      isEstimated: false,
-      tooltipNote: '',
-    };
-  }
-
-  // One side is explicit — use it directly; split the remainder for the other.
   const ossScore = Math.max(0, parseNumber(miner.totalScore));
   const issueScore = Math.max(0, parseNumber(miner.issueDiscoveryScore));
   const sum = ossScore + issueScore;
-
-  if (hasExplicitOss && mode === 'prs') {
-    return {
-      usdPerDay: Number(miner.ossUsdPerDay),
-      lifetimeUsd: Number(miner.ossLifetimeUsd ?? 0),
-      isEstimated: false,
-      tooltipNote: '',
-    };
-  }
-  if (hasExplicitIssue && mode === 'issues') {
-    return {
-      usdPerDay: Number(miner.issueUsdPerDay),
-      lifetimeUsd: Number(miner.issueLifetimeUsd ?? 0),
-      isEstimated: false,
-      tooltipNote: '',
-    };
-  }
 
   // Score-proportional split fallback.
   if (sum <= 0) {
@@ -139,14 +100,16 @@ const resolveEarnings = (
         usdPerDay: 0,
         lifetimeUsd: 0,
         isEstimated: true,
-        tooltipNote: 'No issue discovery score yet; issue-track earnings shown as zero.',
+        tooltipNote:
+          'No issue discovery score yet; issue-track earnings shown as zero.',
       };
     }
     return {
       usdPerDay: combinedUsd,
       lifetimeUsd: combinedLife,
       isEstimated: true,
-      tooltipNote: 'No score data to split earnings; showing combined estimate.',
+      tooltipNote:
+        'No score data to split earnings; showing combined estimate.',
     };
   }
 
