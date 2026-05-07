@@ -424,8 +424,6 @@ const RepositoryContributorsTable: React.FC<
               sx={{
                 px: { xs: 0.6, sm: 1 },
                 py: { xs: 0.6, sm: 0.65 },
-                px: 0.5,
-                py: 0.65,
                 border: 0,
                 borderRadius: 1.5,
                 cursor: 'pointer',
