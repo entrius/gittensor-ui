@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 
-import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
+import { Avatar, Box, Button, Card, Tooltip, Typography } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
-import { LinkBox } from '../components/common/linkBehavior';
+import { LinkBox, useLinkBehavior } from '../components/common/linkBehavior';
 import { Page } from '../components/layout';
 import { TopRepositoriesTable, SEO } from '../components';
 import { useAllPrs, useAllMiners, useReposAndWeights } from '../api';
@@ -123,6 +124,10 @@ const getPrHref = (name: string, number: number) =>
   `/miners/pr?repo=${encodeURIComponent(name)}&number=${number}`;
 
 const RepositoriesPage: React.FC = () => {
+  const registerRepoLink = useLinkBehavior<HTMLAnchorElement>(
+    '/repository-registration',
+  );
+
   const formatRelativeTime = (date: Date) => {
     const now = new Date();
     if (date > now) return 'just now';
@@ -611,6 +616,65 @@ const RepositoriesPage: React.FC = () => {
               </>
             ) : null}
           </Card>
+        </Box>
+
+        {/* ── Register-a-repo CTA ───────────────────────────────────── */}
+        <Box
+          sx={(theme) => ({
+            mb: 3,
+            p: { xs: 2, sm: 2.5 },
+            borderRadius: 2,
+            border: `1px solid ${theme.palette.border.light}`,
+            backgroundColor: theme.palette.surface.transparent,
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            justifyContent: 'space-between',
+            gap: 2,
+          })}
+        >
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              sx={(theme) => ({
+                fontFamily: FONTS.mono,
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                color: theme.palette.text.primary,
+                mb: 0.5,
+              })}
+            >
+              Don&apos;t see your repository?
+            </Typography>
+            <Typography
+              sx={(theme) => ({
+                fontSize: '0.78rem',
+                color: theme.palette.text.secondary,
+                lineHeight: 1.5,
+              })}
+            >
+              Maintainers can register a repo to be added to the network.
+            </Typography>
+          </Box>
+          <Button
+            component="a"
+            {...registerRepoLink}
+            variant="contained"
+            endIcon={<ArrowForwardIcon />}
+            sx={(theme) => ({
+              flexShrink: 0,
+              minHeight: 40,
+              borderRadius: 1.5,
+              backgroundColor: theme.palette.status.merged,
+              color: theme.palette.common.black,
+              textTransform: 'none',
+              fontWeight: 800,
+              '&:hover': {
+                backgroundColor: alpha(theme.palette.status.merged, 0.9),
+              },
+            })}
+          >
+            Register a repo
+          </Button>
         </Box>
 
         {/* ── Main Table ────────────────────────────────────────────── */}
