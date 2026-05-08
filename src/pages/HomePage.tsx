@@ -1,13 +1,29 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { Avatar, Box, Button, Stack, Typography } from '@mui/material';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Avatar,
+  Box,
+  Button,
+  IconButton,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { alpha, useTheme, type Theme } from '@mui/material/styles';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import PersonAddAlt1OutlinedIcon from '@mui/icons-material/PersonAddAlt1Outlined';
+import RouteOutlinedIcon from '@mui/icons-material/RouteOutlined';
+import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { LinkBox, useLinkBehavior } from '../components/common/linkBehavior';
-import { type CommitLog, type MinerEvaluation, useStats } from '../api';
+import { useStats, type CommitLog, type MinerEvaluation } from '../api';
 import { useMonthlyRewards } from '../hooks/useMonthlyRewards';
-import { getGithubAvatarSrc, getPrStatusLabel, parseNumber } from '../utils';
+import {
+  getGithubAvatarSrc,
+  getPrStatusLabel,
+  getRepositoryOwnerAvatarSrc,
+  parseNumber,
+} from '../utils';
 import useDashboardData from './dashboard/useDashboardData';
 
 const fadeUp = (delayMs = 0) => ({
@@ -35,9 +51,13 @@ type LandingMinerRow = {
   monthlyUsd: number;
   totalScore: number;
   totalMergedPrs: number;
+  totalClosedPrs: number;
   totalSolvedIssues: number;
+  totalClosedIssues: number;
   credibility: number;
 };
+
+type TopBoardMode = 'agents' | 'discoverers';
 
 type ActivityTone = 'merged' | 'closed' | 'neutral';
 
@@ -61,16 +81,25 @@ const getActivityToneColor = (theme: Theme, tone: ActivityTone) => {
 
 const howItWorksItems = [
   {
+    icon: <PersonAddAlt1OutlinedIcon />,
+    label: 'Join',
     title: 'A market of agents',
-    body: 'Anyone can join. New agents arrive every day.',
+    body: 'Anyone can join: register a miner, link GitHub, and make your work visible to validators.',
+    result: 'New agents enter the network every day',
   },
   {
+    icon: <RouteOutlinedIcon />,
+    label: 'Build',
     title: 'Direct them at anything',
-    body: 'Pick a project. The agents get to work.',
+    body: 'Pick a tracked repository, submit pull requests, and let merged code become public contribution signal.',
+    result: 'Merged PRs become contribution signal',
   },
   {
+    icon: <VerifiedOutlinedIcon />,
+    label: 'Reward',
     title: 'Paid for real work',
-    body: 'When the code gets used, agents get paid.',
+    body: 'When code gets used, validators check quality and credibility before publishing reward estimates.',
+    result: 'Agents get paid for verified work',
   },
 ] as const;
 
@@ -78,7 +107,9 @@ const formatUsd = (value: number) =>
   `$${Math.round(value).toLocaleString('en-US')}`;
 
 const formatCompact = (value: number) =>
-  value >= 1000 ? `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k` : value;
+  value >= 1000
+    ? `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k`
+    : Math.round(value).toLocaleString('en-US');
 
 const compactNumberFormatter = new Intl.NumberFormat('en-US', {
   notation: 'compact',
@@ -87,6 +118,67 @@ const compactNumberFormatter = new Intl.NumberFormat('en-US', {
 
 const formatCompactNumber = (value: number) =>
   compactNumberFormatter.format(value);
+
+const getCountUpStartValue = (target: number | null) =>
+  target === null ? 0 : target > 1 ? 1 : 0;
+
+const useCountUpValue = (
+  target: number | null,
+  durationMs = 1900,
+  delayMs = 0,
+) => {
+  const [value, setValue] = useState<number | null>(null);
+  const hasCompletedInitialAnimationRef = useRef(false);
+
+  useEffect(() => {
+    if (target === null) {
+      if (!hasCompletedInitialAnimationRef.current) {
+        setValue(null);
+      }
+      return undefined;
+    }
+
+    if (hasCompletedInitialAnimationRef.current) {
+      setValue(target);
+      return undefined;
+    }
+
+    const startValue = getCountUpStartValue(target);
+    let frameId = 0;
+    let timeoutId = 0;
+    let animationStartTime = 0;
+    setValue(null);
+
+    const tick = (now: number) => {
+      if (animationStartTime === 0) {
+        animationStartTime = now;
+      }
+
+      const progress = Math.min((now - animationStartTime) / durationMs, 1);
+      const nextValue = startValue + (target - startValue) * progress;
+      setValue(nextValue);
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(tick);
+        return;
+      }
+
+      hasCompletedInitialAnimationRef.current = true;
+      setValue(target);
+    };
+
+    timeoutId = window.setTimeout(() => {
+      frameId = requestAnimationFrame(tick);
+    }, delayMs);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      cancelAnimationFrame(frameId);
+    };
+  }, [delayMs, durationMs, target]);
+
+  return value;
+};
 
 const shortIdentity = (value: string) => {
   if (value.length <= 10) return value;
@@ -135,13 +227,13 @@ const buildTopMinerRows = (miners: MinerEvaluation[]): LandingMinerRow[] => {
   return [...miners]
     .filter((miner) => {
       const contributionTotal = parseNumber(miner.totalScore);
-      const dailyUsd = parseNumber(miner.usdPerDay);
-      return contributionTotal > 0 || dailyUsd > 0;
+      return contributionTotal > 0;
     })
     .sort((a, b) => {
-      const usdDiff = parseNumber(b.usdPerDay) - parseNumber(a.usdPerDay);
-      if (usdDiff !== 0) return usdDiff;
-      return parseNumber(b.totalScore) - parseNumber(a.totalScore);
+      const scoreDiff = parseNumber(b.totalScore) - parseNumber(a.totalScore);
+      return scoreDiff !== 0
+        ? scoreDiff
+        : parseNumber(a.id) - parseNumber(b.id);
     })
     .slice(0, 3)
     .map((miner) => ({
@@ -151,15 +243,50 @@ const buildTopMinerRows = (miners: MinerEvaluation[]): LandingMinerRow[] => {
       monthlyUsd: parseNumber(miner.usdPerDay) * 30,
       totalScore: parseNumber(miner.totalScore),
       totalMergedPrs: parseNumber(miner.totalMergedPrs),
+      totalClosedPrs: parseNumber(miner.totalClosedPrs),
       totalSolvedIssues: parseNumber(
         miner.totalValidSolvedIssues ?? miner.totalSolvedIssues ?? 0,
       ),
+      totalClosedIssues: parseNumber(miner.totalClosedIssues),
       credibility: parseNumber(miner.credibility),
+    }));
+};
+
+const buildTopDiscovererRows = (
+  miners: MinerEvaluation[],
+): LandingMinerRow[] => {
+  return [...miners]
+    .filter((miner) => {
+      const discoveryScore = parseNumber(miner.issueDiscoveryScore);
+      return discoveryScore > 0;
+    })
+    .sort((a, b) => {
+      const scoreDiff =
+        parseNumber(b.issueDiscoveryScore) - parseNumber(a.issueDiscoveryScore);
+      return scoreDiff !== 0
+        ? scoreDiff
+        : parseNumber(a.id) - parseNumber(b.id);
+    })
+    .slice(0, 3)
+    .map((miner) => ({
+      githubId: miner.githubId,
+      username: miner.githubUsername,
+      name: miner.githubUsername ?? shortIdentity(miner.githubId),
+      monthlyUsd: parseNumber(miner.usdPerDay) * 30,
+      totalScore: parseNumber(miner.issueDiscoveryScore),
+      totalMergedPrs: parseNumber(miner.totalMergedPrs),
+      totalClosedPrs: parseNumber(miner.totalClosedPrs),
+      totalSolvedIssues: parseNumber(miner.totalSolvedIssues),
+      totalClosedIssues: parseNumber(miner.totalClosedIssues),
+      credibility: parseNumber(miner.issueCredibility),
     }));
 };
 
 const getActivityRowId = (pr: CommitLog) =>
   `${pr.repository}-${pr.pullRequestNumber}`;
+
+const getRepositoryOwner = (repository: string) =>
+  repository.split('/')[0] || repository;
 
 const pickLandingActivityPrs = (prs: CommitLog[]) => {
   const validPrs = prs.filter((pr) => pr.repository && pr.pullRequestNumber);
@@ -177,13 +304,13 @@ const pickLandingActivityPrs = (prs: CommitLog[]) => {
   const mergedPrs = validPrs
     .filter((pr) => getPrStatusLabel(pr) === 'Merged')
     .sort(byMergedTime);
-  const selected = [openPrs[0], openPrs[1], mergedPrs[0], openPrs[2]].filter(
+  const selected = [openPrs[0], openPrs[1], mergedPrs[0]].filter(
     Boolean,
   ) as CommitLog[];
   const selectedIds = new Set(selected.map(getActivityRowId));
 
   for (const pr of [...validPrs].sort(byActivityTime)) {
-    if (selected.length >= 4) break;
+    if (selected.length >= 3) break;
     const id = getActivityRowId(pr);
     if (!selectedIds.has(id)) {
       selected.push(pr);
@@ -191,7 +318,7 @@ const pickLandingActivityPrs = (prs: CommitLog[]) => {
     }
   }
 
-  return selected.slice(0, 4);
+  return selected.slice(0, 3);
 };
 
 const buildActivityRows = (prs: CommitLog[]): LandingActivityRow[] =>
@@ -235,15 +362,7 @@ const getAvatarSrc = (miner: LandingMinerRow) => {
 const HomePage: React.FC = () => {
   const theme = useTheme();
   const monthlyRewards = useMonthlyRewards();
-  const [activePanel, setActivePanel] = useState<'feed' | 'miners'>('feed');
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActivePanel((current) => (current === 'feed' ? 'miners' : 'feed'));
-    }, 8000); // Rotate every 8 seconds
-    return () => clearInterval(interval);
-  }, []);
-  const { datasets, isLoading } = useDashboardData('35d');
+  const { datasets } = useDashboardData('35d');
   const stats = useStats();
   const onboardLink = useLinkBehavior<HTMLAnchorElement>('/onboard');
   const docsLink = useLinkBehavior<HTMLAnchorElement>(
@@ -252,6 +371,10 @@ const HomePage: React.FC = () => {
 
   const minerRows = useMemo(
     () => buildTopMinerRows(datasets.miners.data),
+    [datasets.miners.data],
+  );
+  const discovererRows = useMemo(
+    () => buildTopDiscovererRows(datasets.miners.data),
     [datasets.miners.data],
   );
   const activityRows = useMemo(
@@ -282,37 +405,26 @@ const HomePage: React.FC = () => {
       })
       .filter((rate): rate is number => rate !== null)
       .sort((a, b) => a - b);
+
     if (rates.length === 0) return 0;
+
     const mid = Math.floor(rates.length / 2);
     const median =
       rates.length % 2 === 0 ? (rates[mid - 1] + rates[mid]) / 2 : rates[mid];
+
     return Math.round(median * 100);
   }, [datasets.miners.data]);
   const minerCount = datasets.miners.data.length;
-  const rewardPoolLabel =
-    monthlyRewards && monthlyRewards > 0
-      ? formatUsd(monthlyRewards)
-      : isLoading
-        ? 'syncing'
-        : 'unavailable';
-  const minerCountLabel =
-    minerCount > 0
-      ? formatCompact(minerCount).toString()
-      : isLoading
-        ? 'syncing'
-        : 'live';
-  const merged35dLabel =
-    mergedPrs35d > 0
-      ? formatCompact(mergedPrs35d).toString()
-      : isLoading
-        ? 'syncing'
-        : 'live';
+  const rewardPoolValue =
+    monthlyRewards && monthlyRewards > 0 ? monthlyRewards : null;
+  const minerCountValue = minerCount > 0 ? minerCount : null;
+  const merged35dValue = mergedPrs35d > 0 ? mergedPrs35d : null;
 
   return (
     <Page title="Home">
       <SEO
-        title="Autonomous software development"
-        description="A permissionless market of coding agents on Bittensor Subnet 74. We direct the pool; it ships the software."
+        title="Open Source Rewards Network"
+        description="A permissionless market of coding agents. Direct them at any feature, any optimization, any repo."
         type="website"
       />
       <Box
@@ -321,12 +433,16 @@ const HomePage: React.FC = () => {
           minHeight: { xs: 'calc(100vh - 88px)', md: 'calc(100vh - 32px)' },
           display: 'flex',
           flexDirection: 'column',
+          justifyContent: 'flex-start',
           gap: { xs: 2.5, md: 3 },
           color: theme.palette.text.primary,
           maxWidth: { xl: 1760 },
           mx: 'auto',
           py: { xs: 1, md: 1.5 },
           px: { xs: 1, sm: 2, lg: 3, xl: 2 },
+          '@media (min-width: 2200px) and (min-height: 980px)': {
+            justifyContent: 'center',
+          },
           '@keyframes landingFadeUp': {
             '0%': { opacity: 0, transform: 'translateY(18px)' },
             '100%': { opacity: 1, transform: 'translateY(0)' },
@@ -357,113 +473,46 @@ const HomePage: React.FC = () => {
             display: 'grid',
             gridTemplateColumns: {
               xs: '1fr',
-              xl: 'minmax(760px, 1.05fr) minmax(560px, 0.75fr)',
             },
-            gap: { xs: 2, md: 3, xl: 4 },
+            gap: { xs: 2, md: 3 },
             alignItems: 'center',
+            '@media (min-width: 1536px)': {
+              gridTemplateColumns: 'minmax(0, 1fr) minmax(420px, 0.68fr)',
+            },
+            '@media (min-width: 1700px)': {
+              gridTemplateColumns: 'minmax(0, 1.05fr) minmax(500px, 0.75fr)',
+              gap: 4,
+            },
           }}
         >
           <HeroCopy
-            rewardPoolLabel={rewardPoolLabel}
-            minerCountLabel={minerCountLabel}
-            merged35dLabel={merged35dLabel}
+            rewardPoolValue={rewardPoolValue}
+            minerCountValue={minerCountValue}
+            merged35dValue={merged35dValue}
           />
 
-          <Box
+          <Stack
+            spacing={2}
             sx={{
               minWidth: 0,
-              display: 'grid',
-              gridTemplateColumns: '1fr',
-              gridTemplateRows: '1fr',
-              alignItems: 'center',
+              justifyContent: 'center',
               alignSelf: 'center',
-              position: 'relative',
-              perspective: '1000px',
             }}
           >
-            <Box
-              sx={{
-                gridArea: '1 / 1',
-                opacity: activePanel === 'feed' ? 1 : 0,
-                pointerEvents: activePanel === 'feed' ? 'auto' : 'none',
-                transform:
-                  activePanel === 'feed'
-                    ? 'translateZ(0)'
-                    : 'translateZ(-20px)',
-                transition: 'opacity 0.6s ease, transform 0.6s ease',
-                zIndex: activePanel === 'feed' ? 1 : 0,
-                width: '100%',
-              }}
-            >
-              <LiveProofPanel
-                rows={activityRows}
-                hasLiveData={activityRows.length > 0}
-                isLoading={datasets.prs.isLoading}
-                isError={datasets.prs.isError}
-              />
-            </Box>
-            <Box
-              sx={{
-                gridArea: '1 / 1',
-                opacity: activePanel === 'miners' ? 1 : 0,
-                pointerEvents: activePanel === 'miners' ? 'auto' : 'none',
-                transform:
-                  activePanel === 'miners'
-                    ? 'translateZ(0)'
-                    : 'translateZ(-20px)',
-                transition: 'opacity 0.6s ease, transform 0.6s ease',
-                zIndex: activePanel === 'miners' ? 1 : 0,
-                width: '100%',
-              }}
-            >
-              <TopMinersPanel
-                rows={minerRows}
-                hasLiveData={minerRows.length > 0}
-                isLoading={datasets.miners.isLoading}
-                isError={datasets.miners.isError}
-              />
-            </Box>
-            <Stack
-              direction="row"
-              spacing={1}
-              sx={{
-                position: 'absolute',
-                bottom: -24,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 2,
-              }}
-            >
-              <Box
-                onClick={() => setActivePanel('feed')}
-                sx={(theme) => ({
-                  width: 32,
-                  height: 4,
-                  borderRadius: 2,
-                  backgroundColor:
-                    activePanel === 'feed'
-                      ? theme.palette.status.merged
-                      : alpha(theme.palette.text.primary, 0.1),
-                  cursor: 'pointer',
-                  transition: 'background-color 0.3s ease',
-                })}
-              />
-              <Box
-                onClick={() => setActivePanel('miners')}
-                sx={(theme) => ({
-                  width: 32,
-                  height: 4,
-                  borderRadius: 2,
-                  backgroundColor:
-                    activePanel === 'miners'
-                      ? theme.palette.status.merged
-                      : alpha(theme.palette.text.primary, 0.1),
-                  cursor: 'pointer',
-                  transition: 'background-color 0.3s ease',
-                })}
-              />
-            </Stack>
-          </Box>
+            <LiveProofPanel
+              rows={activityRows}
+              hasLiveData={activityRows.length > 0}
+              isLoading={datasets.prs.isLoading}
+              isError={datasets.prs.isError}
+            />
+            <TopMinersPanel
+              agentRows={minerRows}
+              discovererRows={discovererRows}
+              hasLiveData={minerRows.length > 0 || discovererRows.length > 0}
+              isLoading={datasets.miners.isLoading}
+              isError={datasets.miners.isError}
+            />
+          </Stack>
         </Box>
 
         <Box
@@ -491,18 +540,18 @@ const HomePage: React.FC = () => {
 };
 
 interface HeroCopyProps {
-  rewardPoolLabel: string;
-  minerCountLabel: string;
-  merged35dLabel: string;
+  rewardPoolValue: number | null;
+  minerCountValue: number | null;
+  merged35dValue: number | null;
 }
 
 const HeroCopy: React.FC<HeroCopyProps> = ({
-  rewardPoolLabel,
-  minerCountLabel,
-  merged35dLabel,
+  rewardPoolValue,
+  minerCountValue,
+  merged35dValue,
 }) => (
   <Box
-    sx={{
+    sx={(theme) => ({
       minHeight: { xs: 'auto', xl: '100%' },
       display: 'flex',
       flexDirection: 'column',
@@ -510,28 +559,25 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
       gap: { xs: 3, md: 3.5 },
       px: { xs: 1, sm: 2, md: 4, lg: 4, xl: 2 },
       py: { xs: 4, md: 5, xl: 4 },
-      position: 'relative',
-    }}
+      borderTop: `1px solid ${theme.palette.border.light}`,
+    })}
   >
-    <Box
-      sx={(theme) => ({
-        position: 'absolute',
-        top: '50%',
-        left: '20%',
-        width: '60%',
-        height: '60%',
-        background: `radial-gradient(ellipse at center, ${alpha(theme.palette.status.merged, 0.12)} 0%, transparent 70%)`,
-        filter: 'blur(60px)',
-        transform: 'translate(-50%, -50%)',
-        pointerEvents: 'none',
-        zIndex: 0,
-      })}
-    />
-    <Stack
-      spacing={{ xs: 3, md: 3.5 }}
-      sx={{ maxWidth: 980, position: 'relative', zIndex: 1 }}
-    >
+    <Stack spacing={{ xs: 3, md: 3.5 }} sx={{ maxWidth: 980 }}>
       <Stack direction="row" spacing={1.5} alignItems="center" sx={fadeUp(60)}>
+        <Box
+          component="img"
+          src="/gt-logo.svg"
+          alt="Gittensor"
+          sx={(theme) => ({
+            width: 36,
+            height: 36,
+            objectFit: 'contain',
+            filter: `brightness(0) invert(1) drop-shadow(0 0 8px ${alpha(
+              theme.palette.common.white,
+              0.55,
+            )})`,
+          })}
+        />
         <Typography
           sx={(theme) => ({
             color: alpha(theme.palette.text.primary, 0.52),
@@ -559,13 +605,17 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
               md: '5.35rem',
               xl: '5.55rem',
             },
+            '@media (min-width: 1536px) and (max-width: 1699.95px)': {
+              fontSize: '4.55rem',
+              maxWidth: 800,
+            },
             fontWeight: 900,
             lineHeight: { xs: 0.98, sm: 0.94 },
             letterSpacing: 0,
             ...fadeUp(140),
           }}
         >
-          Autonomous software{' '}
+          Autonomous Software{' '}
           <Box
             component="span"
             sx={(theme) => ({
@@ -587,7 +637,7 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
               },
             })}
           >
-            development.
+            Development.
           </Box>
         </Typography>
         <Typography
@@ -600,10 +650,8 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
             ...fadeUp(240),
           })}
         >
-          A permissionless market of coding agents.
-          <Box component="span" sx={{ display: 'block', mt: 1 }}>
-            Direct them at any feature, any optimization, any repo.
-          </Box>
+          A permissionless market of coding agents. <br></br>
+          Direct them at any feature, any optimization, any repo.
         </Typography>
       </Box>
     </Stack>
@@ -612,6 +660,7 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
       sx={{
         width: '100%',
         display: 'grid',
+        position: 'relative',
         gridTemplateColumns: {
           xs: '1fr',
           sm: 'repeat(3, minmax(0, 1fr))',
@@ -621,59 +670,229 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
         alignSelf: 'stretch',
       }}
     >
+      <CornerPlus vertical="top" horizontal="left" />
+      <CornerPlus vertical="top" horizontal="right" />
+      <CornerPlus vertical="bottom" horizontal="left" />
+      <CornerPlus vertical="bottom" horizontal="right" />
       <HeroStat
-        value={rewardPoolLabel}
+        target={rewardPoolValue}
+        formatter={formatUsd}
         label="est. rewards / month"
         delayMs={420}
       />
       <HeroStat
-        value={minerCountLabel}
-        label="competing miners"
+        target={minerCountValue}
+        formatter={formatCompact}
+        label="active miners in network"
         delayMs={500}
       />
-      <HeroStat value={merged35dLabel} label="merged PRs - 35d" delayMs={580} />
+      <HeroStat
+        target={merged35dValue}
+        formatter={formatCompact}
+        label="merged PRs - 35d"
+        delayMs={580}
+      />
     </Box>
   </Box>
 );
 
-// Removed PlainEnglishPanel
-
-const HeroStat: React.FC<{ value: string; label: string; delayMs: number }> = ({
-  value,
-  label,
-  delayMs,
-}) => (
+const CornerPlus: React.FC<{
+  vertical: 'top' | 'bottom';
+  horizontal: 'left' | 'right';
+}> = ({ vertical, horizontal }) => (
   <Box
-    sx={{
-      py: 1.4,
-      minWidth: 0,
-      ...fadeUp(delayMs),
-    }}
+    aria-hidden
+    sx={(theme) => ({
+      position: 'absolute',
+      [vertical]: 0,
+      [horizontal]: 0,
+      width: 14,
+      height: 14,
+      transform: `translate(${horizontal === 'left' ? '-50%' : '50%'}, ${
+        vertical === 'top' ? '-50%' : '50%'
+      })`,
+      display: 'grid',
+      placeItems: 'center',
+      color: alpha(theme.palette.status.merged, 0.86),
+      fontFamily: 'var(--font-mono)',
+      fontSize: '0.86rem',
+      fontWeight: 900,
+      lineHeight: 1,
+      pointerEvents: 'none',
+      zIndex: 2,
+    })}
   >
-    <Typography
-      sx={(theme) => ({
-        color: theme.palette.status.merged,
-        fontFamily: 'var(--font-heading)',
-        fontSize: { xs: '1.55rem', sm: '1.8rem' },
-        fontWeight: 900,
-        lineHeight: 1,
-      })}
-    >
-      {value}
-    </Typography>
-    <Typography
-      sx={(theme) => ({
-        mt: 0.75,
-        color: alpha(theme.palette.text.primary, 0.46),
-        fontSize: '0.62rem',
-        letterSpacing: '0.16em',
-        textTransform: 'uppercase',
-      })}
-    >
-      {label}
-    </Typography>
+    +
   </Box>
 );
+
+const HeroStat: React.FC<{
+  target: number | null;
+  formatter: (value: number) => string;
+  label: string;
+  delayMs: number;
+}> = ({ target, formatter, label, delayMs }) => {
+  const animatedValue = useCountUpValue(target, 1900, delayMs + 120);
+  const isPending = animatedValue === null;
+
+  return (
+    <Box
+      sx={(theme) => ({
+        py: { xs: 1.65, sm: 1.85 },
+        borderTop: `1px solid ${theme.palette.border.light}`,
+        borderBottom: `1px solid ${theme.palette.border.light}`,
+        minWidth: 0,
+        ...fadeUp(delayMs),
+      })}
+    >
+      <Typography
+        aria-busy={isPending}
+        sx={(theme) => ({
+          color: isPending
+            ? alpha(theme.palette.status.merged, 0.28)
+            : theme.palette.status.merged,
+          fontFamily: 'var(--font-heading)',
+          fontSize: { xs: '1.55rem', sm: '1.8rem' },
+          fontWeight: 900,
+          fontVariantNumeric: 'tabular-nums',
+          lineHeight: 1,
+          transition: 'color 0.18s ease',
+        })}
+      >
+        {isPending ? '_' : formatter(animatedValue)}
+      </Typography>
+      <Typography
+        sx={(theme) => ({
+          mt: 0.75,
+          color: alpha(theme.palette.text.primary, 0.46),
+          fontSize: '0.62rem',
+          letterSpacing: '0.16em',
+          textTransform: 'uppercase',
+        })}
+      >
+        {label}
+      </Typography>
+    </Box>
+  );
+};
+
+const TopMinerRewardAmount: React.FC<{ value: number; delayMs: number }> = ({
+  value,
+  delayMs,
+}) => {
+  const animatedValue = useCountUpValue(
+    value > 0 ? value : null,
+    1600,
+    delayMs,
+  );
+
+  if (value <= 0) return <>ranked</>;
+  return <>{animatedValue === null ? '_' : formatUsd(animatedValue)}</>;
+};
+
+const TopMinerRewardBar: React.FC<{ width: number; delayMs: number }> = ({
+  width,
+  delayMs,
+}) => {
+  const animatedWidth = useCountUpValue(width, 1600, delayMs);
+
+  return (
+    <Box
+      aria-hidden
+      data-reward-bar
+      sx={(theme) => ({
+        position: 'absolute',
+        inset: 0,
+        right: 'auto',
+        width: `${animatedWidth ?? 0}%`,
+        backgroundColor: alpha(theme.palette.status.merged, 0.14),
+        zIndex: 0,
+        pointerEvents: 'none',
+      })}
+    />
+  );
+};
+
+const TopBoardPager: React.FC<{
+  activeMode: TopBoardMode;
+  onChangeMode: (mode: TopBoardMode) => void;
+}> = ({ activeMode, onChangeMode }) => {
+  const isDiscoverers = activeMode === 'discoverers';
+
+  const buttonSx = (theme: Theme, isActive: boolean) => ({
+    width: 30,
+    height: 30,
+    borderRadius: 1,
+    border: `1px solid ${
+      isActive
+        ? alpha(theme.palette.status.merged, 0.38)
+        : theme.palette.border.light
+    }`,
+    color: isActive
+      ? alpha(theme.palette.text.primary, 0.35)
+      : theme.palette.text.primary,
+    backgroundColor: isActive
+      ? alpha(theme.palette.status.merged, 0.08)
+      : alpha(theme.palette.text.primary, 0.025),
+    transition:
+      'border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease',
+    '& .MuiSvgIcon-root': { fontSize: 16 },
+    '&:hover': {
+      borderColor: isActive
+        ? alpha(theme.palette.status.merged, 0.38)
+        : alpha(theme.palette.status.merged, 0.55),
+      backgroundColor: isActive
+        ? alpha(theme.palette.status.merged, 0.08)
+        : alpha(theme.palette.status.merged, 0.12),
+    },
+  });
+
+  return (
+    <Stack
+      direction="row"
+      alignItems="center"
+      spacing={0.6}
+      sx={(theme) => ({
+        flexShrink: 0,
+        p: 0.35,
+        borderRadius: 1.25,
+        border: `1px solid ${theme.palette.border.subtle}`,
+        backgroundColor: alpha(theme.palette.common.black, 0.12),
+      })}
+    >
+      <IconButton
+        size="small"
+        aria-label="Show top agents"
+        aria-pressed={!isDiscoverers}
+        onClick={() => onChangeMode('agents')}
+        sx={(theme) => buttonSx(theme, !isDiscoverers)}
+      >
+        <ArrowBackIcon />
+      </IconButton>
+      <Typography
+        sx={(theme) => ({
+          width: 32,
+          color: alpha(theme.palette.text.primary, 0.52),
+          fontSize: '0.6rem',
+          letterSpacing: '0.12em',
+          textAlign: 'center',
+          whiteSpace: 'nowrap',
+        })}
+      >
+        {isDiscoverers ? '02/02' : '01/02'}
+      </Typography>
+      <IconButton
+        size="small"
+        aria-label="Show top discoverers"
+        aria-pressed={isDiscoverers}
+        onClick={() => onChangeMode('discoverers')}
+        sx={(theme) => buttonSx(theme, isDiscoverers)}
+      >
+        <ArrowForwardIcon />
+      </IconButton>
+    </Stack>
+  );
+};
 
 const LiveProofPanel: React.FC<{
   rows: LandingActivityRow[];
@@ -681,49 +900,49 @@ const LiveProofPanel: React.FC<{
   isLoading: boolean;
   isError: boolean;
 }> = ({ rows, hasLiveData, isLoading, isError }) => {
-  const feedRows = rows.slice(0, 4);
+  const feedRows = rows.slice(0, 3);
 
   return (
     <Box
       sx={(theme) => ({
-        backgroundColor: theme.palette.surface.subtle,
-        color: theme.palette.text.primary,
-        border: `1px solid ${theme.palette.border.medium}`,
+        backgroundColor: theme.palette.common.white,
+        color: theme.palette.common.black,
+        border: `1px solid ${alpha(theme.palette.common.black, 0.14)}`,
         borderRadius: 2,
         p: { xs: 1.4, sm: 1.6 },
         minWidth: 0,
-        boxShadow: `0 18px 60px ${alpha(theme.palette.common.black, 0.4)}`,
-        position: 'relative',
-        overflow: 'hidden',
+        boxShadow: `0 18px 60px ${alpha(theme.palette.common.black, 0.18)}`,
         ...slideIn(170),
       })}
     >
-      <Box
-        sx={(theme) => ({
-          position: 'absolute',
-          top: -100,
-          right: -100,
-          width: 250,
-          height: 250,
-          background: `radial-gradient(circle, ${alpha(theme.palette.status.merged, 0.12)} 0%, transparent 70%)`,
-          filter: 'blur(40px)',
-          pointerEvents: 'none',
-        })}
+      <SectionKicker
+        label={
+          hasLiveData
+            ? 'LIVE WORK FROM THE AGENTS'
+            : isLoading
+              ? 'LOADING LIVE WORK'
+              : 'LIVE WORK UNAVAILABLE'
+        }
+        variant="light"
+        right={hasLiveData ? 'streaming' : undefined}
       />
-      <Box sx={{ position: 'relative', zIndex: 1 }}>
-        <SectionKicker
-          label={
-            hasLiveData
-              ? 'Live work from the agents'
-              : isLoading
-                ? 'Loading agent feed'
-                : 'Agent feed unavailable'
-          }
-          right={hasLiveData ? 'streaming' : isLoading ? 'syncing' : undefined}
-        />
-        {feedRows.length > 0 ? (
-          <Stack spacing={0.9}>
-            {feedRows.map((row, index) => (
+      <Typography
+        sx={(theme) => ({
+          color: alpha(theme.palette.common.black, 0.58),
+          fontSize: '0.68rem',
+          lineHeight: 1.5,
+          mb: 1.2,
+        })}
+      >
+        Pull requests currently tracked by Gittensor. Open a row to inspect the
+        repository, contributor, status, and evaluation details.
+      </Typography>
+      {feedRows.length > 0 ? (
+        <Stack spacing={0.9}>
+          {feedRows.map((row, index) => {
+            const repositoryOwner = getRepositoryOwner(row.repository);
+
+            return (
               <LinkBox
                 key={row.id}
                 href={row.href}
@@ -734,10 +953,10 @@ const LiveProofPanel: React.FC<{
                   return {
                     display: 'grid',
                     gridTemplateColumns: {
-                      xs: '72px 28px minmax(0, 1fr)',
-                      sm: '84px 32px minmax(0, 1fr) auto',
+                      xs: '64px 30px minmax(0, 1fr)',
+                      sm: '74px 34px minmax(0, 1fr) auto',
                     },
-                    gap: { xs: 1, sm: 1.4 },
+                    gap: { xs: 1, sm: 1.25 },
                     alignItems: 'center',
                     minHeight: 68,
                     px: { xs: 1, sm: 1.25 },
@@ -745,17 +964,16 @@ const LiveProofPanel: React.FC<{
                     position: 'relative',
                     overflow: 'hidden',
                     borderRadius: 1.25,
-                    border: `1px solid ${theme.palette.border.subtle}`,
-                    borderLeft: `2px solid ${alpha(toneColor, 0.8)}`,
-                    backgroundColor: alpha(theme.palette.text.primary, 0.02),
+                    border: `1px solid ${alpha(theme.palette.common.black, 0.14)}`,
+                    borderLeft: `2px solid ${alpha(toneColor, 0.58)}`,
+                    backgroundColor: alpha(theme.palette.common.black, 0.025),
                     transition:
-                      'background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease',
+                      'background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease',
                     ...slideIn(240 + index * 55),
                     '&:hover': {
-                      backgroundColor: alpha(theme.palette.text.primary, 0.04),
+                      backgroundColor: alpha(theme.palette.common.black, 0.045),
                       borderColor: alpha(toneColor, 0.65),
                       transform: 'translateX(3px)',
-                      boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.2)}`,
                     },
                     '&:focus-visible': {
                       outline: `2px solid ${alpha(toneColor, 0.7)}`,
@@ -775,15 +993,20 @@ const LiveProofPanel: React.FC<{
                   {row.status}
                 </Typography>
                 <Avatar
-                  src={getGithubAvatarSrc(row.repository.split('/')[0])}
-                  alt={row.repository}
-                  sx={{
-                    width: { xs: 28, sm: 32 },
-                    height: { xs: 28, sm: 32 },
-                    border: '1px solid',
-                    borderColor: 'border.medium',
-                  }}
-                />
+                  src={getRepositoryOwnerAvatarSrc(repositoryOwner)}
+                  alt={repositoryOwner}
+                  sx={(theme) => ({
+                    width: 32,
+                    height: 32,
+                    bgcolor: alpha(theme.palette.common.black, 0.06),
+                    color: alpha(theme.palette.common.black, 0.72),
+                    border: `1px solid ${alpha(theme.palette.common.black, 0.16)}`,
+                    fontSize: '0.72rem',
+                    fontWeight: 900,
+                  })}
+                >
+                  {repositoryOwner.slice(0, 2).toUpperCase()}
+                </Avatar>
                 <Box sx={{ minWidth: 0 }}>
                   <Typography
                     sx={{
@@ -802,14 +1025,11 @@ const LiveProofPanel: React.FC<{
                   <Typography
                     sx={(theme) => ({
                       mt: 0.25,
-                      color: theme.palette.text.secondary,
+                      color: alpha(theme.palette.common.black, 0.56),
                       fontSize: '0.66rem',
                     })}
                   >
-                    <Box
-                      component="span"
-                      sx={{ fontWeight: 700, color: 'text.primary' }}
-                    >
+                    <Box component="span" sx={{ fontWeight: 900 }}>
                       {row.repository}
                     </Box>{' '}
                     by {row.author}
@@ -817,7 +1037,7 @@ const LiveProofPanel: React.FC<{
                       component="span"
                       sx={(theme) => ({
                         display: { xs: 'inline', sm: 'none' },
-                        color: alpha(theme.palette.text.primary, 0.4),
+                        color: alpha(theme.palette.common.black, 0.5),
                       })}
                     >
                       {' '}
@@ -843,7 +1063,7 @@ const LiveProofPanel: React.FC<{
                     sx={(theme) => ({
                       display: 'block',
                       mt: 0.25,
-                      color: theme.palette.text.secondary,
+                      color: alpha(theme.palette.common.black, 0.56),
                       fontFamily: 'var(--font-mono)',
                       fontSize: '0.62rem',
                       fontWeight: 700,
@@ -853,60 +1073,66 @@ const LiveProofPanel: React.FC<{
                   </Box>
                 </Typography>
               </LinkBox>
-            ))}
-          </Stack>
-        ) : (
-          <PanelEmptyState
-            title={
-              isLoading
-                ? 'Fetching live PRs'
-                : isError
-                  ? 'Live PR feed is unavailable'
-                  : 'No tracked PRs returned'
-            }
-            body={
-              isLoading
-                ? 'The feed will populate from the API as soon as the latest pull requests arrive.'
-                : 'The landing page is intentionally not showing sample PRs here.'
-            }
-          />
-        )}
-        <LinkBox
-          href="/dashboard"
-          linkState={{ backLabel: 'Back to Home' }}
-          sx={(theme) => ({
-            display: 'block',
-            mt: 1.4,
-            pt: 1.3,
-            borderTop: '1px dashed',
-            borderColor: theme.palette.border.medium,
-            color: theme.palette.text.secondary,
-            fontSize: '0.68rem',
-            textAlign: 'center',
-            transition: 'color 0.16s ease',
-            '&:hover': {
-              color: theme.palette.status.merged,
-            },
-            '&:focus-visible': {
-              outline: '2px solid',
-              outlineColor: theme.palette.status.merged,
-              outlineOffset: 3,
-            },
+            );
           })}
-        >
-          {'see live dashboard ->'}
-        </LinkBox>
-      </Box>
+        </Stack>
+      ) : (
+        <PanelEmptyState
+          variant="light"
+          title={
+            isLoading
+              ? 'Fetching live PRs'
+              : isError
+                ? 'Live PR feed is unavailable'
+                : 'No tracked PRs returned'
+          }
+          body={
+            isLoading
+              ? 'The feed will populate from the API as soon as the latest pull requests arrive.'
+              : 'The landing page is intentionally not showing sample PRs here.'
+          }
+        />
+      )}
+      <LinkBox
+        href="/dashboard"
+        linkState={{ backLabel: 'Back to Home' }}
+        sx={(theme) => ({
+          display: 'block',
+          mt: 1.4,
+          pt: 1.3,
+          borderTop: '1px dashed',
+          borderColor: alpha(theme.palette.common.black, 0.16),
+          color: alpha(theme.palette.common.black, 0.58),
+          fontSize: '0.68rem',
+          textAlign: 'center',
+          transition: 'color 0.16s ease',
+          '&:hover': {
+            color: theme.palette.status.merged,
+          },
+          '&:focus-visible': {
+            outline: '2px solid',
+            outlineColor: theme.palette.status.merged,
+            outlineOffset: 3,
+          },
+        })}
+      >
+        {'see live dashboard ->'}
+      </LinkBox>
     </Box>
   );
 };
 
 const TopMinersPanel: React.FC<{
-  rows: LandingMinerRow[];
+  agentRows: LandingMinerRow[];
+  discovererRows: LandingMinerRow[];
   hasLiveData: boolean;
   isLoading: boolean;
   isError: boolean;
-}> = ({ rows, hasLiveData, isLoading, isError }) => {
+}> = ({ agentRows, discovererRows, hasLiveData, isLoading, isError }) => {
+  const [activeMode, setActiveMode] = useState<TopBoardMode>('agents');
+  const rows = activeMode === 'agents' ? agentRows : discovererRows;
+  const activeHasData = rows.length > 0;
+  const isDiscoverers = activeMode === 'discoverers';
   const topMonthlyUsd = Math.max(...rows.map((miner) => miner.monthlyUsd), 1);
 
   return (
@@ -922,16 +1148,42 @@ const TopMinersPanel: React.FC<{
     >
       <SectionKicker
         label={
-          hasLiveData
-            ? 'Top agents by earnings'
+          activeHasData
+            ? isDiscoverers
+              ? 'Top discoverers by earnings'
+              : 'Top agents by earnings'
             : isLoading
-              ? 'Loading top agents'
-              : 'Agent rankings unavailable'
+              ? isDiscoverers
+                ? 'Loading discoverers'
+                : 'Loading agents'
+              : isDiscoverers
+                ? 'Discoverer rankings unavailable'
+                : 'Agent rankings unavailable'
         }
-        right={
-          hasLiveData ? 'reward estimates' : isLoading ? 'syncing' : undefined
-        }
+        right={hasLiveData ? 'reward estimates' : undefined}
       />
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        spacing={1.5}
+        sx={{ mb: 0.5 }}
+      >
+        <Typography
+          sx={(theme) => ({
+            color: alpha(theme.palette.text.primary, 0.46),
+            fontSize: '0.68rem',
+            lineHeight: 1.5,
+            minWidth: 0,
+          })}
+        >
+          {isDiscoverers
+            ? 'Estimated monthly rewards for issue discoverers currently ranked by validators.'
+            : 'Estimated monthly rewards for agents currently ranked by validators.'}{' '}
+          This is the public board contributors compete on.
+        </Typography>
+        <TopBoardPager activeMode={activeMode} onChangeMode={setActiveMode} />
+      </Stack>
       {rows.length > 0 ? (
         <Stack spacing={0.85}>
           {rows.map((miner, index) => {
@@ -945,7 +1197,7 @@ const TopMinersPanel: React.FC<{
                 key={`${miner.githubId}-${index}`}
                 href={`/miners/details?githubId=${encodeURIComponent(
                   miner.githubId,
-                )}`}
+                )}${isDiscoverers ? '&mode=issues&tab=open-issues' : ''}`}
                 linkState={{ backLabel: 'Back to Home' }}
                 sx={(theme) => ({
                   display: 'grid',
@@ -971,20 +1223,7 @@ const TopMinersPanel: React.FC<{
                   transition:
                     'background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease',
                   ...slideIn(330 + index * 55),
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    inset: 0,
-                    right: 'auto',
-                    width: `${rewardWidth}%`,
-                    backgroundColor: alpha(
-                      theme.palette.status.merged,
-                      index < 3 ? 0.14 : 0.08,
-                    ),
-                    zIndex: 0,
-                    pointerEvents: 'none',
-                  },
-                  '& > *': {
+                  '& > *:not([data-reward-bar])': {
                     position: 'relative',
                     zIndex: 1,
                   },
@@ -1002,6 +1241,10 @@ const TopMinersPanel: React.FC<{
                   },
                 })}
               >
+                <TopMinerRewardBar
+                  width={rewardWidth}
+                  delayMs={420 + index * 80}
+                />
                 <Typography
                   sx={(theme) => ({
                     color:
@@ -1055,8 +1298,13 @@ const TopMinersPanel: React.FC<{
                     }}
                   >
                     {shortIdentity(miner.githubId)} -{' '}
-                    {miner.totalMergedPrs || 0} PRs,{' '}
-                    {miner.totalSolvedIssues || 0} issues
+                    {isDiscoverers
+                      ? `${miner.totalSolvedIssues || 0} issues solved, ${
+                          miner.totalClosedIssues || 0
+                        } closed`
+                      : `${miner.totalMergedPrs || 0} PRs merged, ${
+                          miner.totalClosedPrs || 0
+                        } closed`}
                   </Typography>
                 </Box>
                 <Stack
@@ -1073,9 +1321,10 @@ const TopMinersPanel: React.FC<{
                       lineHeight: 1,
                     }}
                   >
-                    {miner.monthlyUsd > 0
-                      ? formatUsd(miner.monthlyUsd)
-                      : 'ranked'}
+                    <TopMinerRewardAmount
+                      value={miner.monthlyUsd}
+                      delayMs={420 + index * 80}
+                    />
                   </Typography>
                   <Typography
                     sx={{ color: 'text.secondary', fontSize: '0.62rem' }}
@@ -1093,15 +1342,21 @@ const TopMinersPanel: React.FC<{
         <PanelEmptyState
           title={
             isLoading
-              ? 'Fetching live miner rankings'
+              ? isDiscoverers
+                ? 'Fetching live discoverer rankings'
+                : 'Fetching live agent rankings'
               : isError
-                ? 'Live miner rankings are unavailable'
-                : 'No ranked miners returned'
+                ? isDiscoverers
+                  ? 'Live discoverer rankings are unavailable'
+                  : 'Live agent rankings are unavailable'
+                : isDiscoverers
+                  ? 'No ranked discoverers returned'
+                  : 'No ranked agents returned'
           }
           body={
             isLoading
               ? 'The leaderboard will populate from the API as soon as miner evaluations arrive.'
-              : 'The landing page is intentionally not showing sample miner rewards here.'
+              : 'The landing page is intentionally not showing sample rewards here.'
           }
         />
       )}
@@ -1244,10 +1499,12 @@ const HowItWorksSection: React.FC<{
   medianMergeRate,
 }) => (
   <Box
-    sx={{
+    sx={(theme) => ({
       py: { xs: 2.5, md: 3 },
+      borderTop: `1px dashed ${theme.palette.border.medium}`,
+      borderBottom: `1px dashed ${theme.palette.border.medium}`,
       ...fadeUp(620),
-    }}
+    })}
   >
     <Stack spacing={0.75} sx={{ mb: { xs: 2, md: 3 } }}>
       <Typography
@@ -1263,10 +1520,10 @@ const HowItWorksSection: React.FC<{
       <Typography
         sx={{
           fontFamily: 'var(--font-heading)',
-          fontSize: { xs: '1.7rem', sm: '2rem', md: '2.2rem', lg: '2.3rem' },
+          fontSize: { xs: '2rem', md: '2.6rem' },
           fontWeight: 900,
-          lineHeight: 1.1,
-          whiteSpace: { md: 'nowrap' },
+          lineHeight: 1.05,
+          maxWidth: 720,
         }}
       >
         A coordination layer for coding agents.
@@ -1276,69 +1533,166 @@ const HowItWorksSection: React.FC<{
       sx={{
         display: 'grid',
         gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
-        gap: 1.25,
+        gap: { xs: 1.2, md: 1.35 },
       }}
     >
       {howItWorksItems.map((item, index) => (
         <Box
           key={item.title}
           sx={(theme) => ({
-            p: { xs: 1.6, md: 1.9 },
+            position: 'relative',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            p: { xs: 1.6, md: 1.8 },
+            minHeight: 188,
             borderRadius: 2,
             border: `1px solid ${theme.palette.border.light}`,
             backgroundColor: theme.palette.surface.subtle,
             transition:
               'border-color 0.16s ease, transform 0.16s ease, background-color 0.16s ease',
             ...fadeUp(720 + index * 80),
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 2,
+              backgroundColor: alpha(theme.palette.status.merged, 0.52),
+              transform: 'scaleX(0.18)',
+              transformOrigin: 'left',
+              transition: 'transform 0.18s ease',
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              width: 88,
+              height: 88,
+              border: `1px solid ${alpha(theme.palette.status.merged, 0.1)}`,
+              borderRadius: '50%',
+              transform: 'translate(34%, -34%)',
+              pointerEvents: 'none',
+            },
             '&:hover': {
               borderColor: alpha(theme.palette.status.merged, 0.42),
               backgroundColor: alpha(theme.palette.text.primary, 0.025),
               transform: 'translateY(-2px)',
+              '&::before': {
+                transform: 'scaleX(1)',
+              },
             },
           })}
         >
           <Stack
             direction="row"
-            spacing={1.25}
-            alignItems="baseline"
-            sx={{ mb: 1 }}
+            alignItems="center"
+            justifyContent="space-between"
+            spacing={1.5}
+            sx={{ mb: 2.2, position: 'relative', zIndex: 1 }}
           >
-            <Typography
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Box
+                sx={(theme) => ({
+                  width: 34,
+                  height: 34,
+                  display: 'grid',
+                  placeItems: 'center',
+                  borderRadius: 1,
+                  color: theme.palette.status.merged,
+                  border: `1px solid ${alpha(theme.palette.status.merged, 0.32)}`,
+                  backgroundColor: alpha(theme.palette.status.merged, 0.08),
+                  fontFamily: 'var(--font-heading)',
+                  fontSize: '1.4rem',
+                  fontWeight: 900,
+                  lineHeight: 1,
+                })}
+              >
+                {index + 1}
+              </Box>
+              <Typography
+                sx={(theme) => ({
+                  color: alpha(theme.palette.text.primary, 0.44),
+                  fontSize: '0.62rem',
+                  letterSpacing: '0.16em',
+                  textTransform: 'uppercase',
+                })}
+              >
+                {item.label}
+              </Typography>
+            </Stack>
+            <Box
               sx={(theme) => ({
-                color: theme.palette.status.merged,
-                fontFamily: 'var(--font-heading)',
-                fontSize: '1.35rem',
-                fontWeight: 900,
-                lineHeight: 1,
-                flexShrink: 0,
+                width: 34,
+                height: 34,
+                display: 'grid',
+                placeItems: 'center',
+                color: alpha(theme.palette.text.primary, 0.86),
+                borderRadius: 1,
+                border: `1px solid ${theme.palette.border.light}`,
+                backgroundColor: alpha(theme.palette.common.black, 0.12),
+                '& .MuiSvgIcon-root': { fontSize: 18 },
               })}
             >
-              {index + 1}
-            </Typography>
-            <Typography
-              sx={{
-                fontWeight: 900,
-                fontSize: { xs: '1rem', md: '0.95rem', lg: '1.02rem' },
-                lineHeight: 1.25,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                minWidth: 0,
-              }}
-            >
-              {item.title}
-            </Typography>
+              {item.icon}
+            </Box>
           </Stack>
           <Typography
+            sx={{
+              position: 'relative',
+              zIndex: 1,
+              fontWeight: 900,
+              fontSize: '1rem',
+              mb: 1,
+            }}
+          >
+            {item.title}
+          </Typography>
+          <Typography
             sx={(theme) => ({
+              position: 'relative',
+              zIndex: 1,
               color: alpha(theme.palette.text.primary, 0.6),
               fontSize: '0.78rem',
-              lineHeight: 1.55,
-              textWrap: 'balance',
+              lineHeight: 1.65,
+              mb: 2,
             })}
           >
             {item.body}
           </Typography>
+          <Stack
+            direction="row"
+            spacing={0.9}
+            alignItems="center"
+            sx={(theme) => ({
+              position: 'relative',
+              zIndex: 1,
+              mt: 'auto',
+              pt: 1.25,
+              borderTop: `1px solid ${theme.palette.border.light}`,
+            })}
+          >
+            <Box
+              sx={(theme) => ({
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                backgroundColor: theme.palette.status.merged,
+                boxShadow: `0 0 0 4px ${alpha(theme.palette.status.merged, 0.1)}`,
+              })}
+            />
+            <Typography
+              sx={(theme) => ({
+                color: alpha(theme.palette.text.primary, 0.72),
+                fontSize: '0.68rem',
+                lineHeight: 1.3,
+              })}
+            >
+              {item.result}
+            </Typography>
+          </Stack>
         </Box>
       ))}
     </Box>
@@ -1364,6 +1718,7 @@ const HowItWorksSection: React.FC<{
             : null,
           medianMergeRate > 0 ? `${medianMergeRate}% median merge rate` : null,
         ].filter(Boolean);
+
         return parts.length > 0
           ? parts.join(' · ')
           : 'Recognized repositories, verified GitHub identity, public validator scoring.';
@@ -1385,31 +1740,18 @@ const OnboardingCard: React.FC<{
       gap: 3,
       p: { xs: 2, md: 2.5 },
       borderRadius: 2,
-      backgroundColor: theme.palette.surface.subtle,
-      color: theme.palette.text.primary,
-      border: `1px solid ${theme.palette.border.medium}`,
+      backgroundColor: theme.palette.common.white,
+      color: theme.palette.common.black,
+      border: `1px solid ${alpha(theme.palette.common.black, 0.14)}`,
       borderTop: `3px solid ${theme.palette.status.merged}`,
-      position: 'relative',
-      overflow: 'hidden',
       minHeight: 260,
       ...fadeUp(700),
     })}
   >
-    <Box
-      sx={(theme) => ({
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 100,
-        background: `linear-gradient(to bottom, ${alpha(theme.palette.status.merged, 0.1)} 0%, transparent 100%)`,
-        pointerEvents: 'none',
-      })}
-    />
-    <Stack spacing={1.25} sx={{ position: 'relative', zIndex: 1 }}>
+    <Stack spacing={1.25}>
       <Typography
         sx={(theme) => ({
-          color: theme.palette.text.secondary,
+          color: alpha(theme.palette.common.black, 0.58),
           fontSize: '0.66rem',
           letterSpacing: '0.16em',
           textTransform: 'uppercase',
@@ -1429,7 +1771,7 @@ const OnboardingCard: React.FC<{
       </Typography>
       <Typography
         sx={(theme) => ({
-          color: alpha(theme.palette.text.primary, 0.62),
+          color: alpha(theme.palette.common.black, 0.62),
           fontSize: '0.82rem',
           lineHeight: 1.6,
         })}
@@ -1441,7 +1783,6 @@ const OnboardingCard: React.FC<{
     <Stack
       direction={{ xs: 'column', sm: 'row', lg: 'column', xl: 'row' }}
       spacing={1}
-      sx={{ position: 'relative', zIndex: 1 }}
     >
       <Button
         component="a"
@@ -1451,16 +1792,13 @@ const OnboardingCard: React.FC<{
         sx={(theme) => ({
           minHeight: 44,
           borderRadius: 1.5,
-          backgroundColor: theme.palette.status.merged,
-          color: theme.palette.common.black,
+          backgroundColor: theme.palette.common.black,
+          color: theme.palette.common.white,
           textTransform: 'none',
           fontWeight: 900,
           '&:hover': {
-            backgroundColor: alpha(theme.palette.status.merged, 0.9),
-            transform: 'translateY(-1px)',
-            boxShadow: `0 4px 12px ${alpha(theme.palette.status.merged, 0.3)}`,
+            backgroundColor: theme.palette.common.black,
           },
-          transition: 'all 0.2s ease',
         })}
       >
         Miner guide
@@ -1472,13 +1810,13 @@ const OnboardingCard: React.FC<{
         sx={(theme) => ({
           minHeight: 44,
           borderRadius: 1.5,
-          borderColor: theme.palette.border.medium,
-          color: theme.palette.text.primary,
+          borderColor: alpha(theme.palette.common.black, 0.42),
+          color: theme.palette.common.black,
           textTransform: 'none',
           fontWeight: 800,
           '&:hover': {
-            borderColor: theme.palette.text.primary,
-            backgroundColor: alpha(theme.palette.text.primary, 0.05),
+            borderColor: theme.palette.common.black,
+            backgroundColor: alpha(theme.palette.common.black, 0.05),
           },
         })}
       >
