@@ -187,8 +187,8 @@ const RepositoriesPage: React.FC = () => {
           totalScore: s?.totalScore || 0,
           totalPRs: s?.totalPRs || 0,
           uniqueMiners: s?.uniqueMiners || new Set<string>(),
-          weight: repo.weight ? parseFloat(String(repo.weight)) : 0,
-          inactiveAt: repo.inactiveAt,
+          weight: parseFloat(String(repo.config?.weight ?? 0)) || 0,
+          inactiveAt: repo.config?.inactiveAt ?? null,
           discoveryScore: d?.discoveryScore ?? 0,
           discoveryIssues: d?.discoveryIssues ?? 0,
           discoveryContributors: d?.discoveryContributors ?? new Set<string>(),
@@ -315,10 +315,14 @@ const RepositoriesPage: React.FC = () => {
         if (scoreB !== scoreA) return scoreB - scoreA;
         // Tiebreak by repo weight
         const weightA = parseFloat(
-          String(repoMap.get(a.repository?.toLowerCase() ?? '')?.weight || '0'),
+          String(
+            repoMap.get(a.repository?.toLowerCase() ?? '')?.config?.weight ?? 0,
+          ),
         );
         const weightB = parseFloat(
-          String(repoMap.get(b.repository?.toLowerCase() ?? '')?.weight || '0'),
+          String(
+            repoMap.get(b.repository?.toLowerCase() ?? '')?.config?.weight ?? 0,
+          ),
         );
         return weightB - weightA;
       })

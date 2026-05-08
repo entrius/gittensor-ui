@@ -796,7 +796,7 @@ type InactiveRepoSet = Set<string>;
 const buildInactiveRepoSet = (repos: Repository[]): InactiveRepoSet =>
   new Set(
     repos
-      .filter((r: Repository): boolean => !!r.inactiveAt)
+      .filter((r: Repository): boolean => !!r.config?.inactiveAt)
       .map((r: Repository): string => r.fullName.toLowerCase()),
   );
 

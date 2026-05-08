@@ -910,6 +910,10 @@ const MinersList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 };
 
 type WatchedRepoStats = Repository & {
+  // Hoisted from `config` for downstream sort/render code; populated when
+  // constructing each row from the API Repository.
+  weight: number | string;
+  inactiveAt: string | null | undefined;
   totalScore: number;
   totalPRs: number;
   uniqueMiners: Set<string>;
@@ -918,7 +922,7 @@ type WatchedRepoStats = Repository & {
   discoveryContributors: Set<string>;
 };
 
-const isRepoActive = (repo: Repository): boolean => !repo.inactiveAt;
+const isRepoActive = (repo: Repository): boolean => !repo.config?.inactiveAt;
 
 type RepoStatusFilter = 'all' | 'active' | 'inactive';
 
@@ -1627,6 +1631,8 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         const d = discoveryByRepo.get(key);
         return {
           ...r,
+          weight: r.config?.weight ?? 0,
+          inactiveAt: r.config?.inactiveAt ?? null,
           totalScore: s?.totalScore || 0,
           totalPRs: s?.totalPRs || 0,
           uniqueMiners: s?.uniqueMiners || new Set<string>(),
