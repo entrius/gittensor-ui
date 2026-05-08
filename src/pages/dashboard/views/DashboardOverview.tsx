@@ -51,6 +51,8 @@ const buildStatusChartOption = (
 ): Record<string, unknown> => {
   const totalValue = segments.reduce((sum, segment) => sum + segment.value, 0);
   const chartFont = echartsFontFamily(theme);
+  const tooltipLabelColor = alpha(theme.palette.text.primary, 0.62);
+  const tooltipBorderColor = alpha(theme.palette.text.primary, 0.12);
 
   return {
     ...echartsTransparentBackground(),
@@ -71,11 +73,30 @@ const buildStatusChartOption = (
         name,
         value,
         percent,
+        color,
       }: {
         name: string;
         value: number;
         percent: number;
-      }) => `${name}: ${Number(value).toLocaleString()} (${percent}%)`,
+        color?: string;
+      }) => `
+        <div style="display:grid;gap:7px;min-width:136px;font-family:${chartFont};">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="width:8px;height:8px;border-radius:999px;background:${color ?? theme.palette.text.secondary};box-shadow:0 0 0 2px ${alpha(theme.palette.text.primary, 0.08)};"></span>
+            <span style="color:${theme.palette.text.primary};font-weight:700;">${name}</span>
+          </div>
+          <div style="border-top:1px solid ${tooltipBorderColor};padding-top:7px;display:grid;gap:5px;">
+            <div style="display:flex;justify-content:space-between;gap:18px;">
+              <span style="color:${tooltipLabelColor};">Count</span>
+              <span style="color:${theme.palette.text.primary};font-weight:700;">${Number(value).toLocaleString()}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:18px;">
+              <span style="color:${tooltipLabelColor};">Share</span>
+              <span style="color:${theme.palette.text.primary};font-weight:700;">${percent}%</span>
+            </div>
+          </div>
+        </div>
+      `,
       ...echartsItemTooltipChrome(theme),
     },
     series: [
