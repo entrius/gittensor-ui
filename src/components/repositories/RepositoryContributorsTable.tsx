@@ -6,6 +6,7 @@ import {
   CircularProgress,
   alpha,
   useTheme,
+  useMediaQuery,
   Tooltip,
 } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -57,6 +58,7 @@ const RepositoryContributorsTable: React.FC<
   RepositoryContributorsTableProps
 > = ({ repositoryFullName }) => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { data: allPRs, isLoading: isPrsLoading } = useAllPrs();
   const { data: allMinersStats, isLoading: isMinersLoading } = useAllMiners();
 
@@ -401,8 +403,14 @@ const RepositoryContributorsTable: React.FC<
       >
         {(
           [
-            { label: 'OSS Contributions', value: 'oss' as const },
-            { label: 'Issue Discovery', value: 'issues' as const },
+            {
+              label: isMobile ? 'OSS' : 'OSS Contributions',
+              value: 'oss' as const,
+            },
+            {
+              label: isMobile ? 'Discovery' : 'Issue Discovery',
+              value: 'issues' as const,
+            },
           ] as const
         ).map((option) => {
           const isActive = programTab === option.value;
