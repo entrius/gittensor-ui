@@ -712,7 +712,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         startAdornment: searchAdornment,
       }}
       sx={{
-        width: '200px',
+        width: '300px',
         ...(isMobileSearchVisible
           ? {
               flexBasis: { xs: '100%', sm: 'auto' },
@@ -724,51 +724,16 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     />
   );
 
-  // Custom sort header to preserve the original unicode arrow look and
-  // cell-wide click + hover (MUI's TableSortLabel differs visually). The
-  // Box takes on the cell's padding so clicks anywhere inside the cell hit.
-  const renderSortHeader = (
-    column: SortColumn,
-    label: string,
-    align: 'left' | 'right' | 'center' = 'left',
-  ) => (
-    <Box
-      onClick={() => handleSort(column)}
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 0.5,
-        cursor: 'pointer',
-        userSelect: 'none',
-        width: '100%',
-        height: '100%',
-        px: align === 'center' ? 0.5 : 2,
-        py: 1,
-        justifyContent:
-          align === 'right'
-            ? 'flex-end'
-            : align === 'center'
-              ? 'center'
-              : 'flex-start',
-      }}
-    >
-      {label}
-      {sortColumn === column && (
-        <Typography component="span" sx={{ fontSize: '0.7rem', opacity: 0.7 }}>
-          {sortDirection === 'asc' ? '▲' : '▼'}
-        </Typography>
-      )}
-    </Box>
-  );
-
-  const sortableHeaderSx = {
-    padding: 0,
-    cursor: 'pointer',
-    userSelect: 'none' as const,
-    '&:hover': {
-      backgroundColor: 'surface.light',
+  const compactSortableHeaderSx = {
+    whiteSpace: 'nowrap',
+    '& .MuiTableSortLabel-root': {
+      whiteSpace: 'nowrap',
+      maxWidth: '100%',
     },
-  };
+    '& .MuiTableSortLabel-icon': {
+      ml: 0.25,
+    },
+  } as const;
 
   const listColumns: DataTableColumn<RepoStats, SortColumn>[] = [
     {
@@ -780,9 +745,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'repository',
-      header: renderSortHeader('repository', 'Repository'),
+      header: 'Repository',
       width: '30%',
-      headerSx: sortableHeaderSx,
+      sortKey: 'repository',
+      headerSx: compactSortableHeaderSx,
       cellSx: { pl: 1.5 },
       renderCell: (repo) => {
         const owner = (repo.repository || '').split('/')[0] || '';
@@ -837,10 +803,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'weight',
-      header: renderSortHeader('weight', 'Weight', 'right'),
+      header: 'Weight',
       width: '10%',
       align: 'right',
-      headerSx: sortableHeaderSx,
+      sortKey: 'weight',
+      headerSx: compactSortableHeaderSx,
       renderCell: (repo) => (
         <Typography
           sx={{
@@ -855,10 +822,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'totalScore',
-      header: renderSortHeader('totalScore', 'OSS score', 'right'),
+      header: 'OSS score',
       width: '11%',
       align: 'right',
-      headerSx: sortableHeaderSx,
+      sortKey: 'totalScore',
+      headerSx: compactSortableHeaderSx,
       renderCell: (repo) => {
         const active = repoHasOssActivity(repo);
         const v = repo.totalScore ?? 0;
@@ -877,10 +845,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'totalPRs',
-      header: renderSortHeader('totalPRs', 'PRs', 'right'),
+      header: 'PRs',
       width: '7%',
       align: 'right',
-      headerSx: sortableHeaderSx,
+      sortKey: 'totalPRs',
+      headerSx: compactSortableHeaderSx,
       renderCell: (repo) => {
         const active = repoHasOssActivity(repo);
         const n = repo.totalPRs ?? 0;
@@ -898,10 +867,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'discoveryScore',
-      header: renderSortHeader('discoveryScore', 'Issue score', 'right'),
+      header: 'Issue score',
       width: '10%',
       align: 'right',
-      headerSx: sortableHeaderSx,
+      sortKey: 'discoveryScore',
+      headerSx: compactSortableHeaderSx,
       renderCell: (repo) => {
         const active = repoHasDiscoveryActivity(repo);
         const v = repo.discoveryScore ?? 0;
@@ -920,10 +890,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'discoveryIssues',
-      header: renderSortHeader('discoveryIssues', 'Issues', 'right'),
+      header: 'Issues',
       width: '7%',
       align: 'right',
-      headerSx: sortableHeaderSx,
+      sortKey: 'discoveryIssues',
+      headerSx: compactSortableHeaderSx,
       renderCell: (repo) => {
         const active = repoHasDiscoveryActivity(repo);
         const n = repo.discoveryIssues ?? 0;
@@ -941,10 +912,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'contributors',
-      header: renderSortHeader('contributors', 'Contributors', 'right'),
+      header: 'Contributors',
       width: '9%',
       align: 'right',
-      headerSx: sortableHeaderSx,
+      sortKey: 'contributors',
+      headerSx: compactSortableHeaderSx,
       renderCell: (repo) => {
         const active = repoHasOssActivity(repo);
         const n = repo.uniqueMiners?.size ?? 0;
@@ -962,14 +934,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'discoveryContributors',
-      header: renderSortHeader(
-        'discoveryContributors',
-        'Issue contrib.',
-        'right',
-      ),
-      width: '9%',
+      header: 'Issue contrib',
+      width: '10%',
       align: 'right',
-      headerSx: sortableHeaderSx,
+      sortKey: 'discoveryContributors',
+      headerSx: compactSortableHeaderSx,
       renderCell: (repo) => {
         const active = repoHasDiscoveryActivity(repo);
         const n = repo.discoveryContributors?.size ?? 0;
@@ -987,10 +956,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'watch',
-      header: renderSortHeader('watch', '★', 'center'),
+      header: '★',
       width: '52px',
       align: 'center',
-      headerSx: sortableHeaderSx,
       cellSx: { p: 0 },
       renderCell: (repo) =>
         repo.repository ? (
@@ -1436,6 +1404,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             })}
             minWidth="1280px"
             stickyHeader
+            sort={{
+              field: sortColumn,
+              order: sortDirection,
+              onChange: handleSort,
+            }}
             emptyState={
               !filteredRepositories.length &&
               trimmedSearch &&
