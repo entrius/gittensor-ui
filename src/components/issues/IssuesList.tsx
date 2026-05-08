@@ -568,6 +568,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
               src={getRepositoryOwnerAvatarSrc(
                 issue.repositoryFullName.split('/')[0],
               )}
+              alt={issue.repositoryFullName}
               sx={{ width: 24, height: 24, borderRadius: 1, flexShrink: 0 }}
             />
             <Typography

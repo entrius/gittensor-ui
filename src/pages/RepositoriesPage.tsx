@@ -22,10 +22,19 @@ const HighlightRow: React.FC<{
   href: string;
   linkState?: Record<string, unknown>;
   avatar: string;
+  avatarAlt: string;
   avatarBg?: (theme: Theme) => string;
   label: React.ReactNode;
   right: React.ReactNode;
-}> = ({ href, linkState, avatar, avatarBg = 'transparent', label, right }) => {
+}> = ({
+  href,
+  linkState,
+  avatar,
+  avatarAlt,
+  avatarBg = 'transparent',
+  label,
+  right,
+}) => {
   return (
     <LinkBox
       href={href}
@@ -56,6 +65,7 @@ const HighlightRow: React.FC<{
       >
         <Avatar
           src={avatar}
+          alt={avatarAlt}
           sx={{
             width: 24,
             height: 24,
@@ -393,6 +403,7 @@ const RepositoriesPage: React.FC = () => {
                         avatar={getRepositoryOwnerAvatarSrc(
                           repo.name.split('/')[0],
                         )}
+                        avatarAlt={repo.name}
                         avatarBg={getAvatarBg(repo.name)}
                         label={
                           <Tooltip title={repo.name} arrow placement="top">
@@ -464,6 +475,7 @@ const RepositoriesPage: React.FC = () => {
                         avatar={getRepositoryOwnerAvatarSrc(
                           repo.name.split('/')[0],
                         )}
+                        avatarAlt={repo.name}
                         avatarBg={getAvatarBg(repo.name)}
                         label={
                           <Tooltip title={repo.name} arrow placement="top">
@@ -529,6 +541,7 @@ const RepositoriesPage: React.FC = () => {
                         avatar={getRepositoryOwnerAvatarSrc(
                           pr.name.split('/')[0],
                         )}
+                        avatarAlt={pr.name}
                         avatarBg={getAvatarBg(pr.name)}
                         label={
                           <Box

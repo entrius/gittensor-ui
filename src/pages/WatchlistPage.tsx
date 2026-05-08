@@ -1065,6 +1065,7 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
         <Avatar
           src={getRepositoryOwnerAvatarSrc(repo.fullName.split('/')[0])}
+          alt={repo.fullName}
           sx={{
             width: 20,
             height: 20,
@@ -2225,6 +2226,7 @@ const buildBountyColumns = (): DataTableColumn<
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
         <Avatar
           src={getRepositoryOwnerAvatarSrc(i.repositoryFullName.split('/')[0])}
+          alt={i.repositoryFullName}
           sx={{ width: 20, height: 20, flexShrink: 0 }}
         />
         <Typography
@@ -2713,7 +2715,8 @@ const buildPrColumns = (
     renderCell: (pr) => (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
         <Avatar
-          src={`https://avatars.githubusercontent.com/${pr.author}`}
+          src={getRepositoryOwnerAvatarSrc(pr.author)}
+          alt={pr.author}
           sx={{ width: 20, height: 20, flexShrink: 0 }}
         />
         <Typography
@@ -2931,6 +2934,7 @@ const PRCard: React.FC<{
         >
           <Avatar
             src={getRepositoryOwnerAvatarSrc(pr.repository.split('/')[0])}
+            alt={pr.repository}
             sx={{
               width: 20,
               height: 20,
@@ -3007,7 +3011,8 @@ const PRCard: React.FC<{
         >
           <Stack direction="row" alignItems="center" spacing={1}>
             <Avatar
-              src={`https://avatars.githubusercontent.com/${pr.author}`}
+              src={getRepositoryOwnerAvatarSrc(pr.author)}
+              alt={pr.author}
               sx={{ width: 18, height: 18 }}
             />
             <Typography
@@ -3494,7 +3499,8 @@ const buildIssueColumns = (
           sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}
         >
           <Avatar
-            src={`https://avatars.githubusercontent.com/${login}`}
+            src={getRepositoryOwnerAvatarSrc(login)}
+            alt={login}
             sx={{ width: 20, height: 20, flexShrink: 0 }}
           />
           <Typography
@@ -3681,6 +3687,7 @@ const IssueCard: React.FC<{
             src={getRepositoryOwnerAvatarSrc(
               issue.repo_full_name.split('/')[0],
             )}
+            alt={issue.repo_full_name}
             sx={{
               width: 20,
               height: 20,
@@ -3764,7 +3771,8 @@ const IssueCard: React.FC<{
           >
             {issue.author_login && (
               <Avatar
-                src={`https://avatars.githubusercontent.com/${issue.author_login}`}
+                src={getRepositoryOwnerAvatarSrc(issue.author_login)}
+                alt={issue.author_login}
                 sx={{ width: 18, height: 18, flexShrink: 0 }}
               />
             )}
