@@ -108,7 +108,7 @@ const buildMinerSearchData = (miners: MinerEvaluation[]): MinerSearchData[] => {
   }));
 };
 
-export const getMinerSearchResults = (
+const getMinerSearchResults = (
   miners: MinerSearchData[],
   query: string,
   limit?: number,
@@ -181,7 +181,7 @@ const buildRepoSearchData = (
     }));
 };
 
-export const getRepositorySearchResults = (
+const getRepositorySearchResults = (
   repositories: RepoSearchData[],
   query: string,
   limit?: number,
