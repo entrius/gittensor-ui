@@ -42,6 +42,7 @@ import {
 } from '../../utils/format';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
+import { isOutsideScoringWindow } from '../../utils/ExplorerUtils';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { WatchlistButton } from '../common/WatchlistButton';
@@ -1185,6 +1186,11 @@ const IssuesList: React.FC<IssuesListProps> = ({
                 : '750px'
           }
           emptyState={emptyState}
+          getRowSx={(issue) =>
+            issue.completedAt && isOutsideScoringWindow(issue.completedAt)
+              ? { opacity: 0.4, filter: 'grayscale(0.5)' }
+              : {}
+          }
           sort={{
             field: sortKey,
             order: sortDirection,
