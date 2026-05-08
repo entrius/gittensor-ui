@@ -20,7 +20,7 @@ import {
 import RankBadge from './RankBadge';
 import EmptyStateMessage from './EmptyStateMessage';
 import TablePagination from './TablePagination';
-import ExplorerFilterButton from './ExplorerFilterButton';
+import FilterButton from '../FilterButton';
 import { searchFieldSx } from './MinerRepositoriesTable.styles';
 import {
   type RepoSortField,
@@ -519,39 +519,39 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
               '& > *': { flexShrink: 0 },
             }}
           >
-            <ExplorerFilterButton
+            <FilterButton
               label="All"
               count={statusCounts.all}
               color={theme.palette.status.neutral}
-              selected={statusFilter === 'all'}
+              isActive={statusFilter === 'all'}
               onClick={() => setStatusFilter('all')}
             />
-            <ExplorerFilterButton
+            <FilterButton
               label="Active"
               count={statusCounts.active}
               color={theme.palette.status.success}
-              selected={statusFilter === 'active'}
+              isActive={statusFilter === 'active'}
               onClick={() => setStatusFilter('active')}
             />
-            <ExplorerFilterButton
+            <FilterButton
               label="Inactive"
               count={statusCounts.inactive}
               color={theme.palette.status.closed}
-              selected={statusFilter === 'inactive'}
+              isActive={statusFilter === 'inactive'}
               onClick={() => setStatusFilter('inactive')}
             />
-            <ExplorerFilterButton
+            <FilterButton
               label="Recent"
               count={statusCounts.recent}
               color={theme.palette.status.merged}
-              selected={statusFilter === 'recent'}
+              isActive={statusFilter === 'recent'}
               onClick={() => setStatusFilter('recent')}
             />
-            <ExplorerFilterButton
+            <FilterButton
               label="Stale"
               count={statusCounts.stale}
               color={theme.palette.status.warning}
-              selected={statusFilter === 'stale'}
+              isActive={statusFilter === 'stale'}
               onClick={() => setStatusFilter('stale')}
             />
           </Box>

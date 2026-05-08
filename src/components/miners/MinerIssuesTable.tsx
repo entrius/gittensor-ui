@@ -22,7 +22,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
-import ExplorerFilterButton from './ExplorerFilterButton';
+import FilterButton from '../FilterButton';
 import TablePagination from './TablePagination';
 
 type IssueSortField = 'number' | 'repository' | 'date';
@@ -437,12 +437,12 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
         </Box>
         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
           {STATUS_FILTERS.map((s) => (
-            <ExplorerFilterButton
+            <FilterButton
               key={s}
               label={statusLabel(s)}
               count={statusCounts[s]}
               color={statusColor(theme, s)}
-              selected={statusFilter === s}
+              isActive={statusFilter === s}
               onClick={() => setStatusFilter(s)}
             />
           ))}
