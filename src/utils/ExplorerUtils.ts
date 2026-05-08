@@ -263,7 +263,10 @@ export const buildRepoWeightsMap = (
   if (!Array.isArray(repos)) return map;
   for (const repo of repos) {
     if (repo && repo.fullName) {
-      map.set(repo.fullName.toLowerCase(), parseFloat(repo.weight || '0'));
+      map.set(
+        repo.fullName.toLowerCase(),
+        parseFloat(String(repo.config?.weight ?? 0)),
+      );
     }
   }
   return map;

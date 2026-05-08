@@ -240,7 +240,7 @@ const RepositoryDetailsPage: React.FC = () => {
   );
 
   const statusChips = useMemo(() => {
-    const inactiveAt = trackedRepo?.inactiveAt;
+    const inactiveAt = trackedRepo?.config?.inactiveAt ?? null;
     const inactiveLabel = inactiveAt
       ? `Inactive since ${formatDate(inactiveAt)}`
       : null;
@@ -274,7 +274,7 @@ const RepositoryDetailsPage: React.FC = () => {
         ) : null}
       </>
     );
-  }, [trackedRepo?.inactiveAt]);
+  }, [trackedRepo?.config?.inactiveAt]);
 
   const issuesTabLabel = useMemo(() => {
     const openBounties =

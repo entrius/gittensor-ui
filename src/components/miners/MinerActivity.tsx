@@ -393,7 +393,10 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
       const repoWeights = new Map<string, number>();
       repos.forEach((repo) => {
         if (repo?.fullName) {
-          repoWeights.set(repo.fullName, parseFloat(repo.weight || '0'));
+          repoWeights.set(
+            repo.fullName,
+            parseFloat(String(repo.config?.weight ?? 0)),
+          );
         }
       });
       const totalWeight = prs.reduce(
