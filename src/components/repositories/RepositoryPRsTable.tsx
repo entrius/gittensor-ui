@@ -15,6 +15,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
+import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
 import theme, { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
 import FilterButton from '../FilterButton';
@@ -208,16 +209,23 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       header: 'Title',
       sortKey: 'pullRequestTitle',
       renderCell: (pr) => (
-        <Box
-          sx={{
-            maxWidth: '300px',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
+        <ScrollAwareTooltip
+          title={pr.pullRequestTitle}
+          arrow
+          placement="top-start"
+          enterDelay={200}
         >
-          {pr.pullRequestTitle}
-        </Box>
+          <Box
+            sx={{
+              maxWidth: '300px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {pr.pullRequestTitle}
+          </Box>
+        </ScrollAwareTooltip>
       ),
     },
     {
@@ -229,9 +237,14 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           <Avatar
             src={`https://avatars.githubusercontent.com/${pr.author}`}
             alt={pr.author}
-            sx={{ width: 20, height: 20 }}
+            sx={{ width: 20, height: 20, flexShrink: 0 }}
           />
-          {pr.author}
+          <Box
+            component="span"
+            sx={{ whiteSpace: 'nowrap', wordBreak: 'keep-all' }}
+          >
+            {pr.author}
+          </Box>
         </Box>
       ),
     },
@@ -334,11 +347,36 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        // Bounded scroll ancestor for the sticky header inside DataTable.
+        // Restructure so only the body scrolls — the header sits above the
+        // scroll area, so the scrollbar never appears next to the header row.
         '& .MuiTableContainer-root': {
+          overflow: 'visible',
+        },
+        '& .MuiTable-root': {
+          display: 'block',
+        },
+        '& .MuiTableHead-root': {
+          display: 'block',
+          // Reserve space matching the body's scrollbar gutter so columns line up.
+          paddingRight: '8px',
+          backgroundColor: theme.palette.surface.tooltip,
+        },
+        '& .MuiTableHead-root .MuiTableRow-root': {
+          display: 'table',
+          tableLayout: 'fixed',
+          width: '100%',
+        },
+        '& .MuiTableBody-root': {
+          display: 'block',
           maxHeight: '500px',
-          overflow: 'auto',
+          overflowY: 'auto',
+          scrollbarGutter: 'stable',
           ...scrollbarSx,
+        },
+        '& .MuiTableBody-root .MuiTableRow-root': {
+          display: 'table',
+          tableLayout: 'fixed',
+          width: '100%',
         },
       }}
       elevation={0}

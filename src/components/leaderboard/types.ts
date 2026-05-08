@@ -68,7 +68,8 @@ export type SortOption =
   | 'totalPRs'
   | 'totalIssues'
   | 'issueDiscoveryScore'
-  | 'credibility';
+  | 'credibility'
+  | 'watch';
 
 export const FONTS = {
   mono: '"JetBrains Mono", monospace',
