@@ -32,6 +32,7 @@ interface MinersListProps {
   onSort: (option: SortOption) => void;
   getHref: (miner: MinerStats) => string;
   linkState?: Record<string, unknown>;
+  pagination?: React.ReactNode;
 }
 
 export const MinersList: React.FC<MinersListProps> = ({
@@ -42,6 +43,7 @@ export const MinersList: React.FC<MinersListProps> = ({
   onSort,
   getHref,
   linkState,
+  pagination,
 }) => {
   const isWatchlist = variant === 'watchlist';
   const isDiscoveries = variant === 'discoveries';
@@ -207,6 +209,7 @@ export const MinersList: React.FC<MinersListProps> = ({
           order: sortDirection,
           onChange: onSort,
         }}
+        pagination={pagination}
       />
     </Card>
   );
