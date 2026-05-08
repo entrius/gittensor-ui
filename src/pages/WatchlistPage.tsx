@@ -74,7 +74,7 @@ import type { IssueBounty } from '../api/models/Issues';
 import { usePrices } from '../hooks/usePrices';
 import { BountyCard } from '../components/issues/BountyCard';
 import { mapAllMinersToStats } from '../utils/minerMapper';
-import { buildRepoDiscoveryRollupFromMiners } from '../utils/ExplorerUtils';
+import { buildRepoDiscoveryRollupFromMiners, isOutsideScoringWindow } from '../utils/ExplorerUtils';
 import {
   useWatchlist,
   useWatchlistCounts,
@@ -2887,6 +2887,7 @@ const PRCard: React.FC<{
 }> = ({ pr, sources = [] }) => {
   const { label, color } = prStatusMeta(pr);
   const key = serializePRKey(pr.repository, pr.pullRequestNumber);
+  const isStale = !!pr.mergedAt && isOutsideScoringWindow(pr.mergedAt);
   return (
     <Card
       elevation={0}
@@ -2896,6 +2897,7 @@ const PRCard: React.FC<{
         backdropFilter: 'blur(12px)',
         border: '1px solid',
         borderColor: alpha(color, 0.3),
+        ...(isStale && { opacity: 0.4, filter: 'grayscale(0.5)' }),
         borderRadius: 2,
         cursor: 'pointer',
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -3246,6 +3248,11 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           stickyHeader
           isLoading={isLoading && items.length === 0}
           emptyLabel="No watched pull requests found."
+          getRowSx={(pr) =>
+            pr.mergedAt && isOutsideScoringWindow(pr.mergedAt)
+              ? { opacity: 0.4, filter: 'grayscale(0.5)' }
+              : {}
+          }
           sort={{
             field: sortField,
             order: sortOrder,
@@ -3636,6 +3643,7 @@ const IssueCard: React.FC<{
 }> = ({ issue, sources = [] }) => {
   const { label, color } = issueStatusMeta(issue);
   const prNumber = issue.solving_pr?.pr_number ?? issue.solved_by_pr ?? null;
+  const isStale = !!issue.closed_at && isOutsideScoringWindow(issue.closed_at);
   return (
     <Card
       elevation={0}
@@ -3645,6 +3653,7 @@ const IssueCard: React.FC<{
         backdropFilter: 'blur(12px)',
         border: '1px solid',
         borderColor: alpha(color, 0.3),
+        ...(isStale && { opacity: 0.4, filter: 'grayscale(0.5)' }),
         borderRadius: 2,
         cursor: 'pointer',
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -3995,6 +4004,11 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
           stickyHeader
           isLoading={isLoading && items.length === 0}
           emptyLabel="No issues found for the watched miners."
+          getRowSx={(issue) =>
+            issue.closed_at && isOutsideScoringWindow(issue.closed_at)
+              ? { opacity: 0.4, filter: 'grayscale(0.5)' }
+              : {}
+          }
           sort={{
             field: sortField,
             order: sortOrder,

@@ -19,6 +19,7 @@ import {
   filterPrs,
   getRepositoryOwnerAvatarSrc,
   getPrStatusCounts,
+  isOutsideScoringWindow,
   paginateItems,
   type PrStatusFilter,
 } from '../../utils';
@@ -594,6 +595,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           </Box>
         }
         onRowClick={handleRowClick}
+        getRowSx={(pr) =>
+          pr.mergedAt && isOutsideScoringWindow(pr.mergedAt)
+            ? { opacity: 0.4, filter: 'grayscale(0.5)' }
+            : {}
+        }
         sort={{
           field: sortField,
           order: sortDir,

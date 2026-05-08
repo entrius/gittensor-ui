@@ -16,7 +16,7 @@ import { Search as SearchIcon } from '@mui/icons-material';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { useMinerIssues } from '../../api';
 import { type MinerIssue } from '../../api/models/Dashboard';
-import { getRepositoryOwnerAvatarSrc, paginateItems } from '../../utils';
+import { getRepositoryOwnerAvatarSrc, isOutsideScoringWindow, paginateItems } from '../../utils';
 import { LABEL_COLORS } from '../../theme';
 import {
   DataTable,
@@ -521,6 +521,11 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
               {emptyMessage}
             </Typography>
           </Box>
+        }
+        getRowSx={(issue) =>
+          issue.closed_at && isOutsideScoringWindow(issue.closed_at)
+            ? { opacity: 0.4, filter: 'grayscale(0.5)' }
+            : {}
         }
         sort={{
           field: sortField,
