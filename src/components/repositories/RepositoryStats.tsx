@@ -127,7 +127,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
               fontSize: '13px',
             }}
           >
-            {repository.config?.weight}
+            {String(repository.config?.weight ?? '')}
           </Typography>
         </Box>
 

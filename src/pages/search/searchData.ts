@@ -166,7 +166,7 @@ const buildRepoSearchData = (
       return {
         fullName: repo.fullName,
         owner: repo.owner,
-        weight: parseFloat(String(repo.config?.weight ?? 0)),
+        weight: parseNumber(repo.config?.weight),
         totalScore: stats?.totalScore || 0,
         totalPRs: stats?.totalPRs || 0,
         contributors: stats?.uniqueAuthors.size || 0,

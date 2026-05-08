@@ -8,6 +8,9 @@ export type RepoChanges = {
   inactiveAt: string | null;
 };
 
+// Raw config blob from das-gittensor /dash/repos and /repos/:repo. Mirrors
+// gittensor's master_repositories.json with shallow camelCase keys; nested
+// object values (e.g. labelMultipliers) keep their inner keys verbatim.
 export type RepositoryConfig = {
   weight?: number | string;
   additionalAcceptableBranches?: string[] | null;
