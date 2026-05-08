@@ -97,9 +97,13 @@ export const Scoring: React.FC = () => {
           value={category}
           onChange={(_e, v) => setCategory(v)}
           sx={{
+            width: { xs: '100%', sm: 'auto' },
             '& .MuiTab-root': {
               textTransform: 'none',
-              fontSize: '0.9rem',
+              minWidth: { xs: 0, sm: 'auto' },
+              flex: { xs: 1, sm: 'initial' },
+              px: { xs: 1, sm: 2 },
+              fontSize: { xs: '0.82rem', sm: '0.9rem' },
               color: alpha(theme.palette.common.white, 0.55),
               '&.Mui-selected': { color: 'text.primary' },
             },
