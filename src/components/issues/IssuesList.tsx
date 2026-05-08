@@ -822,7 +822,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
     '&.Mui-focused fieldset': { borderColor: 'primary.main' },
   } as const;
 
-
   const chartToggleButton = (
     <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
       <IconButton
@@ -849,7 +848,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
       </IconButton>
     </Tooltip>
   );
-
 
   const searchField = (fullWidth = false) => (
     <TextField
@@ -900,7 +898,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
             </MenuItem>
           ))}
         </Select>
-        <Tooltip title={sortDirection === 'asc' ? 'Ascending' : 'Descending'} arrow>
+        <Tooltip
+          title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
+          arrow
+        >
           <IconButton
             size="small"
             onClick={() =>

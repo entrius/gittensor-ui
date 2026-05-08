@@ -375,7 +375,10 @@ const PoolPayoutsCard: React.FC<{ stats?: IssuesStats }> = ({ stats }) => {
             );
           })}
         </Box>
-        <StatRow label="All" value={(stats?.totalIssues ?? 0).toLocaleString()} />
+        <StatRow
+          label="All"
+          value={(stats?.totalIssues ?? 0).toLocaleString()}
+        />
       </Box>
     </SectionCard>
   );

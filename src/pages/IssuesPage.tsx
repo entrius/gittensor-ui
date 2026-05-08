@@ -1,12 +1,17 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Badge, Box, Tab, Tabs, alpha, useMediaQuery, useTheme } from '@mui/material';
+import {
+  Badge,
+  Box,
+  Tab,
+  Tabs,
+  alpha,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
-import {
-  IssuesList,
-  BountySidebar,
-} from '../components/issues';
+import { IssuesList, BountySidebar } from '../components/issues';
 import {
   FILTER_ORDER,
   FILTER_LABELS,
@@ -137,8 +142,7 @@ const IssuesPage: React.FC = () => {
               position: 'sticky',
               top: 64,
               zIndex: 50,
-              backgroundColor: (t) =>
-                alpha(t.palette.background.default, 0.85),
+              backgroundColor: (t) => alpha(t.palette.background.default, 0.85),
               backdropFilter: 'blur(12px)',
             }}
           >
