@@ -27,6 +27,8 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
+import { WatchlistButton } from '../../components/common';
+import { serializePRKey } from '../../hooks/useWatchlist';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
 import { tooltipSlotProps } from '../../theme';
@@ -223,6 +225,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       header: 'PR #',
       width: '10%',
       sortKey: 'number',
+      headerSx: { whiteSpace: 'nowrap' },
       cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
       renderCell: (pr) => (
         // Native <a> to GitHub — `onRowClick` (no row-as-anchor) keeps this valid HTML.
@@ -417,6 +420,19 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             ? 'Closed'
             : 'Open',
     },
+    {
+      key: 'watch',
+      header: '★',
+      width: '8%',
+      align: 'center',
+      renderCell: (pr) => (
+        <WatchlistButton
+          category="prs"
+          itemKey={serializePRKey(pr.repository, pr.pullRequestNumber)}
+          size="small"
+        />
+      ),
+    },
   ];
 
   if (isLoading) {
@@ -486,7 +502,18 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             />
           )}
 
-          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: { xs: 0.75, sm: 0.5 },
+              flexWrap: 'wrap',
+              width: { xs: '100%', sm: 'auto' },
+              '& > .MuiButton-root': {
+                flex: { xs: 1, sm: 'none' },
+                minWidth: 0,
+              },
+            }}
+          >
             <ExplorerFilterButton
               label="All"
               count={statusCounts.all}
@@ -541,8 +568,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         }}
         sx={{
           mt: 2,
-          maxWidth: 400,
-          minWidth: 350,
+          width: { xs: '100%', sm: 'auto' },
+          maxWidth: { xs: '100%', sm: 400 },
+          minWidth: { xs: 0, sm: 350 },
           '& .MuiOutlinedInput-root': {
             fontSize: '0.8rem',
             color: 'text.primary',

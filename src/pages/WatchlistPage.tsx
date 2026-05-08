@@ -1100,7 +1100,7 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
     cellSx: repoCellSx,
     renderCell: (repo) => (
       <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
-        {parseFloat(String(repo.weight)).toFixed(2)}
+        {parseFloat(String(repo.config?.weight ?? 0)).toFixed(2)}
       </Typography>
     ),
   },
@@ -1370,8 +1370,8 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
 }) => {
   const { label, color } = repoStatusMeta(repo);
   const owner = repo.fullName.split('/')[0] || '';
-  const weight = parseFloat(String(repo.weight)) || 0;
-  const isInactive = !!repo.inactiveAt;
+  const weight = parseFloat(String(repo.config?.weight ?? 0));
+  const isInactive = !!repo.config?.inactiveAt;
   const weightPct =
     maxWeight > 0 ? Math.max(0, Math.min(100, (weight / maxWeight) * 100)) : 0;
 
@@ -1679,8 +1679,8 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           return cmpStr(a.fullName, b.fullName);
         case 'weight':
           return cmpNum(
-            parseFloat(String(a.weight)),
-            parseFloat(String(b.weight)),
+            parseFloat(String(a.config?.weight ?? 0)),
+            parseFloat(String(b.config?.weight ?? 0)),
           );
         case 'totalScore':
           return cmpNum(a.totalScore, b.totalScore);
@@ -1729,7 +1729,10 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   const maxWeight = useMemo(
     () =>
-      items.reduce((m, r) => Math.max(m, parseFloat(String(r.weight)) || 0), 0),
+      items.reduce(
+        (m, r) => Math.max(m, parseFloat(String(r.config?.weight ?? 0))),
+        0,
+      ),
     [items],
   );
 
@@ -1744,7 +1747,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     const chartData = paged.map((repo) => ({
       name: repo.fullName.split('/')[1] || repo.fullName,
       repository: repo.fullName,
-      value: parseFloat(String(repo.weight)) || 0,
+      value: parseFloat(String(repo.config?.weight ?? 0)),
     }));
 
     const barGradient = {

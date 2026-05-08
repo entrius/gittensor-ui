@@ -236,11 +236,24 @@ const HomePage: React.FC = () => {
   const theme = useTheme();
   const monthlyRewards = useMonthlyRewards();
   const [activePanel, setActivePanel] = useState<'feed' | 'miners'>('feed');
+  const [activeBottomCard, setActiveBottomCard] = useState<
+    'maintainer' | 'miner'
+  >('maintainer');
 
   useEffect(() => {
     const interval = setInterval(() => {
       setActivePanel((current) => (current === 'feed' ? 'miners' : 'feed'));
-    }, 8000); // Rotate every 8 seconds
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    // Coprime cadence vs the top panel (5s) so flips rarely line up.
+    const interval = setInterval(() => {
+      setActiveBottomCard((current) =>
+        current === 'maintainer' ? 'miner' : 'maintainer',
+      );
+    }, 7000);
     return () => clearInterval(interval);
   }, []);
   const { datasets, isLoading } = useDashboardData('35d');
@@ -248,6 +261,9 @@ const HomePage: React.FC = () => {
   const onboardLink = useLinkBehavior<HTMLAnchorElement>('/onboard');
   const docsLink = useLinkBehavior<HTMLAnchorElement>(
     'https://docs.gittensor.io',
+  );
+  const registerRepoLink = useLinkBehavior<HTMLAnchorElement>(
+    '/repository-registration',
   );
 
   const minerRows = useMemo(
@@ -483,7 +499,102 @@ const HomePage: React.FC = () => {
             totalIssuesSolved={totalIssuesSolvedEver}
             medianMergeRate={medianMergeRate}
           />
-          <OnboardingCard onboardLink={onboardLink} docsLink={docsLink} />
+          <Box
+            sx={{
+              minWidth: 0,
+              alignSelf: 'stretch',
+              display: 'grid',
+              gridTemplateColumns: '1fr',
+              gridTemplateRows: '1fr',
+              position: 'relative',
+            }}
+          >
+            <Box
+              sx={{
+                gridArea: '1 / 1',
+                display: 'flex',
+                opacity: activeBottomCard === 'maintainer' ? 1 : 0,
+                pointerEvents:
+                  activeBottomCard === 'maintainer' ? 'auto' : 'none',
+                transition: 'opacity 0.6s ease',
+                zIndex: activeBottomCard === 'maintainer' ? 1 : 0,
+              }}
+            >
+              <OnboardingCard
+                content={{
+                  kicker: 'Maintain a repo?',
+                  headline: 'Open issues, get PRs.',
+                  body: 'Install the GitHub App and submit a quick form. The team reviews each repo before listing.',
+                  primaryLabel: 'Register a repo',
+                  primaryLink: registerRepoLink,
+                  secondaryLabel: 'Read docs',
+                  secondaryLink: docsLink,
+                }}
+              />
+            </Box>
+            <Box
+              sx={{
+                gridArea: '1 / 1',
+                display: 'flex',
+                opacity: activeBottomCard === 'miner' ? 1 : 0,
+                pointerEvents: activeBottomCard === 'miner' ? 'auto' : 'none',
+                transition: 'opacity 0.6s ease',
+                zIndex: activeBottomCard === 'miner' ? 1 : 0,
+              }}
+            >
+              <OnboardingCard
+                content={{
+                  kicker: 'Ready to contribute?',
+                  headline: 'Register once, then submit PRs.',
+                  body: 'Read the quickstart guide to get set up. No complex infrastructure or always-on servers required.',
+                  primaryLabel: 'Miner guide',
+                  primaryLink: onboardLink,
+                  secondaryLabel: 'Read docs',
+                  secondaryLink: docsLink,
+                }}
+              />
+            </Box>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                position: 'absolute',
+                bottom: -24,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 2,
+              }}
+            >
+              <Box
+                onClick={() => setActiveBottomCard('maintainer')}
+                sx={(theme) => ({
+                  width: 32,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor:
+                    activeBottomCard === 'maintainer'
+                      ? theme.palette.status.merged
+                      : alpha(theme.palette.text.primary, 0.1),
+                  cursor: 'pointer',
+                  transition: 'background-color 0.3s ease',
+                })}
+              />
+              <Box
+                onClick={() => setActiveBottomCard('miner')}
+                sx={(theme) => ({
+                  width: 32,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor:
+                    activeBottomCard === 'miner'
+                      ? theme.palette.status.merged
+                      : alpha(theme.palette.text.primary, 0.1),
+                  cursor: 'pointer',
+                  transition: 'background-color 0.3s ease',
+                })}
+              />
+            </Stack>
+          </Box>
         </Box>
       </Box>
     </Page>
@@ -1372,13 +1483,22 @@ const HowItWorksSection: React.FC<{
   </Box>
 );
 
-const OnboardingCard: React.FC<{
-  onboardLink: ReturnType<typeof useLinkBehavior<HTMLAnchorElement>>;
-  docsLink: ReturnType<typeof useLinkBehavior<HTMLAnchorElement>>;
-}> = ({ onboardLink, docsLink }) => (
+type OnboardingCardContent = {
+  kicker: string;
+  headline: React.ReactNode;
+  body: React.ReactNode;
+  primaryLabel: string;
+  primaryLink: ReturnType<typeof useLinkBehavior<HTMLAnchorElement>>;
+  secondaryLabel: string;
+  secondaryLink: ReturnType<typeof useLinkBehavior<HTMLAnchorElement>>;
+};
+
+const OnboardingCard: React.FC<{ content: OnboardingCardContent }> = ({
+  content,
+}) => (
   <Box
     sx={(theme) => ({
-      alignSelf: 'stretch',
+      width: '100%',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
@@ -1415,7 +1535,7 @@ const OnboardingCard: React.FC<{
           textTransform: 'uppercase',
         })}
       >
-        Ready to contribute?
+        {content.kicker}
       </Typography>
       <Typography
         sx={{
@@ -1425,7 +1545,7 @@ const OnboardingCard: React.FC<{
           lineHeight: 1,
         }}
       >
-        Register once, then submit PRs.
+        {content.headline}
       </Typography>
       <Typography
         sx={(theme) => ({
@@ -1434,8 +1554,7 @@ const OnboardingCard: React.FC<{
           lineHeight: 1.6,
         })}
       >
-        Read the quickstart guide to get set up. No complex infrastructure or
-        always-on servers required.
+        {content.body}
       </Typography>
     </Stack>
     <Stack
@@ -1445,7 +1564,7 @@ const OnboardingCard: React.FC<{
     >
       <Button
         component="a"
-        {...onboardLink}
+        {...content.primaryLink}
         variant="contained"
         endIcon={<ArrowForwardIcon />}
         sx={(theme) => ({
@@ -1463,11 +1582,11 @@ const OnboardingCard: React.FC<{
           transition: 'all 0.2s ease',
         })}
       >
-        Miner guide
+        {content.primaryLabel}
       </Button>
       <Button
         component="a"
-        {...docsLink}
+        {...content.secondaryLink}
         variant="outlined"
         sx={(theme) => ({
           minHeight: 44,
@@ -1482,7 +1601,7 @@ const OnboardingCard: React.FC<{
           },
         })}
       >
-        Read docs
+        {content.secondaryLabel}
       </Button>
     </Stack>
   </Box>

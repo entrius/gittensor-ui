@@ -6,26 +6,29 @@ import {
   Card,
   Chip,
   Collapse,
-  FormControl,
   Grid,
   IconButton,
   InputAdornment,
   Link,
   MenuItem,
+  Popover,
+  Portal,
   Select,
   Skeleton,
   Stack,
-  TablePagination,
   TextField,
   Tooltip,
   Typography,
   alpha,
+  useMediaQuery,
   useTheme,
 } from '@mui/material';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SearchIcon from '@mui/icons-material/Search';
 import TableChartIcon from '@mui/icons-material/TableChart';
+import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ReactECharts from 'echarts-for-react';
@@ -44,22 +47,31 @@ import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { WatchlistButton } from '../common/WatchlistButton';
 import BountyProgress from './BountyProgress';
-import FilterButton from '../FilterButton';
 import { BountyCard } from './BountyCard';
 import {
   type IssuesViewMode,
   ISSUES_VIEW_QUERY_PARAM,
-  ISSUES_LIST_ROWS,
-  ISSUES_CARD_ROWS,
   ISSUES_DEFAULT_CARD_ROWS,
-  ISSUES_DEFAULT_LIST_ROWS,
-  clampRowsForIssuesView,
   getIssuesViewModeFromQuery,
   readStoredIssuesViewMode,
   writeStoredIssuesViewMode,
 } from './issuesViewMode';
 
-type FilterType = 'all' | 'available' | 'pending' | 'history';
+export type FilterType = 'all' | 'available' | 'pending' | 'history';
+
+export const FILTER_ORDER: readonly FilterType[] = [
+  'all',
+  'available',
+  'pending',
+  'history',
+] as const;
+
+export const FILTER_LABELS: Record<FilterType, string> = {
+  all: 'All',
+  available: 'Available',
+  pending: 'Pending',
+  history: 'History',
+};
 type SortDirection = 'asc' | 'desc';
 type SortKey =
   | 'id'
@@ -70,6 +82,17 @@ type SortKey =
   | 'funding'
   | 'solver'
   | 'date';
+
+const SORT_LABELS: Record<SortKey, string> = {
+  id: 'ID',
+  repository: 'Repository',
+  issue: 'Issue',
+  bounty: 'Bounty',
+  status: 'Status',
+  funding: 'Funding',
+  solver: 'Solver',
+  date: 'Date',
+};
 
 const parseBountyAmount = (value: string | null | undefined): number => {
   const parsed = Number.parseFloat(value ?? '0');
@@ -182,12 +205,19 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [rowsPerPage, setRowsPerPage] = useState(
-    viewMode === 'cards' ? ISSUES_DEFAULT_CARD_ROWS : ISSUES_DEFAULT_LIST_ROWS,
-  );
-  const [page, setPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [showChart, setShowChart] = useState(false);
+
+  const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setPortalTarget(document.getElementById('tabs-options-portal'));
+  }, []);
+
+  const [optionsAnchorEl, setOptionsAnchorEl] = useState<HTMLElement | null>(
+    null,
+  );
+  const optionsOpen = Boolean(optionsAnchorEl);
 
   const { taoPrice, alphaPrice } = usePrices();
 
@@ -210,35 +240,13 @@ const IssuesList: React.FC<IssuesListProps> = ({
     [filterType, viewMode, setSearchParams],
   );
 
-  const handleFilterChange = useCallback(
-    (f: FilterType) => syncParams({ filter: f }),
-    [syncParams],
-  );
-
   const handleViewModeChange = useCallback(
     (nextMode: IssuesViewMode) => {
       writeStoredIssuesViewMode(nextMode);
       setStoredViewMode(nextMode);
-      const nextRows = clampRowsForIssuesView(rowsPerPage, nextMode);
-      if (nextRows !== rowsPerPage) {
-        setRowsPerPage(nextRows);
-        setPage(0);
-      }
       syncParams({ view: nextMode });
     },
-    [rowsPerPage, syncParams],
-  );
-
-  const counts = useMemo(
-    () => ({
-      all: issues.length,
-      available: issues.filter((i) => i.status === 'active').length,
-      pending: issues.filter((i) => i.status === 'registered').length,
-      history: issues.filter(
-        (i) => i.status === 'completed' || i.status === 'cancelled',
-      ).length,
-    }),
-    [issues],
+    [syncParams],
   );
 
   const filteredByType = useMemo(() => {
@@ -285,10 +293,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
       setSortDirection('desc');
     }
   }, [sortKey, visibleSortKeys]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [filterType, searchQuery]);
 
   const handleSort = useCallback(
     (key: SortKey) => {
@@ -351,11 +355,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
     });
     return decorated.map((d) => d.row);
   }, [filteredIssues, getSortValue, sortKey, sortDirection]);
-
-  const paginatedIssues = useMemo(() => {
-    const start = page * rowsPerPage;
-    return sortedIssues.slice(start, start + rowsPerPage);
-  }, [sortedIssues, page, rowsPerPage]);
 
   const chartOption = useMemo(() => {
     const repoTotals = new Map<string, number>();
@@ -751,28 +750,21 @@ const IssuesList: React.FC<IssuesListProps> = ({
     ];
   }, [filterType, theme, taoPrice, alphaPrice]);
 
-  const validRows = viewMode === 'cards' ? ISSUES_CARD_ROWS : ISSUES_LIST_ROWS;
-
-  const pagination = (
-    <TablePagination
-      rowsPerPageOptions={[]}
-      component="div"
-      count={sortedIssues.length}
-      rowsPerPage={rowsPerPage}
-      page={page}
-      onPageChange={(_event, newPage) => setPage(newPage)}
-      onRowsPerPageChange={() => {}}
-      showFirstButton
-      showLastButton
-    />
-  );
-
-  const cardSx = {
-    backgroundColor: 'background.default',
-    border: `1px solid ${theme.palette.border.light}`,
-    borderRadius: 3,
-    overflow: 'hidden',
-  };
+  const cardSx =
+    viewMode === 'cards'
+      ? ({
+          backgroundColor: 'transparent',
+          border: 'none',
+          borderRadius: 0,
+          overflow: 'visible',
+          boxShadow: 'none',
+        } as const)
+      : ({
+          backgroundColor: 'background.default',
+          border: `1px solid ${theme.palette.border.light}`,
+          borderRadius: 3,
+          overflow: 'hidden',
+        } as const);
 
   if (isLoading) {
     return (
@@ -809,186 +801,337 @@ const IssuesList: React.FC<IssuesListProps> = ({
     );
   }
 
-  const toolbar = (
-    <>
-      <Box
+  const sidebarLabelSx = {
+    fontFamily: '"JetBrains Mono", monospace',
+    fontSize: '0.65rem',
+    fontWeight: 600,
+    color: 'text.secondary',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    mb: 1,
+    display: 'block',
+  } as const;
+
+  const inputFieldSx = {
+    color: theme.palette.text.primary,
+    backgroundColor: alpha(theme.palette.common.black, 0.4),
+    fontSize: '0.8rem',
+    height: '36px',
+    borderRadius: 2,
+    '& fieldset': { borderColor: theme.palette.border.light },
+    '&:hover fieldset': { borderColor: theme.palette.border.medium },
+    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+  } as const;
+
+  const chartToggleButton = (
+    <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+      <IconButton
+        onClick={() => setShowChart(!showChart)}
+        size="small"
         sx={{
-          px: 2,
-          py: 1.5,
-          borderBottom: `1px solid ${theme.palette.border.light}`,
-          display: 'flex',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 2,
+          color: showChart
+            ? theme.palette.text.primary
+            : alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+          border: `1px solid ${theme.palette.border.light}`,
+          borderRadius: 2,
+          padding: '6px',
+          '&:hover': {
+            backgroundColor: theme.palette.surface.subtle,
+            borderColor: theme.palette.border.medium,
+          },
         }}
       >
-        {/* Left: filter buttons + chart toggle */}
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems="center"
-          flexWrap="wrap"
-          useFlexGap
-        >
-          <FilterButton
-            label="All"
-            isActive={filterType === 'all'}
-            onClick={() => handleFilterChange('all')}
-            count={counts.all}
-            color={theme.palette.status.neutral}
-          />
-          <FilterButton
-            label="Available"
-            isActive={filterType === 'available'}
-            onClick={() => handleFilterChange('available')}
-            count={counts.available}
-            color={theme.palette.status.merged}
-          />
-          <FilterButton
-            label="Pending"
-            isActive={filterType === 'pending'}
-            onClick={() => handleFilterChange('pending')}
-            count={counts.pending}
-            color={theme.palette.status.warning}
-          />
-          <FilterButton
-            label="History"
-            isActive={filterType === 'history'}
-            onClick={() => handleFilterChange('history')}
-            count={counts.history}
-            color={theme.palette.status.neutral}
-          />
+        {showChart ? (
+          <TableChartIcon fontSize="small" />
+        ) : (
+          <BarChartIcon fontSize="small" />
+        )}
+      </IconButton>
+    </Tooltip>
+  );
 
-          <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
-            <IconButton
-              onClick={() => setShowChart(!showChart)}
-              size="small"
+  const searchField = (fullWidth = false) => (
+    <TextField
+      placeholder="Search..."
+      size="small"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            <SearchIcon
               sx={{
-                color: showChart
-                  ? theme.palette.text.primary
-                  : alpha(theme.palette.common.white, TEXT_OPACITY.muted),
-                border: `1px solid ${theme.palette.border.light}`,
-                borderRadius: 2,
-                padding: '6px',
-                '&:hover': {
-                  backgroundColor: theme.palette.surface.subtle,
-                  borderColor: theme.palette.border.medium,
-                },
+                color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+                fontSize: '1rem',
               }}
-            >
-              {showChart ? (
-                <TableChartIcon fontSize="small" />
-              ) : (
-                <BarChartIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Tooltip>
-        </Stack>
-
-        {/* Rows selector */}
-        <FormControl size="small">
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography
-              variant="body2"
-              sx={{
-                color: alpha(
-                  theme.palette.common.white,
-                  TEXT_OPACITY.secondary,
-                ),
-                fontSize: '0.8rem',
-              }}
-            >
-              Rows:
-            </Typography>
-            <Select
-              value={rowsPerPage}
-              onChange={(e) => {
-                setRowsPerPage(e.target.value as number);
-                setPage(0);
-              }}
-              sx={{
-                color: theme.palette.text.primary,
-                backgroundColor: alpha(theme.palette.common.black, 0.4),
-                fontSize: '0.8rem',
-                height: '36px',
-                borderRadius: 2,
-                minWidth: '80px',
-                '& fieldset': { borderColor: theme.palette.border.light },
-                '&:hover fieldset': {
-                  borderColor: theme.palette.border.medium,
-                },
-                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                '& .MuiSelect-select': { py: 0.75 },
-              }}
-            >
-              {validRows.map((n) => (
-                <MenuItem key={n} value={n}>
-                  {n}
-                </MenuItem>
-              ))}
-            </Select>
-          </Box>
-        </FormControl>
-
-        {/* Search */}
-        <TextField
-          placeholder="Search..."
-          size="small"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon
-                  sx={{
-                    color: alpha(
-                      theme.palette.common.white,
-                      TEXT_OPACITY.muted,
-                    ),
-                    fontSize: '1rem',
-                  }}
-                />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            width: '200px',
-            '& .MuiOutlinedInput-root': {
-              color: theme.palette.text.primary,
-              backgroundColor: alpha(theme.palette.common.black, 0.4),
-              fontSize: '0.8rem',
-              height: '36px',
-              borderRadius: 2,
-              '& fieldset': { borderColor: theme.palette.border.light },
-              '&:hover fieldset': { borderColor: theme.palette.border.medium },
-              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-            },
-          }}
-        />
-
-        {/* View toggle — pushed to far right */}
-        <Box sx={{ ml: 'auto' }}>
-          <ViewModeToggle viewMode={viewMode} onChange={handleViewModeChange} />
-        </Box>
-      </Box>
-
-      <Collapse in={showChart}>
-        <Box
-          sx={{
-            height: 500,
-            p: 2,
-            borderBottom: `1px solid ${theme.palette.border.light}`,
-            backgroundColor: alpha(theme.palette.common.black, 0.2),
-          }}
-        >
-          {showChart && filteredIssues.length > 0 && (
-            <ReactECharts
-              option={chartOption}
-              style={{ height: '100%', width: '100%' }}
             />
-          )}
+          </InputAdornment>
+        ),
+      }}
+      sx={{
+        width: fullWidth ? '100%' : '200px',
+        '& .MuiOutlinedInput-root': inputFieldSx,
+      }}
+    />
+  );
+
+  const viewToggle = (
+    <ViewModeToggle viewMode={viewMode} onChange={handleViewModeChange} />
+  );
+
+  const sortSection = (
+    <Box>
+      <Typography sx={sidebarLabelSx}>Sort</Typography>
+      <Box sx={{ display: 'flex', gap: 1 }}>
+        <Select
+          value={sortKey}
+          onChange={(e) => {
+            const key = e.target.value as SortKey;
+            setSortKey(key);
+            setSortDirection(getDefaultSortDirection(key));
+          }}
+          size="small"
+          sx={{ ...inputFieldSx, flex: 1, '& .MuiSelect-select': { py: 0.75 } }}
+        >
+          {visibleSortKeys.map((key) => (
+            <MenuItem key={key} value={key}>
+              {SORT_LABELS[key]}
+            </MenuItem>
+          ))}
+        </Select>
+        <Tooltip
+          title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
+          arrow
+        >
+          <IconButton
+            size="small"
+            onClick={() =>
+              setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+            }
+            sx={{
+              color: theme.palette.text.primary,
+              border: `1px solid ${theme.palette.border.light}`,
+              borderRadius: 2,
+              padding: '6px',
+              '&:hover': {
+                backgroundColor: theme.palette.surface.subtle,
+                borderColor: theme.palette.border.medium,
+              },
+            }}
+          >
+            <ArrowUpwardIcon
+              fontSize="small"
+              sx={{
+                transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.2s ease',
+              }}
+            />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </Box>
+  );
+
+  const usePortal = !!portalTarget && isLargeScreen;
+
+  const hasActiveOptions = searchQuery.trim() !== '' || showChart;
+
+  /* Below xl: a single compact "Options" icon-button that opens a popover
+     containing the same Status / View / Search / Chart sections that live
+     in the sidebar Filters panel on xl+. Mirrors WatchlistOptionsButton. */
+  const optionsButton = (
+    <Tooltip title="Options" arrow>
+      <Box
+        component="button"
+        type="button"
+        onClick={(e) =>
+          setOptionsAnchorEl((prev) => (prev ? null : e.currentTarget))
+        }
+        sx={(t) => ({
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 0.75,
+          px: 1.25,
+          py: 0.5,
+          minHeight: 32,
+          borderRadius: 2,
+          border: `1px solid ${t.palette.border.light}`,
+          backgroundColor: optionsOpen
+            ? alpha(t.palette.text.primary, 0.06)
+            : 'transparent',
+          cursor: 'pointer',
+          transition: 'all 0.15s',
+          '&:hover': {
+            backgroundColor: alpha(t.palette.text.primary, 0.04),
+            borderColor: t.palette.border.medium,
+          },
+        })}
+      >
+        <TuneOutlinedIcon sx={{ fontSize: '1rem', color: 'text.secondary' }} />
+        <Typography
+          component="span"
+          sx={{
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.72rem',
+            fontWeight: 600,
+            color: 'text.secondary',
+          }}
+        >
+          Options
+        </Typography>
+        {hasActiveOptions && (
+          <Box
+            component="span"
+            sx={{
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              backgroundColor: 'status.info',
+            }}
+          />
+        )}
+      </Box>
+    </Tooltip>
+  );
+
+  const optionsPopover = (
+    <Popover
+      open={optionsOpen}
+      anchorEl={optionsAnchorEl}
+      onClose={() => setOptionsAnchorEl(null)}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      slotProps={{
+        paper: {
+          sx: (t) => ({
+            mt: 1,
+            p: 2.5,
+            minWidth: 280,
+            borderRadius: 3,
+            border: `1px solid ${t.palette.border.light}`,
+            backgroundColor: t.palette.background.default,
+            backgroundImage: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2.5,
+          }),
+        },
+      }}
+    >
+      {sortSection}
+      <Box>
+        <Typography sx={sidebarLabelSx}>View</Typography>
+        {viewToggle}
+      </Box>
+      <Box>
+        <Typography sx={sidebarLabelSx}>Search</Typography>
+        {searchField(true)}
+      </Box>
+      <Box>
+        <Typography sx={sidebarLabelSx}>Chart</Typography>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          {chartToggleButton}
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.78rem',
+              color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
+            }}
+          >
+            {showChart ? 'Hide chart' : 'Show chart'}
+          </Typography>
+        </Stack>
+      </Box>
+    </Popover>
+  );
+
+  /* Inline toolbar at the top of the table.
+     - Above xl (usePortal=true): only Rows; the Filters panel in the right
+       sidebar holds Status / View / Search / Chart via Portal.
+     - Below xl: Rows + a single "Options" button that opens a popover with
+       Status / View / Search / Chart sections. */
+  const inlineToolbar = (
+    <Box
+      sx={{
+        px: viewMode === 'cards' ? 0 : 2,
+        py: 1.5,
+        borderBottom:
+          viewMode === 'cards'
+            ? 'none'
+            : `1px solid ${theme.palette.border.light}`,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+      }}
+    >
+      {!usePortal && (
+        <Box sx={{ ml: 'auto' }}>
+          {optionsButton}
+          {optionsPopover}
         </Box>
-      </Collapse>
+      )}
+    </Box>
+  );
+
+  /* Sidebar-portaled toolbar — Sort, View toggle (grid/cards), Search, and Chart.
+     Rows-per-page stays in the inline toolbar. */
+  const sidebarToolbar = (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      {sortSection}
+      <Box>
+        <Typography sx={sidebarLabelSx}>View</Typography>
+        {viewToggle}
+      </Box>
+      <Box>
+        <Typography sx={sidebarLabelSx}>Search</Typography>
+        {searchField(true)}
+      </Box>
+      <Box>
+        <Typography sx={sidebarLabelSx}>Chart</Typography>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          {chartToggleButton}
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.78rem',
+              color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
+            }}
+          >
+            {showChart ? 'Hide chart' : 'Show chart'}
+          </Typography>
+        </Stack>
+      </Box>
+    </Box>
+  );
+
+  const chartCollapse = (
+    <Collapse in={showChart}>
+      <Box
+        sx={{
+          height: 500,
+          p: 2,
+          borderBottom: `1px solid ${theme.palette.border.light}`,
+          backgroundColor: alpha(theme.palette.common.black, 0.2),
+        }}
+      >
+        {showChart && filteredIssues.length > 0 && (
+          <ReactECharts
+            option={chartOption}
+            style={{ height: '100%', width: '100%' }}
+          />
+        )}
+      </Box>
+    </Collapse>
+  );
+
+  const toolbar = (
+    <>
+      {usePortal ? (
+        <Portal container={portalTarget}>{sidebarToolbar}</Portal>
+      ) : (
+        inlineToolbar
+      )}
+      {chartCollapse}
     </>
   );
 
@@ -1009,32 +1152,27 @@ const IssuesList: React.FC<IssuesListProps> = ({
       {toolbar}
 
       {viewMode === 'cards' ? (
-        <>
-          {paginatedIssues.length > 0 ? (
-            <Box sx={{ p: 2 }}>
-              <Grid container spacing={2}>
-                {paginatedIssues.map((issue) => (
-                  <Grid item xs={12} sm={6} md={4} key={issue.id}>
-                    <BountyCard
-                      issue={issue}
-                      href={getIssueHref ? getIssueHref(issue.id) : undefined}
-                      linkState={linkState}
-                      taoPrice={taoPrice}
-                      alphaPrice={alphaPrice}
-                    />
-                  </Grid>
-                ))}
+        sortedIssues.length > 0 ? (
+          <Grid container spacing={2}>
+            {sortedIssues.map((issue) => (
+              <Grid item xs={12} sm={6} md={4} key={issue.id}>
+                <BountyCard
+                  issue={issue}
+                  href={getIssueHref ? getIssueHref(issue.id) : undefined}
+                  linkState={linkState}
+                  taoPrice={taoPrice}
+                  alphaPrice={alphaPrice}
+                />
               </Grid>
-            </Box>
-          ) : (
-            emptyState
-          )}
-          {pagination}
-        </>
+            ))}
+          </Grid>
+        ) : (
+          emptyState
+        )
       ) : (
         <DataTable<IssueBounty, SortKey>
           columns={columns}
-          rows={paginatedIssues}
+          rows={sortedIssues}
           getRowKey={(issue) => issue.id}
           getRowHref={
             getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
@@ -1048,7 +1186,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                 : '750px'
           }
           emptyState={emptyState}
-          pagination={pagination}
           getRowSx={(issue) =>
             issue.completedAt && isOutsideScoringWindow(issue.completedAt)
               ? { opacity: 0.4, filter: 'grayscale(0.5)' }
