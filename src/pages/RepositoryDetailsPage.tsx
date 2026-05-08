@@ -228,10 +228,10 @@ const RepositoryDetailsPage: React.FC = () => {
                   {(() => {
                     const currentRepo = trackedRepo;
 
-                    if (currentRepo?.inactiveAt) {
+                    if (currentRepo?.config?.inactiveAt) {
                       return (
                         <Chip
-                          label={`Inactive since ${formatDate(currentRepo.inactiveAt)}`}
+                          label={`Inactive since ${formatDate(currentRepo.config.inactiveAt)}`}
                           sx={(theme) => ({
                             backgroundColor: alpha(STATUS_COLORS.error, 0.1),
                             color: theme.palette.status.error,
