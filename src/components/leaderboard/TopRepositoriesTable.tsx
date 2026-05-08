@@ -1286,7 +1286,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             </Box>
           </Box>
         </Box>
-
       </Box>
 
       {(viewMode === 'cards' || showChart) && (
@@ -1331,9 +1330,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               </MenuItem>
             ))}
           </Select>
-          <Tooltip
-            title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
-          >
+          <Tooltip title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}>
             <IconButton
               onClick={() => handleSort(sortColumn)}
               size="small"
