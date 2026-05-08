@@ -360,7 +360,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
       return {
         credibility: 0,
         complexity: 0,
-        issuesSolved: 0,
+        mergedPrs: 0,
         uniqueRepos: 0,
         totalPRs: 0,
         avgRepoWeight: 0,
@@ -393,7 +393,10 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
       const repoWeights = new Map<string, number>();
       repos.forEach((repo) => {
         if (repo?.fullName) {
-          repoWeights.set(repo.fullName, parseFloat(repo.weight || '0'));
+          repoWeights.set(
+            repo.fullName,
+            parseFloat(String(repo.config?.weight ?? 0)),
+          );
         }
       });
       const totalWeight = prs.reduce(
@@ -406,7 +409,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
     return {
       credibility: ((minerStats.credibility || 0) / maxCredibility) * 100,
       complexity: ((minerStats.totalNodesScored || 0) / maxComplexity) * 100,
-      issuesSolved: ((minerStats.totalMergedPrs || 0) / maxMergedPrs) * 100,
+      mergedPrs: ((minerStats.totalMergedPrs || 0) / maxMergedPrs) * 100,
       uniqueRepos: ((minerStats.uniqueReposCount || 0) / maxUniqueRepos) * 100,
       totalPRs: ((minerStats.totalPrs || 0) / maxTotalPrs) * 100,
       avgRepoWeight: avgWeightVal,

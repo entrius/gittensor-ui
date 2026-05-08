@@ -1,7 +1,7 @@
 import React from 'react';
 import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
 import { useMinerGithubData, useMinerPRs } from '../../api';
-import { CHART_COLORS, scrollbarSx } from '../../theme';
+import { CHART_COLORS } from '../../theme';
 import { getGithubAvatarSrc, type SortOrder } from '../../utils/ExplorerUtils';
 import { DataTable, type DataTableColumn, WatchlistButton } from '../common';
 import { RankIcon } from './RankIcon';
@@ -165,6 +165,7 @@ export const MinersList: React.FC<MinersListProps> = ({
       header: '\u2605',
       width: '52px',
       align: 'center',
+      sortKey: 'watch',
       cellSx: { p: 0 },
       renderCell: (miner) =>
         miner.githubId ? (
@@ -185,15 +186,8 @@ export const MinersList: React.FC<MinersListProps> = ({
         border: '1px solid',
         borderColor: 'border.light',
         backgroundColor: 'transparent',
-        overflow: 'hidden',
-        maxHeight: '75vh',
         display: 'flex',
         flexDirection: 'column',
-        '& .MuiTableContainer-root': {
-          flex: 1,
-          overflowY: 'auto',
-          ...scrollbarSx,
-        },
       }}
     >
       <DataTable<MinerStats, SortOption>

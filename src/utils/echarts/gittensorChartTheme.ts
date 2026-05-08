@@ -27,6 +27,8 @@ export function echartsAxisTooltipChrome(theme: Theme) {
 export function echartsItemTooltipChrome(theme: Theme) {
   return {
     confine: true,
+    renderMode: 'html' as const,
+    appendTo: 'body' as const,
     backgroundColor: theme.palette.surface.tooltip,
     borderColor: alpha(theme.palette.text.primary, 0.15),
     borderWidth: 1,
