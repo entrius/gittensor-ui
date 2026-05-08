@@ -33,6 +33,7 @@ jobs:
         run: |
           echo "VITE_REACT_APP_BASE_URL=${{ vars.VITE_REACT_APP_BASE_URL }}" > .env
           echo "VITE_REACT_APP_MIRROR_BASE_URL=${{ vars.VITE_REACT_APP_MIRROR_BASE_URL }}" >> .env
+          echo "VITE_WEB3FORMS_ACCESS_KEY=${{ secrets.VITE_WEB3FORMS_ACCESS_KEY }}" >> .env
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
