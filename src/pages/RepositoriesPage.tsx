@@ -194,6 +194,7 @@ const RepositoriesPage: React.FC = () => {
           uniqueMiners: s?.uniqueMiners || new Set<string>(),
           weight: parseFloat(String(repo.config?.weight ?? 0)) || 0,
           inactiveAt: repo.config?.inactiveAt ?? null,
+          mirrorEnabled: repo.config?.mirrorEnabled ?? false,
           discoveryScore: d?.discoveryScore ?? 0,
           discoveryIssues: d?.discoveryIssues ?? 0,
           discoveryContributors: d?.discoveryContributors ?? new Set<string>(),

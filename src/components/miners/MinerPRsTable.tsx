@@ -27,6 +27,8 @@ import {
   type DataTableColumn,
 } from '../../components/common/DataTable';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
+import { WatchlistButton } from '../../components/common';
+import { serializePRKey } from '../../hooks/useWatchlist';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
 import { tooltipSlotProps } from '../../theme';
@@ -417,6 +419,19 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           : pr.prState === 'CLOSED'
             ? 'Closed'
             : 'Open',
+    },
+    {
+      key: 'watch',
+      header: '★',
+      width: '8%',
+      align: 'center',
+      renderCell: (pr) => (
+        <WatchlistButton
+          category="prs"
+          itemKey={serializePRKey(pr.repository, pr.pullRequestNumber)}
+          size="small"
+        />
+      ),
     },
   ];
 
