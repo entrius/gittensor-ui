@@ -78,6 +78,7 @@ const TopMinersPage: React.FC = () => {
       hotkey: stat.hotkey || 'N/A',
       uniqueReposCount: parseNumber(stat.uniqueReposCount),
       issueCredibility: parseNumber(stat.issueCredibility),
+      credibility: parseNumber(stat.issueCredibility),
       isEligible: stat.isIssueEligible ?? false,
       ossIsEligible: stat.isEligible ?? false,
       discoveriesIsEligible: stat.isIssueEligible ?? false,

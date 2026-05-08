@@ -127,6 +127,8 @@ export interface RepoStats {
   tokenScore: number;
   weight: number;
   latestPrDate?: string | null;
+  /** Set when subnet repo list marks the repository inactive (miners / enrich layer). */
+  inactiveAt?: string | null;
 }
 
 /** Per-repository stats for Issue Discovery (miner solved bounties via winning PRs). */
@@ -138,6 +140,7 @@ export interface IssueRepoStats {
   bountyEarned: number;
   weight: number;
   latestActivityDate: string | null;
+  inactiveAt?: string | null;
 }
 
 export type RepoSortField =
@@ -260,7 +263,10 @@ export const buildRepoWeightsMap = (
   if (!Array.isArray(repos)) return map;
   for (const repo of repos) {
     if (repo && repo.fullName) {
-      map.set(repo.fullName.toLowerCase(), parseFloat(repo.weight || '0'));
+      map.set(
+        repo.fullName.toLowerCase(),
+        parseFloat(String(repo.config?.weight ?? 0)),
+      );
     }
   }
   return map;

@@ -497,6 +497,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               gap: 1.5,
               flexWrap: 'wrap',
               mb: 0.5,
+              pr: {
+                xs: 0,
+                sm: minerStats.updatedAt ? '160px' : 0,
+              },
             }}
           >
             <Typography

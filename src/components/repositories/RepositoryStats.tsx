@@ -127,7 +127,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
               fontSize: '13px',
             }}
           >
-            {repository.weight}
+            {String(repository.config?.weight ?? '')}
           </Typography>
         </Box>
 
@@ -299,8 +299,8 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
         )}
 
         {/* Additional Acceptable Branches */}
-        {repoConfig?.additionalAcceptableBranches &&
-          repoConfig.additionalAcceptableBranches.length > 0 && (
+        {repoConfig?.config?.additionalAcceptableBranches &&
+          repoConfig.config.additionalAcceptableBranches.length > 0 && (
             <>
               <Divider sx={{ borderColor: 'border.light', my: 0.5 }} />
               <Typography
@@ -316,20 +316,22 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
                   gap: 0.75,
                 }}
               >
-                {repoConfig.additionalAcceptableBranches.map((branch) => (
-                  <Chip
-                    key={branch}
-                    label={branch}
-                    size="small"
-                    sx={{
-                      fontSize: '12px',
-                      height: '24px',
-                      bgcolor: 'surface.light',
-                      color: 'text.primary',
-                      border: `1px solid ${theme.palette.border.light}`,
-                    }}
-                  />
-                ))}
+                {repoConfig.config.additionalAcceptableBranches.map(
+                  (branch: string) => (
+                    <Chip
+                      key={branch}
+                      label={branch}
+                      size="small"
+                      sx={{
+                        fontSize: '12px',
+                        height: '24px',
+                        bgcolor: 'surface.light',
+                        color: 'text.primary',
+                        border: `1px solid ${theme.palette.border.light}`,
+                      }}
+                    />
+                  ),
+                )}
               </Box>
             </>
           )}
