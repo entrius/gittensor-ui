@@ -74,7 +74,10 @@ import type { IssueBounty } from '../api/models/Issues';
 import { usePrices } from '../hooks/usePrices';
 import { BountyCard } from '../components/issues/BountyCard';
 import { mapAllMinersToStats } from '../utils/minerMapper';
-import { buildRepoDiscoveryRollupFromMiners, isOutsideScoringWindow } from '../utils/ExplorerUtils';
+import {
+  buildRepoDiscoveryRollupFromMiners,
+  isOutsideScoringWindow,
+} from '../utils/ExplorerUtils';
 import {
   useWatchlist,
   useWatchlistCounts,

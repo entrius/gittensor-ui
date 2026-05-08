@@ -16,7 +16,11 @@ import { Search as SearchIcon } from '@mui/icons-material';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { useMinerIssues } from '../../api';
 import { type MinerIssue } from '../../api/models/Dashboard';
-import { getRepositoryOwnerAvatarSrc, isOutsideScoringWindow, paginateItems } from '../../utils';
+import {
+  getRepositoryOwnerAvatarSrc,
+  isOutsideScoringWindow,
+  paginateItems,
+} from '../../utils';
 import { LABEL_COLORS } from '../../theme';
 import {
   DataTable,
