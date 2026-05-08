@@ -147,7 +147,9 @@ const CARD_SORT_OPTIONS: Array<{ value: SortColumn; label: string }> = [
   { value: 'totalScore', label: 'OSS score' },
   { value: 'totalPRs', label: 'PRs' },
   { value: 'contributors', label: 'Contributors' },
+  { value: 'discoveryScore', label: 'Issue Score' },
   { value: 'discoveryIssues', label: 'Issues' },
+  { value: 'discoveryContributors', label: 'Issue Contributors' },
   { value: 'repository', label: 'Repository' },
 ];
 
@@ -236,11 +238,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     urlDir === 'asc' || urlDir === 'desc' ? urlDir : 'desc',
   );
   const [useLogScale, setUseLogScale] = useState(true);
-  const [chartMetricKey, setChartMetricKey] = useState<ChartMetricKey>(() => {
-    return VALID_CHART_METRIC_KEYS.has(sortColumn as ChartMetricKey)
-      ? (sortColumn as ChartMetricKey)
-      : 'totalScore';
-  });
+  const chartMetricKey: ChartMetricKey = VALID_CHART_METRIC_KEYS.has(
+    sortColumn as ChartMetricKey,
+  )
+    ? (sortColumn as ChartMetricKey)
+    : 'totalScore';
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [storedViewMode, setStoredViewMode] = useState<ViewMode>(
     readStoredRepositoriesViewMode,
@@ -1285,78 +1287,80 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           </Box>
         </Box>
 
-        {/* Row 2: Sort controls (card view only) */}
-        {viewMode === 'cards' && (
-          <Box
+      </Box>
+
+      {(viewMode === 'cards' || showChart) && (
+        <Box
+          sx={{
+            px: 2,
+            py: 1.5,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: 1,
+            borderBottom: '1px solid',
+            borderColor: 'border.light',
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
+          >
+            Sort:
+          </Typography>
+          <Select
+            size="small"
+            value={sortColumn}
+            onChange={(e) => handleSort(e.target.value as SortColumn)}
             sx={{
-              px: 2,
-              pb: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              gap: 1,
+              color: 'text.primary',
+              backgroundColor: 'background.default',
+              fontSize: '0.8rem',
+              height: '36px',
+              borderRadius: 2,
+              minWidth: '140px',
+              '& fieldset': { borderColor: 'border.light' },
+              '&:hover fieldset': { borderColor: 'border.medium' },
+              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+              '& .MuiSelect-select': { py: 0.75 },
             }}
           >
-            <Typography
-              variant="body2"
-              sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
-            >
-              Sort:
-            </Typography>
-            <Select
+            {cardSortSelectOptions.map((opt) => (
+              <MenuItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </Select>
+          <Tooltip
+            title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
+          >
+            <IconButton
+              onClick={() => handleSort(sortColumn)}
               size="small"
-              value={sortColumn}
-              onChange={(e) => handleSort(e.target.value as SortColumn)}
+              aria-label={
+                sortDirection === 'asc' ? 'Sort descending' : 'Sort ascending'
+              }
               sx={{
                 color: 'text.primary',
-                backgroundColor: 'background.default',
-                fontSize: '0.8rem',
-                height: '36px',
+                border: '1px solid',
+                borderColor: 'border.light',
                 borderRadius: 2,
-                minWidth: '140px',
-                '& fieldset': { borderColor: 'border.light' },
-                '&:hover fieldset': { borderColor: 'border.medium' },
-                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                '& .MuiSelect-select': { py: 0.75 },
+                padding: '6px',
+                '&:hover': {
+                  backgroundColor: 'surface.light',
+                  borderColor: 'border.medium',
+                },
               }}
             >
-              {cardSortSelectOptions.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </MenuItem>
-              ))}
-            </Select>
-            <Tooltip
-              title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
-            >
-              <IconButton
-                onClick={() => handleSort(sortColumn)}
-                size="small"
-                aria-label={
-                  sortDirection === 'asc' ? 'Sort descending' : 'Sort ascending'
-                }
-                sx={{
-                  color: 'text.primary',
-                  border: '1px solid',
-                  borderColor: 'border.light',
-                  borderRadius: 2,
-                  padding: '6px',
-                  '&:hover': {
-                    backgroundColor: 'surface.light',
-                    borderColor: 'border.medium',
-                  },
-                }}
-              >
-                {sortDirection === 'asc' ? (
-                  <ArrowUpwardIcon fontSize="small" />
-                ) : (
-                  <ArrowDownwardIcon fontSize="small" />
-                )}
-              </IconButton>
-            </Tooltip>
-          </Box>
-        )}
-      </Box>
+              {sortDirection === 'asc' ? (
+                <ArrowUpwardIcon fontSize="small" />
+              ) : (
+                <ArrowDownwardIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
+        </Box>
+      )}
 
       <Collapse in={showChart}>
         <Box
@@ -1377,40 +1381,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               flexWrap: 'wrap',
             }}
           >
-            <FormControl size="small">
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography
-                  variant="body2"
-                  sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
-                >
-                  Chart:
-                </Typography>
-                <Select
-                  value={chartMetricKey}
-                  onChange={(e) =>
-                    setChartMetricKey(e.target.value as ChartMetricKey)
-                  }
-                  sx={{
-                    color: 'text.primary',
-                    backgroundColor: 'background.default',
-                    fontSize: '0.8rem',
-                    height: '32px',
-                    borderRadius: 2,
-                    minWidth: '160px',
-                    '& fieldset': { borderColor: 'border.light' },
-                    '&:hover fieldset': { borderColor: 'border.medium' },
-                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                    '& .MuiSelect-select': { py: 0.5 },
-                  }}
-                >
-                  {CHART_METRIC_OPTIONS.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </Box>
-            </FormControl>
             <FormControlLabel
               control={
                 <Switch
