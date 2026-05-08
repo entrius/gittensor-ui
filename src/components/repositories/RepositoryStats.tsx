@@ -318,19 +318,20 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
               >
                 {repoConfig.config.additionalAcceptableBranches.map(
                   (branch: string) => (
-                  <Chip
-                    key={branch}
-                    label={branch}
-                    size="small"
-                    sx={{
-                      fontSize: '12px',
-                      height: '24px',
-                      bgcolor: 'surface.light',
-                      color: 'text.primary',
-                      border: `1px solid ${theme.palette.border.light}`,
-                    }}
-                  />
-                ))}
+                    <Chip
+                      key={branch}
+                      label={branch}
+                      size="small"
+                      sx={{
+                        fontSize: '12px',
+                        height: '24px',
+                        bgcolor: 'surface.light',
+                        color: 'text.primary',
+                        border: `1px solid ${theme.palette.border.light}`,
+                      }}
+                    />
+                  ),
+                )}
               </Box>
             </>
           )}

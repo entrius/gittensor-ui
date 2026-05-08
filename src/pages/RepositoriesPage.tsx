@@ -316,14 +316,12 @@ const RepositoriesPage: React.FC = () => {
         // Tiebreak by repo weight
         const weightA = parseFloat(
           String(
-            repoMap.get(a.repository?.toLowerCase() ?? '')?.config?.weight ??
-              0,
+            repoMap.get(a.repository?.toLowerCase() ?? '')?.config?.weight ?? 0,
           ),
         );
         const weightB = parseFloat(
           String(
-            repoMap.get(b.repository?.toLowerCase() ?? '')?.config?.weight ??
-              0,
+            repoMap.get(b.repository?.toLowerCase() ?? '')?.config?.weight ?? 0,
           ),
         );
         return weightB - weightA;
