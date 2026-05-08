@@ -6,7 +6,6 @@ import {
   Card,
   Chip,
   Collapse,
-  FormControl,
   Grid,
   IconButton,
   InputAdornment,
@@ -17,7 +16,6 @@ import {
   Select,
   Skeleton,
   Stack,
-  TablePagination,
   TextField,
   Tooltip,
   Typography,
@@ -25,6 +23,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SearchIcon from '@mui/icons-material/Search';
@@ -46,22 +45,31 @@ import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import BountyProgress from './BountyProgress';
-import FilterButton from '../FilterButton';
 import { BountyCard } from './BountyCard';
 import {
   type IssuesViewMode,
   ISSUES_VIEW_QUERY_PARAM,
-  ISSUES_LIST_ROWS,
-  ISSUES_CARD_ROWS,
   ISSUES_DEFAULT_CARD_ROWS,
-  ISSUES_DEFAULT_LIST_ROWS,
-  clampRowsForIssuesView,
   getIssuesViewModeFromQuery,
   readStoredIssuesViewMode,
   writeStoredIssuesViewMode,
 } from './issuesViewMode';
 
-type FilterType = 'all' | 'available' | 'pending' | 'history';
+export type FilterType = 'all' | 'available' | 'pending' | 'history';
+
+export const FILTER_ORDER: readonly FilterType[] = [
+  'all',
+  'available',
+  'pending',
+  'history',
+] as const;
+
+export const FILTER_LABELS: Record<FilterType, string> = {
+  all: 'All',
+  available: 'Available',
+  pending: 'Pending',
+  history: 'History',
+};
 type SortDirection = 'asc' | 'desc';
 type SortKey =
   | 'id'
@@ -72,6 +80,17 @@ type SortKey =
   | 'funding'
   | 'solver'
   | 'date';
+
+const SORT_LABELS: Record<SortKey, string> = {
+  id: 'ID',
+  repository: 'Repository',
+  issue: 'Issue',
+  bounty: 'Bounty',
+  status: 'Status',
+  funding: 'Funding',
+  solver: 'Solver',
+  date: 'Date',
+};
 
 interface IssuesListProps {
   issues: IssueBounty[];
@@ -179,10 +198,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [rowsPerPage, setRowsPerPage] = useState(
-    viewMode === 'cards' ? ISSUES_DEFAULT_CARD_ROWS : ISSUES_DEFAULT_LIST_ROWS,
-  );
-  const [page, setPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [showChart, setShowChart] = useState(false);
 
@@ -211,35 +226,13 @@ const IssuesList: React.FC<IssuesListProps> = ({
     [filterType, viewMode, setSearchParams],
   );
 
-  const handleFilterChange = useCallback(
-    (f: FilterType) => syncParams({ filter: f }),
-    [syncParams],
-  );
-
   const handleViewModeChange = useCallback(
     (nextMode: IssuesViewMode) => {
       writeStoredIssuesViewMode(nextMode);
       setStoredViewMode(nextMode);
-      const nextRows = clampRowsForIssuesView(rowsPerPage, nextMode);
-      if (nextRows !== rowsPerPage) {
-        setRowsPerPage(nextRows);
-        setPage(0);
-      }
       syncParams({ view: nextMode });
     },
-    [rowsPerPage, syncParams],
-  );
-
-  const counts = useMemo(
-    () => ({
-      all: issues.length,
-      available: issues.filter((i) => i.status === 'active').length,
-      pending: issues.filter((i) => i.status === 'registered').length,
-      history: issues.filter(
-        (i) => i.status === 'completed' || i.status === 'cancelled',
-      ).length,
-    }),
-    [issues],
+    [syncParams],
   );
 
   const filteredByType = useMemo(() => {
@@ -294,10 +287,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
       setSortDirection('desc');
     }
   }, [sortKey, visibleSortKeys]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [filterType, searchQuery]);
 
   const handleSort = useCallback(
     (key: SortKey) => {
@@ -365,11 +354,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
     return decorated.map((item) => item.issue);
   }, [filteredIssues, sortDirection, sortKey]);
-
-  const paginatedIssues = useMemo(() => {
-    const start = page * rowsPerPage;
-    return sortedIssues.slice(start, start + rowsPerPage);
-  }, [sortedIssues, page, rowsPerPage]);
 
   const chartOption = useMemo(() => {
     const repoTotals = new Map<string, number>();
@@ -749,28 +733,21 @@ const IssuesList: React.FC<IssuesListProps> = ({
     ];
   }, [filterType, theme, taoPrice, alphaPrice]);
 
-  const validRows = viewMode === 'cards' ? ISSUES_CARD_ROWS : ISSUES_LIST_ROWS;
-
-  const pagination = (
-    <TablePagination
-      rowsPerPageOptions={[]}
-      component="div"
-      count={sortedIssues.length}
-      rowsPerPage={rowsPerPage}
-      page={page}
-      onPageChange={(_event, newPage) => setPage(newPage)}
-      onRowsPerPageChange={() => {}}
-      showFirstButton
-      showLastButton
-    />
-  );
-
-  const cardSx = {
-    backgroundColor: 'background.default',
-    border: `1px solid ${theme.palette.border.light}`,
-    borderRadius: 3,
-    overflow: 'hidden',
-  };
+  const cardSx =
+    viewMode === 'cards'
+      ? ({
+          backgroundColor: 'transparent',
+          border: 'none',
+          borderRadius: 0,
+          overflow: 'visible',
+          boxShadow: 'none',
+        } as const)
+      : ({
+          backgroundColor: 'background.default',
+          border: `1px solid ${theme.palette.border.light}`,
+          borderRadius: 3,
+          overflow: 'hidden',
+        } as const);
 
   if (isLoading) {
     return (
@@ -829,48 +806,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
     '&.Mui-focused fieldset': { borderColor: 'primary.main' },
   } as const;
 
-  const filterChips = (
-    <Box
-      sx={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-        gap: 1,
-      }}
-    >
-      <FilterButton
-        fullWidth
-        label="All"
-        isActive={filterType === 'all'}
-        onClick={() => handleFilterChange('all')}
-        count={counts.all}
-        color={theme.palette.status.neutral}
-      />
-      <FilterButton
-        fullWidth
-        label="Available"
-        isActive={filterType === 'available'}
-        onClick={() => handleFilterChange('available')}
-        count={counts.available}
-        color={theme.palette.status.merged}
-      />
-      <FilterButton
-        fullWidth
-        label="Pending"
-        isActive={filterType === 'pending'}
-        onClick={() => handleFilterChange('pending')}
-        count={counts.pending}
-        color={theme.palette.status.warning}
-      />
-      <FilterButton
-        fullWidth
-        label="History"
-        isActive={filterType === 'history'}
-        onClick={() => handleFilterChange('history')}
-        count={counts.history}
-        color={theme.palette.status.neutral}
-      />
-    </Box>
-  );
 
   const chartToggleButton = (
     <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
@@ -899,39 +834,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
     </Tooltip>
   );
 
-  const rowsSelector = (
-    <FormControl size="small">
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Typography
-          variant="body2"
-          sx={{
-            color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
-            fontSize: '0.8rem',
-          }}
-        >
-          Rows:
-        </Typography>
-        <Select
-          value={rowsPerPage}
-          onChange={(e) => {
-            setRowsPerPage(e.target.value as number);
-            setPage(0);
-          }}
-          sx={{
-            ...inputFieldSx,
-            minWidth: '80px',
-            '& .MuiSelect-select': { py: 0.75 },
-          }}
-        >
-          {validRows.map((n) => (
-            <MenuItem key={n} value={n}>
-              {n}
-            </MenuItem>
-          ))}
-        </Select>
-      </Box>
-    </FormControl>
-  );
 
   const searchField = (fullWidth = false) => (
     <TextField
@@ -962,10 +864,59 @@ const IssuesList: React.FC<IssuesListProps> = ({
     <ViewModeToggle viewMode={viewMode} onChange={handleViewModeChange} />
   );
 
+  const sortSection = (
+    <Box>
+      <Typography sx={sidebarLabelSx}>Sort</Typography>
+      <Box sx={{ display: 'flex', gap: 1 }}>
+        <Select
+          value={sortKey}
+          onChange={(e) => {
+            const key = e.target.value as SortKey;
+            setSortKey(key);
+            setSortDirection(getDefaultSortDirection(key));
+          }}
+          size="small"
+          sx={{ ...inputFieldSx, flex: 1, '& .MuiSelect-select': { py: 0.75 } }}
+        >
+          {visibleSortKeys.map((key) => (
+            <MenuItem key={key} value={key}>
+              {SORT_LABELS[key]}
+            </MenuItem>
+          ))}
+        </Select>
+        <Tooltip title={sortDirection === 'asc' ? 'Ascending' : 'Descending'} arrow>
+          <IconButton
+            size="small"
+            onClick={() =>
+              setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+            }
+            sx={{
+              color: theme.palette.text.primary,
+              border: `1px solid ${theme.palette.border.light}`,
+              borderRadius: 2,
+              padding: '6px',
+              '&:hover': {
+                backgroundColor: theme.palette.surface.subtle,
+                borderColor: theme.palette.border.medium,
+              },
+            }}
+          >
+            <ArrowUpwardIcon
+              fontSize="small"
+              sx={{
+                transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.2s ease',
+              }}
+            />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </Box>
+  );
+
   const usePortal = !!portalTarget && isLargeScreen;
 
-  const hasActiveOptions =
-    filterType !== 'all' || searchQuery.trim() !== '' || showChart;
+  const hasActiveOptions = searchQuery.trim() !== '' || showChart;
 
   /* Below xl: a single compact "Options" icon-button that opens a popover
      containing the same Status / View / Search / Chart sections that live
@@ -1049,10 +1000,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         },
       }}
     >
-      <Box>
-        <Typography sx={sidebarLabelSx}>Status</Typography>
-        {filterChips}
-      </Box>
+      {sortSection}
       <Box>
         <Typography sx={sidebarLabelSx}>View</Typography>
         {viewToggle}
@@ -1087,15 +1035,17 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const inlineToolbar = (
     <Box
       sx={{
-        px: 2,
+        px: viewMode === 'cards' ? 0 : 2,
         py: 1.5,
-        borderBottom: `1px solid ${theme.palette.border.light}`,
+        borderBottom:
+          viewMode === 'cards'
+            ? 'none'
+            : `1px solid ${theme.palette.border.light}`,
         display: 'flex',
         alignItems: 'center',
         gap: 2,
       }}
     >
-      {rowsSelector}
       {!usePortal && (
         <Box sx={{ ml: 'auto' }}>
           {optionsButton}
@@ -1105,14 +1055,11 @@ const IssuesList: React.FC<IssuesListProps> = ({
     </Box>
   );
 
-  /* Sidebar-portaled toolbar — Status chips, View toggle (grid/cards),
-     Search, and Chart. Rows-per-page stays in the inline toolbar. */
+  /* Sidebar-portaled toolbar — Sort, View toggle (grid/cards), Search, and Chart.
+     Rows-per-page stays in the inline toolbar. */
   const sidebarToolbar = (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Box>
-        <Typography sx={sidebarLabelSx}>Status</Typography>
-        {filterChips}
-      </Box>
+      {sortSection}
       <Box>
         <Typography sx={sidebarLabelSx}>View</Typography>
         {viewToggle}
@@ -1187,32 +1134,27 @@ const IssuesList: React.FC<IssuesListProps> = ({
       {toolbar}
 
       {viewMode === 'cards' ? (
-        <>
-          {paginatedIssues.length > 0 ? (
-            <Box sx={{ p: 2 }}>
-              <Grid container spacing={2}>
-                {paginatedIssues.map((issue) => (
-                  <Grid item xs={12} sm={6} md={4} key={issue.id}>
-                    <BountyCard
-                      issue={issue}
-                      href={getIssueHref ? getIssueHref(issue.id) : undefined}
-                      linkState={linkState}
-                      taoPrice={taoPrice}
-                      alphaPrice={alphaPrice}
-                    />
-                  </Grid>
-                ))}
+        sortedIssues.length > 0 ? (
+          <Grid container spacing={2}>
+            {sortedIssues.map((issue) => (
+              <Grid item xs={12} sm={6} md={4} key={issue.id}>
+                <BountyCard
+                  issue={issue}
+                  href={getIssueHref ? getIssueHref(issue.id) : undefined}
+                  linkState={linkState}
+                  taoPrice={taoPrice}
+                  alphaPrice={alphaPrice}
+                />
               </Grid>
-            </Box>
-          ) : (
-            emptyState
-          )}
-          {pagination}
-        </>
+            ))}
+          </Grid>
+        ) : (
+          emptyState
+        )
       ) : (
         <DataTable<IssueBounty, SortKey>
           columns={columns}
-          rows={paginatedIssues}
+          rows={sortedIssues}
           getRowKey={(issue) => issue.id}
           getRowHref={
             getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
@@ -1226,7 +1168,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                 : '750px'
           }
           emptyState={emptyState}
-          pagination={pagination}
           sort={{
             field: sortKey,
             order: sortDirection,

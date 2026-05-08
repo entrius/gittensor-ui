@@ -153,7 +153,7 @@ const useTopBountyHunters = (
 
 const FilterSection: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   const filterType = useMemo<FilterType>(() => {
     const f = searchParams.get('filter');
@@ -308,14 +308,8 @@ const ActivityLegendRow: React.FC<{ segment: DonutSegment }> = ({
  * ------------------------------------------------------------------ */
 
 const PoolPayoutsCard: React.FC<{ stats?: IssuesStats }> = ({ stats }) => {
-  const { taoPrice, alphaPrice, hasPrices } = usePrices();
-
   const tiles = [
-    {
-      label: 'Bounty Pool',
-      amount: stats?.totalBountyPool,
-      valueColor: undefined as string | undefined,
-    },
+    { label: 'Bounty Pool', amount: stats?.totalBountyPool },
     {
       label: 'Total Payouts',
       amount: stats?.totalPayouts,
@@ -331,12 +325,10 @@ const PoolPayoutsCard: React.FC<{ stats?: IssuesStats }> = ({ stats }) => {
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
             gap: 1,
+            mb: 2,
           }}
         >
           {tiles.map((t) => {
-            const usd = hasPrices
-              ? formatAlphaToUsd(t.amount, taoPrice, alphaPrice)
-              : null;
             return (
               <Box
                 key={t.label}
@@ -351,10 +343,9 @@ const PoolPayoutsCard: React.FC<{ stats?: IssuesStats }> = ({ stats }) => {
                 <Typography
                   sx={{
                     fontFamily: FONTS.mono,
-                    fontSize: '0.62rem',
+                    fontSize: '0.68rem',
                     color: STATUS_COLORS.open,
                     textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
@@ -363,38 +354,28 @@ const PoolPayoutsCard: React.FC<{ stats?: IssuesStats }> = ({ stats }) => {
                 >
                   {t.label}
                 </Typography>
-                <Typography
-                  sx={(theme) => ({
-                    fontFamily: FONTS.mono,
-                    fontSize: '1.05rem',
-                    fontWeight: 700,
-                    color: t.valueColor ?? theme.palette.text.primary,
-                    lineHeight: 1.1,
-                    fontVariantNumeric: 'tabular-nums',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  })}
-                >
-                  {formatTokenAmount(t.amount)} ل
-                </Typography>
-                <Typography
-                  sx={{
-                    mt: 0.5,
-                    fontFamily: FONTS.mono,
-                    fontSize: '0.66rem',
-                    color: STATUS_COLORS.open,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {usd ?? '—'}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.8 }}>
+                  <Typography
+                    sx={{
+                      fontFamily: FONTS.mono,
+                      fontSize: '1.25rem',
+                      fontWeight: 700,
+                      color: t.valueColor ?? 'text.primary',
+                      lineHeight: 1,
+                      fontVariantNumeric: 'tabular-nums',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {formatTokenAmount(t.amount)} ل
+                  </Typography>
+                </Box>
               </Box>
             );
           })}
         </Box>
+        <StatRow label="All" value={(stats?.totalIssues ?? 0).toLocaleString()} />
       </Box>
     </SectionCard>
   );
