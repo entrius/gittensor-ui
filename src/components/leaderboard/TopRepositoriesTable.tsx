@@ -158,6 +158,12 @@ interface TopRepositoriesTableProps {
   linkState?: Record<string, unknown>;
 }
 
+const ISSUE_METRIC_KEYS = new Set<ChartMetricKey>([
+  'discoveryIssues',
+  'discoveryScore',
+  'discoveryContributors',
+]);
+
 const VALID_SORT_COLUMNS: SortColumn[] = [
   'rank',
   'repository',
@@ -414,7 +420,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
      table's sort/pagination), but still respects status + search filters. */
   const chartTopRepositories = useMemo(() => {
     const valueOf = CHART_METRIC_VALUE[chartMetricKey];
-    return [...filteredRepositories]
+    const base = ISSUE_METRIC_KEYS.has(chartMetricKey)
+      ? filteredRepositories.filter((r) => r.mirrorEnabled)
+      : filteredRepositories;
+    return [...base]
       .filter((r) => valueOf(r) > 0)
       .sort((a, b) => valueOf(b) - valueOf(a))
       .slice(0, rowsPerPage)
@@ -1196,77 +1205,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               </IconButton>
             </Tooltip>
 
-            {showChart && (
-              <FormControl size="small">
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: 'text.secondary',
-                      fontSize: '0.8rem',
-                    }}
-                  >
-                    Chart:
-                  </Typography>
-                  <Select
-                    value={chartMetricKey}
-                    onChange={(e) =>
-                      setChartMetricKey(e.target.value as ChartMetricKey)
-                    }
-                    sx={{
-                      color: 'text.primary',
-                      backgroundColor: 'background.default',
-                      fontSize: '0.8rem',
-                      height: '36px',
-                      borderRadius: 2,
-                      minWidth: '160px',
-                      '& fieldset': { borderColor: 'border.light' },
-                      '&:hover fieldset': { borderColor: 'border.medium' },
-                      '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                      '& .MuiSelect-select': { py: 0.75 },
-                    }}
-                  >
-                    {CHART_METRIC_OPTIONS.map((opt) => (
-                      <MenuItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </Box>
-              </FormControl>
-            )}
-
-            {showChart && (
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={useLogScale}
-                    onChange={(e) => setUseLogScale(e.target.checked)}
-                    size="small"
-                    sx={{
-                      '& .MuiSwitch-switchBase.Mui-checked': {
-                        color: 'primary.main',
-                      },
-                      '& .MuiSwitch-track': {
-                        backgroundColor: 'border.medium',
-                      },
-                    }}
-                  />
-                }
-                label={
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontSize: '0.8rem',
-                      color: 'text.secondary',
-                    }}
-                  >
-                    Log Scale
-                  </Typography>
-                }
-              />
-            )}
-
             <FormControl size="small">
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Typography
@@ -1423,19 +1361,88 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       <Collapse in={showChart}>
         <Box
           sx={{
-            p: 2,
             borderBottom: '1px solid',
             borderColor: 'border.light',
-            height: '500px',
             backgroundColor: 'surface.subtle',
           }}
         >
-          {showChart && chartTopRepositories.length > 0 && (
-            <ReactECharts
-              option={getChartOption()}
-              style={{ height: '100%', width: '100%' }}
+          <Box
+            sx={{
+              px: 2,
+              pt: 1.5,
+              pb: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              flexWrap: 'wrap',
+            }}
+          >
+            <FormControl size="small">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography
+                  variant="body2"
+                  sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
+                >
+                  Chart:
+                </Typography>
+                <Select
+                  value={chartMetricKey}
+                  onChange={(e) =>
+                    setChartMetricKey(e.target.value as ChartMetricKey)
+                  }
+                  sx={{
+                    color: 'text.primary',
+                    backgroundColor: 'background.default',
+                    fontSize: '0.8rem',
+                    height: '32px',
+                    borderRadius: 2,
+                    minWidth: '160px',
+                    '& fieldset': { borderColor: 'border.light' },
+                    '&:hover fieldset': { borderColor: 'border.medium' },
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                    '& .MuiSelect-select': { py: 0.5 },
+                  }}
+                >
+                  {CHART_METRIC_OPTIONS.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Box>
+            </FormControl>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={useLogScale}
+                  onChange={(e) => setUseLogScale(e.target.checked)}
+                  size="small"
+                  sx={{
+                    '& .MuiSwitch-switchBase.Mui-checked': {
+                      color: 'primary.main',
+                    },
+                    '& .MuiSwitch-track': { backgroundColor: 'border.medium' },
+                  }}
+                />
+              }
+              label={
+                <Typography
+                  variant="body2"
+                  sx={{ fontSize: '0.8rem', color: 'text.secondary' }}
+                >
+                  Log Scale
+                </Typography>
+              }
             />
-          )}
+          </Box>
+          <Box sx={{ px: 2, pb: 2, height: '460px' }}>
+            {showChart && chartTopRepositories.length > 0 && (
+              <ReactECharts
+                option={getChartOption()}
+                style={{ height: '100%', width: '100%' }}
+              />
+            )}
+          </Box>
         </Box>
       </Collapse>
 
