@@ -431,18 +431,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
     { xs: 'flex', sm: 'none' },
     1,
   );
-  const renderEarningsTile = (tooltip: string) => (
-    <StatTile
-      label="Earnings"
-      value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
-      sub={`$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
-      color={
-        (minerStats.usdPerDay ?? 0) > 0 ? STATUS_COLORS.success : undefined
-      }
-      tooltip={tooltip}
-    />
-  );
-
   return (
     <Card sx={{ p: 3, position: 'relative' }} elevation={0}>
       {/* Updated chip — desktop */}
@@ -677,9 +665,17 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
-            {renderEarningsTile(
-              'Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus.',
-            )}
+            <StatTile
+              label="Earnings"
+              value={`~$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
+              sub={`~$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · ~$${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
+              color={
+                (minerStats.usdPerDay ?? 0) > 0
+                  ? STATUS_COLORS.success
+                  : undefined
+              }
+              tooltip="Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus."
+            />
           </Grid>
         </Grid>
       ) : (
@@ -733,9 +729,17 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
-            {renderEarningsTile(
-              'Estimated earnings from issue discovery based on current network incentive distribution.',
-            )}
+            <StatTile
+              label="Earnings"
+              value={`~$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
+              sub={`~$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · ~$${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
+              color={
+                (minerStats.usdPerDay ?? 0) > 0
+                  ? STATUS_COLORS.success
+                  : undefined
+              }
+              tooltip="Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus."
+            />
           </Grid>
         </Grid>
       )}
