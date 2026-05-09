@@ -111,7 +111,6 @@ const buildMinerSearchData = (miners: MinerEvaluation[]): MinerSearchData[] => {
 const getMinerSearchResults = (
   miners: MinerSearchData[],
   query: string,
-  matchMode: SearchMatchMode,
   limit?: number,
 ) => {
   const results = sortByMatchThenTiebreaker(
@@ -185,7 +184,6 @@ const buildRepoSearchData = (
 const getRepositorySearchResults = (
   repositories: RepoSearchData[],
   query: string,
-  matchMode: SearchMatchMode,
   limit?: number,
 ) => {
   const results = sortByMatchThenTiebreaker(
@@ -287,26 +285,18 @@ export const useSearchResults = (
     return getMinerSearchResults(
       minerSearchData,
       normalizedQuery,
-      matchMode,
       limits.miners,
     );
-  }, [hasQuery, limits.miners, matchMode, normalizedQuery, minerSearchData]);
+  }, [hasQuery, limits.miners, normalizedQuery, minerSearchData]);
 
   const repoResults = useMemo(() => {
     if (!hasQuery) return [];
     return getRepositorySearchResults(
       repoSearchData,
       normalizedQuery,
-      matchMode,
       limits.repositories,
     );
-  }, [
-    hasQuery,
-    limits.repositories,
-    matchMode,
-    normalizedQuery,
-    repoSearchData,
-  ]);
+  }, [hasQuery, limits.repositories, normalizedQuery, repoSearchData]);
 
   const prResults = useMemo(() => {
     if (!hasQuery) return [];

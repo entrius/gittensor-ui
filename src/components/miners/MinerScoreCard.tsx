@@ -41,6 +41,7 @@ import {
   calculateOpenIssueThreshold,
   parseNumber,
 } from '../../utils/ExplorerUtils';
+import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { credibilityColor } from '../../utils/format';
 
 const formatTimeAgo = (date: Date): string => {
@@ -479,7 +480,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
         }}
       >
         <Avatar
-          src={`https://avatars.githubusercontent.com/${username}`}
+          src={getRepositoryOwnerAvatarSrc(username)}
           alt={username}
           sx={{
             width: { xs: 72, sm: 64 },
@@ -497,6 +498,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               gap: 1.5,
               flexWrap: 'wrap',
               mb: 0.5,
+              pr: {
+                xs: 0,
+                sm: minerStats.updatedAt ? '160px' : 0,
+              },
             }}
           >
             <Typography

@@ -1203,60 +1203,50 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
             Click any PR to see multiplier details
           </Typography>
         </Box>
-        <Box
+        <Stack
+          direction="row"
+          spacing={{ xs: 0.75, sm: 1 }}
+          flexWrap="wrap"
           sx={{
             width: { xs: '100%', sm: 'auto' },
-            minWidth: 0,
-            overflowX: { xs: 'auto', sm: 'visible' },
-            WebkitOverflowScrolling: 'touch',
-            pb: { xs: 0.25, sm: 0 },
-            '&::-webkit-scrollbar': { height: 5 },
-            '&::-webkit-scrollbar-thumb': {
-              borderRadius: 2,
-              backgroundColor: (t) => alpha(t.palette.text.primary, 0.15),
+            '& > .MuiButton-root': {
+              flex: { xs: 1, sm: 'none' },
+              minWidth: 0,
+              px: { xs: 1.5, sm: 2 },
+              py: { xs: 0.5, sm: 0 },
+              fontSize: { xs: '0.75rem', sm: '0.8rem' },
             },
           }}
         >
-          <Stack
-            direction="row"
-            spacing={1}
-            useFlexGap
-            sx={{
-              flexWrap: { xs: 'nowrap', sm: 'wrap' },
-              width: { xs: 'max-content', sm: 'auto' },
-              py: 0.25,
-            }}
-          >
-            <FilterButton
-              label="All"
-              isActive={statusFilter === 'all'}
-              onClick={() => handleFilterChange('all')}
-              count={statusCounts.all}
-              color={theme.palette.status.neutral}
-            />
-            <FilterButton
-              label="Open"
-              isActive={statusFilter === 'open'}
-              onClick={() => handleFilterChange('open')}
-              count={statusCounts.open}
-              color={theme.palette.status.open}
-            />
-            <FilterButton
-              label="Merged"
-              isActive={statusFilter === 'merged'}
-              onClick={() => handleFilterChange('merged')}
-              count={statusCounts.merged}
-              color={theme.palette.status.merged}
-            />
-            <FilterButton
-              label="Closed"
-              isActive={statusFilter === 'closed'}
-              onClick={() => handleFilterChange('closed')}
-              count={statusCounts.closed}
-              color={theme.palette.status.closed}
-            />
-          </Stack>
-        </Box>
+          <FilterButton
+            label="All"
+            isActive={statusFilter === 'all'}
+            onClick={() => handleFilterChange('all')}
+            count={statusCounts.all}
+            color={theme.palette.status.neutral}
+          />
+          <FilterButton
+            label="Open"
+            isActive={statusFilter === 'open'}
+            onClick={() => handleFilterChange('open')}
+            count={statusCounts.open}
+            color={theme.palette.status.open}
+          />
+          <FilterButton
+            label="Merged"
+            isActive={statusFilter === 'merged'}
+            onClick={() => handleFilterChange('merged')}
+            count={statusCounts.merged}
+            color={theme.palette.status.merged}
+          />
+          <FilterButton
+            label="Closed"
+            isActive={statusFilter === 'closed'}
+            onClick={() => handleFilterChange('closed')}
+            count={statusCounts.closed}
+            color={theme.palette.status.closed}
+          />
+        </Stack>
       </Box>
 
       <Box
