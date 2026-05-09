@@ -12,7 +12,12 @@ import {
   useStats,
 } from '../api';
 import { useMonthlyRewards } from '../hooks/useMonthlyRewards';
-import { getGithubAvatarSrc, getPrStatusLabel, parseNumber } from '../utils';
+import {
+  getGithubAvatarSrc,
+  getGithubUserAvatarSrcById,
+  getPrStatusLabel,
+  parseNumber,
+} from '../utils';
 import useDashboardData from './dashboard/useDashboardData';
 import { buildFeaturedWork } from './dashboard/dashboardData';
 
@@ -265,7 +270,7 @@ const buildActivityRows = (
 const getAvatarSrc = (miner: LandingMinerRow) => {
   if (miner.username) return getGithubAvatarSrc(miner.username);
   return /^\d+$/.test(miner.githubId)
-    ? `https://avatars.githubusercontent.com/u/${miner.githubId}`
+    ? getGithubUserAvatarSrcById(miner.githubId)
     : '';
 };
 
