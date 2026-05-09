@@ -9,16 +9,20 @@ import {
   Typography,
   alpha,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAllPrs, type CommitLog } from '../../api';
 import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
+import { WatchlistButton } from '../../components/common';
 import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
+import { serializePRKey } from '../../hooks/useWatchlist';
 import theme, { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
+import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import FilterButton from '../FilterButton';
+import { AUTHOR_FILTER_ALL, AuthorFilter } from './AuthorFilter';
 
 type PrSortField =
   | 'pullRequestNumber'
@@ -41,9 +45,26 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   state = 'all',
 }) => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [filter, setFilter] = useState<PrStatusFilter>(state);
   const [sortField, setSortField] = useState<PrSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const authorFilter = searchParams.get('prAuthor') ?? AUTHOR_FILTER_ALL;
+
+  const setAuthorFilter = useCallback(
+    (nextAuthor: string) => {
+      setSearchParams(
+        (prev) => {
+          const nextParams = new URLSearchParams(prev);
+          if (nextAuthor === AUTHOR_FILTER_ALL) nextParams.delete('prAuthor');
+          else nextParams.set('prAuthor', nextAuthor);
+          return nextParams;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   const handleSort = (field: PrSortField) => {
     if (sortField === field) {
@@ -71,10 +92,11 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     return getPrStatusCounts(allPRs);
   }, [allPRs]);
 
-  const filteredPRs = useMemo(
-    () => filterPrs(allPRs ?? [], { statusFilter: filter }),
-    [allPRs, filter],
-  );
+  const filteredPRs = useMemo(() => {
+    const byStatus = filterPrs(allPRs ?? [], { statusFilter: filter });
+    if (authorFilter === AUTHOR_FILTER_ALL) return byStatus;
+    return byStatus.filter((pr) => pr.author === authorFilter);
+  }, [allPRs, filter, authorFilter]);
 
   const sortedPRs = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -127,7 +149,13 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   );
 
   const filterButtons = (
-    <Stack direction="row" spacing={1}>
+    <Stack
+      direction="row"
+      spacing={1}
+      alignItems="center"
+      flexWrap="wrap"
+      useFlexGap
+    >
       <FilterButton
         label="All"
         isActive={filter === 'all'}
@@ -155,6 +183,13 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         onClick={() => setFilter('closed')}
         count={counts.closed}
         color={theme.palette.status.closed}
+      />
+      <AuthorFilter
+        items={allPRs}
+        getAuthor={(pr) => pr.author}
+        getGithubId={(pr) => pr.githubId}
+        value={authorFilter}
+        onChange={setAuthorFilter}
       />
     </Stack>
   );
@@ -235,7 +270,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       renderCell: (pr) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Avatar
-            src={`https://avatars.githubusercontent.com/${pr.author}`}
+            src={getRepositoryOwnerAvatarSrc(pr.author)}
             alt={pr.author}
             sx={{ width: 20, height: 20, flexShrink: 0 }}
           />
@@ -312,6 +347,18 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       sortKey: 'mergedAt',
       renderCell: (pr) =>
         pr.mergedAt ? new Date(pr.mergedAt).toLocaleDateString() : '-',
+    },
+    {
+      key: 'watch',
+      header: '★',
+      align: 'center',
+      renderCell: (pr) => (
+        <WatchlistButton
+          category="prs"
+          itemKey={serializePRKey(pr.repository, pr.pullRequestNumber)}
+          size="small"
+        />
+      ),
     },
   ];
 

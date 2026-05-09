@@ -21,7 +21,7 @@ type TimelineTab = 'oss' | 'discoveries';
 const TIMELINE_ORDER: readonly TimelineTab[] = ['oss', 'discoveries'] as const;
 
 const TIMELINE_LABELS: Record<TimelineTab, string> = {
-  oss: 'Leaderboard',
+  oss: 'OSS Contributions',
   discoveries: 'Discoveries',
 };
 
@@ -78,6 +78,7 @@ const TopMinersPage: React.FC = () => {
       hotkey: stat.hotkey || 'N/A',
       uniqueReposCount: parseNumber(stat.uniqueReposCount),
       issueCredibility: parseNumber(stat.issueCredibility),
+      credibility: parseNumber(stat.issueCredibility),
       isEligible: stat.isIssueEligible ?? false,
       ossIsEligible: stat.isEligible ?? false,
       discoveriesIsEligible: stat.isIssueEligible ?? false,
