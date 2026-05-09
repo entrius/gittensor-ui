@@ -228,7 +228,7 @@ const MinerIdentityCell: React.FC<MinerIdentityCellProps> = ({ miner }) => {
     (!isNumericId(miner.author) ? miner.author : miner.githubId) ||
     miner.githubId ||
     '';
-  const avatarSrc = githubData?.avatarUrl || getGithubAvatarSrc(username);
+  const avatarSrc = githubData?.avatarUrl || getGithubAvatarSrc(miner.author, miner.githubId);
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
